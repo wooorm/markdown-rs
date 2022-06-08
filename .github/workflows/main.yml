@@ -29,12 +29,12 @@ jobs:
       - run: cargo test
       # - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
       # - uses: codecov/codecov-action@v1
-      - run: cargo doc --document-private-items
+      - run: cargo doc --document-private-items --no-deps --release
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
           branch: gh-pages
-          folder: target/doc/micromark
+          folder: target/doc
           single-commit: true
           commit-message: .
           git-config-name: Titus Wormer
