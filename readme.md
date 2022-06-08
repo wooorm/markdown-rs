@@ -1,5 +1,8 @@
 # micromark-rs
 
+Crate docs are currently at
+[`wooorm.com/micromark-rs/micromark/`](https://wooorm.com/micromark-rs/micromark/).
+
 Here be dragons!
 🐉
 There’s a lot to do.
