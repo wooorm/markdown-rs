@@ -1,0 +1,24 @@
+name: main
+on:
+  - pull_request
+  - push
+jobs:
+  main:
+    name: ${{matrix.rust}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{matrix.rust}}
+          components: rustfmt, clippy
+      - run: cargo clippy -- -W clippy::pedantic
+      - run: cargo fmt --all -- --check
+      - run: cargo test
+      - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
+      - uses: codecov/codecov-action@v1
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta

@@ -1,0 +1,1 @@
+micromark.js: unquoted: is `completeAttributeValueUnquoted`s case for `completeAttributeNameAfter` missing a `/`?. I’ve added it here.

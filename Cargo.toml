@@ -1,0 +1,18 @@
+[package]
+name = "micromark"
+version = "0.0.0"
+authors = ["Titus Wormer <tituswormer@gmail.com>"]
+edition = "2015"
+rust-version = "1.56"
+description = "small commonmark compliant markdown parser with positional info and concrete tokens"
+homepage = "https://github.com/micromark/micromark-rs"
+repository = "https://github.com/micromark/micromark-rs"
+license = "MIT"
+keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
+categories = ["compilers", "encoding", "parser-implementations", "parsing", "text-processing"]
+include = ["src/", "license"]
+publish = false
+
+[dependencies]
+log = "0.4"
+env_logger = "0.9"
