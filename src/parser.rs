@@ -9,6 +9,6 @@ use crate::tokenizer::{as_codes, Code, Event};
 pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
     let codes = as_codes(value);
     // To do: pass a reference to this around, and slices in the (back)feeding. Might be tough.
-    let events = flow(codes.clone());
+    let events = flow(&codes);
     (events, codes)
 }

@@ -18,7 +18,7 @@ use crate::tokenizer::{Code, Event, State, StateFnResult, TokenType, Tokenizer};
 /// Turn `codes` as the string content type into events.
 // To do: remove this `allow` when all the content types are glued together.
 #[allow(dead_code)]
-pub fn string(codes: Vec<Code>) -> Vec<Event> {
+pub fn string(codes: &[Code]) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new();
     let (state, remainder) = tokenizer.feed(codes, Box::new(before), true);
 

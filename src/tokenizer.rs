@@ -334,7 +334,7 @@ impl Tokenizer {
                     tokenizer.point
                 );
                 let result = done(ok);
-                tokenizer.feed(codes, result, false)
+                tokenizer.feed(&codes, result, false)
             },
         )
     }
@@ -373,7 +373,7 @@ impl Tokenizer {
                     tokenizer.point
                 );
                 let result = done(ok);
-                tokenizer.feed(codes, result, false)
+                tokenizer.feed(&codes, result, false)
             },
         )
     }
@@ -440,11 +440,11 @@ impl Tokenizer {
     /// When `done: true` is passed, the EOF is fed.
     pub fn feed(
         &mut self,
-        codes: Vec<Code>,
+        codes: &[Code],
         start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         drain: bool,
     ) -> StateFnResult {
-        let mut codes = codes;
+        let codes = codes;
         let mut state = State::Fn(Box::new(start));
         let mut index = 0;
 
@@ -474,7 +474,7 @@ impl Tokenizer {
 
         // Yield to a higher loop if we shouldn’t feed EOFs.
         if !drain {
-            return (state, Some(codes.split_off(index)));
+            return (state, Some(codes[index..].to_vec()));
         }
 
         loop {

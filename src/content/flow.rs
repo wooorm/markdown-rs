@@ -32,7 +32,7 @@ use crate::util::get_span;
 /// Turn `codes` as the flow content type into events.
 // To do: remove this `allow` when all the content types are glued together.
 #[allow(dead_code)]
-pub fn flow(codes: Vec<Code>) -> Vec<Event> {
+pub fn flow(codes: &[Code]) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new();
     let (state, remainder) = tokenizer.feed(codes, Box::new(start), true);
 
