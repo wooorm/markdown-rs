@@ -62,7 +62,8 @@ pub enum TokenType {
     BlankLineWhitespace,
 
     Content,
-    ContentPhrasing,
+    ContentChunk,
+
     ChunkString,
 }
 
@@ -375,6 +376,61 @@ impl Tokenizer {
                 tokenizer.feed(codes, result, false)
             },
         )
+    }
+
+    // To do: lifetimes, boxes, lmao.
+    pub fn attempt_2(
+        &mut self,
+        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
+    ) -> Box<StateFn> {
+        self.call_multiple(false, Some(Box::new(a)), Some(Box::new(b)), None, done)
+    }
+
+    pub fn attempt_3(
+        &mut self,
+        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
+    ) -> Box<StateFn> {
+        self.call_multiple(
+            false,
+            Some(Box::new(a)),
+            Some(Box::new(b)),
+            Some(Box::new(c)),
+            done,
+        )
+    }
+
+    pub fn call_multiple(
+        &mut self,
+        check: bool,
+        a: Option<Box<StateFn>>,
+        b: Option<Box<StateFn>>,
+        c: Option<Box<StateFn>>,
+        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
+    ) -> Box<StateFn> {
+        if let Some(head) = a {
+            let callback = move |ok| {
+                if ok {
+                    done(ok)
+                } else {
+                    Box::new(move |tokenizer: &mut Tokenizer, code| {
+                        tokenizer.call_multiple(check, b, c, None, done)(tokenizer, code)
+                    })
+                }
+            };
+
+            if check {
+                self.check(head, callback)
+            } else {
+                self.attempt(head, callback)
+            }
+        } else {
+            done(false)
+        }
     }
 
     /// Feed a list of `codes` into `start`.

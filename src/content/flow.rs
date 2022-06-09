@@ -96,16 +96,14 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |qwe
 /// |    asd
+/// |~~~js
+/// |<div>
 /// ```
 fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt(code_indented, |ok| {
-            Box::new(if ok {
-                after
-            } else {
-                initial_before_not_code_indented
-            })
+        _ => tokenizer.attempt_3(code_indented, code_fenced, html_flow, |ok| {
+            Box::new(if ok { after } else { before })
         })(tokenizer, code),
     }
 }
@@ -132,38 +130,6 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// Before flow (initial), but not at code (indented).
-///
-/// ```markdown
-/// |qwe
-/// ```
-fn initial_before_not_code_indented(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        _ => tokenizer.attempt(code_fenced, |ok| {
-            Box::new(if ok {
-                after
-            } else {
-                initial_before_not_code_fenced
-            })
-        })(tokenizer, code),
-    }
-}
-
-/// Before flow (initial), but not at code (fenced).
-///
-/// ```markdown
-/// |qwe
-/// ```
-fn initial_before_not_code_fenced(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        _ => tokenizer.attempt(html_flow, |ok| Box::new(if ok { after } else { before }))(
-            tokenizer, code,
-        ),
-    }
-}
-
 /// Before flow, but not at code (indented) or code (fenced).
 ///
 /// Compared to flow (initial), normal flow can be arbitrarily prefixed.
@@ -181,32 +147,11 @@ pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Before flow, after potential whitespace.
 ///
 /// ```markdown
-/// |qwe
+/// |# asd
+/// |***
 /// ```
 pub fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(heading_atx, |ok| {
-        Box::new(if ok { after } else { before_not_heading_atx })
-    })(tokenizer, code)
-}
-
-/// Before flow, but not before a heading (atx)
-///
-/// ```markdown
-/// |qwe
-/// ```
-pub fn before_not_heading_atx(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(thematic_break, |ok| {
-        Box::new(if ok { after } else { before_not_thematic_break })
-    })(tokenizer, code)
-}
-
-/// Before flow, but not before a heading (atx) or thematic break.
-///
-/// ```markdown
-/// |qwe
-/// ```
-pub fn before_not_thematic_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(html_flow, |ok| {
+    tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
         Box::new(if ok { after } else { content_before })
     })(tokenizer, code)
 }
@@ -231,9 +176,8 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => {
             tokenizer.enter(TokenType::Content);
-            tokenizer.enter(TokenType::ContentPhrasing);
-            tokenizer.consume(code);
-            (State::Fn(Box::new(content)), None)
+            tokenizer.enter(TokenType::ContentChunk);
+            content(tokenizer, code)
         }
     }
 }
@@ -245,14 +189,96 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 // To do: lift limitations as documented above.
 fn content(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::ContentPhrasing);
-            tokenizer.exit(TokenType::Content);
-            after(tokenizer, code)
+        Code::None => {
+            tokenizer.exit(TokenType::ContentChunk);
+            content_end(tokenizer, code)
+        }
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            tokenizer.exit(TokenType::ContentChunk);
+            tokenizer.check(continuation_construct, |ok| {
+                Box::new(if ok { content_continue } else { content_end })
+            })(tokenizer, code)
         }
         _ => {
             tokenizer.consume(code);
             (State::Fn(Box::new(content)), None)
         }
     }
+}
+
+fn continuation_construct(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::LineEnding);
+            (
+                State::Fn(Box::new(continuation_construct_initial_before)),
+                None,
+            )
+        }
+        _ => unreachable!("expected eol"),
+    }
+}
+
+fn continuation_construct_initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.attempt_2(code_fenced, html_flow, |ok| {
+        if ok {
+            Box::new(|_tokenizer, _code| (State::Nok, None))
+        } else {
+            Box::new(|tokenizer, code| {
+                tokenizer.attempt(
+                    |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
+                    |_ok| Box::new(continuation_construct_after_prefix),
+                )(tokenizer, code)
+            })
+        }
+    })(tokenizer, code)
+}
+
+fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    // let tail = tokenizer.events.last();
+    // let mut prefix = 0;
+
+    // if let Some(event) = tail {
+    //     if event.token_type == TokenType::Whitespace {
+    //         let span = get_span(&tokenizer.events, tokenizer.events.len() - 1);
+    //         prefix = span.end_index - span.start_index;
+    //     }
+    // }
+
+    match code {
+        // Blank lines are not allowed in content.
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
+        // If code is disabled, indented lines are part of the content.
+        // _ if prefix >= TAB_SIZE => {
+        //     (State::Ok, None)
+        // }
+        _ => {
+            println!("to do: check if flow interrupts, assuming it can’t");
+            tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
+                let result = if ok {
+                    (State::Nok, None)
+                } else {
+                    (State::Ok, None)
+                };
+                Box::new(|_t, _c| result)
+            })(tokenizer, code)
+        }
+    }
+}
+
+fn content_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    // To do: should this be part of the content chunk?
+    // That’s what `micromark-js` does.
+    tokenizer.enter(TokenType::LineEnding);
+    tokenizer.consume(code);
+    tokenizer.exit(TokenType::LineEnding);
+    tokenizer.enter(TokenType::ContentChunk);
+    (State::Fn(Box::new(content)), None)
+}
+
+fn content_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.exit(TokenType::Content);
+    after(tokenizer, code)
 }

@@ -62,7 +62,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         ignore_encode = true;
                     }
                 }
-                TokenType::ContentPhrasing
+                TokenType::ContentChunk
                 | TokenType::AtxHeading
                 | TokenType::AtxHeadingSequence
                 | TokenType::AtxHeadingWhitespace
@@ -280,7 +280,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 // To do: `ContentPhrasing` should be parsed as phrasing first.
                 // This branch below currently acts as the resulting `data` tokens.
-                TokenType::ContentPhrasing
+                TokenType::ContentChunk
                 // To do: `ChunkString` does not belong here. Remove it when subtokenization is supported.
                 | TokenType::ChunkString
                 | TokenType::Data
