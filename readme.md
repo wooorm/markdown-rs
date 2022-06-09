@@ -70,6 +70,7 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (3) Clean compiler
 - [ ] (1) Optionally remove dangerous protocols when compiling
 - [ ] (1) Use preferred line ending style in markdown

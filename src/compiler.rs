@@ -280,11 +280,15 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 // To do: `ContentPhrasing` should be parsed as phrasing first.
                 // This branch below currently acts as the resulting `data` tokens.
-                TokenType::ContentChunk
+                // To do: initial and final whitespace should be handled in `text`.
+                TokenType::ContentChunk => {
+                    // last_was_tag = false;
+                    buf_tail_mut(buffers).push(encode(
+                        slice_serialize(codes, &get_span(events, index), false).trim(),
+                    ));
+                }
                 // To do: `ChunkString` does not belong here. Remove it when subtokenization is supported.
-                | TokenType::ChunkString
-                | TokenType::Data
-                | TokenType::CharacterEscapeValue => {
+                TokenType::ChunkString | TokenType::Data | TokenType::CharacterEscapeValue => {
                     // last_was_tag = false;
                     buf_tail_mut(buffers).push(encode(&slice_serialize(
                         codes,

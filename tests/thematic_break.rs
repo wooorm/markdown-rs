@@ -63,12 +63,11 @@ fn thematic_break() {
         "should not support thematic breaks w/ 4 spaces"
     );
 
-    // To do: trim initial whitespace.
-    // assert_eq!(
-    //     micromark("Foo\n    ***"),
-    //     "<p>Foo\n***</p>",
-    //     "should not support thematic breaks w/ 4 spaces as paragraph continuation"
-    // );
+    assert_eq!(
+        micromark("Foo\n    ***"),
+        "<p>Foo\n***</p>",
+        "should not support thematic breaks w/ 4 spaces as paragraph continuation"
+    );
 
     assert_eq!(
         micromark("_____________________________________"),

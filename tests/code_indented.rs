@@ -40,12 +40,11 @@ fn code_indented() {
         "should support blank lines in indented code (3)"
     );
 
-    // To do: strip whitespace.
-    // assert_eq!(
-    //     micromark("Foo\n    bar"),
-    //     "<p>Foo\nbar</p>",
-    //     "should not support interrupting paragraphs"
-    // );
+    assert_eq!(
+        micromark("Foo\n    bar"),
+        "<p>Foo\nbar</p>",
+        "should not support interrupting paragraphs"
+    );
 
     assert_eq!(
         micromark("    foo\nbar"),
