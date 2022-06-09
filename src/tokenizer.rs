@@ -177,16 +177,12 @@ pub struct Tokenizer {
 
 impl Tokenizer {
     /// Create a new tokenizer.
-    pub fn new() -> Tokenizer {
+    pub fn new(point: Point, index: usize) -> Tokenizer {
         Tokenizer {
             current: Code::None,
-            index: 0,
+            index,
             consumed: true,
-            point: Point {
-                line: 1,
-                column: 1,
-                offset: 0,
-            },
+            point,
             stack: vec![],
             events: vec![],
         }
@@ -497,6 +493,11 @@ impl Tokenizer {
                     state = next;
                 }
             }
+        }
+
+        match state {
+            State::Ok => {}
+            _ => unreachable!("expected final state to be `State::Ok`"),
         }
 
         check_statefn_result((state, None))

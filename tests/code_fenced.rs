@@ -219,12 +219,11 @@ fn code_fenced() {
         "should support an eof in the prefix, in content"
     );
 
-    // To do: strings.
-    // assert_eq!(
-    //     micromark("```j\\+s&copy;"),
-    //     "<pre><code class=\"language-j+s©\"></code></pre>\n",
-    //     "should support character escapes and character references in info strings"
-    // );
+    assert_eq!(
+        micromark("```j\\+s&copy;"),
+        "<pre><code class=\"language-j+s©\"></code></pre>\n",
+        "should support character escapes and character references in info strings"
+    );
 
     assert_eq!(
       micromark("   ```\naaa\n    ```"),

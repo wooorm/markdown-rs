@@ -26,28 +26,17 @@ use crate::construct::{
     html_flow::start as html_flow, partial_whitespace::start as whitespace,
     thematic_break::start as thematic_break,
 };
-use crate::tokenizer::{Code, Event, State, StateFnResult, TokenType, Tokenizer};
+use crate::subtokenize::subtokenize;
+use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::get_span;
 
 /// Turn `codes` as the flow content type into events.
 // To do: remove this `allow` when all the content types are glued together.
 #[allow(dead_code)]
-pub fn flow(codes: &[Code]) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new();
-    let (state, remainder) = tokenizer.feed(codes, Box::new(start), true);
-
-    if let Some(ref x) = remainder {
-        if !x.is_empty() {
-            unreachable!("expected no final remainder {:?}", x);
-        }
-    }
-
-    match state {
-        State::Ok => {}
-        _ => unreachable!("expected final state to be `State::Ok`"),
-    }
-
-    tokenizer.events
+pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
+    let mut tokenizer = Tokenizer::new(point, index);
+    tokenizer.feed(codes, Box::new(start), true);
+    subtokenize(tokenizer.events, codes)
 }
 
 /// Before flow.

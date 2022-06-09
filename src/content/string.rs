@@ -13,26 +13,14 @@
 use crate::construct::{
     character_escape::start as character_escape, character_reference::start as character_reference,
 };
-use crate::tokenizer::{Code, Event, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
 
 /// Turn `codes` as the string content type into events.
 // To do: remove this `allow` when all the content types are glued together.
 #[allow(dead_code)]
-pub fn string(codes: &[Code]) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new();
-    let (state, remainder) = tokenizer.feed(codes, Box::new(before), true);
-
-    if let Some(ref x) = remainder {
-        if !x.is_empty() {
-            unreachable!("expected no final remainder {:?}", x);
-        }
-    }
-
-    match state {
-        State::Ok => {}
-        _ => unreachable!("expected final state to be `State::Ok`"),
-    }
-
+pub fn string(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
+    let mut tokenizer = Tokenizer::new(point, index);
+    tokenizer.feed(codes, Box::new(before), true);
     tokenizer.events
 }
 

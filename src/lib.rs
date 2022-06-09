@@ -9,6 +9,7 @@ mod constant;
 mod construct;
 mod content;
 mod parser;
+mod subtokenize;
 mod tokenizer;
 mod util;
 

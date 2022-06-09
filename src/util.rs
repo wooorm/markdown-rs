@@ -165,12 +165,12 @@ pub fn get_span(events: &[Event], index: usize) -> Span {
     assert_eq!(
         exit.event_type,
         EventType::Exit,
-        "expected get_span to be called on `exit` event"
+        "expected `get_span` to be called on `exit` event"
     );
-    let mut start_index = index - 1;
+    let mut enter_index = index - 1;
 
     loop {
-        let enter = &events[start_index];
+        let enter = &events[enter_index];
         if enter.event_type == EventType::Enter && enter.token_type == token_type {
             return Span {
                 // start: enter.point.clone(),
@@ -181,7 +181,7 @@ pub fn get_span(events: &[Event], index: usize) -> Span {
             };
         }
 
-        start_index -= 1;
+        enter_index -= 1;
     }
 }
 
