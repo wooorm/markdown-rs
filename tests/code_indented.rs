@@ -40,19 +40,18 @@ fn code_indented() {
         "should support blank lines in indented code (3)"
     );
 
-    // To do: paragraphs.
+    // To do: strip whitespace.
     // assert_eq!(
     //     micromark("Foo\n    bar"),
     //     "<p>Foo\nbar</p>",
     //     "should not support interrupting paragraphs"
     // );
 
-    // To do: paragraphs.
-    // assert_eq!(
-    //     micromark("    foo\nbar"),
-    //     "<pre><code>foo\n</code></pre>\n<p>bar</p>",
-    //     "should support paragraphs directly after indented code"
-    // );
+    assert_eq!(
+        micromark("    foo\nbar"),
+        "<pre><code>foo\n</code></pre>\n<p>bar</p>",
+        "should support paragraphs directly after indented code"
+    );
 
     // To do: setext.
     // assert_eq!(

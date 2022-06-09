@@ -99,7 +99,7 @@ fn heading_atx() {
         "should not support four initial spaces"
     );
 
-    // To do: lazy.
+    // To do: strip whitespace.
     // assert_eq!(
     //     micromark("foo\n    # bar"),
     //     "<p>foo\n# bar</p>",

@@ -115,12 +115,11 @@ p {color:blue;}
         "should support an eof directly after a raw tag name"
     );
 
-    // To do: paragraphs.
-    // assert_eq!(
-    //     micromark_with_options("</script\nmore", DANGER),
-    //     "<p>&lt;/script\nmore</p>",
-    //     "should not support a raw closing tag"
-    // );
+    assert_eq!(
+        micromark_with_options("</script\nmore", DANGER),
+        "<p>&lt;/script\nmore</p>",
+        "should not support a raw closing tag"
+    );
 
     assert_eq!(
         micromark_with_options("<script/", DANGER),
@@ -466,29 +465,29 @@ fn html_flow_6_basic() {
     // );
 
     // To do: paragraphs.
-    //     assert_eq!(
-    //         micromark_with_options(
-    //             "<table>
-    //   <tr>
-    //     <td>
-    //            hi
-    //     </td>
-    //   </tr>
-    // </table>
+    assert_eq!(
+        micromark_with_options(
+            "<table>
+  <tr>
+    <td>
+           hi
+    </td>
+  </tr>
+</table>
 
-    // okay.",
-    //             DANGER
-    //         ),
-    //         "<table>
-    //   <tr>
-    //     <td>
-    //            hi
-    //     </td>
-    //   </tr>
-    // </table>
-    // <p>okay.</p>",
-    //         "should support html of type 6 (1)"
-    //     );
+okay.",
+            DANGER
+        ),
+        "<table>
+  <tr>
+    <td>
+           hi
+    </td>
+  </tr>
+</table>
+<p>okay.</p>",
+        "should support html of type 6 (1)"
+    );
 
     assert_eq!(
         micromark_with_options(" <div>\n  *hello*\n         <foo><a>", DANGER),
@@ -502,7 +501,7 @@ fn html_flow_6_basic() {
         "should support html starting w/ a closing tag"
     );
 
-    // To do: phrasing
+    // To do: phrasing.
     // assert_eq!(
     //     micromark_with_options("<DIV CLASS=\"foo\">\n\n*Markdown*\n\n</DIV>", DANGER),
     //     "<DIV CLASS=\"foo\">\n<p><em>Markdown</em></p>\n</DIV>",
@@ -740,12 +739,11 @@ fn html_flow_6_basic() {
 
 #[test]
 fn html_flow_7_complete() {
-    // To do: phrasing.
-    // assert_eq!(
-    //     micromark_with_options("<a href=\"foo\">\n*bar*\n</a>", DANGER),
-    //     "<a href=\"foo\">\n*bar*\n</a>",
-    //     "should support complete tags (type 7)"
-    // );
+    assert_eq!(
+        micromark_with_options("<a href=\"foo\">\n*bar*\n</a>", DANGER),
+        "<a href=\"foo\">\n*bar*\n</a>",
+        "should support complete tags (type 7)"
+    );
 
     assert_eq!(
         micromark_with_options("<Warning>\n*bar*\n</Warning>", DANGER),
@@ -791,7 +789,7 @@ fn html_flow_7_complete() {
         "should support interleaving w/ whitespace-only blank lines"
     );
 
-    // To do: interrupting.
+    // To do: disallow html (complete) from interrupting.
     // assert_eq!(
     //     micromark_with_options("Foo\n<a href=\"bar\">\nbaz", DANGER),
     //     "<p>Foo\n<a href=\"bar\">\nbaz</p>",
@@ -816,7 +814,7 @@ fn html_flow_7_complete() {
         "should not support a line ending directly after a tag name"
     );
 
-    // To do: paragraphs (trailing whitespace).
+    // To do: trim trailing whitespace.
     // assert_eq!(
     //     micromark_with_options("<x ", DANGER),
     //     "<p>&lt;x</p>",

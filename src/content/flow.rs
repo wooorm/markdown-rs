@@ -19,6 +19,7 @@
 //!
 //! <!-- To do: `setext` in content? Link to content. -->
 
+use crate::constant::TAB_SIZE;
 use crate::construct::{
     blank_line::start as blank_line, code_fenced::start as code_fenced,
     code_indented::start as code_indented, heading_atx::start as heading_atx,
@@ -26,6 +27,7 @@ use crate::construct::{
     thematic_break::start as thematic_break,
 };
 use crate::tokenizer::{Code, Event, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::get_span;
 
 /// Turn `codes` as the flow content type into events.
 // To do: remove this `allow` when all the content types are glued together.
@@ -237,34 +239,29 @@ fn continuation_construct_initial_before(tokenizer: &mut Tokenizer, code: Code) 
 }
 
 fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // let tail = tokenizer.events.last();
-    // let mut prefix = 0;
+    let tail = tokenizer.events.last();
+    let mut prefix = 0;
 
-    // if let Some(event) = tail {
-    //     if event.token_type == TokenType::Whitespace {
-    //         let span = get_span(&tokenizer.events, tokenizer.events.len() - 1);
-    //         prefix = span.end_index - span.start_index;
-    //     }
-    // }
+    if let Some(event) = tail {
+        if event.token_type == TokenType::Whitespace {
+            let span = get_span(&tokenizer.events, tokenizer.events.len() - 1);
+            prefix = span.end_index - span.start_index;
+        }
+    }
 
     match code {
         // Blank lines are not allowed in content.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
-        // If code is disabled, indented lines are part of the content.
-        // _ if prefix >= TAB_SIZE => {
-        //     (State::Ok, None)
-        // }
-        _ => {
-            println!("to do: check if flow interrupts, assuming it can’t");
-            tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
-                let result = if ok {
-                    (State::Nok, None)
-                } else {
-                    (State::Ok, None)
-                };
-                Box::new(|_t, _c| result)
-            })(tokenizer, code)
-        }
+        // To do: If code is disabled, indented lines are part of the content.
+        _ if prefix >= TAB_SIZE => (State::Ok, None),
+        _ => tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
+            let result = if ok {
+                (State::Nok, None)
+            } else {
+                (State::Ok, None)
+            };
+            Box::new(|_t, _c| result)
+        })(tokenizer, code),
     }
 }
 
