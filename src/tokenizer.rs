@@ -63,10 +63,10 @@ pub enum TokenType {
     BlankLineWhitespace,
 
     Content,
-    ContentChunk,
 
     Paragraph,
 
+    ChunkContent,
     ChunkString,
     ChunkText,
 }

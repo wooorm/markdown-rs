@@ -1,37 +1,43 @@
 use crate::content::content::start as content;
 use crate::content::string::start as string;
+use crate::content::text::start as text;
 use crate::tokenizer::{
     Code, Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer,
 };
 use crate::util::{slice_codes, Span};
 use std::collections::HashMap;
 
-pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> Vec<Event> {
+pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     let mut events = events;
     let mut index = 0;
     // Map of first chunks its tokenizer.
     let mut head_to_tokenizer: HashMap<usize, Tokenizer> = HashMap::new();
     // Map of chunks to their head and corresponding range of events.
     let mut link_to_info: HashMap<usize, (usize, usize, usize)> = HashMap::new();
+    let mut done = true;
 
     while index < events.len() {
         let event = &events[index];
 
         // Find each first opening chunk.
         if (event.token_type == TokenType::ChunkString
-                || event.token_type == TokenType::ContentChunk) &&
+                || event.token_type == TokenType::ChunkText
+                || event.token_type == TokenType::ChunkContent) &&
             event.event_type == EventType::Enter &&
             // No need to enter linked events again.
             event.previous == None
         {
+            done = false;
             // Index into `events` pointing to a chunk.
             let mut index_opt: Option<usize> = Some(index);
             // Subtokenizer.
             let mut tokenizer = Tokenizer::new(event.point.clone(), event.index);
             // Substate.
             let mut result: StateFnResult = (
-                State::Fn(Box::new(if event.token_type == TokenType::ContentChunk {
+                State::Fn(Box::new(if event.token_type == TokenType::ChunkContent {
                     content
+                } else if event.token_type == TokenType::ChunkText {
+                    text
                 } else {
                     string
                 })),
@@ -129,5 +135,5 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> Vec<Event> {
         index -= 1;
     }
 
-    events
+    (events, done)
 }

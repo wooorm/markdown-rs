@@ -4,3 +4,4 @@
 pub mod content;
 pub mod flow;
 pub mod string;
+pub mod text;

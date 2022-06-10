@@ -123,18 +123,18 @@ cargo doc --document-private-items
 - [ ] (8) container
   - [ ] block quote
   - [ ] list
-- [ ] (1) flow
+- [x] (1) flow
   - [x] blank line
   - [x] code (fenced)
   - [x] code (indented)
-  - [ ] content
+  - [x] content
   - [x] heading (atx)
   - [x] html (flow)
   - [x] thematic break
 - [ ] (3) content
   - [ ] definition
   - [ ] heading (setext)
-  - [ ] paragraph
+  - [x] paragraph
 - [ ] (5) text
   - [ ] attention (strong, emphasis) (text)
   - [ ] autolink

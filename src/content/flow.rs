@@ -34,7 +34,11 @@ use crate::util::get_span;
 pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, index);
     tokenizer.feed(codes, Box::new(start), true);
-    subtokenize(tokenizer.events, codes)
+    let mut result = (tokenizer.events, false);
+    while !result.1 {
+        result = subtokenize(result.0, codes);
+    }
+    result.0
 }
 
 /// Before flow.
@@ -165,7 +169,7 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => {
             tokenizer.enter(TokenType::Content);
-            tokenizer.enter(TokenType::ContentChunk);
+            tokenizer.enter(TokenType::ChunkContent);
             content(tokenizer, code, tokenizer.events.len() - 1)
         }
     }
@@ -259,8 +263,8 @@ fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) ->
 
 fn content_continue(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFnResult {
     tokenizer.consume(code);
-    tokenizer.exit(TokenType::ContentChunk);
-    tokenizer.enter(TokenType::ContentChunk);
+    tokenizer.exit(TokenType::ChunkContent);
+    tokenizer.enter(TokenType::ChunkContent);
     let next_index = tokenizer.events.len() - 1;
     tokenizer.events[previous_index].next = Some(next_index);
     tokenizer.events[next_index].previous = Some(previous_index);
@@ -271,7 +275,7 @@ fn content_continue(tokenizer: &mut Tokenizer, code: Code, previous_index: usize
 }
 
 fn content_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(TokenType::ContentChunk);
+    tokenizer.exit(TokenType::ChunkContent);
     tokenizer.exit(TokenType::Content);
     after(tokenizer, code)
 }

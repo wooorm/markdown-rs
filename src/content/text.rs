@@ -1,12 +1,18 @@
-//! The string content type.
+//! The text content type.
 //!
-//! **String** is a limited **text** like content type which only allows
-//! character escapes and character references.
-//! It exists in things such as identifiers (media references, definitions),
-//! titles, URLs, code (fenced) info and meta parts.
+//! **Text** contains phrasing content such as attention (emphasis, strong),
+//! media (links, images), and actual text.
 //!
-//! The constructs found in string are:
+//! The constructs found in text are:
 //!
+//! *   Autolink
+//! *   Attention
+//! *   HTML (text)
+//! *   Hard break escape
+//! *   Code (text)
+//! *   Line ending
+//! *   Label start (image)
+//! *   Label start (link)
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
 
@@ -15,7 +21,9 @@ use crate::construct::{
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
-/// Before string.
+/// Before text.
+///
+/// First we assume character reference.
 ///
 /// ```markdown
 /// |&amp;
@@ -31,7 +39,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// Before string, not at a character reference or character escape.
+/// Before text.
 ///
 /// We’re at data.
 ///

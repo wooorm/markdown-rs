@@ -79,7 +79,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::HtmlFlowData
                 | TokenType::CodeFencedFence
                 | TokenType::CodeFencedFenceSequence
-                | TokenType::ChunkText
                 | TokenType::CodeFencedFenceWhitespace
                 | TokenType::Data
                 | TokenType::CharacterEscape
@@ -280,8 +279,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     character_reference_kind = None;
                 }
                 // This branch below currently acts as the resulting `data` tokens.
-                // To do: `ChunkText` does not belong here. Remove it when subtokenization is supported.
-                TokenType::ChunkText | TokenType::Data | TokenType::CharacterEscapeValue => {
+                TokenType::Data | TokenType::CharacterEscapeValue => {
                     // last_was_tag = false;
                     buf_tail_mut(buffers).push(encode(&slice_serialize(
                         codes,
