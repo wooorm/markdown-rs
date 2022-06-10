@@ -5,7 +5,7 @@
 //! It exists in things such as identifiers (media references, definitions),
 //! titles, URLs, code (fenced) info and meta parts.
 //!
-//! The constructs found in strin are:
+//! The constructs found in string are:
 //!
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
@@ -13,16 +13,7 @@
 use crate::construct::{
     character_escape::start as character_escape, character_reference::start as character_reference,
 };
-use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
-
-/// Turn `codes` as the string content type into events.
-// To do: remove this `allow` when all the content types are glued together.
-#[allow(dead_code)]
-pub fn string(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new(point, index);
-    tokenizer.feed(codes, Box::new(before), true);
-    tokenizer.events
-}
+use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Before string.
 ///
@@ -33,33 +24,12 @@ pub fn string(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
 /// |\&
 /// |qwe
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt(character_reference, |ok| {
+        _ => tokenizer.attempt_2(character_reference, character_escape, |ok| {
             Box::new(if ok {
-                before
-            } else {
-                before_not_character_reference
-            })
-        })(tokenizer, code),
-    }
-}
-
-/// Before string, not at a character reference.
-///
-/// Assume character escape.
-///
-/// ```markdown
-/// |\&
-/// |qwe
-/// ```
-fn before_not_character_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        _ => tokenizer.attempt(character_escape, |ok| {
-            Box::new(if ok {
-                before
+                start
             } else {
                 before_not_character_escape
             })
@@ -98,7 +68,7 @@ fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         // To do: somehow get these markers from constructs.
         Code::Char('&' | '\\') => {
             tokenizer.exit(TokenType::Data);
-            before(tokenizer, code)
+            start(tokenizer, code)
         }
         _ => {
             tokenizer.consume(code);

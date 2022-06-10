@@ -31,8 +31,6 @@ use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Toke
 use crate::util::get_span;
 
 /// Turn `codes` as the flow content type into events.
-// To do: remove this `allow` when all the content types are glued together.
-#[allow(dead_code)]
 pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, index);
     tokenizer.feed(codes, Box::new(start), true);
@@ -49,7 +47,7 @@ pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
 /// |    bravo
 /// |***
 /// ```
-fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         _ => tokenizer.attempt(blank_line, |ok| {
@@ -168,7 +166,7 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         _ => {
             tokenizer.enter(TokenType::Content);
             tokenizer.enter(TokenType::ContentChunk);
-            content(tokenizer, code)
+            content(tokenizer, code, tokenizer.events.len() - 1)
         }
     }
 }
@@ -178,21 +176,26 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// al|pha
 /// ```
 // To do: lift limitations as documented above.
-fn content(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn content(tokenizer: &mut Tokenizer, code: Code, previous: usize) -> StateFnResult {
     match code {
-        Code::None => {
-            tokenizer.exit(TokenType::ContentChunk);
-            content_end(tokenizer, code)
-        }
+        Code::None => content_end(tokenizer, code),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::ContentChunk);
-            tokenizer.check(continuation_construct, |ok| {
-                Box::new(if ok { content_continue } else { content_end })
+            tokenizer.check(continuation_construct, move |ok| {
+                Box::new(move |t, c| {
+                    if ok {
+                        content_continue(t, c, previous)
+                    } else {
+                        content_end(t, c)
+                    }
+                })
             })(tokenizer, code)
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(content)), None)
+            (
+                State::Fn(Box::new(move |t, c| content(t, c, previous))),
+                None,
+            )
         }
     }
 }
@@ -254,17 +257,21 @@ fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) ->
     }
 }
 
-fn content_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: should this be part of the content chunk?
-    // That’s what `micromark-js` does.
-    tokenizer.enter(TokenType::LineEnding);
+fn content_continue(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFnResult {
     tokenizer.consume(code);
-    tokenizer.exit(TokenType::LineEnding);
+    tokenizer.exit(TokenType::ContentChunk);
     tokenizer.enter(TokenType::ContentChunk);
-    (State::Fn(Box::new(content)), None)
+    let next_index = tokenizer.events.len() - 1;
+    tokenizer.events[previous_index].next = Some(next_index);
+    tokenizer.events[next_index].previous = Some(previous_index);
+    (
+        State::Fn(Box::new(move |t, c| content(t, c, next_index))),
+        None,
+    )
 }
 
 fn content_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.exit(TokenType::ContentChunk);
     tokenizer.exit(TokenType::Content);
     after(tokenizer, code)
 }

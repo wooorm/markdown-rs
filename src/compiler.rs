@@ -38,7 +38,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
 
         match event.event_type {
             EventType::Enter => match token_type {
-                TokenType::Content => {
+                TokenType::Paragraph => {
                     buf_tail_mut(buffers).push("<p>".to_string());
                 }
                 TokenType::CodeIndented => {
@@ -62,7 +62,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         ignore_encode = true;
                     }
                 }
-                TokenType::ContentChunk
+                TokenType::Content
                 | TokenType::AtxHeading
                 | TokenType::AtxHeadingSequence
                 | TokenType::AtxHeadingWhitespace
@@ -79,7 +79,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::HtmlFlowData
                 | TokenType::CodeFencedFence
                 | TokenType::CodeFencedFenceSequence
-                | TokenType::ChunkString
+                | TokenType::ChunkText
                 | TokenType::CodeFencedFenceWhitespace
                 | TokenType::Data
                 | TokenType::CharacterEscape
@@ -97,7 +97,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
             },
             EventType::Exit => match token_type {
-                TokenType::ThematicBreakSequence
+                TokenType::Content
+                | TokenType::ThematicBreakSequence
                 | TokenType::ThematicBreakWhitespace
                 | TokenType::CodeIndentedPrefixWhitespace
                 | TokenType::BlankLineEnding
@@ -120,7 +121,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     // last_was_tag = false;
                     buf_tail_mut(buffers).push(res);
                 }
-                TokenType::Content => {
+                TokenType::Paragraph => {
                     buf_tail_mut(buffers).push("</p>".to_string());
                 }
                 TokenType::CodeIndented | TokenType::CodeFenced => {
@@ -278,17 +279,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
 
                     character_reference_kind = None;
                 }
-                // To do: `ContentPhrasing` should be parsed as phrasing first.
                 // This branch below currently acts as the resulting `data` tokens.
-                // To do: initial and final whitespace should be handled in `text`.
-                TokenType::ContentChunk => {
-                    // last_was_tag = false;
-                    buf_tail_mut(buffers).push(encode(
-                        slice_serialize(codes, &get_span(events, index), false).trim(),
-                    ));
-                }
-                // To do: `ChunkString` does not belong here. Remove it when subtokenization is supported.
-                TokenType::ChunkString | TokenType::Data | TokenType::CharacterEscapeValue => {
+                // To do: `ChunkText` does not belong here. Remove it when subtokenization is supported.
+                TokenType::ChunkText | TokenType::Data | TokenType::CharacterEscapeValue => {
                     // last_was_tag = false;
                     buf_tail_mut(buffers).push(encode(&slice_serialize(
                         codes,

@@ -46,8 +46,6 @@ cargo doc --document-private-items
 
 ### Some major obstacles
 
-- [ ] (8) Subtokenization: figure out a good, fast way to deal with constructs in
-      one content type that also are another content type
 - [ ] (1) Setext headings: can they be solved in content, or do they have to be
       solved in flow somehow
 - [ ] (8) Can content (and to a lesser extent string and text) operate more
@@ -151,6 +149,11 @@ cargo doc --document-private-items
 - [x] string
   - [x] character escape
   - [x] character reference
+
+### Done
+
+- [x] (8) Subtokenization: figure out a good, fast way to deal with constructs in
+      one content type that also are another content type
 
 ### Extensions
 

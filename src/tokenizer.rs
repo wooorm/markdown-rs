@@ -12,6 +12,7 @@
 //! [`check`]: Tokenizer::check
 
 use crate::constant::TAB_SIZE;
+use std::collections::HashMap;
 
 /// Semantic label of a span.
 // To do: figure out how to share this so extensions can add their own stuff,
@@ -64,7 +65,10 @@ pub enum TokenType {
     Content,
     ContentChunk,
 
+    Paragraph,
+
     ChunkString,
+    ChunkText,
 }
 
 /// Enum representing a character code.
@@ -101,7 +105,7 @@ pub struct Point {
 }
 
 /// Possible event types.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum EventType {
     /// The start of something.
     Enter,
@@ -110,12 +114,14 @@ pub enum EventType {
 }
 
 /// Something semantic happening somewhere.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Event {
     pub event_type: EventType,
     pub token_type: TokenType,
     pub point: Point,
     pub index: usize,
+    pub previous: Option<usize>,
+    pub next: Option<usize>,
 }
 
 /// The essence of the state machine are functions: `StateFn`.
@@ -156,6 +162,7 @@ struct InternalState {
 /// A tokenizer itself.
 #[derive(Debug)]
 pub struct Tokenizer {
+    column_start: HashMap<usize, usize>,
     /// Track whether a character is expected to be consumed, and whether it’s
     /// actually consumed
     ///
@@ -180,6 +187,7 @@ impl Tokenizer {
     pub fn new(point: Point, index: usize) -> Tokenizer {
         Tokenizer {
             current: Code::None,
+            column_start: HashMap::new(),
             index,
             consumed: true,
             point,
@@ -193,6 +201,28 @@ impl Tokenizer {
         assert!(self.consumed, "expected previous character to be consumed");
         self.consumed = false;
         self.current = code;
+    }
+
+    pub fn define_skip(&mut self, point: &Point, index: usize) {
+        self.column_start.insert(point.line, point.column);
+        self.account_for_potential_skip();
+        log::debug!("position: define skip: `{:?}` ({:?})", point, index);
+    }
+
+    fn account_for_potential_skip(&mut self) {
+        println!("account?: {:?} {:?}", self.point, self.index);
+        match self.column_start.get(&self.point.line) {
+            None => {}
+            Some(next_column) => {
+                if self.point.column == 1 {
+                    let col = *next_column;
+                    self.point.column = col;
+                    self.point.offset += col - 1;
+                    self.index += col - 1;
+                    println!("account! {:?} {:?}", self.point, self.index);
+                }
+            }
+        };
     }
 
     /// Consume the current character.
@@ -215,7 +245,7 @@ impl Tokenizer {
                 } else {
                     1
                 };
-                // To do: accountForPotentialSkip()
+                self.account_for_potential_skip();
                 log::debug!("position: after eol: `{:?}`", self.point);
             }
             Code::VirtualSpace => {
@@ -240,6 +270,8 @@ impl Tokenizer {
             token_type: token_type.clone(),
             point: self.point.clone(),
             index: self.index,
+            previous: None,
+            next: None,
         };
 
         self.events.push(event);
@@ -270,6 +302,8 @@ impl Tokenizer {
             token_type,
             point,
             index: self.index,
+            previous: None,
+            next: None,
         };
 
         self.events.push(event);
