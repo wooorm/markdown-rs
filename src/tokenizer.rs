@@ -20,6 +20,11 @@ use std::collections::HashMap;
 // To do: document each variant.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
+    Autolink,
+    AutolinkMarker,
+    AutolinkProtocol,
+    AutolinkEmail,
+
     AtxHeading,
     AtxHeadingSequence,
     AtxHeadingWhitespace,

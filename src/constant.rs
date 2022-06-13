@@ -27,6 +27,23 @@
 /// [code_indented]: crate::construct::code_indented
 pub const TAB_SIZE: usize = 4;
 
+/// The number of characters allowed in a protocol of an [autolink][].
+///
+/// The protocol part is the `xxx` in `<xxx://example.com>`.
+/// 32 characters is fine, 33 is too many.
+///
+/// [autolink]: crate::construct::autolink
+pub const AUTOLINK_SCHEME_SIZE_MAX: usize = 32;
+
+/// The number of characters allowed in a domain of an email [autolink][].
+///
+/// There can be multiple “domains”.
+/// A domain part is each `xxx` in `<example@xxx.xxx.xxx>`.
+/// 63 characters is fine, 64 is too many.
+///
+/// [autolink]: crate::construct::autolink
+pub const AUTOLINK_DOMAIN_SIZE_MAX: usize = 63;
+
 /// The number of markers needed for a [thematic break][thematic_break] to form.
 ///
 /// Like many things in markdown, the number is `3`.

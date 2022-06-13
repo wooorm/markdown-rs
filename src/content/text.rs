@@ -5,7 +5,7 @@
 //!
 //! The constructs found in text are:
 //!
-//! *   Autolink
+//! *   [Autolink][crate::construct::autolink]
 //! *   Attention
 //! *   HTML (text)
 //! *   Hard break escape
@@ -17,7 +17,8 @@
 //! *   [Character reference][crate::construct::character_reference]
 
 use crate::construct::{
-    character_escape::start as character_escape, character_reference::start as character_reference,
+    autolink::start as autolink, character_escape::start as character_escape,
+    character_reference::start as character_reference,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -33,7 +34,7 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt_2(character_reference, character_escape, |ok| {
+        _ => tokenizer.attempt_3(character_reference, character_escape, autolink, |ok| {
             Box::new(if ok { start } else { before_data })
         })(tokenizer, code),
     }
@@ -68,7 +69,7 @@ fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Ok, None)
         }
         // To do: somehow get these markers from constructs.
-        Code::Char('&' | '\\') => {
+        Code::Char('&' | '\\' | '<') => {
             tokenizer.exit(TokenType::Data);
             start(tokenizer, code)
         }

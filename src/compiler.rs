@@ -89,7 +89,11 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CharacterReferenceMarkerNumeric
                 | TokenType::CharacterReferenceMarkerHexadecimal
                 | TokenType::CharacterReferenceMarkerSemi
-                | TokenType::CharacterReferenceValue => {}
+                | TokenType::CharacterReferenceValue
+                | TokenType::Autolink
+                | TokenType::AutolinkMarker
+                | TokenType::AutolinkProtocol
+                | TokenType::AutolinkEmail => {}
                 #[allow(unreachable_patterns)]
                 _ => {
                     unreachable!("unhandled `enter` of TokenType {:?}", token_type)
@@ -108,7 +112,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CharacterEscape
                 | TokenType::CharacterEscapeMarker
                 | TokenType::CharacterReference
-                | TokenType::CharacterReferenceMarkerSemi => {}
+                | TokenType::CharacterReferenceMarkerSemi
+                | TokenType::Autolink
+                | TokenType::AutolinkMarker => {}
                 TokenType::HtmlFlow => {
                     ignore_encode = false;
                 }
@@ -228,6 +234,26 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     buf_tail_mut(buffers).push(format!("</h{}>", rank));
                     atx_opening_sequence_size = None;
                     atx_heading_buffer = None;
+                }
+                TokenType::AutolinkProtocol => {
+                    let slice = slice_serialize(codes, &get_span(events, index), false);
+                    let buf = buf_tail_mut(buffers);
+                    // To do: options.allowDangerousProtocol ? undefined : protocolHref
+                    // let url = sanitize_uri(slice);
+                    let url = encode(&slice);
+                    buf.push(format!("<a href=\"{}\">", url));
+                    buf.push(encode(&slice));
+                    buf.push("</a>".to_string());
+                }
+                TokenType::AutolinkEmail => {
+                    let slice = slice_serialize(codes, &get_span(events, index), false);
+                    let buf = buf_tail_mut(buffers);
+                    // To do: options.allowDangerousProtocol ? undefined : protocolHref
+                    // let url = sanitize_uri(slice);
+                    let url = encode(&slice);
+                    buf.push(format!("<a href=\"mailto:{}\">", url));
+                    buf.push(encode(&slice));
+                    buf.push("</a>".to_string());
                 }
                 TokenType::ThematicBreak => {
                     buf_tail_mut(buffers).push("<hr />".to_string());

@@ -1,5 +1,6 @@
 //! Constructs found in markdown.
 
+pub mod autolink;
 pub mod blank_line;
 pub mod character_escape;
 pub mod character_reference;

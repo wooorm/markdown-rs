@@ -68,6 +68,7 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (3) Encode urls
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (3) Clean compiler
 - [ ] (1) Optionally remove dangerous protocols when compiling
@@ -96,7 +97,7 @@ cargo doc --document-private-items
 ### Constructs
 
 - [ ] (5) attention (strong, emphasis) (text)
-- [ ] (1) autolink
+- [x] autolink
 - [x] blank line
 - [ ] (5) block quote
 - [x] character escape
@@ -137,7 +138,7 @@ cargo doc --document-private-items
   - [x] paragraph
 - [ ] (5) text
   - [ ] attention (strong, emphasis) (text)
-  - [ ] autolink
+  - [x] autolink
   - [x] character escape
   - [x] character reference
   - [ ] code (text)
