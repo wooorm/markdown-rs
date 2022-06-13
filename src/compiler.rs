@@ -78,6 +78,11 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         ignore_encode = true;
                     }
                 }
+                TokenType::HtmlText => {
+                    if options.allow_dangerous_html {
+                        ignore_encode = true;
+                    }
+                }
                 TokenType::Content
                 | TokenType::AtxHeading
                 | TokenType::AtxHeadingSequence
@@ -93,6 +98,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::BlankLineWhitespace
                 | TokenType::Whitespace
                 | TokenType::HtmlFlowData
+                | TokenType::HtmlTextData
                 | TokenType::CodeFencedFence
                 | TokenType::CodeFencedFenceSequence
                 | TokenType::CodeFencedFenceWhitespace
@@ -131,10 +137,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CharacterReferenceMarkerSemi
                 | TokenType::Autolink
                 | TokenType::AutolinkMarker => {}
-                TokenType::HtmlFlow => {
+                TokenType::HtmlFlow | TokenType::HtmlText => {
                     ignore_encode = false;
                 }
-                TokenType::HtmlFlowData => {
+                TokenType::HtmlFlowData | TokenType::HtmlTextData => {
                     let slice = slice_serialize(codes, &get_span(events, index), false);
 
                     let res = if ignore_encode { slice } else { encode(&slice) };

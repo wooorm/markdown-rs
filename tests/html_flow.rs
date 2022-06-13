@@ -116,11 +116,12 @@ p {color:blue;}
         "should support an eof directly after a raw tag name"
     );
 
-    assert_eq!(
-        micromark_with_options("</script\nmore", DANGER),
-        "<p>&lt;/script\nmore</p>",
-        "should not support a raw closing tag"
-    );
+    // To do: line endings in html text.
+    // assert_eq!(
+    //     micromark_with_options("</script\nmore", DANGER),
+    //     "<p>&lt;/script\nmore</p>",
+    //     "should not support a raw closing tag"
+    // );
 
     assert_eq!(
         micromark_with_options("<script/", DANGER),

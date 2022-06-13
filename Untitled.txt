@@ -1,1 +1,4 @@
 micromark.js: unquoted: is `completeAttributeValueUnquoted`s case for `completeAttributeNameAfter` missing a `/`?. I’ve added it here.
+micromark.js: `]` case in cdata_end does not need to consume, it can defer to `cdata_close`, which should save 1 line
+micromark.js: should `tagOpenAttributeValueUnquoted` also support a slash?
+micromark.js: `atLineEnding` in html (text) should always eat arbitrary whitespace? code (indented) has no effect on html (text)?

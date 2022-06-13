@@ -52,7 +52,7 @@ fn paragraph_initial(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         _ => {
             tokenizer.enter(TokenType::Paragraph);
             tokenizer.enter(TokenType::ChunkText);
-            data(tokenizer, code)
+            data(tokenizer, code, tokenizer.events.len() - 1)
         }
     }
 }
@@ -63,7 +63,7 @@ fn paragraph_initial(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |\&
 /// |qwe
 /// ```
-fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn data(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFnResult {
     match code {
         Code::None => {
             tokenizer.exit(TokenType::ChunkText);
@@ -74,11 +74,20 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(TokenType::ChunkText);
             tokenizer.enter(TokenType::ChunkText);
-            (State::Fn(Box::new(data)), None)
+            let next_index = tokenizer.events.len() - 1;
+            tokenizer.events[previous_index].next = Some(next_index);
+            tokenizer.events[next_index].previous = Some(previous_index);
+            (
+                State::Fn(Box::new(move |t, c| data(t, c, next_index))),
+                None,
+            )
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(data)), None)
+            (
+                State::Fn(Box::new(move |t, c| data(t, c, previous_index))),
+                None,
+            )
         }
     }
 }

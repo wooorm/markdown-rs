@@ -58,6 +58,9 @@ pub enum TokenType {
     HtmlFlow,
     HtmlFlowData,
 
+    HtmlText,
+    HtmlTextData,
+
     ThematicBreak,
     ThematicBreakSequence,
     ThematicBreakWhitespace,
@@ -420,7 +423,14 @@ impl Tokenizer {
         b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
-        self.call_multiple(false, Some(Box::new(a)), Some(Box::new(b)), None, done)
+        self.call_multiple(
+            false,
+            Some(Box::new(a)),
+            Some(Box::new(b)),
+            None,
+            None,
+            done,
+        )
     }
 
     pub fn attempt_3(
@@ -435,6 +445,25 @@ impl Tokenizer {
             Some(Box::new(a)),
             Some(Box::new(b)),
             Some(Box::new(c)),
+            None,
+            done,
+        )
+    }
+
+    pub fn attempt_4(
+        &mut self,
+        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
+    ) -> Box<StateFn> {
+        self.call_multiple(
+            false,
+            Some(Box::new(a)),
+            Some(Box::new(b)),
+            Some(Box::new(c)),
+            Some(Box::new(d)),
             done,
         )
     }
@@ -445,6 +474,7 @@ impl Tokenizer {
         a: Option<Box<StateFn>>,
         b: Option<Box<StateFn>>,
         c: Option<Box<StateFn>>,
+        d: Option<Box<StateFn>>,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         if let Some(head) = a {
@@ -453,7 +483,7 @@ impl Tokenizer {
                     done(ok)
                 } else {
                     Box::new(move |tokenizer: &mut Tokenizer, code| {
-                        tokenizer.call_multiple(check, b, c, None, done)(tokenizer, code)
+                        tokenizer.call_multiple(check, b, c, d, None, done)(tokenizer, code)
                     })
                 }
             };

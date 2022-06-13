@@ -7,7 +7,7 @@
 //!
 //! *   [Autolink][crate::construct::autolink]
 //! *   Attention
-//! *   HTML (text)
+//! *   [HTML (text)][crate::construct::html-text]
 //! *   Hard break escape
 //! *   Code (text)
 //! *   Line ending
@@ -18,7 +18,7 @@
 
 use crate::construct::{
     autolink::start as autolink, character_escape::start as character_escape,
-    character_reference::start as character_reference,
+    character_reference::start as character_reference, html_text::start as html_text,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -34,9 +34,13 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt_3(character_reference, character_escape, autolink, |ok| {
-            Box::new(if ok { start } else { before_data })
-        })(tokenizer, code),
+        _ => tokenizer.attempt_4(
+            character_reference,
+            character_escape,
+            autolink,
+            html_text,
+            |ok| Box::new(if ok { start } else { before_data }),
+        )(tokenizer, code),
     }
 }
 

@@ -36,10 +36,10 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
             let mut result: StateFnResult = (
                 State::Fn(Box::new(if event.token_type == TokenType::ChunkContent {
                     content
-                } else if event.token_type == TokenType::ChunkText {
-                    text
-                } else {
+                } else if event.token_type == TokenType::ChunkString {
                     string
+                } else {
+                    text
                 })),
                 None,
             );
@@ -49,6 +49,7 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
             // Loop through chunks to pass them in order to the subtokenizer.
             while let Some(index_ptr) = index_opt {
                 let enter = &events[index_ptr];
+                assert_eq!(enter.event_type, EventType::Enter);
                 let span = Span {
                     start_index: enter.index,
                     end_index: events[index_ptr + 1].index,
@@ -119,6 +120,11 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     // from each slice and slices from events?
     let mut index = events.len() - 1;
 
+    // To do: this is broken, because it can inject linked events, which point
+    // to their links through indices, and this messes with all indices.
+    // We should try walking front to end instead, keep a count of the shifted
+    // index.
+    // It’s a bit complex but should work?
     while index > 0 {
         let slice_opt = link_to_info.get(&index);
 
