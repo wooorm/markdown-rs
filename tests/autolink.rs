@@ -1,5 +1,10 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, CompileOptions};
+
+const DANGER: &CompileOptions = &CompileOptions {
+    allow_dangerous_html: true,
+    allow_dangerous_protocol: true,
+};
 
 #[test]
 fn autolink() {
@@ -33,19 +38,29 @@ fn autolink() {
         "should support protocol autolinks in uppercase"
     );
 
-    // To do: safety.
-    // assert_eq!(
-    //   micromark("<a+b+c:d>", {allowDangerousProtocol: true}),
-    //   "<p><a href=\"a+b+c:d\">a+b+c:d</a></p>",
-    //   "should support protocol autolinks w/ incorrect URIs (1)"
-    // );
+    assert_eq!(
+        micromark("<a+b+c:d>"),
+        "<p><a href=\"\">a+b+c:d</a></p>",
+        "should support protocol autolinks w/ incorrect URIs (1, default)"
+    );
 
-    // To do: safety.
-    // assert_eq!(
-    //   micromark("<made-up-scheme://foo,bar>", {allowDangerousProtocol: true}),
-    //   "<p><a href=\"made-up-scheme://foo,bar\">made-up-scheme://foo,bar</a></p>",
-    //   "should support protocol autolinks w/ incorrect URIs (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("<a+b+c:d>", DANGER),
+        "<p><a href=\"a+b+c:d\">a+b+c:d</a></p>",
+        "should support protocol autolinks w/ incorrect URIs (1, danger)"
+    );
+
+    assert_eq!(
+        micromark("<made-up-scheme://foo,bar>"),
+        "<p><a href=\"\">made-up-scheme://foo,bar</a></p>",
+        "should support protocol autolinks w/ incorrect URIs (2, default)"
+    );
+
+    assert_eq!(
+        micromark_with_options("<made-up-scheme://foo,bar>", DANGER),
+        "<p><a href=\"made-up-scheme://foo,bar\">made-up-scheme://foo,bar</a></p>",
+        "should support protocol autolinks w/ incorrect URIs (2, danger)"
+    );
 
     assert_eq!(
         micromark("<http://../>"),
@@ -53,12 +68,11 @@ fn autolink() {
         "should support protocol autolinks w/ incorrect URIs (3)"
     );
 
-    // To do: safety.
-    // assert_eq!(
-    //   micromark("<localhost:5001/foo>", {allowDangerousProtocol: true}),
-    //   "<p><a href=\"localhost:5001/foo\">localhost:5001/foo</a></p>",
-    //   "should support protocol autolinks w/ incorrect URIs (4)"
-    // );
+    assert_eq!(
+        micromark_with_options("<localhost:5001/foo>", DANGER),
+        "<p><a href=\"localhost:5001/foo\">localhost:5001/foo</a></p>",
+        "should support protocol autolinks w/ incorrect URIs (4)"
+    );
 
     assert_eq!(
         micromark("<http://foo.bar/baz bim>"),
@@ -66,12 +80,11 @@ fn autolink() {
         "should not support protocol autolinks w/ spaces"
     );
 
-    // To do: encode urls.
-    // assert_eq!(
-    //     micromark("<http://example.com/\\[\\>"),
-    //     "<p><a href=\"http://example.com/%5C%5B%5C\">http://example.com/\\[\\</a></p>",
-    //     "should not support character escapes in protocol autolinks"
-    // );
+    assert_eq!(
+        micromark("<http://example.com/\\[\\>"),
+        "<p><a href=\"http://example.com/%5C%5B%5C\">http://example.com/\\[\\</a></p>",
+        "should not support character escapes in protocol autolinks"
+    );
 
     assert_eq!(
         micromark("<foo@bar.example.com>"),

@@ -68,10 +68,8 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (3) Encode urls
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (3) Clean compiler
-- [ ] (1) Optionally remove dangerous protocols when compiling
 - [ ] (1) Use preferred line ending style in markdown
 - [ ] (1) Handle BOM at start
 - [ ] (1) Make sure tabs are handled properly and that positional info is perfect
@@ -155,6 +153,8 @@ cargo doc --document-private-items
 
 - [x] (8) Subtokenization: figure out a good, fast way to deal with constructs in
       one content type that also are another content type
+- [x] (3) Encode urls
+- [x] (1) Optionally remove dangerous protocols when compiling
 
 ### Extensions
 

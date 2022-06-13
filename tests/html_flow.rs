@@ -3,6 +3,7 @@ use micromark::{micromark, micromark_with_options, CompileOptions};
 
 const DANGER: &CompileOptions = &CompileOptions {
     allow_dangerous_html: true,
+    allow_dangerous_protocol: false,
 };
 
 #[test]

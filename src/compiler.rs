@@ -3,7 +3,7 @@ use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::tokenizer::{Code, Event, EventType, TokenType};
 use crate::util::{
     decode_named_character_reference, decode_numeric_character_reference, encode, get_span,
-    slice_serialize,
+    sanitize_uri, slice_serialize,
 };
 
 /// Configuration (optional).
@@ -13,6 +13,11 @@ pub struct CompileOptions {
     /// The default is `false`, you can turn it on to `true` for trusted
     /// content.
     pub allow_dangerous_html: bool,
+
+    /// Whether to allow (dangerous) protocols in links and images.
+    /// The default is `false`, you can turn it on to `true` for trusted
+    /// content.
+    pub allow_dangerous_protocol: bool,
 }
 
 /// Turn events and codes into a string of HTML.
@@ -28,6 +33,17 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
     let mut slurp_one_line_ending = false;
     let mut ignore_encode = false;
     let mut character_reference_kind: Option<CharacterReferenceKind> = None;
+    let protocol_href = if options.allow_dangerous_protocol {
+        None
+    } else {
+        Some(vec!["http", "https", "irc", "ircs", "mailto", "xmpp"])
+    };
+    // let protocol_src = if options.allow_dangerous_protocol {
+    //     None
+    // } else {
+    //     Some(vec!["http", "https"])
+    // };
+
     // let mut slurp_all_line_endings = false;
 
     println!("events: {:#?}", events);
@@ -238,20 +254,20 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 TokenType::AutolinkProtocol => {
                     let slice = slice_serialize(codes, &get_span(events, index), false);
                     let buf = buf_tail_mut(buffers);
-                    // To do: options.allowDangerousProtocol ? undefined : protocolHref
-                    // let url = sanitize_uri(slice);
-                    let url = encode(&slice);
-                    buf.push(format!("<a href=\"{}\">", url));
+                    buf.push(format!(
+                        "<a href=\"{}\">",
+                        sanitize_uri(slice.as_str(), &protocol_href)
+                    ));
                     buf.push(encode(&slice));
                     buf.push("</a>".to_string());
                 }
                 TokenType::AutolinkEmail => {
                     let slice = slice_serialize(codes, &get_span(events, index), false);
                     let buf = buf_tail_mut(buffers);
-                    // To do: options.allowDangerousProtocol ? undefined : protocolHref
-                    // let url = sanitize_uri(slice);
-                    let url = encode(&slice);
-                    buf.push(format!("<a href=\"mailto:{}\">", url));
+                    buf.push(format!(
+                        "<a href=\"mailto:{}\">",
+                        sanitize_uri(slice.as_str(), &protocol_href)
+                    ));
                     buf.push(encode(&slice));
                     buf.push("</a>".to_string());
                 }

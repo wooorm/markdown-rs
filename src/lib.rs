@@ -42,6 +42,7 @@ pub fn micromark(value: &str) -> String {
 ///
 /// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &CompileOptions {
 ///     allow_dangerous_html: true,
+///     allow_dangerous_protocol: true,
 /// });
 ///
 /// assert_eq!(result, "<div>\n<h1>Hello, world!</h1>\n</div>");

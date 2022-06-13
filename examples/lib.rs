@@ -15,7 +15,8 @@ fn main() {
         micromark_with_options(
             "<div style=\"color: tomato\">\n\n# Hello, tomato!\n\n</div>",
             &CompileOptions {
-                allow_dangerous_html: true
+                allow_dangerous_html: true,
+                allow_dangerous_protocol: true
             }
         )
     );

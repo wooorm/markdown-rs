@@ -41,12 +41,12 @@
 //! Interestingly, there are a couple of things that are valid autolinks in
 //! markdown but in HTML would be valid tags, such as `<svg:rect>` and
 //! `<xml:lang/>`.
-//! However, because CommonMark employs a naïve HTML parsing algorithm, those
+//! However, because `CommonMark` employs a naïve HTML parsing algorithm, those
 //! are not considered HTML.
 //!
-//! While CommonMark restricts links from occurring in other links in the case
-//! of bracketed links, this restriction is not in place for autolinks inside
-//! autolinks:
+//! While `CommonMark` restricts links from occurring in other links in the
+//! case of bracketed links, this restriction is not in place for autolinks
+//! inside autolinks:
 //!
 //! ```markdown
 //! [<https://example.com>](#)
@@ -74,8 +74,6 @@
 //! [autolink_scheme_size_max]: crate::constant::AUTOLINK_SCHEME_SIZE_MAX
 //! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
-//!
-//! <!-- To do: link to `encode` -->
 
 use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
