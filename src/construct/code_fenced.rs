@@ -1,4 +1,4 @@
-//! Code (fenced) is a construct that occurs in the flow content type.
+//! Code (fenced) is a construct that occurs in the [flow][] content type.
 //!
 //! It forms with the following BNF:
 //!
@@ -63,10 +63,10 @@
 //! </code></pre>
 //! ```
 //!
-//! The `info` and `meta` parts are interpreted as the string content type.
+//! The `info` and `meta` parts are interpreted as the [string][] content type.
 //! That means that character escapes and character reference are allowed.
 //!
-//! In markdown, it is also possible to use code (text) in the text content
+//! In markdown, it is also possible to use code (text) in the [text][] content
 //! type.
 //! It is also possible to create code with the
 //! [code (indented)][code-indented] construct.
@@ -79,11 +79,14 @@
 //! *   [`code-fenced.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-fenced.js)
 //! *   [*§ 4.5 Fenced code blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#fenced-code-blocks)
 //!
+//! [flow]: crate::content::flow
+//! [string]: crate::content::string
+//! [text]: crate::content::text
 //! [code-indented]: crate::construct::code_indented
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 //!
-//! <!-- To do: link `flow`, `text`, `code_text`, `string` -->
+//! <!-- To do: link `code_text` -->
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
 use crate::construct::partial_whitespace::start as whitespace;

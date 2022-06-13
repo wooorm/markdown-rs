@@ -1,5 +1,5 @@
-//! Character escapes are a construct that occurs in the string and text
-//! content types.
+//! Character escapes are a construct that occurs in the [string][] and
+//! [text][] content types.
 //!
 //! They’re formed with the following BNF:
 //!
@@ -22,9 +22,11 @@
 //! *   [`character-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-escape.js)
 //! *   [*§ 2.4 Backslash escapes* in `CommonMark`](https://spec.commonmark.org/0.30/#backslash-escapes)
 //!
+//! [string]: crate::content::string
+//! [text]: crate::content::text
 //! [character reference]: crate::construct::character_reference
 //!
-//! <!-- To do: link `hard_break_escape`, `string`, `text` -->
+//! <!-- To do: link `hard_break_escape` -->
 
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 

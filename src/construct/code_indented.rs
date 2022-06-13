@@ -1,4 +1,4 @@
-//! Code (indented) is a construct that occurs in the flow content type.
+//! Code (indented) is a construct that occurs in the [flow][] content type.
 //!
 //! It forms with the following BNF:
 //!
@@ -31,11 +31,12 @@
 //! *   [`code-indented.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-indented.js)
 //! *   [*§ 4.4 Indented code blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#indented-code-blocks)
 //!
+//! [flow]: crate::content::flow
 //! [code-fenced]: crate::construct::code_fenced
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 //!
-//! <!-- To do: link `flow`, `code_text` -->
+//! <!-- To do: link `code_text` -->
 
 use crate::constant::TAB_SIZE;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};

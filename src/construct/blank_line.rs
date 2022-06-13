@@ -1,4 +1,4 @@
-//! Blank lines are a construct that occurs in the flow content type.
+//! Blank lines are a construct that occurs in the [flow][] content type.
 //!
 //! They’re formed with the following BNF:
 //!
@@ -9,7 +9,7 @@
 //! Blank lines are sometimes needed, such as to differentiate a paragraph
 //! from another paragraph.
 //! In several cases, blank lines are not needed between flow constructs,
-//! such as between two headings.
+//! such as between two [heading (atx)][heading-atx]s.
 //! Sometimes, whether blank lines are present, changes the behavior of how
 //! HTML is rendered, such as whether blank lines are present between list
 //! items in a list.
@@ -23,7 +23,10 @@
 //! *   [`blank-line.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/blank-line.js)
 //! *   [*§ 4.9 Blank lines* in `CommonMark`](https://spec.commonmark.org/0.30/#blank-lines)
 //!
-//! <!-- To do: link `flow`, `heading`, `list`, `paragraph` -->
+//! [flow]: crate::content::flow
+//! [heading-atx]: crate::construct::heading_atx
+//!
+//! <!-- To do: link `list`, `paragraph` -->
 
 use crate::construct::partial_whitespace::start as whitespace;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};

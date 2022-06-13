@@ -1,5 +1,5 @@
-//! Character references are a construct that occurs in the string and text
-//! content types.
+//! Character references are a construct that occurs in the [string][] and
+//! [text][] content types.
 //!
 //! They’re formed with the following BNF:
 //!
@@ -45,6 +45,8 @@
 //! *   [`character-reference.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-reference.js)
 //! *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.30/#entity-and-numeric-character-references)
 //!
+//! [string]: crate::content::string
+//! [text]: crate::content::text
 //! [character_escape]: crate::construct::character_reference
 //! [decode_numeric]: crate::util::decode_numeric_character_reference
 //! [character_reference_names]: crate::constant::CHARACTER_REFERENCE_NAMES

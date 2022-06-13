@@ -1,5 +1,5 @@
 //! Thematic breaks, sometimes called horizontal rules, are a construct that
-//! occurs in the flow content type.
+//! occurs in the [flow][] content type.
 //!
 //! They’re formed with the following BNF:
 //!
@@ -38,9 +38,10 @@
 //! *   [`thematic-break.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/thematic-break.js)
 //! *   [*§ 4.1 Thematic breaks* in `CommonMark`](https://spec.commonmark.org/0.30/#thematic-breaks)
 //!
+//! [flow]: crate::content::flow
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element
 //!
-//! <!-- To do: link `flow` -->
+//! <!-- To do: link `lists`, `setext heading` -->
 
 use crate::constant::THEMATIC_BREAK_MARKER_COUNT_MIN;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};

@@ -1,4 +1,4 @@
-//! HTML (flow) is a construct that occurs in the flow content type.
+//! HTML (flow) is a construct that occurs in the [flow][] content type.
 //!
 //! It forms with the following BNF:
 //!
@@ -80,11 +80,12 @@
 //! *   [`html-flow.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-flow.js)
 //! *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
 //!
+//! [flow]: crate::content::flow
 //! [html_raw_names]: crate::constant::HTML_RAW_NAMES
 //! [html_block_names]: crate::constant::HTML_BLOCK_NAMES
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 //!
-//! <!-- To do: link stuff -->
+//! <!-- To do: link html (text) -->
 
 use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX};
 use crate::construct::{blank_line::start as blank_line, partial_whitespace::start as whitespace};

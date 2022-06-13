@@ -12,8 +12,6 @@
 //! ## References
 //!
 //! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
-//!
-//! <!-- To do: link stuff -->
 
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 

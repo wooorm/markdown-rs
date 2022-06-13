@@ -1,4 +1,4 @@
-//! Heading (atx) is a construct that occurs in the flow content type.
+//! Heading (atx) is a construct that occurs in the [flow] content type.
 //!
 //! They’re formed with the following BNF:
 //!
@@ -38,11 +38,12 @@
 //! *   [`heading-atx.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/heading-atx.js)
 //! *   [*§ 4.2 ATX headings* in `CommonMark`](https://spec.commonmark.org/0.30/#atx-headings)
 //!
+//! [flow]: crate::content::flow
 //! [html]: https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 //!
-//! <!-- To do: link `flow`, `setext` -->
+//! <!-- To do: link `setext` -->
 
 use crate::constant::HEADING_ATX_OPENING_FENCE_SIZE_MAX;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
