@@ -20,7 +20,7 @@
 //! However, for security reasons, several numeric character references parse
 //! fine but are not rendered as their corresponding character and they are
 //! instead replaced by a U+FFFD REPLACEMENT CHARACTER (`�`).
-//! See [`decode_numeric_character_reference`][decode_numeric] for more info.
+//! See [`decode_numeric`][decode_numeric] for more info.
 //!
 //! To escape ASCII punctuation characters, use the terser
 //! [character escape][character_escape] construct instead (as in, `\&`).
@@ -48,7 +48,7 @@
 //! [string]: crate::content::string
 //! [text]: crate::content::text
 //! [character_escape]: crate::construct::character_reference
-//! [decode_numeric]: crate::util::decode_numeric_character_reference
+//! [decode_numeric]: crate::util::decode_character_reference::decode_numeric
 //! [character_reference_names]: crate::constant::CHARACTER_REFERENCE_NAMES
 //! [html]: https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
 //!

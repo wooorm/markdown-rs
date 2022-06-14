@@ -2,8 +2,10 @@
 use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::tokenizer::{Code, Event, EventType, TokenType};
 use crate::util::{
-    decode_named_character_reference, decode_numeric_character_reference, encode, get_span,
-    sanitize_uri, slice_serialize,
+    decode_character_reference::{decode_named, decode_numeric},
+    encode::encode,
+    sanitize_uri::sanitize_uri,
+    span::{from_exit_event, serialize},
 };
 
 /// Configuration (optional).
@@ -141,7 +143,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     ignore_encode = false;
                 }
                 TokenType::HtmlFlowData | TokenType::HtmlTextData => {
-                    let slice = slice_serialize(codes, &get_span(events, index), false);
+                    let slice = serialize(codes, &from_exit_event(events, index), false);
 
                     let res = if ignore_encode { slice } else { encode(&slice) };
 
@@ -208,9 +210,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 TokenType::CodeFlowChunk => {
                     code_flow_seen_data = Some(true);
-                    buf_tail_mut(buffers).push(encode(&slice_serialize(
+                    buf_tail_mut(buffers).push(encode(&serialize(
                         codes,
-                        &get_span(events, index),
+                        &from_exit_event(events, index),
                         false,
                     )));
                 }
@@ -224,13 +226,17 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     if let Some(buf) = atx_heading_buffer {
                         atx_heading_buffer = Some(
                             buf.to_string()
-                                + &encode(&slice_serialize(codes, &get_span(events, index), false)),
+                                + &encode(&serialize(
+                                    codes,
+                                    &from_exit_event(events, index),
+                                    false,
+                                )),
                         );
                     }
 
                     // First fence we see.
                     if None == atx_opening_sequence_size {
-                        let rank = slice_serialize(codes, &get_span(events, index), false).len();
+                        let rank = serialize(codes, &from_exit_event(events, index), false).len();
                         atx_opening_sequence_size = Some(rank);
                         buf_tail_mut(buffers).push(format!("<h{}>", rank));
                     }
@@ -246,7 +252,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         atx_heading_buffer = Some("".to_string());
                     }
 
-                    let slice = encode(&slice_serialize(codes, &get_span(events, index), false));
+                    let slice = encode(&serialize(codes, &from_exit_event(events, index), false));
                     println!("slice: {:?}", slice);
                     buf_tail_mut(buffers).push(slice);
                 }
@@ -258,7 +264,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     atx_heading_buffer = None;
                 }
                 TokenType::AutolinkProtocol => {
-                    let slice = slice_serialize(codes, &get_span(events, index), false);
+                    let slice = serialize(codes, &from_exit_event(events, index), false);
                     let buf = buf_tail_mut(buffers);
                     buf.push(format!(
                         "<a href=\"{}\">",
@@ -268,7 +274,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     buf.push("</a>".to_string());
                 }
                 TokenType::AutolinkEmail => {
-                    let slice = slice_serialize(codes, &get_span(events, index), false);
+                    let slice = serialize(codes, &from_exit_event(events, index), false);
                     let buf = buf_tail_mut(buffers);
                     buf.push(format!(
                         "<a href=\"mailto:{}\">",
@@ -289,9 +295,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     // } else if code_text_inside {
                     //     buf_tail_mut(buffers).push(" ".to_string());
                     } else {
-                        buf_tail_mut(buffers).push(encode(&slice_serialize(
+                        buf_tail_mut(buffers).push(encode(&serialize(
                             codes,
-                            &get_span(events, index),
+                            &from_exit_event(events, index),
                             false,
                         )));
                     }
@@ -308,18 +314,16 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 TokenType::CharacterReferenceValue => {
                     let kind = character_reference_kind
                         .expect("expected `character_reference_kind` to be set");
-                    let reference = slice_serialize(codes, &get_span(events, index), false);
+                    let reference = serialize(codes, &from_exit_event(events, index), false);
                     let ref_string = reference.as_str();
                     let value = match kind {
                         CharacterReferenceKind::Decimal => {
-                            decode_numeric_character_reference(ref_string, 10).to_string()
+                            decode_numeric(ref_string, 10).to_string()
                         }
                         CharacterReferenceKind::Hexadecimal => {
-                            decode_numeric_character_reference(ref_string, 16).to_string()
+                            decode_numeric(ref_string, 16).to_string()
                         }
-                        CharacterReferenceKind::Named => {
-                            decode_named_character_reference(ref_string)
-                        }
+                        CharacterReferenceKind::Named => decode_named(ref_string),
                     };
 
                     buf_tail_mut(buffers).push(value);
@@ -329,9 +333,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 // This branch below currently acts as the resulting `data` tokens.
                 TokenType::Data | TokenType::CharacterEscapeValue => {
                     // last_was_tag = false;
-                    buf_tail_mut(buffers).push(encode(&slice_serialize(
+                    buf_tail_mut(buffers).push(encode(&serialize(
                         codes,
-                        &get_span(events, index),
+                        &from_exit_event(events, index),
                         false,
                     )));
                 }

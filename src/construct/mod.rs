@@ -53,7 +53,6 @@
 //! example `ascii_punctuation` refers to
 //! [`char::is_ascii_punctuation`][char::is_ascii_punctuation].
 
-
 pub mod autolink;
 pub mod blank_line;
 pub mod character_escape;

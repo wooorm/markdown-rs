@@ -91,7 +91,7 @@
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
 use crate::construct::partial_whitespace::start as whitespace;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::get_span;
+use crate::util::span::from_exit_event;
 
 /// Kind of fences.
 #[derive(Debug, Clone, PartialEq)]
@@ -147,7 +147,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 
     if let Some(event) = tail {
         if event.token_type == TokenType::Whitespace {
-            let span = get_span(&tokenizer.events, tokenizer.events.len() - 1);
+            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
             prefix = span.end_index - span.start_index;
         }
     }
@@ -415,7 +415,7 @@ fn close_sequence_before(tokenizer: &mut Tokenizer, info: Info, code: Code) -> S
 
     if let Some(event) = tail {
         if event.token_type == TokenType::Whitespace {
-            let span = get_span(&tokenizer.events, tokenizer.events.len() - 1);
+            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
             prefix = span.end_index - span.start_index;
         }
     }

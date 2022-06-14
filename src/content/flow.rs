@@ -28,7 +28,7 @@ use crate::construct::{
 };
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::get_span;
+use crate::util::span::from_exit_event;
 
 /// Turn `codes` as the flow content type into events.
 pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
@@ -240,7 +240,7 @@ fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) ->
 
     if let Some(event) = tail {
         if event.token_type == TokenType::Whitespace {
-            let span = get_span(&tokenizer.events, tokenizer.events.len() - 1);
+            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
             prefix = span.end_index - span.start_index;
         }
     }

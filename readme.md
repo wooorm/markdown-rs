@@ -72,7 +72,6 @@ cargo doc --document-private-items
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
-- [ ] (1) Reorganize to split util
 - [ ] (1) Add examples to `CompileOptions` docs
 - [ ] (1) Add overview docs on how everything works
 - [ ] (1) Move safe protocols to constants
@@ -165,6 +164,7 @@ cargo doc --document-private-items
 - [x] (1) Optionally remove dangerous protocols when compiling
 - [x] (1) Add docs to html (text)
 - [x] (1) Add docs on bnf
+- [x] (1) Reorganize to split util
 
 ### Extensions
 

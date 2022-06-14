@@ -1,10 +1,8 @@
-use crate::content::content::start as content;
-use crate::content::string::start as string;
-use crate::content::text::start as text;
+use crate::content::{content::start as content, string::start as string, text::start as text};
 use crate::tokenizer::{
     Code, Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer,
 };
-use crate::util::{slice_codes, Span};
+use crate::util::span;
 use std::collections::HashMap;
 
 /// To do.
@@ -51,7 +49,7 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
             while let Some(index_ptr) = index_opt {
                 let enter = &events[index_ptr];
                 assert_eq!(enter.event_type, EventType::Enter);
-                let span = Span {
+                let span = span::Span {
                     start_index: enter.index,
                     end_index: events[index_ptr + 1].index,
                 };
@@ -66,7 +64,7 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
                     _ => unreachable!("cannot be ok/nok"),
                 };
 
-                result = tokenizer.feed(slice_codes(codes, &span), func, enter.next == None);
+                result = tokenizer.feed(span::codes(codes, &span), func, enter.next == None);
 
                 if let Some(ref x) = result.1 {
                     if !x.is_empty() {

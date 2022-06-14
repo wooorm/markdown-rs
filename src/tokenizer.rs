@@ -513,6 +513,8 @@ impl Tokenizer {
         let mut state = State::Fn(Box::new(start));
         let mut index = 0;
 
+        println!("feed: {:?} {:?}", codes, drain);
+
         self.consumed = true;
 
         while index < codes.len() {
