@@ -69,7 +69,6 @@ cargo doc --document-private-items
 ### Small things
 
 - [ ] (3) Fix deep subtokenization
-- [ ] (1) Add docs on bnf
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
@@ -165,6 +164,7 @@ cargo doc --document-private-items
 - [x] (3) Encode urls
 - [x] (1) Optionally remove dangerous protocols when compiling
 - [x] (1) Add docs to html (text)
+- [x] (1) Add docs on bnf
 
 ### Extensions
 
