@@ -26,22 +26,20 @@ fn html_text() {
         "should support self-closing tags"
     );
 
-    // To do: line endings.
-    // assert_eq!(
-    //     micromark_with_options("<a  /><b2\ndata=\"foo\" >", DANGER),
-    //     "<p><a  /><b2\ndata=\"foo\" ></p>",
-    //     "should support whitespace in tags"
-    // );
+    assert_eq!(
+        micromark_with_options("<a  /><b2\ndata=\"foo\" >", DANGER),
+        "<p><a  /><b2\ndata=\"foo\" ></p>",
+        "should support whitespace in tags"
+    );
 
-    // To do: line endings.
-    // assert_eq!(
-    //     micromark_with_options(
-    //         "<a foo=\"bar\" bam = \"baz <em>\"</em>\"\n_boolean zoop:33=zoop:33 />",
-    //         DANGER
-    //     ),
-    //     "<p><a foo=\"bar\" bam = \"baz <em>\"</em>\"\n_boolean zoop:33=zoop:33 /></p>",
-    //     "should support attributes on tags"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "<a foo=\"bar\" bam = 'baz <em>\"</em>'\n_boolean zoop:33=zoop:33 />",
+            DANGER
+        ),
+        "<p><a foo=\"bar\" bam = 'baz <em>\"</em>'\n_boolean zoop:33=zoop:33 /></p>",
+        "should support attributes on tags"
+    );
 
     assert_eq!(
         micromark_with_options("Foo <responsive-image src=\"foo.jpg\" />", DANGER),
@@ -67,12 +65,11 @@ fn html_text() {
         "should not support nonconforming attribute values"
     );
 
-    // To do: line endings.
-    // assert_eq!(
-    //     micromark_with_options("< a><\nfoo><bar/ >\n<foo bar=baz\nbim!bop />", DANGER),
-    //     "<p>&lt; a&gt;&lt;\nfoo&gt;&lt;bar/ &gt;\n&lt;foo bar=baz\nbim!bop /&gt;</p>",
-    //     "should not support nonconforming whitespace"
-    // );
+    assert_eq!(
+        micromark_with_options("< a><\nfoo><bar/ >\n<foo bar=baz\nbim!bop />", DANGER),
+        "<p>&lt; a&gt;&lt;\nfoo&gt;&lt;bar/ &gt;\n&lt;foo bar=baz\nbim!bop /&gt;</p>",
+        "should not support nonconforming whitespace"
+    );
 
     assert_eq!(
         micromark_with_options("<a href='bar'title=title>", DANGER),
@@ -92,12 +89,11 @@ fn html_text() {
         "should not support closing tags w/ attributes"
     );
 
-    // To do: line endings.
-    //     assert_eq!(
-    //         micromark_with_options("foo <!-- this is a\ncomment - with hyphen -->", DANGER),
-    //         "<p>foo <!-- this is a\ncomment - with hyphen --></p>",
-    //         "should support comments"
-    //     );
+    assert_eq!(
+        micromark_with_options("foo <!-- this is a\ncomment - with hyphen -->", DANGER),
+        "<p>foo <!-- this is a\ncomment - with hyphen --></p>",
+        "should support comments"
+    );
 
     assert_eq!(
         micromark_with_options("foo <!-- not a comment -- two hyphens -->", DANGER),
@@ -384,12 +380,11 @@ fn html_text() {
         "should not support eof in unquoted attribute value"
     );
 
-    // To do: line endings.
-    // assert_eq!(
-    //     micromark_with_options("foo <a b=\nasd>", DANGER),
-    //     "<p>foo <a b=\nasd></p>",
-    //     "should support an eol before an attribute value"
-    // );
+    assert_eq!(
+        micromark_with_options("foo <a b=\nasd>", DANGER),
+        "<p>foo <a b=\nasd></p>",
+        "should support an eol before an attribute value"
+    );
 
     assert_eq!(
 micromark_with_options("<x> a", DANGER),
@@ -403,32 +398,29 @@ micromark_with_options("<x> a", DANGER),
         "should support an EOF before an attribute value"
     );
 
-    // To do: line endings.
-    // assert_eq!(
-    //     micromark_with_options("a <!b\nc>", DANGER),
-    //     "<p>a <!b\nc></p>",
-    //     "should support an EOL in a declaration"
-    // );
-    // To do: line endings.
-    // assert_eq!(
-    //     micromark_with_options("a <![CDATA[\n]]>", DANGER),
-    //     "<p>a <![CDATA[\n]]></p>",
-    //     "should support an EOL in cdata"
-    // );
+    assert_eq!(
+        micromark_with_options("a <!b\nc>", DANGER),
+        "<p>a <!b\nc></p>",
+        "should support an EOL in a declaration"
+    );
+    assert_eq!(
+        micromark_with_options("a <![CDATA[\n]]>", DANGER),
+        "<p>a <![CDATA[\n]]></p>",
+        "should support an EOL in cdata"
+    );
 
-    // To do: line endings.
-    // // Note: cmjs parses this differently.
-    // // See: <https://github.com/commonmark/commonmark.js/issues/196>
-    // assert_eq!(
-    //     micromark_with_options("a <?\n?>", DANGER),
-    //     "<p>a <?\n?></p>",
-    //     "should support an EOL in an instruction"
-    // );
+    // Note: cmjs parses this differently.
+    // See: <https://github.com/commonmark/commonmark.js/issues/196>
+    assert_eq!(
+        micromark_with_options("a <?\n?>", DANGER),
+        "<p>a <?\n?></p>",
+        "should support an EOL in an instruction"
+    );
 
-    //     // To do: extensions.
-    //     // assert_eq!(
-    //     //     micromark_with_options("a <x>", {extensions: [{disable: {null: ["htmlText"]}}]}),
-    //     //     "<p>a &lt;x&gt;</p>",
-    //     //     "should support turning off html (text)"
-    //     // );
+    // To do: extensions.
+    // assert_eq!(
+    //     micromark_with_options("a <x>", {extensions: [{disable: {null: ["htmlText"]}}]}),
+    //     "<p>a &lt;x&gt;</p>",
+    //     "should support turning off html (text)"
+    // );
 }

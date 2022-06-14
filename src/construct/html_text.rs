@@ -58,10 +58,14 @@ use crate::tokenizer::{Code, State, StateFn, StateFnResult, TokenType, Tokenizer
 /// a |<x> b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::HtmlText);
-    tokenizer.enter(TokenType::HtmlTextData);
-    tokenizer.consume(code);
-    (State::Fn(Box::new(open)), None)
+    if Code::Char('<') == code {
+        tokenizer.enter(TokenType::HtmlText);
+        tokenizer.enter(TokenType::HtmlTextData);
+        tokenizer.consume(code);
+        (State::Fn(Box::new(open)), None)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// After `<`, before a tag name or other stuff.
@@ -582,9 +586,9 @@ pub fn tag_open_attribute_value_quoted(
 pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::Char('"' | '\'' | '<' | '=' | '`') => (State::Nok, None),
-        Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char('\t' | ' ' | '/' | '>') => {
-            tag_open_between(tokenizer, code)
-        }
+        Code::CarriageReturnLineFeed
+        | Code::VirtualSpace
+        | Code::Char('\r' | '\n' | '\t' | ' ' | '/' | '>') => tag_open_between(tokenizer, code),
         Code::Char(_) => {
             tokenizer.consume(code);
             (State::Fn(Box::new(tag_open_attribute_value_unquoted)), None)
@@ -603,9 +607,9 @@ pub fn tag_open_attribute_value_quoted_after(
     code: Code,
 ) -> StateFnResult {
     match code {
-        Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char('\t' | ' ' | '>' | '/') => {
-            tag_open_between(tokenizer, code)
-        }
+        Code::CarriageReturnLineFeed
+        | Code::VirtualSpace
+        | Code::Char('\r' | '\n' | '\t' | ' ' | '>' | '/') => tag_open_between(tokenizer, code),
         _ => (State::Nok, None),
     }
 }

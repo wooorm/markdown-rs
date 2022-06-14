@@ -82,12 +82,12 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
             let mut subindex = 0;
             // Index into subevents that starts the current slice.
             let mut last_start = 0;
-            // Counter into `ends`.
+            // Counter into `ends`: the linked token we are at.
             let mut end_index = 0;
             let mut index_opt: Option<usize> = Some(index);
 
             while subindex < tokenizer.events.len() {
-                let subevent = &tokenizer.events[subindex];
+                let subevent = &mut tokenizer.events[subindex];
 
                 // Find the first event that starts after the end we’re looking
                 // for.
@@ -101,11 +101,26 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
                     index_opt = events[link].next;
                 }
 
+                // If there is a `next` link in the subevents, we have to change
+                // its index to account for the shifted events.
+                // If it points to a next event, we also change the next event’s
+                // reference back to *this* event.
+                if let Some(next) = subevent.next {
+                    // The `index` in `events` where the current link is,
+                    // minus 2 events (the enter and exit) for each removed
+                    // link.
+                    let shift = index_opt.unwrap() - (end_index * 2);
+
+                    subevent.next = Some(next + shift);
+                    let next_ev = &mut tokenizer.events[next];
+                    let previous = next_ev.previous.unwrap();
+                    next_ev.previous = Some(previous + shift);
+                }
+
                 subindex += 1;
             }
 
-            let link = index_opt.unwrap();
-            link_to_info.insert(link, (index, last_start, subindex));
+            link_to_info.insert(index_opt.unwrap(), (index, last_start, subindex));
             head_to_tokenizer.insert(index, tokenizer);
         }
 
@@ -119,11 +134,6 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     // from each slice and slices from events?
     let mut index = events.len() - 1;
 
-    // To do: this is broken, because it can inject linked events, which point
-    // to their links through indices, and this messes with all indices.
-    // We should try walking front to end instead, keep a count of the shifted
-    // index.
-    // It’s a bit complex but should work?
     while index > 0 {
         let slice_opt = link_to_info.get(&index);
 
