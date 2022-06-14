@@ -68,11 +68,9 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (3) Fix deep subtokenization
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
-- [ ] (1) Add examples to `CompileOptions` docs
 - [ ] (1) Add overview docs on how everything works
 - [ ] (1) Move safe protocols to constants
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
@@ -165,6 +163,8 @@ cargo doc --document-private-items
 - [x] (1) Add docs to html (text)
 - [x] (1) Add docs on bnf
 - [x] (1) Reorganize to split util
+- [x] (1) Add examples to `CompileOptions` docs
+- [x] (3) Fix deep subtokenization
 
 ### Extensions
 
