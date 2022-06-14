@@ -17,6 +17,17 @@ use crate::util::encode::encode;
 /// If the URL includes an unknown protocol (one not matched by `protocol`, such
 /// as a dangerous example, `javascript:`), the value is ignored.
 ///
+/// ## Examples
+///
+/// ```rust ignore
+/// use micromark::util::sanitize_url::sanitize_url;
+///
+/// assert_eq!(sanitize_uri("javascript:alert(1)", &None), "javascript:alert(1)");
+/// assert_eq!(sanitize_uri("javascript:alert(1)", &Some(vec!["http", "https"])), "");
+/// assert_eq!(sanitize_uri("https://example.com", &Some(vec!["http", "https"])), "https://example.com");
+/// assert_eq!(sanitize_uri("https://a👍b.c/%20/%", &Some(vec!["http", "https"])), "https://a%F0%9F%91%8Db.c/%20/%25");
+/// ```
+///
 /// ## References
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
@@ -60,6 +71,15 @@ pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
 ///
 /// Encode unsafe characters with percent-encoding, skipping already encoded
 /// sequences.
+///
+/// ## Examples
+///
+/// ```rust ignore
+/// use micromark::util::sanitize_url::normalize_uri;
+///
+/// assert_eq!(sanitize_uri("https://example.com"), "https://example.com");
+/// assert_eq!(sanitize_uri("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");
+/// ```
 ///
 /// ## References
 ///

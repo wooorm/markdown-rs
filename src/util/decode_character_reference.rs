@@ -15,7 +15,7 @@ use crate::constant::{CHARACTER_REFERENCE_NAMES, CHARACTER_REFERENCE_VALUES};
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::character_reference::decode_named;
+/// use micromark::util::decode_character_reference::decode_named;
 ///
 /// assert_eq!(decode_named("amp"), "&");
 /// assert_eq!(decode_named("AElig"), "Æ");
@@ -58,7 +58,7 @@ pub fn decode_named(value: &str) -> String {
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::character_reference::decode_numeric;
+/// use micromark::util::decode_character_reference::decode_numeric;
 ///
 /// assert_eq!(decode_numeric("123", 10), '{');
 /// assert_eq!(decode_numeric("9", 16), '\t');

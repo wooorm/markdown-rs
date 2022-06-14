@@ -14,11 +14,59 @@ pub struct CompileOptions {
     /// Whether to allow (dangerous) HTML.
     /// The default is `false`, you can turn it on to `true` for trusted
     /// content.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use micromark::{micromark, micromark_with_options, CompileOptions};
+    ///
+    /// // micromark is safe by default:
+    /// assert_eq!(
+    ///     micromark("Hi, <i>venus</i>!"),
+    ///     "<p>Hi, &lt;i&gt;venus&lt;/i&gt;!</p>"
+    /// );
+    ///
+    /// // Turn `allow_dangerous_html` on to allow potentially dangerous HTML:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "Hi, <i>venus</i>!",
+    ///         &CompileOptions {
+    ///             allow_dangerous_html: true,
+    ///             allow_dangerous_protocol: false,
+    ///         }
+    ///     ),
+    ///     "<p>Hi, <i>venus</i>!</p>"
+    /// );
+    /// ```
     pub allow_dangerous_html: bool,
 
     /// Whether to allow (dangerous) protocols in links and images.
     /// The default is `false`, you can turn it on to `true` for trusted
     /// content.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use micromark::{micromark, micromark_with_options, CompileOptions};
+    ///
+    /// // micromark is safe by default:
+    /// assert_eq!(
+    ///     micromark("<javascript:alert(1)>"),
+    ///     "<p><a href=\"\">javascript:alert(1)</a></p>"
+    /// );
+    ///
+    /// // Turn `allow_dangerous_protocol` on to allow potentially dangerous protocols:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "<javascript:alert(1)>",
+    ///         &CompileOptions {
+    ///             allow_dangerous_html: false,
+    ///             allow_dangerous_protocol: true,
+    ///         }
+    ///     ),
+    ///     "<p><a href=\"javascript:alert(1)\">javascript:alert(1)</a></p>"
+    /// );
+    /// ```
     pub allow_dangerous_protocol: bool,
 }
 
