@@ -7,7 +7,7 @@
 //!
 //! *   [Autolink][crate::construct::autolink]
 //! *   Attention
-//! *   [HTML (text)][crate::construct::html-text]
+//! *   [HTML (text)][crate::construct::html_text]
 //! *   Hard break escape
 //! *   Code (text)
 //! *   Line ending

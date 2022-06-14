@@ -7,6 +7,7 @@ use crate::tokenizer::{
 use crate::util::{slice_codes, Span};
 use std::collections::HashMap;
 
+/// To do.
 pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     let mut events = events;
     let mut index = 0;

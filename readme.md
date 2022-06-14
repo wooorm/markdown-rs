@@ -68,6 +68,15 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (3) Fix deep subtokenization
+- [ ] (1) Add docs on bnf
+- [ ] (1) Add docs to subtokenize
+- [ ] (1) Add module docs to content
+- [ ] (1) Add module docs to parser
+- [ ] (1) Reorganize to split util
+- [ ] (1) Add examples to `CompileOptions` docs
+- [ ] (1) Add overview docs on how everything works
+- [ ] (1) Move safe protocols to constants
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (3) Clean compiler
 - [ ] (1) Use preferred line ending style in markdown
@@ -109,7 +118,7 @@ cargo doc --document-private-items
 - [x] heading (atx)
 - [ ] (1) heading (setext)
 - [x] html (flow)
-- [ ] html (text)
+- [x] html (text)
 - [ ] (3) label end
 - [ ] (3) label start (image)
 - [ ] (3) label start (link)
@@ -141,7 +150,7 @@ cargo doc --document-private-items
   - [x] character reference
   - [ ] code (text)
   - [ ] hard break escape
-  - [ ] html (text)
+  - [x] html (text)
   - [ ] label end
   - [ ] label start (image)
   - [ ] label start (link)
@@ -155,6 +164,7 @@ cargo doc --document-private-items
       one content type that also are another content type
 - [x] (3) Encode urls
 - [x] (1) Optionally remove dangerous protocols when compiling
+- [x] (1) Add docs to html (text)
 
 ### Extensions
 

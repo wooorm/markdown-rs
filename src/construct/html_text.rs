@@ -1,4 +1,53 @@
-//! To do.
+//! HTML (text) is a construct that occurs in the [text][] content type.
+//!
+//! It forms with the following BNF:
+//!
+//! ```bnf
+//! html_text ::= comment | instruction | declaration | cdata | tag_close | tag_open
+//!
+//! ; Restriction: the text is not allowed to start with `>`, `->`, or to contain `--`.
+//! comment ::= '<!--' *code '-->'
+//! instruction ::= '<?' *code '?>'
+//! declaration ::= '<!' ascii_alphabetic *code '>'
+//! ; Restriction: the text is not allowed to contain `]]`.
+//! cdata ::= '<![CDATA[' *code ']]>'
+//! tag_close ::= '</' tag_name whitespace_optional '>'
+//! opening_tag ::= '<' tag_name *( whitespace attribute ) [ whitespace_optional '/' ] whitespace_optional '>'
+//!
+//! tag_name ::= ascii_alphabetic *( '-' | ascii_alphanumeric )
+//! attribute ::= attribute_name [ whitespace_optional '=' whitespace_optional attribute_value ]
+//! attribute_name ::= ( ':' | '_' | ascii_alphabetic ) *( '-' | '.' | ':' | '_' | ascii_alphanumeric )
+//! attribute_value ::= '"' *( code - '"' ) '"' | "'" *( code - "'" )  "'" | 1*( code - space_or_tab - eol - '"' - "'" - '/' - '<' - '=' - '>' - '`')
+//!
+//! ; Note: blank lines can never occur in `text`.
+//! whitespace ::= 1*space_or_tab | [ *space_or_tab eol *space_or_tab ]
+//! whitespace_optional ::= [ whitespace ]
+//! eol ::= '\r' | '\r\n' | '\n'
+//! space_or_tab ::= ' ' | '\t'
+//! ```
+//!
+//! The grammar for HTML in markdown does not resemble the rules of parsing
+//! HTML according to the [*§ 13.2 Parsing HTML documents* in the HTML
+//! spec][html-parsing].
+//! See the related flow construct [HTML (flow)][html_flow] for more info.
+//!
+//! Because the **tag open** and **tag close** productions in the grammar form
+//! with just tags instead of complete elements, it is possible to interleave
+//! (a word for switching between languages) markdown and HTML together.
+//! For example:
+//!
+//! ```markdown
+//! This is equivalent to <code>*emphasised* code</code>.
+//! ```
+//!
+//! ## References
+//!
+//! *   [`html-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-text.js)
+//! *   [*§ 6.6 Raw HTML* in `CommonMark`](https://spec.commonmark.org/0.30/#raw-html)
+//!
+//! [text]: crate::content::text
+//! [html_flow]: crate::construct::html_flow
+//! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
 use crate::construct::partial_whitespace::start as whitespace;
 use crate::tokenizer::{Code, State, StateFn, StateFnResult, TokenType, Tokenizer};
@@ -15,7 +64,13 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     (State::Fn(Box::new(open)), None)
 }
 
-/// To do.
+/// After `<`, before a tag name or other stuff.
+///
+/// ```markdown
+/// a <|x /> b
+/// a <|!doctype> b
+/// a <|!--xxx--/> b
+/// ```
 pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('!') => {
@@ -38,19 +93,25 @@ pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `<!`, so inside a declaration, comment, or CDATA.
+///
+/// ```markdown
+/// a <!|doctype> b
+/// a <!|--xxx--> b
+/// a <!|[CDATA[>&<]]> b
+/// ```
 pub fn declaration_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('-') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(comment_open)), None)
+            (State::Fn(Box::new(comment_open_inside)), None)
         }
         Code::Char('[') => {
             tokenizer.consume(code);
             let buffer = vec!['C', 'D', 'A', 'T', 'A', '['];
             (
                 State::Fn(Box::new(|tokenizer, code| {
-                    cdata_open(tokenizer, code, buffer, 0)
+                    cdata_open_inside(tokenizer, code, buffer, 0)
                 })),
                 None,
             )
@@ -63,8 +124,12 @@ pub fn declaration_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
     }
 }
 
-/// To do.
-pub fn comment_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+/// After `<!-`, inside a comment, before another `-`.
+///
+/// ```markdown
+/// a <!-|-xxx--> b
+/// ```
+pub fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('-') => {
             tokenizer.consume(code);
@@ -74,7 +139,18 @@ pub fn comment_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `<!--`, inside a comment
+///
+/// > **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
+/// > empty comments.
+/// > This is prohibited in html (text).
+/// > See: <https://github.com/commonmark/commonmark-spec/issues/712>.
+///
+/// ```markdown
+/// a <!--|xxx--> b
+/// ```
+///
+/// [html_flow]: crate::construct::html_flow
 pub fn comment_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::Char('>') => (State::Nok, None),
@@ -86,7 +162,18 @@ pub fn comment_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `<!---`, inside a comment
+///
+/// > **Note**: [html (flow)][html_flow] does allow `<!--->` as an empty
+/// > comment.
+/// > This is prohibited in html (text).
+/// > See: <https://github.com/commonmark/commonmark-spec/issues/712>.
+///
+/// ```markdown
+/// a <!---|xxx--> b
+/// ```
+///
+/// [html_flow]: crate::construct::html_flow
 pub fn comment_start_dash(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::Char('>') => (State::Nok, None),
@@ -94,7 +181,12 @@ pub fn comment_start_dash(tokenizer: &mut Tokenizer, code: Code) -> StateFnResul
     }
 }
 
-/// To do.
+/// In a comment.
+///
+/// ```markdown
+/// a <!--|xxx--> b
+/// a <!--x|xx--> b
+/// ```
 pub fn comment(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
@@ -112,7 +204,12 @@ pub fn comment(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In a comment, after `-`.
+///
+/// ```markdown
+/// a <!--xxx-|-> b
+/// a <!--xxx-|yyy--> b
+/// ```
 pub fn comment_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('-') => {
@@ -123,8 +220,16 @@ pub fn comment_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
-pub fn cdata_open(
+/// After `<![`, inside CDATA, expecting `CDATA[`.
+///
+/// ```markdown
+/// a <![|CDATA[>&<]]> b
+/// a <![CD|ATA[>&<]]> b
+/// a <![CDA|TA[>&<]]> b
+/// a <![CDAT|A[>&<]]> b
+/// a <![CDATA|[>&<]]> b
+/// ```
+pub fn cdata_open_inside(
     tokenizer: &mut Tokenizer,
     code: Code,
     buffer: Vec<char>,
@@ -139,7 +244,7 @@ pub fn cdata_open(
             } else {
                 (
                     State::Fn(Box::new(move |tokenizer, code| {
-                        cdata_open(tokenizer, code, buffer, index + 1)
+                        cdata_open_inside(tokenizer, code, buffer, index + 1)
                     })),
                     None,
                 )
@@ -149,7 +254,11 @@ pub fn cdata_open(
     }
 }
 
-/// To do.
+/// In CDATA.
+///
+/// ```markdown
+/// a <![CDATA[|>&<]]> b
+/// ```
 pub fn cdata(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
@@ -167,7 +276,11 @@ pub fn cdata(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In CDATA, after `]`.
+///
+/// ```markdown
+/// a <![CDATA[>&<]|]> b
+/// ```
 pub fn cdata_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(']') => {
@@ -178,7 +291,11 @@ pub fn cdata_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In CDATA, after `]]`.
+///
+/// ```markdown
+/// a <![CDATA[>&<]]|> b
+/// ```
 pub fn cdata_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => end(tokenizer, code),
@@ -187,7 +304,11 @@ pub fn cdata_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In a declaration.
+///
+/// ```markdown
+/// a <!a|b> b
+/// ```
 pub fn declaration(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::Char('>') => end(tokenizer, code),
@@ -201,7 +322,12 @@ pub fn declaration(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In an instruction.
+///
+/// ```markdown
+/// a <?|ab?> b
+/// a <?a|b?> b
+/// ```
 pub fn instruction(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
@@ -219,7 +345,12 @@ pub fn instruction(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In an instruction, after `?`.
+///
+/// ```markdown
+/// a <?aa?|> b
+/// a <?aa?|bb?> b
+/// ```
 pub fn instruction_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => end(tokenizer, code),
@@ -227,7 +358,11 @@ pub fn instruction_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult
     }
 }
 
-/// To do.
+/// After `</`, in a closing tag, before a tag name.
+///
+/// ```markdown
+/// a </|x> b
+/// ```
 pub fn tag_close_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char.is_ascii_alphabetic() => {
@@ -238,7 +373,12 @@ pub fn tag_close_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `</x`, in a tag name.
+///
+/// ```markdown
+/// a </x|> b
+/// a </x|y> b
+/// ```
 pub fn tag_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char == '-' || char.is_ascii_alphanumeric() => {
@@ -249,7 +389,12 @@ pub fn tag_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In a closing tag, after the tag name.
+///
+/// ```markdown
+/// a </x| > b
+/// a </xy |> b
+/// ```
 pub fn tag_close_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
@@ -263,14 +408,17 @@ pub fn tag_close_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult
     }
 }
 
-/// To do.
+/// After `<x`, in an opening tag name.
+///
+/// ```markdown
+/// a <x|> b
+/// ```
 pub fn tag_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char == '-' || char.is_ascii_alphanumeric() => {
             tokenizer.consume(code);
             (State::Fn(Box::new(tag_open)), None)
         }
-
         Code::CarriageReturnLineFeed
         | Code::VirtualSpace
         | Code::Char('\r' | '\n' | '\t' | ' ' | '/' | '>') => tag_open_between(tokenizer, code),
@@ -278,7 +426,13 @@ pub fn tag_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In an opening tag, after the tag name.
+///
+/// ```markdown
+/// a <x| y> b
+/// a <x |y="z"> b
+/// a <x |/> b
+/// ```
 pub fn tag_open_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
@@ -300,7 +454,13 @@ pub fn tag_open_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
     }
 }
 
-/// To do.
+/// In an attribute name.
+///
+/// ```markdown
+/// a <x :|> b
+/// a <x _|> b
+/// a <x a|> b
+/// ```
 pub fn tag_open_attribute_name(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char)
@@ -317,7 +477,14 @@ pub fn tag_open_attribute_name(tokenizer: &mut Tokenizer, code: Code) -> StateFn
     }
 }
 
-/// To do.
+/// After an attribute name, before an attribute initializer, the end of the
+/// tag, or whitespace.
+///
+/// ```markdown
+/// a <x a|> b
+/// a <x a|=b> b
+/// a <x a|="c"> b
+/// ```
 pub fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
@@ -335,7 +502,13 @@ pub fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer, code: Code) -> S
     }
 }
 
-/// To do.
+/// Before an unquoted, double quoted, or single quoted attribute value,
+/// allowing whitespace.
+///
+/// ```markdown
+/// a <x a=|b> b
+/// a <x a=|"c"> b
+/// ```
 pub fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::Char('<' | '=' | '>' | '`') => (State::Nok, None),
@@ -362,7 +535,12 @@ pub fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer, code: Code) ->
     }
 }
 
-/// To do.
+/// In a double or single quoted attribute value.
+///
+/// ```markdown
+/// a <x a="|"> b
+/// a <x a='|'> b
+/// ```
 pub fn tag_open_attribute_value_quoted(
     tokenizer: &mut Tokenizer,
     code: Code,
@@ -396,7 +574,30 @@ pub fn tag_open_attribute_value_quoted(
     }
 }
 
-/// To do.
+/// In an unquoted attribute value.
+///
+/// ```markdown
+/// a <x a=b|c> b
+/// ```
+pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::None | Code::Char('"' | '\'' | '<' | '=' | '`') => (State::Nok, None),
+        Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char('\t' | ' ' | '/' | '>') => {
+            tag_open_between(tokenizer, code)
+        }
+        Code::Char(_) => {
+            tokenizer.consume(code);
+            (State::Fn(Box::new(tag_open_attribute_value_unquoted)), None)
+        }
+    }
+}
+
+/// After a double or single quoted attribute value, before whitespace or the
+/// end of the tag.
+///
+/// ```markdown
+/// a <x a="b"|> b
+/// ```
 pub fn tag_open_attribute_value_quoted_after(
     tokenizer: &mut Tokenizer,
     code: Code,
@@ -409,23 +610,34 @@ pub fn tag_open_attribute_value_quoted_after(
     }
 }
 
-/// To do.
-pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+/// In certain circumstances of a complete tag where only an `>` is allowed.
+///
+/// ```markdown
+/// a <x a="b"|> b
+/// a <!--xx--|> b
+/// a <x /|> b
+/// ```
+pub fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None | Code::Char('"' | '\'' | '<' | '=' | '`') => (State::Nok, None),
-        Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char('\t' | ' ' | '>') => {
-            tag_open_between(tokenizer, code)
-        }
-        Code::Char(_) => {
+        Code::Char('>') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(tag_open_attribute_value_unquoted)), None)
+            tokenizer.exit(TokenType::HtmlTextData);
+            tokenizer.exit(TokenType::HtmlText);
+            (State::Ok, None)
         }
+        _ => (State::Nok, None),
     }
 }
 
-/// To do.
-// We can’t have blank lines in content, so no need to worry about empty
-// tokens.
+/// At an allowed line ending.
+///
+/// > **Note**: we can’t have blank lines in content, so no need to worry about
+/// > empty tokens.
+///
+/// ```markdown
+/// a <!--a|
+/// b--> b
+/// ```
 pub fn at_line_ending(
     tokenizer: &mut Tokenizer,
     code: Code,
@@ -446,6 +658,15 @@ pub fn at_line_ending(
     }
 }
 
+/// After a line ending.
+///
+/// > **Note**: we can’t have blank lines in content, so no need to worry about
+/// > empty tokens.
+///
+/// ```markdown
+/// a <!--a
+/// |b--> b
+/// ```
 pub fn after_line_ending(
     tokenizer: &mut Tokenizer,
     code: Code,
@@ -457,6 +678,15 @@ pub fn after_line_ending(
     )(tokenizer, code)
 }
 
+/// After a line ending, after indent.
+///
+/// > **Note**: we can’t have blank lines in content, so no need to worry about
+/// > empty tokens.
+///
+/// ```markdown
+/// a <!--a
+///   |b--> b
+/// ```
 pub fn after_line_ending_prefix(
     tokenizer: &mut Tokenizer,
     code: Code,
@@ -464,17 +694,4 @@ pub fn after_line_ending_prefix(
 ) -> StateFnResult {
     tokenizer.enter(TokenType::HtmlTextData);
     return_state(tokenizer, code)
-}
-
-/// To do.
-pub fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::Char('>') => {
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::HtmlTextData);
-            tokenizer.exit(TokenType::HtmlText);
-            (State::Ok, None)
-        }
-        _ => (State::Nok, None),
-    }
 }

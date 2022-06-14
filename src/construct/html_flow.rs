@@ -24,7 +24,7 @@
 //! attribute_value ::= '"' *( line - '"' ) '"' | "'" *( line - "'" )  "'" | 1*( line - space_or_tab - '"' - "'" - '/' - '<' - '=' - '>' - '`')
 //!
 //! whitespace ::= 1*space_or_tab
-//! whitespace_optional ::= [ space_or_tab ]
+//! whitespace_optional ::= [ whitespace ]
 //! line ::= code - eol
 //! eol ::= '\r' | '\r\n' | '\n'
 //! space_or_tab ::= ' ' | '\t'
@@ -38,6 +38,11 @@
 //! By extension, another notable property of the grammar is that it can
 //! result in invalid HTML, in that it allows things that wouldn’t work or
 //! wouldn’t work well in HTML, such as mismatched tags.
+//!
+//! Interestingly, most of the productions above have a clear opening and
+//! closing condition (raw, comment, insutrction, declaration, cdata), but the
+//! closing condition does not need to be satisfied.
+//! In this case, the parser never has to backtrack.
 //!
 //! Because the **basic** and **complete** productions in the grammar form with
 //! a tag, followed by more stuff, and stop at a blank line, it is possible to
@@ -59,8 +64,8 @@
 //! The **complete** production of HTML (flow) is not allowed to interrupt
 //! content.
 //! That means that a blank line is needed between a paragraph and it.
-//! However, HTML (text) has a similar production, which will typically kick-in
-//! instead.
+//! However, [HTML (text)][html_text] has a similar production, which will
+//! typically kick-in instead.
 //!
 //! The list of tag names allowed in the **raw** production are defined in
 //! [`HTML_RAW_NAMES`][html_raw_names].
@@ -81,11 +86,10 @@
 //! *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
 //!
 //! [flow]: crate::content::flow
+//! [html_text]: crate::construct::html_text
 //! [html_raw_names]: crate::constant::HTML_RAW_NAMES
 //! [html_block_names]: crate::constant::HTML_BLOCK_NAMES
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
-//!
-//! <!-- To do: link html (text) -->
 
 use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX};
 use crate::construct::{blank_line::start as blank_line, partial_whitespace::start as whitespace};
@@ -146,6 +150,7 @@ struct Info {
 /// ```markdown
 /// |<x />
 /// ```
+///
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::HtmlFlow);
     tokenizer.enter(TokenType::HtmlFlowData);
@@ -188,8 +193,8 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///
 /// ```markdown
 /// <|x />
-/// <|!doctype />
-/// <|!--xxx--/>
+/// <|!doctype>
+/// <|!--xxx-->
 /// ```
 fn open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
     match code {
@@ -197,7 +202,7 @@ fn open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             (
                 State::Fn(Box::new(|tokenizer, code| {
-                    declaration_start(tokenizer, info, code)
+                    declaration_open(tokenizer, info, code)
                 })),
                 None,
             )
@@ -238,11 +243,11 @@ fn open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
 /// After `<!`, so inside a declaration, comment, or CDATA.
 ///
 /// ```markdown
-/// <!|doctype />
-/// <!|--xxx--/>
+/// <!|doctype>
+/// <!|--xxx-->
 /// <!|[CDATA[>&<]]>
 /// ```
-fn declaration_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn declaration_open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
     match code {
         Code::Char('-') => {
             tokenizer.consume(code);
@@ -287,7 +292,7 @@ fn declaration_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> State
 /// After `<!-`, inside a comment, before another `-`.
 ///
 /// ```markdown
-/// <!-|-xxx--/>
+/// <!-|-xxx-->
 /// ```
 fn comment_open_inside(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
     match code {
