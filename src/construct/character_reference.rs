@@ -189,7 +189,7 @@ fn value(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 
             if let Kind::Named = info.kind {
                 if !CHARACTER_REFERENCE_NAMES.contains(&value.as_str()) {
-                    return (State::Nok, Some(vec![code]));
+                    return (State::Nok, None);
                 }
             }
 

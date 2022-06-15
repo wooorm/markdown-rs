@@ -374,7 +374,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         CharacterReferenceKind::Named => decode_named(ref_string),
                     };
 
-                    buf_tail_mut(buffers).push(value);
+                    buf_tail_mut(buffers).push(encode(&value));
 
                     character_reference_kind = None;
                 }
