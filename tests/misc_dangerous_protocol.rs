@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::{micromark};
+use micromark::micromark;
 
 #[test]
 fn dangerous_protocol_autolink() {

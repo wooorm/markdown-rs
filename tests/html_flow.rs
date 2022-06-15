@@ -97,7 +97,7 @@ p {color:blue;}
         "should support raw tags w/o ending"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<style>p{color:red;}</style>\n*foo*", DANGER),
     //     "<style>p{color:red;}</style>\n<p><em>foo</em></p>",
@@ -128,7 +128,7 @@ p {color:blue;}
         "should not support an eof after a self-closing slash"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<script/\n*asd*", DANGER),
     //     "<p>&lt;script/\n<em>asd</em></p>",
@@ -147,12 +147,11 @@ p {color:blue;}
         "should support a line ending after a self-closing tag"
     );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<script/>a", DANGER),
-    //     "<p><script/>a</p>",
-    //     "should not support other characters after a self-closing tag"
-    // );
+    assert_eq!(
+        micromark_with_options("<script/>a", DANGER),
+        "<p><script/>a</p>",
+        "should not support other characters after a self-closing tag"
+    );
 
     assert_eq!(
         micromark_with_options("<script>a", DANGER),

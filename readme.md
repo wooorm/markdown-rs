@@ -68,6 +68,7 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (1) text in heading
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
@@ -76,6 +77,7 @@ cargo doc --document-private-items
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (3) Clean compiler
 - [ ] (1) Use preferred line ending style in markdown
+- [ ] (1) Add tests for `default-line-ending`, `line-ending`
 - [ ] (1) Handle BOM at start
 - [ ] (1) Make sure tabs are handled properly and that positional info is perfect
 - [ ] (1) Make sure crlf/cr/lf are working perfectly

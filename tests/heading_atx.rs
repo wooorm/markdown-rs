@@ -56,13 +56,13 @@ fn heading_atx() {
         "should not support a heading for a number sign not followed by whitespace (2)"
     );
 
-    // To do: phrasing.
-    // assert_eq!(
-    //     micromark("\\## foo"),
-    //     "<p>## foo</p>",
-    //     "should not support a heading for an escaped number sign"
-    // );
+    assert_eq!(
+        micromark("\\## foo"),
+        "<p>## foo</p>",
+        "should not support a heading for an escaped number sign"
+    );
 
+    // To do: attention.
     // assert_eq!(
     //     micromark("# foo *bar* \\*baz\\*"),
     //     "<h1>foo <em>bar</em> *baz*</h1>",

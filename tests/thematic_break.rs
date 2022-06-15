@@ -118,7 +118,7 @@ fn thematic_break() {
         "should not support thematic breaks w/ other characters (3)"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark(" *-*"),
     //     "<p><em>-</em></p>",
@@ -138,12 +138,11 @@ fn thematic_break() {
     //     "should support thematic breaks mixed w/ lists (2)"
     // );
 
-    // To do: paragraph.
-    // assert_eq!(
-    //     micromark("Foo\n***\nbar"),
-    //     "<p>Foo</p>\n<hr />\n<p>bar</p>",
-    //     "should support thematic breaks interrupting paragraphs"
-    // );
+    assert_eq!(
+        micromark("Foo\n***\nbar"),
+        "<p>Foo</p>\n<hr />\n<p>bar</p>",
+        "should support thematic breaks interrupting paragraphs"
+    );
 
     // To do: setext.
     // assert_eq!(
