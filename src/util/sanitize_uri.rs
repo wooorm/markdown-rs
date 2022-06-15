@@ -5,9 +5,9 @@ use crate::util::encode::encode;
 /// Make a value safe for injection as a URL.
 ///
 /// This encodes unsafe characters with percent-encoding and skips already
-/// encoded sequences (see `normalize_uri` below).
+/// encoded sequences (see [`normalize_uri`][] below).
 /// Further unsafe characters are encoded as character references (see
-/// `encode`).
+/// [`encode`][]).
 ///
 /// Then, a vec of (lowercase) allowed protocols can be given, in which case
 /// the URL is sanitized.

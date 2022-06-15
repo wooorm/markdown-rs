@@ -38,6 +38,23 @@
 //! <p><a href="https://example.com/alpha%20bravo">https://example.com/alpha%20bravo</a></p>
 //! ```
 //!
+//! There are several cases where incorrect encoding of URLs would, in other
+//! languages, result in a parse error.
+//! In markdown, there are no errors, and URLs are normalized.
+//! In addition, unicode characters are percent encoded
+//! ([`sanitize_uri`][sanitize_uri]).
+//! For example:
+//!
+//! ```markdown
+//! <https://a👍b%>
+//! ```
+//!
+//! Yields:
+//!
+//! ```html
+//! <p><a href="https://a%F0%9F%91%8Db%25">https://a👍b%</a></p>
+//! ```
+//!
 //! Interestingly, there are a couple of things that are valid autolinks in
 //! markdown but in HTML would be valid tags, such as `<svg:rect>` and
 //! `<xml:lang/>`.
@@ -73,6 +90,7 @@
 //! [text]: crate::content::text
 //! [autolink_scheme_size_max]: crate::constant::AUTOLINK_SCHEME_SIZE_MAX
 //! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX
+//! [sanitize_uri]: crate::util::sanitize_uri
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //!
 //! <!-- To do: add explanation of sanitation. -->
