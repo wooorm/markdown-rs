@@ -68,7 +68,6 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (1) text in heading
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
@@ -167,6 +166,7 @@ cargo doc --document-private-items
 - [x] (1) Reorganize to split util
 - [x] (1) Add examples to `CompileOptions` docs
 - [x] (3) Fix deep subtokenization
+- [x] (1) text in heading
 
 ### Extensions
 

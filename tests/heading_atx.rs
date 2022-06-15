@@ -148,24 +148,23 @@ fn heading_atx() {
         "should not support a closing sequence w/o whitespace before it"
     );
 
-    // Phrasing.
-    // assert_eq!(
-    //     micromark("### foo \\###"),
-    //     "<h3>foo ###</h3>",
-    //     "should not support an “escaped” closing sequence (1)"
-    // );
+    assert_eq!(
+        micromark("### foo \\###"),
+        "<h3>foo ###</h3>",
+        "should not support an “escaped” closing sequence (1)"
+    );
 
-    // assert_eq!(
-    //     micromark("## foo #\\##"),
-    //     "<h2>foo ###</h2>",
-    //     "should not support an “escaped” closing sequence (2)"
-    // );
+    assert_eq!(
+        micromark("## foo #\\##"),
+        "<h2>foo ###</h2>",
+        "should not support an “escaped” closing sequence (2)"
+    );
 
-    // assert_eq!(
-    //     micromark("# foo \\#"),
-    //     "<h1>foo #</h1>",
-    //     "should not support an “escaped” closing sequence (3)"
-    // );
+    assert_eq!(
+        micromark("# foo \\#"),
+        "<h1>foo #</h1>",
+        "should not support an “escaped” closing sequence (3)"
+    );
 
     assert_eq!(
         micromark("****\n## foo\n****"),
@@ -179,7 +178,6 @@ fn heading_atx() {
         "should support atx headings interrupting paragraphs"
     );
 
-    // Line endings.
     assert_eq!(
         micromark("## \n#\n### ###"),
         "<h2></h2>\n<h1></h1>\n<h3></h3>",

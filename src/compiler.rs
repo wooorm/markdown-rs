@@ -117,7 +117,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     buf_tail_mut(buffers).push("<pre><code".to_string());
                     code_fenced_fences_count = Some(0);
                 }
-                TokenType::CodeFencedFenceInfo | TokenType::CodeFencedFenceMeta => {
+                TokenType::AtxHeadingText
+                | TokenType::CodeFencedFenceInfo
+                | TokenType::CodeFencedFenceMeta => {
                     buffer(buffers);
                 }
                 TokenType::HtmlFlow => {
@@ -139,7 +141,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::AtxHeading
                 | TokenType::AtxHeadingSequence
                 | TokenType::AtxHeadingWhitespace
-                | TokenType::AtxHeadingText
                 | TokenType::LineEnding
                 | TokenType::ThematicBreak
                 | TokenType::ThematicBreakSequence
@@ -297,6 +298,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     }
                 }
                 TokenType::AtxHeadingText => {
+                    let result = resume(buffers);
+
                     if let Some(ref buf) = atx_heading_buffer {
                         if !buf.is_empty() {
                             buf_tail_mut(buffers).push(encode(buf));
@@ -306,8 +309,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         atx_heading_buffer = Some("".to_string());
                     }
 
-                    let slice = encode(&serialize(codes, &from_exit_event(events, index), false));
-                    buf_tail_mut(buffers).push(slice);
+                    buf_tail_mut(buffers).push(encode(&result));
                 }
                 TokenType::AtxHeading => {
                     let rank = atx_opening_sequence_size

@@ -117,6 +117,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         Code::Char(_) => {
             tokenizer.enter(TokenType::AtxHeadingText);
+            tokenizer.enter(TokenType::ChunkText);
             data(tokenizer, code)
         }
     }
@@ -165,6 +166,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\t' | '\n' | '\r' | ' ') => {
+            tokenizer.exit(TokenType::ChunkText);
             tokenizer.exit(TokenType::AtxHeadingText);
             at_break(tokenizer, code)
         }
