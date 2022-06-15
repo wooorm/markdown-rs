@@ -2576,3 +2576,49 @@ pub const CHARACTER_REFERENCE_VALUES: [&str; 2222] = [
     "⟶", "𝓍", "⨆", "⨄", "△", "⋁", "⋀", "ý", "ý", "я", "ŷ", "ы", "¥", "¥", "𝔶", "ї", "𝕪", "𝓎", "ю",
     "ÿ", "ÿ", "ź", "ž", "з", "ż", "ℨ", "ζ", "𝔷", "ж", "⇝", "𝕫", "𝓏", "‍", "‌",
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn constants() {
+        assert_eq!(
+            CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
+            format!("{}", 0x10ffff).len(),
+            "`CHARACTER_REFERENCE_DECIMAL_SIZE_MAX`"
+        );
+
+        assert_eq!(
+            CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
+            format!("{:x}", 0x10ffff).len(),
+            "`CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX`"
+        );
+
+        assert_eq!(
+            CHARACTER_REFERENCE_NAMED_SIZE_MAX,
+            longest(&CHARACTER_REFERENCE_NAMES).unwrap().len(),
+            "`CHARACTER_REFERENCE_NAMED_SIZE_MAX`"
+        );
+
+        assert_eq!(
+            HTML_RAW_SIZE_MAX,
+            longest(&HTML_RAW_NAMES).unwrap().len(),
+            "`HTML_RAW_SIZE_MAX`"
+        );
+    }
+
+    fn longest<'a>(list: &[&'a str]) -> Option<&'a str> {
+        let mut max = 0;
+        let mut result = None;
+        for name in list.iter() {
+            let len = name.len();
+            if len > max {
+                max = len;
+                result = Some(*name);
+            }
+        }
+
+        result
+    }
+}
