@@ -74,12 +74,11 @@ fn character_reference() {
         "should support character references in code language"
     );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("`f&ouml;&ouml;`"),
-    //     "<p><code>f&amp;ouml;&amp;ouml;</code></p>",
-    //     "should not support character references in text code"
-    // );
+    assert_eq!(
+        micromark("`f&ouml;&ouml;`"),
+        "<p><code>f&amp;ouml;&amp;ouml;</code></p>",
+        "should not support character references in text code"
+    );
 
     assert_eq!(
         micromark("    f&ouml;f&ouml;"),

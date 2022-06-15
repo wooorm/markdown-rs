@@ -96,8 +96,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
 
     // let mut slurp_all_line_endings = false;
 
-    println!("events: {:#?}", events);
-
     while index < events.len() {
         let event = &events[index];
         let token_type = &event.token_type;
@@ -133,6 +131,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         ignore_encode = true;
                     }
                 }
+                TokenType::CodeText => {
+                    buf_tail_mut(buffers).push("<code>".to_string());
+                    buffer(buffers);
+                }
                 TokenType::Content
                 | TokenType::AtxHeading
                 | TokenType::AtxHeadingSequence
@@ -152,6 +154,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CodeFencedFence
                 | TokenType::CodeFencedFenceSequence
                 | TokenType::CodeFencedFenceWhitespace
+                | TokenType::CodeTextSequence
+                | TokenType::CodeTextData
+                | TokenType::CodeTextLineEnding
                 | TokenType::Data
                 | TokenType::CharacterEscape
                 | TokenType::CharacterEscapeMarker
@@ -181,6 +186,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::Whitespace
                 | TokenType::CodeFencedFenceSequence
                 | TokenType::CodeFencedFenceWhitespace
+                | TokenType::CodeTextSequence
                 | TokenType::CharacterEscape
                 | TokenType::CharacterEscapeMarker
                 | TokenType::CharacterReference
@@ -264,6 +270,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         false,
                     )));
                 }
+
                 // `AtxHeadingWhitespace` is ignored after the opening sequence,
                 // before the closing sequence, and after the closing sequence.
                 // But it is used around intermediate sequences.
@@ -290,7 +297,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     }
                 }
                 TokenType::AtxHeadingText => {
-                    println!("text: {:?}", atx_heading_buffer);
                     if let Some(ref buf) = atx_heading_buffer {
                         if !buf.is_empty() {
                             buf_tail_mut(buffers).push(encode(buf));
@@ -301,7 +307,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     }
 
                     let slice = encode(&serialize(codes, &from_exit_event(events, index), false));
-                    println!("slice: {:?}", slice);
                     buf_tail_mut(buffers).push(slice);
                 }
                 TokenType::AtxHeading => {
@@ -340,8 +345,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     // } else
                     if slurp_one_line_ending {
                         slurp_one_line_ending = false;
-                    // } else if code_text_inside {
-                    //     buf_tail_mut(buffers).push(" ".to_string());
                     } else {
                         buf_tail_mut(buffers).push(encode(&serialize(
                             codes,
@@ -378,8 +381,33 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
 
                     character_reference_kind = None;
                 }
+                TokenType::CodeText => {
+                    let result = resume(buffers);
+                    let mut chars = result.chars();
+                    let mut trim = false;
+
+                    if Some(' ') == chars.next() && Some(' ') == chars.next_back() {
+                        let mut next = chars.next();
+                        while next != None && !trim {
+                            if Some(' ') != next {
+                                trim = true;
+                            }
+                            next = chars.next();
+                        }
+                    }
+
+                    buf_tail_mut(buffers).push(if trim {
+                        result[1..(result.len() - 1)].to_string()
+                    } else {
+                        result
+                    });
+                    buf_tail_mut(buffers).push("</code>".to_string());
+                }
+                TokenType::CodeTextLineEnding => {
+                    buf_tail_mut(buffers).push(" ".to_string());
+                }
                 // This branch below currently acts as the resulting `data` tokens.
-                TokenType::Data | TokenType::CharacterEscapeValue => {
+                TokenType::CodeTextData | TokenType::Data | TokenType::CharacterEscapeValue => {
                     // last_was_tag = false;
                     buf_tail_mut(buffers).push(encode(&serialize(
                         codes,

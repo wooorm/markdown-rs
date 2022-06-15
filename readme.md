@@ -109,7 +109,7 @@ cargo doc --document-private-items
 - [x] character reference
 - [x] code (fenced)
 - [x] code (indented)
-- [ ] (1) code (text)
+- [x] (1) code (text)
 - [ ] (3) content
 - [ ] (3) definition
 - [ ] (1) hard break escape
@@ -146,7 +146,7 @@ cargo doc --document-private-items
   - [x] autolink
   - [x] character escape
   - [x] character reference
-  - [ ] code (text)
+  - [x] code (text)
   - [ ] hard break escape
   - [x] html (text)
   - [ ] label end

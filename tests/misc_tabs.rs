@@ -181,40 +181,35 @@ fn tabs_text() {
         "should support character reference resolving to a tab"
     );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("`\tx`"),
-    //     "<p><code>\tx</code></p>",
-    //     "should support a tab starting code"
-    // );
+    assert_eq!(
+        micromark("`\tx`"),
+        "<p><code>\tx</code></p>",
+        "should support a tab starting code"
+    );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("`x\t`"),
-    //     "<p><code>x\t</code></p>",
-    //     "should support a tab ending code"
-    // );
+    assert_eq!(
+        micromark("`x\t`"),
+        "<p><code>x\t</code></p>",
+        "should support a tab ending code"
+    );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("`\tx\t`"),
-    //     "<p><code>\tx\t</code></p>",
-    //     "should support tabs around code"
-    // );
+    assert_eq!(
+        micromark("`\tx\t`"),
+        "<p><code>\tx\t</code></p>",
+        "should support tabs around code"
+    );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("`\tx `"),
-    //     "<p><code>\tx </code></p>",
-    //     "should support a tab starting, and a space ending, code"
-    // );
+    assert_eq!(
+        micromark("`\tx `"),
+        "<p><code>\tx </code></p>",
+        "should support a tab starting, and a space ending, code"
+    );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("` x\t`"),
-    //     "<p><code> x\t</code></p>",
-    //     "should support a space starting, and a tab ending, code"
-    // );
+    assert_eq!(
+        micromark("` x\t`"),
+        "<p><code> x\t</code></p>",
+        "should support a space starting, and a tab ending, code"
+    );
 
     // To do: trim trailing whitespace.
     // // Note: CM does not strip it in this case.

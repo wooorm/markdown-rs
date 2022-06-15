@@ -18,9 +18,9 @@
 //! See [*§ 4.4.3 The `pre` element*][html-pre] and the [*§ 4.5.15 The `code`
 //! element*][html-code] in the HTML spec for more info.
 //!
-//! In markdown, it is also possible to use code (text) in the text content
-//! type.
-//! It is also possible to create code with the [code (fenced)][code-fenced]
+//! In markdown, it is also possible to use [code (text)][code_text] in the
+//! [text][] content type.
+//! It is also possible to create code with the [code (fenced)][code_fenced]
 //! construct.
 //! That construct is more explicit, more similar to code (text), and has
 //! support for specifying the programming language that the code is in, so it
@@ -32,11 +32,11 @@
 //! *   [*§ 4.4 Indented code blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#indented-code-blocks)
 //!
 //! [flow]: crate::content::flow
-//! [code-fenced]: crate::construct::code_fenced
+//! [text]: crate::content::text
+//! [code_text]: crate::construct::code_text
+//! [code_fenced]: crate::construct::code_fenced
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
-//!
-//! <!-- To do: link `code_text` -->
 
 use crate::constant::TAB_SIZE;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};

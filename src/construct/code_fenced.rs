@@ -66,10 +66,10 @@
 //! The `info` and `meta` parts are interpreted as the [string][] content type.
 //! That means that character escapes and character reference are allowed.
 //!
-//! In markdown, it is also possible to use code (text) in the [text][] content
-//! type.
+//! In markdown, it is also possible to use [code (text)][code_text] in the
+//! [text][] content type.
 //! It is also possible to create code with the
-//! [code (indented)][code-indented] construct.
+//! [code (indented)][code_indented] construct.
 //! That construct is less explicit, different from code (text), and has no
 //! support for specifying the programming language, so it is recommended to
 //! use code (fenced) instead of code (indented).
@@ -82,11 +82,10 @@
 //! [flow]: crate::content::flow
 //! [string]: crate::content::string
 //! [text]: crate::content::text
-//! [code-indented]: crate::construct::code_indented
+//! [code_indented]: crate::construct::code_indented
+//! [code_text]: crate::construct::code_text
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
-//!
-//! <!-- To do: link `code_text` -->
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
 use crate::construct::partial_whitespace::start as whitespace;
@@ -251,14 +250,12 @@ fn info_inside(
 ) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            println!("to do: subtokenize: {:?}", codes);
             tokenizer.exit(TokenType::ChunkString);
             tokenizer.exit(TokenType::CodeFencedFenceInfo);
             tokenizer.exit(TokenType::CodeFencedFence);
             at_break(tokenizer, info, code)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            println!("to do: subtokenize: {:?}", codes);
             tokenizer.exit(TokenType::ChunkString);
             tokenizer.exit(TokenType::CodeFencedFenceInfo);
             tokenizer.attempt(

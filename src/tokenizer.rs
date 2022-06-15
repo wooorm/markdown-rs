@@ -51,6 +51,11 @@ pub enum TokenType {
     CodeIndented,
     CodeIndentedPrefixWhitespace,
 
+    CodeText,
+    CodeTextSequence,
+    CodeTextLineEnding,
+    CodeTextData,
+
     CodeFlowChunk,
 
     Data,
@@ -159,6 +164,8 @@ struct InternalState {
     events_len: usize,
     /// Length of the stack. It’s not allowed to decrease the stack in a check or an attempt.
     stack_len: usize,
+    /// Previous code.
+    previous: Code,
     /// Current code.
     current: Code,
     /// `index` in codes of the current code.
@@ -182,6 +189,8 @@ pub struct Tokenizer {
     ///
     /// Tracked to make sure everything’s valid.
     stack: Vec<TokenType>,
+    /// Previous character code.
+    pub previous: Code,
     /// Current character code.
     current: Code,
     /// `index` in codes of the current code.
@@ -194,6 +203,7 @@ impl Tokenizer {
     /// Create a new tokenizer.
     pub fn new(point: Point, index: usize) -> Tokenizer {
         Tokenizer {
+            previous: Code::None,
             current: Code::None,
             column_start: HashMap::new(),
             index,
@@ -218,7 +228,6 @@ impl Tokenizer {
     }
 
     fn account_for_potential_skip(&mut self) {
-        println!("account?: {:?} {:?}", self.point, self.index);
         match self.column_start.get(&self.point.line) {
             None => {}
             Some(next_column) => {
@@ -227,7 +236,6 @@ impl Tokenizer {
                     self.point.column = col;
                     self.point.offset += col - 1;
                     self.index += col - 1;
-                    println!("account! {:?} {:?}", self.point, self.index);
                 }
             }
         };
@@ -266,6 +274,7 @@ impl Tokenizer {
         }
 
         self.index += 1;
+        self.previous = code;
         // Mark as consumed.
         self.consumed = true;
     }
@@ -321,6 +330,7 @@ impl Tokenizer {
     fn capture(&mut self) -> InternalState {
         InternalState {
             index: self.index,
+            previous: self.previous,
             current: self.current,
             point: self.point.clone(),
             events_len: self.events.len(),
@@ -331,6 +341,7 @@ impl Tokenizer {
     /// Apply the internal state.
     fn free(&mut self, previous: InternalState) {
         self.index = previous.index;
+        self.previous = previous.previous;
         self.current = previous.current;
         self.point = previous.point;
         assert!(
@@ -429,6 +440,7 @@ impl Tokenizer {
             Some(Box::new(b)),
             None,
             None,
+            None,
             done,
         )
     }
@@ -446,16 +458,19 @@ impl Tokenizer {
             Some(Box::new(b)),
             Some(Box::new(c)),
             None,
+            None,
             done,
         )
     }
 
-    pub fn attempt_4(
+    #[allow(clippy::many_single_char_names)]
+    pub fn attempt_5(
         &mut self,
         a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        e: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         self.call_multiple(
@@ -464,10 +479,12 @@ impl Tokenizer {
             Some(Box::new(b)),
             Some(Box::new(c)),
             Some(Box::new(d)),
+            Some(Box::new(e)),
             done,
         )
     }
 
+    #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
     pub fn call_multiple(
         &mut self,
         check: bool,
@@ -475,6 +492,7 @@ impl Tokenizer {
         b: Option<Box<StateFn>>,
         c: Option<Box<StateFn>>,
         d: Option<Box<StateFn>>,
+        e: Option<Box<StateFn>>,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         if let Some(head) = a {
@@ -483,7 +501,7 @@ impl Tokenizer {
                     done(ok)
                 } else {
                     Box::new(move |tokenizer: &mut Tokenizer, code| {
-                        tokenizer.call_multiple(check, b, c, d, None, done)(tokenizer, code)
+                        tokenizer.call_multiple(check, b, c, d, e, None, done)(tokenizer, code)
                     })
                 }
             };
@@ -640,7 +658,6 @@ pub fn as_codes(value: &str) -> Vec<Code> {
                 '\t' => {
                     // To do: is this correct?
                     let virtual_spaces = TAB_SIZE - (column % TAB_SIZE);
-                    println!("tabs, expand {:?}, {:?}", column, virtual_spaces);
                     codes.push(Code::Char(char));
                     column += 1;
                     let mut index = 0;

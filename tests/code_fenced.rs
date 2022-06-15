@@ -15,12 +15,11 @@ fn code_fenced() {
         "should support fenced code w/ tildes"
     );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("``\nfoo\n``"),
-    //     "<p><code>foo</code></p>",
-    //     "should not support fenced code w/ less than three markers"
-    // );
+    assert_eq!(
+        micromark("``\nfoo\n``"),
+        "<p><code>foo</code></p>",
+        "should not support fenced code w/ less than three markers"
+    );
 
     assert_eq!(
         micromark("```\naaa\n~~~\n```"),
@@ -119,12 +118,11 @@ fn code_fenced() {
         "should not support an indented closing sequence w/ 4 spaces"
     );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("``` ```\naaa"),
-    //     "<p><code> </code>\naaa</p>",
-    //     "should not support grave accents in the opening fence after the opening sequence"
-    // );
+    assert_eq!(
+        micromark("``` ```\naaa"),
+        "<p><code> </code>\naaa</p>",
+        "should not support grave accents in the opening fence after the opening sequence"
+    );
 
     assert_eq!(
         micromark("~~~~~~\naaa\n~~~ ~~\n"),
@@ -163,12 +161,11 @@ fn code_fenced() {
         "should support the info string as a `language-` class, but not the meta string"
     );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("``` aa ```\nfoo"),
-    //     "<p><code>aa</code>\nfoo</p>",
-    //     "should not support grave accents in the meta string"
-    // );
+    assert_eq!(
+        micromark("``` aa ```\nfoo"),
+        "<p><code>aa</code>\nfoo</p>",
+        "should not support grave accents in the meta string"
+    );
 
     assert_eq!(
         micromark("~~~ aa ``` ~~~\nfoo\n~~~"),

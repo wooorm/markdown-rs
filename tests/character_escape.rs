@@ -37,12 +37,11 @@ fn character_escape() {
     //     "should escape a line break"
     // );
 
-    // To do: code (text).
-    // assert_eq!(
-    //     micromark("`` \\[\\` ``"),
-    //     "<p><code>\\[\\`</code></p>",
-    //     "should not escape in text code"
-    // );
+    assert_eq!(
+        micromark("`` \\[\\` ``"),
+        "<p><code>\\[\\`</code></p>",
+        "should not escape in text code"
+    );
 
     assert_eq!(
         micromark("    \\[\\]"),

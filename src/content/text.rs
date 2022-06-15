@@ -9,7 +9,7 @@
 //! *   Attention
 //! *   [HTML (text)][crate::construct::html_text]
 //! *   Hard break escape
-//! *   Code (text)
+//! *   [Code (text)][crate::construct::code_text]
 //! *   Line ending
 //! *   Label start (image)
 //! *   Label start (link)
@@ -18,7 +18,8 @@
 
 use crate::construct::{
     autolink::start as autolink, character_escape::start as character_escape,
-    character_reference::start as character_reference, html_text::start as html_text,
+    character_reference::start as character_reference, code_text::start as code_text,
+    html_text::start as html_text,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -34,11 +35,12 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt_4(
+        _ => tokenizer.attempt_5(
             character_reference,
             character_escape,
             autolink,
             html_text,
+            code_text,
             |ok| Box::new(if ok { start } else { before_data }),
         )(tokenizer, code),
     }
@@ -80,7 +82,7 @@ fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Ok, None)
         }
         // To do: somehow get these markers from constructs.
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '&' | '\\' | '<') => {
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '&' | '<' | '\\' | '`') => {
             tokenizer.exit(TokenType::Data);
             start(tokenizer, code)
         }
