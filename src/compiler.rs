@@ -152,6 +152,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::Whitespace
                 | TokenType::HardBreakEscape
                 | TokenType::HardBreakEscapeMarker
+                | TokenType::HardBreakTrailing
+                | TokenType::HardBreakTrailingSpace
                 | TokenType::HtmlFlowData
                 | TokenType::HtmlTextData
                 | TokenType::CodeFencedFence
@@ -195,6 +197,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CharacterReference
                 | TokenType::CharacterReferenceMarkerSemi
                 | TokenType::HardBreakEscapeMarker
+                | TokenType::HardBreakTrailingSpace
                 | TokenType::Autolink
                 | TokenType::AutolinkMarker => {}
                 TokenType::HtmlFlow | TokenType::HtmlText => {
@@ -211,7 +214,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 TokenType::Paragraph => {
                     buf_tail_mut(buffers).push("</p>".to_string());
                 }
-                TokenType::HardBreakEscape => {
+                TokenType::HardBreakEscape | TokenType::HardBreakTrailing => {
                     buf_tail_mut(buffers).push("<br />".to_string());
                 }
                 TokenType::CodeIndented | TokenType::CodeFenced => {

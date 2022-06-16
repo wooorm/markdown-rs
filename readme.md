@@ -111,7 +111,8 @@ cargo doc --document-private-items
 - [x] (1) code (text)
 - [ ] (3) content
 - [ ] (3) definition
-- [x] (1) hard break escape
+- [x] hard break (escape)
+- [x] hard break (trailing)
 - [x] heading (atx)
 - [ ] (1) heading (setext)
 - [x] html (flow)
@@ -122,7 +123,6 @@ cargo doc --document-private-items
 - [ ] (8) list
 - [ ] (1) paragraph
 - [x] thematic break
-- [ ] (1) trailing break escape
 
 ### Content types
 
@@ -147,12 +147,12 @@ cargo doc --document-private-items
   - [x] character escape
   - [x] character reference
   - [x] code (text)
-  - [x] hard break escape
+  - [x] hard break (escape)
+  - [x] hard break (trailing)
   - [x] html (text)
   - [ ] label end
   - [ ] label start (image)
   - [ ] label start (link)
-  - [ ] trailing break escape
 - [x] string
   - [x] character escape
   - [x] character reference

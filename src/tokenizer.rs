@@ -62,6 +62,8 @@ pub enum TokenType {
 
     HardBreakEscape,
     HardBreakEscapeMarker,
+    HardBreakTrailing,
+    HardBreakTrailingSpace,
 
     HtmlFlow,
     HtmlFlowData,
@@ -445,6 +447,7 @@ impl Tokenizer {
             None,
             None,
             None,
+            None,
             done,
         )
     }
@@ -464,12 +467,13 @@ impl Tokenizer {
             None,
             None,
             None,
+            None,
             done,
         )
     }
 
     #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
-    pub fn attempt_6(
+    pub fn attempt_7(
         &mut self,
         a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
@@ -477,6 +481,7 @@ impl Tokenizer {
         d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         e: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         f: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        g: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         self.call_multiple(
@@ -487,6 +492,7 @@ impl Tokenizer {
             Some(Box::new(d)),
             Some(Box::new(e)),
             Some(Box::new(f)),
+            Some(Box::new(g)),
             done,
         )
     }
@@ -501,6 +507,7 @@ impl Tokenizer {
         d: Option<Box<StateFn>>,
         e: Option<Box<StateFn>>,
         f: Option<Box<StateFn>>,
+        g: Option<Box<StateFn>>,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         if let Some(head) = a {
@@ -509,7 +516,9 @@ impl Tokenizer {
                     done(ok)
                 } else {
                     Box::new(move |tokenizer: &mut Tokenizer, code| {
-                        tokenizer.call_multiple(check, b, c, d, e, f, None, done)(tokenizer, code)
+                        tokenizer.call_multiple(check, b, c, d, e, f, g, None, done)(
+                            tokenizer, code,
+                        )
                     })
                 }
             };

@@ -36,7 +36,7 @@ pub fn from_exit_event(events: &[Event], index: usize) -> Span {
     assert_eq!(
         exit.event_type,
         EventType::Exit,
-        "expected `get_span` to be called on `exit` event"
+        "expected `from_exit_event` to be called on `exit` event"
     );
     let mut enter_index = index - 1;
 

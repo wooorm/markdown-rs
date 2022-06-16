@@ -1,4 +1,4 @@
-//! Hard break escapes are a construct that occurs in the  [text][] content
+//! Hard break (escape) is a construct that occurs in the  [text][] content
 //! type.
 //!
 //! They’re formed with the following BNF:
@@ -8,6 +8,15 @@
 //! ; instead of ending it).
 //! hard_break_escape ::= '\\'
 //! ```
+//!
+//! Hard breaks in markdown relate to the HTML element `<br>`.
+//! See [*§ 4.5.27 The `br` element* in the HTML spec][html] for more info.
+//!
+//! It is also possible to create a hard break with a
+//! [hard break (trailing)][hard_break_trailing].
+//! That construct is not recommended because trailing spaces are typically
+//! invisible in editors, or even automatically removed, making them to use.
+//!
 //! It is also possible to escape punctuation characters with a similar
 //! construct: a [character escape][character_escape] is a backslash followed
 //! by an ASCII punctuation character.
@@ -22,12 +31,12 @@
 //! [text]: crate::content::text
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
-//!
-//! <!-- To do: link `hard_break_escape` -->
+//! [hard_break_trailing]: crate::construct::hard_break_trailing
+//! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
-/// Start of a hard break escape.
+/// Start of a hard break (escape).
 ///
 /// ```markdown
 /// a|\
@@ -45,7 +54,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// At the end of a hard break escape, after `\`.
+/// At the end of a hard break (escape), after `\`.
 ///
 /// ```markdown
 /// a\|

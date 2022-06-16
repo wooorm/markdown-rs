@@ -8,7 +8,8 @@
 //! *   [Autolink][crate::construct::autolink]
 //! *   Attention
 //! *   [HTML (text)][crate::construct::html_text]
-//! *   [Hard break escape][crate::construct::hard_break_escape]
+//! *   [Hard break (escape)][crate::construct::hard_break_escape]
+//! *   [Hard break (trailing)][crate::construct::hard_break_trailing]
 //! *   [Code (text)][crate::construct::code_text]
 //! *   Line ending
 //! *   Label start (image)
@@ -19,7 +20,8 @@
 use crate::construct::{
     autolink::start as autolink, character_escape::start as character_escape,
     character_reference::start as character_reference, code_text::start as code_text,
-    hard_break_escape::start as hard_break_escape, html_text::start as html_text,
+    hard_break_escape::start as hard_break_escape,
+    hard_break_trailing::start as hard_break_trailing, html_text::start as html_text,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -35,10 +37,11 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt_6(
+        _ => tokenizer.attempt_7(
             character_reference,
             character_escape,
             hard_break_escape,
+            hard_break_trailing,
             autolink,
             html_text,
             code_text,
@@ -78,12 +81,12 @@ fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.exit(TokenType::Data);
-            (State::Ok, None)
+            before_data(tokenizer, code)
         }
         // To do: somehow get these markers from constructs.
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '&' | '<' | '\\' | '`') => {
+        Code::Char(' ' | '&' | '<' | '\\' | '`') => {
             tokenizer.exit(TokenType::Data);
             start(tokenizer, code)
         }

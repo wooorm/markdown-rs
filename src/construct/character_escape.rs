@@ -14,7 +14,7 @@
 //! [character reference][character_reference] instead
 //! (as in, `&amp;`, `&#123;`, or say `&#x9;`).
 //! It is also possible to escape a line ending in text with a similar
-//! construct: a [hard break escape][hard_break_escape] is a backslash followed
+//! construct: a [hard break (escape)][hard_break_escape] is a backslash followed
 //! by a line ending (that is part of the construct instead of ending it).
 //!
 //! ## References

@@ -44,6 +44,12 @@ pub const AUTOLINK_SCHEME_SIZE_MAX: usize = 32;
 /// [autolink]: crate::construct::autolink
 pub const AUTOLINK_DOMAIN_SIZE_MAX: usize = 63;
 
+/// The number of spaces needed, before a line ending, for a [hard break
+/// (trailing)][hard_break_trailing] to form.
+///
+/// [hard_break_trailing]: crate::construct::hard_break_trailing
+pub const HARD_BREAK_PREFIX_SIZE_MIN: usize = 2;
+
 /// The number of markers needed for a [thematic break][thematic_break] to form.
 ///
 /// Like many things in markdown, the number is `3`.
