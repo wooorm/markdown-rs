@@ -11,7 +11,6 @@
 //! *   [Hard break (escape)][crate::construct::hard_break_escape]
 //! *   [Hard break (trailing)][crate::construct::hard_break_trailing]
 //! *   [Code (text)][crate::construct::code_text]
-//! *   Line ending
 //! *   Label start (image)
 //! *   Label start (link)
 //! *   [Character escape][crate::construct::character_escape]

@@ -55,6 +55,7 @@ fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
+        // To do: line endings.
         Code::None => {
             tokenizer.exit(TokenType::Data);
             (State::Ok, None)

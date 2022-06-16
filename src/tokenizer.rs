@@ -24,66 +24,52 @@ pub enum TokenType {
     AutolinkMarker,
     AutolinkProtocol,
     AutolinkEmail,
-
     AtxHeading,
     AtxHeadingSequence,
     AtxHeadingWhitespace,
     AtxHeadingText,
-
+    BlankLineEnding,
+    BlankLineWhitespace,
     CharacterEscape,
     CharacterEscapeMarker,
     CharacterEscapeValue,
-
     CharacterReference,
     CharacterReferenceMarker,
     CharacterReferenceMarkerNumeric,
     CharacterReferenceMarkerHexadecimal,
     CharacterReferenceMarkerSemi,
     CharacterReferenceValue,
-
     CodeFenced,
     CodeFencedFence,
     CodeFencedFenceSequence,
     CodeFencedFenceWhitespace,
     CodeFencedFenceInfo,
     CodeFencedFenceMeta,
-
+    CodeFlowChunk,
     CodeIndented,
     CodeIndentedPrefixWhitespace,
-
     CodeText,
     CodeTextSequence,
     CodeTextLineEnding,
     CodeTextData,
-
-    CodeFlowChunk,
-
+    Content,
     Data,
-
     HardBreakEscape,
     HardBreakEscapeMarker,
     HardBreakTrailing,
     HardBreakTrailingSpace,
-
     HtmlFlow,
     HtmlFlowData,
-
     HtmlText,
     HtmlTextData,
-
+    LineEnding,
+    Paragraph,
     ThematicBreak,
     ThematicBreakSequence,
     ThematicBreakWhitespace,
-
     Whitespace,
-    LineEnding,
-    BlankLineEnding,
-    BlankLineWhitespace,
 
-    Content,
-
-    Paragraph,
-
+    // Chunks are tokenizer, but unraveled by `subtokenize`.
     ChunkContent,
     ChunkString,
     ChunkText,
