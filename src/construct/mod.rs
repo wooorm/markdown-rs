@@ -29,7 +29,7 @@
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [hard break (trailing)][hard_break_trailing]
 //! *   [heading (atx)][heading_atx]
-//! *   heading (setext)
+//! *   [heading (setext)][heading_setext]
 //! *   [html (flow)][html_flow]
 //! *   [html (text)][html_text]
 //! *   label end
@@ -64,6 +64,7 @@ pub mod code_text;
 pub mod hard_break_escape;
 pub mod hard_break_trailing;
 pub mod heading_atx;
+pub mod heading_setext;
 pub mod html_flow;
 pub mod html_text;
 pub mod partial_whitespace;

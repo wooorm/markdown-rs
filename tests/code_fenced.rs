@@ -136,12 +136,11 @@ fn code_fenced() {
         "should support interrupting paragraphs"
     );
 
-    // To do: setext.
-    // assert_eq!(
-    //     micromark("foo\n---\n~~~\nbar\n~~~\n# baz"),
-    //     "<h2>foo</h2>\n<pre><code>bar\n</code></pre>\n<h1>baz</h1>",
-    //     "should support interrupting other content"
-    // );
+    assert_eq!(
+        micromark("foo\n---\n~~~\nbar\n~~~\n# baz"),
+        "<h2>foo</h2>\n<pre><code>bar\n</code></pre>\n<h1>baz</h1>",
+        "should support interrupting other content"
+    );
 
     assert_eq!(
         micromark("```ruby\ndef foo(x)\n  return 3\nend\n```"),

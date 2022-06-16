@@ -144,12 +144,11 @@ fn thematic_break() {
         "should support thematic breaks interrupting paragraphs"
     );
 
-    // To do: setext.
-    // assert_eq!(
-    //     micromark("Foo\n---\nbar"),
-    //     "<h2>Foo</h2>\n<p>bar</p>",
-    //     "should not support thematic breaks w/ dashes interrupting paragraphs (setext heading)"
-    // );
+    assert_eq!(
+        micromark("Foo\n---\nbar"),
+        "<h2>Foo</h2>\n<p>bar</p>",
+        "should not support thematic breaks w/ dashes interrupting paragraphs (setext heading)"
+    );
 
     // To do: list.
     // assert_eq!(

@@ -18,9 +18,11 @@
 //! In older markdown versions, this was not required, and headings would form
 //! without it.
 //!
-//! In markdown, it is also possible to create headings with the setext heading
-//! construct.
-//! The benefit of setext headings is that their text can include line endings.
+//! In markdown, it is also possible to create headings with a
+//! [heading (setext)][heading_setext] construct.
+//! The benefit of setext headings is that their text can include line endings,
+//! and by extensions also hard breaks (e.g., with
+//! [hard break (escape)][hard_break_escape]).
 //! However, their limit is that they cannot form `<h3>` through `<h6>`
 //! headings.
 //! Due to this limitation, it is recommended to use atx headings.
@@ -39,11 +41,11 @@
 //! *   [*§ 4.2 ATX headings* in `CommonMark`](https://spec.commonmark.org/0.30/#atx-headings)
 //!
 //! [flow]: crate::content::flow
+//! [heading_setext]: crate::construct::heading_setext
+//! [hard_break_escape]: crate::construct::hard_break_escape
 //! [html]: https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
-//!
-//! <!-- To do: link `setext` -->
 
 use crate::constant::HEADING_ATX_OPENING_FENCE_SIZE_MAX;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
@@ -55,8 +57,8 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('#') == code {
-        tokenizer.enter(TokenType::AtxHeading);
-        tokenizer.enter(TokenType::AtxHeadingSequence);
+        tokenizer.enter(TokenType::HeadingAtx);
+        tokenizer.enter(TokenType::HeadingAtxSequence);
         sequence_open(tokenizer, code, 0)
     } else {
         (State::Nok, None)
@@ -76,7 +78,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
         | Code::Char('\t' | '\n' | '\r' | ' ')
             if rank > 0 =>
         {
-            tokenizer.exit(TokenType::AtxHeadingSequence);
+            tokenizer.exit(TokenType::HeadingAtxSequence);
             at_break(tokenizer, code)
         }
         Code::Char('#') if rank < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
@@ -104,19 +106,19 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
 fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::AtxHeading);
+            tokenizer.exit(TokenType::HeadingAtx);
             (State::Ok, Some(vec![code]))
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.enter(TokenType::AtxHeadingWhitespace);
+            tokenizer.enter(TokenType::HeadingAtxWhitespace);
             whitespace(tokenizer, code)
         }
         Code::Char('#') => {
-            tokenizer.enter(TokenType::AtxHeadingSequence);
+            tokenizer.enter(TokenType::HeadingAtxSequence);
             further_sequence(tokenizer, code)
         }
         Code::Char(_) => {
-            tokenizer.enter(TokenType::AtxHeadingText);
+            tokenizer.enter(TokenType::HeadingAtxText);
             tokenizer.enter(TokenType::ChunkText);
             data(tokenizer, code)
         }
@@ -134,7 +136,7 @@ fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.consume(code);
         (State::Fn(Box::new(further_sequence)), None)
     } else {
-        tokenizer.exit(TokenType::AtxHeadingSequence);
+        tokenizer.exit(TokenType::HeadingAtxSequence);
         at_break(tokenizer, code)
     }
 }
@@ -151,7 +153,7 @@ fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Fn(Box::new(whitespace)), None)
         }
         _ => {
-            tokenizer.exit(TokenType::AtxHeadingWhitespace);
+            tokenizer.exit(TokenType::HeadingAtxWhitespace);
             at_break(tokenizer, code)
         }
     }
@@ -167,7 +169,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\t' | '\n' | '\r' | ' ') => {
             tokenizer.exit(TokenType::ChunkText);
-            tokenizer.exit(TokenType::AtxHeadingText);
+            tokenizer.exit(TokenType::HeadingAtxText);
             at_break(tokenizer, code)
         }
         _ => {

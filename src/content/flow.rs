@@ -14,17 +14,18 @@
 //! *   [Code (fenced)][crate::construct::code_fenced]
 //! *   [Code (indented)][crate::construct::code_indented]
 //! *   [Heading (atx)][crate::construct::heading_atx]
+//! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
 //! *   [Thematic break][crate::construct::thematic_break]
 //!
-//! <!-- To do: `setext` in content? Link to content. -->
+//! <!-- To do: Link to content. -->
 
 use crate::constant::TAB_SIZE;
 use crate::construct::{
     blank_line::start as blank_line, code_fenced::start as code_fenced,
     code_indented::start as code_indented, heading_atx::start as heading_atx,
-    html_flow::start as html_flow, partial_whitespace::start as whitespace,
-    thematic_break::start as thematic_break,
+    heading_setext::start as heading_setext, html_flow::start as html_flow,
+    partial_whitespace::start as whitespace, thematic_break::start as thematic_break,
 };
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
@@ -144,24 +145,20 @@ pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |***
 /// ```
 pub fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
+    tokenizer.attempt_3(heading_atx, thematic_break, heading_setext, |ok| {
         Box::new(if ok { after } else { content_before })
     })(tokenizer, code)
 }
 
-/// Before flow, but not before a heading (atx) or thematic break.
-///
-/// At this point, we’re at content (zero or more definitions and zero or one
-/// paragraph/setext heading).
+/// Before content.
 ///
 /// ```markdown
 /// |qwe
 /// ```
-// To do: currently only parses a single line.
+///
 // To do:
 // - Multiline
 // - One or more definitions.
-// - Setext heading.
 fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -174,12 +171,12 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
     }
 }
+
 /// In content.
 ///
 /// ```markdown
 /// al|pha
 /// ```
-// To do: lift limitations as documented above.
 fn content(tokenizer: &mut Tokenizer, code: Code, previous: usize) -> StateFnResult {
     match code {
         Code::None => content_end(tokenizer, code),

@@ -5,7 +5,7 @@ use crate::util::{
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
     sanitize_uri::sanitize_uri,
-    span::{from_exit_event, serialize},
+    span::{codes as codes_from_span, from_exit_event, serialize},
 };
 
 /// Configuration (optional).
@@ -78,6 +78,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
     let buffers: &mut Vec<Vec<String>> = &mut vec![vec![]];
     let mut atx_opening_sequence_size: Option<usize> = None;
     let mut atx_heading_buffer: Option<String> = None;
+    let mut heading_setext_buffer: Option<String> = None;
     let mut code_flow_seen_data: Option<bool> = None;
     let mut code_fenced_fences_count: Option<usize> = None;
     let mut slurp_one_line_ending = false;
@@ -102,10 +103,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
 
         match event.event_type {
             EventType::Enter => match token_type {
-                TokenType::AtxHeading
-                | TokenType::AtxHeadingSequence
-                | TokenType::AtxHeadingWhitespace
-                | TokenType::Autolink
+                TokenType::Autolink
                 | TokenType::AutolinkEmail
                 | TokenType::AutolinkMarker
                 | TokenType::AutolinkProtocol
@@ -134,6 +132,11 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::HardBreakEscapeMarker
                 | TokenType::HardBreakTrailing
                 | TokenType::HardBreakTrailingSpace
+                | TokenType::HeadingAtx
+                | TokenType::HeadingAtxSequence
+                | TokenType::HeadingAtxWhitespace
+                | TokenType::HeadingSetext
+                | TokenType::HeadingSetextUnderline
                 | TokenType::HtmlFlowData
                 | TokenType::HtmlTextData
                 | TokenType::LineEnding
@@ -143,9 +146,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::Whitespace => {
                     // Ignore.
                 }
-                TokenType::AtxHeadingText
-                | TokenType::CodeFencedFenceInfo
-                | TokenType::CodeFencedFenceMeta => {
+                TokenType::CodeFencedFenceInfo
+                | TokenType::CodeFencedFenceMeta
+                | TokenType::HeadingAtxText
+                | TokenType::HeadingSetextText => {
                     buffer(buffers);
                 }
                 TokenType::CodeIndented => {
@@ -199,6 +203,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::Content
                 | TokenType::HardBreakEscapeMarker
                 | TokenType::HardBreakTrailingSpace
+                | TokenType::HeadingSetext
                 | TokenType::ThematicBreakSequence
                 | TokenType::ThematicBreakWhitespace
                 | TokenType::Whitespace => {
@@ -212,52 +217,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                         &from_exit_event(events, index),
                         false,
                     )));
-                }
-                TokenType::AtxHeading => {
-                    let rank = atx_opening_sequence_size
-                        .expect("`atx_opening_sequence_size` must be set in headings");
-                    buf_tail_mut(buffers).push(format!("</h{}>", rank));
-                    atx_opening_sequence_size = None;
-                    atx_heading_buffer = None;
-                }
-                // `AtxHeadingWhitespace` is ignored after the opening sequence,
-                // before the closing sequence, and after the closing sequence.
-                // But it is used around intermediate sequences.
-                // `atx_heading_buffer` is set to `Some` by the first `AtxHeadingText`.
-                // `AtxHeadingSequence` is ignored as the opening and closing sequence,
-                // but not when intermediate.
-                TokenType::AtxHeadingSequence | TokenType::AtxHeadingWhitespace => {
-                    if let Some(buf) = atx_heading_buffer {
-                        atx_heading_buffer = Some(
-                            buf.to_string()
-                                + &encode(&serialize(
-                                    codes,
-                                    &from_exit_event(events, index),
-                                    false,
-                                )),
-                        );
-                    }
-
-                    // First fence we see.
-                    if None == atx_opening_sequence_size {
-                        let rank = serialize(codes, &from_exit_event(events, index), false).len();
-                        atx_opening_sequence_size = Some(rank);
-                        buf_tail_mut(buffers).push(format!("<h{}>", rank));
-                    }
-                }
-                TokenType::AtxHeadingText => {
-                    let result = resume(buffers);
-
-                    if let Some(ref buf) = atx_heading_buffer {
-                        if !buf.is_empty() {
-                            buf_tail_mut(buffers).push(encode(buf));
-                            atx_heading_buffer = Some("".to_string());
-                        }
-                    } else {
-                        atx_heading_buffer = Some("".to_string());
-                    }
-
-                    buf_tail_mut(buffers).push(encode(&result));
                 }
                 TokenType::AutolinkEmail => {
                     let slice = serialize(codes, &from_exit_event(events, index), false);
@@ -394,11 +353,68 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 TokenType::CodeTextLineEnding => {
                     buf_tail_mut(buffers).push(" ".to_string());
                 }
-
                 TokenType::HardBreakEscape | TokenType::HardBreakTrailing => {
                     buf_tail_mut(buffers).push("<br />".to_string());
                 }
+                TokenType::HeadingAtx => {
+                    let rank = atx_opening_sequence_size
+                        .expect("`atx_opening_sequence_size` must be set in headings");
+                    buf_tail_mut(buffers).push(format!("</h{}>", rank));
+                    atx_opening_sequence_size = None;
+                    atx_heading_buffer = None;
+                }
+                // `HeadingAtxWhitespace` is ignored after the opening sequence,
+                // before the closing sequence, and after the closing sequence.
+                // But it is used around intermediate sequences.
+                // `atx_heading_buffer` is set to `Some` by the first `HeadingAtxText`.
+                // `HeadingAtxSequence` is ignored as the opening and closing sequence,
+                // but not when intermediate.
+                TokenType::HeadingAtxSequence | TokenType::HeadingAtxWhitespace => {
+                    if let Some(buf) = atx_heading_buffer {
+                        atx_heading_buffer = Some(
+                            buf.to_string()
+                                + &encode(&serialize(
+                                    codes,
+                                    &from_exit_event(events, index),
+                                    false,
+                                )),
+                        );
+                    }
 
+                    // First fence we see.
+                    if None == atx_opening_sequence_size {
+                        let rank = serialize(codes, &from_exit_event(events, index), false).len();
+                        atx_opening_sequence_size = Some(rank);
+                        buf_tail_mut(buffers).push(format!("<h{}>", rank));
+                    }
+                }
+                TokenType::HeadingAtxText => {
+                    let result = resume(buffers);
+
+                    if let Some(ref buf) = atx_heading_buffer {
+                        if !buf.is_empty() {
+                            buf_tail_mut(buffers).push(encode(buf));
+                            atx_heading_buffer = Some("".to_string());
+                        }
+                    } else {
+                        atx_heading_buffer = Some("".to_string());
+                    }
+
+                    buf_tail_mut(buffers).push(encode(&result));
+                }
+                TokenType::HeadingSetextText => {
+                    heading_setext_buffer = Some(resume(buffers));
+                    slurp_one_line_ending = true;
+                }
+                TokenType::HeadingSetextUnderline => {
+                    let text = heading_setext_buffer
+                        .expect("`atx_opening_sequence_size` must be set in headings");
+                    let head = codes_from_span(codes, &from_exit_event(events, index))[0];
+                    let level: usize = if head == Code::Char('-') { 2 } else { 1 };
+
+                    heading_setext_buffer = None;
+                    buf_tail_mut(buffers).push(format!("<h{}>{}</h{}>", level, text, level));
+                }
                 TokenType::HtmlFlow | TokenType::HtmlText => {
                     ignore_encode = false;
                 }

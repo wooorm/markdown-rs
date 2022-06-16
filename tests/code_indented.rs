@@ -53,12 +53,11 @@ fn code_indented() {
         "should support paragraphs directly after indented code"
     );
 
-    // To do: setext.
-    // assert_eq!(
-    //   micromark("# Heading\n    foo\nHeading\n------\n    foo\n----"),
-    //   "<h1>Heading</h1>\n<pre><code>foo\n</code></pre>\n<h2>Heading</h2>\n<pre><code>foo\n</code></pre>\n<hr />",
-    //   "should mix w/ other content"
-    // );
+    assert_eq!(
+      micromark("# Heading\n    foo\nHeading\n------\n    foo\n----"),
+      "<h1>Heading</h1>\n<pre><code>foo\n</code></pre>\n<h2>Heading</h2>\n<pre><code>foo\n</code></pre>\n<hr />",
+      "should mix w/ other content"
+    );
 
     assert_eq!(
         micromark("        foo\n    bar"),

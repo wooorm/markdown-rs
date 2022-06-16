@@ -27,7 +27,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             unreachable!("expected non-eol/eof");
         }
-        _ => paragraph_initial(tokenizer, code)
+        _ => after_definitions(tokenizer, code)
         // To do: definition.
         // _ => tokenizer.attempt(definition, |ok| {
         //     Box::new(if ok {
@@ -44,10 +44,26 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |asd
 /// ```
+fn after_definitions(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::None => (State::Ok, None),
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            unreachable!("to do: handle eol after definition");
+        }
+        _ => paragraph_initial(tokenizer, code),
+    }
+}
+
+/// Before a paragraph.
+///
+/// ```markdown
+/// |asd
+/// ```
 fn paragraph_initial(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            unreachable!("expected non-eol/eof");
+        Code::None => (State::Ok, None),
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            unreachable!("to do: handle eol after definition");
         }
         _ => {
             tokenizer.enter(TokenType::Paragraph);

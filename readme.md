@@ -46,8 +46,6 @@ cargo doc --document-private-items
 
 ### Some major obstacles
 
-- [ ] (1) Setext headings: can they be solved in content, or do they have to be
-      solved in flow somehow
 - [ ] (8) Can content (and to a lesser extent string and text) operate more
       performantly than checking whether other flow constructs start a line,
       before exiting and actually attempting flow constructs?
@@ -114,7 +112,7 @@ cargo doc --document-private-items
 - [x] hard break (escape)
 - [x] hard break (trailing)
 - [x] heading (atx)
-- [ ] (1) heading (setext)
+- [x] heading (setext)
 - [x] html (flow)
 - [x] html (text)
 - [ ] (3) label end
@@ -135,11 +133,11 @@ cargo doc --document-private-items
   - [x] code (indented)
   - [x] content
   - [x] heading (atx)
+  - [x] heading (setext)
   - [x] html (flow)
   - [x] thematic break
 - [ ] (3) content
   - [ ] definition
-  - [ ] heading (setext)
   - [x] paragraph
 - [ ] (5) text
   - [ ] attention (strong, emphasis) (text)
@@ -169,6 +167,8 @@ cargo doc --document-private-items
 - [x] (1) Add examples to `CompileOptions` docs
 - [x] (3) Fix deep subtokenization
 - [x] (1) text in heading
+- [x] (1) Setext headings: can they be solved in content, or do they have to be
+      solved in flow somehow
 
 ### Extensions
 

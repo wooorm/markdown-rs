@@ -24,7 +24,7 @@
 //! For these reasons, it is recommend to not use spaces or tabs between the
 //! markers.
 //! Thematic breaks formed with dashes (without whitespace) can also form
-//! setext headings.
+//! [heading (setext)][heading_setext].
 //! As dashes and underscores frequently occur in natural language and URLs, it
 //! is recommended to use asterisks for thematic breaks to distinguish from
 //! such use.
@@ -39,9 +39,10 @@
 //! *   [*§ 4.1 Thematic breaks* in `CommonMark`](https://spec.commonmark.org/0.30/#thematic-breaks)
 //!
 //! [flow]: crate::content::flow
+//! [heading_setext]: crate::construct::heading_setext
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element
 //!
-//! <!-- To do: link `lists`, `setext heading` -->
+//! <!-- To do: link `lists` -->
 
 use crate::constant::THEMATIC_BREAK_MARKER_COUNT_MIN;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
