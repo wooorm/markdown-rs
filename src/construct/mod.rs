@@ -26,7 +26,7 @@
 //! *   [code (text)][code_text]
 //! *   content
 //! *   definition
-//! *   hard break escape
+//! *   [hard break escape][hard_break_escape]
 //! *   [heading (atx)][heading_atx]
 //! *   heading (setext)
 //! *   [html (flow)][html_flow]
@@ -60,6 +60,7 @@ pub mod character_reference;
 pub mod code_fenced;
 pub mod code_indented;
 pub mod code_text;
+pub mod hard_break_escape;
 pub mod heading_atx;
 pub mod html_flow;
 pub mod html_text;

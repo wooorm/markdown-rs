@@ -60,6 +60,9 @@ pub enum TokenType {
 
     Data,
 
+    HardBreakEscape,
+    HardBreakEscapeMarker,
+
     HtmlFlow,
     HtmlFlowData,
 
@@ -441,6 +444,7 @@ impl Tokenizer {
             None,
             None,
             None,
+            None,
             done,
         )
     }
@@ -459,18 +463,20 @@ impl Tokenizer {
             Some(Box::new(c)),
             None,
             None,
+            None,
             done,
         )
     }
 
-    #[allow(clippy::many_single_char_names)]
-    pub fn attempt_5(
+    #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
+    pub fn attempt_6(
         &mut self,
         a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         e: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        f: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         self.call_multiple(
@@ -480,6 +486,7 @@ impl Tokenizer {
             Some(Box::new(c)),
             Some(Box::new(d)),
             Some(Box::new(e)),
+            Some(Box::new(f)),
             done,
         )
     }
@@ -493,6 +500,7 @@ impl Tokenizer {
         c: Option<Box<StateFn>>,
         d: Option<Box<StateFn>>,
         e: Option<Box<StateFn>>,
+        f: Option<Box<StateFn>>,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         if let Some(head) = a {
@@ -501,7 +509,7 @@ impl Tokenizer {
                     done(ok)
                 } else {
                     Box::new(move |tokenizer: &mut Tokenizer, code| {
-                        tokenizer.call_multiple(check, b, c, d, e, None, done)(tokenizer, code)
+                        tokenizer.call_multiple(check, b, c, d, e, f, None, done)(tokenizer, code)
                     })
                 }
             };

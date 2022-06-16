@@ -11,11 +11,11 @@
 //! slash, or a slash followed by anything other than an ASCII punctuation
 //! character, is exactly that: just a slash.
 //! To escape (most) arbitrary characters, use a
-//! [character reference][] instead
+//! [character reference][character_reference] instead
 //! (as in, `&amp;`, `&#123;`, or say `&#x9;`).
 //! It is also possible to escape a line ending in text with a similar
-//! construct: a backslash followed by a line ending (that is part of the
-//! construct instead of ending it).
+//! construct: a [hard break escape][hard_break_escape] is a backslash followed
+//! by a line ending (that is part of the construct instead of ending it).
 //!
 //! ## References
 //!
@@ -24,9 +24,8 @@
 //!
 //! [string]: crate::content::string
 //! [text]: crate::content::text
-//! [character reference]: crate::construct::character_reference
-//!
-//! <!-- To do: link `hard_break_escape` -->
+//! [character_reference]: crate::construct::character_reference
+//! [hard_break_escape]: crate::construct::hard_break_escape
 
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 

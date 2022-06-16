@@ -150,6 +150,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::BlankLineEnding
                 | TokenType::BlankLineWhitespace
                 | TokenType::Whitespace
+                | TokenType::HardBreakEscape
+                | TokenType::HardBreakEscapeMarker
                 | TokenType::HtmlFlowData
                 | TokenType::HtmlTextData
                 | TokenType::CodeFencedFence
@@ -192,6 +194,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CharacterEscapeMarker
                 | TokenType::CharacterReference
                 | TokenType::CharacterReferenceMarkerSemi
+                | TokenType::HardBreakEscapeMarker
                 | TokenType::Autolink
                 | TokenType::AutolinkMarker => {}
                 TokenType::HtmlFlow | TokenType::HtmlText => {
@@ -207,6 +210,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 TokenType::Paragraph => {
                     buf_tail_mut(buffers).push("</p>".to_string());
+                }
+                TokenType::HardBreakEscape => {
+                    buf_tail_mut(buffers).push("<br />".to_string());
                 }
                 TokenType::CodeIndented | TokenType::CodeFenced => {
                     let seen_data =

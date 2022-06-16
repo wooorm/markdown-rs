@@ -30,12 +30,11 @@ fn character_escape() {
         "should escape other constructs"
     );
 
-    // To do: hard break.
-    // assert_eq!(
-    //     micromark("foo\\\nbar"),
-    //     "<p>foo<br />\nbar</p>",
-    //     "should escape a line break"
-    // );
+    assert_eq!(
+        micromark("foo\\\nbar"),
+        "<p>foo<br />\nbar</p>",
+        "should escape a line break"
+    );
 
     assert_eq!(
         micromark("`` \\[\\` ``"),
