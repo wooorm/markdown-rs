@@ -49,8 +49,8 @@ cargo doc --document-private-items
 - [ ] (8) Can content (and to a lesser extent string and text) operate more
       performantly than checking whether other flow constructs start a line,
       before exiting and actually attempting flow constructs?
-- [ ] (5) Figure out definitions and sharing those identifiers, and references
-      before definitions
+- [ ] (5) Figure out sharing definition and identifiers, and references before
+      definitions
 - [ ] (3) Interrupting: sometimes flow can or cannot start depending on the
       previous construct (typically paragraph)
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
@@ -66,6 +66,11 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (1) Add docs to partials
+- [ ] (1) Remove all `pub fn`s from constructs, except for start
+- [ ] (1) Remove `content` content type, as it is no longer needed
+- [ ] (1) Connect `ChunkString` in label, destination, title
+- [ ] (1) Add support for line endings in `string`
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
@@ -108,7 +113,7 @@ cargo doc --document-private-items
 - [x] code (indented)
 - [x] (1) code (text)
 - [ ] (3) content
-- [ ] (3) definition
+- [x] definition
 - [x] hard break (escape)
 - [x] hard break (trailing)
 - [x] heading (atx)
@@ -127,17 +132,17 @@ cargo doc --document-private-items
 - [ ] (8) container
   - [ ] block quote
   - [ ] list
-- [x] (1) flow
+- [x] flow
   - [x] blank line
   - [x] code (fenced)
   - [x] code (indented)
   - [x] content
+  - [x] definition
   - [x] heading (atx)
   - [x] heading (setext)
   - [x] html (flow)
   - [x] thematic break
-- [ ] (3) content
-  - [ ] definition
+- [x] content
   - [x] paragraph
 - [ ] (5) text
   - [ ] attention (strong, emphasis) (text)

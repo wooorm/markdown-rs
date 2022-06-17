@@ -16,7 +16,7 @@
 //! The following constructs are found in markdown:
 //!
 //! *   attention (strong, emphasis) (text)
-//! *   [autolink][autolink]
+//! *   [autolink][]
 //! *   [blank line][blank_line]
 //! *   block quote
 //! *   [character escape][character_escape]
@@ -25,7 +25,7 @@
 //! *   [code (indented)][code_indented]
 //! *   [code (text)][code_text]
 //! *   content
-//! *   definition
+//! *   [definition][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [hard break (trailing)][hard_break_trailing]
 //! *   [heading (atx)][heading_atx]
@@ -61,11 +61,15 @@ pub mod character_reference;
 pub mod code_fenced;
 pub mod code_indented;
 pub mod code_text;
+pub mod definition;
 pub mod hard_break_escape;
 pub mod hard_break_trailing;
 pub mod heading_atx;
 pub mod heading_setext;
 pub mod html_flow;
 pub mod html_text;
+pub mod partial_destination;
+pub mod partial_label;
+pub mod partial_title;
 pub mod partial_whitespace;
 pub mod thematic_break;

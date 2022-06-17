@@ -72,6 +72,9 @@ pub const HEADING_ATX_OPENING_FENCE_SIZE_MAX: usize = 6;
 /// [code_fenced]: crate::construct::code_fenced
 pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 
+/// To safeguard performance, labels are capped at a large number: `999`.
+pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
+
 /// List of HTML tag names that form the **raw** production of
 /// [HTML (flow)][html_flow].
 ///

@@ -128,6 +128,18 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CodeTextSequence
                 | TokenType::Content
                 | TokenType::Data
+                | TokenType::DefinitionLabel
+                | TokenType::DefinitionLabelMarker
+                | TokenType::DefinitionLabelData
+                | TokenType::DefinitionMarker
+                | TokenType::DefinitionDestination
+                | TokenType::DefinitionDestinationLiteral
+                | TokenType::DefinitionDestinationLiteralMarker
+                | TokenType::DefinitionDestinationRaw
+                | TokenType::DefinitionDestinationString
+                | TokenType::DefinitionTitle
+                | TokenType::DefinitionTitleMarker
+                | TokenType::DefinitionTitleString
                 | TokenType::HardBreakEscape
                 | TokenType::HardBreakEscapeMarker
                 | TokenType::HardBreakTrailing
@@ -148,6 +160,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 TokenType::CodeFencedFenceInfo
                 | TokenType::CodeFencedFenceMeta
+                | TokenType::Definition
                 | TokenType::HeadingAtxText
                 | TokenType::HeadingSetextText => {
                     buffer(buffers);
@@ -201,6 +214,18 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CodeIndentedPrefixWhitespace
                 | TokenType::CodeTextSequence
                 | TokenType::Content
+                | TokenType::DefinitionLabel
+                | TokenType::DefinitionLabelMarker
+                | TokenType::DefinitionLabelData
+                | TokenType::DefinitionMarker
+                | TokenType::DefinitionDestination
+                | TokenType::DefinitionDestinationLiteral
+                | TokenType::DefinitionDestinationLiteralMarker
+                | TokenType::DefinitionDestinationRaw
+                | TokenType::DefinitionDestinationString
+                | TokenType::DefinitionTitle
+                | TokenType::DefinitionTitleMarker
+                | TokenType::DefinitionTitleString
                 | TokenType::HardBreakEscapeMarker
                 | TokenType::HardBreakTrailingSpace
                 | TokenType::HeadingSetext
@@ -352,6 +377,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 TokenType::CodeTextLineEnding => {
                     buf_tail_mut(buffers).push(" ".to_string());
+                }
+                TokenType::Definition => {
+                    resume(buffers);
+                    slurp_one_line_ending = true;
                 }
                 TokenType::HardBreakEscape | TokenType::HardBreakTrailing => {
                     buf_tail_mut(buffers).push("<br />".to_string());

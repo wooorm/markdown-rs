@@ -50,6 +50,19 @@ pub enum TokenType {
     CodeTextData,
     Content,
     Data,
+    Definition,
+    DefinitionLabel,
+    DefinitionLabelMarker,
+    DefinitionLabelData,
+    DefinitionMarker,
+    DefinitionDestination,
+    DefinitionDestinationLiteral,
+    DefinitionDestinationLiteralMarker,
+    DefinitionDestinationRaw,
+    DefinitionDestinationString,
+    DefinitionTitle,
+    DefinitionTitleMarker,
+    DefinitionTitleString,
     HardBreakEscape,
     HardBreakEscapeMarker,
     HardBreakTrailing,
@@ -350,6 +363,39 @@ impl Tokenizer {
         self.stack.truncate(previous.stack_len);
     }
 
+    /// To do.
+    pub fn go(
+        &mut self,
+        state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        ok: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+    ) -> Box<StateFn> {
+        // To do: could we *not* capture?
+        // As this state can return `nok`, it must be wrapped in a higher attempt,
+        // which has captured things and will revert on `nok` already?
+        let previous = self.capture();
+
+        attempt_impl(
+            state,
+            vec![],
+            |result: (Vec<Code>, Vec<Code>), is_ok, tokenizer: &mut Tokenizer| {
+                let codes = if is_ok { result.1 } else { result.0 };
+                log::debug!(
+                    "go: {:?}, codes: {:?}, at {:?}",
+                    is_ok,
+                    codes,
+                    tokenizer.point
+                );
+
+                if is_ok {
+                    tokenizer.feed(&codes, ok, false)
+                } else {
+                    tokenizer.free(previous);
+                    (State::Nok, None)
+                }
+            },
+        )
+    }
+
     /// Check if `state` and its future states are successful or not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
@@ -461,6 +507,27 @@ impl Tokenizer {
         )
     }
 
+    pub fn attempt_4(
+        &mut self,
+        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
+    ) -> Box<StateFn> {
+        self.call_multiple(
+            false,
+            Some(Box::new(a)),
+            Some(Box::new(b)),
+            Some(Box::new(c)),
+            Some(Box::new(d)),
+            None,
+            None,
+            None,
+            done,
+        )
+    }
+
     #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
     pub fn attempt_7(
         &mut self,
@@ -536,8 +603,6 @@ impl Tokenizer {
         let codes = codes;
         let mut state = State::Fn(Box::new(start));
         let mut index = 0;
-
-        println!("feed: {:?} {:?}", codes, drain);
 
         self.consumed = true;
 
@@ -701,19 +766,6 @@ pub fn as_codes(value: &str) -> Vec<Code> {
 /// and clean a final eof passed back in `remainder`.
 fn check_statefn_result(result: StateFnResult) -> StateFnResult {
     let (state, mut remainder) = result;
-
-    match state {
-        State::Nok | State::Fn(_) => {
-            if let Some(ref x) = remainder {
-                assert_eq!(
-                    x.len(),
-                    0,
-                    "expected `None` to be passed back as remainder from `State::Nok`, `State::Fn`"
-                );
-            }
-        }
-        State::Ok => {}
-    }
 
     // Remove an eof.
     // For convencience, feeding back an eof is allowed, but cleaned here.

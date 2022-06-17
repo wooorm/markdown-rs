@@ -16,10 +16,9 @@
 
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
-/// Before content.
+/// Before a paragraph.
 ///
 /// ```markdown
-/// |[x]: y
 /// |asd
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
@@ -27,48 +26,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             unreachable!("expected non-eol/eof");
         }
-        _ => after_definitions(tokenizer, code)
-        // To do: definition.
-        // _ => tokenizer.attempt(definition, |ok| {
-        //     Box::new(if ok {
-        //         a
-        //     } else {
-        //         b
-        //     })
-        // })(tokenizer, code),
-    }
-}
-
-/// Before a paragraph.
-///
-/// ```markdown
-/// |asd
-/// ```
-fn after_definitions(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            unreachable!("to do: handle eol after definition");
-        }
-        _ => paragraph_initial(tokenizer, code),
-    }
-}
-
-/// Before a paragraph.
-///
-/// ```markdown
-/// |asd
-/// ```
-fn paragraph_initial(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            unreachable!("to do: handle eol after definition");
-        }
         _ => {
             tokenizer.enter(TokenType::Paragraph);
             tokenizer.enter(TokenType::ChunkText);
-            data(tokenizer, code, tokenizer.events.len() - 1)
+            inside(tokenizer, code, tokenizer.events.len() - 1)
         }
     }
 }
@@ -79,7 +40,7 @@ fn paragraph_initial(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |\&
 /// |qwe
 /// ```
-fn data(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFnResult {
     match code {
         Code::None => {
             tokenizer.exit(TokenType::ChunkText);
@@ -94,14 +55,14 @@ fn data(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFn
             tokenizer.events[previous_index].next = Some(next_index);
             tokenizer.events[next_index].previous = Some(previous_index);
             (
-                State::Fn(Box::new(move |t, c| data(t, c, next_index))),
+                State::Fn(Box::new(move |t, c| inside(t, c, next_index))),
                 None,
             )
         }
         _ => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(move |t, c| data(t, c, previous_index))),
+                State::Fn(Box::new(move |t, c| inside(t, c, previous_index))),
                 None,
             )
         }

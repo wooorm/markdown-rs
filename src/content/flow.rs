@@ -13,6 +13,7 @@
 //! *   [Blank line][crate::construct::blank_line]
 //! *   [Code (fenced)][crate::construct::code_fenced]
 //! *   [Code (indented)][crate::construct::code_indented]
+//! *   [Definition][crate::construct::definition]
 //! *   [Heading (atx)][crate::construct::heading_atx]
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
@@ -23,9 +24,10 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::{
     blank_line::start as blank_line, code_fenced::start as code_fenced,
-    code_indented::start as code_indented, heading_atx::start as heading_atx,
-    heading_setext::start as heading_setext, html_flow::start as html_flow,
-    partial_whitespace::start as whitespace, thematic_break::start as thematic_break,
+    code_indented::start as code_indented, definition::start as definition,
+    heading_atx::start as heading_atx, heading_setext::start as heading_setext,
+    html_flow::start as html_flow, partial_whitespace::start as whitespace,
+    thematic_break::start as thematic_break,
 };
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
@@ -96,6 +98,7 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
+        // To do: should all flow just start before the prefix?
         _ => tokenizer.attempt_3(code_indented, code_fenced, html_flow, |ok| {
             Box::new(if ok { after } else { before })
         })(tokenizer, code),
@@ -145,9 +148,13 @@ pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |***
 /// ```
 pub fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_3(heading_atx, thematic_break, heading_setext, |ok| {
-        Box::new(if ok { after } else { content_before })
-    })(tokenizer, code)
+    tokenizer.attempt_4(
+        heading_atx,
+        thematic_break,
+        definition,
+        heading_setext,
+        |ok| Box::new(if ok { after } else { content_before }),
+    )(tokenizer, code)
 }
 
 /// Before content.
@@ -156,9 +163,7 @@ pub fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResu
 /// |qwe
 /// ```
 ///
-// To do:
-// - Multiline
-// - One or more definitions.
+// To do: we don’t need content anymore in `micromark-rs` it seems?
 fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -247,6 +252,7 @@ fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) ->
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
         // To do: If code is disabled, indented lines are part of the content.
         _ if prefix >= TAB_SIZE => (State::Ok, None),
+        // To do: definitions, setext headings, etc?
         _ => tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
             let result = if ok {
                 (State::Nok, None)

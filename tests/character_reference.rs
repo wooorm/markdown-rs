@@ -61,7 +61,7 @@ fn character_reference() {
     //     "should support character references in resource URLs and titles"
     // );
 
-    // To do: definition.
+    // To do: link (resource).
     // assert_eq!(
     //     micromark("[foo]: /f&ouml;&ouml; \"f&ouml;&ouml;\"\n\n[foo]"),
     //     "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>",
