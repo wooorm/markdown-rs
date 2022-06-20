@@ -47,6 +47,7 @@
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
+use super::partial_space_or_tab::{space_or_tab, space_or_tab_opt};
 use crate::constant::HEADING_ATX_OPENING_FENCE_SIZE_MAX;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -56,8 +57,17 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// |## alpha
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.enter(TokenType::HeadingAtx);
+    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+}
+
+/// Start of a heading (atx), after whitespace.
+///
+/// ```markdown
+/// |## alpha
+/// ```
+pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('#') == code {
-        tokenizer.enter(TokenType::HeadingAtx);
         tokenizer.enter(TokenType::HeadingAtxSequence);
         sequence_open(tokenizer, code, 0)
     } else {
@@ -72,12 +82,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnResult {
     match code {
-        Code::None
-        | Code::CarriageReturnLineFeed
-        | Code::VirtualSpace
-        | Code::Char('\t' | '\n' | '\r' | ' ')
-            if rank > 0 =>
-        {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') if rank > 0 => {
             tokenizer.exit(TokenType::HeadingAtxSequence);
             at_break(tokenizer, code)
         }
@@ -89,6 +94,13 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
                 })),
                 None,
             )
+        }
+        _ if rank > 0 => {
+            tokenizer.exit(TokenType::HeadingAtxSequence);
+            tokenizer.go(
+                space_or_tab(TokenType::HeadingAtxWhitespace, 1, usize::MAX),
+                at_break,
+            )(tokenizer, code)
         }
         _ => (State::Nok, None),
     }
@@ -109,10 +121,10 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::HeadingAtx);
             (State::Ok, Some(vec![code]))
         }
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.enter(TokenType::HeadingAtxWhitespace);
-            whitespace(tokenizer, code)
-        }
+        Code::VirtualSpace | Code::Char('\t' | ' ') => tokenizer.go(
+            space_or_tab(TokenType::HeadingAtxWhitespace, 1, usize::MAX),
+            at_break,
+        )(tokenizer, code),
         Code::Char('#') => {
             tokenizer.enter(TokenType::HeadingAtxSequence);
             further_sequence(tokenizer, code)
@@ -138,24 +150,6 @@ fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     } else {
         tokenizer.exit(TokenType::HeadingAtxSequence);
         at_break(tokenizer, code)
-    }
-}
-
-/// In whitespace.
-///
-/// ```markdown
-/// ## alpha | bravo
-/// ```
-fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.consume(code);
-            (State::Fn(Box::new(whitespace)), None)
-        }
-        _ => {
-            tokenizer.exit(TokenType::HeadingAtxWhitespace);
-            at_break(tokenizer, code)
-        }
     }
 }
 

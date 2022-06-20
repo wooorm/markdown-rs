@@ -44,6 +44,7 @@
 //!
 //! <!-- To do: link `lists` -->
 
+use super::partial_space_or_tab::space_or_tab_opt;
 use crate::constant::THEMATIC_BREAK_MARKER_COUNT_MIN;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -53,9 +54,18 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// |***
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.enter(TokenType::ThematicBreak);
+    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+}
+
+/// Start of a thematic break, after whitespace.
+///
+/// ```markdown
+/// |***
+/// ```
+pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char == '*' || char == '-' || char == '_' => {
-            tokenizer.enter(TokenType::ThematicBreak);
             at_break(tokenizer, code, char, 0)
         }
         _ => (State::Nok, None),
@@ -71,19 +81,15 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, marker: char, size: usize) -> StateFnResult {
     match code {
-        Code::Char(char) if char == marker => {
-            tokenizer.enter(TokenType::ThematicBreakSequence);
-            sequence(tokenizer, code, marker, size)
-        }
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.enter(TokenType::ThematicBreakWhitespace);
-            whitespace(tokenizer, code, marker, size)
-        }
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if size >= THEMATIC_BREAK_MARKER_COUNT_MIN =>
         {
             tokenizer.exit(TokenType::ThematicBreak);
             (State::Ok, Some(vec![code]))
+        }
+        Code::Char(char) if char == marker => {
+            tokenizer.enter(TokenType::ThematicBreakSequence);
+            sequence(tokenizer, code, marker, size)
         }
         _ => (State::Nok, None),
     }
@@ -109,31 +115,9 @@ fn sequence(tokenizer: &mut Tokenizer, code: Code, marker: char, size: usize) ->
         }
         _ => {
             tokenizer.exit(TokenType::ThematicBreakSequence);
-            at_break(tokenizer, code, marker, size)
-        }
-    }
-}
-
-/// In whitespace.
-///
-/// ```markdown
-/// * |* *
-/// * | * *
-/// ```
-fn whitespace(tokenizer: &mut Tokenizer, code: Code, marker: char, size: usize) -> StateFnResult {
-    match code {
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    whitespace(tokenizer, code, marker, size)
-                })),
-                None,
+            tokenizer.go(space_or_tab_opt(), move |t, c| at_break(t, c, marker, size))(
+                tokenizer, code,
             )
-        }
-        _ => {
-            tokenizer.exit(TokenType::ThematicBreakWhitespace);
-            at_break(tokenizer, code, marker, size)
         }
     }
 }

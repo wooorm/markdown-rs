@@ -25,7 +25,6 @@ pub enum TokenType {
     AutolinkProtocol,
     AutolinkEmail,
     BlankLineEnding,
-    BlankLineWhitespace,
     CharacterEscape,
     CharacterEscapeMarker,
     CharacterEscapeValue,
@@ -38,12 +37,10 @@ pub enum TokenType {
     CodeFenced,
     CodeFencedFence,
     CodeFencedFenceSequence,
-    CodeFencedFenceWhitespace,
     CodeFencedFenceInfo,
     CodeFencedFenceMeta,
     CodeFlowChunk,
     CodeIndented,
-    CodeIndentedPrefixWhitespace,
     CodeText,
     CodeTextSequence,
     CodeTextLineEnding,
@@ -81,7 +78,6 @@ pub enum TokenType {
     Paragraph,
     ThematicBreak,
     ThematicBreakSequence,
-    ThematicBreakWhitespace,
     Whitespace,
 
     // Chunks are tokenizer, but unraveled by `subtokenize`.
@@ -114,7 +110,7 @@ pub struct Point {
     /// 1-indexed line number.
     pub line: usize,
     /// 1-indexed column number.
-    /// Note that this is increases up to a tab stop for tabs.
+    /// This is increases up to a tab stop for tabs.
     /// Some editors count tabs as 1 character, so this position is not always
     /// the same as editors.
     pub column: usize,
@@ -485,32 +481,14 @@ impl Tokenizer {
         )
     }
 
-    pub fn attempt_3(
-        &mut self,
-        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        self.call_multiple(
-            false,
-            Some(Box::new(a)),
-            Some(Box::new(b)),
-            Some(Box::new(c)),
-            None,
-            None,
-            None,
-            None,
-            done,
-        )
-    }
-
-    pub fn attempt_4(
+    #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
+    pub fn attempt_5(
         &mut self,
         a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        e: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         self.call_multiple(
@@ -519,7 +497,7 @@ impl Tokenizer {
             Some(Box::new(b)),
             Some(Box::new(c)),
             Some(Box::new(d)),
-            None,
+            Some(Box::new(e)),
             None,
             None,
             done,

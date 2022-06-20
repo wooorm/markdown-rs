@@ -24,7 +24,7 @@ use crate::construct::{
     code_indented::start as code_indented, definition::start as definition,
     heading_atx::start as heading_atx, heading_setext::start as heading_setext,
     html_flow::start as html_flow, paragraph::start as paragraph,
-    partial_whitespace::start as whitespace, thematic_break::start as thematic_break,
+    thematic_break::start as thematic_break,
 };
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
@@ -95,9 +95,16 @@ fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         // To do: should all flow just start before the prefix?
-        _ => tokenizer.attempt_3(code_indented, code_fenced, html_flow, |ok| {
-            Box::new(if ok { after } else { before })
-        })(tokenizer, code),
+        _ => tokenizer.attempt_7(
+            code_indented,
+            code_fenced,
+            html_flow,
+            heading_atx,
+            thematic_break,
+            definition,
+            heading_setext,
+            |ok| Box::new(if ok { after } else { before_paragraph }),
+        )(tokenizer, code),
     }
 }
 
@@ -121,36 +128,6 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => unreachable!("unexpected non-eol/eof after flow `{:?}`", code),
     }
-}
-
-/// Before flow, but not at code (indented) or code (fenced).
-///
-/// Compared to flow (initial), normal flow can be arbitrarily prefixed.
-///
-/// ```markdown
-/// |qwe
-/// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-        |_ok| Box::new(before_after_prefix),
-    )(tokenizer, code)
-}
-
-/// Before flow, after potential whitespace.
-///
-/// ```markdown
-/// |# asd
-/// |***
-/// ```
-fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_4(
-        heading_atx,
-        thematic_break,
-        definition,
-        heading_setext,
-        |ok| Box::new(if ok { after } else { before_paragraph }),
-    )(tokenizer, code)
 }
 
 /// Before a paragraph.

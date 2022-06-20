@@ -29,27 +29,24 @@
 //!
 //! <!-- To do: link `list` -->
 
-use crate::construct::partial_whitespace::start as whitespace;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::construct::partial_space_or_tab::space_or_tab_opt;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of a blank line.
 ///
-/// Note: `␠` represents a space character.
+/// > 👉 **Note**: `␠` represents a space character.
 ///
 /// ```markdown
 /// |␠␠
 /// |
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |tokenizer, code| whitespace(tokenizer, code, TokenType::BlankLineWhitespace),
-        |_ok| Box::new(after),
-    )(tokenizer, code)
+    tokenizer.go(space_or_tab_opt(), after)(tokenizer, code)
 }
 
 /// After zero or more spaces or tabs, before a line ending or EOF.
 ///
-/// Note: `␠` represents a space character.
+/// > 👉 **Note**: `␠` represents a space character.
 ///
 /// ```markdown
 /// |␠␠

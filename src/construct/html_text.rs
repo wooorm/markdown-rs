@@ -49,7 +49,7 @@
 //! [html_flow]: crate::construct::html_flow
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
-use crate::construct::partial_whitespace::start as whitespace;
+use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFn, StateFnResult, TokenType, Tokenizer};
 
 /// Start of HTML (text)
@@ -673,10 +673,9 @@ fn after_line_ending(
     code: Code,
     return_state: Box<StateFn>,
 ) -> StateFnResult {
-    tokenizer.attempt(
-        |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-        |_ok| Box::new(|t, c| after_line_ending_prefix(t, c, return_state)),
-    )(tokenizer, code)
+    tokenizer.go(space_or_tab_opt(), |t, c| {
+        after_line_ending_prefix(t, c, return_state)
+    })(tokenizer, code)
 }
 
 /// After a line ending, after indent.

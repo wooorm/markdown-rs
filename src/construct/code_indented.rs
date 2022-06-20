@@ -38,6 +38,7 @@
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
+use super::partial_space_or_tab::{space_or_tab_min_max, space_or_tab_opt};
 use crate::constant::TAB_SIZE;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -46,46 +47,13 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// ```markdown
 /// |    asd
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::VirtualSpace | Code::Char(' ' | '\t') => {
-            tokenizer.enter(TokenType::CodeIndented);
-            tokenizer.enter(TokenType::CodeIndentedPrefixWhitespace);
-            indent(tokenizer, code, 0)
-        }
-        _ => (State::Nok, None),
-    }
-}
-
-/// Inside the initial whitespace.
-///
-/// ```markdown
-///  |   asd
-///   |  asd
-///    | asd
-///     |asd
-/// ```
 ///
 /// > **Parsing note**: it is not needed to check if this first line is a
 /// > filled line (that it has a non-whitespace character), because blank lines
 /// > are parsed already, so we never run into that.
-fn indent(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
-    match code {
-        _ if size == TAB_SIZE => {
-            tokenizer.exit(TokenType::CodeIndentedPrefixWhitespace);
-            at_break(tokenizer, code)
-        }
-        Code::VirtualSpace | Code::Char(' ' | '\t') => {
-            tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    indent(tokenizer, code, size + 1)
-                })),
-                None,
-            )
-        }
-        _ => (State::Nok, None),
-    }
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.enter(TokenType::CodeIndented);
+    tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer, code)
 }
 
 /// At a break.
@@ -153,39 +121,45 @@ fn further_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::LineEnding);
             (State::Fn(Box::new(further_start)), None)
         }
-        Code::VirtualSpace | Code::Char(' ' | '\t') => {
-            tokenizer.enter(TokenType::CodeIndentedPrefixWhitespace);
-            further_indent(tokenizer, code, 0)
-        }
-        _ => (State::Nok, None),
+        _ => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
+            Box::new(if ok { further_end } else { further_begin })
+        })(tokenizer, code),
     }
 }
 
-/// Inside further whitespace.
+/// After a proper indent.
 ///
 /// ```markdown
 ///     asd
-///   |  asd
+///     |asd
 /// ```
-fn further_indent(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
+fn further_end(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    (State::Ok, Some(vec![code]))
+}
+
+/// At the beginning of a line that is not indented enough.
+///
+/// > 👉 **Note**: `␠` represents a space character.
+///
+/// ```markdown
+///     asd
+/// |␠␠
+///     asd
+/// ```
+fn further_begin(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.go(space_or_tab_opt(), further_after)(tokenizer, code)
+}
+
+/// After whitespace.
+///
+/// ```markdown
+///     asd
+/// ␠␠|
+///     asd
+/// ```
+fn further_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        _ if size == TAB_SIZE => {
-            tokenizer.exit(TokenType::CodeIndentedPrefixWhitespace);
-            (State::Ok, Some(vec![code]))
-        }
-        Code::VirtualSpace | Code::Char(' ' | '\t') => {
-            tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    further_indent(tokenizer, code, size + 1)
-                })),
-                None,
-            )
-        }
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::CodeIndentedPrefixWhitespace);
-            further_start(tokenizer, code)
-        }
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => further_start(tokenizer, code),
         _ => (State::Nok, None),
     }
 }

@@ -70,6 +70,6 @@ pub mod html_text;
 pub mod paragraph;
 pub mod partial_destination;
 pub mod partial_label;
+pub mod partial_space_or_tab;
 pub mod partial_title;
-pub mod partial_whitespace;
 pub mod thematic_break;

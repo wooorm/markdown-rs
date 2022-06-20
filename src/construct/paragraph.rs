@@ -30,12 +30,11 @@
 
 use crate::constant::TAB_SIZE;
 use crate::construct::{
-    code_fenced::start as code_fenced, heading_atx::start as heading_atx,
-    html_flow::start as html_flow, partial_whitespace::start as whitespace,
-    thematic_break::start as thematic_break,
+    blank_line::start as blank_line, code_fenced::start as code_fenced,
+    heading_atx::start as heading_atx, html_flow::start as html_flow,
+    partial_space_or_tab::space_or_tab_min_max, thematic_break::start as thematic_break,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::span::from_exit_event;
 
 /// Before a paragraph.
 ///
@@ -114,7 +113,7 @@ fn interrupt(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(TokenType::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
-            (State::Fn(Box::new(interrupt_initial)), None)
+            (State::Fn(Box::new(interrupt_start)), None)
         }
         _ => unreachable!("expected eol"),
     }
@@ -123,55 +122,30 @@ fn interrupt(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a line ending.
 ///
 /// ```markdown
-/// alpha|
-/// ~~~js
+/// alpha
+/// |~~~js
 /// ~~~
 /// ```
-fn interrupt_initial(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_2(code_fenced, html_flow, |ok| {
+fn interrupt_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    // To do: If code is disabled, indented lines are allowed to interrupt.
+    tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
         if ok {
-            Box::new(|_tokenizer, _code| (State::Nok, None))
+            Box::new(|_t, code| (State::Ok, Some(vec![code])))
         } else {
             Box::new(|tokenizer, code| {
-                tokenizer.attempt(
-                    |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-                    |_ok| Box::new(interrupt_start),
+                tokenizer.attempt_5(
+                    blank_line,
+                    code_fenced,
+                    html_flow,
+                    heading_atx,
+                    thematic_break,
+                    |ok| {
+                        Box::new(move |_t, code| {
+                            (if ok { State::Nok } else { State::Ok }, Some(vec![code]))
+                        })
+                    },
                 )(tokenizer, code)
             })
         }
     })(tokenizer, code)
-}
-
-/// After a line ending, after optional whitespace.
-///
-/// ```markdown
-/// alpha|
-/// # bravo
-/// ```
-fn interrupt_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let tail = tokenizer.events.last();
-    let mut prefix = 0;
-
-    if let Some(event) = tail {
-        if event.token_type == TokenType::Whitespace {
-            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
-            prefix = span.end_index - span.start_index;
-        }
-    }
-
-    match code {
-        // Blank lines are not allowed in paragraph.
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
-        // To do: If code is disabled, indented lines are allowed.
-        _ if prefix >= TAB_SIZE => (State::Ok, None),
-        // To do: definitions, setext headings, etc?
-        _ => tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
-            let result = if ok {
-                (State::Nok, None)
-            } else {
-                (State::Ok, None)
-            };
-            Box::new(|_t, _c| result)
-        })(tokenizer, code),
-    }
 }

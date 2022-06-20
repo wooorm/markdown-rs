@@ -7,7 +7,7 @@ const DANGER: &CompileOptions = &CompileOptions {
 };
 
 #[test]
-fn autolink() {
+fn code_fenced() {
     assert_eq!(
         micromark("```\n<\n >\n```"),
         "<pre><code>&lt;\n &gt;\n</code></pre>",

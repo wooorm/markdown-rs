@@ -108,7 +108,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::AutolinkMarker
                 | TokenType::AutolinkProtocol
                 | TokenType::BlankLineEnding
-                | TokenType::BlankLineWhitespace
                 | TokenType::CharacterEscape
                 | TokenType::CharacterEscapeMarker
                 | TokenType::CharacterEscapeValue
@@ -118,10 +117,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CharacterReferenceMarkerNumeric
                 | TokenType::CharacterReferenceMarkerSemi
                 | TokenType::CharacterReferenceValue
-                | TokenType::CodeIndentedPrefixWhitespace
                 | TokenType::CodeFencedFence
                 | TokenType::CodeFencedFenceSequence
-                | TokenType::CodeFencedFenceWhitespace
                 | TokenType::CodeFlowChunk
                 | TokenType::CodeTextData
                 | TokenType::CodeTextLineEnding
@@ -153,7 +150,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::LineEnding
                 | TokenType::ThematicBreak
                 | TokenType::ThematicBreakSequence
-                | TokenType::ThematicBreakWhitespace
                 | TokenType::Whitespace => {
                     // Ignore.
                 }
@@ -172,7 +168,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 TokenType::CodeFenced => {
                     code_flow_seen_data = Some(false);
                     line_ending_if_needed(buffers);
-                    // Note: no `>`, which is added later.
+                    // Note that no `>` is used, which is added later.
                     buf_tail_mut(buffers).push("<pre><code".to_string());
                     code_fenced_fences_count = Some(0);
                 }
@@ -203,14 +199,11 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 TokenType::Autolink
                 | TokenType::AutolinkMarker
                 | TokenType::BlankLineEnding
-                | TokenType::BlankLineWhitespace
                 | TokenType::CharacterEscape
                 | TokenType::CharacterEscapeMarker
                 | TokenType::CharacterReference
                 | TokenType::CharacterReferenceMarkerSemi
                 | TokenType::CodeFencedFenceSequence
-                | TokenType::CodeFencedFenceWhitespace
-                | TokenType::CodeIndentedPrefixWhitespace
                 | TokenType::CodeTextSequence
                 | TokenType::DefinitionLabel
                 | TokenType::DefinitionLabelMarker
@@ -228,7 +221,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::HardBreakTrailingSpace
                 | TokenType::HeadingSetext
                 | TokenType::ThematicBreakSequence
-                | TokenType::ThematicBreakWhitespace
                 | TokenType::Whitespace => {
                     // Ignore.
                 }

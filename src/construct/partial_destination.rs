@@ -60,7 +60,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::DefinitionDestinationLiteralMarker);
             (State::Fn(Box::new(enclosed_before)), None)
         }
-        Code::None | Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char(')') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char(' ' | ')') => {
             (State::Nok, None)
         }
         Code::Char(char) if char.is_ascii_control() => (State::Nok, None),

@@ -58,7 +58,7 @@
 
 use crate::construct::{
     partial_destination::start as destination, partial_label::start as label,
-    partial_title::start as title, partial_whitespace::start as whitespace,
+    partial_space_or_tab::space_or_tab_opt, partial_title::start as title,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -68,11 +68,18 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// |[a]: b "c"
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.enter(TokenType::Definition);
+    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+}
+
+/// At the start of a definition, after whitespace.
+///
+/// ```markdown
+/// |[a]: b "c"
+/// ```
+pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('[') => {
-            tokenizer.enter(TokenType::Definition);
-            tokenizer.go(label, label_after)(tokenizer, code)
-        }
+        Code::Char('[') => tokenizer.go(label, label_after)(tokenizer, code),
         _ => (State::Nok, None),
     }
 }
@@ -93,25 +100,13 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(TokenType::DefinitionMarker);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::DefinitionMarker);
-            (State::Fn(Box::new(marker_after)), None)
+            (
+                State::Fn(Box::new(tokenizer.go(space_or_tab_opt(), marker_after))),
+                None,
+            )
         }
         _ => (State::Nok, None),
     }
-}
-
-/// After the marker of a definition.
-///
-/// ```markdown
-/// [a]:| b "c"
-///
-/// [a]:| ␊
-///  b "c"
-/// ```
-fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(marker_after_optional_whitespace),
-    )(tokenizer, code)
 }
 
 /// After the marker, after whitespace.
@@ -122,29 +117,21 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: |␊
 ///  b "c"
 /// ```
-fn marker_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.enter(TokenType::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
-            (State::Fn(Box::new(marker_after_optional_line_ending)), None)
+            (
+                State::Fn(Box::new(
+                    tokenizer.go(space_or_tab_opt(), destination_before),
+                )),
+                None,
+            )
         }
         _ => destination_before(tokenizer, code),
     }
-}
-
-/// After the marker, after a line ending.
-///
-/// ```markdown
-/// [a]:
-/// | b "c"
-/// ```
-fn marker_after_optional_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(destination_before),
-    )(tokenizer, code)
 }
 
 /// Before a destination.
@@ -163,8 +150,9 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
     );
 
-    if !char_nok
-        && (event.token_type == TokenType::LineEnding || event.token_type == TokenType::Whitespace)
+    // Whitespace.
+    if (event.token_type == TokenType::LineEnding || event.token_type == TokenType::Whitespace)
+        && !char_nok
     {
         tokenizer.go(destination, destination_after)(tokenizer, code)
     } else {
@@ -191,10 +179,7 @@ fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: b "c"|
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(after_whitespace),
-    )(tokenizer, code)
+    tokenizer.go(space_or_tab_opt(), after_whitespace)(tokenizer, code)
 }
 
 /// After a definition, after optional whitespace.
@@ -222,10 +207,7 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///  "c"
 /// ```
 fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(title_before_after_optional_whitespace),
-    )(tokenizer, code)
+    tokenizer.go(space_or_tab_opt(), title_before_after_optional_whitespace)(tokenizer, code)
 }
 
 /// Before a title, after optional whitespace.
@@ -243,25 +225,14 @@ fn title_before_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code)
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
             (
-                State::Fn(Box::new(title_before_after_optional_line_ending)),
+                State::Fn(Box::new(
+                    tokenizer.go(space_or_tab_opt(), title_before_marker),
+                )),
                 None,
             )
         }
         _ => title_before_marker(tokenizer, code),
     }
-}
-
-/// Before a title, after a line ending.
-///
-/// ```markdown
-/// [a]: b␊
-/// | "c"
-/// ```
-fn title_before_after_optional_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(title_before_marker),
-    )(tokenizer, code)
 }
 
 /// Before a title, after a line ending.
@@ -289,10 +260,7 @@ fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// "c"|
 /// ```
 fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(title_after_after_optional_whitespace),
-    )(tokenizer, code)
+    tokenizer.go(space_or_tab_opt(), title_after_after_optional_whitespace)(tokenizer, code)
 }
 
 /// After a title, after optional whitespace.

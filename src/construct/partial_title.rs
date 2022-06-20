@@ -33,7 +33,7 @@
 
 // To do: pass token types in.
 
-use crate::construct::partial_whitespace::start as whitespace;
+use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Type of title.
@@ -143,10 +143,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult 
 /// |b"
 /// ```
 fn line_start(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
-    tokenizer.attempt(
-        |t, c| whitespace(t, c, TokenType::Whitespace),
-        |_ok| Box::new(|t, c| line_begin(t, c, kind)),
-    )(tokenizer, code)
+    tokenizer.go(space_or_tab_opt(), |t, c| line_begin(t, c, kind))(tokenizer, code)
 }
 
 /// After a line ending, after optional whitespace.

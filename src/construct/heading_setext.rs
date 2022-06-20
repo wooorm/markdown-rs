@@ -50,7 +50,7 @@
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
 use crate::constant::TAB_SIZE;
-use crate::construct::partial_whitespace::start as whitespace;
+use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::span::from_exit_event;
 
@@ -70,12 +70,22 @@ pub enum Kind {
 /// ==
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.enter(TokenType::HeadingSetext);
+    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+}
+
+/// Start of a heading (setext), after whitespace.
+///
+/// ```markdown
+/// |alpha
+/// ==
+/// ```
+pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             unreachable!("expected non-eol/eof");
         }
         _ => {
-            tokenizer.enter(TokenType::HeadingSetext);
             tokenizer.enter(TokenType::HeadingSetextText);
             tokenizer.enter(TokenType::ChunkText);
             text_inside(tokenizer, code)
@@ -134,10 +144,7 @@ fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.events[next].previous = Some(previous);
 
             (
-                State::Fn(Box::new(tokenizer.attempt(
-                    |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-                    |_ok| Box::new(text_line_start),
-                ))),
+                State::Fn(Box::new(tokenizer.go(space_or_tab_opt(), text_line_start))),
                 None,
             )
         }
@@ -202,23 +209,15 @@ fn underline_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(TokenType::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
-            (State::Fn(Box::new(underline_start)), None)
+            (
+                State::Fn(Box::new(
+                    tokenizer.go(space_or_tab_opt(), underline_sequence_start),
+                )),
+                None,
+            )
         }
         _ => unreachable!("expected eol"),
     }
-}
-
-/// After a line ending, presumably an underline.
-///
-/// ```markdown
-/// alpha
-/// |==
-/// ```
-fn underline_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(
-        |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-        |_ok| Box::new(underline_sequence_start),
-    )(tokenizer, code)
 }
 
 /// After optional whitespace, presumably an underline.
@@ -276,11 +275,7 @@ fn underline_sequence_inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) 
                 None,
             )
         }
-        Code::VirtualSpace | Code::Char('\t' | ' ') => tokenizer.attempt(
-            |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-            |_ok| Box::new(underline_after),
-        )(tokenizer, code),
-        _ => underline_after(tokenizer, code),
+        _ => tokenizer.go(space_or_tab_opt(), underline_after)(tokenizer, code),
     }
 }
 
