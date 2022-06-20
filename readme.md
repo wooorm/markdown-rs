@@ -66,7 +66,6 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (1) Handle BOM at start
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to parser
@@ -171,6 +170,7 @@ cargo doc --document-private-items
 - [x] (1) Parse whitespace in each flow construct
 - [x] (1) Connect `ChunkString` in label, destination, title
 - [x] (1) Add support for line endings in `string`
+- [x] (1) Handle BOM at start
 
 ### Extensions
 

@@ -680,10 +680,20 @@ fn attempt_impl(
 // To do: handle BOM at start?
 pub fn as_codes(value: &str) -> Vec<Code> {
     let mut codes: Vec<Code> = vec![];
+    let mut at_start = true;
     let mut at_carriage_return = false;
     let mut column = 1;
 
     for char in value.chars() {
+        if at_start {
+            if char == '\u{feff}' {
+                // Ignore.
+                continue;
+            }
+
+            at_start = false;
+        }
+
         // Send a CRLF.
         if at_carriage_return && '\n' == char {
             at_carriage_return = false;

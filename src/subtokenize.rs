@@ -15,6 +15,10 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     let mut link_to_info: HashMap<usize, (usize, usize, usize)> = HashMap::new();
     let mut done = true;
 
+    if events.is_empty() {
+        return (events, true);
+    }
+
     while index < events.len() {
         let event = &events[index];
 

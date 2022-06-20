@@ -3,6 +3,8 @@ use micromark::micromark;
 
 #[test]
 fn zero() {
+    assert_eq!(micromark(""), "", "should support no markdown");
+
     assert_eq!(
         micromark("asd\0asd"),
         "<p>asd�asd</p>",
