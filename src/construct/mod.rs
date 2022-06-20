@@ -15,7 +15,7 @@
 //!
 //! The following constructs are found in markdown:
 //!
-//! *   attention (strong, emphasis) (text)
+//! *   attention (strong, emphasis)
 //! *   [autolink][]
 //! *   [blank line][blank_line]
 //! *   block quote

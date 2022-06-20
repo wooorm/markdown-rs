@@ -14,7 +14,7 @@
 //!
 //! destination ::= destination_enclosed | destination_raw
 //! destination_enclosed ::= '<' *( destination_enclosed_text | destination_enclosed_escape ) '>'
-//! destination_enclosed_text ::= code - '<' - '\\' - eol
+//! destination_enclosed_text ::= code - '<' - '\\' - '>' - eol
 //! destination_enclosed_escape ::= '\\' [ '<' | '\\' | '>' ]
 //! destination_raw ::= 1*( destination_raw_text | destination_raw_escape )
 //! ; Restriction: unbalanced `)` characters are not allowed.

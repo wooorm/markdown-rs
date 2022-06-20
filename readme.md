@@ -66,7 +66,6 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (1) Add docs to partials
 - [ ] (1) Remove all `pub fn`s from constructs, except for start
 - [ ] (1) Remove `content` content type, as it is no longer needed
 - [ ] (1) Connect `ChunkString` in label, destination, title
@@ -174,6 +173,7 @@ cargo doc --document-private-items
 - [x] (1) text in heading
 - [x] (1) Setext headings: can they be solved in content, or do they have to be
       solved in flow somehow
+- [x] (1) Add docs to partials
 
 ### Extensions
 

@@ -1,7 +1,52 @@
+//! Destination occurs in [definition][] and label end.
+//!
+//! They’re formed with the following BNF:
+//!
+//! ```bnf
+//! destination ::= destination_enclosed | destination_raw
+//!
+//! destination_enclosed ::= '<' *( destination_enclosed_text | destination_enclosed_escape ) '>'
+//! destination_enclosed_text ::= code - '<' - '\\' - '>' - eol
+//! destination_enclosed_escape ::= '\\' [ '<' | '\\' | '>' ]
+//! destination_raw ::= 1*( destination_raw_text | destination_raw_escape )
+//! ; Restriction: unbalanced `)` characters are not allowed.
+//! destination_raw_text ::= code - '\\' - ascii_control - space_or_tab - eol
+//! destination_raw_escape ::= '\\' [ '(' | ')' | '\\' ]
+//! ```
+//!
+//! Balanced parens allowed in raw destinations.
+//! They are counted with a counter that starts at `0`, and is incremented
+//! every time `(` occurs and decremented every time `)` occurs.
+//! If `)` is found when the counter is `0`, the destination closes immediately
+//! after it.
+//! Escaped parens do not count.
+//!
+//! It is recommended to use the enclosed variant of destinations, as it allows
+//! arbitrary parens, and also allows for whitespace and other characters in
+//! URLs.
+//!
+//! The destination is interpreted as the [string][] content type.
+//! That means that character escapes and character reference are allowed.
+//!
+//! ## References
+//!
+//! *   [`micromark-factory-destination/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-destination/dev/index.js)
+//!
+//! [definition]: crate::construct::definition
+//! [string]: crate::content::string
+//!
+//! <!-- To do: link label end. -->
+
 // To do: pass token types in.
 
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
+/// Before a destination.
+///
+/// ```markdown
+/// |<ab>
+/// |ab
+/// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('<') => {
@@ -27,7 +72,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `<`, before an enclosed destination.
+///
+/// ```markdown
+/// <|ab>
+/// ```
 fn enclosed_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if let Code::Char('>') = code {
         tokenizer.enter(TokenType::DefinitionDestinationLiteralMarker);
@@ -44,7 +93,11 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In an enclosed destination.
+///
+/// ```markdown
+/// <u|rl>
+/// ```
 fn enclosed(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => {
@@ -66,7 +119,11 @@ fn enclosed(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `\`, in an enclosed destination.
+///
+/// ```markdown
+/// <a\|>b>
+/// ```
 fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('<' | '>' | '\\') => {
@@ -77,7 +134,11 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// In a raw destination.
+///
+/// ```markdown
+/// a|b
+/// ```
 // To do: these arms can be improved?
 fn raw(tokenizer: &mut Tokenizer, code: Code, balance: usize) -> StateFnResult {
     // To do: configurable.
@@ -139,7 +200,11 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, balance: usize) -> StateFnResult {
     }
 }
 
-/// To do.
+/// After `\`, in a raw destination.
+///
+/// ```markdown
+/// a\|)b
+/// ```
 fn raw_escape(tokenizer: &mut Tokenizer, code: Code, balance: usize) -> StateFnResult {
     match code {
         Code::Char('(' | ')' | '\\') => {
