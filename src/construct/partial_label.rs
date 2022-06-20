@@ -56,7 +56,9 @@
 // To do: pass token types in.
 
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
+use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::link::link;
 
 /// Before a label.
 ///
@@ -71,7 +73,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(TokenType::DefinitionLabelMarker);
             tokenizer.enter(TokenType::DefinitionLabelData);
-            (State::Fn(Box::new(|t, c| at_break(t, c, false, 0))), None)
+            (
+                State::Fn(Box::new(|t, c| at_break(t, c, false, 0, false))),
+                None,
+            )
         }
         _ => (State::Nok, None),
     }
@@ -83,7 +88,13 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [|a]
 /// [a|]
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> StateFnResult {
+fn at_break(
+    tokenizer: &mut Tokenizer,
+    code: Code,
+    data: bool,
+    size: usize,
+    connect: bool,
+) -> StateFnResult {
     match code {
         Code::None | Code::Char('[') => (State::Nok, None),
         Code::Char(']') if !data => (State::Nok, None),
@@ -96,21 +107,54 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> S
             tokenizer.exit(TokenType::DefinitionLabel);
             (State::Ok, None)
         }
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            // To do: limit blank lines.
-            (
-                State::Fn(Box::new(move |t, c| at_break(t, c, data, size))),
-                None,
-            )
-        }
         _ => {
             tokenizer.enter(TokenType::ChunkString);
-            // To do: link.
+
+            if connect {
+                let index = tokenizer.events.len() - 1;
+                link(&mut tokenizer.events, index);
+            }
+
             label(tokenizer, code, data, size)
         }
+    }
+}
+
+/// After a line ending.
+///
+/// ```markdown
+/// [a
+/// |b]
+/// ```
+fn line_start(
+    tokenizer: &mut Tokenizer,
+    code: Code,
+    data: bool,
+    size: usize,
+    connect: bool,
+) -> StateFnResult {
+    tokenizer.go(space_or_tab_opt(), move |t, c| {
+        line_begin(t, c, data, size, connect)
+    })(tokenizer, code)
+}
+
+/// After a line ending, after optional whitespace.
+///
+/// ```markdown
+/// [a
+/// |b]
+/// ```
+fn line_begin(
+    tokenizer: &mut Tokenizer,
+    code: Code,
+    data: bool,
+    size: usize,
+    connect: bool,
+) -> StateFnResult {
+    match code {
+        // Blank line not allowed.
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
+        _ => at_break(tokenizer, code, data, size, connect),
     }
 }
 
@@ -121,13 +165,21 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> S
 /// ```
 fn label(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '[' | ']') => {
+        Code::None | Code::Char('[' | ']') => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, data, size)
+            at_break(tokenizer, code, data, size, true)
         }
         _ if size > LINK_REFERENCE_SIZE_MAX => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, data, size)
+            at_break(tokenizer, code, data, size, true)
+        }
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::ChunkString);
+            (
+                State::Fn(Box::new(move |t, c| line_start(t, c, data, size + 1, true))),
+                None,
+            )
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);

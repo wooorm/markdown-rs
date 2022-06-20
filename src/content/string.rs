@@ -43,13 +43,28 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |qwe
 /// ```
 fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    if let Code::None = code {
-        (State::Ok, None)
-    } else {
-        tokenizer.enter(TokenType::Data);
-        tokenizer.consume(code);
-        (State::Fn(Box::new(in_data)), None)
+    match code {
+        Code::None => (State::Ok, None),
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::LineEnding);
+            (State::Fn(Box::new(start)), None)
+        }
+        _ => {
+            tokenizer.enter(TokenType::Data);
+            tokenizer.consume(code);
+            (State::Fn(Box::new(in_data)), None)
+        }
     }
+
+    // if let Code::None = code {
+    //     (State::Ok, None)
+    // } else {
+    //     tokenizer.enter(TokenType::Data);
+    //     tokenizer.consume(code);
+    //     (State::Fn(Box::new(in_data)), None)
+    // }
 }
 
 /// In data.
@@ -59,10 +74,9 @@ fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        // To do: line endings.
-        Code::None => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.exit(TokenType::Data);
-            (State::Ok, None)
+            before_data(tokenizer, code)
         }
         // To do: somehow get these markers from constructs.
         Code::Char('&' | '\\') => {

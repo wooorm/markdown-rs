@@ -35,6 +35,7 @@ use crate::construct::{
     partial_space_or_tab::space_or_tab_min_max, thematic_break::start as thematic_break,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::link::link;
 
 /// Before a paragraph.
 ///
@@ -83,9 +84,8 @@ fn at_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.consume(code);
     tokenizer.exit(TokenType::ChunkText);
     tokenizer.enter(TokenType::ChunkText);
-    let next_index = tokenizer.events.len() - 1;
-    tokenizer.events[next_index - 2].next = Some(next_index);
-    tokenizer.events[next_index].previous = Some(next_index - 2);
+    let index = tokenizer.events.len() - 1;
+    link(&mut tokenizer.events, index);
     (State::Fn(Box::new(inside)), None)
 }
 

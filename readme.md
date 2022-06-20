@@ -66,8 +66,6 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (1) Connect `ChunkString` in label, destination, title
-- [ ] (1) Add support for line endings in `string`
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to parser
 - [ ] (1) Add overview docs on how everything works
@@ -171,6 +169,8 @@ cargo doc --document-private-items
 - [x] (1) Remove `content` content type, as it is no longer needed
 - [x] (1) Paragraph
 - [x] (1) Parse whitespace in each flow construct
+- [x] (1) Connect `ChunkString` in label, destination, title
+- [x] (1) Add support for line endings in `string`
 
 ### Extensions
 

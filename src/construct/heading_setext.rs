@@ -52,7 +52,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::span::from_exit_event;
+use crate::util::{link::link, span::from_exit_event};
 
 /// Kind of underline.
 #[derive(Debug, Clone, PartialEq)]
@@ -133,15 +133,11 @@ fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            let next = tokenizer.events.len();
-            let previous = next - 2;
-
             tokenizer.enter(TokenType::LineEnding);
+            let index = tokenizer.events.len() - 1;
+            link(&mut tokenizer.events, index);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
-
-            tokenizer.events[previous].next = Some(next);
-            tokenizer.events[next].previous = Some(previous);
 
             (
                 State::Fn(Box::new(tokenizer.go(space_or_tab_opt(), text_line_start))),
@@ -160,27 +156,20 @@ fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ==
 /// ```
 fn text_line_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let next = tokenizer.events.len() - 2;
-    let previous = next - 2;
+    let index = tokenizer.events.len() - 2;
 
     // Link the whitespace, if it exists.
-    if tokenizer.events[next].token_type == TokenType::Whitespace {
-        tokenizer.events[previous].next = Some(next);
-        tokenizer.events[next].previous = Some(previous);
+    if tokenizer.events[index].token_type == TokenType::Whitespace {
+        link(&mut tokenizer.events, index);
     }
 
     match code {
         // Blank lines not allowed.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
         _ => {
-            let next = tokenizer.events.len();
-            let previous = next - 2;
-
             tokenizer.enter(TokenType::ChunkText);
-
-            tokenizer.events[previous].next = Some(next);
-            tokenizer.events[next].previous = Some(previous);
-
+            let index = tokenizer.events.len() - 1;
+            link(&mut tokenizer.events, index);
             text_inside(tokenizer, code)
         }
     }

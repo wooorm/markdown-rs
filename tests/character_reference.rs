@@ -100,7 +100,7 @@ fn character_reference() {
     //     "should not support character references as construct markers (2)"
     // );
 
-    // To do: link.
+    // To do: link (resource).
     // assert_eq!(
     //     micromark("[a](url &quot;tit&quot;)"),
     //     "<p>[a](url &quot;tit&quot;)</p>",

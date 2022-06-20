@@ -35,6 +35,7 @@
 
 use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::link::link;
 
 /// Type of title.
 #[derive(Debug, Clone, PartialEq)]
@@ -102,7 +103,7 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
         }
         _ => {
             tokenizer.enter(TokenType::DefinitionTitleString);
-            at_break(tokenizer, code, kind)
+            at_break(tokenizer, code, kind, false)
         }
     }
 }
@@ -115,22 +116,19 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
 /// (a|
 /// b)
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, kind: Kind, connect: bool) -> StateFnResult {
     match code {
         Code::Char(char) if char == kind_to_marker(&kind) => {
             tokenizer.exit(TokenType::DefinitionTitleString);
             begin(tokenizer, code, kind)
         }
         Code::None => (State::Nok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (State::Fn(Box::new(|t, c| line_start(t, c, kind))), None)
-        }
         _ => {
-            // To do: link.
             tokenizer.enter(TokenType::ChunkString);
+            if connect {
+                let index = tokenizer.events.len() - 1;
+                link(&mut tokenizer.events, index);
+            }
             title(tokenizer, code, kind)
         }
     }
@@ -156,7 +154,7 @@ fn line_begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResul
     match code {
         // Blank line not allowed.
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
-        _ => at_break(tokenizer, code, kind),
+        _ => at_break(tokenizer, code, kind, true),
     }
 }
 
@@ -169,11 +167,20 @@ fn title(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
     match code {
         Code::Char(char) if char == kind_to_marker(&kind) => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, kind)
+            at_break(tokenizer, code, kind, true)
         }
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::None => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, kind)
+            at_break(tokenizer, code, kind, true)
+        }
+        // To do: limit blank lines.
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::ChunkString);
+            (
+                State::Fn(Box::new(move |t, c| line_start(t, c, kind))),
+                None,
+            )
         }
         Code::Char('\\') => {
             tokenizer.consume(code);

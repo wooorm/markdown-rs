@@ -18,8 +18,8 @@
 //! They are counted with a counter that starts at `0`, and is incremented
 //! every time `(` occurs and decremented every time `)` occurs.
 //! If `)` is found when the counter is `0`, the destination closes immediately
-//! after it.
-//! Escaped parens do not count.
+//! before it.
+//! Escaped parens do not count in balancing.
 //!
 //! It is recommended to use the enclosed variant of destinations, as it allows
 //! arbitrary parens, and also allows for whitespace and other characters in
@@ -68,7 +68,6 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(TokenType::DefinitionDestination);
             tokenizer.enter(TokenType::DefinitionDestinationRaw);
             tokenizer.enter(TokenType::DefinitionDestinationString);
-            // To do: link.
             tokenizer.enter(TokenType::ChunkString);
             raw(tokenizer, code, 0)
         }
@@ -90,7 +89,6 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         (State::Ok, None)
     } else {
         tokenizer.enter(TokenType::DefinitionDestinationString);
-        // To do: link.
         tokenizer.enter(TokenType::ChunkString);
         enclosed(tokenizer, code)
     }
