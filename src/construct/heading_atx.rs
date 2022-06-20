@@ -3,9 +3,9 @@
 //! They’re formed with the following BNF:
 //!
 //! ```bnf
-//! heading_atx ::= 1*6'#' [ 1*space_or_tab code [ 1*space_or_tab 1*'#' ] ] *space_or_tab
+//! heading_atx ::= 1*6'#' [ 1*space_or_tab text [ 1*space_or_tab 1*'#' ] ] *space_or_tab
 //!
-//! code ::= . ; any unicode code point (other than line endings).
+//! text ::= code - eol
 //! space_or_tab ::= ' ' | '\t'
 //! ```
 //!

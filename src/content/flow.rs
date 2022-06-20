@@ -19,17 +19,15 @@
 //! *   [HTML (flow)][crate::construct::html_flow]
 //! *   [Thematic break][crate::construct::thematic_break]
 
-use crate::constant::TAB_SIZE;
 use crate::construct::{
     blank_line::start as blank_line, code_fenced::start as code_fenced,
     code_indented::start as code_indented, definition::start as definition,
     heading_atx::start as heading_atx, heading_setext::start as heading_setext,
-    html_flow::start as html_flow, partial_whitespace::start as whitespace,
-    thematic_break::start as thematic_break,
+    html_flow::start as html_flow, paragraph::start as paragraph,
+    partial_whitespace::start as whitespace, thematic_break::start as thematic_break,
 };
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::span::from_exit_event;
 
 /// Turn `codes` as the flow content type into events.
 pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
@@ -52,7 +50,7 @@ pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
 /// |    bravo
 /// |***
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         _ => tokenizer.attempt(blank_line, |ok| {
@@ -132,7 +130,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |qwe
 /// ```
-pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
         |_ok| Box::new(before_after_prefix),
@@ -145,140 +143,21 @@ pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |# asd
 /// |***
 /// ```
-pub fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_4(
         heading_atx,
         thematic_break,
         definition,
         heading_setext,
-        |ok| Box::new(if ok { after } else { paragraph_before }),
+        |ok| Box::new(if ok { after } else { before_paragraph }),
     )(tokenizer, code)
 }
 
 /// Before a paragraph.
 ///
 /// ```markdown
-/// |qwe
+/// |asd
 /// ```
-fn paragraph_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            after(tokenizer, code)
-        }
-        _ => {
-            tokenizer.enter(TokenType::Paragraph);
-            tokenizer.enter(TokenType::ChunkText);
-            paragraph_inside(tokenizer, code, tokenizer.events.len() - 1)
-        }
-    }
-}
-
-/// In a paragraph.
-///
-/// ```markdown
-/// al|pha
-/// ```
-fn paragraph_inside(tokenizer: &mut Tokenizer, code: Code, previous: usize) -> StateFnResult {
-    match code {
-        Code::None => paragraph_end(tokenizer, code),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.check(continuation_construct, move |ok| {
-                Box::new(move |t, c| {
-                    if ok {
-                        paragraph_continue(t, c, previous)
-                    } else {
-                        paragraph_end(t, c)
-                    }
-                })
-            })(tokenizer, code)
-        }
-        _ => {
-            tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| paragraph_inside(t, c, previous))),
-                None,
-            )
-        }
-    }
-}
-
-fn continuation_construct(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (
-                State::Fn(Box::new(continuation_construct_initial_before)),
-                None,
-            )
-        }
-        _ => unreachable!("expected eol"),
-    }
-}
-
-fn continuation_construct_initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_2(code_fenced, html_flow, |ok| {
-        if ok {
-            Box::new(|_tokenizer, _code| (State::Nok, None))
-        } else {
-            Box::new(|tokenizer, code| {
-                tokenizer.attempt(
-                    |tokenizer, code| whitespace(tokenizer, code, TokenType::Whitespace),
-                    |_ok| Box::new(continuation_construct_after_prefix),
-                )(tokenizer, code)
-            })
-        }
-    })(tokenizer, code)
-}
-
-fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let tail = tokenizer.events.last();
-    let mut prefix = 0;
-
-    if let Some(event) = tail {
-        if event.token_type == TokenType::Whitespace {
-            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
-            prefix = span.end_index - span.start_index;
-        }
-    }
-
-    match code {
-        // Blank lines are not allowed in paragraph.
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
-        // To do: If code is disabled, indented lines are part of the paragraph.
-        _ if prefix >= TAB_SIZE => (State::Ok, None),
-        // To do: definitions, setext headings, etc?
-        _ => tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
-            let result = if ok {
-                (State::Nok, None)
-            } else {
-                (State::Ok, None)
-            };
-            Box::new(|_t, _c| result)
-        })(tokenizer, code),
-    }
-}
-
-fn paragraph_continue(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    previous_index: usize,
-) -> StateFnResult {
-    tokenizer.consume(code);
-    tokenizer.exit(TokenType::ChunkText);
-    tokenizer.enter(TokenType::ChunkText);
-    let next_index = tokenizer.events.len() - 1;
-    tokenizer.events[previous_index].next = Some(next_index);
-    tokenizer.events[next_index].previous = Some(previous_index);
-    (
-        State::Fn(Box::new(move |t, c| paragraph_inside(t, c, next_index))),
-        None,
-    )
-}
-
-fn paragraph_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(TokenType::ChunkText);
-    tokenizer.exit(TokenType::Paragraph);
-    after(tokenizer, code)
+fn before_paragraph(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.go(paragraph, after)(tokenizer, code)
 }

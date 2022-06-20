@@ -66,6 +66,7 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (1) Parse whitespace in each flow construct
 - [ ] (1) Connect `ChunkString` in label, destination, title
 - [ ] (1) Add support for line endings in `string`
 - [ ] (1) Add docs to subtokenize
@@ -119,7 +120,7 @@ cargo doc --document-private-items
 - [ ] (3) label start (image)
 - [ ] (3) label start (link)
 - [ ] (8) list
-- [ ] (1) paragraph
+- [x] paragraph
 - [x] thematic break
 
 ### Content types
@@ -169,6 +170,7 @@ cargo doc --document-private-items
 - [x] (1) Add docs to partials
 - [x] (1) Remove all `pub fn`s from constructs, except for start
 - [x] (1) Remove `content` content type, as it is no longer needed
+- [x] (1) Paragraph
 
 ### Extensions
 

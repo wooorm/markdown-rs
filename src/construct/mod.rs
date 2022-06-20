@@ -35,7 +35,7 @@
 //! *   label start (image)
 //! *   label start (link)
 //! *   list
-//! *   paragraph
+//! *   [paragraph][]
 //! *   [thematic break][thematic_break]
 //!
 //! Each construct maintained here is explained with a BNF diagram.
@@ -67,6 +67,7 @@ pub mod heading_atx;
 pub mod heading_setext;
 pub mod html_flow;
 pub mod html_text;
+pub mod paragraph;
 pub mod partial_destination;
 pub mod partial_label;
 pub mod partial_title;

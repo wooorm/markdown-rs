@@ -17,7 +17,8 @@
 //! They are allowed to be blank themselves.
 //!
 //! The title is interpreted as the [string][] content type.
-//! That means that character escapes and character reference are allowed.
+//! That means that [character escapes][character_escape] and
+//! [character references][character_reference] are allowed.
 //!
 //! ## References
 //!
@@ -25,6 +26,8 @@
 //!
 //! [definition]: crate::construct::definition
 //! [string]: crate::content::string
+//! [character_escape]: crate::construct::character_escape
+//! [character_reference]: crate::construct::character_reference
 //!
 //! <!-- To do: link label end. -->
 

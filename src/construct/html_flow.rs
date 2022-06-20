@@ -63,7 +63,7 @@
 //!
 //! The **complete** production of HTML (flow) is not allowed to interrupt
 //! content.
-//! That means that a blank line is needed between a paragraph and it.
+//! That means that a blank line is needed between a [paragraph][] and it.
 //! However, [HTML (text)][html_text] has a similar production, which will
 //! typically kick-in instead.
 //!
@@ -87,6 +87,7 @@
 //!
 //! [flow]: crate::content::flow
 //! [html_text]: crate::construct::html_text
+//! [paragraph]: crate::construct::paragraph
 //! [html_raw_names]: crate::constant::HTML_RAW_NAMES
 //! [html_block_names]: crate::constant::HTML_BLOCK_NAMES
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing

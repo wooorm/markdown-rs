@@ -19,7 +19,8 @@
 //! contain blank lines, and they must not be blank themselves.
 //!
 //! The label is interpreted as the [string][] content type.
-//! That means that character escapes and character reference are allowed.
+//! That means that [character escapes][character_escape] and
+//! [character references][character_reference] are allowed.
 //!
 //! > 👉 **Note**: this label relates to, but is not, the initial “label” of
 //! > what is know as a reference in markdown:
@@ -46,6 +47,8 @@
 //!
 //! [definition]: crate::construct::definition
 //! [string]: crate::content::string
+//! [character_escape]: crate::construct::character_escape
+//! [character_reference]: crate::construct::character_reference
 //! [link_reference_size_max]: crate::constant::LINK_REFERENCE_SIZE_MAX
 //!
 //! <!-- To do: link label end, label starts. -->

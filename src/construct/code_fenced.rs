@@ -64,7 +64,8 @@
 //! ```
 //!
 //! The `info` and `meta` parts are interpreted as the [string][] content type.
-//! That means that character escapes and character reference are allowed.
+//! That means that [character escapes][character_escape] and
+//! [character references][character_reference] are allowed.
 //!
 //! In markdown, it is also possible to use [code (text)][code_text] in the
 //! [text][] content type.
@@ -84,6 +85,8 @@
 //! [text]: crate::content::text
 //! [code_indented]: crate::construct::code_indented
 //! [code_text]: crate::construct::code_text
+//! [character_escape]: crate::construct::character_escape
+//! [character_reference]: crate::construct::character_reference
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 

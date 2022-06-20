@@ -38,7 +38,8 @@
 //!
 //! The `label`, `destination`, and `title` parts are interpreted as the
 //! [string][] content type.
-//! That means that character escapes and character reference are allowed.
+//! That means that [character escapes][character_escape] and
+//! [character references][character_reference] are allowed.
 //!
 //! ## References
 //!
@@ -47,6 +48,8 @@
 //!
 //! [flow]: crate::content::flow
 //! [string]: crate::content::string
+//! [character_escape]: crate::construct::character_escape
+//! [character_reference]: crate::construct::character_reference
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //!
 //! <!-- To do: link link (reference) -->

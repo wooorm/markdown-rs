@@ -6,7 +6,7 @@
 //! blank_line ::= *(' ' '\t')
 //! ```
 //!
-//! Blank lines are sometimes needed, such as to differentiate a paragraph
+//! Blank lines are sometimes needed, such as to differentiate a [paragraph][]
 //! from another paragraph.
 //! In several cases, blank lines are not needed between flow constructs,
 //! such as between two [heading (atx)][heading-atx]s.
@@ -24,9 +24,10 @@
 //! *   [*§ 4.9 Blank lines* in `CommonMark`](https://spec.commonmark.org/0.30/#blank-lines)
 //!
 //! [flow]: crate::content::flow
+//! [paragraph]: crate::construct::paragraph
 //! [heading-atx]: crate::construct::heading_atx
 //!
-//! <!-- To do: link `list`, `paragraph` -->
+//! <!-- To do: link `list` -->
 
 use crate::construct::partial_whitespace::start as whitespace;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
