@@ -27,7 +27,7 @@
 //! The above grammar does not show how whitespace is handled.
 //! To parse code (fenced), let `X` be the number of whitespace characters
 //! before the opening fence sequence.
-//! Each line of content is then allowed (not required) to be indented with up
+//! Each line of text is then allowed (not required) to be indented with up
 //! to `X` spaces or tabs, which are then ignored as an indent instead of being
 //! considered as part of the code.
 //! This indent does not affect the closing fence.

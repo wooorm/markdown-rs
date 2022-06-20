@@ -1,7 +1,7 @@
 //! The flow content type.
 //!
-//! **Flow** represents the sections, such as headings, code, and content, which
-//! is parsed per line.
+//! **Flow** represents the sections, such as headings and code, which are
+//! parsed per line.
 //! An example is HTML, which has a certain starting condition (such as
 //! `<script>` on its own line), then continues for a while, until an end
 //! condition is found (such as `</style>`).
@@ -18,8 +18,6 @@
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
 //! *   [Thematic break][crate::construct::thematic_break]
-//!
-//! <!-- To do: Link to content. -->
 
 use crate::constant::TAB_SIZE;
 use crate::construct::{
@@ -153,45 +151,43 @@ pub fn before_after_prefix(tokenizer: &mut Tokenizer, code: Code) -> StateFnResu
         thematic_break,
         definition,
         heading_setext,
-        |ok| Box::new(if ok { after } else { content_before }),
+        |ok| Box::new(if ok { after } else { paragraph_before }),
     )(tokenizer, code)
 }
 
-/// Before content.
+/// Before a paragraph.
 ///
 /// ```markdown
 /// |qwe
 /// ```
-///
-// To do: we don’t need content anymore in `micromark-rs` it seems?
-fn content_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn paragraph_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             after(tokenizer, code)
         }
         _ => {
-            tokenizer.enter(TokenType::Content);
-            tokenizer.enter(TokenType::ChunkContent);
-            content(tokenizer, code, tokenizer.events.len() - 1)
+            tokenizer.enter(TokenType::Paragraph);
+            tokenizer.enter(TokenType::ChunkText);
+            paragraph_inside(tokenizer, code, tokenizer.events.len() - 1)
         }
     }
 }
 
-/// In content.
+/// In a paragraph.
 ///
 /// ```markdown
 /// al|pha
 /// ```
-fn content(tokenizer: &mut Tokenizer, code: Code, previous: usize) -> StateFnResult {
+fn paragraph_inside(tokenizer: &mut Tokenizer, code: Code, previous: usize) -> StateFnResult {
     match code {
-        Code::None => content_end(tokenizer, code),
+        Code::None => paragraph_end(tokenizer, code),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.check(continuation_construct, move |ok| {
                 Box::new(move |t, c| {
                     if ok {
-                        content_continue(t, c, previous)
+                        paragraph_continue(t, c, previous)
                     } else {
-                        content_end(t, c)
+                        paragraph_end(t, c)
                     }
                 })
             })(tokenizer, code)
@@ -199,7 +195,7 @@ fn content(tokenizer: &mut Tokenizer, code: Code, previous: usize) -> StateFnRes
         _ => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(move |t, c| content(t, c, previous))),
+                State::Fn(Box::new(move |t, c| paragraph_inside(t, c, previous))),
                 None,
             )
         }
@@ -248,9 +244,9 @@ fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) ->
     }
 
     match code {
-        // Blank lines are not allowed in content.
+        // Blank lines are not allowed in paragraph.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
-        // To do: If code is disabled, indented lines are part of the content.
+        // To do: If code is disabled, indented lines are part of the paragraph.
         _ if prefix >= TAB_SIZE => (State::Ok, None),
         // To do: definitions, setext headings, etc?
         _ => tokenizer.attempt_2(heading_atx, thematic_break, |ok| {
@@ -264,21 +260,25 @@ fn continuation_construct_after_prefix(tokenizer: &mut Tokenizer, code: Code) ->
     }
 }
 
-fn content_continue(tokenizer: &mut Tokenizer, code: Code, previous_index: usize) -> StateFnResult {
+fn paragraph_continue(
+    tokenizer: &mut Tokenizer,
+    code: Code,
+    previous_index: usize,
+) -> StateFnResult {
     tokenizer.consume(code);
-    tokenizer.exit(TokenType::ChunkContent);
-    tokenizer.enter(TokenType::ChunkContent);
+    tokenizer.exit(TokenType::ChunkText);
+    tokenizer.enter(TokenType::ChunkText);
     let next_index = tokenizer.events.len() - 1;
     tokenizer.events[previous_index].next = Some(next_index);
     tokenizer.events[next_index].previous = Some(previous_index);
     (
-        State::Fn(Box::new(move |t, c| content(t, c, next_index))),
+        State::Fn(Box::new(move |t, c| paragraph_inside(t, c, next_index))),
         None,
     )
 }
 
-fn content_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(TokenType::ChunkContent);
-    tokenizer.exit(TokenType::Content);
+fn paragraph_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.exit(TokenType::ChunkText);
+    tokenizer.exit(TokenType::Paragraph);
     after(tokenizer, code)
 }

@@ -126,7 +126,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CodeTextData
                 | TokenType::CodeTextLineEnding
                 | TokenType::CodeTextSequence
-                | TokenType::Content
                 | TokenType::Data
                 | TokenType::DefinitionLabel
                 | TokenType::DefinitionLabelMarker
@@ -213,7 +212,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 | TokenType::CodeFencedFenceWhitespace
                 | TokenType::CodeIndentedPrefixWhitespace
                 | TokenType::CodeTextSequence
-                | TokenType::Content
                 | TokenType::DefinitionLabel
                 | TokenType::DefinitionLabelMarker
                 | TokenType::DefinitionLabelData

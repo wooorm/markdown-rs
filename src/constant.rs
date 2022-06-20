@@ -103,8 +103,9 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// List of HTML tag names that form the **basic** production of
 /// [HTML (flow)][html_flow].
 ///
-/// The **basic** production allows interleaving HTML and markdown with blank lines
-/// and allows flow (block) elements to interrupt content.
+/// The **basic** production allows interleaving HTML and markdown with blank
+/// lines and allows flow (block) elements to interrupt definitions, paragraphs,
+/// and heading (setext).
 /// Tag name matching must be performed insensitive to case, and thus this list
 /// includes lowercase tag names.
 ///

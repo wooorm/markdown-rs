@@ -46,9 +46,9 @@ cargo doc --document-private-items
 
 ### Some major obstacles
 
-- [ ] (8) Can content (and to a lesser extent string and text) operate more
-      performantly than checking whether other flow constructs start a line,
-      before exiting and actually attempting flow constructs?
+- [ ] (8) Can paragraphs (and to a lesser extent string data and text data)
+      operate more performantly than checking whether other flow constructs
+      start a line, before exiting and actually attempting flow constructs?
 - [ ] (5) Figure out sharing definition and identifiers, and references before
       definitions
 - [ ] (3) Interrupting: sometimes flow can or cannot start depending on the
@@ -57,8 +57,8 @@ cargo doc --document-private-items
       subtokenization is solved
 - [ ] (3) Concrete constructs: HTML or code (fenced) cannot be “pierced” into by
       containers
-- [ ] (3) Lazy lines, in containers, in flow and content in a paragraph, a line
-      does not need to be indented
+- [ ] (3) Lazy lines, in containers, in flow in a paragraph, a line does not
+      need to be indented
 - [ ] (5) There’s a lot of rust-related choosing whether to pass (mutable)
       references or whatever around that should be refactored
 - [ ] (5) Figure out extensions
@@ -66,11 +66,9 @@ cargo doc --document-private-items
 
 ### Small things
 
-- [ ] (1) Remove `content` content type, as it is no longer needed
 - [ ] (1) Connect `ChunkString` in label, destination, title
 - [ ] (1) Add support for line endings in `string`
 - [ ] (1) Add docs to subtokenize
-- [ ] (1) Add module docs to content
 - [ ] (1) Add module docs to parser
 - [ ] (1) Add overview docs on how everything works
 - [ ] (1) Move safe protocols to constants
@@ -109,8 +107,7 @@ cargo doc --document-private-items
 - [x] character reference
 - [x] code (fenced)
 - [x] code (indented)
-- [x] (1) code (text)
-- [ ] (3) content
+- [x] code (text)
 - [x] definition
 - [x] hard break (escape)
 - [x] hard break (trailing)
@@ -134,14 +131,12 @@ cargo doc --document-private-items
   - [x] blank line
   - [x] code (fenced)
   - [x] code (indented)
-  - [x] content
   - [x] definition
   - [x] heading (atx)
   - [x] heading (setext)
   - [x] html (flow)
-  - [x] thematic break
-- [x] content
   - [x] paragraph
+  - [x] thematic break
 - [ ] (5) text
   - [ ] attention (strong, emphasis) (text)
   - [x] autolink
@@ -170,10 +165,10 @@ cargo doc --document-private-items
 - [x] (1) Add examples to `CompileOptions` docs
 - [x] (3) Fix deep subtokenization
 - [x] (1) text in heading
-- [x] (1) Setext headings: can they be solved in content, or do they have to be
-      solved in flow somehow
+- [x] (1) Setext headings, solved in flow
 - [x] (1) Add docs to partials
 - [x] (1) Remove all `pub fn`s from constructs, except for start
+- [x] (1) Remove `content` content type, as it is no longer needed
 
 ### Extensions
 
@@ -188,7 +183,7 @@ important.
       — [`micromark-extension-frontmatter`](https://github.com/micromark/micromark-extension-frontmatter)
 - [ ] (3) autolink literal (GFM) (text)
       — [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)
-- [ ] (3) footnote (GFM) (content, text)
+- [ ] (3) footnote (GFM) (flow, text)
       — [`micromark-extension-gfm-footnote`](https://github.com/micromark/micromark-extension-gfm-footnote)
 - [ ] (3) strikethrough (GFM) (text)
       — [`micromark-extension-gfm-strikethrough`](https://github.com/micromark/micromark-extension-gfm-strikethrough)

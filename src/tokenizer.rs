@@ -48,7 +48,6 @@ pub enum TokenType {
     CodeTextSequence,
     CodeTextLineEnding,
     CodeTextData,
-    Content,
     Data,
     Definition,
     DefinitionLabel,
@@ -86,7 +85,6 @@ pub enum TokenType {
     Whitespace,
 
     // Chunks are tokenizer, but unraveled by `subtokenize`.
-    ChunkContent,
     ChunkString,
     ChunkText,
 }

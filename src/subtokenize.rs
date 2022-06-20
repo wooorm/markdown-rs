@@ -1,4 +1,4 @@
-use crate::content::{content::start as content, string::start as string, text::start as text};
+use crate::content::{string::start as string, text::start as text};
 use crate::tokenizer::{
     Code, Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer,
 };
@@ -20,8 +20,7 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
 
         // Find each first opening chunk.
         if (event.token_type == TokenType::ChunkString
-                || event.token_type == TokenType::ChunkText
-                || event.token_type == TokenType::ChunkContent) &&
+                || event.token_type == TokenType::ChunkText) &&
             event.event_type == EventType::Enter &&
             // No need to enter linked events again.
             event.previous == None
@@ -33,9 +32,7 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
             let mut tokenizer = Tokenizer::new(event.point.clone(), event.index);
             // Substate.
             let mut result: StateFnResult = (
-                State::Fn(Box::new(if event.token_type == TokenType::ChunkContent {
-                    content
-                } else if event.token_type == TokenType::ChunkString {
+                State::Fn(Box::new(if event.token_type == TokenType::ChunkString {
                     string
                 } else {
                     text

@@ -24,7 +24,6 @@
 //! *   [code (fenced)][code_fenced]
 //! *   [code (indented)][code_indented]
 //! *   [code (text)][code_text]
-//! *   content
 //! *   [definition][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [hard break (trailing)][hard_break_trailing]

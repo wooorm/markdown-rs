@@ -632,7 +632,7 @@ fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// At an allowed line ending.
 ///
-/// > **Note**: we can’t have blank lines in content, so no need to worry about
+/// > **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
 ///
 /// ```markdown
@@ -661,7 +661,7 @@ fn at_line_ending(
 
 /// After a line ending.
 ///
-/// > **Note**: we can’t have blank lines in content, so no need to worry about
+/// > **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
 ///
 /// ```markdown
@@ -681,7 +681,7 @@ fn after_line_ending(
 
 /// After a line ending, after indent.
 ///
-/// > **Note**: we can’t have blank lines in content, so no need to worry about
+/// > **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
 ///
 /// ```markdown

@@ -1,6 +1,6 @@
 //! The string content type.
 //!
-//! **String** is a limited **text** like content type which only allows
+//! **String** is a limited [text][] like content type which only allows
 //! character escapes and character references.
 //! It exists in things such as identifiers (media references, definitions),
 //! titles, URLs, code (fenced) info and meta parts.
@@ -9,6 +9,8 @@
 //!
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
+//!
+//! [text]: crate::content::text
 
 use crate::construct::{
     character_escape::start as character_escape, character_reference::start as character_reference,
