@@ -79,7 +79,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// [a]|: b "c"
 /// ```
-pub fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // To do: get the identifier:
     // identifier = normalizeIdentifier(
     //   self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1)
@@ -104,7 +104,7 @@ pub fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]:| ␊
 ///  b "c"
 /// ```
-pub fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |t, c| whitespace(t, c, TokenType::Whitespace),
         |_ok| Box::new(marker_after_optional_whitespace),
@@ -119,7 +119,7 @@ pub fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: |␊
 ///  b "c"
 /// ```
-pub fn marker_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.enter(TokenType::LineEnding);
@@ -137,7 +137,7 @@ pub fn marker_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code) -
 /// [a]:
 /// | b "c"
 /// ```
-pub fn marker_after_optional_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker_after_optional_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |t, c| whitespace(t, c, TokenType::Whitespace),
         |_ok| Box::new(destination_before),
@@ -152,7 +152,7 @@ pub fn marker_after_optional_line_ending(tokenizer: &mut Tokenizer, code: Code) 
 /// [a]:
 ///  |b "c"
 /// ```
-pub fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let event = tokenizer.events.last().unwrap();
     // Blank line not ok.
     let char_nok = matches!(
@@ -177,7 +177,7 @@ pub fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResul
 /// [a]: b| ␊
 ///  "c"
 /// ```
-pub fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(title_before, |_ok| Box::new(after))(tokenizer, code)
 }
 
@@ -187,7 +187,7 @@ pub fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult
 /// [a]: b|
 /// [a]: b "c"|
 /// ```
-pub fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |t, c| whitespace(t, c, TokenType::Whitespace),
         |_ok| Box::new(after_whitespace),
@@ -200,7 +200,7 @@ pub fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: b |
 /// [a]: b "c"|
 /// ```
-pub fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.exit(TokenType::Definition);
@@ -218,7 +218,7 @@ pub fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 /// [a]: b| ␊
 ///  "c"
 /// ```
-pub fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |t, c| whitespace(t, c, TokenType::Whitespace),
         |_ok| Box::new(title_before_after_optional_whitespace),
@@ -233,10 +233,7 @@ pub fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: b |␊
 ///  "c"
 /// ```
-pub fn title_before_after_optional_whitespace(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-) -> StateFnResult {
+fn title_before_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.enter(TokenType::LineEnding);
@@ -257,10 +254,7 @@ pub fn title_before_after_optional_whitespace(
 /// [a]: b␊
 /// | "c"
 /// ```
-pub fn title_before_after_optional_line_ending(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-) -> StateFnResult {
+fn title_before_after_optional_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |t, c| whitespace(t, c, TokenType::Whitespace),
         |_ok| Box::new(title_before_marker),
@@ -273,7 +267,7 @@ pub fn title_before_after_optional_line_ending(
 /// [a]: b␊
 /// | "c"
 /// ```
-pub fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let event = tokenizer.events.last().unwrap();
 
     if event.token_type == TokenType::LineEnding || event.token_type == TokenType::Whitespace {
@@ -291,7 +285,7 @@ pub fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResu
 /// [a]: b␊
 /// "c"|
 /// ```
-pub fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(
         |t, c| whitespace(t, c, TokenType::Whitespace),
         |_ok| Box::new(title_after_after_optional_whitespace),
@@ -305,10 +299,7 @@ pub fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///
 /// [a]: b "c" |
 /// ```
-pub fn title_after_after_optional_whitespace(
-    _tokenizer: &mut Tokenizer,
-    code: Code,
-) -> StateFnResult {
+fn title_after_after_optional_whitespace(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             (State::Ok, Some(vec![code]))

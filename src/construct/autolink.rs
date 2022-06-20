@@ -124,7 +124,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// a<|https://example.com>b
 /// a<|user@example.com>b
 /// ```
-pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char.is_ascii_alphabetic() => {
             tokenizer.consume(code);
@@ -141,7 +141,7 @@ pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// a<h|ttps://example.com>b
 /// a<u|ser@example.com>b
 /// ```
-pub fn scheme_or_email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn scheme_or_email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // Whether this character can be both a protocol and email atext.
     let unknown = match code {
         Code::Char('+' | '-' | '.') => true,
@@ -162,7 +162,7 @@ pub fn scheme_or_email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnRe
 /// a<ht|tps://example.com>b
 /// a<us|er@example.com>b
 /// ```
-pub fn scheme_inside_or_email_atext(
+fn scheme_inside_or_email_atext(
     tokenizer: &mut Tokenizer,
     code: Code,
     size: usize,
@@ -199,7 +199,7 @@ pub fn scheme_inside_or_email_atext(
 /// ```markdown
 /// a<https:|//example.com>b
 /// ```
-pub fn url_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn url_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => {
             tokenizer.exit(TokenType::AutolinkProtocol);
@@ -221,7 +221,7 @@ pub fn url_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// a<user.na|me@example.com>b
 /// ```
-pub fn email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('@') => {
             tokenizer.consume(code);
@@ -244,7 +244,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// a<user.name@|example.com>b
 /// a<user.name@example.|com>b
 /// ```
-pub fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
+fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
         Code::Char(char) if char.is_ascii_alphanumeric() => email_value(tokenizer, code, size),
         _ => (State::Nok, None),
@@ -256,7 +256,7 @@ pub fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, code: Code, size: usize) 
 /// ```markdown
 /// a<user.name@ex|ample.com>b
 /// ```
-pub fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
+fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
         Code::Char('.') => {
             tokenizer.consume(code);
@@ -285,7 +285,7 @@ pub fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateF
 /// ```markdown
 /// a<user.name@ex-|ample.com>b
 /// ```
-pub fn email_value(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
+fn email_value(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     let ok = match code {
         Code::Char('-') if size < AUTOLINK_DOMAIN_SIZE_MAX => true,
         Code::Char(char) if char.is_ascii_alphanumeric() && size < AUTOLINK_DOMAIN_SIZE_MAX => true,
@@ -311,7 +311,7 @@ pub fn email_value(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateF
 /// a<https://example.com|>b
 /// a<user@example.com|>b
 /// ```
-pub fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => {
             tokenizer.enter(TokenType::AutolinkMarker);

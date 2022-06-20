@@ -123,10 +123,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult 
             tokenizer.enter(TokenType::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
-            (
-                State::Fn(Box::new(|t, c| line_start(t, c, kind))),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| line_start(t, c, kind))), None)
         }
         _ => {
             // To do: link.

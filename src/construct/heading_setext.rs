@@ -90,7 +90,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// bra|vo
 /// ==
 /// ```
-pub fn text_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn text_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {

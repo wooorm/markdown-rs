@@ -109,7 +109,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// `|`a``
 /// ```
-pub fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
+fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     if let Code::Char('`') = code {
         tokenizer.consume(code);
         (
@@ -130,7 +130,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> Stat
 /// `|a`
 /// `a|`
 /// ```
-pub fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
+fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
@@ -160,7 +160,7 @@ pub fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> State
 /// ```markdown
 /// `a|b`
 /// ```
-pub fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
+fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '`') => {
             tokenizer.exit(TokenType::CodeTextData);
@@ -183,7 +183,7 @@ pub fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnR
 /// ```markdown
 /// ``a`|`
 /// ```
-pub fn sequence_close(
+fn sequence_close(
     tokenizer: &mut Tokenizer,
     code: Code,
     size_open: usize,
