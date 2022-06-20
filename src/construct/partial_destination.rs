@@ -140,51 +140,50 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// a|b
 /// ```
-// To do: these arms can be improved?
 fn raw(tokenizer: &mut Tokenizer, code: Code, balance: usize) -> StateFnResult {
     // To do: configurable.
     let limit = usize::MAX;
 
     match code {
-        Code::Char('(') if balance >= limit => (State::Nok, None),
         Code::Char('(') => {
-            tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| raw(t, c, balance + 1))),
-                None,
-            )
-        }
-        Code::Char(')') if balance == 0 => {
-            tokenizer.exit(TokenType::ChunkString);
-            tokenizer.exit(TokenType::DefinitionDestinationString);
-            tokenizer.exit(TokenType::DefinitionDestinationRaw);
-            tokenizer.exit(TokenType::DefinitionDestination);
-            (State::Ok, Some(vec![code]))
+            if balance >= limit {
+                (State::Nok, None)
+            } else {
+                tokenizer.consume(code);
+                (
+                    State::Fn(Box::new(move |t, c| raw(t, c, balance + 1))),
+                    None,
+                )
+            }
         }
         Code::Char(')') => {
-            tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| raw(t, c, balance - 1))),
-                None,
-            )
-        }
-        Code::None
-        | Code::CarriageReturnLineFeed
-        | Code::VirtualSpace
-        | Code::Char('\t' | '\r' | '\n' | ' ')
-            if balance > 0 =>
-        {
-            (State::Nok, None)
+            if balance == 0 {
+                tokenizer.exit(TokenType::ChunkString);
+                tokenizer.exit(TokenType::DefinitionDestinationString);
+                tokenizer.exit(TokenType::DefinitionDestinationRaw);
+                tokenizer.exit(TokenType::DefinitionDestination);
+                (State::Ok, Some(vec![code]))
+            } else {
+                tokenizer.consume(code);
+                (
+                    State::Fn(Box::new(move |t, c| raw(t, c, balance - 1))),
+                    None,
+                )
+            }
         }
         Code::None
         | Code::CarriageReturnLineFeed
         | Code::VirtualSpace
         | Code::Char('\t' | '\r' | '\n' | ' ') => {
-            tokenizer.exit(TokenType::ChunkString);
-            tokenizer.exit(TokenType::DefinitionDestinationString);
-            tokenizer.exit(TokenType::DefinitionDestinationRaw);
-            tokenizer.exit(TokenType::DefinitionDestination);
-            (State::Ok, Some(vec![code]))
+            if balance > 0 {
+                (State::Nok, None)
+            } else {
+                tokenizer.exit(TokenType::ChunkString);
+                tokenizer.exit(TokenType::DefinitionDestinationString);
+                tokenizer.exit(TokenType::DefinitionDestinationRaw);
+                tokenizer.exit(TokenType::DefinitionDestination);
+                (State::Ok, Some(vec![code]))
+            }
         }
         Code::Char(char) if char.is_ascii_control() => (State::Nok, None),
         Code::Char('\\') => {
