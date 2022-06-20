@@ -173,7 +173,6 @@ fn title(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
             tokenizer.exit(TokenType::ChunkString);
             at_break(tokenizer, code, kind, true)
         }
-        // To do: limit blank lines.
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.consume(code);
             tokenizer.exit(TokenType::ChunkString);

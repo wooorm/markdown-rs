@@ -17,8 +17,6 @@ use crate::construct::{
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
-// To do: line endings?
-
 /// Before string.
 ///
 /// ```markdown

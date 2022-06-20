@@ -51,8 +51,6 @@
 //! [decode_numeric]: crate::util::decode_character_reference::decode_numeric
 //! [character_reference_names]: crate::constant::CHARACTER_REFERENCE_NAMES
 //! [html]: https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
-//!
-//! <!-- To do: link `string`, `text` -->
 
 use crate::constant::{
     CHARACTER_REFERENCE_DECIMAL_SIZE_MAX, CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,

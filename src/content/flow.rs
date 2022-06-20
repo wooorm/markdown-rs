@@ -94,7 +94,6 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        // To do: should all flow just start before the prefix?
         _ => tokenizer.attempt_7(
             code_indented,
             code_fenced,

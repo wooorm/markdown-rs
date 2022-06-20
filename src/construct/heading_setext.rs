@@ -126,7 +126,6 @@ fn text_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // Needed to connect the text.
-    // To do: does it work?
     tokenizer.enter(TokenType::HeadingSetextText);
     tokenizer.events.pop();
     tokenizer.events.pop();

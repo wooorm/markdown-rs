@@ -194,7 +194,7 @@ fn html_flow_2_comment() {
         "should support comments (type 2)"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<!-- foo -->*bar*\n*baz*", DANGER),
     //     "<!-- foo -->*bar*\n<p><em>baz</em></p>",
@@ -454,7 +454,7 @@ fn html_flow_5_cdata() {
 
 #[test]
 fn html_flow_6_basic() {
-    // To do: phrasing, paragraphs, etc.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options(
     //         "<table><tr><td>\n<pre>\n**Hello**,\n\n_world_.\n</pre>\n</td></tr></table>",
@@ -464,7 +464,6 @@ fn html_flow_6_basic() {
     //     "should support html (basic)"
     // );
 
-    // To do: paragraphs.
     assert_eq!(
         micromark_with_options(
             "<table>
@@ -501,7 +500,7 @@ okay.",
         "should support html starting w/ a closing tag"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<DIV CLASS=\"foo\">\n\n*Markdown*\n\n</DIV>", DANGER),
     //     "<DIV CLASS=\"foo\">\n<p><em>Markdown</em></p>\n</DIV>",
@@ -520,7 +519,7 @@ okay.",
         "should support html w/ line endings (2)"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<div>\n*foo*\n\n*bar*", DANGER),
     //     "<div>\n*foo*\n<p><em>bar</em></p>",
@@ -601,7 +600,7 @@ okay.",
         "should require a blank line to end"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<div>\n\n*Emphasized* text.\n\n</div>", DANGER),
     //     "<div>\n<p><em>Emphasized</em> text.</p>\n</div>",
@@ -679,7 +678,7 @@ okay.",
         "should not support an eof directly after a self-closing slash"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<div/\n*asd*", DANGER),
     //     "<p>&lt;div/\n<em>asd</em></p>",
@@ -769,14 +768,14 @@ fn html_flow_7_complete() {
         "should support closing tags"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<del>\n\n*foo*\n\n</del>", DANGER),
     //     "<del>\n<p><em>foo</em></p>\n</del>",
     //     "should support interleaving"
     // );
 
-    // To do: html (text).
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<del>*foo*</del>", DANGER),
     //     "<p><del><em>foo</em></del></p>",
@@ -827,7 +826,7 @@ fn html_flow_7_complete() {
         "should not support an eof directly after a self-closing slash"
     );
 
-    // To do: phrasing.
+    // To do: attention.
     // assert_eq!(
     //     micromark_with_options("<x/\n*asd*", DANGER),
     //     "<p>&lt;x/\n<em>asd</em></p>",
@@ -846,19 +845,17 @@ fn html_flow_7_complete() {
         "should support a line ending after a self-closing tag"
     );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x/>a", DANGER),
-    //     "<p><x/>a</p>",
-    //     "should not support another character after a self-closing tag"
-    // );
+    assert_eq!(
+        micromark_with_options("<x/>a", DANGER),
+        "<p><x/>a</p>",
+        "should not support another character after a self-closing tag"
+    );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x>a", DANGER),
-    //     "<p><x>a</p>",
-    //     "should not support another character after an opening tag"
-    // );
+    assert_eq!(
+        micromark_with_options("<x>a", DANGER),
+        "<p><x>a</p>",
+        "should not support another character after an opening tag"
+    );
 
     assert_eq!(
         micromark_with_options("<x y>", DANGER),
@@ -866,32 +863,29 @@ fn html_flow_7_complete() {
         "should support boolean attributes in a complete tag"
     );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x\ny>", DANGER),
-    //     "<p><x\ny></p>",
-    //     "should not support a line ending before an attribute name"
-    // );
-
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x\n  y>", DANGER),
-    //     "<p><x\ny></p>",
-    //     "should not support a line ending w/ whitespace before an attribute name"
-    // );
+    assert_eq!(
+        micromark_with_options("<x\ny>", DANGER),
+        "<p><x\ny></p>",
+        "should not support a line ending before an attribute name"
+    );
 
     assert_eq!(
-    micromark_with_options("<x\n  \ny>", DANGER),
-    "<p>&lt;x</p>\n<p>y&gt;</p>",
-    "should not support a line ending w/ whitespace and another line ending before an attribute name"
-  );
+        micromark_with_options("<x\n  y>", DANGER),
+        "<p><x\ny></p>",
+        "should not support a line ending w/ whitespace before an attribute name"
+    );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x y\nz>", DANGER),
-    //     "<p><x y\nz></p>",
-    //     "should not support a line ending between attribute names"
-    // );
+    assert_eq!(
+        micromark_with_options("<x\n  \ny>", DANGER),
+        "<p>&lt;x</p>\n<p>y&gt;</p>",
+        "should not support a line ending w/ whitespace and another line ending before an attribute name"
+    );
+
+    assert_eq!(
+        micromark_with_options("<x y\nz>", DANGER),
+        "<p><x y\nz></p>",
+        "should not support a line ending between attribute names"
+    );
 
     assert_eq!(
         micromark_with_options("<x y   z>", DANGER),
@@ -995,26 +989,23 @@ fn html_flow_7_complete() {
         "should support an empty single quoted attribute value"
     );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x y=\"\n\">", DANGER),
-    //     "<p><x y=\"\n\"></p>",
-    //     "should not support a line ending in a double quoted attribute value"
-    // );
+    assert_eq!(
+        micromark_with_options("<x y=\"\n\">", DANGER),
+        "<p><x y=\"\n\"></p>",
+        "should not support a line ending in a double quoted attribute value"
+    );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<x y=\"\n\">", DANGER),
-    //     "<p><x y=\"\n\"></p>",
-    //     "should not support a line ending in a single quoted attribute value"
-    // );
+    assert_eq!(
+        micromark_with_options("<x y=\"\n\">", DANGER),
+        "<p><x y=\"\n\"></p>",
+        "should not support a line ending in a single quoted attribute value"
+    );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<w x=y\nz>", DANGER),
-    //     "<p><w x=y\nz></p>",
-    //     "should not support a line ending in/after an unquoted attribute value"
-    // );
+    assert_eq!(
+        micromark_with_options("<w x=y\nz>", DANGER),
+        "<p><w x=y\nz></p>",
+        "should not support a line ending in/after an unquoted attribute value"
+    );
 
     assert_eq!(
         micromark_with_options("<w x=y\"z>", DANGER),
@@ -1022,12 +1013,11 @@ fn html_flow_7_complete() {
         "should not support a double quote in/after an unquoted attribute value"
     );
 
-    // To do: html (text).
-    // assert_eq!(
-    //     micromark_with_options("<w x=y\"z>", DANGER),
-    //     "<p>&lt;w x=y\"z&gt;</p>",
-    //     "should not support a single quote in/after an unquoted attribute value"
-    // );
+    assert_eq!(
+        micromark_with_options("<w x=y'z>", DANGER),
+        "<p>&lt;w x=y'z&gt;</p>",
+        "should not support a single quote in/after an unquoted attribute value"
+    );
 
     assert_eq!(
         micromark_with_options("<x y=\"\"z>", DANGER),
