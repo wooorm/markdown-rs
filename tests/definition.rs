@@ -49,12 +49,11 @@ fn definition() {
     //     "should support line endings in titles"
     // );
 
-    // To do: some bug
-    // assert_eq!(
-    //     micromark("[foo]: /url 'title\n\nwith blank line'\n\n[foo]"),
-    //     "<p>[foo]: /url 'title</p>\n<p>with blank line'</p>\n<p>[foo]</p>",
-    //     "should not support blank lines in titles"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url 'title\n\nwith blank line'\n\n[foo]"),
+        "<p>[foo]: /url 'title</p>\n<p>with blank line'</p>\n<p>[foo]</p>",
+        "should not support blank lines in titles"
+    );
 
     // To do: link (reference).
     // assert_eq!(

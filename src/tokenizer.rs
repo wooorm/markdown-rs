@@ -704,7 +704,12 @@ pub fn as_codes(value: &str) -> Vec<Code> {
                 // Send a tab and virtual spaces.
                 '\t' => {
                     // To do: is this correct?
-                    let virtual_spaces = TAB_SIZE - (column % TAB_SIZE);
+                    let remainder = column % TAB_SIZE;
+                    let virtual_spaces = if remainder == 0 {
+                        0
+                    } else {
+                        TAB_SIZE - remainder
+                    };
                     codes.push(Code::Char(char));
                     column += 1;
                     let mut index = 0;

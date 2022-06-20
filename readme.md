@@ -66,15 +66,15 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (1) Handle BOM at start
+- [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to parser
 - [ ] (1) Add overview docs on how everything works
 - [ ] (1) Move safe protocols to constants
-- [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (3) Clean compiler
 - [ ] (1) Use preferred line ending style in markdown
 - [ ] (1) Add tests for `default-line-ending`, `line-ending`
-- [ ] (1) Handle BOM at start
 - [ ] (1) Make sure tabs are handled properly and that positional info is perfect
 - [ ] (1) Make sure crlf/cr/lf are working perfectly
 - [ ] (3) Figure out lifetimes of things (see `life time` in source)

@@ -32,12 +32,11 @@ fn tabs_flow() {
         "should support a 2*SP + HT to start code"
     );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \tx"),
-    //     "<pre><code>x\n</code></pre>",
-    //     "should support a 3*SP + HT to start code"
-    // );
+    assert_eq!(
+        micromark("   \tx"),
+        "<pre><code>x\n</code></pre>",
+        "should support a 3*SP + HT to start code"
+    );
 
     assert_eq!(
         micromark("    \tx"),
@@ -45,54 +44,47 @@ fn tabs_flow() {
         "should support a 4*SP to start code, and leave the next HT as code data"
     );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t# x"),
-    //     "<pre><code># x\n</code></pre>",
-    //     "should not support a 3*SP + HT to start an ATX heading"
-    // );
+    assert_eq!(
+        micromark("   \t# x"),
+        "<pre><code># x\n</code></pre>",
+        "should not support a 3*SP + HT to start an ATX heading"
+    );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t> x"),
-    //     "<pre><code>&gt; x\n</code></pre>",
-    //     "should not support a 3*SP + HT to start a block quote"
-    // );
+    assert_eq!(
+        micromark("   \t> x"),
+        "<pre><code>&gt; x\n</code></pre>",
+        "should not support a 3*SP + HT to start a block quote"
+    );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t- x"),
-    //     "<pre><code>- x\n</code></pre>",
-    //     "should not support a 3*SP + HT to start a list item"
-    // );
+    assert_eq!(
+        micromark("   \t- x"),
+        "<pre><code>- x\n</code></pre>",
+        "should not support a 3*SP + HT to start a list item"
+    );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t---"),
-    //     "<pre><code>---\n</code></pre>",
-    //     "should not support a 3*SP + HT to start a thematic break"
-    // );
+    assert_eq!(
+        micromark("   \t---"),
+        "<pre><code>---\n</code></pre>",
+        "should not support a 3*SP + HT to start a thematic break"
+    );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t---"),
-    //     "<pre><code>---\n</code></pre>",
-    //     "should not support a 3*SP + HT to start a thematic break"
-    // );
+    assert_eq!(
+        micromark("   \t---"),
+        "<pre><code>---\n</code></pre>",
+        "should not support a 3*SP + HT to start a thematic break"
+    );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t```"),
-    //     "<pre><code>```\n</code></pre>",
-    //     "should not support a 3*SP + HT to start a fenced code"
-    // );
+    assert_eq!(
+        micromark("   \t```"),
+        "<pre><code>```\n</code></pre>",
+        "should not support a 3*SP + HT to start a fenced code"
+    );
 
-    // To do: bug with tabs/vs.
-    // assert_eq!(
-    //     micromark("   \t<div>"),
-    //     "<pre><code>&lt;div&gt;\n</code></pre>",
-    //     "should not support a 3*SP + HT to start HTML"
-    // );
+    assert_eq!(
+        micromark("   \t<div>"),
+        "<pre><code>&lt;div&gt;\n</code></pre>",
+        "should not support a 3*SP + HT to start HTML"
+    );
 
     assert_eq!(
         micromark("#\tx\t#\t"),
