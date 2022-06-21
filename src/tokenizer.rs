@@ -49,7 +49,7 @@ pub enum TokenType {
     Definition,
     DefinitionLabel,
     DefinitionLabelMarker,
-    DefinitionLabelData,
+    DefinitionLabelString,
     DefinitionMarker,
     DefinitionDestination,
     DefinitionDestinationLiteral,

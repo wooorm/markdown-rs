@@ -31,11 +31,22 @@
 //!
 //! <!-- To do: link label end. -->
 
-// To do: pass token types in.
-
 use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::link::link;
+
+/// Configuration.
+///
+/// You must pass the token types in that are used.
+#[derive(Debug)]
+pub struct Options {
+    /// Token for the whole title.
+    pub title: TokenType,
+    /// Token for the marker.
+    pub marker: TokenType,
+    /// Token for the string inside the quotes.
+    pub string: TokenType,
+}
 
 /// Type of title.
 #[derive(Debug, PartialEq)]
@@ -94,6 +105,17 @@ impl Kind {
     }
 }
 
+/// State needed to parse titles.
+#[derive(Debug)]
+struct Info {
+    /// Whether we’ve seen our first `ChunkString`.
+    connect: bool,
+    /// Kind of title.
+    kind: Kind,
+    /// Configuration.
+    options: Options,
+}
+
 /// Before a title.
 ///
 /// ```markdown
@@ -101,15 +123,19 @@ impl Kind {
 /// |'a'
 /// |(a)
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     match code {
         Code::Char(char) if char == '(' || char == '"' || char == '\'' => {
-            let kind = Kind::from_char(char);
-            tokenizer.enter(TokenType::DefinitionTitle);
-            tokenizer.enter(TokenType::DefinitionTitleMarker);
+            let info = Info {
+                connect: false,
+                kind: Kind::from_char(char),
+                options,
+            };
+            tokenizer.enter(info.options.title.clone());
+            tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::DefinitionTitleMarker);
-            (State::Fn(Box::new(|t, c| begin(t, c, kind))), None)
+            tokenizer.exit(info.options.marker.clone());
+            (State::Fn(Box::new(|t, c| begin(t, c, info))), None)
         }
         _ => (State::Nok, None),
     }
@@ -124,18 +150,18 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// '|a'
 /// (|a)
 /// ```
-fn begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
-        Code::Char(char) if char == kind.as_char() => {
-            tokenizer.enter(TokenType::DefinitionTitleMarker);
+        Code::Char(char) if char == info.kind.as_char() => {
+            tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::DefinitionTitleMarker);
-            tokenizer.exit(TokenType::DefinitionTitle);
+            tokenizer.exit(info.options.marker.clone());
+            tokenizer.exit(info.options.title);
             (State::Ok, None)
         }
         _ => {
-            tokenizer.enter(TokenType::DefinitionTitleString);
-            at_break(tokenizer, code, kind, false)
+            tokenizer.enter(info.options.string.clone());
+            at_break(tokenizer, code, info)
         }
     }
 }
@@ -148,20 +174,24 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
 /// (a|
 /// b)
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, kind: Kind, connect: bool) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::Char(char) if char == kind.as_char() => {
-            tokenizer.exit(TokenType::DefinitionTitleString);
-            begin(tokenizer, code, kind)
+        Code::Char(char) if char == info.kind.as_char() => {
+            tokenizer.exit(info.options.string.clone());
+            begin(tokenizer, code, info)
         }
         Code::None => (State::Nok, None),
         _ => {
             tokenizer.enter(TokenType::ChunkString);
-            if connect {
+
+            if info.connect {
                 let index = tokenizer.events.len() - 1;
                 link(&mut tokenizer.events, index);
+            } else {
+                info.connect = true;
             }
-            title(tokenizer, code, kind)
+
+            title(tokenizer, code, info)
         }
     }
 }
@@ -172,8 +202,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, kind: Kind, connect: bool) ->
 /// "a
 /// |b"
 /// ```
-fn line_start(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), |t, c| line_begin(t, c, kind))(tokenizer, code)
+fn line_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    tokenizer.go(space_or_tab_opt(), |t, c| line_begin(t, c, info))(tokenizer, code)
 }
 
 /// After a line ending, after optional whitespace.
@@ -182,11 +212,11 @@ fn line_start(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResul
 /// "a
 /// |b"
 /// ```
-fn line_begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         // Blank line not allowed.
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
-        _ => at_break(tokenizer, code, kind, true),
+        _ => at_break(tokenizer, code, info),
     }
 }
 
@@ -195,28 +225,28 @@ fn line_begin(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResul
 /// ```markdown
 /// "a|b"
 /// ```
-fn title(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
-        Code::Char(char) if char == kind.as_char() => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, kind, true)
+            at_break(tokenizer, code, info)
         }
         Code::None => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, kind, true)
+            at_break(tokenizer, code, info)
         }
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.consume(code);
             tokenizer.exit(TokenType::ChunkString);
-            (State::Fn(Box::new(|t, c| line_start(t, c, kind))), None)
+            (State::Fn(Box::new(|t, c| line_start(t, c, info))), None)
         }
         Code::Char('\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| escape(t, c, kind))), None)
+            (State::Fn(Box::new(|t, c| escape(t, c, info))), None)
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| title(t, c, kind))), None)
+            (State::Fn(Box::new(|t, c| title(t, c, info))), None)
         }
     }
 }
@@ -226,12 +256,12 @@ fn title(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
 /// ```markdown
 /// "a\|"b"
 /// ```
-fn escape(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
-        Code::Char(char) if char == kind.as_char() => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| title(t, c, kind))), None)
+            (State::Fn(Box::new(|t, c| title(t, c, info))), None)
         }
-        _ => title(tokenizer, code, kind),
+        _ => title(tokenizer, code, info),
     }
 }

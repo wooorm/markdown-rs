@@ -60,6 +60,19 @@ use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::link::link;
 
+/// Configuration.
+///
+/// You must pass the token types in that are used.
+#[derive(Debug)]
+pub struct Options {
+    /// Token for the whole label.
+    pub label: TokenType,
+    /// Token for the markers.
+    pub marker: TokenType,
+    /// Token for the string (inside the markers).
+    pub string: TokenType,
+}
+
 /// State needed to parse labels.
 #[derive(Debug)]
 struct Info {
@@ -69,6 +82,8 @@ struct Info {
     data: bool,
     /// Number of characters in the label.
     size: usize,
+    /// Configuration.
+    options: Options,
 }
 
 /// Before a label.
@@ -76,19 +91,20 @@ struct Info {
 /// ```markdown
 /// |[a]
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     match code {
         Code::Char('[') => {
-            tokenizer.enter(TokenType::DefinitionLabel);
-            tokenizer.enter(TokenType::DefinitionLabelMarker);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::DefinitionLabelMarker);
-            tokenizer.enter(TokenType::DefinitionLabelData);
             let info = Info {
                 connect: false,
                 data: false,
                 size: 0,
+                options,
             };
+            tokenizer.enter(info.options.label.clone());
+            tokenizer.enter(info.options.marker.clone());
+            tokenizer.consume(code);
+            tokenizer.exit(info.options.marker.clone());
+            tokenizer.enter(info.options.string.clone());
             (State::Fn(Box::new(|t, c| at_break(t, c, info))), None)
         }
         _ => (State::Nok, None),
@@ -101,17 +117,17 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [|a]
 /// [a|]
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::None | Code::Char('[') => (State::Nok, None),
         Code::Char(']') if !info.data => (State::Nok, None),
         _ if info.size > LINK_REFERENCE_SIZE_MAX => (State::Nok, None),
         Code::Char(']') => {
-            tokenizer.exit(TokenType::DefinitionLabelData);
-            tokenizer.enter(TokenType::DefinitionLabelMarker);
+            tokenizer.exit(info.options.string.clone());
+            tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::DefinitionLabelMarker);
-            tokenizer.exit(TokenType::DefinitionLabel);
+            tokenizer.exit(info.options.marker.clone());
+            tokenizer.exit(info.options.label);
             (State::Ok, None)
         }
         _ => {
@@ -120,6 +136,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
             if info.connect {
                 let index = tokenizer.events.len() - 1;
                 link(&mut tokenizer.events, index);
+            } else {
+                info.connect = true;
             }
 
             label(tokenizer, code, info)
@@ -157,10 +175,6 @@ fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResul
 /// [a|b]
 /// ```
 fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
-    if !info.connect {
-        info.connect = true;
-    }
-
     match code {
         Code::None | Code::Char('[' | ']') => {
             tokenizer.exit(TokenType::ChunkString);

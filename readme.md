@@ -84,7 +84,6 @@ cargo doc --document-private-items
 
 #### Refactor
 
-- [ ] (1) Configurable tokens (destination, label, title)
 - [ ] (1) Configurable limit (destination)
 
 #### Parse
@@ -237,6 +236,7 @@ cargo doc --document-private-items
 - [x] (1) Move safe protocols to constants
 - [x] (1) Make text data, string data constructs (document in
       `construct/mod.rs`)
+- [x] (1) Configurable tokens (destination, label, title)
 
 ### Extensions
 

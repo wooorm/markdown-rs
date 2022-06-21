@@ -186,7 +186,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::Data
                 | TokenType::DefinitionLabel
                 | TokenType::DefinitionLabelMarker
-                | TokenType::DefinitionLabelData
+                | TokenType::DefinitionLabelString
                 | TokenType::DefinitionMarker
                 | TokenType::DefinitionDestination
                 | TokenType::DefinitionDestinationLiteral
@@ -267,7 +267,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::CodeTextSequence
                 | TokenType::DefinitionLabel
                 | TokenType::DefinitionLabelMarker
-                | TokenType::DefinitionLabelData
+                | TokenType::DefinitionLabelString
                 | TokenType::DefinitionMarker
                 | TokenType::DefinitionDestination
                 | TokenType::DefinitionDestinationLiteral
