@@ -6,6 +6,19 @@
 
 use crate::tokenizer::{Code, State, StateFn, StateFnResult, TokenType, Tokenizer};
 
+/// Options to parse whitespace.
+#[derive(Debug)]
+struct Info {
+    /// Current size.
+    size: usize,
+    /// Minimum allowed characters (inclusive).
+    min: usize,
+    /// Maximum allowed characters (inclusive).
+    max: usize,
+    /// Token type to use for whitespace events.
+    kind: TokenType,
+}
+
 /// Optional `space_or_tab`
 ///
 /// ```bnf
@@ -30,7 +43,13 @@ pub fn space_or_tab_min_max(min: usize, max: usize) -> Box<StateFn> {
 /// space_or_tab ::= x*y( ' ' '\t' )
 /// ```
 pub fn space_or_tab(kind: TokenType, min: usize, max: usize) -> Box<StateFn> {
-    Box::new(move |t, c| start(t, c, kind, min, max))
+    let info = Info {
+        size: 0,
+        min,
+        max,
+        kind,
+    };
+    Box::new(|t, c| start(t, c, info))
 }
 
 /// Before whitespace.
@@ -38,26 +57,16 @@ pub fn space_or_tab(kind: TokenType, min: usize, max: usize) -> Box<StateFn> {
 /// ```markdown
 /// alpha| bravo
 /// ```
-fn start(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    kind: TokenType,
-    min: usize,
-    max: usize,
-) -> StateFnResult {
+fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::VirtualSpace | Code::Char('\t' | ' ') if max > 0 => {
-            tokenizer.enter(kind.clone());
+        Code::VirtualSpace | Code::Char('\t' | ' ') if info.max > 0 => {
+            tokenizer.enter(info.kind.clone());
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    inside(tokenizer, code, kind, min, max, 1)
-                })),
-                None,
-            )
+            info.size += 1;
+            (State::Fn(Box::new(|t, c| inside(t, c, info))), None)
         }
         _ => (
-            if min == 0 { State::Ok } else { State::Nok },
+            if info.min == 0 { State::Ok } else { State::Nok },
             Some(vec![code]),
         ),
     }
@@ -69,28 +78,21 @@ fn start(
 /// alpha |bravo
 /// alpha | bravo
 /// ```
-fn inside(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    kind: TokenType,
-    min: usize,
-    max: usize,
-    size: usize,
-) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::VirtualSpace | Code::Char('\t' | ' ') if size < max => {
+        Code::VirtualSpace | Code::Char('\t' | ' ') if info.size < info.max => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    inside(tokenizer, code, kind, min, max, size + 1)
-                })),
-                None,
-            )
+            info.size += 1;
+            (State::Fn(Box::new(|t, c| inside(t, c, info))), None)
         }
         _ => {
-            tokenizer.exit(kind);
+            tokenizer.exit(info.kind.clone());
             (
-                if size >= min { State::Ok } else { State::Nok },
+                if info.size >= info.min {
+                    State::Ok
+                } else {
+                    State::Nok
+                },
                 Some(vec![code]),
             )
         }

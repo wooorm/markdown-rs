@@ -59,7 +59,7 @@ use crate::constant::{
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Kind of a character reference.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     /// Numeric decimal character reference (`&#x9;`).
     Decimal,
@@ -67,6 +67,28 @@ pub enum Kind {
     Hexadecimal,
     /// Named character reference (`&amp;`).
     Named,
+}
+
+impl Kind {
+    /// Get the maximum size of characters allowed in a character reference.
+    fn max(&self) -> usize {
+        match self {
+            Kind::Hexadecimal => CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
+            Kind::Decimal => CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
+            Kind::Named => CHARACTER_REFERENCE_NAMED_SIZE_MAX,
+        }
+    }
+
+    /// Check if a char is allowed.
+    fn allowed(&self, char: char) -> bool {
+        let check = match self {
+            Kind::Hexadecimal => char::is_ascii_hexdigit,
+            Kind::Decimal => char::is_ascii_digit,
+            Kind::Named => char::is_ascii_alphanumeric,
+        };
+
+        check(&char)
+    }
 }
 
 /// State needed to parse character references.
@@ -141,10 +163,10 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(TokenType::CharacterReferenceValue);
 
             (
-                State::Fn(Box::new(|tokenizer, code| {
+                State::Fn(Box::new(|t, c| {
                     value(
-                        tokenizer,
-                        code,
+                        t,
+                        c,
                         Info {
                             buffer: vec![],
                             kind: Kind::Hexadecimal,
@@ -179,7 +201,7 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// a&#1|23;b
 /// a&#x|9;b
 /// ```
-fn value(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char(';') if !info.buffer.is_empty() => {
             tokenizer.exit(TokenType::CharacterReferenceValue);
@@ -198,36 +220,10 @@ fn value(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
             (State::Ok, None)
         }
         Code::Char(char) => {
-            let len = info.buffer.len();
-
-            let cont = match info.kind {
-                Kind::Hexadecimal
-                    if char.is_ascii_hexdigit()
-                        && len < CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX =>
-                {
-                    true
-                }
-                Kind::Decimal
-                    if char.is_ascii_digit() && len < CHARACTER_REFERENCE_DECIMAL_SIZE_MAX =>
-                {
-                    true
-                }
-                Kind::Named
-                    if char.is_ascii_alphanumeric() && len < CHARACTER_REFERENCE_NAMED_SIZE_MAX =>
-                {
-                    true
-                }
-                _ => false,
-            };
-
-            if cont {
-                let mut clone = info;
-                clone.buffer.push(char);
+            if info.buffer.len() < info.kind.max() && info.kind.allowed(char) {
+                info.buffer.push(char);
                 tokenizer.consume(code);
-                (
-                    State::Fn(Box::new(|tokenizer, code| value(tokenizer, code, clone))),
-                    None,
-                )
+                (State::Fn(Box::new(|t, c| value(t, c, info))), None)
             } else {
                 (State::Nok, None)
             }

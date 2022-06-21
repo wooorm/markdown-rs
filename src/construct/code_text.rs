@@ -113,9 +113,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnR
     if let Code::Char('`') = code {
         tokenizer.consume(code);
         (
-            State::Fn(Box::new(move |tokenizer, code| {
-                sequence_open(tokenizer, code, size + 1)
-            })),
+            State::Fn(Box::new(move |t, c| sequence_open(t, c, size + 1))),
             None,
         )
     } else {
@@ -138,9 +136,7 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnRe
             tokenizer.consume(code);
             tokenizer.exit(TokenType::CodeTextLineEnding);
             (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    between(tokenizer, code, size_open)
-                })),
+                State::Fn(Box::new(move |t, c| between(t, c, size_open))),
                 None,
             )
         }
@@ -168,12 +164,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResul
         }
         _ => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    data(tokenizer, code, size_open)
-                })),
-                None,
-            )
+            (State::Fn(Box::new(move |t, c| data(t, c, size_open))), None)
         }
     }
 }
@@ -193,8 +184,8 @@ fn sequence_close(
         Code::Char('`') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    sequence_close(tokenizer, code, size_open, size + 1)
+                State::Fn(Box::new(move |t, c| {
+                    sequence_close(t, c, size_open, size + 1)
                 })),
                 None,
             )
@@ -205,12 +196,11 @@ fn sequence_close(
             (State::Ok, Some(vec![code]))
         }
         _ => {
-            let tail_index = tokenizer.events.len();
-            let head_index = tokenizer.events.len() - 1;
+            let index = tokenizer.events.len();
             tokenizer.exit(TokenType::CodeTextSequence);
             // Change the token type.
-            tokenizer.events[head_index].token_type = TokenType::CodeTextData;
-            tokenizer.events[tail_index].token_type = TokenType::CodeTextData;
+            tokenizer.events[index - 1].token_type = TokenType::CodeTextData;
+            tokenizer.events[index].token_type = TokenType::CodeTextData;
             between(tokenizer, code, size_open)
         }
     }

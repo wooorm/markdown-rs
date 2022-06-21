@@ -144,16 +144,14 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let event = tokenizer.events.last().unwrap();
-    // Blank line not ok.
-    let char_nok = matches!(
-        code,
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
-    );
 
     // Whitespace.
     if (event.token_type == TokenType::LineEnding || event.token_type == TokenType::Whitespace)
-        && !char_nok
-    {
+    // Blank line not ok.
+        && !matches!(
+        code,
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
+    ) {
         tokenizer.go(destination, destination_after)(tokenizer, code)
     } else {
         (State::Nok, None)

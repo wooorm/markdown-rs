@@ -142,6 +142,7 @@ pub struct Event {
 /// It’s responsible for dealing with that single passed [`Code`][].
 /// It yields a [`StateFnResult`][].
 pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> StateFnResult;
+
 /// Each [`StateFn`][] yields something back: primarily the state.
 /// In certain cases, it can also yield back up parsed codes that were passed down.
 pub type StateFnResult = (State, Option<Vec<Code>>);

@@ -48,6 +48,68 @@ use super::partial_space_or_tab::space_or_tab_opt;
 use crate::constant::THEMATIC_BREAK_MARKER_COUNT_MIN;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
+/// Type of thematic break.
+#[derive(Debug, PartialEq)]
+enum Kind {
+    /// In a thematic break using asterisks (`*`).
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// ***
+    /// ```
+    Asterisk,
+    /// In a thematic break using dashes (`-`).
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// ---
+    /// ```
+    Dash,
+    /// In a thematic break using underscores (`_`).
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// ___
+    /// ```
+    Underscore,
+}
+
+impl Kind {
+    /// Turn the kind into a [char].
+    fn as_char(&self) -> char {
+        match self {
+            Kind::Asterisk => '*',
+            Kind::Dash => '-',
+            Kind::Underscore => '_',
+        }
+    }
+    /// Turn a [char] into a kind.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `char` is not `*`, `_`, or `_`.
+    fn from_char(char: char) -> Kind {
+        match char {
+            '*' => Kind::Asterisk,
+            '-' => Kind::Dash,
+            '_' => Kind::Underscore,
+            _ => unreachable!("invalid char"),
+        }
+    }
+}
+
+/// State needed to parse thematic breaks.
+#[derive(Debug)]
+struct Info {
+    /// Kind of marker.
+    kind: Kind,
+    /// Number of markers.
+    size: usize,
+}
+
 /// Start of a thematic break.
 ///
 /// ```markdown
@@ -65,9 +127,14 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char(char) if char == '*' || char == '-' || char == '_' => {
-            at_break(tokenizer, code, char, 0)
-        }
+        Code::Char(char) if char == '*' || char == '-' || char == '_' => at_break(
+            tokenizer,
+            code,
+            Info {
+                kind: Kind::from_char(char),
+                size: 0,
+            },
+        ),
         _ => (State::Nok, None),
     }
 }
@@ -79,17 +146,17 @@ pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// *| * *
 /// * |* *
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, marker: char, size: usize) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
-            if size >= THEMATIC_BREAK_MARKER_COUNT_MIN =>
+            if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN =>
         {
             tokenizer.exit(TokenType::ThematicBreak);
             (State::Ok, Some(vec![code]))
         }
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(TokenType::ThematicBreakSequence);
-            sequence(tokenizer, code, marker, size)
+            sequence(tokenizer, code, info)
         }
         _ => (State::Nok, None),
     }
@@ -102,22 +169,16 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, marker: char, size: usize) ->
 /// *|**
 /// **|*
 /// ```
-fn sequence(tokenizer: &mut Tokenizer, code: Code, marker: char, size: usize) -> StateFnResult {
+fn sequence(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    sequence(tokenizer, code, marker, size + 1)
-                })),
-                None,
-            )
+            info.size += 1;
+            (State::Fn(Box::new(|t, c| sequence(t, c, info))), None)
         }
         _ => {
             tokenizer.exit(TokenType::ThematicBreakSequence);
-            tokenizer.go(space_or_tab_opt(), move |t, c| at_break(t, c, marker, size))(
-                tokenizer, code,
-            )
+            tokenizer.go(space_or_tab_opt(), |t, c| at_break(t, c, info))(tokenizer, code)
         }
     }
 }

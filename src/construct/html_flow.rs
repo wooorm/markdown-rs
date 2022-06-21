@@ -97,10 +97,8 @@ use crate::construct::{blank_line::start as blank_line, partial_space_or_tab::sp
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Kind of HTML (flow).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Kind {
-    /// Not yet known.
-    Unknown,
     /// Symbol for `<script>` (condition 1).
     Raw,
     /// Symbol for `<!---->` (condition 2).
@@ -117,19 +115,51 @@ enum Kind {
     Complete,
 }
 
-/// Type of quote, if we’re in an attribure, in complete (condition 7).
-#[derive(Debug, Clone, PartialEq)]
+/// Type of quote, if we’re in a quoted attribute, in complete (condition 7).
+#[derive(Debug, PartialEq)]
 enum QuoteKind {
-    /// Not in a quoted attribute.
-    None,
-    /// In a double quoted (`"`) attribute.
+    /// In a double quoted (`"`) attribute value.
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// <a b="c" />
+    /// ```
     Double,
-    /// In a single quoted (`"`) attribute.
+    /// In a single quoted (`'`) attribute value.
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// <a b='c' />
+    /// ```
     Single,
 }
 
+impl QuoteKind {
+    /// Turn the kind into a [char].
+    fn as_char(&self) -> char {
+        match self {
+            QuoteKind::Double => '"',
+            QuoteKind::Single => '\'',
+        }
+    }
+    /// Turn a [char] into a kind.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `char` is not `"` or `'`.
+    fn from_char(char: char) -> QuoteKind {
+        match char {
+            '"' => QuoteKind::Double,
+            '\'' => QuoteKind::Single,
+            _ => unreachable!("invalid char"),
+        }
+    }
+}
+
 /// State needed to parse HTML (flow).
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Info {
     /// Kind of HTML (flow).
     kind: Kind,
@@ -141,7 +171,7 @@ struct Info {
     /// `index` into `buffer` when expecting certain characters.
     index: usize,
     /// Current quote, when in a double or single quoted attribute value.
-    quote: QuoteKind,
+    quote: Option<QuoteKind>,
 }
 
 // To do: mark as concrete (block quotes or lists can’t “pierce” into HTML).
@@ -166,22 +196,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('<') == code {
         tokenizer.consume(code);
-        (
-            State::Fn(Box::new(|tokenizer, code| {
-                open(
-                    tokenizer,
-                    Info {
-                        kind: Kind::Unknown,
-                        start_tag: false,
-                        buffer: vec![],
-                        index: 0,
-                        quote: QuoteKind::None,
-                    },
-                    code,
-                )
-            })),
-            None,
-        )
+        (State::Fn(Box::new(open)), None)
     } else {
         (State::Nok, None)
     }
@@ -194,45 +209,44 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// <|!doctype>
 /// <|!--xxx-->
 /// ```
-fn open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    let mut info = Info {
+        // Assume basic.
+        kind: Kind::Basic,
+        start_tag: false,
+        buffer: vec![],
+        index: 0,
+        quote: None,
+    };
+
     match code {
         Code::Char('!') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    declaration_open(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| declaration_open(t, c, info))),
                 None,
             )
         }
         Code::Char('/') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    tag_close_start(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| tag_close_start(t, c, info))),
                 None,
             )
         }
         Code::Char('?') => {
-            // To do: life times.
-            let mut clone = info;
-            clone.kind = Kind::Instruction;
+            info.kind = Kind::Instruction;
             tokenizer.consume(code);
             // While we’re in an instruction instead of a declaration, we’re on a `?`
             // right now, so we do need to search for `>`, similar to declarations.
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, clone, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
         Code::Char(char) if char.is_ascii_alphabetic() => {
-            // To do: life times.
-            let mut clone = info;
-            clone.start_tag = true;
-            tag_name(tokenizer, clone, code)
+            info.start_tag = true;
+            tag_name(tokenizer, code, info)
         }
         _ => (State::Nok, None),
     }
@@ -245,41 +259,31 @@ fn open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
 /// <!|--xxx-->
 /// <!|[CDATA[>&<]]>
 /// ```
-fn declaration_open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn declaration_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char('-') => {
             tokenizer.consume(code);
-            let mut clone = info;
-            clone.kind = Kind::Comment;
+            info.kind = Kind::Comment;
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    comment_open_inside(tokenizer, clone, code)
-                })),
+                State::Fn(Box::new(|t, c| comment_open_inside(t, c, info))),
                 None,
             )
         }
         Code::Char('[') => {
             tokenizer.consume(code);
-            let mut clone = info;
-            clone.kind = Kind::Cdata;
-            clone.buffer = vec!['C', 'D', 'A', 'T', 'A', '['];
-            clone.index = 0;
+            info.kind = Kind::Cdata;
+            info.buffer = vec!['C', 'D', 'A', 'T', 'A', '['];
+            info.index = 0;
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    cdata_open_inside(tokenizer, clone, code)
-                })),
+                State::Fn(Box::new(|t, c| cdata_open_inside(t, c, info))),
                 None,
             )
         }
         Code::Char(char) if char.is_ascii_alphabetic() => {
             tokenizer.consume(code);
-            // To do: life times.
-            let mut clone = info;
-            clone.kind = Kind::Declaration;
+            info.kind = Kind::Declaration;
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, clone, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
@@ -292,14 +296,12 @@ fn declaration_open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateF
 /// ```markdown
 /// <!-|-xxx-->
 /// ```
-fn comment_open_inside(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('-') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
@@ -316,26 +318,18 @@ fn comment_open_inside(tokenizer: &mut Tokenizer, info: Info, code: Code) -> Sta
 /// <![CDAT|A[>&<]]>
 /// <![CDATA|[>&<]]>
 /// ```
-fn cdata_open_inside(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn cdata_open_inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char(char) if char == info.buffer[info.index] => {
-            let mut clone = info;
-            clone.index += 1;
+            info.index += 1;
             tokenizer.consume(code);
 
-            if clone.index == clone.buffer.len() {
-                clone.buffer.clear();
-                (
-                    State::Fn(Box::new(|tokenizer, code| {
-                        continuation(tokenizer, clone, code)
-                    })),
-                    None,
-                )
+            if info.index == info.buffer.len() {
+                info.buffer.clear();
+                (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
             } else {
                 (
-                    State::Fn(Box::new(|tokenizer, code| {
-                        cdata_open_inside(tokenizer, clone, code)
-                    })),
+                    State::Fn(Box::new(|t, c| cdata_open_inside(t, c, info))),
                     None,
                 )
             }
@@ -349,17 +343,12 @@ fn cdata_open_inside(tokenizer: &mut Tokenizer, info: Info, code: Code) -> State
 /// ```markdown
 /// </|x>
 /// ```
-fn tag_close_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn tag_close_start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char(char) if char.is_ascii_alphabetic() => {
             tokenizer.consume(code);
-            // To do: life times.
-            let mut clone = info;
-            clone.buffer.push(char);
-            (
-                State::Fn(Box::new(|tokenizer, code| tag_name(tokenizer, clone, code))),
-                None,
-            )
+            info.buffer.push(char);
+            (State::Fn(Box::new(|t, c| tag_name(t, c, info))), None)
         }
         _ => (State::Nok, None),
     }
@@ -371,7 +360,7 @@ fn tag_close_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFn
 /// <a|b>
 /// </a|b>
 /// ```
-fn tag_name(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::None
         | Code::CarriageReturnLineFeed
@@ -385,50 +374,37 @@ fn tag_name(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult 
                 false
             };
 
-            if !slash && info.start_tag && HTML_RAW_NAMES.contains(&name) {
-                // To do: life times.
-                let mut clone = info;
-                clone.kind = Kind::Raw;
-                clone.buffer.clear();
-                continuation(tokenizer, clone, code)
-            } else if HTML_BLOCK_NAMES.contains(&name) {
-                // To do: life times.
-                let mut clone = info;
-                clone.kind = Kind::Basic;
-                clone.buffer.clear();
+            info.buffer.clear();
 
+            if !slash && info.start_tag && HTML_RAW_NAMES.contains(&name) {
+                info.kind = Kind::Raw;
+                continuation(tokenizer, code, info)
+            } else if HTML_BLOCK_NAMES.contains(&name) {
+                // Basic is assumed, no need to set `kind`.
                 if slash {
                     tokenizer.consume(code);
                     (
-                        State::Fn(Box::new(|tokenizer, code| {
-                            basic_self_closing(tokenizer, clone, code)
-                        })),
+                        State::Fn(Box::new(|t, c| basic_self_closing(t, c, info))),
                         None,
                     )
                 } else {
-                    continuation(tokenizer, clone, code)
+                    continuation(tokenizer, code, info)
                 }
             } else {
-                // To do: life times.
-                let mut clone = info;
-                clone.kind = Kind::Complete;
+                info.kind = Kind::Complete;
 
                 // To do: do not support complete HTML when interrupting.
-                if clone.start_tag {
-                    complete_attribute_name_before(tokenizer, clone, code)
+                if info.start_tag {
+                    complete_attribute_name_before(tokenizer, code, info)
                 } else {
-                    complete_closing_tag_after(tokenizer, clone, code)
+                    complete_closing_tag_after(tokenizer, code, info)
                 }
             }
         }
         Code::Char(char) if char == '-' || char.is_ascii_alphanumeric() => {
             tokenizer.consume(code);
-            let mut clone = info;
-            clone.buffer.push(char);
-            (
-                State::Fn(Box::new(|tokenizer, code| tag_name(tokenizer, clone, code))),
-                None,
-            )
+            info.buffer.push(char);
+            (State::Fn(Box::new(|t, c| tag_name(t, c, info))), None)
         }
         Code::Char(_) => (State::Nok, None),
     }
@@ -439,16 +415,11 @@ fn tag_name(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult 
 /// ```markdown
 /// <div/|>
 /// ```
-fn basic_self_closing(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn basic_self_closing(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('>') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation(tokenizer, info, code)
-                })),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
         }
         _ => (State::Nok, None),
     }
@@ -460,18 +431,16 @@ fn basic_self_closing(tokenizer: &mut Tokenizer, info: Info, code: Code) -> Stat
 /// <x/|>
 /// </x/|>
 /// ```
-fn complete_closing_tag_after(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn complete_closing_tag_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_closing_tag_after(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_closing_tag_after(t, c, info))),
                 None,
             )
         }
-        _ => complete_end(tokenizer, info, code),
+        _ => complete_end(tokenizer, code, info),
     }
 }
 
@@ -492,38 +461,29 @@ fn complete_closing_tag_after(tokenizer: &mut Tokenizer, info: Info, code: Code)
 /// ```
 fn complete_attribute_name_before(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
     match code {
         Code::Char('/') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_end(tokenizer, info, code)
-                })),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| complete_end(t, c, info))), None)
         }
         Code::Char(char) if char == ':' || char == '_' || char.is_ascii_alphabetic() => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_name(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_name(t, c, info))),
                 None,
             )
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_name_before(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_name_before(t, c, info))),
                 None,
             )
         }
-        _ => complete_end(tokenizer, info, code),
+        _ => complete_end(tokenizer, code, info),
     }
 }
 
@@ -534,7 +494,7 @@ fn complete_attribute_name_before(
 /// <x _|>
 /// <x a|>
 /// ```
-fn complete_attribute_name(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn complete_attribute_name(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char(char)
             if char == '-'
@@ -545,13 +505,11 @@ fn complete_attribute_name(tokenizer: &mut Tokenizer, info: Info, code: Code) ->
         {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_name(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_name(t, c, info))),
                 None,
             )
         }
-        _ => complete_attribute_name_after(tokenizer, info, code),
+        _ => complete_attribute_name_after(tokenizer, code, info),
     }
 }
 
@@ -565,29 +523,25 @@ fn complete_attribute_name(tokenizer: &mut Tokenizer, info: Info, code: Code) ->
 /// ```
 fn complete_attribute_name_after(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
     match code {
         Code::Char('=') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_value_before(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_value_before(t, c, info))),
                 None,
             )
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_name_after(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_name_after(t, c, info))),
                 None,
             )
         }
-        _ => complete_attribute_name_before(tokenizer, info, code),
+        _ => complete_attribute_name_before(tokenizer, code, info),
     }
 }
 
@@ -600,38 +554,27 @@ fn complete_attribute_name_after(
 /// ```
 fn complete_attribute_value_before(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    mut info: Info,
 ) -> StateFnResult {
     match code {
         Code::None | Code::Char('<' | '=' | '>' | '`') => (State::Nok, None),
         Code::Char(char) if char == '"' || char == '\'' => {
             tokenizer.consume(code);
-            // To do: life times.
-            let mut clone = info;
-            clone.quote = if char == '"' {
-                QuoteKind::Double
-            } else {
-                QuoteKind::Single
-            };
-
+            info.quote = Some(QuoteKind::from_char(char));
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_value_quoted(tokenizer, clone, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_value_quoted(t, c, info))),
                 None,
             )
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_value_before(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_value_before(t, c, info))),
                 None,
             )
         }
-        _ => complete_attribute_value_unquoted(tokenizer, info, code),
+        _ => complete_attribute_value_unquoted(tokenizer, code, info),
     }
 }
 
@@ -643,22 +586,16 @@ fn complete_attribute_value_before(
 /// ```
 fn complete_attribute_value_quoted(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
-    let marker = if info.quote == QuoteKind::Double {
-        '"'
-    } else {
-        '\''
-    };
-
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == info.quote.as_ref().unwrap().as_char() => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_value_quoted_after(tokenizer, info, code)
+                State::Fn(Box::new(|t, c| {
+                    complete_attribute_value_quoted_after(t, c, info)
                 })),
                 None,
             )
@@ -666,9 +603,7 @@ fn complete_attribute_value_quoted(
         _ => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_value_quoted(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| complete_attribute_value_quoted(t, c, info))),
                 None,
             )
         }
@@ -682,21 +617,21 @@ fn complete_attribute_value_quoted(
 /// ```
 fn complete_attribute_value_unquoted(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
     match code {
         Code::None
         | Code::CarriageReturnLineFeed
         | Code::VirtualSpace
         | Code::Char('\t' | '\n' | '\r' | ' ' | '"' | '\'' | '/' | '<' | '=' | '>' | '`') => {
-            complete_attribute_name_after(tokenizer, info, code)
+            complete_attribute_name_after(tokenizer, code, info)
         }
         Code::Char(_) => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_attribute_value_unquoted(tokenizer, info, code)
+                State::Fn(Box::new(|t, c| {
+                    complete_attribute_value_unquoted(t, c, info)
                 })),
                 None,
             )
@@ -712,12 +647,12 @@ fn complete_attribute_value_unquoted(
 /// ```
 fn complete_attribute_value_quoted_after(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ' | '/' | '>') => {
-            complete_attribute_name_before(tokenizer, info, code)
+            complete_attribute_name_before(tokenizer, code, info)
         }
         _ => (State::Nok, None),
     }
@@ -728,16 +663,11 @@ fn complete_attribute_value_quoted_after(
 /// ```markdown
 /// <x a="b"|>
 /// ```
-fn complete_end(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn complete_end(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('>') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_after(tokenizer, info, code)
-                })),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| complete_after(t, c, info))), None)
         }
         _ => (State::Nok, None),
     }
@@ -748,19 +678,14 @@ fn complete_end(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnRes
 /// ```markdown
 /// <x>|
 /// ```
-fn complete_after(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn complete_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            continuation(tokenizer, info, code)
+            continuation(tokenizer, code, info)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(|tokenizer, code| {
-                    complete_after(tokenizer, info, code)
-                })),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| complete_after(t, c, info))), None)
         }
         Code::Char(_) => (State::Nok, None),
     }
@@ -771,49 +696,41 @@ fn complete_after(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnR
 /// ```markdown
 /// <!--x|xx-->
 /// ```
-fn continuation(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('-') if info.kind == Kind::Comment => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_comment_inside(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_comment_inside(t, c, info))),
                 None,
             )
         }
         Code::Char('<') if info.kind == Kind::Raw => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_raw_tag_open(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_raw_tag_open(t, c, info))),
                 None,
             )
         }
         Code::Char('>') if info.kind == Kind::Declaration => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_close(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_close(t, c, info))),
                 None,
             )
         }
         Code::Char('?') if info.kind == Kind::Instruction => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
         Code::Char(']') if info.kind == Kind::Cdata => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_character_data_inside(tokenizer, info, code)
+                State::Fn(Box::new(|t, c| {
+                    continuation_character_data_inside(t, c, info)
                 })),
                 None,
             )
@@ -821,27 +738,21 @@ fn continuation(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnRes
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if info.kind == Kind::Basic || info.kind == Kind::Complete =>
         {
-            let clone = info;
-
             tokenizer.check(blank_line_before, |ok| {
-                if ok {
-                    Box::new(|tokenizer, code| continuation_close(tokenizer, clone, code))
+                let func = if ok {
+                    continuation_close
                 } else {
-                    Box::new(|tokenizer, code| continuation_at_line_ending(tokenizer, clone, code))
-                }
+                    continuation_at_line_ending
+                };
+                Box::new(move |t, c| func(t, c, info))
             })(tokenizer, code)
         }
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            continuation_at_line_ending(tokenizer, info, code)
+            continuation_at_line_ending(tokenizer, code, info)
         }
         _ => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation(tokenizer, info, code)
-                })),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
         }
     }
 }
@@ -851,9 +762,9 @@ fn continuation(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnRes
 /// ```markdown
 /// <x>|
 /// ```
-fn continuation_at_line_ending(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn continuation_at_line_ending(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.exit(TokenType::HtmlFlowData);
-    html_continue_start(tokenizer, info, code)
+    html_continue_start(tokenizer, code, info)
 }
 
 /// In continuation, after an eol.
@@ -862,7 +773,7 @@ fn continuation_at_line_ending(tokenizer: &mut Tokenizer, info: Info, code: Code
 /// <x>|
 /// asd
 /// ```
-fn html_continue_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None => {
             tokenizer.exit(TokenType::HtmlFlow);
@@ -874,15 +785,13 @@ fn html_continue_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> Sta
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    html_continue_start(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| html_continue_start(t, c, info))),
                 None,
             )
         }
         _ => {
             tokenizer.enter(TokenType::HtmlFlowData);
-            continuation(tokenizer, info, code)
+            continuation(tokenizer, code, info)
         }
     }
 }
@@ -892,18 +801,16 @@ fn html_continue_start(tokenizer: &mut Tokenizer, info: Info, code: Code) -> Sta
 /// ```markdown
 /// <!--xxx-|->
 /// ```
-fn continuation_comment_inside(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn continuation_comment_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
-        Code::Char('-') if info.kind == Kind::Comment => {
+        Code::Char('-') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
-        _ => continuation(tokenizer, info, code),
+        _ => continuation(tokenizer, code, info),
     }
 }
 
@@ -912,18 +819,16 @@ fn continuation_comment_inside(tokenizer: &mut Tokenizer, info: Info, code: Code
 /// ```markdown
 /// <script>console.log(1)<|/script>
 /// ```
-fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('/') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_raw_end_tag(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_raw_end_tag(t, c, info))),
                 None,
             )
         }
-        _ => continuation(tokenizer, info, code),
+        _ => continuation(tokenizer, code, info),
     }
 }
 
@@ -934,39 +839,38 @@ fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, info: Info, code: Code) 
 /// <script>console.log(1)</s|cript>
 /// <script>console.log(1)</script|>
 /// ```
-fn continuation_raw_end_tag(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn continuation_raw_end_tag(
+    tokenizer: &mut Tokenizer,
+    code: Code,
+    mut info: Info,
+) -> StateFnResult {
     match code {
         Code::Char('>') => {
             let tag_name_buffer = info.buffer.iter().collect::<String>().to_lowercase();
-            // To do: life times.
-            let mut clone = info;
-            clone.buffer.clear();
+            info.buffer.clear();
 
             if HTML_RAW_NAMES.contains(&tag_name_buffer.as_str()) {
                 tokenizer.consume(code);
                 (
-                    State::Fn(Box::new(|tokenizer, code| {
-                        continuation_close(tokenizer, clone, code)
-                    })),
+                    State::Fn(Box::new(|t, c| continuation_close(t, c, info))),
                     None,
                 )
             } else {
-                continuation(tokenizer, clone, code)
+                continuation(tokenizer, code, info)
             }
         }
         Code::Char(char) if char.is_ascii_alphabetic() && info.buffer.len() < HTML_RAW_SIZE_MAX => {
             tokenizer.consume(code);
-            // To do: life times.
-            let mut clone = info;
-            clone.buffer.push(char);
+            info.buffer.push(char);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_raw_end_tag(tokenizer, clone, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_raw_end_tag(t, c, info))),
                 None,
             )
         }
-        _ => continuation(tokenizer, info, code),
+        _ => {
+            info.buffer.clear();
+            continuation(tokenizer, code, info)
+        }
     }
 }
 
@@ -977,20 +881,18 @@ fn continuation_raw_end_tag(tokenizer: &mut Tokenizer, info: Info, code: Code) -
 /// ```
 fn continuation_character_data_inside(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
     match code {
         Code::Char(']') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
-        _ => continuation(tokenizer, info, code),
+        _ => continuation(tokenizer, code, info),
     }
 }
 
@@ -1008,29 +910,25 @@ fn continuation_character_data_inside(
 /// ```
 fn continuation_declaration_inside(
     tokenizer: &mut Tokenizer,
-    info: Info,
     code: Code,
+    info: Info,
 ) -> StateFnResult {
     match code {
         Code::Char('>') => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_close(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_close(t, c, info))),
                 None,
             )
         }
         Code::Char('-') if info.kind == Kind::Comment => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_declaration_inside(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
             )
         }
-        _ => continuation(tokenizer, info, code),
+        _ => continuation(tokenizer, code, info),
     }
 }
 
@@ -1039,7 +937,7 @@ fn continuation_declaration_inside(
 /// ```markdown
 /// <!doctype>|
 /// ```
-fn continuation_close(tokenizer: &mut Tokenizer, info: Info, code: Code) -> StateFnResult {
+fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::HtmlFlowData);
@@ -1049,9 +947,7 @@ fn continuation_close(tokenizer: &mut Tokenizer, info: Info, code: Code) -> Stat
         _ => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    continuation_close(tokenizer, info, code)
-                })),
+                State::Fn(Box::new(|t, c| continuation_close(t, c, info))),
                 None,
             )
         }

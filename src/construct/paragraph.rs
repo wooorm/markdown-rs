@@ -129,23 +129,33 @@ fn interrupt(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn interrupt_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // To do: If code is disabled, indented lines are allowed to interrupt.
     tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
-        if ok {
-            Box::new(|_t, code| (State::Ok, Some(vec![code])))
-        } else {
-            Box::new(|tokenizer, code| {
-                tokenizer.attempt_5(
-                    blank_line,
-                    code_fenced,
-                    html_flow,
-                    heading_atx,
-                    thematic_break,
-                    |ok| {
-                        Box::new(move |_t, code| {
-                            (if ok { State::Nok } else { State::Ok }, Some(vec![code]))
-                        })
-                    },
-                )(tokenizer, code)
-            })
-        }
+        Box::new(if ok { interrupt_indent } else { interrupt_cont })
     })(tokenizer, code)
+}
+
+/// At an indent.
+///
+/// ```markdown
+/// alpha
+///     |
+/// ```
+pub fn interrupt_indent(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    (State::Ok, Some(vec![code]))
+}
+
+/// Not at an indented line.
+///
+/// ```markdown
+/// alpha
+/// |<div>
+/// ```
+pub fn interrupt_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.attempt_5(
+        blank_line,
+        code_fenced,
+        html_flow,
+        heading_atx,
+        thematic_break,
+        |ok| Box::new(move |_t, code| (if ok { State::Nok } else { State::Ok }, Some(vec![code]))),
+    )(tokenizer, code)
 }

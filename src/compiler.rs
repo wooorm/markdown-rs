@@ -9,11 +9,35 @@ use crate::util::{
 };
 
 /// To do.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LineEnding {
     CarriageReturnLineFeed,
     CarriageReturn,
     LineFeed,
+}
+
+impl LineEnding {
+    /// Turn the line ending into a [str].
+    fn as_str(&self) -> &str {
+        match self {
+            LineEnding::CarriageReturnLineFeed => "\r\n",
+            LineEnding::CarriageReturn => "\r",
+            LineEnding::LineFeed => "\n",
+        }
+    }
+    /// Turn a [Code] into a line ending.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `code` is not `\r\n`, `\r`, or `\n`.
+    fn from_code(code: Code) -> LineEnding {
+        match code {
+            Code::CarriageReturnLineFeed => LineEnding::CarriageReturnLineFeed,
+            Code::Char('\r') => LineEnding::CarriageReturn,
+            Code::Char('\n') => LineEnding::LineFeed,
+            _ => unreachable!("invalid code"),
+        }
+    }
 }
 
 /// Configuration (optional).
@@ -120,29 +144,20 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 || event.token_type == TokenType::LineEnding)
         {
             let codes = codes_from_span(codes, &from_exit_event(events, index));
-            let code = *codes.first().unwrap();
-            line_ending_inferred = Some(if code == Code::CarriageReturnLineFeed {
-                LineEnding::CarriageReturnLineFeed
-            } else if code == Code::Char('\r') {
-                LineEnding::CarriageReturn
-            } else {
-                LineEnding::LineFeed
-            });
+            line_ending_inferred = Some(LineEnding::from_code(*codes.first().unwrap()));
             break;
         }
 
         index += 1;
     }
 
-    let line_ending_default: LineEnding;
-
-    if let Some(value) = line_ending_inferred {
-        line_ending_default = value;
+    let line_ending_default = if let Some(value) = line_ending_inferred {
+        value
     } else if let Some(value) = &options.default_line_ending {
-        line_ending_default = value.clone();
+        value.clone()
     } else {
-        line_ending_default = LineEnding::LineFeed;
-    }
+        LineEnding::LineFeed
+    };
 
     index = 0;
 
@@ -557,17 +572,8 @@ fn buf_tail(buffers: &mut [Vec<String>]) -> &Vec<String> {
 /// Add a line ending.
 fn line_ending(buffers: &mut [Vec<String>], default: &LineEnding) {
     let tail = buf_tail_mut(buffers);
-
-    println!("xxx: {:?}", default);
-
-    let line_ending = match default {
-        LineEnding::CarriageReturnLineFeed => "\r\n",
-        LineEnding::CarriageReturn => "\r",
-        LineEnding::LineFeed => "\n",
-    };
-
     // lastWasTag = false
-    tail.push(line_ending.to_string());
+    tail.push(default.as_str().to_string());
 }
 
 /// Add a line ending if needed (as in, there’s no eol/eof already).

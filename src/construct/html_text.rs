@@ -114,9 +114,7 @@ fn declaration_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             let buffer = vec!['C', 'D', 'A', 'T', 'A', '['];
             (
-                State::Fn(Box::new(|tokenizer, code| {
-                    cdata_open_inside(tokenizer, code, buffer, 0)
-                })),
+                State::Fn(Box::new(|t, c| cdata_open_inside(t, c, buffer, 0))),
                 None,
             )
         }
@@ -247,8 +245,8 @@ fn cdata_open_inside(
                 (State::Fn(Box::new(cdata)), None)
             } else {
                 (
-                    State::Fn(Box::new(move |tokenizer, code| {
-                        cdata_open_inside(tokenizer, code, buffer, index + 1)
+                    State::Fn(Box::new(move |t, c| {
+                        cdata_open_inside(t, c, buffer, index + 1)
                     })),
                     None,
                 )
@@ -526,8 +524,8 @@ fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer, code: Code) -> Sta
         Code::Char(char) if char == '"' || char == '\'' => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    tag_open_attribute_value_quoted(tokenizer, code, char)
+                State::Fn(Box::new(move |t, c| {
+                    tag_open_attribute_value_quoted(t, c, char)
                 })),
                 None,
             )
@@ -555,9 +553,7 @@ fn tag_open_attribute_value_quoted(
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => at_line_ending(
             tokenizer,
             code,
-            Box::new(move |tokenizer, code| {
-                tag_open_attribute_value_quoted(tokenizer, code, marker)
-            }),
+            Box::new(move |t, c| tag_open_attribute_value_quoted(t, c, marker)),
         ),
         Code::Char(char) if char == marker => {
             tokenizer.consume(code);
@@ -569,8 +565,8 @@ fn tag_open_attribute_value_quoted(
         _ => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    tag_open_attribute_value_quoted(tokenizer, code, marker)
+                State::Fn(Box::new(move |t, c| {
+                    tag_open_attribute_value_quoted(t, c, marker)
                 })),
                 None,
             )

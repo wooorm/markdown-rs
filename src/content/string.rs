@@ -55,14 +55,6 @@ fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Fn(Box::new(in_data)), None)
         }
     }
-
-    // if let Code::None = code {
-    //     (State::Ok, None)
-    // } else {
-    //     tokenizer.enter(TokenType::Data);
-    //     tokenizer.consume(code);
-    //     (State::Fn(Box::new(in_data)), None)
-    // }
 }
 
 /// In data.

@@ -85,7 +85,6 @@ cargo doc --document-private-items
 #### Refactor
 
 - [ ] (1) Move safe protocols to constants
-- [ ] (1) Use `impl fmt::Display for x` for a bunch of enums, e.g., markers
 - [ ] (1) Make text data, string data constructs (document in
       `construct/mod.rs`)
 - [ ] (1) Configurable tokens (destination, label, title)
@@ -136,7 +135,6 @@ cargo doc --document-private-items
 - [ ] (1) Do not capture in `tokenizer.go`
 - [ ] (1) Clean attempts
 - [ ] (3) Clean compiler
-- [ ] (3) Figure out lifetimes of things (see `life time` in source)
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
       how to integrate with streams or so?
 - [ ] (1) Go through clippy rules, and such, to add strict code styles
@@ -237,6 +235,8 @@ cargo doc --document-private-items
 - [x] (1) Add tests for `default-line-ending`, `line-ending`
 - [x] (1) Use preferred line ending style in markdown
 - [x] (1) Make sure crlf/cr/lf are working perfectly
+- [x] (1) Figure out lifetimes of things (see `life time` in source)
+- [x] (1) Use traits for a bunch of enums, e.g., markers
 
 ### Extensions
 

@@ -60,6 +60,17 @@ use crate::construct::partial_space_or_tab::space_or_tab_opt;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::link::link;
 
+/// State needed to parse labels.
+#[derive(Debug)]
+struct Info {
+    /// Whether we’ve seen our first `ChunkString`.
+    connect: bool,
+    /// Whether there are non-blank characters in the label.
+    data: bool,
+    /// Number of characters in the label.
+    size: usize,
+}
+
 /// Before a label.
 ///
 /// ```markdown
@@ -73,10 +84,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(TokenType::DefinitionLabelMarker);
             tokenizer.enter(TokenType::DefinitionLabelData);
-            (
-                State::Fn(Box::new(|t, c| at_break(t, c, false, 0, false))),
-                None,
-            )
+            let info = Info {
+                connect: false,
+                data: false,
+                size: 0,
+            };
+            (State::Fn(Box::new(|t, c| at_break(t, c, info))), None)
         }
         _ => (State::Nok, None),
     }
@@ -88,17 +101,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [|a]
 /// [a|]
 /// ```
-fn at_break(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    data: bool,
-    size: usize,
-    connect: bool,
-) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::Char('[') => (State::Nok, None),
-        Code::Char(']') if !data => (State::Nok, None),
-        _ if size > LINK_REFERENCE_SIZE_MAX => (State::Nok, None),
+        Code::Char(']') if !info.data => (State::Nok, None),
+        _ if info.size > LINK_REFERENCE_SIZE_MAX => (State::Nok, None),
         Code::Char(']') => {
             tokenizer.exit(TokenType::DefinitionLabelData);
             tokenizer.enter(TokenType::DefinitionLabelMarker);
@@ -110,12 +117,12 @@ fn at_break(
         _ => {
             tokenizer.enter(TokenType::ChunkString);
 
-            if connect {
+            if info.connect {
                 let index = tokenizer.events.len() - 1;
                 link(&mut tokenizer.events, index);
             }
 
-            label(tokenizer, code, data, size)
+            label(tokenizer, code, info)
         }
     }
 }
@@ -126,16 +133,8 @@ fn at_break(
 /// [a
 /// |b]
 /// ```
-fn line_start(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    data: bool,
-    size: usize,
-    connect: bool,
-) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), move |t, c| {
-        line_begin(t, c, data, size, connect)
-    })(tokenizer, code)
+fn line_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    tokenizer.go(space_or_tab_opt(), |t, c| line_begin(t, c, info))(tokenizer, code)
 }
 
 /// After a line ending, after optional whitespace.
@@ -144,17 +143,11 @@ fn line_start(
 /// [a
 /// |b]
 /// ```
-fn line_begin(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    data: bool,
-    size: usize,
-    connect: bool,
-) -> StateFnResult {
+fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         // Blank line not allowed.
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
-        _ => at_break(tokenizer, code, data, size, connect),
+        _ => at_break(tokenizer, code, info),
     }
 }
 
@@ -163,44 +156,46 @@ fn line_begin(
 /// ```markdown
 /// [a|b]
 /// ```
-fn label(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> StateFnResult {
+fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+    if !info.connect {
+        info.connect = true;
+    }
+
     match code {
         Code::None | Code::Char('[' | ']') => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, data, size, true)
+            at_break(tokenizer, code, info)
         }
-        _ if size > LINK_REFERENCE_SIZE_MAX => {
+        _ if info.size > LINK_REFERENCE_SIZE_MAX => {
             tokenizer.exit(TokenType::ChunkString);
-            at_break(tokenizer, code, data, size, true)
+            at_break(tokenizer, code, info)
         }
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.consume(code);
+            info.size += 1;
             tokenizer.exit(TokenType::ChunkString);
-            (
-                State::Fn(Box::new(move |t, c| line_start(t, c, data, size + 1, true))),
-                None,
-            )
+            (State::Fn(Box::new(|t, c| line_start(t, c, info))), None)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| label(t, c, data, size + 1))),
-                None,
-            )
+            info.size += 1;
+            (State::Fn(Box::new(|t, c| label(t, c, info))), None)
         }
         Code::Char('/') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| escape(t, c, true, size + 1))),
-                None,
-            )
+            info.size += 1;
+            if !info.data {
+                info.data = true;
+            }
+            (State::Fn(Box::new(|t, c| escape(t, c, info))), None)
         }
         Code::Char(_) => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| label(t, c, true, size + 1))),
-                None,
-            )
+            info.size += 1;
+            if !info.data {
+                info.data = true;
+            }
+            (State::Fn(Box::new(|t, c| label(t, c, info))), None)
         }
     }
 }
@@ -210,15 +205,13 @@ fn label(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> Stat
 /// ```markdown
 /// [a\|[b]
 /// ```
-fn escape(tokenizer: &mut Tokenizer, code: Code, data: bool, size: usize) -> StateFnResult {
+fn escape(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char('[' | '\\' | ']') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| label(t, c, true, size + 1))),
-                None,
-            )
+            info.size += 1;
+            (State::Fn(Box::new(|t, c| label(t, c, info))), None)
         }
-        _ => label(tokenizer, code, data, size),
+        _ => label(tokenizer, code, info),
     }
 }

@@ -99,9 +99,47 @@ use crate::util::span::from_exit_event;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     /// Grave accent (tick) code.
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// ```rust
+    /// println!("I <3 🦀");
+    /// ```
+    /// ````
     GraveAccent,
     /// Tilde code.
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// ~~~rust
+    /// println!("I <3 🦀");
+    /// ~~~
+    /// ```
     Tilde,
+}
+
+impl Kind {
+    /// Turn the kind into a [char].
+    fn as_char(&self) -> char {
+        match self {
+            Kind::GraveAccent => '`',
+            Kind::Tilde => '~',
+        }
+    }
+    /// Turn a [char] into a kind.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `char` is not `~` or `` ` ``.
+    fn from_char(char: char) -> Kind {
+        match char {
+            '`' => Kind::GraveAccent,
+            '~' => Kind::Tilde,
+            _ => unreachable!("invalid char"),
+        }
+    }
 }
 
 /// State needed to parse code (fenced).
@@ -160,11 +198,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
                 Info {
                     prefix,
                     size: 0,
-                    kind: if char == '`' {
-                        Kind::GraveAccent
-                    } else {
-                        Kind::Tilde
-                    },
+                    kind: Kind::from_char(char),
                 },
             )
         }
@@ -180,14 +214,8 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 /// ~~~
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    let marker = if info.kind == Kind::GraveAccent {
-        '`'
-    } else {
-        '~'
-    };
-
     match code {
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
             (
                 State::Fn(Box::new(|t, c| {
@@ -375,14 +403,8 @@ fn close_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 ///   |~~~
 /// ```
 fn close_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    let marker = if info.kind == Kind::GraveAccent {
-        '`'
-    } else {
-        '~'
-    };
-
     match code {
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(TokenType::CodeFencedFenceSequence);
             close_sequence(tokenizer, code, info, 0)
         }
@@ -398,14 +420,8 @@ fn close_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
 /// ~|~~
 /// ```
 fn close_sequence(tokenizer: &mut Tokenizer, code: Code, info: Info, size: usize) -> StateFnResult {
-    let marker = if info.kind == Kind::GraveAccent {
-        '`'
-    } else {
-        '~'
-    };
-
     match code {
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
             (
                 State::Fn(Box::new(move |t, c| close_sequence(t, c, info, size + 1))),

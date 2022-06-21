@@ -266,12 +266,11 @@ fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnRes
             )
         }
         Code::Char('>') => {
-            let tail_index = tokenizer.events.len();
-            let head_index = tokenizer.events.len() - 1;
+            let index = tokenizer.events.len();
             tokenizer.exit(TokenType::AutolinkProtocol);
             // Change the token type.
-            tokenizer.events[head_index].token_type = TokenType::AutolinkEmail;
-            tokenizer.events[tail_index].token_type = TokenType::AutolinkEmail;
+            tokenizer.events[index - 1].token_type = TokenType::AutolinkEmail;
+            tokenizer.events[index].token_type = TokenType::AutolinkEmail;
             end(tokenizer, code)
         }
         _ => email_value(tokenizer, code, size),

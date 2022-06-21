@@ -57,10 +57,47 @@ use crate::util::{link::link, span::from_exit_event};
 /// Kind of underline.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
-    /// Grave accent (tick) code.
+    /// Dash (rank 2) heading.
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// alpha
+    /// -----
+    /// ```
     Dash,
-    /// Tilde code.
+
+    /// Equals to (rank 1) heading.
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// alpha
+    /// =====
+    /// ```
     EqualsTo,
+}
+
+impl Kind {
+    /// Turn the kind into a [char].
+    fn as_char(&self) -> char {
+        match self {
+            Kind::Dash => '-',
+            Kind::EqualsTo => '=',
+        }
+    }
+    /// Turn a [char] into a kind.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `char` is not `-` or `=`.
+    fn from_char(char: char) -> Kind {
+        match char {
+            '-' => Kind::Dash,
+            '=' => Kind::EqualsTo,
+            _ => unreachable!("invalid char"),
+        }
+    }
 }
 
 /// Start of a heading (setext).
@@ -232,13 +269,8 @@ fn underline_sequence_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
 
     match code {
         Code::Char(char) if char == '-' || char == '=' => {
-            let marker = if char == '-' {
-                Kind::Dash
-            } else {
-                Kind::EqualsTo
-            };
             tokenizer.enter(TokenType::HeadingSetextUnderline);
-            underline_sequence_inside(tokenizer, code, marker)
+            underline_sequence_inside(tokenizer, code, Kind::from_char(char))
         }
         _ => (State::Nok, None),
     }
@@ -251,15 +283,11 @@ fn underline_sequence_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
 /// =|=
 /// ```
 fn underline_sequence_inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
-    let marker = if kind == Kind::Dash { '-' } else { '=' };
-
     match code {
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == kind.as_char() => {
             tokenizer.consume(code);
             (
-                State::Fn(Box::new(move |tokenizer, code| {
-                    underline_sequence_inside(tokenizer, code, kind)
-                })),
+                State::Fn(Box::new(move |t, c| underline_sequence_inside(t, c, kind))),
                 None,
             )
         }
