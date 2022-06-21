@@ -21,8 +21,17 @@ use crate::construct::{
     character_reference::start as character_reference, code_text::start as code_text,
     hard_break_escape::start as hard_break_escape,
     hard_break_trailing::start as hard_break_trailing, html_text::start as html_text,
+    partial_data::start as data,
 };
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+
+const MARKERS: [Code; 5] = [
+    Code::Char(' '),  // `hard_break_trailing`
+    Code::Char('&'),  // `character_reference`
+    Code::Char('<'),  // `autolink`, `html_text`
+    Code::Char('\\'), // `character_escape`, `hard_break_escape`
+    Code::Char('`'),  // `code_text`
+];
 
 /// Before text.
 ///
@@ -49,49 +58,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// Before text.
-///
-/// We’re at data.
+/// At data.
 ///
 /// ```markdown
 /// |qwe
 /// ```
 fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (State::Fn(Box::new(start)), None)
-        }
-        _ => {
-            tokenizer.enter(TokenType::Data);
-            tokenizer.consume(code);
-            (State::Fn(Box::new(in_data)), None)
-        }
-    }
-}
-
-/// In data.
-///
-/// ```markdown
-/// q|w|e
-/// ```
-fn in_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.exit(TokenType::Data);
-            before_data(tokenizer, code)
-        }
-        // To do: somehow get these markers from constructs.
-        Code::Char(' ' | '&' | '<' | '\\' | '`') => {
-            tokenizer.exit(TokenType::Data);
-            start(tokenizer, code)
-        }
-        _ => {
-            tokenizer.consume(code);
-            (State::Fn(Box::new(in_data)), None)
-        }
-    }
+    tokenizer.go(|t, c| data(t, c, MARKERS.to_vec()), start)(tokenizer, code)
 }

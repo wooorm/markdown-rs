@@ -84,8 +84,6 @@ cargo doc --document-private-items
 
 #### Refactor
 
-- [ ] (1) Make text data, string data constructs (document in
-      `construct/mod.rs`)
 - [ ] (1) Configurable tokens (destination, label, title)
 - [ ] (1) Configurable limit (destination)
 
@@ -237,6 +235,8 @@ cargo doc --document-private-items
 - [x] (1) Figure out lifetimes of things (see `life time` in source)
 - [x] (1) Use traits for a bunch of enums, e.g., markers
 - [x] (1) Move safe protocols to constants
+- [x] (1) Make text data, string data constructs (document in
+      `construct/mod.rs`)
 
 ### Extensions
 
