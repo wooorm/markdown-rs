@@ -15,18 +15,6 @@
 //! [heading_atx]: crate::construct::heading_atx
 //! [html_flow]: crate::construct::html_flow
 
-/// The number of characters that form a tab stop.
-///
-/// This relates to the number of whitespace characters needed to form certain
-/// constructs in markdown, most notable the whitespace required to form
-/// [code (indented)][code_indented].
-///
-/// <!-- To do: link to somewhere that discusses virtual spaces. -->
-/// <!-- Ref: https://github.com/syntax-tree/mdast-util-to-markdown/issues/51 -->
-///
-/// [code_indented]: crate::construct::code_indented
-pub const TAB_SIZE: usize = 4;
-
 /// The number of characters allowed in a protocol of an [autolink][].
 ///
 /// The protocol part is the `xxx` in `<xxx://example.com>`.
@@ -44,26 +32,33 @@ pub const AUTOLINK_SCHEME_SIZE_MAX: usize = 32;
 /// [autolink]: crate::construct::autolink
 pub const AUTOLINK_DOMAIN_SIZE_MAX: usize = 63;
 
-/// The number of spaces needed, before a line ending, for a [hard break
-/// (trailing)][hard_break_trailing] to form.
+/// The max number of characters in a decimal numeric
+/// [character reference][character_reference].
 ///
-/// [hard_break_trailing]: crate::construct::hard_break_trailing
-pub const HARD_BREAK_PREFIX_SIZE_MIN: usize = 2;
+/// To illustrate, this allows `&#9999999;` and disallows `&#99999990;`.
+/// This limit is imposed because all bigger numbers are invalid.
+///
+/// [character_reference]: crate::construct::character_reference
+pub const CHARACTER_REFERENCE_DECIMAL_SIZE_MAX: usize = 7;
 
-/// The number of markers needed for a [thematic break][thematic_break] to form.
+/// The max number of characters in a hexadecimal numeric
+/// [character reference][character_reference].
 ///
-/// Like many things in markdown, the number is `3`.
+/// To illustrate, this allows `&#xff9999;` and disallows `&#xff99990;`.
+/// This limit is imposed because all bigger numbers are invalid.
 ///
-/// [thematic_break]: crate::construct::thematic_break
-pub const THEMATIC_BREAK_MARKER_COUNT_MIN: usize = 3;
+/// [character_reference]: crate::construct::character_reference
+pub const CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX: usize = 6;
 
-/// The max number of markers allowed to form a [heading (atx)][heading_atx].
+/// The max number of characters in a named
+/// [character reference][character_reference].
 ///
-/// This limitation is imposed by HTML, which imposes a max heading rank of
-/// `6`.
+/// This is the number of the longest name in [`CHARACTER_REFERENCE_NAMES`][].
+/// It allows `&CounterClockwiseContourIntegral;` and prevents the parser from
+/// continuing for eons.
 ///
-/// [heading_atx]: crate::construct::heading_atx
-pub const HEADING_ATX_OPENING_FENCE_SIZE_MAX: usize = 6;
+/// [character_reference]: crate::construct::character_reference
+pub const CHARACTER_REFERENCE_NAMED_SIZE_MAX: usize = 31;
 
 /// The number of markers needed for [code (fenced)][code_fenced] to form.
 ///
@@ -72,33 +67,19 @@ pub const HEADING_ATX_OPENING_FENCE_SIZE_MAX: usize = 6;
 /// [code_fenced]: crate::construct::code_fenced
 pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 
-/// To safeguard performance, labels are capped at a large number: `999`.
-pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
+/// The number of spaces needed, before a line ending, for a [hard break
+/// (trailing)][hard_break_trailing] to form.
+///
+/// [hard_break_trailing]: crate::construct::hard_break_trailing
+pub const HARD_BREAK_PREFIX_SIZE_MIN: usize = 2;
 
-/// List of HTML tag names that form the **raw** production of
-/// [HTML (flow)][html_flow].
+/// The max number of markers allowed to form a [heading (atx)][heading_atx].
 ///
-/// The **raw** production allows blank lines and thus no interleaving with
-/// markdown.
-/// Tag name matching must be performed insensitive to case, and thus this list
-/// includes lowercase tag names.
+/// This limitation is imposed by HTML, which imposes a max heading rank of
+/// `6`.
 ///
-/// The number of the longest tag name is also stored as a constant in
-/// [`HTML_RAW_SIZE_MAX`][].
-///
-/// > 👉 **Note**: `textarea` was added in `CommonMark@0.30`.
-///
-/// ## References
-///
-/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
-///
-/// [html_flow]: crate::construct::html_flow
-pub const HTML_RAW_NAMES: [&str; 4] = ["pre", "script", "style", "textarea"];
-
-/// The number of the longest tag name in [`HTML_RAW_NAMES`][].
-///
-/// This is currently the size of `textarea`.
-pub const HTML_RAW_SIZE_MAX: usize = 8;
+/// [heading_atx]: crate::construct::heading_atx
+pub const HEADING_ATX_OPENING_FENCE_SIZE_MAX: usize = 6;
 
 /// List of HTML tag names that form the **basic** production of
 /// [HTML (flow)][html_flow].
@@ -184,33 +165,54 @@ pub const HTML_BLOCK_NAMES: [&str; 61] = [
     "ul",
 ];
 
-/// The max number of characters in a hexadecimal numeric
-/// [character reference][character_reference].
+/// List of HTML tag names that form the **raw** production of
+/// [HTML (flow)][html_flow].
 ///
-/// To illustrate, this allows `&#xff9999;` and disallows `&#xff99990;`.
-/// This limit is imposed because all bigger numbers are invalid.
+/// The **raw** production allows blank lines and thus no interleaving with
+/// markdown.
+/// Tag name matching must be performed insensitive to case, and thus this list
+/// includes lowercase tag names.
 ///
-/// [character_reference]: crate::construct::character_reference
-pub const CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX: usize = 6;
+/// The number of the longest tag name is also stored as a constant in
+/// [`HTML_RAW_SIZE_MAX`][].
+///
+/// > 👉 **Note**: `textarea` was added in `CommonMark@0.30`.
+///
+/// ## References
+///
+/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
+///
+/// [html_flow]: crate::construct::html_flow
+pub const HTML_RAW_NAMES: [&str; 4] = ["pre", "script", "style", "textarea"];
 
-/// The max number of characters in a decimal numeric
-/// [character reference][character_reference].
+/// The number of the longest tag name in [`HTML_RAW_NAMES`][].
 ///
-/// To illustrate, this allows `&#9999999;` and disallows `&#99999990;`.
-/// This limit is imposed because all bigger numbers are invalid.
-///
-/// [character_reference]: crate::construct::character_reference
-pub const CHARACTER_REFERENCE_DECIMAL_SIZE_MAX: usize = 7;
+/// This is currently the size of `textarea`.
+pub const HTML_RAW_SIZE_MAX: usize = 8;
 
-/// The max number of characters in a named
-/// [character reference][character_reference].
+/// To safeguard performance, labels are capped at a large number: `999`.
+pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
+
+/// The number of characters that form a tab stop.
 ///
-/// This is the number of the longest name in [`CHARACTER_REFERENCE_NAMES`][].
-/// It allows `&CounterClockwiseContourIntegral;` and prevents the parser from
-/// continuing for eons.
+/// This relates to the number of whitespace characters needed to form certain
+/// constructs in markdown, most notable the whitespace required to form
+/// [code (indented)][code_indented].
 ///
-/// [character_reference]: crate::construct::character_reference
-pub const CHARACTER_REFERENCE_NAMED_SIZE_MAX: usize = 31;
+/// <!-- To do: link to somewhere that discusses virtual spaces. -->
+/// <!-- Ref: https://github.com/syntax-tree/mdast-util-to-markdown/issues/51 -->
+///
+/// [code_indented]: crate::construct::code_indented
+pub const TAB_SIZE: usize = 4;
+
+/// The number of markers needed for a [thematic break][thematic_break] to form.
+///
+/// Like many things in markdown, the number is `3`.
+///
+/// [thematic_break]: crate::construct::thematic_break
+pub const THEMATIC_BREAK_MARKER_COUNT_MIN: usize = 3;
+
+// Important: please touch the below lists as few times as possible to keep Git small.
 
 /// List of names that can form a named
 /// [character reference][character_reference].
