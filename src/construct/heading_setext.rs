@@ -51,8 +51,9 @@
 
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab_opt;
+use crate::subtokenize::link;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::{link::link, span::from_exit_event};
+use crate::util::span::from_exit_event;
 
 /// Kind of underline.
 #[derive(Debug, Clone, PartialEq)]

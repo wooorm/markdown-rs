@@ -34,8 +34,8 @@ use crate::construct::{
     heading_atx::start as heading_atx, html_flow::start as html_flow,
     partial_space_or_tab::space_or_tab_min_max, thematic_break::start as thematic_break,
 };
+use crate::subtokenize::link;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::link::link;
 
 /// Before a paragraph.
 ///

@@ -32,8 +32,8 @@
 //! <!-- To do: link label end. -->
 
 use crate::construct::partial_space_or_tab::space_or_tab_opt;
+use crate::subtokenize::link;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::link::link;
 
 /// Configuration.
 ///

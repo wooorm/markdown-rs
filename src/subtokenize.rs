@@ -1,3 +1,29 @@
+//! Deal with content in other content.
+//!
+//! To deal with content in content, *you* (a `micromark-rs` contributor) add
+//! information on events.
+//! Events are a flat list, but they can be connected to each other by setting
+//! `previous` and `next` links.
+//! These links:
+//!
+//! *   …must occur on [`Enter`][EventType::Enter] events only
+//! *   …must occur on void events (they are followed by their corresponding
+//!     [`Exit`][EventType::Exit] event)
+//! *   …must be headed by a [`ChunkString`][TokenType::ChunkString] or
+//!     [`ChunkText`][TokenType::ChunkText] event
+//!
+//! Links will then be passed through a tokenizer for the corresponding content
+//! type by `subtokenize`.
+//! The subevents they result in are split up into slots for each linked token
+//! and replace those links.
+//!
+//! Subevents are not immediately subtokenized again because markdown prevents
+//! us from doing so due to definitions, which can occur after references, and
+//! thus the whole document needs to be parsed up to the level of definitions,
+//! before any level that can include references can be parsed.
+//!
+//! <!-- To do: `ChunkFlow` when it exists. -->
+
 use crate::content::{string::start as string, text::start as text};
 use crate::tokenizer::{
     Code, Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer,
@@ -5,11 +31,34 @@ use crate::tokenizer::{
 use crate::util::span;
 use std::collections::HashMap;
 
-/// To do.
+/// Create a link between two [`Event`][]s.
+///
+/// Arbitrary (void) events can be linked together.
+/// This optimizes for the common case where the token at `index` is connected
+/// to the previous void token.
+pub fn link(events: &mut [Event], index: usize) {
+    let prev = &mut events[index - 2];
+    assert_eq!(prev.event_type, EventType::Enter);
+    prev.next = Some(index);
+
+    let prev_ref = &events[index - 2];
+    let prev_exit_ref = &events[index - 1];
+    assert_eq!(prev_exit_ref.event_type, EventType::Exit);
+    assert_eq!(prev_exit_ref.token_type, prev_ref.token_type);
+
+    let curr = &mut events[index];
+    assert_eq!(curr.event_type, EventType::Enter);
+    curr.previous = Some(index - 2);
+    // Note: the exit of this event may not exist, so don’t check for that.
+}
+
+/// Parse linked events.
+///
+/// Supposed to be called repeatedly, returns `1: true` when done.
 pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     let mut events = events;
     let mut index = 0;
-    // Map of first chunks its tokenizer.
+    // Map of first chunks to their tokenizer.
     let mut head_to_tokenizer: HashMap<usize, Tokenizer> = HashMap::new();
     // Map of chunks to their head and corresponding range of events.
     let mut link_to_info: HashMap<usize, (usize, usize, usize)> = HashMap::new();

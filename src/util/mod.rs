@@ -2,6 +2,5 @@
 
 pub mod decode_character_reference;
 pub mod encode;
-pub mod link;
 pub mod sanitize_uri;
 pub mod span;
