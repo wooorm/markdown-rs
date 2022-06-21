@@ -8,9 +8,17 @@ use crate::util::{
     span::{codes as codes_from_span, from_exit_event, serialize},
 };
 
+/// To do.
+#[derive(Debug, Clone)]
+pub enum LineEnding {
+    CarriageReturnLineFeed,
+    CarriageReturn,
+    LineFeed,
+}
+
 /// Configuration (optional).
 #[derive(Default, Debug)]
-pub struct CompileOptions {
+pub struct Options {
     /// Whether to allow (dangerous) HTML.
     /// The default is `false`, you can turn it on to `true` for trusted
     /// content.
@@ -18,7 +26,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```rust
-    /// use micromark::{micromark, micromark_with_options, CompileOptions};
+    /// use micromark::{micromark, micromark_with_options, Options};
     ///
     /// // micromark is safe by default:
     /// assert_eq!(
@@ -30,9 +38,11 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "Hi, <i>venus</i>!",
-    ///         &CompileOptions {
+    ///         &Options {
     ///             allow_dangerous_html: true,
     ///             allow_dangerous_protocol: false,
+    ///             default_line_ending: None,
+    ///
     ///         }
     ///     ),
     ///     "<p>Hi, <i>venus</i>!</p>"
@@ -47,7 +57,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```rust
-    /// use micromark::{micromark, micromark_with_options, CompileOptions};
+    /// use micromark::{micromark, micromark_with_options, Options};
     ///
     /// // micromark is safe by default:
     /// assert_eq!(
@@ -59,20 +69,24 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "<javascript:alert(1)>",
-    ///         &CompileOptions {
+    ///         &Options {
     ///             allow_dangerous_html: false,
     ///             allow_dangerous_protocol: true,
+    ///             default_line_ending: None,
     ///         }
     ///     ),
     ///     "<p><a href=\"javascript:alert(1)\">javascript:alert(1)</a></p>"
     /// );
     /// ```
     pub allow_dangerous_protocol: bool,
+
+    /// To do.
+    pub default_line_ending: Option<LineEnding>,
 }
 
 /// Turn events and codes into a string of HTML.
 #[allow(clippy::too_many_lines)]
-pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> String {
+pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut index = 0;
     // let mut last_was_tag = false;
     let buffers: &mut Vec<Vec<String>> = &mut vec![vec![]];
@@ -89,6 +103,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
     } else {
         Some(vec!["http", "https", "irc", "ircs", "mailto", "xmpp"])
     };
+    let mut line_ending_inferred: Option<LineEnding> = None;
     // let protocol_src = if options.allow_dangerous_protocol {
     //     None
     // } else {
@@ -96,6 +111,40 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
     // };
 
     // let mut slurp_all_line_endings = false;
+    while index < events.len() {
+        let event = &events[index];
+
+        if event.event_type == EventType::Exit
+            && (event.token_type == TokenType::BlankLineEnding
+                || event.token_type == TokenType::CodeTextLineEnding
+                || event.token_type == TokenType::LineEnding)
+        {
+            let codes = codes_from_span(codes, &from_exit_event(events, index));
+            let code = *codes.first().unwrap();
+            line_ending_inferred = Some(if code == Code::CarriageReturnLineFeed {
+                LineEnding::CarriageReturnLineFeed
+            } else if code == Code::Char('\r') {
+                LineEnding::CarriageReturn
+            } else {
+                LineEnding::LineFeed
+            });
+            break;
+        }
+
+        index += 1;
+    }
+
+    let line_ending_default: LineEnding;
+
+    if let Some(value) = line_ending_inferred {
+        line_ending_default = value;
+    } else if let Some(value) = &options.default_line_ending {
+        line_ending_default = value.clone();
+    } else {
+        line_ending_default = LineEnding::LineFeed;
+    }
+
+    index = 0;
 
     while index < events.len() {
         let event = &events[index];
@@ -162,12 +211,12 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                 }
                 TokenType::CodeIndented => {
                     code_flow_seen_data = Some(false);
-                    line_ending_if_needed(buffers);
+                    line_ending_if_needed(buffers, &line_ending_default);
                     buf_tail_mut(buffers).push("<pre><code>".to_string());
                 }
                 TokenType::CodeFenced => {
                     code_flow_seen_data = Some(false);
-                    line_ending_if_needed(buffers);
+                    line_ending_if_needed(buffers, &line_ending_default);
                     // Note that no `>` is used, which is added later.
                     buf_tail_mut(buffers).push("<pre><code".to_string());
                     code_fenced_fences_count = Some(0);
@@ -177,7 +226,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     buffer(buffers);
                 }
                 TokenType::HtmlFlow => {
-                    line_ending_if_needed(buffers);
+                    line_ending_if_needed(buffers, &line_ending_default);
                     if options.allow_dangerous_html {
                         ignore_encode = true;
                     }
@@ -297,14 +346,14 @@ pub fn compile(events: &[Event], codes: &[Code], options: &CompileOptions) -> St
                     // But in most cases, it’s simpler: when we’ve seen some data, emit an extra
                     // line ending when needed.
                     if seen_data {
-                        line_ending_if_needed(buffers);
+                        line_ending_if_needed(buffers, &line_ending_default);
                     }
 
                     buf_tail_mut(buffers).push("</code></pre>".to_string());
 
                     if let Some(count) = code_fenced_fences_count {
                         if count < 2 {
-                            line_ending_if_needed(buffers);
+                            line_ending_if_needed(buffers, &line_ending_default);
                         }
                     }
 
@@ -506,15 +555,23 @@ fn buf_tail(buffers: &mut [Vec<String>]) -> &Vec<String> {
 }
 
 /// Add a line ending.
-fn line_ending(buffers: &mut [Vec<String>]) {
+fn line_ending(buffers: &mut [Vec<String>], default: &LineEnding) {
     let tail = buf_tail_mut(buffers);
-    // To do: use inferred line ending style.
+
+    println!("xxx: {:?}", default);
+
+    let line_ending = match default {
+        LineEnding::CarriageReturnLineFeed => "\r\n",
+        LineEnding::CarriageReturn => "\r",
+        LineEnding::LineFeed => "\n",
+    };
+
     // lastWasTag = false
-    tail.push("\n".to_string());
+    tail.push(line_ending.to_string());
 }
 
 /// Add a line ending if needed (as in, there’s no eol/eof already).
-fn line_ending_if_needed(buffers: &mut [Vec<String>]) {
+fn line_ending_if_needed(buffers: &mut [Vec<String>], default: &LineEnding) {
     let slice = buf_tail_slice(buffers);
     let last_char = if let Some(x) = slice {
         x.chars().last()
@@ -532,6 +589,6 @@ fn line_ending_if_needed(buffers: &mut [Vec<String>]) {
     }
 
     if add {
-        line_ending(buffers);
+        line_ending(buffers, default);
     }
 }

@@ -1,9 +1,10 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, CompileOptions};
+use micromark::{micromark, micromark_with_options, Options};
 
-const DANGER: &CompileOptions = &CompileOptions {
+const DANGER: &Options = &Options {
     allow_dangerous_html: true,
     allow_dangerous_protocol: true,
+    default_line_ending: None,
 };
 
 #[test]

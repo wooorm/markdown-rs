@@ -677,7 +677,6 @@ fn attempt_impl(
 }
 
 /// Turn a string into codes.
-// To do: handle BOM at start?
 pub fn as_codes(value: &str) -> Vec<Code> {
     let mut codes: Vec<Code> = vec![];
     let mut at_start = true;
@@ -748,7 +747,10 @@ pub fn as_codes(value: &str) -> Vec<Code> {
         };
     }
 
-    // To do: handle a final CR?
+    // Send the last CR: we’re not at a next `\n`.
+    if at_carriage_return {
+        codes.push(Code::Char('\r'));
+    }
 
     codes
 }

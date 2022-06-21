@@ -66,16 +66,14 @@ cargo doc --document-private-items
 
 ### Small things
 
+- [ ] (1) Use `impl fmt::Display for x` for a bunch of enums, e.g., markers
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)
 - [ ] (1) Add docs to subtokenize
 - [ ] (1) Add module docs to parser
 - [ ] (1) Add overview docs on how everything works
 - [ ] (1) Move safe protocols to constants
 - [ ] (3) Clean compiler
-- [ ] (1) Use preferred line ending style in markdown
-- [ ] (1) Add tests for `default-line-ending`, `line-ending`
-- [ ] (1) Make sure tabs are handled properly and that positional info is perfect
-- [ ] (1) Make sure crlf/cr/lf are working perfectly
+- [ ] (1) Make sure positional info is perfect
 - [ ] (3) Figure out lifetimes of things (see `life time` in source)
 - [ ] (3) Use `commonmark` tests
 - [ ] (3) Share a bunch of tests with `micromark-js`
@@ -159,7 +157,7 @@ cargo doc --document-private-items
 - [x] (1) Add docs to html (text)
 - [x] (1) Add docs on bnf
 - [x] (1) Reorganize to split util
-- [x] (1) Add examples to `CompileOptions` docs
+- [x] (1) Add examples to `Options` docs
 - [x] (3) Fix deep subtokenization
 - [x] (1) text in heading
 - [x] (1) Setext headings, solved in flow
@@ -171,6 +169,10 @@ cargo doc --document-private-items
 - [x] (1) Connect `ChunkString` in label, destination, title
 - [x] (1) Add support for line endings in `string`
 - [x] (1) Handle BOM at start
+- [x] (1) Make sure tabs are handled properly
+- [x] (1) Add tests for `default-line-ending`, `line-ending`
+- [x] (1) Use preferred line ending style in markdown
+- [x] (1) Make sure crlf/cr/lf are working perfectly
 
 ### Extensions
 
