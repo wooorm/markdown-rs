@@ -66,14 +66,7 @@ pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
                 };
 
                 result = tokenizer.feed(span::codes(codes, &span), func, enter.next == None);
-
-                if let Some(ref x) = result.1 {
-                    if !x.is_empty() {
-                        // To do: handle?
-                        unreachable!("subtokenize:remainder {:?}", x);
-                    }
-                }
-
+                assert!(result.1.is_none(), "expected no remainder");
                 index_opt = enter.next;
             }
 

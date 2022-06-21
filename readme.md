@@ -64,37 +64,101 @@ cargo doc --document-private-items
 - [ ] (5) Figure out extensions
 - [ ] (1) Support turning off constructs
 
-### Small things
+### All the things
 
-- [ ] (1) Use `impl fmt::Display for x` for a bunch of enums, e.g., markers
-- [ ] (1) Parse initial and final whitespace of paragraphs (in text)
-- [ ] (1) Add docs to subtokenize
+#### Docs
+
+- [ ] (1) Add docs for `default_line_ending`
+- [ ] (1) Add docs for virtual spaces
+- [ ] (1) Add docs to `subtokenize.rs`
+- [ ] (1) Add docs for `link.rs`
+- [ ] (1) Add docs for token types
+- [ ] (1) Add docs for tokenizer (`go`, `define_skip`,
+      `account_for_potential_skip`, `attempt_5`, `attempt_7`, `call_multiple`)
+- [ ] (1) Add docs for sanitation (autolink, definition, resource)
+- [ ] (1) Add docs for how references and definitions match (definition, reference)
+- [ ] (1) Go through all bnf
+- [ ] (1) Go through all docs
 - [ ] (1) Add module docs to parser
 - [ ] (1) Add overview docs on how everything works
+
+#### Refactor
+
 - [ ] (1) Move safe protocols to constants
-- [ ] (3) Clean compiler
+- [ ] (1) Use `impl fmt::Display for x` for a bunch of enums, e.g., markers
+- [ ] (1) Make text data, string data constructs (document in
+      `construct/mod.rs`)
+- [ ] (1) Configurable tokens (destination, label, title)
+- [ ] (1) Configurable limit (destination)
+
+#### Parse
+
+- [ ] (1) Parse initial and final whitespace of paragraphs (in text)\
+       test (`code_indented`, `hard_break_escape`, `hard_break_trailing`,
+      `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
+      `misc_tabs`, `thematic_break`)
+- [ ] (1) Get definition identifiers (definition)
+- [ ] (3) Interrupting (html flow complete)
+- [ ] (5) labels\
+       test (`character_escape`, `character_reference`, `definition`,
+      `misc_dangerous_protocol`, `misc_tabs`, `misc_url`, `thematic_break`)\
+       link link reference (definition)\
+       link label end (destination, label, title)\
+       link label start (label)
+- [ ] (5) attention\
+       test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
+      `heading_atx`, `heading_setext`, `html_flow`, `thematic_break`)\
+- [ ] (8) block quote\
+       test (`code_fenced`, `code_indented`, `heading_atx`, `heading_setext`,
+      `html_flow`, `misc_default_line_ending`, `thematic_break`)
+- [ ] (8) list\
+       test (`character_reference`, `code_indented`, `heading_setext`,
+      `html_flow`, `thematic_break`)\
+       link (`blank line`, `thematic break`)
+- [ ] (3) Lazy lines (`code indented`, `html flow`)
+- [ ] (3) Concrete (`html flow`)
+- [ ] (3) Turn off things (enable every test for these)
+- [ ] (3) Make tokenizer tokens extendable
+
+#### Test
+
 - [ ] (1) Make sure positional info is perfect
-- [ ] (3) Figure out lifetimes of things (see `life time` in source)
 - [ ] (3) Use `commonmark` tests
 - [ ] (3) Share a bunch of tests with `micromark-js`
+
+#### Misc
+
+- [ ] (3) Check subtokenizer unraveling is ok
+- [ ] (3) Remove splicing and cloning in subtokenizer
+- [ ] (3) Pass more references around
+- [ ] (1) Remove todos in `span.rs` if not needed
+- [ ] (1) Get markers from constructs (`string`, `text`)
+- [ ] (1) Do not capture in `tokenizer.go`
+- [ ] (1) Clean attempts
+- [ ] (3) Clean compiler
+- [ ] (3) Figure out lifetimes of things (see `life time` in source)
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
       how to integrate with streams or so?
 - [ ] (1) Go through clippy rules, and such, to add strict code styles
 - [ ] (1) Make sure that rust character groups match CM character groups (e.g., is
       `unicode_whitespace` or so the same?)
 - [ ] (1) Any special handling of surrogates?
-- [ ] (1) Make sure debugging is useful for other folks
+- [ ] (1) Make sure debugging, assertions are useful for other folks
 - [ ] (3) Add some benchmarks, do some perf testing
 - [ ] (3) Write comparison to other parsers
 - [ ] (3) Add node/etc bindings?
-- [ ] (8) After all extensions, including MDX, are done, see if we can integrate
-      this with SWC to compile MDX
 - [ ] (3) Bunch of docs
 - [ ] (5) Site
 
+#### After
+
+- [ ] (8) Extensions!
+- [ ] (8) After all extensions, including MDX, are done, see if we can integrate
+      this with SWC to compile MDX
+
 ### Constructs
 
-- [ ] (5) attention (strong, emphasis) (text)
+- [ ] (5) attention (strong, emphasis)
 - [x] autolink
 - [x] blank line
 - [ ] (5) block quote
@@ -132,7 +196,7 @@ cargo doc --document-private-items
   - [x] html (flow)
   - [x] paragraph
   - [x] thematic break
-- [ ] (5) text
+- [ ] (8) text
   - [ ] attention (strong, emphasis) (text)
   - [x] autolink
   - [x] character escape

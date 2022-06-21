@@ -222,12 +222,14 @@ impl Tokenizer {
         self.current = code;
     }
 
+    /// To do.
     pub fn define_skip(&mut self, point: &Point, index: usize) {
         self.column_start.insert(point.line, point.column);
         self.account_for_potential_skip();
         log::debug!("position: define skip: `{:?}` ({:?})", point, index);
     }
 
+    /// To do.
     fn account_for_potential_skip(&mut self) {
         match self.column_start.get(&self.point.line) {
             None => {}
@@ -462,6 +464,7 @@ impl Tokenizer {
     }
 
     // To do: lifetimes, boxes, lmao.
+    /// To do.
     pub fn attempt_2(
         &mut self,
         a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
@@ -481,6 +484,7 @@ impl Tokenizer {
         )
     }
 
+    /// To do.
     #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
     pub fn attempt_5(
         &mut self,
@@ -504,6 +508,7 @@ impl Tokenizer {
         )
     }
 
+    /// To do.
     #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
     pub fn attempt_7(
         &mut self,
@@ -529,6 +534,7 @@ impl Tokenizer {
         )
     }
 
+    /// To do.
     #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
     pub fn call_multiple(
         &mut self,
@@ -606,7 +612,7 @@ impl Tokenizer {
 
         // Yield to a higher loop if we shouldn’t feed EOFs.
         if !drain {
-            return (state, Some(codes[index..].to_vec()));
+            return check_statefn_result((state, Some(codes[index..].to_vec())));
         }
 
         loop {
@@ -618,14 +624,7 @@ impl Tokenizer {
                     log::debug!("main: passing eof");
                     self.expect(code);
                     let (next, remainder) = check_statefn_result(func(self, code));
-
-                    if let Some(ref x) = remainder {
-                        if !x.is_empty() {
-                            // To do: handle?
-                            unreachable!("drain:remainder {:?}", x);
-                        }
-                    }
-
+                    assert!(remainder.is_none(), "expected no remainder");
                     state = next;
                 }
             }
@@ -661,8 +660,13 @@ fn attempt_impl(
             }
         }
 
-        // To do: `remainder` must never be bigger than codes I guess?
-        // To do: `remainder` probably has to be taken *from* `codes`, in a similar vain to the `Ok` handling below.
+        if let Some(ref list) = remainder {
+            assert!(
+                list.len() <= codes.len(),
+                "`remainder` must be less than or equal to `codes`"
+            );
+        }
+
         match next {
             State::Ok => {
                 let remaining = if let Some(x) = remainder { x } else { vec![] };
@@ -670,6 +674,7 @@ fn attempt_impl(
             }
             State::Nok => check_statefn_result(done((codes, vec![]), false, tokenizer)),
             State::Fn(func) => {
+                assert!(remainder.is_none(), "expected no remainder");
                 check_statefn_result((State::Fn(attempt_impl(func, codes, done)), None))
             }
         }
@@ -712,20 +717,18 @@ pub fn as_codes(value: &str) -> Vec<Code> {
                 }
                 // Send a tab and virtual spaces.
                 '\t' => {
-                    // To do: is this correct?
                     let remainder = column % TAB_SIZE;
-                    let virtual_spaces = if remainder == 0 {
+                    let mut virtual_spaces = if remainder == 0 {
                         0
                     } else {
                         TAB_SIZE - remainder
                     };
                     codes.push(Code::Char(char));
                     column += 1;
-                    let mut index = 0;
-                    while index < virtual_spaces {
+                    while virtual_spaces > 0 {
                         codes.push(Code::VirtualSpace);
                         column += 1;
-                        index += 1;
+                        virtual_spaces -= 1;
                     }
                 }
                 // Send an LF.
@@ -769,6 +772,10 @@ fn check_statefn_result(result: StateFnResult) -> StateFnResult {
     if let Some(ref mut list) = remainder {
         if Some(&Code::None) == list.last() {
             list.pop();
+        }
+
+        if list.is_empty() {
+            return (state, None);
         }
     }
 
