@@ -1,4 +1,5 @@
 //! Turn events into a string of HTML.
+use crate::constant::SAFE_PROTOCOL_HREF;
 use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::tokenizer::{Code, Event, EventType, TokenType};
 use crate::util::{
@@ -125,14 +126,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let protocol_href = if options.allow_dangerous_protocol {
         None
     } else {
-        Some(vec!["http", "https", "irc", "ircs", "mailto", "xmpp"])
+        Some(SAFE_PROTOCOL_HREF.to_vec())
     };
     let mut line_ending_inferred: Option<LineEnding> = None;
-    // let protocol_src = if options.allow_dangerous_protocol {
-    //     None
-    // } else {
-    //     Some(vec!["http", "https"])
-    // };
 
     // let mut slurp_all_line_endings = false;
     while index < events.len() {

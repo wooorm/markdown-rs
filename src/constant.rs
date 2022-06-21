@@ -193,6 +193,18 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
+/// List of protocols allowed, when operating safely, as `href` on `a`.
+///
+/// This list is based on what is allowed by GitHub.
+pub const SAFE_PROTOCOL_HREF: [&str; 6] = ["http", "https", "irc", "ircs", "mailto", "xmpp"];
+
+/// List of protocols allowed, when operating safely, as `src` on `img`.
+///
+/// This list is based on what is allowed by GitHub.
+// To do: image.
+#[allow(dead_code)]
+pub const SAFE_PROTOCOL_SRC: [&str; 2] = ["http", "https"];
+
 /// The number of characters that form a tab stop.
 ///
 /// This relates to the number of whitespace characters needed to form certain
