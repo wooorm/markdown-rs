@@ -173,6 +173,7 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     t,
                     c,
                     DestinationOptions {
+                        limit: usize::MAX,
                         destination: TokenType::DefinitionDestination,
                         literal: TokenType::DefinitionDestinationLiteral,
                         marker: TokenType::DefinitionDestinationLiteralMarker,

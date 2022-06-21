@@ -82,10 +82,6 @@ cargo doc --document-private-items
 - [ ] (1) Add module docs to parser
 - [ ] (1) Add overview docs on how everything works
 
-#### Refactor
-
-- [ ] (1) Configurable limit (destination)
-
 #### Parse
 
 - [ ] (1) Parse initial and final whitespace of paragraphs (in text)\
@@ -237,6 +233,7 @@ cargo doc --document-private-items
 - [x] (1) Make text data, string data constructs (document in
       `construct/mod.rs`)
 - [x] (1) Configurable tokens (destination, label, title)
+- [x] (1) Configurable limit (destination)
 
 ### Extensions
 

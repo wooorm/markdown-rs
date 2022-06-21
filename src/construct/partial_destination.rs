@@ -57,6 +57,8 @@ pub struct Options {
     pub raw: TokenType,
     /// Token for a the string.
     pub string: TokenType,
+    /// Maximum unbalanced parens.
+    pub limit: usize,
 }
 
 /// State needed to parse destination.
@@ -176,12 +178,9 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 /// a|b
 /// ```
 fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
-    // To do: configurable.
-    let limit = usize::MAX;
-
     match code {
         Code::Char('(') => {
-            if info.balance >= limit {
+            if info.balance >= info.options.limit {
                 (State::Nok, None)
             } else {
                 tokenizer.consume(code);
