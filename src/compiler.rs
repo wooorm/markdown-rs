@@ -105,7 +105,47 @@ pub struct Options {
     /// ```
     pub allow_dangerous_protocol: bool,
 
-    /// To do.
+    /// Default line ending to use, for line endings not in `value`.
+    ///
+    /// Generally, micromark copies line endings (`\r`, `\n`, `\r\n`) in the
+    /// markdown document over to the compiled HTML.
+    /// In some cases, such as `> a`, CommonMark requires that extra line
+    /// endings are added: `<blockquote>\n<p>a</p>\n</blockquote>`.
+    ///
+    /// To create that line ending, the document is checked for the first line
+    /// ending that is used.
+    /// If there is no line ending, `default_line_ending` is used.
+    /// If that isn’t configured, `\n` is used.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use micromark::{micromark, micromark_with_options, Options, LineEnding};
+    ///
+    /// // micromark is safe by default:
+    /// assert_eq!(
+    ///     micromark("> a"),
+    ///     // To do: block quote
+    ///     // "<blockquote>\n<p>a</p>\n</blockquote>"
+    ///     "<p>&gt; a</p>"
+    /// );
+    ///
+    /// // Define `default_line_ending` to configure the default:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "> a",
+    ///         &Options {
+    ///             allow_dangerous_html: false,
+    ///             allow_dangerous_protocol: false,
+    ///             default_line_ending: Some(LineEnding::CarriageReturnLineFeed),
+    ///
+    ///         }
+    ///     ),
+    ///     // To do: block quote
+    ///     // "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
+    ///     "<p>&gt; a</p>"
+    /// );
+    /// ```
     pub default_line_ending: Option<LineEnding>,
 }
 

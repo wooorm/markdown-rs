@@ -68,7 +68,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) Add docs for `default_line_ending`
 - [ ] (1) Add docs for virtual spaces
 - [ ] (1) Add docs to `subtokenize.rs`
 - [ ] (1) Add docs for `link.rs`
@@ -234,6 +233,7 @@ cargo doc --document-private-items
       `construct/mod.rs`)
 - [x] (1) Configurable tokens (destination, label, title)
 - [x] (1) Configurable limit (destination)
+- [x] (1) Add docs for `default_line_ending`
 
 ### Extensions
 
