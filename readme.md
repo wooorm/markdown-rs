@@ -68,8 +68,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) Add docs to `normalize_identifier`
-- [ ] (1) Add docs for how references and definitions match (definition, reference)
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add module docs to parser
@@ -234,6 +232,8 @@ cargo doc --document-private-items
 - [x] (1) Add docs for tokenizer
 - [x] (1) Add docs for sanitation
 - [x] (1) Get definition identifiers (definition)
+- [x] (1) Add docs to `normalize_identifier`
+- [x] (1) Add docs for how references and definitions match
 
 ### Extensions
 

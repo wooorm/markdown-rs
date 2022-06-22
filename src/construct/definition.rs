@@ -31,15 +31,45 @@
 //! ```
 //!
 //! Definitions in markdown do not, on their own, relate to anything in HTML.
-//! When connected with a link (reference), they together relate to the `<a>`
+//! When matched with a link (reference), they together relate to the `<a>`
 //! element in HTML.
 //! The definition forms its `href`, and optionally `title`, attributes.
-//! See [*§ 4.5.1 The `a` element*][html] in the HTML spec for more info.
+//! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
+//! Definitions can also match with image (reference), in which case they
+//! form an `<img>` element, where the definition contributes the `src`, and
+//! optionally `title`, attributes.
+//! See [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
 //!
 //! The `label`, `destination`, and `title` parts are interpreted as the
 //! [string][] content type.
 //! That means that [character escapes][character_escape] and
 //! [character references][character_reference] are allowed.
+//!
+//! Definitions match to references through their label.
+//! To match, both labels must be equal after normalizing with
+//! [`normalize_identifier`][normalize_identifier].
+//! One definitions can match to multiple references.
+//! Multiple definitions with the same, normalized, identifier are ignored: the
+//! first definition is preferred.
+//! To illustrate, the definition with a destination of `x` wins:
+//!
+//! ```markdown
+//! [a]: x
+//! [a]: y
+//!
+//! [a]
+//! ```
+//!
+//! Importantly, while labels *can* include [string][] content (character
+//! escapes and character references), these are not considered when matching.
+//! To illustrate, neither definition matches the reference:
+//!
+//! ```markdown
+//! [a&amp;b]: x
+//! [a\&b]: y
+//!
+//! [a&b]
+//! ```
 //!
 //! For info on how to encode characters in URLs, see
 //! [`partial_destination`][destination].
@@ -75,12 +105,12 @@
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
 //! [destination]: crate::construct::partial_destination
-//! [sanitize_uri]: crate::util::sanitize_uri
-//! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
+//! [normalize_identifier]: crate::util::normalize_identifier
+//! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 //!
-//! <!-- To do: link link (reference) -->
-//!
-//! <!-- To do: describe how references and definitions match -->
+//! <!-- To do: link link/image (reference) -->
 
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},
