@@ -21,6 +21,8 @@
 ///
 /// *   [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
 pub fn encode(value: &str) -> String {
+    // To do: replacing 4 times might just be slow.
+    // Perhaps we can walk the chars.
     value
         .replace('&', "&amp;")
         .replace('"', "&quot;")

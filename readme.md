@@ -68,6 +68,7 @@ cargo doc --document-private-items
 
 #### Docs
 
+- [ ] (1) Add docs to `normalize_identifier`
 - [ ] (1) Add docs for how references and definitions match (definition, reference)
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
@@ -80,7 +81,6 @@ cargo doc --document-private-items
        test (`code_indented`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
       `misc_tabs`, `thematic_break`)
-- [ ] (1) Get definition identifiers (definition)
 - [ ] (3) Interrupting (html flow complete)
 - [ ] (5) labels\
        test (`character_escape`, `character_reference`, `definition`,
@@ -124,7 +124,7 @@ cargo doc --document-private-items
       `unicode_whitespace` or so the same?)
 - [ ] (1) Any special handling of surrogates?
 - [ ] (1) Make sure debugging, assertions are useful for other folks
-- [ ] (3) Add some benchmarks, do some perf testing
+- [ ] (3) Add some benchmarks (against comrak, pulldown-cmark, kramdown?), do some perf testing
 - [ ] (3) Write comparison to other parsers
 - [ ] (3) Add node/etc bindings?
 - [ ] (3) Bunch of docs
@@ -233,6 +233,7 @@ cargo doc --document-private-items
 - [x] (1) Clean attempts
 - [x] (1) Add docs for tokenizer
 - [x] (1) Add docs for sanitation
+- [x] (1) Get definition identifiers (definition)
 
 ### Extensions
 

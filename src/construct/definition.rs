@@ -131,11 +131,6 @@ pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]|: b "c"
 /// ```
 fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: get the identifier:
-    // identifier = normalizeIdentifier(
-    //   self.sliceSerialize(self.events[self.events.length - 1][1]).slice(1, -1)
-    // )
-
     match code {
         Code::Char(':') => {
             tokenizer.enter(TokenType::DefinitionMarker);

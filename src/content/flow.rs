@@ -27,13 +27,36 @@ use crate::construct::{
     thematic_break::start as thematic_break,
 };
 use crate::subtokenize::subtokenize;
-use crate::tokenizer::{Code, Event, Point, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::{
+    normalize_identifier::normalize_identifier,
+    span::{from_exit_event, serialize},
+};
 
 /// Turn `codes` as the flow content type into events.
 pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, index);
     tokenizer.feed(codes, Box::new(start), true);
+
+    let mut index = 0;
+
+    while index < tokenizer.events.len() {
+        let event = &tokenizer.events[index];
+
+        if event.event_type == EventType::Exit
+            && event.token_type == TokenType::DefinitionLabelString
+        {
+            let id = normalize_identifier(
+                serialize(codes, &from_exit_event(&tokenizer.events, index), false).as_str(),
+            );
+            println!("to do: use identifier {:?}", id);
+        }
+
+        index += 1;
+    }
+
     let mut result = (tokenizer.events, false);
+
     while !result.1 {
         result = subtokenize(result.0, codes);
     }
