@@ -242,7 +242,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::HardBreakTrailingSpace
                 | TokenType::HeadingAtx
                 | TokenType::HeadingAtxSequence
-                | TokenType::HeadingAtxWhitespace
+                | TokenType::HeadingAtxSpaceOrTab
                 | TokenType::HeadingSetext
                 | TokenType::HeadingSetextUnderline
                 | TokenType::HtmlFlowData
@@ -250,7 +250,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::LineEnding
                 | TokenType::ThematicBreak
                 | TokenType::ThematicBreakSequence
-                | TokenType::Whitespace => {
+                | TokenType::SpaceOrTab => {
                     // Ignore.
                 }
                 TokenType::CodeFencedFenceInfo
@@ -321,7 +321,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::HardBreakTrailingSpace
                 | TokenType::HeadingSetext
                 | TokenType::ThematicBreakSequence
-                | TokenType::Whitespace => {
+                | TokenType::SpaceOrTab => {
                     // Ignore.
                 }
                 // Just output it.
@@ -482,13 +482,13 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     atx_opening_sequence_size = None;
                     atx_heading_buffer = None;
                 }
-                // `HeadingAtxWhitespace` is ignored after the opening sequence,
+                // `HeadingAtxSpaceOrTab` is ignored after the opening sequence,
                 // before the closing sequence, and after the closing sequence.
                 // But it is used around intermediate sequences.
                 // `atx_heading_buffer` is set to `Some` by the first `HeadingAtxText`.
                 // `HeadingAtxSequence` is ignored as the opening and closing sequence,
                 // but not when intermediate.
-                TokenType::HeadingAtxSequence | TokenType::HeadingAtxWhitespace => {
+                TokenType::HeadingAtxSequence | TokenType::HeadingAtxSpaceOrTab => {
                     if let Some(buf) = atx_heading_buffer {
                         atx_heading_buffer = Some(
                             buf.to_string()

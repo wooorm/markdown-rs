@@ -57,7 +57,7 @@
 //! *   [`DefinitionTitleMarker`][TokenType::DefinitionTitleMarker]
 //! *   [`DefinitionTitleString`][TokenType::DefinitionTitleString]
 //! *   [`LineEnding`][TokenType::LineEnding]
-//! *   [`Whitespace`][TokenType::Whitespace]
+//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -179,7 +179,7 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let event = tokenizer.events.last().unwrap();
 
     // Whitespace.
-    if (event.token_type == TokenType::LineEnding || event.token_type == TokenType::Whitespace)
+    if (event.token_type == TokenType::LineEnding || event.token_type == TokenType::SpaceOrTab)
     // Blank line not ok.
         && !matches!(
         code,
@@ -291,7 +291,7 @@ fn title_before_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code)
 fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let event = tokenizer.events.last().unwrap();
 
-    if event.token_type == TokenType::LineEnding || event.token_type == TokenType::Whitespace {
+    if event.token_type == TokenType::LineEnding || event.token_type == TokenType::SpaceOrTab {
         tokenizer.go(
             |t, c| {
                 title(

@@ -77,7 +77,7 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (1) Parse initial and final whitespace of paragraphs (in text)\
+- [ ] (1) Parse initial and final space_or_tab of paragraphs (in text)\
        test (`code_indented`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
       `misc_tabs`, `thematic_break`)

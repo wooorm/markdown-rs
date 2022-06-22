@@ -202,7 +202,7 @@ fn text_line_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let index = tokenizer.events.len() - 2;
 
     // Link the whitespace, if it exists.
-    if tokenizer.events[index].token_type == TokenType::Whitespace {
+    if tokenizer.events[index].token_type == TokenType::SpaceOrTab {
         link(&mut tokenizer.events, index);
     }
 
@@ -263,7 +263,7 @@ fn underline_sequence_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
     let mut prefix = 0;
 
     if let Some(event) = tail {
-        if event.token_type == TokenType::Whitespace {
+        if event.token_type == TokenType::SpaceOrTab {
             let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
             prefix = span.end_index - span.start_index;
         }

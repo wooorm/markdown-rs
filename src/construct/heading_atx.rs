@@ -40,7 +40,7 @@
 //! *   [`HeadingAtx`][TokenType::HeadingAtx]
 //! *   [`HeadingAtxSequence`][TokenType::HeadingAtxSequence]
 //! *   [`HeadingAtxText`][TokenType::HeadingAtxText]
-//! *   [`HeadingAtxWhitespace`][TokenType::HeadingAtxWhitespace]
+//! *   [`HeadingAtxSpaceOrTab`][TokenType::HeadingAtxSpaceOrTab]
 //!
 //! ## References
 //!
@@ -105,7 +105,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
         _ if rank > 0 => {
             tokenizer.exit(TokenType::HeadingAtxSequence);
             tokenizer.go(
-                space_or_tab(TokenType::HeadingAtxWhitespace, 1, usize::MAX),
+                space_or_tab(TokenType::HeadingAtxSpaceOrTab, 1, usize::MAX),
                 at_break,
             )(tokenizer, code)
         }
@@ -129,7 +129,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Ok, Some(vec![code]))
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => tokenizer.go(
-            space_or_tab(TokenType::HeadingAtxWhitespace, 1, usize::MAX),
+            space_or_tab(TokenType::HeadingAtxSpaceOrTab, 1, usize::MAX),
             at_break,
         )(tokenizer, code),
         Code::Char('#') => {

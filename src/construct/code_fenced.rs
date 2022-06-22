@@ -84,7 +84,7 @@
 //! *   [`CodeFencedFenceMeta`][TokenType::CodeFencedFenceMeta]
 //! *   [`CodeFlowChunk`][TokenType::CodeFlowChunk]
 //! *   [`LineEnding`][TokenType::LineEnding]
-//! *   [`Whitespace`][TokenType::Whitespace]
+//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -194,7 +194,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
     let mut prefix = 0;
 
     if let Some(event) = tail {
-        if event.token_type == TokenType::Whitespace {
+        if event.token_type == TokenType::SpaceOrTab {
             let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
             prefix = span.end_index - span.start_index;
         }

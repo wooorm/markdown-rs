@@ -292,7 +292,7 @@ pub enum TokenType {
     ///     [`CodeFencedFence`][TokenType::CodeFencedFence],
     ///     [`CodeFlowChunk`][TokenType::CodeFlowChunk],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`code_fenced`][crate::construct::code_fenced]
     ///
@@ -317,7 +317,7 @@ pub enum TokenType {
     ///     [`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo],
     ///     [`CodeFencedFenceMeta`][TokenType::CodeFencedFenceMeta],
     ///     [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`code_fenced`][crate::construct::code_fenced]
     ///
@@ -428,7 +428,7 @@ pub enum TokenType {
     /// *   **Content model**:
     ///     [`CodeFlowChunk`][TokenType::CodeFlowChunk],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`code_fenced`][crate::construct::code_fenced]
     ///
@@ -545,7 +545,7 @@ pub enum TokenType {
     ///     [`DefinitionDestination`][TokenType::DefinitionDestination],
     ///     [`DefinitionTitle`][TokenType::DefinitionTitle],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`definition`][crate::construct::definition]
     ///
@@ -566,7 +566,7 @@ pub enum TokenType {
     ///     [`DefinitionLabelMarker`][TokenType::DefinitionLabelMarker],
     ///     [`DefinitionLabelString`][TokenType::DefinitionLabelString],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`partial_label`][crate::construct::partial_label]
     ///
@@ -738,7 +738,7 @@ pub enum TokenType {
     ///     [`DefinitionTitleMarker`][TokenType::DefinitionTitleMarker],
     ///     [`DefinitionTitleString`][TokenType::DefinitionTitleString],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`partial_title`][crate::construct::partial_title]
     ///
@@ -870,7 +870,7 @@ pub enum TokenType {
     /// *   **Content model**:
     ///     [`HeadingAtxSequence`][TokenType::HeadingAtxSequence],
     ///     [`HeadingAtxText`][TokenType::HeadingAtxText],
-    ///     [`HeadingAtxWhitespace`][TokenType::HeadingAtxWhitespace]
+    ///     [`HeadingAtxSpaceOrTab`][TokenType::HeadingAtxSpaceOrTab]
     /// *   **Construct**:
     ///     [`heading_atx`][crate::construct::heading_atx]
     ///
@@ -918,7 +918,7 @@ pub enum TokenType {
     ///       ^^^^^
     /// ```
     HeadingAtxText,
-    /// Heading (atx) whitespace.
+    /// Heading (atx) spaces.
     ///
     /// ## Info
     ///
@@ -935,7 +935,7 @@ pub enum TokenType {
     /// > | # alpha
     ///      ^
     /// ```
-    HeadingAtxWhitespace,
+    HeadingAtxSpaceOrTab,
     /// Whole heading (setext).
     ///
     /// ## Info
@@ -946,7 +946,7 @@ pub enum TokenType {
     ///     [`HeadingSetextText`][TokenType::HeadingSetextText],
     ///     [`HeadingSetextUnderline`][TokenType::HeadingSetextUnderline],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`heading_setext`][crate::construct::heading_setext]
     ///
@@ -1006,7 +1006,7 @@ pub enum TokenType {
     /// *   **Content model**:
     ///     [`HtmlFlowData`][TokenType::HtmlFlowData],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`html_flow`][crate::construct::html_flow]
     ///
@@ -1044,7 +1044,7 @@ pub enum TokenType {
     /// *   **Content model**:
     ///     [`HtmlTextData`][TokenType::HtmlTextData],
     ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`html_text`][crate::construct::html_text]
     ///
@@ -1120,7 +1120,7 @@ pub enum TokenType {
     ///     [flow content][crate::content::flow]
     /// *   **Content model**:
     ///     [`ThematicBreakSequence`][TokenType::ThematicBreakSequence],
-    ///     [`Whitespace`][TokenType::Whitespace]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`thematic_break`][crate::construct::thematic_break]
     ///
@@ -1149,7 +1149,7 @@ pub enum TokenType {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
-    /// Whitespace.
+    /// SpaceOrTab.
     ///
     /// ## Info
     ///
@@ -1166,7 +1166,7 @@ pub enum TokenType {
     /// > | ␠* * *␠
     ///     ^ ^ ^ ^
     /// ```
-    Whitespace,
+    SpaceOrTab,
 
     /// Chunk (string).
     ///

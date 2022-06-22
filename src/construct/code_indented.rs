@@ -31,7 +31,7 @@
 //! *   [`CodeIndented`][TokenType::CodeIndented]
 //! *   [`CodeFlowChunk`][TokenType::CodeFlowChunk]
 //! *   [`LineEnding`][TokenType::LineEnding]
-//! *   [`Whitespace`][TokenType::Whitespace]
+//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
 //!
 //! ## References
 //!

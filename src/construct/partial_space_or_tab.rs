@@ -34,7 +34,7 @@ pub fn space_or_tab_opt() -> Box<StateFn> {
 /// space_or_tab_min_max ::= x*y( ' ' '\t' )
 /// ```
 pub fn space_or_tab_min_max(min: usize, max: usize) -> Box<StateFn> {
-    space_or_tab(TokenType::Whitespace, min, max)
+    space_or_tab(TokenType::SpaceOrTab, min, max)
 }
 
 /// Between `x` and `y` `space_or_tab`, with the given token type.
