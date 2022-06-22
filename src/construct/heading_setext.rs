@@ -36,6 +36,12 @@
 //! > See [*§ atx, the true structured text format* on `aaronsw.com`][atx] for
 //! > more info.
 //!
+//! ## Tokens
+//!
+//! *   [`HeadingSetext`][TokenType::HeadingSetext]
+//! *   [`HeadingSetextText`][TokenType::HeadingSetextText]
+//! *   [`HeadingSetextUnderline`][TokenType::HeadingSetextUnderline]
+//!
 //! ## References
 //!
 //! *   [`setext-underline.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/setext-underline.js)

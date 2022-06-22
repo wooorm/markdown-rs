@@ -11,77 +11,1173 @@
 //! [`attempt`]: Tokenizer::attempt
 //! [`check`]: Tokenizer::check
 
-use crate::constant::TAB_SIZE;
+/// To do: could we do without `HashMap`, so we don’t need `std`?
 use std::collections::HashMap;
+
+use crate::constant::TAB_SIZE;
 
 /// Semantic label of a span.
 // To do: figure out how to share this so extensions can add their own stuff,
 // though perhaps that’s impossible and we should inline all extensions?
-// To do: document each variant.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
+    /// Whole autolink.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`AutolinkEmail`][TokenType::AutolinkEmail],
+    ///     [`AutolinkMarker`][TokenType::AutolinkMarker],
+    ///     [`AutolinkProtocol`][TokenType::AutolinkProtocol]
+    /// *   **Construct**:
+    ///     [`autolink`][crate::construct::autolink]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <https://example.com> and <admin@example.com>
+    ///     ^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^
+    /// ```
     Autolink,
-    AutolinkMarker,
-    AutolinkProtocol,
+    /// Email autolink w/o markers.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Autolink`][TokenType::Autolink]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`autolink`][crate::construct::autolink]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <admin@example.com>
+    ///      ^^^^^^^^^^^^^^^^^
+    /// ```
     AutolinkEmail,
+    /// Marker of an autolink.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Autolink`][TokenType::Autolink]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`autolink`][crate::construct::autolink]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <https://example.com>
+    ///     ^                   ^
+    /// ```
+    AutolinkMarker,
+    /// Protocol autolink w/o markers.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Autolink`][TokenType::Autolink]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`autolink`][crate::construct::autolink]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <https://example.com>
+    ///      ^^^^^^^^^^^^^^^^^^^
+    /// ```
+    AutolinkProtocol,
+    /// Line ending preceded only by whitespace or nothing at all.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`blank_line`][crate::construct::blank_line]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ␠␠␊
+    ///       ^
+    /// ```
     BlankLineEnding,
+    /// Whole character escape.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [string content][crate::content::string] or
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`CharacterEscapeMarker`][TokenType::CharacterEscapeMarker],
+    ///     [`CharacterEscapeValue`][TokenType::CharacterEscapeValue]
+    /// *   **Construct**:
+    ///     [`character_escape`][crate::construct::character_escape]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a \- b
+    ///       ^^
+    /// ```
     CharacterEscape,
+    /// Character escape marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterEscape`][TokenType::CharacterEscape]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_escape`][crate::construct::character_escape]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a \- b
+    ///       ^
+    /// ```
     CharacterEscapeMarker,
+    /// Character escape value.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterEscape`][TokenType::CharacterEscape]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_escape`][crate::construct::character_escape]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a \- b
+    ///        ^
+    /// ```
     CharacterEscapeValue,
+    /// Whole character reference.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [string content][crate::content::string] or
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker],
+    ///     [`CharacterReferenceMarkerHexadecimal`][TokenType::CharacterReferenceMarkerHexadecimal],
+    ///     [`CharacterReferenceMarkerNumeric`][TokenType::CharacterReferenceMarkerNumeric],
+    ///     [`CharacterReferenceMarkerSemi`][TokenType::CharacterReferenceMarkerSemi],
+    ///     [`CharacterReferenceValue`][TokenType::CharacterReferenceValue]
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///       ^^^^^   ^^^^^^^   ^^^^^^^^^
+    /// ```
     CharacterReference,
+    /// Character reference opening marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterReference`][TokenType::CharacterReference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///       ^       ^         ^
+    /// ```
     CharacterReferenceMarker,
+    /// Character reference numeric marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterReference`][TokenType::CharacterReference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///                ^         ^
+    /// ```
     CharacterReferenceMarkerNumeric,
+    /// Character reference hexadecimal numeric marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterReference`][TokenType::CharacterReference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///                           ^
+    /// ```
     CharacterReferenceMarkerHexadecimal,
+    /// Character reference closing marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterReference`][TokenType::CharacterReference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///           ^         ^           ^
+    /// ```
     CharacterReferenceMarkerSemi,
+    /// Character reference value.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterReference`][TokenType::CharacterReference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///        ^^^      ^^^^       ^^^^^
+    /// ```
     CharacterReferenceValue,
+    /// Whole code (fenced).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`CodeFencedFence`][TokenType::CodeFencedFence],
+    ///     [`CodeFlowChunk`][TokenType::CodeFlowChunk],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ```js
+    ///     ^^^^^
+    /// > | console.log(1)
+    ///     ^^^^^^^^^^^^^^
+    /// > | ```
+    ///     ^^^
+    /// ````
     CodeFenced,
+    /// A code (fenced) fence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeFenced`][TokenType::CodeFenced]
+    /// *   **Content model**:
+    ///     [`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo],
+    ///     [`CodeFencedFenceMeta`][TokenType::CodeFencedFenceMeta],
+    ///     [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ```js
+    ///     ^^^^^
+    ///   | console.log(1)
+    /// > | ```
+    ///     ^^^
+    /// ````
     CodeFencedFence,
+    /// A code (fenced) fence sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ```js
+    ///     ^^^
+    ///   | console.log(1)
+    /// > | ```
+    ///     ^^^
+    /// ````
     CodeFencedFenceSequence,
+    /// A code (fenced) fence info word.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeFencedFence`][TokenType::CodeFencedFence]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ```js
+    ///        ^^
+    ///   | console.log(1)
+    ///   | ```
+    /// ````
     CodeFencedFenceInfo,
+    /// A code (fenced) fence meta string.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeFencedFence`][TokenType::CodeFencedFence]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ```js highlight="1"
+    ///           ^^^^^^^^^^^^^
+    ///   | console.log(1)
+    ///   | ```
+    /// ````
     CodeFencedFenceMeta,
+    /// A code (fenced, indented) chunk.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeFenced`][TokenType::CodeFenced],
+    ///     [`CodeIndented`][TokenType::CodeIndented]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced],
+    ///     [`code_indented`][crate::construct::code_indented]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    ///   | ```js
+    /// > | console.log(1)
+    ///     ^^^^^^^^^^^^^^
+    ///   | ```
+    /// ````
+    ///
+    /// ```markdown
+    /// > | ␠␠␠␠console.log(1)
+    ///         ^^^^^^^^^^^^^^
+    /// ```
     CodeFlowChunk,
+    /// Whole code (indented).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`CodeFlowChunk`][TokenType::CodeFlowChunk],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// ␠␠␠␠console.log(1)
+    /// ^^^^^^^^^^^^^^^^^^
+    /// ```
     CodeIndented,
+    /// Whole code (text).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`CodeTextData`][TokenType::CodeTextData],
+    ///     [`CodeTextSequence`][TokenType::CodeTextSequence],
+    ///     [`CodeTextLineEnding`][TokenType::CodeTextLineEnding]
+    /// *   **Construct**:
+    ///     [`code_text`][crate::construct::code_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a `b` c
+    ///       ^^^
+    /// ```
     CodeText,
-    CodeTextSequence,
-    CodeTextLineEnding,
+    /// Code (text) data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeText`][TokenType::CodeText],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_text`][crate::construct::code_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a `b` c
+    ///        ^
+    /// ```
     CodeTextData,
+    /// Code (text) sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeText`][TokenType::CodeText],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_text`][crate::construct::code_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a `b` c
+    ///       ^ ^
+    /// ```
+    CodeTextSequence,
+    /// Line ending in code (text).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeText`][TokenType::CodeText],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_text`][crate::construct::code_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a `b␊
+    ///         ^
+    ///   | c` d
+    /// ```
+    CodeTextLineEnding,
+    /// Data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [string content][crate::content::string],
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_data`][crate::construct::partial_data]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | aa *bb* cc
+    ///     ^^^ ^^ ^^^
+    /// ```
     Data,
+    /// Whole definition.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`DefinitionMarker`][TokenType::DefinitionMarker],
+    ///     [`DefinitionLabel`][TokenType::DefinitionLabel],
+    ///     [`DefinitionDestination`][TokenType::DefinitionDestination],
+    ///     [`DefinitionTitle`][TokenType::DefinitionTitle],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`definition`][crate::construct::definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///     ^^^^^^^^^^
+    /// ```
     Definition,
+    /// Whole definition label.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Definition`][TokenType::Definition]
+    /// *   **Content model**:
+    ///     [`DefinitionLabelMarker`][TokenType::DefinitionLabelMarker],
+    ///     [`DefinitionLabelString`][TokenType::DefinitionLabelString],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`partial_label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///     ^^^
+    /// ```
     DefinitionLabel,
+    /// Definition label marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionLabel`][TokenType::DefinitionLabel]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///     ^ ^
+    /// ```
     DefinitionLabelMarker,
+    /// Definition label data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionLabel`][TokenType::DefinitionLabel]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`partial_label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///      ^
+    /// ```
     DefinitionLabelString,
+    /// Definition marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Definition`][TokenType::Definition]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`definition`][crate::construct::definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///        ^
+    /// ```
     DefinitionMarker,
+    /// Whole definition destination.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Definition`][TokenType::Definition]
+    /// *   **Content model**:
+    ///     [`DefinitionDestinationLiteral`][TokenType::DefinitionDestinationLiteral],
+    ///     [`DefinitionDestinationRaw`][TokenType::DefinitionDestinationRaw]
+    /// *   **Construct**:
+    ///     [`partial_destination`][crate::construct::partial_destination]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///          ^
+    /// > | [a]: <b> "c"
+    ///          ^^^
+    /// ```
     DefinitionDestination,
+    /// Definition destination literal.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionDestination`][TokenType::DefinitionDestination]
+    /// *   **Content model**:
+    ///     [`DefinitionDestinationLiteralMarker`][TokenType::DefinitionDestinationLiteralMarker],
+    ///     [`DefinitionDestinationString`][TokenType::DefinitionDestinationString]
+    /// *   **Construct**:
+    ///     [`partial_destination`][crate::construct::partial_destination]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: <b> "c"
+    ///          ^^^
+    /// ```
     DefinitionDestinationLiteral,
+    /// Definition destination literal marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionDestinationLiteral`][TokenType::DefinitionDestinationLiteral]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_destination`][crate::construct::partial_destination]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: <b> "c"
+    ///          ^ ^
+    /// ```
     DefinitionDestinationLiteralMarker,
+    /// Definition destination raw.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionDestination`][TokenType::DefinitionDestination]
+    /// *   **Content model**:
+    ///     [`DefinitionDestinationString`][TokenType::DefinitionDestinationString]
+    /// *   **Construct**:
+    ///     [`partial_destination`][crate::construct::partial_destination]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///          ^
+    /// ```
     DefinitionDestinationRaw,
+    /// Definition destination data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionDestinationLiteral`][TokenType::DefinitionDestinationLiteral],
+    ///     [`DefinitionDestinationRaw`][TokenType::DefinitionDestinationRaw]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`partial_destination`][crate::construct::partial_destination]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///          ^
+    /// > | [a]: <b> "c"
+    ///           ^
+    /// ```
     DefinitionDestinationString,
+    /// Whole definition title.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Definition`][TokenType::Definition]
+    /// *   **Content model**:
+    ///     [`DefinitionTitleMarker`][TokenType::DefinitionTitleMarker],
+    ///     [`DefinitionTitleString`][TokenType::DefinitionTitleString],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`partial_title`][crate::construct::partial_title]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///            ^^^
+    /// ```
     DefinitionTitle,
+    /// Definition title marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionTitle`][TokenType::DefinitionTitle]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_title`][crate::construct::partial_title]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///            ^ ^
+    /// ```
     DefinitionTitleMarker,
+    /// Definition title data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionTitle`][TokenType::DefinitionTitle]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`partial_title`][crate::construct::partial_title]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///             ^
+    /// ```
     DefinitionTitleString,
+    /// Whole hard break (escape).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`HardBreakEscapeMarker`][TokenType::HardBreakEscapeMarker]
+    /// *   **Construct**:
+    ///     [`hard_break_escape`][crate::construct::hard_break_escape]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a\␊
+    ///      ^^
+    /// > | b
+    /// ```
     HardBreakEscape,
+    /// Hard break (escape) marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`hard_break_escape`][crate::construct::hard_break_escape]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a\␊
+    ///      ^
+    /// > | b
+    /// ```
     HardBreakEscapeMarker,
+    /// Whole hard break (trailing).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`HardBreakTrailingSpace`][TokenType::HardBreakTrailingSpace]
+    /// *   **Construct**:
+    ///     [`hard_break_trailing`][crate::construct::hard_break_trailing]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a␠␠␊
+    ///      ^^^
+    /// > | b
+    /// ```
     HardBreakTrailing,
+    /// Hard break (trailing) spaces.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HardBreakTrailing`][TokenType::HardBreakTrailing]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`hard_break_trailing`][crate::construct::hard_break_trailing]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a␠␠␊
+    ///      ^^
+    /// > | b
+    /// ```
     HardBreakTrailingSpace,
+    /// Whole heading (atx).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`HeadingAtxSequence`][TokenType::HeadingAtxSequence],
+    ///     [`HeadingAtxText`][TokenType::HeadingAtxText],
+    ///     [`HeadingAtxWhitespace`][TokenType::HeadingAtxWhitespace]
+    /// *   **Construct**:
+    ///     [`heading_atx`][crate::construct::heading_atx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | # alpha
+    ///     ^^^^^^^
+    /// ```
     HeadingAtx,
+    /// Heading (atx) sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HeadingAtx`][TokenType::HeadingAtx],
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`heading_atx`][crate::construct::heading_atx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | # alpha
+    ///     ^
+    /// ```
     HeadingAtxSequence,
-    HeadingAtxWhitespace,
+    /// Heading (atx) data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HeadingAtx`][TokenType::HeadingAtx],
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`heading_atx`][crate::construct::heading_atx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | # alpha
+    ///       ^^^^^
+    /// ```
     HeadingAtxText,
+    /// Heading (atx) whitespace.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HeadingAtx`][TokenType::HeadingAtx],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`heading_atx`][crate::construct::heading_atx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | # alpha
+    ///      ^
+    /// ```
+    HeadingAtxWhitespace,
+    /// Whole heading (setext).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`HeadingSetextText`][TokenType::HeadingSetextText],
+    ///     [`HeadingSetextUnderline`][TokenType::HeadingSetextUnderline],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`heading_setext`][crate::construct::heading_setext]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | alpha
+    ///     ^^^^^
+    /// > | =====
+    ///     ^^^^^
+    /// ```
     HeadingSetext,
+    /// Heading (setext) data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HeadingSetext`][TokenType::HeadingSetext]
+    /// *   **Content model**:
+    ///     [text content][crate::content::text]
+    /// *   **Construct**:
+    ///     [`heading_setext`][crate::construct::heading_setext]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | alpha
+    ///     ^^^^^
+    ///   | =====
+    /// ```
     HeadingSetextText,
+    /// Heading (setext) underline.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HeadingSetext`][TokenType::HeadingSetext]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`heading_setext`][crate::construct::heading_setext]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | alpha
+    /// > | =====
+    ///     ^^^^^
+    /// ```
     HeadingSetextUnderline,
+    /// Whole html (flow).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`HtmlFlowData`][TokenType::HtmlFlowData],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`html_flow`][crate::construct::html_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <div>
+    ///     ^^^^^
+    /// ```
     HtmlFlow,
+    /// HTML (flow) data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HtmlFlow`][TokenType::HtmlFlow],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`html_flow`][crate::construct::html_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <div>
+    ///     ^^^^^
+    /// ```
     HtmlFlowData,
+    /// Whole html (text).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`HtmlTextData`][TokenType::HtmlTextData],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`html_text`][crate::construct::html_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b> c
+    ///       ^^^
+    /// ```
     HtmlText,
+    /// HTML (text) data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HtmlText`][TokenType::HtmlText]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`html_text`][crate::construct::html_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b> c
+    ///       ^^^
+    /// ```
     HtmlTextData,
+    /// Line ending.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     basically everywhere
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     n/a
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a␊
+    ///      ^
+    ///   | b
+    /// ```
     LineEnding,
+    /// Whole paragraph.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [text content][crate::content::text]
+    /// *   **Construct**:
+    ///     [`paragraph`][crate::construct::paragraph]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a b
+    ///     ^^^
+    /// > | c.
+    ///     ^^
+    /// ```
     Paragraph,
+    /// Whole thematic break.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [`ThematicBreakSequence`][TokenType::ThematicBreakSequence],
+    ///     [`Whitespace`][TokenType::Whitespace]
+    /// *   **Construct**:
+    ///     [`thematic_break`][crate::construct::thematic_break]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * * *
+    ///     ^^^^^
+    /// ```
     ThematicBreak,
+    /// Thematic break sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`ThematicBreak`][TokenType::ThematicBreak]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`thematic_break`][crate::construct::thematic_break]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * * *
+    ///     ^ ^ ^
+    /// ```
     ThematicBreakSequence,
+    /// Whitespace.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     basically everywhere
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     n/a
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ␠* * *␠
+    ///     ^ ^ ^ ^
+    /// ```
     Whitespace,
 
-    // Chunks are tokenizer, but unraveled by `subtokenize`.
+    /// Chunk (string).
+    ///
+    /// Tokenized where [string content][crate::content::string] can exist and
+    /// unraveled by [`subtokenize`][crate::subtokenize].
     ChunkString,
+
+    /// Chunk (text).
+    ///
+    /// Tokenized where [text content][crate::content::text] can exist and
+    /// unraveled by [`subtokenize`][crate::subtokenize].
     ChunkText,
 }
 

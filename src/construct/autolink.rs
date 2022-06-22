@@ -82,6 +82,13 @@
 //! <p><a href="#"></a><a href="https://example.com">https://example.com</a></p>
 //! ```
 //!
+//! ## Tokens
+//!
+//! *   [`Autolink`][TokenType::Autolink]
+//! *   [`AutolinkEmail`][TokenType::AutolinkEmail]
+//! *   [`AutolinkMarker`][TokenType::AutolinkMarker]
+//! *   [`AutolinkProtocol`][TokenType::AutolinkProtocol]
+//!
 //! ## References
 //!
 //! *   [`autolink.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/autolink.js)

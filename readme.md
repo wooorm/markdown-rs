@@ -68,7 +68,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) Add docs for token types
 - [ ] (1) Add docs for tokenizer (`go`, `define_skip`,
       `account_for_potential_skip`, `attempt_5`, `attempt_7`, `call_multiple`)
 - [ ] (1) Add docs for sanitation (autolink, definition, resource)
@@ -234,6 +233,7 @@ cargo doc --document-private-items
 - [x] (1) Add docs for virtual spaces
 - [x] (1) Add docs to `subtokenize.rs`
 - [x] (1) Add docs for `link.rs`
+- [x] (1) Add docs for token types
 
 ### Extensions
 

@@ -41,6 +41,24 @@
 //! That means that [character escapes][character_escape] and
 //! [character references][character_reference] are allowed.
 //!
+//! ## Tokens
+//!
+//! *   [`Definition`][TokenType::Definition]
+//! *   [`DefinitionMarker`][TokenType::DefinitionMarker]
+//! *   [`DefinitionLabel`][TokenType::DefinitionLabel]
+//! *   [`DefinitionLabelMarker`][TokenType::DefinitionLabelMarker]
+//! *   [`DefinitionLabelString`][TokenType::DefinitionLabelString]
+//! *   [`DefinitionDestination`][TokenType::DefinitionDestination]
+//! *   [`DefinitionDestinationLiteral`][TokenType::DefinitionDestinationLiteral]
+//! *   [`DefinitionDestinationLiteralMarker`][TokenType::DefinitionDestinationLiteralMarker]
+//! *   [`DefinitionDestinationRaw`][TokenType::DefinitionDestinationRaw]
+//! *   [`DefinitionDestinationString`][TokenType::DefinitionDestinationString]
+//! *   [`DefinitionTitle`][TokenType::DefinitionTitle]
+//! *   [`DefinitionTitleMarker`][TokenType::DefinitionTitleMarker]
+//! *   [`DefinitionTitleString`][TokenType::DefinitionTitleString]
+//! *   [`LineEnding`][TokenType::LineEnding]
+//! *   [`Whitespace`][TokenType::Whitespace]
+//!
 //! ## References
 //!
 //! *   [`definition.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/definition.js)

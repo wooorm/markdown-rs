@@ -40,6 +40,11 @@
 //! This is equivalent to <code>*emphasised* code</code>.
 //! ```
 //!
+//! ## Tokens
+//!
+//! *   [`HtmlText`][TokenType::HtmlText]
+//! *   [`HtmlTextData`][TokenType::HtmlTextData]
+//!
 //! ## References
 //!
 //! *   [`html-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-text.js)

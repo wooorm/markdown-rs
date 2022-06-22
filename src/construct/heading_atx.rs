@@ -35,6 +35,13 @@
 //! > See [*§ atx, the true structured text format* on `aaronsw.com`][atx] for
 //! > more info.
 //!
+//! ## Tokens
+//!
+//! *   [`HeadingAtx`][TokenType::HeadingAtx]
+//! *   [`HeadingAtxSequence`][TokenType::HeadingAtxSequence]
+//! *   [`HeadingAtxText`][TokenType::HeadingAtxText]
+//! *   [`HeadingAtxWhitespace`][TokenType::HeadingAtxWhitespace]
+//!
 //! ## References
 //!
 //! *   [`heading-atx.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/heading-atx.js)

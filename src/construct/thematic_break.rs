@@ -33,6 +33,11 @@
 //! can look for asterisks to find syntax while not worrying about other
 //! characters.
 //!
+//! ## Tokens
+//!
+//! *   [`ThematicBreak`][TokenType::ThematicBreak]
+//! *   [`ThematicBreakSequence`][TokenType::ThematicBreakSequence]
+//!
 //! ## References
 //!
 //! *   [`thematic-break.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/thematic-break.js)

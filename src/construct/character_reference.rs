@@ -40,6 +40,15 @@
 //! See [`CHARACTER_REFERENCE_NAMES`][character_reference_names] for which
 //! names match.
 //!
+//! ## Tokens
+//!
+//! *   [`CharacterReference`][TokenType::CharacterReference]
+//! *   [`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker]
+//! *   [`CharacterReferenceMarkerHexadecimal`][TokenType::CharacterReferenceMarkerHexadecimal]
+//! *   [`CharacterReferenceMarkerNumeric`][TokenType::CharacterReferenceMarkerNumeric]
+//! *   [`CharacterReferenceMarkerSemi`][TokenType::CharacterReferenceMarkerSemi]
+//! *   [`CharacterReferenceValue`][TokenType::CharacterReferenceValue]
+//!
 //! ## References
 //!
 //! *   [`character-reference.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-reference.js)
@@ -155,39 +164,36 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// a&#|x9;b
 /// ```
 fn numeric(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::Char(char) if char == 'x' || char == 'X' => {
-            tokenizer.enter(TokenType::CharacterReferenceMarkerHexadecimal);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::CharacterReferenceMarkerHexadecimal);
-            tokenizer.enter(TokenType::CharacterReferenceValue);
+    if let Code::Char('x' | 'X') = code {
+        tokenizer.enter(TokenType::CharacterReferenceMarkerHexadecimal);
+        tokenizer.consume(code);
+        tokenizer.exit(TokenType::CharacterReferenceMarkerHexadecimal);
+        tokenizer.enter(TokenType::CharacterReferenceValue);
 
-            (
-                State::Fn(Box::new(|t, c| {
-                    value(
-                        t,
-                        c,
-                        Info {
-                            buffer: vec![],
-                            kind: Kind::Hexadecimal,
-                        },
-                    )
-                })),
-                None,
-            )
-        }
-        _ => {
-            tokenizer.enter(TokenType::CharacterReferenceValue);
+        (
+            State::Fn(Box::new(|t, c| {
+                value(
+                    t,
+                    c,
+                    Info {
+                        buffer: vec![],
+                        kind: Kind::Hexadecimal,
+                    },
+                )
+            })),
+            None,
+        )
+    } else {
+        tokenizer.enter(TokenType::CharacterReferenceValue);
 
-            value(
-                tokenizer,
-                code,
-                Info {
-                    buffer: vec![],
-                    kind: Kind::Decimal,
-                },
-            )
-        }
+        value(
+            tokenizer,
+            code,
+            Info {
+                buffer: vec![],
+                kind: Kind::Decimal,
+            },
+        )
     }
 }
 

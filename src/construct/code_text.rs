@@ -65,6 +65,13 @@
 //! that the code is in, so it is recommended to use that instead of indented
 //! code.
 //!
+//! ## Tokens
+//!
+//! *   [`CodeText`][TokenType::CodeText]
+//! *   [`CodeTextData`][TokenType::CodeTextData]
+//! *   [`CodeTextSequence`][TokenType::CodeTextSequence]
+//! *   [`CodeTextLineEnding`][TokenType::CodeTextLineEnding]
+//!
 //! ## References
 //!
 //! *   [`code-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-text.js)

@@ -18,6 +18,10 @@
 //! Because blank lines can be empty (line endings are not considered part of
 //! it), and events cannot be empty, blank lines are not present as a token.
 //!
+//! ## Tokens
+//!
+//! *   [`Whitespace`][crate::tokenizer::TokenType::Whitespace]
+//!
 //! ## References
 //!
 //! *   [`blank-line.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/blank-line.js)

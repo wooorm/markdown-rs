@@ -75,6 +75,17 @@
 //! support for specifying the programming language, so it is recommended to
 //! use code (fenced) instead of code (indented).
 //!
+//! ## Tokens
+//!
+//! *   [`CodeFenced`][TokenType::CodeFenced]
+//! *   [`CodeFencedFence`][TokenType::CodeFencedFence]
+//! *   [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence]
+//! *   [`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo]
+//! *   [`CodeFencedFenceMeta`][TokenType::CodeFencedFenceMeta]
+//! *   [`CodeFlowChunk`][TokenType::CodeFlowChunk]
+//! *   [`LineEnding`][TokenType::LineEnding]
+//! *   [`Whitespace`][TokenType::Whitespace]
+//!
 //! ## References
 //!
 //! *   [`code-fenced.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-fenced.js)

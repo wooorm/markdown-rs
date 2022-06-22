@@ -24,6 +24,11 @@
 //! Trailing spaces are typically invisible in editors, or even automatically
 //! removed, making hard break (trailing) hard to use.
 //!
+//! ## Tokens
+//!
+//! *   [`HardBreakTrailing`][TokenType::HardBreakTrailing]
+//! *   [`HardBreakTrailingSpace`][TokenType::HardBreakTrailingSpace]
+//!
 //! ## References
 //!
 //! *   [`lib/initialize/text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark/dev/lib/initialize/text.js)

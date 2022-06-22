@@ -23,6 +23,11 @@
 //! Arbitrary characters can be escaped with
 //! [character reference][character_reference]s.
 //!
+//! ## Tokens
+//!
+//! *   [`HardBreakEscape`][TokenType::HardBreakEscape]
+//! *   [`HardBreakEscapeMarker`][TokenType::HardBreakEscapeMarker]
+//!
 //! ## References
 //!
 //! *   [`hard-break-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/hard-break-escape.js)

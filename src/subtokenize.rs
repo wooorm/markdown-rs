@@ -24,12 +24,14 @@
 //!
 //! <!-- To do: `ChunkFlow` when it exists. -->
 
+/// To do: could we do without `HashMap`, so we don’t need `std`?
+use std::collections::HashMap;
+
 use crate::content::{string::start as string, text::start as text};
 use crate::tokenizer::{
     Code, Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer,
 };
 use crate::util::span;
-use std::collections::HashMap;
 
 /// Create a link between two [`Event`][]s.
 ///

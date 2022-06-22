@@ -26,6 +26,13 @@
 //! support for specifying the programming language that the code is in, so it
 //! is recommended to use that instead of indented code.
 //!
+//! ## Tokens
+//!
+//! *   [`CodeIndented`][TokenType::CodeIndented]
+//! *   [`CodeFlowChunk`][TokenType::CodeFlowChunk]
+//! *   [`LineEnding`][TokenType::LineEnding]
+//! *   [`Whitespace`][TokenType::Whitespace]
+//!
 //! ## References
 //!
 //! *   [`code-indented.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-indented.js)

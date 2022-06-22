@@ -17,6 +17,10 @@
 //! The paragraph is interpreted as the [text][] content type.
 //! That means that [autolinks][autolink], [code (text)][code_text], etc are allowed.
 //!
+//! ## Tokens
+//!
+//! *   [`Paragraph`][TokenType::Paragraph]
+//!
 //! ## References
 //!
 //! *   [`content.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/content.js)

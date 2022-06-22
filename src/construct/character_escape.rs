@@ -17,6 +17,12 @@
 //! construct: a [hard break (escape)][hard_break_escape] is a backslash followed
 //! by a line ending (that is part of the construct instead of ending it).
 //!
+//! ## Tokens
+//!
+//! *   [`CharacterEscape`][TokenType::CharacterEscape]
+//! *   [`CharacterEscapeMarker`][TokenType::CharacterEscapeMarker]
+//! *   [`CharacterEscapeValue`][TokenType::CharacterEscapeValue]
+//!
 //! ## References
 //!
 //! *   [`character-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-escape.js)

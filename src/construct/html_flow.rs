@@ -80,6 +80,12 @@
 //! We *can* interrupt and don’t have to care too much about it being
 //! well-formed.
 //!
+//! ## Tokens
+//!
+//! *   [`HtmlFlow`][TokenType::HtmlFlow]
+//! *   [`HtmlFlowData`][TokenType::HtmlFlowData]
+//! *   [`LineEnding`][TokenType::LineEnding]
+//!
 //! ## References
 //!
 //! *   [`html-flow.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-flow.js)
