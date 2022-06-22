@@ -143,7 +143,7 @@ fn interrupt_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// alpha
 ///     |
 /// ```
-pub fn interrupt_indent(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn interrupt_indent(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     (State::Ok, Some(vec![code]))
 }
 
@@ -153,7 +153,7 @@ pub fn interrupt_indent(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult
 /// alpha
 /// |<div>
 /// ```
-pub fn interrupt_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn interrupt_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_n(
         vec![
             Box::new(blank_line),

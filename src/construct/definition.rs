@@ -135,7 +135,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |[a]: b "c"
 /// ```
-pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('[') => tokenizer.go(
             |t, c| {

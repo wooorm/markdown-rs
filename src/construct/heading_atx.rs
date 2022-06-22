@@ -75,7 +75,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |## alpha
 /// ```
-pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('#') == code {
         tokenizer.enter(TokenType::HeadingAtxSequence);
         sequence_open(tokenizer, code, 0)

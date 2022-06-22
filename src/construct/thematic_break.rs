@@ -130,7 +130,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |***
 /// ```
-pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char == '*' || char == '-' || char == '_' => at_break(
             tokenizer,

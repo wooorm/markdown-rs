@@ -124,7 +124,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// |alpha
 /// ==
 /// ```
-pub fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             unreachable!("expected non-eol/eof");
