@@ -1319,26 +1319,32 @@ impl Tokenizer {
         self.current = code;
     }
 
-    /// To do.
+    /// Define a jump between two places.
+    ///
+    /// This defines how much columns are increased when consuming a line
+    /// ending.
+    /// `index` is currently not used (yet).
+    // To do: remove `index` as a parameter if not needed.
     pub fn define_skip(&mut self, point: &Point, index: usize) {
         self.column_start.insert(point.line, point.column);
         self.account_for_potential_skip();
         log::debug!("position: define skip: `{:?}` ({:?})", point, index);
     }
 
-    /// To do.
+    /// Increment the current positional info if we’re right after a line
+    /// ending, which has a skip defined.
     fn account_for_potential_skip(&mut self) {
-        match self.column_start.get(&self.point.line) {
-            None => {}
-            Some(next_column) => {
-                if self.point.column == 1 {
+        if self.point.column == 1 {
+            match self.column_start.get(&self.point.line) {
+                None => {}
+                Some(next_column) => {
                     let col = *next_column;
                     self.point.column = col;
                     self.point.offset += col - 1;
                     self.index += col - 1;
                 }
-            }
-        };
+            };
+        }
     }
 
     /// Consume the current character.
@@ -1382,48 +1388,43 @@ impl Tokenizer {
     /// Mark the start of a semantic label.
     pub fn enter(&mut self, token_type: TokenType) {
         log::debug!("enter `{:?}` ({:?})", token_type, self.point);
-        let event = Event {
+        self.events.push(Event {
             event_type: EventType::Enter,
             token_type: token_type.clone(),
             point: self.point.clone(),
             index: self.index,
             previous: None,
             next: None,
-        };
-
-        self.events.push(event);
+        });
         self.stack.push(token_type);
     }
 
     /// Mark the end of a semantic label.
     pub fn exit(&mut self, token_type: TokenType) {
-        let token_on_stack = self.stack.pop().expect("cannot close w/o open tokens");
+        let current_token = self.stack.pop().expect("cannot close w/o open tokens");
 
         assert_eq!(
-            token_on_stack, token_type,
-            "expected exit TokenType to match current TokenType"
+            current_token, token_type,
+            "expected exit token to match current token"
         );
 
-        let ev = self.events.last().expect("cannot close w/o open event");
-
+        let previous = self.events.last().expect("cannot close w/o open event");
         let point = self.point.clone();
 
         assert!(
-            token_on_stack != ev.token_type || ev.point != point,
-            "expected non-empty TokenType"
+            current_token != previous.token_type || previous.point != point,
+            "expected non-empty token"
         );
 
         log::debug!("exit `{:?}` ({:?})", token_type, self.point);
-        let event = Event {
+        self.events.push(Event {
             event_type: EventType::Exit,
             token_type,
             point,
             index: self.index,
             previous: None,
             next: None,
-        };
-
-        self.events.push(event);
+        });
     }
 
     /// Capture the internal state.
@@ -1456,17 +1457,18 @@ impl Tokenizer {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// To do.
+    /// Parse with `state` and its future states, switching to `ok` when
+    /// successful, and passing [`State::Nok`][] back if it occurs.
+    ///
+    /// This function does not capture the current state, in case of
+    /// `State::Nok`, as it is assumed that this `go` is itself wrapped in
+    /// another `attempt`.
+    #[allow(clippy::unused_self)]
     pub fn go(
         &mut self,
         state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         ok: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
     ) -> Box<StateFn> {
-        // To do: could we *not* capture?
-        // As this state can return `nok`, it must be wrapped in a higher attempt,
-        // which has captured things and will revert on `nok` already?
-        let previous = self.capture();
-
         attempt_impl(
             state,
             vec![],
@@ -1482,18 +1484,19 @@ impl Tokenizer {
                 if is_ok {
                     tokenizer.feed(&codes, ok, false)
                 } else {
-                    tokenizer.free(previous);
                     (State::Nok, None)
                 }
             },
         )
     }
 
-    /// Check if `state` and its future states are successful or not.
+    /// Parse with `state` and its future states, to check if it result in
+    /// [`State::Ok`][] or [`State::Nok`][], revert on both cases, and then
+    /// call `done` with whether it was successful or not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
     /// state that captures all codes and feeds them to `state` and its future
-    /// states until it yields [`State::Ok`][] or [`State::Nok`][].
+    /// states until it yields `State::Ok` or `State::Nok`.
     /// It then applies the captured state, calls `done`, and feeds all
     /// captured codes to its future states.
     pub fn check(
@@ -1515,20 +1518,21 @@ impl Tokenizer {
                     codes,
                     tokenizer.point
                 );
-                let result = done(ok);
-                tokenizer.feed(&codes, result, false)
+                tokenizer.feed(&codes, done(ok), false)
             },
         )
     }
 
-    /// Attempt to parse with `state` and its future states, reverting if
-    /// unsuccessful.
+    /// Parse with `state` and its future states, to check if it result in
+    /// [`State::Ok`][] or [`State::Nok`][], revert on the case of
+    /// `State::Nok`, and then call `done` with whether it was successful or
+    /// not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
     /// state that captures all codes and feeds them to `state` and its future
-    /// states until it yields [`State::Ok`][], at which point it calls `done`
-    /// and yields its result.
-    /// If instead [`State::Nok`][] was yielded, the captured state is applied,
+    /// states until it yields `State::Ok`, at which point it calls `done` and
+    /// yields its result.
+    /// If instead `State::Nok` was yielded, the captured state is applied,
     /// `done` is called, and all captured codes are fed to its future states.
     pub fn attempt(
         &mut self,
@@ -1541,12 +1545,11 @@ impl Tokenizer {
             state,
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
-                let codes = if ok {
-                    result.1
-                } else {
+                if !ok {
                     tokenizer.free(previous);
-                    result.0
-                };
+                }
+
+                let codes = if ok { result.1 } else { result.0 };
 
                 log::debug!(
                     "attempt: {:?}, codes: {:?}, at {:?}",
@@ -1554,117 +1557,28 @@ impl Tokenizer {
                     codes,
                     tokenizer.point
                 );
-                let result = done(ok);
-                tokenizer.feed(&codes, result, false)
+                tokenizer.feed(&codes, done(ok), false)
             },
         )
     }
 
-    // To do: lifetimes, boxes, lmao.
-    /// To do.
-    pub fn attempt_2(
+    /// Just like [`attempt`][Tokenizer::attempt], but many.
+    pub fn attempt_n(
         &mut self,
-        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        mut state_fns: Vec<Box<StateFn>>,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
-        self.call_multiple(
-            false,
-            Some(Box::new(a)),
-            Some(Box::new(b)),
-            None,
-            None,
-            None,
-            None,
-            None,
-            done,
-        )
-    }
-
-    /// To do.
-    #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
-    pub fn attempt_5(
-        &mut self,
-        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        e: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        self.call_multiple(
-            false,
-            Some(Box::new(a)),
-            Some(Box::new(b)),
-            Some(Box::new(c)),
-            Some(Box::new(d)),
-            Some(Box::new(e)),
-            None,
-            None,
-            done,
-        )
-    }
-
-    /// To do.
-    #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
-    pub fn attempt_7(
-        &mut self,
-        a: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        b: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        c: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        d: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        e: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        f: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        g: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        self.call_multiple(
-            false,
-            Some(Box::new(a)),
-            Some(Box::new(b)),
-            Some(Box::new(c)),
-            Some(Box::new(d)),
-            Some(Box::new(e)),
-            Some(Box::new(f)),
-            Some(Box::new(g)),
-            done,
-        )
-    }
-
-    /// To do.
-    #[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
-    pub fn call_multiple(
-        &mut self,
-        check: bool,
-        a: Option<Box<StateFn>>,
-        b: Option<Box<StateFn>>,
-        c: Option<Box<StateFn>>,
-        d: Option<Box<StateFn>>,
-        e: Option<Box<StateFn>>,
-        f: Option<Box<StateFn>>,
-        g: Option<Box<StateFn>>,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        if let Some(head) = a {
-            let callback = move |ok| {
+        if state_fns.is_empty() {
+            done(false)
+        } else {
+            let state_fn = state_fns.remove(0);
+            self.attempt(state_fn, move |ok| {
                 if ok {
                     done(ok)
                 } else {
-                    Box::new(move |tokenizer: &mut Tokenizer, code| {
-                        tokenizer.call_multiple(check, b, c, d, e, f, g, None, done)(
-                            tokenizer, code,
-                        )
-                    })
+                    Box::new(|t, code| t.attempt_n(state_fns, done)(t, code))
                 }
-            };
-
-            if check {
-                self.check(head, callback)
-            } else {
-                self.attempt(head, callback)
-            }
-        } else {
-            done(false)
+            })
         }
     }
 

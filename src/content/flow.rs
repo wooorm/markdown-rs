@@ -94,14 +94,16 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt_7(
-            code_indented,
-            code_fenced,
-            html_flow,
-            heading_atx,
-            thematic_break,
-            definition,
-            heading_setext,
+        _ => tokenizer.attempt_n(
+            vec![
+                Box::new(code_indented),
+                Box::new(code_fenced),
+                Box::new(html_flow),
+                Box::new(heading_atx),
+                Box::new(thematic_break),
+                Box::new(definition),
+                Box::new(heading_setext),
+            ],
             |ok| Box::new(if ok { after } else { before_paragraph }),
         )(tokenizer, code),
     }

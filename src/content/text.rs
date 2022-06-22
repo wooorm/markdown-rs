@@ -45,14 +45,16 @@ const MARKERS: [Code; 5] = [
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        _ => tokenizer.attempt_7(
-            character_reference,
-            character_escape,
-            hard_break_escape,
-            hard_break_trailing,
-            autolink,
-            html_text,
-            code_text,
+        _ => tokenizer.attempt_n(
+            vec![
+                Box::new(character_reference),
+                Box::new(character_escape),
+                Box::new(hard_break_escape),
+                Box::new(hard_break_trailing),
+                Box::new(autolink),
+                Box::new(html_text),
+                Box::new(code_text),
+            ],
             |ok| Box::new(if ok { start } else { before_data }),
         )(tokenizer, code),
     }

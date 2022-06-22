@@ -68,8 +68,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) Add docs for tokenizer (`go`, `define_skip`,
-      `account_for_potential_skip`, `attempt_5`, `attempt_7`, `call_multiple`)
 - [ ] (1) Add docs for sanitation (autolink, definition, resource)
 - [ ] (1) Add docs for how references and definitions match (definition, reference)
 - [ ] (1) Go through all bnf
@@ -119,8 +117,6 @@ cargo doc --document-private-items
 - [ ] (3) Pass more references around
 - [ ] (1) Remove todos in `span.rs` if not needed
 - [ ] (1) Get markers from constructs (`string`, `text`)
-- [ ] (1) Do not capture in `tokenizer.go`
-- [ ] (1) Clean attempts
 - [ ] (3) Clean compiler
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
       how to integrate with streams or so?
@@ -234,6 +230,9 @@ cargo doc --document-private-items
 - [x] (1) Add docs to `subtokenize.rs`
 - [x] (1) Add docs for `link.rs`
 - [x] (1) Add docs for token types
+- [x] (1) Do not capture in `tokenizer.go`
+- [x] (1) Clean attempts
+- [x] (1) Add docs for tokenizer
 
 ### Extensions
 

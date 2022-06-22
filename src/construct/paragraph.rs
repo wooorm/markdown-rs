@@ -154,12 +154,14 @@ pub fn interrupt_indent(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult
 /// |<div>
 /// ```
 pub fn interrupt_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_5(
-        blank_line,
-        code_fenced,
-        html_flow,
-        heading_atx,
-        thematic_break,
+    tokenizer.attempt_n(
+        vec![
+            Box::new(blank_line),
+            Box::new(code_fenced),
+            Box::new(html_flow),
+            Box::new(heading_atx),
+            Box::new(thematic_break),
+        ],
         |ok| Box::new(move |_t, code| (if ok { State::Nok } else { State::Ok }, Some(vec![code]))),
     )(tokenizer, code)
 }
