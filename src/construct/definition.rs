@@ -30,7 +30,7 @@
 //! space_or_tab ::= ' ' | '\t'
 //! ```
 //!
-//! Definitions in markdown to not, on their own, relate to anything in HTML.
+//! Definitions in markdown do not, on their own, relate to anything in HTML.
 //! When connected with a link (reference), they together relate to the `<a>`
 //! element in HTML.
 //! The definition forms its `href`, and optionally `title`, attributes.
@@ -40,6 +40,12 @@
 //! [string][] content type.
 //! That means that [character escapes][character_escape] and
 //! [character references][character_reference] are allowed.
+//!
+//! For info on how to encode characters in URLs, see
+//! [`partial_destination`][destination].
+//! For info on how to characters are encoded as `href` on `<a>` or `src` on
+//! `<img>` when compiling, see
+//! [`sanitize_uri`][sanitize_uri].
 //!
 //! ## Tokens
 //!
@@ -68,6 +74,8 @@
 //! [string]: crate::content::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
+//! [destination]: crate::construct::partial_destination
+//! [sanitize_uri]: crate::util::sanitize_uri
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //!
 //! <!-- To do: link link (reference) -->

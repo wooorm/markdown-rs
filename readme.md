@@ -68,7 +68,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) Add docs for sanitation (autolink, definition, resource)
 - [ ] (1) Add docs for how references and definitions match (definition, reference)
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
@@ -233,6 +232,7 @@ cargo doc --document-private-items
 - [x] (1) Do not capture in `tokenizer.go`
 - [x] (1) Clean attempts
 - [x] (1) Add docs for tokenizer
+- [x] (1) Add docs for sanitation
 
 ### Extensions
 

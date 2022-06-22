@@ -21,13 +21,44 @@
 //! before it.
 //! Escaped parens do not count in balancing.
 //!
-//! It is recommended to use the enclosed variant of destinations, as it allows
-//! arbitrary parens, and also allows for whitespace and other characters in
-//! URLs.
-//!
 //! The destination is interpreted as the [string][] content type.
 //! That means that [character escapes][character_escape] and
 //! [character references][character_reference] are allowed.
+//!
+//! The grammar for enclosed destinations (`<x>`) prohibits the use of `<`,
+//! `>`, and line endings to form URLs.
+//! The angle brackets can be encoded as a character reference, character
+//! escape, or percent encoding: for `<` as `&lt;`, `\<`, or `%3c` and for
+//! `>` as `&gt;`, `\>`, or `%3e`.
+//!
+//! The grammar for raw destinations (`x`) prohibits space (` `) and all
+//! [ASCII control][char::is_ascii_control] characters, which thus must be
+//! encoded.
+//! Unbalanced arens can be encoded as a character reference, character escape,
+//! or percent encoding: for `(` as `&lpar;`, `\(`, or `%28` and for `)` as
+//! `&rpar;`, `\)`, or `%29`.
+//!
+//! It is recommended to use the enclosed variant of destinations, as it allows
+//! the most characters, including arbitrary parens, in URLs.
+//!
+//! There are several cases where incorrect encoding of URLs would, in other
+//! languages, result in a parse error.
+//! In markdown, there are no errors, and URLs are normalized.
+//! In addition, unicode characters are percent encoded
+//! ([`sanitize_uri`][sanitize_uri]).
+//! For example:
+//!
+//! ```markdown
+//! [x]
+//!
+//! [x]: <https://a👍b%>
+//! ```
+//!
+//! Yields:
+//!
+//! ```html
+//! <p><a href="https://a%F0%9F%91%8Db%25">x</a></p>
+//! ```
 //!
 //! ## References
 //!
@@ -37,6 +68,7 @@
 //! [string]: crate::content::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
+//! [sanitize_uri]: crate::util::sanitize_uri
 //!
 //! <!-- To do: link label end. -->
 

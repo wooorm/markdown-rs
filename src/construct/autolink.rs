@@ -23,8 +23,8 @@
 //! The maximum allowed size of a domain is `63` (inclusive), which is defined
 //! in [`AUTOLINK_DOMAIN_SIZE_MAX`][autolink_domain_size_max].
 //!
-//! The grammar for autolinks is quite strict and requires ASCII to be used
-//! (without, for example, spaces).
+//! The grammar for autolinks is quite strict and prohibits the use of ASCII control
+//! characters or spaces.
 //! To use non-ascii characters and otherwise impossible characters, in URLs,
 //! you can use percent encoding:
 //!
