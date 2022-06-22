@@ -77,7 +77,7 @@
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},
     partial_label::{start as label, Options as LabelOptions},
-    partial_space_or_tab::space_or_tab_opt,
+    partial_space_or_tab::space_or_tab,
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
@@ -89,7 +89,7 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::Definition);
-    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
 }
 
 /// At the start of a definition, after whitespace.
@@ -134,7 +134,9 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(TokenType::DefinitionMarker);
             (
-                State::Fn(Box::new(tokenizer.go(space_or_tab_opt(), marker_after))),
+                State::Fn(Box::new(
+                    tokenizer.attempt_opt(space_or_tab(), marker_after),
+                )),
                 None,
             )
         }
@@ -158,7 +160,7 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::LineEnding);
             (
                 State::Fn(Box::new(
-                    tokenizer.go(space_or_tab_opt(), destination_before),
+                    tokenizer.attempt_opt(space_or_tab(), destination_before),
                 )),
                 None,
             )
@@ -216,7 +218,7 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///  "c"
 /// ```
 fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(title_before, |_ok| Box::new(after))(tokenizer, code)
+    tokenizer.attempt_opt(title_before, after)(tokenizer, code)
 }
 
 /// After a definition.
@@ -226,7 +228,7 @@ fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: b "c"|
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), after_whitespace)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), after_whitespace)(tokenizer, code)
 }
 
 /// After a definition, after optional whitespace.
@@ -254,7 +256,7 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///  "c"
 /// ```
 fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), title_before_after_optional_whitespace)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), title_before_after_optional_whitespace)(tokenizer, code)
 }
 
 /// Before a title, after optional whitespace.
@@ -273,7 +275,7 @@ fn title_before_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code)
             tokenizer.exit(TokenType::LineEnding);
             (
                 State::Fn(Box::new(
-                    tokenizer.go(space_or_tab_opt(), title_before_marker),
+                    tokenizer.attempt_opt(space_or_tab(), title_before_marker),
                 )),
                 None,
             )
@@ -320,7 +322,7 @@ fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// "c"|
 /// ```
 fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), title_after_after_optional_whitespace)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), title_after_after_optional_whitespace)(tokenizer, code)
 }
 
 /// After a title, after optional whitespace.

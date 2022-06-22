@@ -49,7 +49,7 @@
 //!
 //! <!-- To do: link `lists` -->
 
-use super::partial_space_or_tab::space_or_tab_opt;
+use super::partial_space_or_tab::space_or_tab;
 use crate::constant::THEMATIC_BREAK_MARKER_COUNT_MIN;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -122,7 +122,7 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::ThematicBreak);
-    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
 }
 
 /// Start of a thematic break, after whitespace.
@@ -183,7 +183,7 @@ fn sequence(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
         }
         _ => {
             tokenizer.exit(TokenType::ThematicBreakSequence);
-            tokenizer.go(space_or_tab_opt(), |t, c| at_break(t, c, info))(tokenizer, code)
+            tokenizer.attempt_opt(space_or_tab(), |t, c| at_break(t, c, info))(tokenizer, code)
         }
     }
 }

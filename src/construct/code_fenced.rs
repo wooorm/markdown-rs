@@ -102,7 +102,7 @@
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
-use crate::construct::partial_space_or_tab::{space_or_tab_min_max, space_or_tab_opt};
+use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::span::from_exit_event;
 
@@ -179,7 +179,7 @@ struct Info {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::CodeFenced);
     tokenizer.enter(TokenType::CodeFencedFence);
-    tokenizer.go(space_or_tab_opt(), before_sequence_open)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), before_sequence_open)(tokenizer, code)
 }
 
 /// Inside the opening fence, after an optional prefix, before a sequence.
@@ -240,7 +240,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRe
         _ if info.size < CODE_FENCED_SEQUENCE_SIZE_MIN => (State::Nok, None),
         _ => {
             tokenizer.exit(TokenType::CodeFencedFenceSequence);
-            tokenizer.go(space_or_tab_opt(), |t, c| info_before(t, c, info))(tokenizer, code)
+            tokenizer.attempt_opt(space_or_tab(), |t, c| info_before(t, c, info))(tokenizer, code)
         }
     }
 }
@@ -289,7 +289,7 @@ fn info_inside(
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.exit(TokenType::ChunkString);
             tokenizer.exit(TokenType::CodeFencedFenceInfo);
-            tokenizer.go(space_or_tab_opt(), |t, c| meta_before(t, c, info))(tokenizer, code)
+            tokenizer.attempt_opt(space_or_tab(), |t, c| meta_before(t, c, info))(tokenizer, code)
         }
         Code::Char(char) if char == '`' && info.kind == Kind::GraveAccent => (State::Nok, None),
         Code::Char(_) => {
@@ -361,26 +361,35 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
     match code {
         Code::None => after(tokenizer, code),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.attempt(
-            |tokenizer, code| {
-                tokenizer.enter(TokenType::LineEnding);
-                tokenizer.consume(code);
-                tokenizer.exit(TokenType::LineEnding);
-                (State::Fn(Box::new(|t, c| close_start(t, c, info))), None)
-            },
+            |t, c| close_begin(t, c, info),
             |ok| {
                 if ok {
                     Box::new(after)
                 } else {
-                    Box::new(|tokenizer, code| {
-                        tokenizer.enter(TokenType::LineEnding);
-                        tokenizer.consume(code);
-                        tokenizer.exit(TokenType::LineEnding);
-                        (State::Fn(Box::new(|t, c| content_start(t, c, clone))), None)
-                    })
+                    Box::new(|t, c| content_before(t, c, clone))
                 }
             },
         )(tokenizer, code),
         _ => unreachable!("unexpected non-eol/eof after `at_break` `{:?}`", code),
+    }
+}
+
+/// Before a closing fence, at the line ending.
+///
+/// ```markdown
+/// ~~~js
+/// console.log('1')|
+/// ~~~
+/// ```
+fn close_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    match code {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::LineEnding);
+            (State::Fn(Box::new(|t, c| close_start(t, c, info))), None)
+        }
+        _ => unreachable!("expected eol"),
     }
 }
 
@@ -441,7 +450,7 @@ fn close_sequence(tokenizer: &mut Tokenizer, code: Code, info: Info, size: usize
         }
         _ if size >= CODE_FENCED_SEQUENCE_SIZE_MIN && size >= info.size => {
             tokenizer.exit(TokenType::CodeFencedFenceSequence);
-            tokenizer.go(space_or_tab_opt(), close_sequence_after)(tokenizer, code)
+            tokenizer.attempt_opt(space_or_tab(), close_sequence_after)(tokenizer, code)
         }
         _ => (State::Nok, None),
     }
@@ -464,6 +473,19 @@ fn close_sequence_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
     }
 }
 
+/// Before a closing fence, at the line ending.
+///
+/// ```markdown
+/// ~~~js
+/// console.log('1')|
+/// ~~~
+/// ```
+fn content_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    tokenizer.enter(TokenType::LineEnding);
+    tokenizer.consume(code);
+    tokenizer.exit(TokenType::LineEnding);
+    (State::Fn(Box::new(|t, c| content_start(t, c, info))), None)
+}
 /// Before code content, definitely not before a closing fence.
 ///
 /// ```markdown

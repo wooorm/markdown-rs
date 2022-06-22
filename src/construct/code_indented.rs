@@ -45,7 +45,7 @@
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
-use super::partial_space_or_tab::{space_or_tab_min_max, space_or_tab_opt};
+use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::TAB_SIZE;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -154,7 +154,7 @@ fn further_end(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///     asd
 /// ```
 fn further_begin(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), further_after)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), further_after)(tokenizer, code)
 }
 
 /// After whitespace.

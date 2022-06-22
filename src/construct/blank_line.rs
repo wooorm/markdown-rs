@@ -33,7 +33,7 @@
 //!
 //! <!-- To do: link `list` -->
 
-use crate::construct::partial_space_or_tab::space_or_tab_opt;
+use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of a blank line.
@@ -45,7 +45,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// |
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), after)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code)
 }
 
 /// After zero or more spaces or tabs, before a line ending or EOF.

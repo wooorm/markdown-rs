@@ -56,7 +56,7 @@
 // To do: pass token types in.
 
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
-use crate::construct::partial_space_or_tab::space_or_tab_opt;
+use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::subtokenize::link;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -152,7 +152,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 /// |b]
 /// ```
 fn line_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    tokenizer.go(space_or_tab_opt(), |t, c| line_begin(t, c, info))(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), |t, c| line_begin(t, c, info))(tokenizer, code)
 }
 
 /// After a line ending, after optional whitespace.

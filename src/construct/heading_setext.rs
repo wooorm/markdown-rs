@@ -56,7 +56,7 @@
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
 use crate::constant::TAB_SIZE;
-use crate::construct::partial_space_or_tab::space_or_tab_opt;
+use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::subtokenize::link;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::span::from_exit_event;
@@ -115,7 +115,7 @@ impl Kind {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::HeadingSetext);
-    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
 }
 
 /// Start of a heading (setext), after whitespace.
@@ -183,7 +183,9 @@ fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::LineEnding);
 
             (
-                State::Fn(Box::new(tokenizer.go(space_or_tab_opt(), text_line_start))),
+                State::Fn(Box::new(
+                    tokenizer.attempt_opt(space_or_tab(), text_line_start),
+                )),
                 None,
             )
         }
@@ -243,7 +245,7 @@ fn underline_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::LineEnding);
             (
                 State::Fn(Box::new(
-                    tokenizer.go(space_or_tab_opt(), underline_sequence_start),
+                    tokenizer.attempt_opt(space_or_tab(), underline_sequence_start),
                 )),
                 None,
             )
@@ -298,7 +300,7 @@ fn underline_sequence_inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) 
                 None,
             )
         }
-        _ => tokenizer.go(space_or_tab_opt(), underline_after)(tokenizer, code),
+        _ => tokenizer.attempt_opt(space_or_tab(), underline_after)(tokenizer, code),
     }
 }
 

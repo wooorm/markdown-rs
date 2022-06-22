@@ -54,7 +54,9 @@
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
-use super::partial_space_or_tab::{space_or_tab, space_or_tab_opt};
+use super::partial_space_or_tab::{
+    space_or_tab, space_or_tab_with_options, Options as SpaceOrTabOptions,
+};
 use crate::constant::HEADING_ATX_OPENING_FENCE_SIZE_MAX;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
@@ -65,7 +67,7 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::HeadingAtx);
-    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
 }
 
 /// Start of a heading (atx), after whitespace.
@@ -105,7 +107,11 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
         _ if rank > 0 => {
             tokenizer.exit(TokenType::HeadingAtxSequence);
             tokenizer.go(
-                space_or_tab(TokenType::HeadingAtxSpaceOrTab, 1, usize::MAX),
+                space_or_tab_with_options(SpaceOrTabOptions {
+                    kind: TokenType::HeadingAtxSpaceOrTab,
+                    min: 1,
+                    max: usize::MAX,
+                }),
                 at_break,
             )(tokenizer, code)
         }
@@ -129,7 +135,11 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Ok, Some(vec![code]))
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => tokenizer.go(
-            space_or_tab(TokenType::HeadingAtxSpaceOrTab, 1, usize::MAX),
+            space_or_tab_with_options(SpaceOrTabOptions {
+                kind: TokenType::HeadingAtxSpaceOrTab,
+                min: 1,
+                max: usize::MAX,
+            }),
             at_break,
         )(tokenizer, code),
         Code::Char('#') => {

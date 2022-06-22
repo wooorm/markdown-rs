@@ -99,7 +99,7 @@
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
 use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX};
-use crate::construct::{blank_line::start as blank_line, partial_space_or_tab::space_or_tab_opt};
+use crate::construct::{blank_line::start as blank_line, partial_space_or_tab::space_or_tab};
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Kind of HTML (flow).
@@ -191,7 +191,7 @@ struct Info {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::HtmlFlow);
     tokenizer.enter(TokenType::HtmlFlowData);
-    tokenizer.go(space_or_tab_opt(), before)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
 }
 
 /// After optional whitespace, before `<`.

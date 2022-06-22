@@ -1457,8 +1457,8 @@ impl Tokenizer {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// Parse with `state` and its future states, switching to `ok` when
-    /// successful, and passing [`State::Nok`][] back if it occurs.
+    /// Parse with `state_fn` and its future states, switching to `ok` when
+    /// successful, and passing [`State::Nok`][] back up if it occurs.
     ///
     /// This function does not capture the current state, in case of
     /// `State::Nok`, as it is assumed that this `go` is itself wrapped in
@@ -1466,23 +1466,15 @@ impl Tokenizer {
     #[allow(clippy::unused_self)]
     pub fn go(
         &mut self,
-        state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        ok: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        after: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
-            state,
+            state_fn,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), is_ok, tokenizer: &mut Tokenizer| {
-                let codes = if is_ok { result.1 } else { result.0 };
-                log::debug!(
-                    "go: {:?}, codes: {:?}, at {:?}",
-                    is_ok,
-                    codes,
-                    tokenizer.point
-                );
-
-                if is_ok {
-                    tokenizer.feed(&codes, ok, false)
+            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
+                if ok {
+                    tokenizer.feed(&if ok { result.1 } else { result.0 }, after, false)
                 } else {
                     (State::Nok, None)
                 }
@@ -1490,59 +1482,52 @@ impl Tokenizer {
         )
     }
 
-    /// Parse with `state` and its future states, to check if it result in
+    /// Parse with `state_fn` and its future states, to check if it result in
     /// [`State::Ok`][] or [`State::Nok`][], revert on both cases, and then
     /// call `done` with whether it was successful or not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `state` and its future
-    /// states until it yields `State::Ok` or `State::Nok`.
+    /// state that captures all codes and feeds them to `state_fn` and its
+    /// future states until it yields `State::Ok` or `State::Nok`.
     /// It then applies the captured state, calls `done`, and feeds all
     /// captured codes to its future states.
     pub fn check(
         &mut self,
-        state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
 
         attempt_impl(
-            state,
+            state_fn,
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
-                let codes = result.0;
                 tokenizer.free(previous);
-                log::debug!(
-                    "check: {:?}, codes: {:?}, at {:?}",
-                    ok,
-                    codes,
-                    tokenizer.point
-                );
-                tokenizer.feed(&codes, done(ok), false)
+                tokenizer.feed(&result.0, done(ok), false)
             },
         )
     }
 
-    /// Parse with `state` and its future states, to check if it result in
+    /// Parse with `state_fn` and its future states, to check if it results in
     /// [`State::Ok`][] or [`State::Nok`][], revert on the case of
     /// `State::Nok`, and then call `done` with whether it was successful or
     /// not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `state` and its future
-    /// states until it yields `State::Ok`, at which point it calls `done` and
-    /// yields its result.
+    /// state that captures all codes and feeds them to `state_fn` and its
+    /// future states until it yields `State::Ok`, at which point it calls
+    /// `done` and yields its result.
     /// If instead `State::Nok` was yielded, the captured state is applied,
     /// `done` is called, and all captured codes are fed to its future states.
     pub fn attempt(
         &mut self,
-        state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
 
         attempt_impl(
-            state,
+            state_fn,
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
                 if !ok {
@@ -1580,6 +1565,16 @@ impl Tokenizer {
                 }
             })
         }
+    }
+
+    /// Just like [`attempt`][Tokenizer::attempt], but for when you don’t care
+    /// about `ok`.
+    pub fn attempt_opt(
+        &mut self,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        after: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+    ) -> Box<StateFn> {
+        self.attempt(state_fn, |_ok| Box::new(after))
     }
 
     /// Feed a list of `codes` into `start`.
