@@ -224,13 +224,12 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 /// console.log(1);
 /// ~~~
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn sequence_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
             (
                 State::Fn(Box::new(|t, c| {
-                    let mut info = info;
                     info.size += 1;
                     sequence_open(t, c, info)
                 })),
@@ -277,7 +276,7 @@ fn info_inside(
     tokenizer: &mut Tokenizer,
     code: Code,
     info: Info,
-    codes: Vec<Code>,
+    mut codes: Vec<Code>,
 ) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -293,7 +292,6 @@ fn info_inside(
         }
         Code::Char(char) if char == '`' && info.kind == Kind::GraveAccent => (State::Nok, None),
         Code::Char(_) => {
-            let mut codes = codes;
             codes.push(code);
             tokenizer.consume(code);
             (

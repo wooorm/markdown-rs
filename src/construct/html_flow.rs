@@ -219,6 +219,7 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let mut info = Info {
         // Assume basic.
         kind: Kind::Basic,
+        // Assume closing tag (or no tag).
         start_tag: false,
         buffer: vec![],
         index: 0,

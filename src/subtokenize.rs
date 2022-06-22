@@ -57,8 +57,7 @@ pub fn link(events: &mut [Event], index: usize) {
 /// Parse linked events.
 ///
 /// Supposed to be called repeatedly, returns `1: true` when done.
-pub fn subtokenize(events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
-    let mut events = events;
+pub fn subtokenize(mut events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
     let mut index = 0;
     // Map of first chunks to their tokenizer.
     let mut head_to_tokenizer: HashMap<usize, Tokenizer> = HashMap::new();

@@ -1651,12 +1651,10 @@ impl Tokenizer {
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-    codes: Vec<Code>,
+    mut codes: Vec<Code>,
     done: impl FnOnce((Vec<Code>, Vec<Code>), bool, &mut Tokenizer) -> StateFnResult + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
-        let mut codes = codes;
-
         let (next, remainder) = check_statefn_result(state(tokenizer, code));
 
         match code {
