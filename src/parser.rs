@@ -1,9 +1,11 @@
 //! Turn a string of markdown into events.
+
 // To do: this should start with `containers`, when they’re done.
 use crate::content::flow::flow;
 use crate::tokenizer::{as_codes, Code, Event, Point};
 
 /// Turn a string of markdown into events.
+///
 /// Passes the codes back so the compiler can access the source.
 pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
     let codes = as_codes(value);
