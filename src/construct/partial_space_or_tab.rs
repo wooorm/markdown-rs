@@ -35,6 +35,45 @@ pub fn space_or_tab() -> Box<StateFn> {
     space_or_tab_min_max(1, usize::MAX)
 }
 
+pub fn space_or_tab_one_line_ending() -> Box<StateFn> {
+    Box::new(|tokenizer, code| {
+        tokenizer.attempt(space_or_tab(), move |ok| {
+            Box::new(move |tokenizer, code| match code {
+                Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+                    tokenizer.enter(TokenType::LineEnding);
+                    tokenizer.consume(code);
+                    tokenizer.exit(TokenType::LineEnding);
+                    (
+                        State::Fn(Box::new(tokenizer.attempt_opt(
+                            space_or_tab(),
+                            move |_t, code| {
+                                if !matches!(
+                                    code,
+                                    Code::None
+                                        | Code::CarriageReturnLineFeed
+                                        | Code::Char('\r' | '\n')
+                                ) {
+                                    (State::Ok, Some(vec![code]))
+                                } else {
+                                    (State::Nok, None)
+                                }
+                            },
+                        ))),
+                        None,
+                    )
+                }
+                _ => {
+                    if ok {
+                        (State::Ok, Some(vec![code]))
+                    } else {
+                        (State::Nok, None)
+                    }
+                }
+            })
+        })(tokenizer, code)
+    })
+}
+
 /// Between `x` and `y` `space_or_tab`
 ///
 /// ```bnf

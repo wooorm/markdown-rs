@@ -115,7 +115,7 @@
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},
     partial_label::{start as label, Options as LabelOptions},
-    partial_space_or_tab::space_or_tab,
+    partial_space_or_tab::{space_or_tab, space_or_tab_one_line_ending},
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
@@ -168,37 +168,12 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::DefinitionMarker);
             (
                 State::Fn(Box::new(
-                    tokenizer.attempt_opt(space_or_tab(), marker_after),
+                    tokenizer.go(space_or_tab_one_line_ending(), destination_before),
                 )),
                 None,
             )
         }
         _ => (State::Nok, None),
-    }
-}
-
-/// After the marker, after whitespace.
-///
-/// ```markdown
-/// [a]: |b "c"
-///
-/// [a]: |␊
-///  b "c"
-/// ```
-fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (
-                State::Fn(Box::new(
-                    tokenizer.attempt_opt(space_or_tab(), destination_before),
-                )),
-                None,
-            )
-        }
-        _ => destination_before(tokenizer, code),
     }
 }
 
@@ -211,35 +186,23 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///  |b "c"
 /// ```
 fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let event = tokenizer.events.last().unwrap();
-
-    // Whitespace.
-    if (event.token_type == TokenType::LineEnding || event.token_type == TokenType::SpaceOrTab)
-    // Blank line not ok.
-        && !matches!(
-        code,
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
-    ) {
-        tokenizer.go(
-            |t, c| {
-                destination(
-                    t,
-                    c,
-                    DestinationOptions {
-                        limit: usize::MAX,
-                        destination: TokenType::DefinitionDestination,
-                        literal: TokenType::DefinitionDestinationLiteral,
-                        marker: TokenType::DefinitionDestinationLiteralMarker,
-                        raw: TokenType::DefinitionDestinationRaw,
-                        string: TokenType::DefinitionDestinationString,
-                    },
-                )
-            },
-            destination_after,
-        )(tokenizer, code)
-    } else {
-        (State::Nok, None)
-    }
+    tokenizer.go(
+        |t, c| {
+            destination(
+                t,
+                c,
+                DestinationOptions {
+                    limit: usize::MAX,
+                    destination: TokenType::DefinitionDestination,
+                    literal: TokenType::DefinitionDestinationLiteral,
+                    marker: TokenType::DefinitionDestinationLiteralMarker,
+                    raw: TokenType::DefinitionDestinationRaw,
+                    string: TokenType::DefinitionDestinationString,
+                },
+            )
+        },
+        destination_after,
+    )(tokenizer, code)
 }
 
 /// After a destination.
@@ -289,32 +252,7 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///  "c"
 /// ```
 fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_opt(space_or_tab(), title_before_after_optional_whitespace)(tokenizer, code)
-}
-
-/// Before a title, after optional whitespace.
-///
-/// ```markdown
-/// [a]: b |"c"
-///
-/// [a]: b |␊
-///  "c"
-/// ```
-fn title_before_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (
-                State::Fn(Box::new(
-                    tokenizer.attempt_opt(space_or_tab(), title_before_marker),
-                )),
-                None,
-            )
-        }
-        _ => title_before_marker(tokenizer, code),
-    }
+    tokenizer.go(space_or_tab_one_line_ending(), title_before_marker)(tokenizer, code)
 }
 
 /// Before a title, after a line ending.
@@ -324,26 +262,20 @@ fn title_before_after_optional_whitespace(tokenizer: &mut Tokenizer, code: Code)
 /// | "c"
 /// ```
 fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let event = tokenizer.events.last().unwrap();
-
-    if event.token_type == TokenType::LineEnding || event.token_type == TokenType::SpaceOrTab {
-        tokenizer.go(
-            |t, c| {
-                title(
-                    t,
-                    c,
-                    TitleOptions {
-                        title: TokenType::DefinitionTitle,
-                        marker: TokenType::DefinitionTitleMarker,
-                        string: TokenType::DefinitionTitleString,
-                    },
-                )
-            },
-            title_after,
-        )(tokenizer, code)
-    } else {
-        (State::Nok, None)
-    }
+    tokenizer.go(
+        |t, c| {
+            title(
+                t,
+                c,
+                TitleOptions {
+                    title: TokenType::DefinitionTitle,
+                    marker: TokenType::DefinitionTitleMarker,
+                    string: TokenType::DefinitionTitleString,
+                },
+            )
+        },
+        title_after,
+    )(tokenizer, code)
 }
 
 /// After a title.

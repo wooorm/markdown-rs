@@ -32,7 +32,7 @@
 //! <!-- To do: link label end. -->
 
 use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::subtokenize::link;
+use crate::subtokenize::link_to;
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Configuration.
@@ -109,7 +109,7 @@ impl Kind {
 #[derive(Debug)]
 struct Info {
     /// Whether we’ve seen our first `ChunkString`.
-    connect: bool,
+    connect_index: Option<usize>,
     /// Kind of title.
     kind: Kind,
     /// Configuration.
@@ -125,9 +125,9 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     match code {
-        Code::Char(char) if char == '(' || char == '"' || char == '\'' => {
+        Code::Char(char) if char == '"' || char == '\'' || char == '(' => {
             let info = Info {
-                connect: false,
+                connect_index: None,
                 kind: Kind::from_char(char),
                 options,
             };
@@ -184,11 +184,11 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
         _ => {
             tokenizer.enter(TokenType::ChunkString);
 
-            if info.connect {
+            if let Some(connect_index) = info.connect_index {
                 let index = tokenizer.events.len() - 1;
-                link(&mut tokenizer.events, index);
+                link_to(&mut tokenizer.events, connect_index, index);
             } else {
-                info.connect = true;
+                info.connect_index = Some(tokenizer.events.len() - 1);
             }
 
             title(tokenizer, code, info)

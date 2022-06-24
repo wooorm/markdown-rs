@@ -82,9 +82,9 @@ cargo doc --document-private-items
 - [x] heading (setext)
 - [x] html (flow)
 - [x] html (text)
-- [ ] (3) label end
-- [ ] (3) label start (image)
-- [ ] (3) label start (link)
+- [x] label end
+- [x] label start (image)
+- [x] label start (link)
 - [ ] (8) list
 - [x] paragraph
 - [x] thematic break
@@ -113,9 +113,9 @@ cargo doc --document-private-items
   - [x] hard break (escape)
   - [x] hard break (trailing)
   - [x] html (text)
-  - [ ] label end
-  - [ ] label start (image)
-  - [ ] label start (link)
+  - [x] label end
+  - [x] label start (image)
+  - [x] label start (link)
 - [x] string
   - [x] character escape
   - [x] character reference
@@ -124,9 +124,27 @@ cargo doc --document-private-items
 
 #### Docs
 
+- [ ] (1) Media in compiler (`Media`, `encode_opt`)
+- [ ] (1) `LINK_RESOURCE_DESTINATION_BALANCE_MAX` in constants
+- [ ] (1) `label_start_image`, `label_start_link`
+- [ ] (1) `label_end`
+- [ ] (1) `space_or_tab_one_line_ending`
+- [ ] (1) `ParseState`
+- [ ] (1) Image, Link, and other media token types; `LabelStart`, `Media`
+- [ ] (1) Resolvers, push, feed, etc.
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add overview docs on how everything works
+
+#### Refactor
+
+- [ ] (1) Move map handling from `resolve_media`, reuse in `subtokenize`
+- [ ] (1) Clean shifting, assertions in the above helper
+- [ ] (1) Clean `space_or_tab_one_line_ending`
+- [ ] (1) Use `link_to` (and `space_or_tab_one_line_ending`) in more places?
+      It’s probably better
+- [ ] (1) Force chunks in `link_to`, disallowing `LineEnding` and such
+- [ ] (1) Clean feeding, resolving
 
 #### Parse
 
@@ -136,8 +154,7 @@ cargo doc --document-private-items
       `misc_tabs`, `thematic_break`)
 - [ ] (3) Interrupting (html flow complete)
 - [ ] (5) labels\
-       test (`character_escape`, `character_reference`, `definition`,
-      `misc_dangerous_protocol`, `misc_tabs`, `misc_url`, `thematic_break`)\
+       test (`character_escape`, `character_reference`, `definition`)\
        link link reference (definition)\
        link label end (destination, label, title)\
        link label start (label)

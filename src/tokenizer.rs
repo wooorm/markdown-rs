@@ -15,6 +15,7 @@
 use std::collections::HashMap;
 
 use crate::constant::TAB_SIZE;
+use crate::parser::ParseState;
 
 /// Semantic label of a span.
 // To do: figure out how to share this so extensions can add their own stuff,
@@ -1073,6 +1074,32 @@ pub enum TokenType {
     ///       ^^^
     /// ```
     HtmlTextData,
+    /// To do,
+    LabelImage,
+    /// To do,
+    LabelImageMarker,
+    /// To do,
+    LabelLink,
+    /// To do,
+    LabelMarker,
+    LabelEnd,
+    Resource,
+    ResourceMarker,
+    ResourceDestination,
+    ResourceDestinationLiteral,
+    ResourceDestinationLiteralMarker,
+    ResourceDestinationRaw,
+    ResourceDestinationString,
+    ResourceTitle,
+    ResourceTitleMarker,
+    ResourceTitleString,
+    Reference,
+    ReferenceMarker,
+    ReferenceString,
+    Link,
+    Image,
+    Label,
+    LabelText,
     /// Line ending.
     ///
     /// ## Info
@@ -1243,6 +1270,9 @@ pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> StateFnResult;
 /// In certain cases, it can also yield back up parsed codes that were passed down.
 pub type StateFnResult = (State, Option<Vec<Code>>);
 
+/// To do.
+pub type Resolver = dyn FnOnce(&mut Tokenizer) -> Vec<Event>;
+
 /// The result of a state.
 pub enum State {
     /// There is a future state: a boxed [`StateFn`][] to pass the next code to.
@@ -1251,6 +1281,30 @@ pub enum State {
     Ok,
     /// The state is not successful.
     Nok,
+}
+
+/// To do.
+#[derive(Debug)]
+pub struct LabelStart {
+    /// To do.
+    pub start: (usize, usize),
+    /// A boolean used internally to figure out if a label start link can’t be
+    /// used (because links in links are incorrect).
+    pub inactive: bool,
+    /// A boolean used internally to figure out if a label is balanced: they’re
+    /// not media, it’s just balanced braces.
+    pub balanced: bool,
+}
+
+/// To do.
+#[derive(Debug)]
+pub struct Media {
+    /// To do.
+    pub start: (usize, usize),
+    /// To do.
+    pub end: (usize, usize),
+    /// To do.
+    pub id: String,
 }
 
 /// The internal state of a tokenizer, not to be confused with states from the
@@ -1272,9 +1326,10 @@ struct InternalState {
     point: Point,
 }
 
+// #[derive(Debug)]
+
 /// A tokenizer itself.
-#[derive(Debug)]
-pub struct Tokenizer {
+pub struct Tokenizer<'a> {
     column_start: HashMap<usize, usize>,
     /// Track whether a character is expected to be consumed, and whether it’s
     /// actually consumed
@@ -1295,11 +1350,22 @@ pub struct Tokenizer {
     index: usize,
     /// Current relative and absolute place in the file.
     point: Point,
+    /// To do.
+    pub parse_state: &'a ParseState,
+    /// To do.
+    pub label_start_stack: Vec<LabelStart>,
+    /// To do.
+    pub label_start_list_loose: Vec<LabelStart>,
+    /// To do.
+    pub media_list: Vec<Media>,
+    /// To do.
+    resolvers: Vec<Box<Resolver>>,
+    resolver_ids: Vec<String>,
 }
 
-impl Tokenizer {
+impl<'a> Tokenizer<'a> {
     /// Create a new tokenizer.
-    pub fn new(point: Point, index: usize) -> Tokenizer {
+    pub fn new(point: Point, index: usize, parse_state: &'a ParseState) -> Tokenizer {
         Tokenizer {
             previous: Code::None,
             current: Code::None,
@@ -1309,6 +1375,20 @@ impl Tokenizer {
             point,
             stack: vec![],
             events: vec![],
+            parse_state,
+            label_start_stack: vec![],
+            label_start_list_loose: vec![],
+            media_list: vec![],
+            resolvers: vec![],
+            resolver_ids: vec![],
+        }
+    }
+
+    /// To do.
+    pub fn register_resolver(&mut self, id: String, resolver: Box<Resolver>) {
+        if !self.resolver_ids.contains(&id) {
+            self.resolver_ids.push(id);
+            self.resolvers.push(resolver);
         }
     }
 
@@ -1582,7 +1662,8 @@ impl Tokenizer {
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
     /// When `done: true` is passed, the EOF is fed.
-    pub fn feed(
+    // To do: call this `feed_impl`, and rename `push` to `feed`?
+    fn feed(
         &mut self,
         codes: &[Code],
         start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
@@ -1642,6 +1723,26 @@ impl Tokenizer {
         }
 
         check_statefn_result((state, None))
+    }
+
+    /// To do.
+    // To do: set a `drained` to prevent passing after draining?
+    pub fn push(
+        &mut self,
+        codes: &[Code],
+        start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        drain: bool,
+    ) -> StateFnResult {
+        let result = self.feed(codes, start, drain);
+
+        if drain {
+            while !self.resolvers.is_empty() {
+                let resolver = self.resolvers.remove(0);
+                self.events = resolver(self);
+            }
+        }
+
+        result
     }
 }
 

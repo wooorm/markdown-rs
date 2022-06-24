@@ -55,14 +55,13 @@ fn character_reference() {
         "should not care about character references in html"
     );
 
-    // To do: link (resource).
-    // assert_eq!(
-    //     micromark("[foo](/f&ouml;&ouml; \"f&ouml;&ouml;\")"),
-    //     "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>",
-    //     "should support character references in resource URLs and titles"
-    // );
+    assert_eq!(
+        micromark("[foo](/f&ouml;&ouml; \"f&ouml;&ouml;\")"),
+        "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>",
+        "should support character references in resource URLs and titles"
+    );
 
-    // To do: link (resource).
+    // To do: link (reference).
     // assert_eq!(
     //     micromark("[foo]: /f&ouml;&ouml; \"f&ouml;&ouml;\"\n\n[foo]"),
     //     "<p><a href=\"/f%C3%B6%C3%B6\" title=\"föö\">foo</a></p>",
@@ -101,12 +100,11 @@ fn character_reference() {
     //     "should not support character references as construct markers (2)"
     // );
 
-    // To do: link (resource).
-    // assert_eq!(
-    //     micromark("[a](url &quot;tit&quot;)"),
-    //     "<p>[a](url &quot;tit&quot;)</p>",
-    //     "should not support character references as construct markers (3)"
-    // );
+    assert_eq!(
+        micromark("[a](url &quot;tit&quot;)"),
+        "<p>[a](url &quot;tit&quot;)</p>",
+        "should not support character references as construct markers (3)"
+    );
 
     assert_eq!(
         micromark("foo&#10;&#10;bar"),

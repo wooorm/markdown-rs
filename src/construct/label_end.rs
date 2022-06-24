@@ -1,0 +1,712 @@
+//! To do
+
+use crate::constant::LINK_RESOURCE_DESTINATION_BALANCE_MAX;
+use crate::construct::{
+    partial_destination::{start as destination, Options as DestinationOptions},
+    partial_label::{start as label, Options as LabelOptions},
+    partial_space_or_tab::space_or_tab_one_line_ending,
+    partial_title::{start as title, Options as TitleOptions},
+};
+use crate::tokenizer::{
+    Code, Event, EventType, LabelStart, Media, State, StateFnResult, TokenType, Tokenizer,
+};
+use crate::util::{
+    normalize_identifier::normalize_identifier,
+    span::{serialize, Span},
+};
+/// To do: could we do without `HashMap`, so we don’t need `std`?
+use std::collections::HashMap;
+
+#[derive(Debug)]
+struct Info {
+    /// To do.
+    label_start_index: usize,
+    /// To do.
+    media: Media,
+}
+
+#[allow(clippy::too_many_lines)]
+pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
+    let mut left: Vec<LabelStart> = tokenizer.label_start_list_loose.drain(..).collect();
+    let mut left_2: Vec<LabelStart> = tokenizer.label_start_stack.drain(..).collect();
+    let media: Vec<Media> = tokenizer.media_list.drain(..).collect();
+    left.append(&mut left_2);
+
+    let mut map: HashMap<usize, (usize, Vec<Event>)> = HashMap::new();
+    let events = &tokenizer.events;
+
+    let mut index = 0;
+    while index < left.len() {
+        let label_start = &left[index];
+        let data_enter_index = label_start.start.0;
+        let data_exit_index = label_start.start.1;
+
+        map.insert(
+            data_enter_index,
+            (
+                data_exit_index - data_enter_index,
+                vec![
+                    Event {
+                        event_type: EventType::Enter,
+                        token_type: TokenType::Data,
+                        point: events[data_enter_index].point.clone(),
+                        index: events[data_enter_index].index,
+                        previous: None,
+                        next: None,
+                    },
+                    Event {
+                        event_type: EventType::Exit,
+                        token_type: TokenType::Data,
+                        point: events[data_exit_index].point.clone(),
+                        index: events[data_exit_index].index,
+                        previous: None,
+                        next: None,
+                    },
+                ],
+            ),
+        );
+
+        index += 1;
+    }
+
+    let mut index = 0;
+    while index < media.len() {
+        let media = &media[index];
+        // LabelLink:Enter or LabelImage:Enter.
+        let group_enter_index = media.start.0;
+        let group_enter_event = &events[group_enter_index];
+        // LabelLink:Exit or LabelImage:Exit.
+        let text_enter_index = media.start.0
+            + (if group_enter_event.token_type == TokenType::LabelLink {
+                4
+            } else {
+                6
+            });
+        // LabelEnd:Enter.
+        let text_exit_index = media.end.0;
+        // LabelEnd:Exit.
+        let label_exit_index = media.end.0 + 3;
+        // Resource:Exit, etc.
+        let group_end_index = media.end.1;
+
+        // Insert a group enter and label enter.
+        add(
+            &mut map,
+            group_enter_index,
+            0,
+            vec![
+                Event {
+                    event_type: EventType::Enter,
+                    token_type: if group_enter_event.token_type == TokenType::LabelLink {
+                        TokenType::Link
+                    } else {
+                        TokenType::Image
+                    },
+                    point: group_enter_event.point.clone(),
+                    index: group_enter_event.index,
+                    previous: None,
+                    next: None,
+                },
+                Event {
+                    event_type: EventType::Enter,
+                    token_type: TokenType::Label,
+                    point: group_enter_event.point.clone(),
+                    index: group_enter_event.index,
+                    previous: None,
+                    next: None,
+                },
+            ],
+        );
+
+        // Empty events not allowed.
+        if text_enter_index != text_exit_index {
+            // Insert a text enter.
+            add(
+                &mut map,
+                text_enter_index,
+                0,
+                vec![Event {
+                    event_type: EventType::Enter,
+                    token_type: TokenType::LabelText,
+                    point: events[text_enter_index].point.clone(),
+                    index: events[text_enter_index].index,
+                    previous: None,
+                    next: None,
+                }],
+            );
+
+            // Insert a text exit.
+            add(
+                &mut map,
+                text_exit_index,
+                0,
+                vec![Event {
+                    event_type: EventType::Exit,
+                    token_type: TokenType::LabelText,
+                    point: events[text_exit_index].point.clone(),
+                    index: events[text_exit_index].index,
+                    previous: None,
+                    next: None,
+                }],
+            );
+        }
+
+        // Insert a label exit.
+        add(
+            &mut map,
+            label_exit_index + 1,
+            0,
+            vec![Event {
+                event_type: EventType::Exit,
+                token_type: TokenType::Label,
+                point: events[label_exit_index].point.clone(),
+                index: events[label_exit_index].index,
+                previous: None,
+                next: None,
+            }],
+        );
+
+        // Insert a group exit.
+        add(
+            &mut map,
+            group_end_index + 1,
+            0,
+            vec![Event {
+                event_type: EventType::Exit,
+                token_type: TokenType::Link,
+                point: events[group_end_index].point.clone(),
+                index: events[group_end_index].index,
+                previous: None,
+                next: None,
+            }],
+        );
+
+        index += 1;
+    }
+
+    let mut indices: Vec<&usize> = map.keys().collect();
+    indices.sort_unstable();
+    let mut next_events: Vec<Event> = vec![];
+    let mut index_into_indices = 0;
+    let mut start = 0;
+    let events = &mut tokenizer.events;
+    let mut shift: i32 = 0;
+
+    while index_into_indices < indices.len() {
+        let index = *indices[index_into_indices];
+
+        if start < index {
+            let append = &mut events[start..index].to_vec();
+            let mut index = 0;
+
+            while index < append.len() {
+                let ev = &mut append[index];
+
+                if let Some(x) = ev.previous {
+                    let next = (x as i32 + shift) as usize;
+                    ev.previous = Some(next);
+                    println!("todo: y: previous {:?} {:?} {:?}", x, shift, start);
+                }
+
+                if let Some(x) = ev.next {
+                    let next = (x as i32 + shift) as usize;
+                    ev.next = Some(next);
+                    println!("todo: y: next {:?} {:?} {:?}", x, shift, start);
+                }
+
+                index += 1;
+            }
+
+            next_events.append(append);
+        }
+
+        let (remove, add) = map.get(&index).unwrap();
+        shift += (add.len() as i32) - (*remove as i32);
+
+        if !add.is_empty() {
+            let append = &mut add.clone();
+            let mut index = 0;
+
+            while index < append.len() {
+                let ev = &mut append[index];
+
+                if let Some(x) = ev.previous {
+                    println!("todo: x: previous {:?} {:?} {:?}", x, shift, start);
+                }
+
+                if let Some(x) = ev.next {
+                    println!("todo: x: next {:?} {:?} {:?}", x, shift, start);
+                }
+
+                index += 1;
+            }
+
+            next_events.append(append);
+        }
+
+        start = index + remove;
+        index_into_indices += 1;
+    }
+
+    if start < events.len() {
+        next_events.append(&mut events[start..].to_vec());
+    }
+
+    next_events
+}
+
+/// Start of label end.
+///
+/// ```markdown
+/// [a|](b) c
+/// [a|][b] c
+/// [a|][] b
+/// [a|] b
+///
+/// [a]: z
+/// ```
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    if Code::Char(']') == code {
+        let mut label_start_index: Option<usize> = None;
+        let mut index = tokenizer.label_start_stack.len();
+
+        while index > 0 {
+            index -= 1;
+
+            if !tokenizer.label_start_stack[index].balanced {
+                label_start_index = Some(index);
+                break;
+            }
+        }
+
+        // If there is an okay opening:
+        if let Some(label_start_index) = label_start_index {
+            let label_start = tokenizer
+                .label_start_stack
+                .get_mut(label_start_index)
+                .unwrap();
+
+            // Mark as balanced if the info is inactive.
+            if label_start.inactive {
+                return nok(tokenizer, code, label_start_index);
+            }
+
+            let label_end_start = tokenizer.events.len();
+            let info = Info {
+                label_start_index,
+                media: Media {
+                    start: label_start.start,
+                    end: (label_end_start, label_end_start + 3),
+                    id: normalize_identifier(&serialize(
+                        &tokenizer.parse_state.codes,
+                        &Span {
+                            start_index: tokenizer.events[label_start.start.1].index,
+                            end_index: tokenizer.events[label_end_start - 1].index,
+                        },
+                        false,
+                    )),
+                },
+            };
+
+            tokenizer.enter(TokenType::LabelEnd);
+            tokenizer.enter(TokenType::LabelMarker);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::LabelMarker);
+            tokenizer.exit(TokenType::LabelEnd);
+
+            return (State::Fn(Box::new(move |t, c| after(t, c, info))), None);
+        }
+    }
+
+    (State::Nok, None)
+}
+
+/// After `]`.
+///
+/// ```markdown
+/// [a]|(b) c
+/// [a]|[b] c
+/// [a]|[] b
+/// [a]| b
+///
+/// [a]: z
+/// ```
+fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    // let label_start = tokenizer
+    //     .label_start_stack
+    //     .get_mut(info.label_start_index)
+    //     .unwrap();
+    // To do: figure out if defined or not.
+    let defined = false;
+    println!("to do: is `{:?}` defined?", info);
+    match code {
+        // Resource (`[asd](fgh)`)?
+        Code::Char('(') => tokenizer.attempt(resource, move |is_ok| {
+            Box::new(move |t, c| {
+                // Also fine if `defined`, as then it’s a valid shortcut.
+                if is_ok || defined {
+                    ok(t, c, info)
+                } else {
+                    nok(t, c, info.label_start_index)
+                }
+            })
+        })(tokenizer, code),
+        // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
+        Code::Char('[') => tokenizer.attempt(full_reference, move |is_ok| {
+            Box::new(move |t, c| {
+                if is_ok {
+                    ok(t, c, info)
+                } else if defined {
+                    reference_not_full(t, c, info)
+                } else {
+                    nok(t, c, info.label_start_index)
+                }
+            })
+        })(tokenizer, code),
+        // Shortcut reference: `[asd]`?
+        _ => {
+            if defined {
+                ok(tokenizer, code, info)
+            } else {
+                nok(tokenizer, code, info.label_start_index)
+            }
+        }
+    }
+}
+
+/// After `]`, at `[`, but not at a full reference.
+///
+/// > 👉 **Note**: we only get here if the label is defined.
+///
+/// ```markdown
+/// [a]|[] b
+///
+/// [a]: z
+/// ```
+fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    tokenizer.attempt(collapsed_reference, move |is_ok| {
+        Box::new(move |t, c| {
+            if is_ok {
+                ok(t, c, info)
+            } else {
+                nok(t, c, info.label_start_index)
+            }
+        })
+    })(tokenizer, code)
+}
+
+/// Done, we found something.
+///
+/// ```markdown
+/// [a](b)| c
+/// [a][b]| c
+/// [a][]| b
+/// [a]| b
+///
+/// [a]: z
+/// ```
+fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+    println!(
+        "ok res, ref full, ref, collapsed, or ref shortcut: {:?}",
+        info.media
+    );
+    // Remove this one and everything after it.
+    let mut left: Vec<LabelStart> = tokenizer
+        .label_start_stack
+        .drain(info.label_start_index..)
+        .collect();
+    // Remove this one from `left`, as we’ll move it to `media_list`.
+    left.remove(0);
+    tokenizer.label_start_list_loose.append(&mut left);
+
+    let is_link = tokenizer.events[info.media.start.0].token_type == TokenType::LabelLink;
+
+    if is_link {
+        let mut index = 0;
+        while index < tokenizer.label_start_stack.len() {
+            let label_start = &mut tokenizer.label_start_stack[index];
+            if tokenizer.events[label_start.start.0].token_type == TokenType::LabelLink {
+                label_start.inactive = true;
+            }
+            index += 1;
+        }
+    }
+
+    info.media.end.1 = tokenizer.events.len() - 1;
+    tokenizer.media_list.push(info.media);
+    tokenizer.register_resolver("media".to_string(), Box::new(resolve_media));
+    (State::Ok, Some(vec![code]))
+}
+
+/// Done, it’s nothing.
+///
+/// There was an okay opening, but we didn’t match anything.
+///
+/// ```markdown
+/// [a]|(b c
+/// [a]|[b c
+/// [b]|[ c
+/// [b]| c
+///
+/// [a]: z
+/// ```
+fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> StateFnResult {
+    let label_start = tokenizer
+        .label_start_stack
+        .get_mut(label_start_index)
+        .unwrap();
+    println!("just balanced braces: {:?}", label_start);
+    label_start.balanced = true;
+    // To do: pop things off the list?
+    (State::Nok, None)
+}
+
+/// Before a resource, at `(`.
+///
+/// ```markdown
+/// [a]|(b) c
+/// ```
+fn resource(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char('(') => {
+            tokenizer.enter(TokenType::Resource);
+            tokenizer.enter(TokenType::ResourceMarker);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::ResourceMarker);
+            (State::Fn(Box::new(resource_start)), None)
+        }
+        _ => unreachable!("expected `(`"),
+    }
+}
+
+/// At the start of a resource, after `(`, before a definition.
+///
+/// ```markdown
+/// [a](|b) c
+/// ```
+fn resource_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.attempt_opt(space_or_tab_one_line_ending(), resource_open)(tokenizer, code)
+}
+
+/// At the start of a resource, after optional whitespace.
+///
+/// ```markdown
+/// [a](|b) c
+/// ```
+fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char(')') => resource_end(tokenizer, code),
+        _ => tokenizer.go(
+            |t, c| {
+                destination(
+                    t,
+                    c,
+                    DestinationOptions {
+                        limit: LINK_RESOURCE_DESTINATION_BALANCE_MAX,
+                        destination: TokenType::ResourceDestination,
+                        literal: TokenType::ResourceDestinationLiteral,
+                        marker: TokenType::ResourceDestinationLiteralMarker,
+                        raw: TokenType::ResourceDestinationRaw,
+                        string: TokenType::ResourceDestinationString,
+                    },
+                )
+            },
+            destination_after,
+        )(tokenizer, code),
+    }
+}
+
+/// In a resource, after a destination, before optional whitespace.
+///
+/// ```markdown
+/// [a](b|) c
+/// [a](b| "c") d
+/// ```
+fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.attempt(space_or_tab_one_line_ending(), |ok| {
+        Box::new(if ok { resource_between } else { resource_end })
+    })(tokenizer, code)
+}
+
+/// In a resource, after a destination, after whitespace.
+///
+/// ```markdown
+/// [a](b |) c
+/// [a](b |"c") d
+/// ```
+fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char('"' | '\'' | '(') => tokenizer.go(
+            |t, c| {
+                title(
+                    t,
+                    c,
+                    TitleOptions {
+                        title: TokenType::ResourceTitle,
+                        marker: TokenType::ResourceTitleMarker,
+                        string: TokenType::ResourceTitleString,
+                    },
+                )
+            },
+            title_after,
+        )(tokenizer, code),
+        _ => resource_end(tokenizer, code),
+    }
+}
+
+/// In a resource, after a title.
+///
+/// ```markdown
+/// [a](b "c"|) d
+/// ```
+fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.attempt_opt(space_or_tab_one_line_ending(), resource_end)(tokenizer, code)
+}
+
+/// In a resource, at the `)`.
+///
+/// ```markdown
+/// [a](b|) c
+/// [a](b |) c
+/// [a](b "c"|) d
+/// ```
+fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char(')') => {
+            tokenizer.enter(TokenType::ResourceMarker);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::ResourceMarker);
+            tokenizer.exit(TokenType::Resource);
+            (State::Ok, None)
+        }
+        _ => (State::Nok, None),
+    }
+}
+
+/// In a reference (full), at the `[`.
+///
+/// ```markdown
+/// [a]|[b]
+/// ```
+fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char('[') => tokenizer.go(
+            |t, c| {
+                label(
+                    t,
+                    c,
+                    LabelOptions {
+                        label: TokenType::Reference,
+                        marker: TokenType::ReferenceMarker,
+                        string: TokenType::ReferenceString,
+                    },
+                )
+            },
+            full_reference_after,
+        )(tokenizer, code),
+        _ => unreachable!("expected `[`"),
+    }
+}
+
+/// In a reference (full), after `]`.
+///
+/// ```markdown
+/// [a][b]|
+/// ```
+fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    let events = &tokenizer.events;
+    let mut index = events.len() - 1;
+    let mut start: Option<usize> = None;
+    let mut end: Option<usize> = None;
+
+    while index > 0 {
+        index -= 1;
+        let event = &events[index];
+        if event.token_type == TokenType::ReferenceString {
+            if event.event_type == EventType::Exit {
+                end = Some(event.index);
+            } else {
+                start = Some(event.index);
+                break;
+            }
+        }
+    }
+
+    // Always found, otherwise we don’t get here.
+    let start = start.unwrap();
+    let end = end.unwrap();
+
+    let id = normalize_identifier(&serialize(
+        &tokenizer.parse_state.codes,
+        &Span {
+            start_index: start,
+            end_index: end,
+        },
+        false,
+    ));
+    println!("to do: is `{:?}` defined?", id);
+    let defined = false;
+
+    if defined {
+        (State::Ok, Some(vec![code]))
+    } else {
+        (State::Nok, None)
+    }
+}
+
+/// In a reference (collapsed), at the `[`.
+///
+/// > 👉 **Note**: we only get here if the label is defined.
+///
+/// ```markdown
+/// [a]|[]
+/// ```
+fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char('[') => {
+            tokenizer.enter(TokenType::Reference);
+            tokenizer.enter(TokenType::ReferenceMarker);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::ReferenceMarker);
+            (State::Fn(Box::new(collapsed_reference_open)), None)
+        }
+        _ => (State::Nok, None),
+    }
+}
+
+/// In a reference (collapsed), at the `]`.
+///
+/// > 👉 **Note**: we only get here if the label is defined.
+///
+/// ```markdown
+/// [a][|]
+/// ```
+fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::Char(']') => {
+            tokenizer.enter(TokenType::ReferenceMarker);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::ReferenceMarker);
+            tokenizer.exit(TokenType::Reference);
+            (State::Ok, None)
+        }
+        _ => (State::Nok, None),
+    }
+}
+
+pub fn add(
+    map: &mut HashMap<usize, (usize, Vec<Event>)>,
+    index: usize,
+    mut remove: usize,
+    mut add: Vec<Event>,
+) {
+    let curr = map.remove(&index);
+
+    if let Some((curr_rm, mut curr_add)) = curr {
+        remove += curr_rm;
+        curr_add.append(&mut add);
+        add = curr_add;
+    }
+
+    map.insert(index, (remove, add));
+}

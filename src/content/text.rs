@@ -21,15 +21,19 @@ use crate::construct::{
     character_reference::start as character_reference, code_text::start as code_text,
     hard_break_escape::start as hard_break_escape,
     hard_break_trailing::start as hard_break_trailing, html_text::start as html_text,
-    partial_data::start as data,
+    label_end::start as label_end, label_start_image::start as label_start_image,
+    label_start_link::start as label_start_link, partial_data::start as data,
 };
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
-const MARKERS: [Code; 5] = [
+const MARKERS: [Code; 8] = [
     Code::Char(' '),  // `hard_break_trailing`
+    Code::Char('!'),  // `label_start_image`
     Code::Char('&'),  // `character_reference`
     Code::Char('<'),  // `autolink`, `html_text`
+    Code::Char('['),  // `label_start_link`
     Code::Char('\\'), // `character_escape`, `hard_break_escape`
+    Code::Char(']'),  // `label_end`
     Code::Char('`'),  // `code_text`
 ];
 
@@ -47,13 +51,16 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::None => (State::Ok, None),
         _ => tokenizer.attempt_n(
             vec![
-                Box::new(character_reference),
+                Box::new(autolink),
                 Box::new(character_escape),
+                Box::new(character_reference),
+                Box::new(code_text),
                 Box::new(hard_break_escape),
                 Box::new(hard_break_trailing),
-                Box::new(autolink),
                 Box::new(html_text),
-                Box::new(code_text),
+                Box::new(label_end),
+                Box::new(label_start_image),
+                Box::new(label_start_link),
             ],
             |ok| Box::new(if ok { start } else { before_data }),
         )(tokenizer, code),

@@ -115,7 +115,7 @@ fn normalize_uri(value: &str) -> String {
             result.push(
                 buff[0..char.len_utf8()]
                     .iter()
-                    .map(|&byte| format!("%{:X}", byte))
+                    .map(|&byte| format!("%{:>02X}", byte))
                     .collect::<String>(),
             );
 

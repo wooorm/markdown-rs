@@ -61,12 +61,11 @@ fn character_escape() {
         "should not escape in flow html"
     );
 
-    // To do: link (reference).
-    // assert_eq!(
-    //     micromark("[foo](/bar\\* \"ti\\*tle\")"),
-    //     "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>",
-    //     "should escape in resource and title"
-    // );
+    assert_eq!(
+        micromark("[foo](/bar\\* \"ti\\*tle\")"),
+        "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>",
+        "should escape in resource and title"
+    );
 
     // To do: link (reference).
     // assert_eq!(

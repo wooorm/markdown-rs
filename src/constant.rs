@@ -193,6 +193,11 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
+/// To do.
+/// See: <https://spec.commonmark.org/0.30/#link-destination>,
+/// <https://github.com/remarkjs/react-markdown/issues/658#issuecomment-984345577>.
+pub const LINK_RESOURCE_DESTINATION_BALANCE_MAX: usize = 32;
+
 /// List of protocols allowed, when operating safely, as `href` on `a`.
 ///
 /// This list is based on what is allowed by GitHub.
@@ -201,8 +206,6 @@ pub const SAFE_PROTOCOL_HREF: [&str; 6] = ["http", "https", "irc", "ircs", "mail
 /// List of protocols allowed, when operating safely, as `src` on `img`.
 ///
 /// This list is based on what is allowed by GitHub.
-// To do: image.
-#[allow(dead_code)]
 pub const SAFE_PROTOCOL_SRC: [&str; 2] = ["http", "https"];
 
 /// The number of characters that form a tab stop.

@@ -30,9 +30,9 @@
 //! *   [heading (setext)][heading_setext]
 //! *   [html (flow)][html_flow]
 //! *   [html (text)][html_text]
-//! *   label end
-//! *   label start (image)
-//! *   label start (link)
+//! *   [label end][label_end]
+//! *   [label start (image)][label_start_image]
+//! *   [label start (link)][label_start_link]
 //! *   list
 //! *   [paragraph][]
 //! *   [thematic break][thematic_break]
@@ -59,8 +59,6 @@
 //! They also contain references to character as defined by [char][], so for
 //! example `ascii_punctuation` refers to
 //! [`char::is_ascii_punctuation`][char::is_ascii_punctuation].
-//!
-//!
 
 pub mod autolink;
 pub mod blank_line;
@@ -76,6 +74,9 @@ pub mod heading_atx;
 pub mod heading_setext;
 pub mod html_flow;
 pub mod html_text;
+pub mod label_end;
+pub mod label_start_image;
+pub mod label_start_link;
 pub mod paragraph;
 pub mod partial_data;
 pub mod partial_destination;

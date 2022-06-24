@@ -4,14 +4,24 @@
 use crate::content::flow::flow;
 use crate::tokenizer::{as_codes, Code, Event, Point};
 
+pub struct ParseState {
+    /// To do.
+    pub codes: Vec<Code>,
+    /// To do.
+    pub definitions: Vec<String>,
+}
+
 /// Turn a string of markdown into events.
 ///
 /// Passes the codes back so the compiler can access the source.
 pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
-    let codes = as_codes(value);
-    // To do: pass a reference to this around, and slices in the (back)feeding. Might be tough.
+    let parse_state = ParseState {
+        codes: as_codes(value),
+        definitions: vec![],
+    };
+
     let events = flow(
-        &codes,
+        &parse_state,
         Point {
             line: 1,
             column: 1,
@@ -19,5 +29,7 @@ pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
         },
         0,
     );
-    (events, codes)
+
+    // To do: pass whole `parse_state` back?
+    (events, parse_state.codes)
 }

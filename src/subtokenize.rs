@@ -28,9 +28,8 @@
 use std::collections::HashMap;
 
 use crate::content::{string::start as string, text::start as text};
-use crate::tokenizer::{
-    Code, Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer,
-};
+use crate::parser::ParseState;
+use crate::tokenizer::{Event, EventType, State, StateFn, StateFnResult, TokenType, Tokenizer};
 use crate::util::span;
 
 /// Create a link between two [`Event`][]s.
@@ -39,25 +38,36 @@ use crate::util::span;
 /// This optimizes for the common case where the token at `index` is connected
 /// to the previous void token.
 pub fn link(events: &mut [Event], index: usize) {
-    let prev = &mut events[index - 2];
-    assert_eq!(prev.event_type, EventType::Enter);
-    prev.next = Some(index);
+    link_to(events, index - 2, index);
+}
 
-    let prev_ref = &events[index - 2];
-    let prev_exit_ref = &events[index - 1];
+/// To do
+pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
+    let prev = &mut events[pevious];
+    // To do: force chunks?
+    // assert!(
+    //     prev.token_type == TokenType::ChunkString || prev.token_type == TokenType::ChunkText,
+    //     "{:?}",
+    //     prev.token_type.to_owned()
+    // );
+    assert_eq!(prev.event_type, EventType::Enter);
+    prev.next = Some(next);
+
+    let prev_ref = &events[pevious];
+    let prev_exit_ref = &events[pevious + 1];
     assert_eq!(prev_exit_ref.event_type, EventType::Exit);
     assert_eq!(prev_exit_ref.token_type, prev_ref.token_type);
 
-    let curr = &mut events[index];
+    let curr = &mut events[next];
     assert_eq!(curr.event_type, EventType::Enter);
-    curr.previous = Some(index - 2);
+    curr.previous = Some(pevious);
     // Note: the exit of this event may not exist, so don’t check for that.
 }
 
 /// Parse linked events.
 ///
 /// Supposed to be called repeatedly, returns `1: true` when done.
-pub fn subtokenize(mut events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool) {
+pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Event>, bool) {
     let mut index = 0;
     // Map of first chunks to their tokenizer.
     let mut head_to_tokenizer: HashMap<usize, Tokenizer> = HashMap::new();
@@ -83,7 +93,7 @@ pub fn subtokenize(mut events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool)
             // Index into `events` pointing to a chunk.
             let mut index_opt: Option<usize> = Some(index);
             // Subtokenizer.
-            let mut tokenizer = Tokenizer::new(event.point.clone(), event.index);
+            let mut tokenizer = Tokenizer::new(event.point.clone(), event.index, parse_state);
             // Substate.
             let mut result: StateFnResult = (
                 State::Fn(Box::new(if event.token_type == TokenType::ChunkString {
@@ -115,7 +125,11 @@ pub fn subtokenize(mut events: Vec<Event>, codes: &[Code]) -> (Vec<Event>, bool)
                     _ => unreachable!("cannot be ok/nok"),
                 };
 
-                result = tokenizer.feed(span::codes(codes, &span), func, enter.next == None);
+                result = tokenizer.push(
+                    span::codes(&parse_state.codes, &span),
+                    func,
+                    enter.next == None,
+                );
                 assert!(result.1.is_none(), "expected no remainder");
                 index_opt = enter.next;
             }

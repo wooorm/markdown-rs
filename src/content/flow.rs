@@ -26,6 +26,7 @@ use crate::construct::{
     html_flow::start as html_flow, paragraph::start as paragraph,
     thematic_break::start as thematic_break,
 };
+use crate::parser::ParseState;
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::{
@@ -34,9 +35,10 @@ use crate::util::{
 };
 
 /// Turn `codes` as the flow content type into events.
-pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new(point, index);
-    tokenizer.feed(codes, Box::new(start), true);
+pub fn flow(parse_state: &ParseState, point: Point, index: usize) -> Vec<Event> {
+    let mut tokenizer = Tokenizer::new(point, index, parse_state);
+
+    tokenizer.push(&parse_state.codes, Box::new(start), true);
 
     let mut index = 0;
 
@@ -47,9 +49,14 @@ pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
             && event.token_type == TokenType::DefinitionLabelString
         {
             let id = normalize_identifier(
-                serialize(codes, &from_exit_event(&tokenizer.events, index), false).as_str(),
+                serialize(
+                    &parse_state.codes,
+                    &from_exit_event(&tokenizer.events, index),
+                    false,
+                )
+                .as_str(),
             );
-            println!("to do: use identifier {:?}", id);
+            println!("to do: use definition identifier {:?}", id);
         }
 
         index += 1;
@@ -58,8 +65,9 @@ pub fn flow(codes: &[Code], point: Point, index: usize) -> Vec<Event> {
     let mut result = (tokenizer.events, false);
 
     while !result.1 {
-        result = subtokenize(result.0, codes);
+        result = subtokenize(result.0, parse_state);
     }
+
     result.0
 }
 

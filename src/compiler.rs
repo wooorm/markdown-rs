@@ -1,5 +1,5 @@
 //! Turn events into a string of HTML.
-use crate::constant::SAFE_PROTOCOL_HREF;
+use crate::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
 use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::tokenizer::{Code, Event, EventType, TokenType};
 use crate::util::{
@@ -15,6 +15,23 @@ pub enum LineEnding {
     CarriageReturnLineFeed,
     CarriageReturn,
     LineFeed,
+}
+
+/// To do.
+#[derive(Debug)]
+struct Media {
+    /// To do.
+    image: bool,
+    /// To do.
+    label_id: String,
+    /// To do.
+    label: String,
+    /// To do.
+    // reference_id: String,
+    /// To do.
+    destination: Option<String>,
+    /// To do.
+    title: Option<String>,
 }
 
 impl LineEnding {
@@ -168,7 +185,13 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     } else {
         Some(SAFE_PROTOCOL_HREF.to_vec())
     };
+    let protocol_src = if options.allow_dangerous_protocol {
+        None
+    } else {
+        Some(SAFE_PROTOCOL_SRC.to_vec())
+    };
     let mut line_ending_inferred: Option<LineEnding> = None;
+    let mut media_stack: Vec<Media> = vec![];
 
     // let mut slurp_all_line_endings = false;
     while index < events.len() {
@@ -257,7 +280,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::CodeFencedFenceMeta
                 | TokenType::Definition
                 | TokenType::HeadingAtxText
-                | TokenType::HeadingSetextText => {
+                | TokenType::HeadingSetextText
+                | TokenType::Label
+                | TokenType::ResourceTitleString => {
                     buffer(buffers);
                 }
                 TokenType::CodeIndented => {
@@ -286,6 +311,56 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     if options.allow_dangerous_html {
                         ignore_encode = true;
                     }
+                }
+                TokenType::Image => {
+                    media_stack.push(Media {
+                        image: true,
+                        label_id: "".to_string(),
+                        label: "".to_string(),
+                        // reference_id: "".to_string(),
+                        destination: None,
+                        title: None,
+                    });
+                    // tags = undefined // Disallow tags.
+                }
+                TokenType::Link => {
+                    media_stack.push(Media {
+                        image: false,
+                        label_id: "".to_string(),
+                        label: "".to_string(),
+                        // reference_id: "".to_string(),
+                        destination: None,
+                        title: None,
+                    });
+                }
+                TokenType::Resource => {
+                    buffer(buffers); // We can have line endings in the resource, ignore them.
+                    let media = media_stack.last_mut().unwrap();
+                    media.destination = Some("".to_string());
+                }
+                TokenType::ResourceDestinationString => {
+                    buffer(buffers);
+                    // Ignore encoding the result, as we’ll first percent encode the url and
+                    // encode manually after.
+                    ignore_encode = true;
+                }
+                TokenType::LabelImage
+                | TokenType::LabelImageMarker
+                | TokenType::LabelLink
+                | TokenType::LabelMarker
+                | TokenType::LabelEnd
+                | TokenType::ResourceMarker
+                | TokenType::ResourceDestination
+                | TokenType::ResourceDestinationLiteral
+                | TokenType::ResourceDestinationLiteralMarker
+                | TokenType::ResourceDestinationRaw
+                | TokenType::ResourceTitle
+                | TokenType::ResourceTitleMarker
+                | TokenType::Reference
+                | TokenType::ReferenceMarker
+                | TokenType::ReferenceString
+                | TokenType::LabelText => {
+                    println!("ignore labels for now");
                 }
                 TokenType::Paragraph => {
                     buf_tail_mut(buffers).push("<p>".to_string());
@@ -324,14 +399,88 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::SpaceOrTab => {
                     // Ignore.
                 }
+                TokenType::LabelImage
+                | TokenType::LabelImageMarker
+                | TokenType::LabelLink
+                | TokenType::LabelMarker
+                | TokenType::LabelEnd
+                | TokenType::ResourceMarker
+                | TokenType::ResourceDestination
+                | TokenType::ResourceDestinationLiteral
+                | TokenType::ResourceDestinationLiteralMarker
+                | TokenType::ResourceDestinationRaw
+                | TokenType::ResourceTitle
+                | TokenType::ResourceTitleMarker
+                | TokenType::Reference
+                | TokenType::ReferenceMarker
+                | TokenType::ReferenceString => {
+                    println!("ignore labels for now");
+                }
+                TokenType::Label => {
+                    let media = media_stack.last_mut().unwrap();
+                    media.label = resume(buffers);
+                }
+                TokenType::LabelText => {
+                    let media = media_stack.last_mut().unwrap();
+                    media.label_id = serialize(codes, &from_exit_event(events, index), false);
+                }
+                TokenType::ResourceDestinationString => {
+                    let media = media_stack.last_mut().unwrap();
+                    media.destination = Some(resume(buffers));
+                    ignore_encode = false;
+                }
+                TokenType::ResourceTitleString => {
+                    let media = media_stack.last_mut().unwrap();
+                    media.title = Some(resume(buffers));
+                }
+                TokenType::Image | TokenType::Link => {
+                    // let mut is_in_image = false;
+                    // let mut index = 0;
+                    // Skip current.
+                    // while index < (media_stack.len() - 1) {
+                    //     if media_stack[index].image {
+                    //         is_in_image = true;
+                    //         break;
+                    //     }
+                    //     index += 1;
+                    // }
+
+                    // tags = is_in_image;
+
+                    let media = media_stack.pop().unwrap();
+                    println!("media: {:?}", media);
+                    let buf = buf_tail_mut(buffers);
+                    // To do: get from definition.
+                    let destination = media.destination.unwrap();
+                    let title = if let Some(title) = media.title {
+                        format!(" title=\"{}\"", title)
+                    } else {
+                        "".to_string()
+                    };
+
+                    if media.image {
+                        buf.push(format!(
+                            "<img src=\"{}\" alt=\"{}\"{} />",
+                            sanitize_uri(&destination, &protocol_src),
+                            media.label,
+                            title
+                        ));
+                    } else {
+                        buf.push(format!(
+                            "<a href=\"{}\"{}>{}</a>",
+                            sanitize_uri(&destination, &protocol_href),
+                            title,
+                            media.label
+                        ));
+                    }
+                }
                 // Just output it.
                 TokenType::CodeTextData | TokenType::Data | TokenType::CharacterEscapeValue => {
                     // last_was_tag = false;
-                    buf_tail_mut(buffers).push(encode(&serialize(
-                        codes,
-                        &from_exit_event(events, index),
-                        false,
-                    )));
+                    buf_tail_mut(buffers).push(encode_opt(
+                        &serialize(codes, &from_exit_event(events, index), false),
+                        ignore_encode,
+                    ));
                 }
                 TokenType::AutolinkEmail => {
                     let slice = serialize(codes, &from_exit_event(events, index), false);
@@ -340,7 +489,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                         "<a href=\"mailto:{}\">",
                         sanitize_uri(slice.as_str(), &protocol_href)
                     ));
-                    buf.push(encode(&slice));
+                    buf.push(encode_opt(&slice, ignore_encode));
                     buf.push("</a>".to_string());
                 }
                 TokenType::AutolinkProtocol => {
@@ -350,7 +499,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                         "<a href=\"{}\">",
                         sanitize_uri(slice.as_str(), &protocol_href)
                     ));
-                    buf.push(encode(&slice));
+                    buf.push(encode_opt(&slice, ignore_encode));
                     buf.push("</a>".to_string());
                 }
                 TokenType::CharacterReferenceMarker => {
@@ -377,7 +526,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                         CharacterReferenceKind::Named => decode_named(ref_string),
                     };
 
-                    buf_tail_mut(buffers).push(encode(&value));
+                    buf_tail_mut(buffers).push(encode_opt(&value, ignore_encode));
                     character_reference_kind = None;
                 }
                 TokenType::CodeFenced | TokenType::CodeIndented => {
@@ -432,16 +581,15 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     buf_tail_mut(buffers).push(format!(" class=\"language-{}\"", value));
                     // tag = true;
                 }
-                TokenType::CodeFencedFenceMeta => {
+                TokenType::CodeFencedFenceMeta | TokenType::Resource => {
                     resume(buffers);
                 }
                 TokenType::CodeFlowChunk => {
                     code_flow_seen_data = Some(true);
-                    buf_tail_mut(buffers).push(encode(&serialize(
-                        codes,
-                        &from_exit_event(events, index),
-                        false,
-                    )));
+                    buf_tail_mut(buffers).push(encode_opt(
+                        &serialize(codes, &from_exit_event(events, index), false),
+                        ignore_encode,
+                    ));
                 }
                 TokenType::CodeText => {
                     let result = resume(buffers);
@@ -492,11 +640,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     if let Some(buf) = atx_heading_buffer {
                         atx_heading_buffer = Some(
                             buf.to_string()
-                                + &encode(&serialize(
-                                    codes,
-                                    &from_exit_event(events, index),
-                                    false,
-                                )),
+                                + &encode_opt(
+                                    &serialize(codes, &from_exit_event(events, index), false),
+                                    ignore_encode,
+                                ),
                         );
                     }
 
@@ -512,14 +659,14 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
 
                     if let Some(ref buf) = atx_heading_buffer {
                         if !buf.is_empty() {
-                            buf_tail_mut(buffers).push(encode(buf));
+                            buf_tail_mut(buffers).push(encode_opt(buf, ignore_encode));
                             atx_heading_buffer = Some("".to_string());
                         }
                     } else {
                         atx_heading_buffer = Some("".to_string());
                     }
 
-                    buf_tail_mut(buffers).push(encode(&result));
+                    buf_tail_mut(buffers).push(encode_opt(&result, ignore_encode));
                 }
                 TokenType::HeadingSetextText => {
                     heading_setext_buffer = Some(resume(buffers));
@@ -540,7 +687,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 TokenType::HtmlFlowData | TokenType::HtmlTextData => {
                     let slice = serialize(codes, &from_exit_event(events, index), false);
                     // last_was_tag = false;
-                    buf_tail_mut(buffers).push(if ignore_encode { slice } else { encode(&slice) });
+                    buf_tail_mut(buffers).push(encode_opt(&slice, ignore_encode));
                 }
                 TokenType::LineEnding => {
                     // if slurp_all_line_endings {
@@ -549,11 +696,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     if slurp_one_line_ending {
                         slurp_one_line_ending = false;
                     } else {
-                        buf_tail_mut(buffers).push(encode(&serialize(
-                            codes,
-                            &from_exit_event(events, index),
-                            false,
-                        )));
+                        buf_tail_mut(buffers).push(encode_opt(
+                            &serialize(codes, &from_exit_event(events, index), false),
+                            ignore_encode,
+                        ));
                     }
                 }
                 TokenType::Paragraph => {
@@ -603,6 +749,15 @@ fn buf_tail_mut(buffers: &mut [Vec<String>]) -> &mut Vec<String> {
 /// Get the current buffer.
 fn buf_tail(buffers: &mut [Vec<String>]) -> &Vec<String> {
     buffers.last().expect("at least one buffer should exist")
+}
+
+/// To do.
+fn encode_opt(value: &str, ignore_encode: bool) -> String {
+    if ignore_encode {
+        value.to_string()
+    } else {
+        encode(value)
+    }
 }
 
 /// Add a line ending.

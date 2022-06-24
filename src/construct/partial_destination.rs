@@ -267,11 +267,10 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
 /// ```markdown
 /// a\|)b
 /// ```
-fn raw_escape(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn raw_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('(' | ')' | '\\') => {
             tokenizer.consume(code);
-            info.balance += 1;
             (State::Fn(Box::new(move |t, c| raw(t, c, info))), None)
         }
         _ => raw(tokenizer, code, info),

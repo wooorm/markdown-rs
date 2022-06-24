@@ -221,48 +221,42 @@ fn tabs_text() {
     //     "should support an initial tab after a line ending in a paragraph"
     // );
 
-    // To do: link (reference).
-    // assert_eq!(
-    //     micromark("x[\ty](z)"),
-    //     "<p>x<a href=\"z\">\ty</a></p>",
-    //     "should support an initial tab in a link label"
-    // );
+    assert_eq!(
+        micromark("x[\ty](z)"),
+        "<p>x<a href=\"z\">\ty</a></p>",
+        "should support an initial tab in a link label"
+    );
 
-    // To do: link (reference).
-    // assert_eq!(
-    //     micromark("x[y\t](z)"),
-    //     "<p>x<a href=\"z\">y\t</a></p>",
-    //     "should support a final tab in a link label"
-    // );
+    assert_eq!(
+        micromark("x[y\t](z)"),
+        "<p>x<a href=\"z\">y\t</a></p>",
+        "should support a final tab in a link label"
+    );
 
-    // To do: link (reference).
-    // assert_eq!(
-    //     micromark("[x\ty](z)"),
-    //     "<p><a href=\"z\">x\ty</a></p>",
-    //     "should support a tab in a link label"
-    // );
+    assert_eq!(
+        micromark("[x\ty](z)"),
+        "<p><a href=\"z\">x\ty</a></p>",
+        "should support a tab in a link label"
+    );
 
-    // To do: link (resource).
     // Note: CM.js bug, see: <https://github.com/commonmark/commonmark.js/issues/191>
-    // assert_eq!(
-    //     micromark("[x](\ty)"),
-    //     "<p><a href=\"y\">x</a></p>",
-    //     "should support a tab starting a link resource"
-    // );
+    assert_eq!(
+        micromark("[x](\ty)"),
+        "<p><a href=\"y\">x</a></p>",
+        "should support a tab starting a link resource"
+    );
 
-    // To do: link (resource).
-    // assert_eq!(
-    //     micromark("[x](y\t)"),
-    //     "<p><a href=\"y\">x</a></p>",
-    //     "should support a tab ending a link resource"
-    // );
+    assert_eq!(
+        micromark("[x](y\t)"),
+        "<p><a href=\"y\">x</a></p>",
+        "should support a tab ending a link resource"
+    );
 
-    // To do: link (resource).
-    // assert_eq!(
-    //     micromark("[x](y\t\"z\")"),
-    //     "<p><a href=\"y\" title=\"z\">x</a></p>",
-    //     "should support a tab between a link destination and title"
-    // );
+    assert_eq!(
+        micromark("[x](y\t\"z\")"),
+        "<p><a href=\"y\" title=\"z\">x</a></p>",
+        "should support a tab between a link destination and title"
+    );
 }
 
 #[test]
