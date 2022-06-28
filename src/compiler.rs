@@ -9,29 +9,36 @@ use crate::util::{
     span::{codes as codes_from_span, from_exit_event, serialize},
 };
 
-/// To do.
+/// Type of line endings in markdown.
 #[derive(Debug, Clone, PartialEq)]
 pub enum LineEnding {
+    /// Both a carriage return (`\r`) and a line feed (`\n`).
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// a␍␊
+    /// b
+    /// ```
     CarriageReturnLineFeed,
+    /// Sole carriage return (`\r`).
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// a␍
+    /// b
+    /// ```
     CarriageReturn,
+    /// Sole line feed (`\n`).
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// a␊
+    /// b
+    /// ```
     LineFeed,
-}
-
-/// To do.
-#[derive(Debug)]
-struct Media {
-    /// To do.
-    image: bool,
-    /// To do.
-    label_id: String,
-    /// To do.
-    label: String,
-    /// To do.
-    // reference_id: String,
-    /// To do.
-    destination: Option<String>,
-    /// To do.
-    title: Option<String>,
 }
 
 impl LineEnding {
@@ -56,6 +63,32 @@ impl LineEnding {
             _ => unreachable!("invalid code"),
         }
     }
+}
+
+/// Representation of a link or image, resource or reference.
+#[derive(Debug)]
+struct Media {
+    /// Whether this represents an image (`true`) or a link (`false`).
+    image: bool,
+    /// The text between the brackets (`x` in `![x]()` and `[x]()`), as an
+    /// identifier, meaning that the original source characters are used
+    /// instead of interpreting them.
+    label_id: Option<String>,
+    /// The text between the brackets (`x` in `![x]()` and `[x]()`), as
+    /// content.
+    /// When this is a link, it can contain further text content and thus HTML
+    /// tags.
+    /// Otherwise, when an image, text content is also allowed, but resulting
+    /// tags are ignored.
+    label: Option<String>,
+    /// To do.
+    // reference_id: String,
+    /// The destination (url).
+    /// Interpreted string content.
+    destination: Option<String>,
+    /// The destination (url).
+    /// Interpreted string content.
+    title: Option<String>,
 }
 
 /// Configuration (optional).
@@ -313,8 +346,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 TokenType::Image => {
                     media_stack.push(Media {
                         image: true,
-                        label_id: "".to_string(),
-                        label: "".to_string(),
+                        label_id: None,
+                        label: None,
                         // reference_id: "".to_string(),
                         destination: None,
                         title: None,
@@ -324,8 +357,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 TokenType::Link => {
                     media_stack.push(Media {
                         image: false,
-                        label_id: "".to_string(),
-                        label: "".to_string(),
+                        label_id: None,
+                        label: None,
                         // reference_id: "".to_string(),
                         destination: None,
                         title: None,
@@ -416,11 +449,11 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 }
                 TokenType::Label => {
                     let media = media_stack.last_mut().unwrap();
-                    media.label = resume(buffers);
+                    media.label = Some(resume(buffers));
                 }
                 TokenType::LabelText => {
                     let media = media_stack.last_mut().unwrap();
-                    media.label_id = serialize(codes, &from_exit_event(events, index), false);
+                    media.label_id = Some(serialize(codes, &from_exit_event(events, index), false));
                 }
                 TokenType::ResourceDestinationString => {
                     let media = media_stack.last_mut().unwrap();
@@ -447,6 +480,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
 
                     let media = media_stack.pop().unwrap();
                     println!("media: {:?}", media);
+                    let label = media.label.unwrap();
                     let buf = buf_tail_mut(buffers);
                     // To do: get from definition.
                     let destination = media.destination.unwrap();
@@ -460,7 +494,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                         buf.push(format!(
                             "<img src=\"{}\" alt=\"{}\"{} />",
                             sanitize_uri(&destination, &protocol_src),
-                            media.label,
+                            label,
                             title
                         ));
                     } else {
@@ -468,7 +502,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                             "<a href=\"{}\"{}>{}</a>",
                             sanitize_uri(&destination, &protocol_href),
                             title,
-                            media.label
+                            label
                         ));
                     }
                 }
@@ -722,7 +756,7 @@ fn buf_tail(buffers: &mut [Vec<String>]) -> &Vec<String> {
     buffers.last().expect("at least one buffer should exist")
 }
 
-/// To do.
+/// Optionally encode.
 fn encode_opt(value: &str, ignore_encode: bool) -> String {
     if ignore_encode {
         value.to_string()
