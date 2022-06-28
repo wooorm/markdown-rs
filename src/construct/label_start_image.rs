@@ -7,11 +7,10 @@
 //! label_start_image ::= '!' '['
 //! ```
 //!
-//! Label start (images) relates to the `<img>` element in HTML.
+//! Label start (image) does not, on its own, relate to anything in HTML.
+//! When matched with a [label end][label_end], they together relate to the
+//! `<img>` element in HTML.
 //! See [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
-//!
-//! Whether it contributes an image depends on whether it is followed by a
-//! valid [label end][label_end] or not.
 //! Without an end, the characters (`![`) are output.
 //!
 //! ## Tokens

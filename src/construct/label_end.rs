@@ -1,4 +1,148 @@
-//! To do
+//! Label end is a construct that occurs in the [text][] content type.
+//!
+//! It forms with the following BNF:
+//!
+//! ```bnf
+//! label_end ::= ']' [ resource | reference_full | reference_collapsed ]
+//!
+//! resource ::= '(' [ whitespace ] destination [ whitespace title ] [ whitespace ] ')'
+//! reference_full ::= '[' label ']'
+//! reference_collapsed ::= '[' ']'
+//!
+//! ; See the `destination`, `title`, and `label` constructs for the BNF of
+//! ; those parts.
+//! ```
+//!
+//! See [`destination`][destination], [`title`][title], and [`label`][label]
+//! for grammar, notes, and recommendations.
+//!
+//! Label end does not, on its own, relate to anything in HTML.
+//! When matched with a [label start (link)][label_start_link], they together
+//! relate to the `<a>` element in HTML.
+//! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
+//! It can also match with [label start (image)][label_start_image], in which
+//! case they form an `<img>` element.
+//! See [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
+//!
+//! In the case of a resource, the destination and title are given directly
+//! with the label end.
+//! In the case of a reference, this information is provided by a matched
+//! [definition][].
+//! Full references (`[x][y]`) match to definitions through their explicit,
+//! second, label (`y`).
+//! Collapsed labels (`[x][]`) and shortcut labels (`[x]`) match by
+//! interpreting the text provided between the first, implicit, label (`x`).
+//! To match, the effective label of the reference must be equal to the label
+//! of the definition after normalizing with
+//! [`normalize_identifier`][normalize_identifier].
+//!
+//! Importantly, while the label of a full reference *can* include [string][]
+//! content, and in case of collapsed and shortcut references even [text][]
+//! content, that content is not considered when matching.
+//! To illustrate, neither label matches the definition:
+//!
+//! ```markdown
+//! [a&b]: https://example.com
+//!
+//! [x][a&amp;b], [a\&b][]
+//! ```
+//!
+//! When the resource or reference matches, the destination forms the `href`
+//! attribute in case of a [label start (link)][label_start_link], and an
+//! `src` attribute otherwise.
+//! The title is, optionally, formed, on either `<a>` or `<img>`.
+//!
+//! For info on how to encode characters in URLs, see
+//! [`destination`][destination].
+//! For info on how to characters are encoded as `href` on `<a>` or `src` on
+//! `<img>` when compiling, see
+//! [`sanitize_uri`][sanitize_uri].
+//!
+//! In case of a matched [label start (link)][label_start_link], the interpreted
+//! content between it and the label end, is placed between the opening and
+//! closing tags.
+//! Otherwise, the text is also interpreted, but used *without* the resulting
+//! tags:
+//!
+//! ```markdown
+//! [a *b* c](#)
+//!
+//! ![a *b* c](#)
+//! ```
+//!
+//! Yields:
+//!
+//! ```html
+//! <p><a href="#">a <em>b</em> c</a></p>
+//! <p><img src="#" alt="a b c" /></p>
+//! ```
+//!
+//! It is possible to use images in links.
+//! It’s, somewhat, possible to have links in images (the text will be used,
+//! not the HTML, see above).
+//! But it’s not possible to use links in links, and the “deepest” link wins.
+//! To illustrate:
+//!
+//! ```markdown
+//! a [b [c](#) d](#) e
+//! ```
+//!
+//! Yields:
+//!
+//! ```html
+//! <p>a [b <a href="#">c</a> d](#) e</p>
+//! ```
+//!
+//! This limiation is imposed because links in links is invalid according to
+//! HTML.
+//! Technically though, it is possible by using an [autolink][] in a link,
+//! but you definitely should not do that.
+//!
+//! ## Tokens
+//!
+//! *   [`Link`][TokenType::Link]
+//! *   [`Image`][TokenType::Image]
+//! *   [`Label`][TokenType::Label]
+//! *   [`LabelText`][TokenType::LabelText]
+//! *   [`LabelEnd`][TokenType::LabelEnd]
+//! *   [`LabelMarker`][TokenType::LabelMarker]
+//! *   [`Resource`][TokenType::Resource]
+//! *   [`ResourceMarker`][TokenType::ResourceMarker]
+//! *   [`ResourceDestination`][TokenType::ResourceDestination]
+//! *   [`ResourceDestinationLiteral`][TokenType::ResourceDestinationLiteral]
+//! *   [`ResourceDestinationLiteralMarker`][TokenType::ResourceDestinationLiteralMarker]
+//! *   [`ResourceDestinationRaw`][TokenType::ResourceDestinationRaw]
+//! *   [`ResourceDestinationString`][TokenType::ResourceDestinationString]
+//! *   [`ResourceTitle`][TokenType::ResourceTitle]
+//! *   [`ResourceTitleMarker`][TokenType::ResourceTitleMarker]
+//! *   [`ResourceTitleString`][TokenType::ResourceTitleString]
+//! *   [`Reference`][TokenType::Reference]
+//! *   [`ReferenceMarker`][TokenType::ReferenceMarker]
+//! *   [`ReferenceString`][TokenType::ReferenceString]
+//! *   [`Data`][TokenType::Data]
+//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
+//! *   [`LineEnding`][TokenType::LineEnding]
+//!
+//! ## References
+//!
+//! *   [`label-end.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-end.js)
+//! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.30/#link-reference-definitions)
+//! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.30/#links)
+//! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.30/#images)
+//!
+//! [string]: crate::content::string
+//! [text]: crate::content::text
+//! [destination]: crate::construct::partial_destination
+//! [title]: crate::construct::partial_title
+//! [label]: crate::construct::partial_label
+//! [label_start_image]: crate::construct::label_start_image
+//! [label_start_link]: crate::construct::label_start_link
+//! [definition]: crate::construct::definition
+//! [autolink]: crate::construct::autolink
+//! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
+//! [normalize_identifier]: crate::util::normalize_identifier
+//! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::{
@@ -16,14 +160,17 @@ use crate::util::{
     span::{serialize, Span},
 };
 
+/// State needed to parse label end.
 #[derive(Debug)]
 struct Info {
-    /// To do.
+    /// Index into `label_start_stack` of the corresponding opening.
     label_start_index: usize,
-    /// To do.
+    /// The proposed `Media` that this seems to represent.
     media: Media,
 }
 
+/// Resolve media: turn correct label start (image, link) and label end
+/// into links and images, or turn them back into data.
 #[allow(clippy::too_many_lines)]
 pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut left: Vec<LabelStart> = tokenizer.label_start_list_loose.drain(..).collect();

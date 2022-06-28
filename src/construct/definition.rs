@@ -5,30 +5,12 @@
 //! ```bnf
 //! definition ::= label ':' whitespace destination [ whitespace title ] [ space_or_tab ]
 //!
-//! ; Restriction: maximum `999` codes allowed between brackets.
-//! ; Restriction: no blank lines.
-//! ; Restriction: at least 1 non-space and non-eol code must exist.
-//! label ::= '[' *( label_text | label_escape ) ']'
-//! label_text ::= code - '[' - '\\' - ']'
-//! label_escape ::= '\\' [ '[' | '\\' | ']' ]
-//!
-//! destination ::= destination_enclosed | destination_raw
-//! destination_enclosed ::= '<' *( destination_enclosed_text | destination_enclosed_escape ) '>'
-//! destination_enclosed_text ::= code - '<' - '\\' - '>' - eol
-//! destination_enclosed_escape ::= '\\' [ '<' | '\\' | '>' ]
-//! destination_raw ::= 1*( destination_raw_text | destination_raw_escape )
-//! ; Restriction: unbalanced `)` characters are not allowed.
-//! destination_raw_text ::= code - '\\' - ascii_control - space_or_tab - eol
-//! destination_raw_escape ::= '\\' [ '(' | ')' | '\\' ]
-//!
-//! ; Restriction: no blank lines.
-//! ; Restriction: markers must match (in case of `(` with `)`).
-//! title ::= marker [  *( code - '\\' | '\\' [ marker ] ) ] marker
-//! marker ::= '"' | '\'' | '('
-//!
 //! whitespace ::= eol *whitespace | 1*space_or_tab [ eol *whitespace ]
 //! space_or_tab ::= ' ' | '\t'
 //! ```
+//!
+//! See [`destination`][destination], [`title`][title], and [`label`][label]
+//! for grammar, notes, and recommendations.
 //!
 //! Definitions in markdown do not, on their own, relate to anything in HTML.
 //! When matched with a link (reference), they together relate to the `<a>`
@@ -72,7 +54,7 @@
 //! ```
 //!
 //! For info on how to encode characters in URLs, see
-//! [`partial_destination`][destination].
+//! [`destination`][destination].
 //! For info on how to characters are encoded as `href` on `<a>` or `src` on
 //! `<img>` when compiling, see
 //! [`sanitize_uri`][sanitize_uri].
@@ -105,6 +87,8 @@
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
 //! [destination]: crate::construct::partial_destination
+//! [title]: crate::construct::partial_title
+//! [label]: crate::construct::partial_label
 //! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
 //! [normalize_identifier]: crate::util::normalize_identifier
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element

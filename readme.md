@@ -124,7 +124,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) `label_end`
 - [ ] (1) `space_or_tab_one_line_ending`
 - [ ] (1) `ParseState`
 - [ ] (1) Image, Link, and other media token types; `LabelStart`, `Media`
@@ -135,7 +134,7 @@ cargo doc --document-private-items
 
 #### Refactor
 
-- [ ] (1) Move map handling from `resolve_media`, reuse in `subtokenize`
+- [ ] (1) Use `edit_map` in `subtokenize`
 - [ ] (1) Clean shifting, assertions in the above helper
 - [ ] (1) Clean `space_or_tab_one_line_ending`
 - [ ] (1) Use `link_to` (and `space_or_tab_one_line_ending`) in more places?
@@ -284,3 +283,5 @@ important.
 - [x] (1) Add improved docs in compiler
 - [x] (1) Add docs for `RESOURCE_DESTINATION_BALANCE_MAX`
 - [x] (1) Add docs for `label_start_image`, `label_start_link`
+- [x] (1) Add docs for `label_end`
+- [x] (1) Move map handling from `resolve_media`

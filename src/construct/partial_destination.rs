@@ -1,4 +1,4 @@
-//! Destination occurs in [definition][] and label end.
+//! Destination occurs in [definition][] and [label end][].
 //!
 //! They’re formed with the following BNF:
 //!
@@ -68,9 +68,8 @@
 //! [string]: crate::content::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
+//! [label_end]: crate::construct::label_end
 //! [sanitize_uri]: crate::util::sanitize_uri
-//!
-//! <!-- To do: link label end. -->
 
 use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 

@@ -99,8 +99,6 @@
 //! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX
 //! [sanitize_uri]: crate::util::sanitize_uri
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
-//!
-//! <!-- To do: add explanation of sanitation. -->
 
 use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};

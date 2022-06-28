@@ -7,11 +7,10 @@
 //! label_start_link ::= '['
 //! ```
 //!
-//! Label start (link) relates to the `<a>` element in HTML.
+//! Label start (link) does not, on its own, relate to anything in HTML.
+//! When matched with a [label end][label_end], they together relate to the
+//! `<a>` element in HTML.
 //! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
-//!
-//! Whether it contributes a link depends on whether it is followed by a
-//! valid [label end][label_end] or not.
 //! Without an end, the characters (`[`) are output.
 //!
 //! ## Tokens
