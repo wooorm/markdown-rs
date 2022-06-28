@@ -124,7 +124,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) `label_start_image`, `label_start_link`
 - [ ] (1) `label_end`
 - [ ] (1) `space_or_tab_one_line_ending`
 - [ ] (1) `ParseState`
@@ -284,3 +283,4 @@ important.
 - [x] (1) Add module docs to parser
 - [x] (1) Add improved docs in compiler
 - [x] (1) Add docs for `RESOURCE_DESTINATION_BALANCE_MAX`
+- [x] (1) Add docs for `label_start_image`, `label_start_link`
