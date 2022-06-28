@@ -1,6 +1,6 @@
 //! To do
 
-use crate::constant::LINK_RESOURCE_DESTINATION_BALANCE_MAX;
+use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},
     partial_label::{start as label, Options as LabelOptions},
@@ -436,7 +436,7 @@ fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     t,
                     c,
                     DestinationOptions {
-                        limit: LINK_RESOURCE_DESTINATION_BALANCE_MAX,
+                        limit: RESOURCE_DESTINATION_BALANCE_MAX,
                         destination: TokenType::ResourceDestination,
                         literal: TokenType::ResourceDestinationLiteral,
                         marker: TokenType::ResourceDestinationLiteralMarker,
