@@ -40,7 +40,7 @@
 //! *   [`HeadingAtx`][TokenType::HeadingAtx]
 //! *   [`HeadingAtxSequence`][TokenType::HeadingAtxSequence]
 //! *   [`HeadingAtxText`][TokenType::HeadingAtxText]
-//! *   [`HeadingAtxSpaceOrTab`][TokenType::HeadingAtxSpaceOrTab]
+//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -54,11 +54,12 @@
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
-use super::partial_space_or_tab::{
-    space_or_tab, space_or_tab_with_options, Options as SpaceOrTabOptions,
-};
+use super::partial_space_or_tab::space_or_tab;
 use crate::constant::HEADING_ATX_OPENING_FENCE_SIZE_MAX;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{
+    Code, ContentType, Event, EventType, State, StateFnResult, TokenType, Tokenizer,
+};
+use crate::util::edit_map::EditMap;
 
 /// Start of a heading (atx).
 ///
@@ -106,14 +107,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
         }
         _ if rank > 0 => {
             tokenizer.exit(TokenType::HeadingAtxSequence);
-            tokenizer.go(
-                space_or_tab_with_options(SpaceOrTabOptions {
-                    kind: TokenType::HeadingAtxSpaceOrTab,
-                    min: 1,
-                    max: usize::MAX,
-                }),
-                at_break,
-            )(tokenizer, code)
+            tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
         }
         _ => (State::Nok, None),
     }
@@ -132,23 +126,18 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::HeadingAtx);
+            tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
             (State::Ok, Some(vec![code]))
         }
-        Code::VirtualSpace | Code::Char('\t' | ' ') => tokenizer.go(
-            space_or_tab_with_options(SpaceOrTabOptions {
-                kind: TokenType::HeadingAtxSpaceOrTab,
-                min: 1,
-                max: usize::MAX,
-            }),
-            at_break,
-        )(tokenizer, code),
+        Code::VirtualSpace | Code::Char('\t' | ' ') => {
+            tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
+        }
         Code::Char('#') => {
             tokenizer.enter(TokenType::HeadingAtxSequence);
             further_sequence(tokenizer, code)
         }
         Code::Char(_) => {
-            tokenizer.enter(TokenType::HeadingAtxText);
-            tokenizer.enter(TokenType::ChunkText);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
             data(tokenizer, code)
         }
     }
@@ -179,8 +168,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\t' | '\n' | '\r' | ' ') => {
-            tokenizer.exit(TokenType::ChunkText);
-            tokenizer.exit(TokenType::HeadingAtxText);
+            tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code)
         }
         _ => {
@@ -188,4 +176,73 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             (State::Fn(Box::new(data)), None)
         }
     }
+}
+
+/// To do.
+pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+    let mut edit_map = EditMap::new();
+    let mut index = 0;
+    let mut heading_start: Option<usize> = None;
+    let mut data_start: Option<usize> = None;
+    let mut data_end: Option<usize> = None;
+
+    while index < tokenizer.events.len() {
+        let event = &tokenizer.events[index];
+
+        if event.token_type == TokenType::HeadingAtx {
+            if event.event_type == EventType::Enter {
+                heading_start = Some(index);
+            } else if let Some(start) = data_start {
+                // If `start` is some, `end` is too.
+                let end = data_end.unwrap();
+
+                edit_map.add(
+                    start,
+                    0,
+                    vec![Event {
+                        event_type: EventType::Enter,
+                        token_type: TokenType::HeadingAtxText,
+                        point: tokenizer.events[start].point.clone(),
+                        index: tokenizer.events[start].index,
+                        previous: None,
+                        next: None,
+                        content_type: None,
+                    }],
+                );
+
+                // Remove everything between the start and the end.
+                edit_map.add(start + 1, end - start - 1, vec![]);
+
+                edit_map.add(
+                    end + 1,
+                    0,
+                    vec![Event {
+                        event_type: EventType::Exit,
+                        token_type: TokenType::HeadingAtxText,
+                        point: tokenizer.events[end].point.clone(),
+                        index: tokenizer.events[end].index,
+                        previous: None,
+                        next: None,
+                        content_type: None,
+                    }],
+                );
+
+                heading_start = None;
+                data_start = None;
+                data_end = None;
+            }
+        } else if heading_start.is_some() && event.token_type == TokenType::Data {
+            if event.event_type == EventType::Enter {
+                if data_start.is_none() {
+                    data_start = Some(index);
+                }
+            } else {
+                data_end = Some(index);
+            }
+        }
+
+        index += 1;
+    }
+
+    edit_map.consume(&mut tokenizer.events)
 }

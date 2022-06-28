@@ -11,11 +11,10 @@ use crate::tokenizer::{
     Code, Event, EventType, LabelStart, Media, State, StateFnResult, TokenType, Tokenizer,
 };
 use crate::util::{
+    edit_map::EditMap,
     normalize_identifier::normalize_identifier,
     span::{serialize, Span},
 };
-/// To do: could we do without `HashMap`, so we don’t need `std`?
-use std::collections::HashMap;
 
 #[derive(Debug)]
 struct Info {
@@ -32,43 +31,45 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let media: Vec<Media> = tokenizer.media_list.drain(..).collect();
     left.append(&mut left_2);
 
-    let mut map: HashMap<usize, (usize, Vec<Event>)> = HashMap::new();
+    let mut edit_map = EditMap::new();
     let events = &tokenizer.events;
 
+    // Remove loose label starts.
     let mut index = 0;
     while index < left.len() {
         let label_start = &left[index];
         let data_enter_index = label_start.start.0;
         let data_exit_index = label_start.start.1;
 
-        map.insert(
+        edit_map.add(
             data_enter_index,
-            (
-                data_exit_index - data_enter_index,
-                vec![
-                    Event {
-                        event_type: EventType::Enter,
-                        token_type: TokenType::Data,
-                        point: events[data_enter_index].point.clone(),
-                        index: events[data_enter_index].index,
-                        previous: None,
-                        next: None,
-                    },
-                    Event {
-                        event_type: EventType::Exit,
-                        token_type: TokenType::Data,
-                        point: events[data_exit_index].point.clone(),
-                        index: events[data_exit_index].index,
-                        previous: None,
-                        next: None,
-                    },
-                ],
-            ),
+            data_exit_index - data_enter_index,
+            vec![
+                Event {
+                    event_type: EventType::Enter,
+                    token_type: TokenType::Data,
+                    point: events[data_enter_index].point.clone(),
+                    index: events[data_enter_index].index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                },
+                Event {
+                    event_type: EventType::Exit,
+                    token_type: TokenType::Data,
+                    point: events[data_exit_index].point.clone(),
+                    index: events[data_exit_index].index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                },
+            ],
         );
 
         index += 1;
     }
 
+    // Add grouping events.
     let mut index = 0;
     while index < media.len() {
         let media = &media[index];
@@ -90,8 +91,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
         let group_end_index = media.end.1;
 
         // Insert a group enter and label enter.
-        add(
-            &mut map,
+        edit_map.add(
             group_enter_index,
             0,
             vec![
@@ -106,6 +106,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     index: group_enter_event.index,
                     previous: None,
                     next: None,
+                    content_type: None,
                 },
                 Event {
                     event_type: EventType::Enter,
@@ -114,6 +115,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     index: group_enter_event.index,
                     previous: None,
                     next: None,
+                    content_type: None,
                 },
             ],
         );
@@ -121,8 +123,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
         // Empty events not allowed.
         if text_enter_index != text_exit_index {
             // Insert a text enter.
-            add(
-                &mut map,
+            edit_map.add(
                 text_enter_index,
                 0,
                 vec![Event {
@@ -132,12 +133,12 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     index: events[text_enter_index].index,
                     previous: None,
                     next: None,
+                    content_type: None,
                 }],
             );
 
             // Insert a text exit.
-            add(
-                &mut map,
+            edit_map.add(
                 text_exit_index,
                 0,
                 vec![Event {
@@ -147,13 +148,13 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     index: events[text_exit_index].index,
                     previous: None,
                     next: None,
+                    content_type: None,
                 }],
             );
         }
 
         // Insert a label exit.
-        add(
-            &mut map,
+        edit_map.add(
             label_exit_index + 1,
             0,
             vec![Event {
@@ -163,12 +164,12 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 index: events[label_exit_index].index,
                 previous: None,
                 next: None,
+                content_type: None,
             }],
         );
 
         // Insert a group exit.
-        add(
-            &mut map,
+        edit_map.add(
             group_end_index + 1,
             0,
             vec![Event {
@@ -178,81 +179,14 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 index: events[group_end_index].index,
                 previous: None,
                 next: None,
+                content_type: None,
             }],
         );
 
         index += 1;
     }
 
-    let mut indices: Vec<&usize> = map.keys().collect();
-    indices.sort_unstable();
-    let mut next_events: Vec<Event> = vec![];
-    let mut index_into_indices = 0;
-    let mut start = 0;
-    let events = &mut tokenizer.events;
-    let mut shift: i32 = 0;
-
-    while index_into_indices < indices.len() {
-        let index = *indices[index_into_indices];
-
-        if start < index {
-            let append = &mut events[start..index].to_vec();
-            let mut index = 0;
-
-            while index < append.len() {
-                let ev = &mut append[index];
-
-                if let Some(x) = ev.previous {
-                    let next = (x as i32 + shift) as usize;
-                    ev.previous = Some(next);
-                    println!("todo: y: previous {:?} {:?} {:?}", x, shift, start);
-                }
-
-                if let Some(x) = ev.next {
-                    let next = (x as i32 + shift) as usize;
-                    ev.next = Some(next);
-                    println!("todo: y: next {:?} {:?} {:?}", x, shift, start);
-                }
-
-                index += 1;
-            }
-
-            next_events.append(append);
-        }
-
-        let (remove, add) = map.get(&index).unwrap();
-        shift += (add.len() as i32) - (*remove as i32);
-
-        if !add.is_empty() {
-            let append = &mut add.clone();
-            let mut index = 0;
-
-            while index < append.len() {
-                let ev = &mut append[index];
-
-                if let Some(x) = ev.previous {
-                    println!("todo: x: previous {:?} {:?} {:?}", x, shift, start);
-                }
-
-                if let Some(x) = ev.next {
-                    println!("todo: x: next {:?} {:?} {:?}", x, shift, start);
-                }
-
-                index += 1;
-            }
-
-            next_events.append(append);
-        }
-
-        start = index + remove;
-        index_into_indices += 1;
-    }
-
-    if start < events.len() {
-        next_events.append(&mut events[start..].to_vec());
-    }
-
-    next_events
+    edit_map.consume(&mut tokenizer.events)
 }
 
 /// Start of label end.
@@ -692,21 +626,4 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
         }
         _ => (State::Nok, None),
     }
-}
-
-pub fn add(
-    map: &mut HashMap<usize, (usize, Vec<Event>)>,
-    index: usize,
-    mut remove: usize,
-    mut add: Vec<Event>,
-) {
-    let curr = map.remove(&index);
-
-    if let Some((curr_rm, mut curr_add)) = curr {
-        remove += curr_rm;
-        curr_add.append(&mut add);
-        add = curr_add;
-    }
-
-    map.insert(index, (remove, add));
 }

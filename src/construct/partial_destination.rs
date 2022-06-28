@@ -72,7 +72,7 @@
 //!
 //! <!-- To do: link label end. -->
 
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 
 /// Configuration.
 ///
@@ -134,7 +134,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.raw.clone());
             tokenizer.enter(info.options.string.clone());
-            tokenizer.enter(TokenType::ChunkString);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
             raw(tokenizer, code, info)
         }
     }
@@ -155,7 +155,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
         (State::Ok, None)
     } else {
         tokenizer.enter(info.options.string.clone());
-        tokenizer.enter(TokenType::ChunkString);
+        tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
         enclosed(tokenizer, code, info)
     }
 }
@@ -168,7 +168,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('>') => {
-            tokenizer.exit(TokenType::ChunkString);
+            tokenizer.exit(TokenType::Data);
             tokenizer.exit(info.options.string.clone());
             enclosed_before(tokenizer, code, info)
         }
@@ -222,7 +222,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
         }
         Code::Char(')') => {
             if info.balance == 0 {
-                tokenizer.exit(TokenType::ChunkString);
+                tokenizer.exit(TokenType::Data);
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
@@ -240,7 +240,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
             if info.balance > 0 {
                 (State::Nok, None)
             } else {
-                tokenizer.exit(TokenType::ChunkString);
+                tokenizer.exit(TokenType::Data);
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);

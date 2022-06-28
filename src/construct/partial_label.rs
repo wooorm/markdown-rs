@@ -55,10 +55,12 @@
 
 // To do: pass token types in.
 
+use super::partial_space_or_tab::{
+    space_or_tab_one_line_ending_with_options, OneLineEndingOptions,
+};
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
-use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::subtokenize::link;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 
 /// Configuration.
 ///
@@ -130,8 +132,18 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             tokenizer.exit(info.options.label);
             (State::Ok, None)
         }
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => tokenizer.go(
+            space_or_tab_one_line_ending_with_options(OneLineEndingOptions {
+                content_type: Some(ContentType::String),
+                connect: info.connect,
+            }),
+            |t, c| {
+                info.connect = true;
+                at_break(t, c, info)
+            },
+        )(tokenizer, code),
         _ => {
-            tokenizer.enter(TokenType::ChunkString);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
 
             if info.connect {
                 let index = tokenizer.events.len() - 1;
@@ -145,30 +157,6 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
     }
 }
 
-/// After a line ending.
-///
-/// ```markdown
-/// [a
-/// |b]
-/// ```
-fn line_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    tokenizer.attempt_opt(space_or_tab(), |t, c| line_begin(t, c, info))(tokenizer, code)
-}
-
-/// After a line ending, after optional whitespace.
-///
-/// ```markdown
-/// [a
-/// |b]
-/// ```
-fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    match code {
-        // Blank line not allowed.
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
-        _ => at_break(tokenizer, code, info),
-    }
-}
-
 /// In a label, in text.
 ///
 /// ```markdown
@@ -176,19 +164,13 @@ fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResul
 /// ```
 fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::None | Code::Char('[' | ']') => {
-            tokenizer.exit(TokenType::ChunkString);
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '[' | ']') => {
+            tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
         }
         _ if info.size > LINK_REFERENCE_SIZE_MAX => {
-            tokenizer.exit(TokenType::ChunkString);
+            tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
-        }
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.consume(code);
-            info.size += 1;
-            tokenizer.exit(TokenType::ChunkString);
-            (State::Fn(Box::new(|t, c| line_start(t, c, info))), None)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);

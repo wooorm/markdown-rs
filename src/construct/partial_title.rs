@@ -31,9 +31,11 @@
 //!
 //! <!-- To do: link label end. -->
 
-use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::subtokenize::link_to;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use super::partial_space_or_tab::{
+    space_or_tab_one_line_ending_with_options, OneLineEndingOptions,
+};
+use crate::subtokenize::link;
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 
 /// Configuration.
 ///
@@ -108,8 +110,8 @@ impl Kind {
 /// State needed to parse titles.
 #[derive(Debug)]
 struct Info {
-    /// Whether we’ve seen our first `ChunkString`.
-    connect_index: Option<usize>,
+    /// Whether we’ve seen data.
+    connect: bool,
     /// Kind of title.
     kind: Kind,
     /// Configuration.
@@ -127,7 +129,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
     match code {
         Code::Char(char) if char == '"' || char == '\'' || char == '(' => {
             let info = Info {
-                connect_index: None,
+                connect: false,
                 kind: Kind::from_char(char),
                 options,
             };
@@ -181,42 +183,28 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             begin(tokenizer, code, info)
         }
         Code::None => (State::Nok, None),
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => tokenizer.go(
+            space_or_tab_one_line_ending_with_options(OneLineEndingOptions {
+                content_type: Some(ContentType::String),
+                connect: info.connect,
+            }),
+            |t, c| {
+                info.connect = true;
+                at_break(t, c, info)
+            },
+        )(tokenizer, code),
         _ => {
-            tokenizer.enter(TokenType::ChunkString);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
 
-            if let Some(connect_index) = info.connect_index {
+            if info.connect {
                 let index = tokenizer.events.len() - 1;
-                link_to(&mut tokenizer.events, connect_index, index);
+                link(&mut tokenizer.events, index);
             } else {
-                info.connect_index = Some(tokenizer.events.len() - 1);
+                info.connect = true;
             }
 
             title(tokenizer, code, info)
         }
-    }
-}
-
-/// After a line ending.
-///
-/// ```markdown
-/// "a
-/// |b"
-/// ```
-fn line_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    tokenizer.attempt_opt(space_or_tab(), |t, c| line_begin(t, c, info))(tokenizer, code)
-}
-
-/// After a line ending, after optional whitespace.
-///
-/// ```markdown
-/// "a
-/// |b"
-/// ```
-fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    match code {
-        // Blank line not allowed.
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
-        _ => at_break(tokenizer, code, info),
     }
 }
 
@@ -228,17 +216,12 @@ fn line_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResul
 fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
-            tokenizer.exit(TokenType::ChunkString);
+            tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
         }
-        Code::None => {
-            tokenizer.exit(TokenType::ChunkString);
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+            tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
-        }
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::ChunkString);
-            (State::Fn(Box::new(|t, c| line_start(t, c, info))), None)
         }
         Code::Char('\\') => {
             tokenizer.consume(code);

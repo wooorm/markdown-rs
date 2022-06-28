@@ -39,7 +39,7 @@ use crate::construct::{
     partial_space_or_tab::space_or_tab_min_max, thematic_break::start as thematic_break,
 };
 use crate::subtokenize::link;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 
 /// Before a paragraph.
 ///
@@ -53,7 +53,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => {
             tokenizer.enter(TokenType::Paragraph);
-            tokenizer.enter(TokenType::ChunkText);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
             inside(tokenizer, code)
         }
     }
@@ -86,8 +86,8 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn at_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.consume(code);
-    tokenizer.exit(TokenType::ChunkText);
-    tokenizer.enter(TokenType::ChunkText);
+    tokenizer.exit(TokenType::Data);
+    tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
     let index = tokenizer.events.len() - 1;
     link(&mut tokenizer.events, index);
     (State::Fn(Box::new(inside)), None)
@@ -100,7 +100,7 @@ fn at_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ***
 /// ```
 fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(TokenType::ChunkText);
+    tokenizer.exit(TokenType::Data);
     tokenizer.exit(TokenType::Paragraph);
     (State::Ok, Some(vec![code]))
 }

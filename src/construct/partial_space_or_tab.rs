@@ -4,7 +4,8 @@
 //!
 //! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
 
-use crate::tokenizer::{Code, State, StateFn, StateFnResult, TokenType, Tokenizer};
+use crate::subtokenize::link;
+use crate::tokenizer::{Code, ContentType, State, StateFn, StateFnResult, TokenType, Tokenizer};
 
 /// Options to parse whitespace.
 #[derive(Debug)]
@@ -15,6 +16,25 @@ pub struct Options {
     pub max: usize,
     /// Token type to use for whitespace events.
     pub kind: TokenType,
+    /// To do.
+    pub content_type: Option<ContentType>,
+    pub connect: bool,
+}
+
+#[derive(Debug)]
+pub struct OneLineEndingOptions {
+    /// To do.
+    pub content_type: Option<ContentType>,
+    pub connect: bool,
+}
+
+/// Options to parse whitespace.
+#[derive(Debug)]
+struct OneLineInfo {
+    /// Whether something was seen.
+    connect: bool,
+    /// Configuration.
+    options: OneLineEndingOptions,
 }
 
 /// Options to parse whitespace.
@@ -35,45 +55,6 @@ pub fn space_or_tab() -> Box<StateFn> {
     space_or_tab_min_max(1, usize::MAX)
 }
 
-pub fn space_or_tab_one_line_ending() -> Box<StateFn> {
-    Box::new(|tokenizer, code| {
-        tokenizer.attempt(space_or_tab(), move |ok| {
-            Box::new(move |tokenizer, code| match code {
-                Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
-                    tokenizer.enter(TokenType::LineEnding);
-                    tokenizer.consume(code);
-                    tokenizer.exit(TokenType::LineEnding);
-                    (
-                        State::Fn(Box::new(tokenizer.attempt_opt(
-                            space_or_tab(),
-                            move |_t, code| {
-                                if !matches!(
-                                    code,
-                                    Code::None
-                                        | Code::CarriageReturnLineFeed
-                                        | Code::Char('\r' | '\n')
-                                ) {
-                                    (State::Ok, Some(vec![code]))
-                                } else {
-                                    (State::Nok, None)
-                                }
-                            },
-                        ))),
-                        None,
-                    )
-                }
-                _ => {
-                    if ok {
-                        (State::Ok, Some(vec![code]))
-                    } else {
-                        (State::Nok, None)
-                    }
-                }
-            })
-        })(tokenizer, code)
-    })
-}
-
 /// Between `x` and `y` `space_or_tab`
 ///
 /// ```bnf
@@ -84,6 +65,8 @@ pub fn space_or_tab_min_max(min: usize, max: usize) -> Box<StateFn> {
         kind: TokenType::SpaceOrTab,
         min,
         max,
+        content_type: None,
+        connect: false,
     })
 }
 
@@ -104,7 +87,13 @@ pub fn space_or_tab_with_options(options: Options) -> Box<StateFn> {
 fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') if info.options.max > 0 => {
-            tokenizer.enter(info.options.kind.clone());
+            tokenizer.enter_with_content(info.options.kind.clone(), info.options.content_type);
+
+            if info.options.content_type.is_some() {
+                let index = tokenizer.events.len() - 1;
+                link(&mut tokenizer.events, index);
+            }
+
             tokenizer.consume(code);
             info.size += 1;
             (State::Fn(Box::new(|t, c| inside(t, c, info))), None)
@@ -144,5 +133,95 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
                 Some(vec![code]),
             )
         }
+    }
+}
+
+pub fn space_or_tab_one_line_ending() -> Box<StateFn> {
+    space_or_tab_one_line_ending_with_options(OneLineEndingOptions {
+        content_type: None,
+        connect: false,
+    })
+}
+
+pub fn space_or_tab_one_line_ending_with_options(options: OneLineEndingOptions) -> Box<StateFn> {
+    Box::new(move |tokenizer, code| {
+        let mut info = OneLineInfo {
+            connect: false,
+            options,
+        };
+
+        tokenizer.attempt(
+            space_or_tab_with_options(Options {
+                kind: TokenType::SpaceOrTab,
+                min: 1,
+                max: usize::MAX,
+                content_type: info.options.content_type,
+                connect: info.options.connect,
+            }),
+            move |ok| {
+                if ok && info.options.content_type.is_some() {
+                    info.connect = true;
+                }
+
+                Box::new(move |tokenizer, code| match code {
+                    Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+                        at_eol(tokenizer, code, info)
+                    }
+                    _ => {
+                        if ok {
+                            (State::Ok, Some(vec![code]))
+                        } else {
+                            (State::Nok, None)
+                        }
+                    }
+                })
+            },
+        )(tokenizer, code)
+    })
+}
+
+fn at_eol(tokenizer: &mut Tokenizer, code: Code, mut info: OneLineInfo) -> StateFnResult {
+    match code {
+        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+            tokenizer.enter_with_content(TokenType::LineEnding, info.options.content_type);
+
+            if info.options.content_type.is_some() {
+                if info.connect {
+                    let index = tokenizer.events.len() - 1;
+                    link(&mut tokenizer.events, index);
+                } else {
+                    info.connect = true;
+                }
+            }
+
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::LineEnding);
+            (
+                State::Fn(Box::new(tokenizer.attempt_opt(
+                    space_or_tab_with_options(Options {
+                        kind: TokenType::SpaceOrTab,
+                        min: 1,
+                        max: usize::MAX,
+                        content_type: info.options.content_type,
+                        connect: info.connect,
+                    }),
+                    after_eol,
+                ))),
+                None,
+            )
+        }
+        _ => unreachable!("expected eol"),
+    }
+}
+
+fn after_eol(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    // Blank line not allowed.
+    if matches!(
+        code,
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
+    ) {
+        (State::Nok, None)
+    } else {
+        (State::Ok, Some(vec![code]))
     }
 }

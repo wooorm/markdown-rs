@@ -173,7 +173,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     // let mut last_was_tag = false;
     let buffers: &mut Vec<Vec<String>> = &mut vec![vec![]];
     let mut atx_opening_sequence_size: Option<usize> = None;
-    let mut atx_heading_buffer: Option<String> = None;
     let mut heading_setext_buffer: Option<String> = None;
     let mut code_flow_seen_data: Option<bool> = None;
     let mut code_fenced_fences_count: Option<usize> = None;
@@ -265,7 +264,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                 | TokenType::HardBreakTrailingSpace
                 | TokenType::HeadingAtx
                 | TokenType::HeadingAtxSequence
-                | TokenType::HeadingAtxSpaceOrTab
                 | TokenType::HeadingSetext
                 | TokenType::HeadingSetextUnderline
                 | TokenType::HtmlFlowData
@@ -628,25 +626,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                         .expect("`atx_opening_sequence_size` must be set in headings");
                     buf_tail_mut(buffers).push(format!("</h{}>", rank));
                     atx_opening_sequence_size = None;
-                    atx_heading_buffer = None;
                 }
-                // `HeadingAtxSpaceOrTab` is ignored after the opening sequence,
-                // before the closing sequence, and after the closing sequence.
-                // But it is used around intermediate sequences.
-                // `atx_heading_buffer` is set to `Some` by the first `HeadingAtxText`.
-                // `HeadingAtxSequence` is ignored as the opening and closing sequence,
-                // but not when intermediate.
-                TokenType::HeadingAtxSequence | TokenType::HeadingAtxSpaceOrTab => {
-                    if let Some(buf) = atx_heading_buffer {
-                        atx_heading_buffer = Some(
-                            buf.to_string()
-                                + &encode_opt(
-                                    &serialize(codes, &from_exit_event(events, index), false),
-                                    ignore_encode,
-                                ),
-                        );
-                    }
-
+                TokenType::HeadingAtxSequence => {
                     // First fence we see.
                     if None == atx_opening_sequence_size {
                         let rank = serialize(codes, &from_exit_event(events, index), false).len();
@@ -655,18 +636,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     }
                 }
                 TokenType::HeadingAtxText => {
-                    let result = resume(buffers);
-
-                    if let Some(ref buf) = atx_heading_buffer {
-                        if !buf.is_empty() {
-                            buf_tail_mut(buffers).push(encode_opt(buf, ignore_encode));
-                            atx_heading_buffer = Some("".to_string());
-                        }
-                    } else {
-                        atx_heading_buffer = Some("".to_string());
-                    }
-
-                    buf_tail_mut(buffers).push(encode_opt(&result, ignore_encode));
+                    let value = resume(buffers);
+                    buf_tail_mut(buffers).push(value);
                 }
                 TokenType::HeadingSetextText => {
                     heading_setext_buffer = Some(resume(buffers));

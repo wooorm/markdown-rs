@@ -56,9 +56,9 @@
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
 use crate::constant::TAB_SIZE;
-use crate::construct::partial_space_or_tab::space_or_tab;
+use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_with_options, Options};
 use crate::subtokenize::link;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::span::from_exit_event;
 
 /// Kind of underline.
@@ -131,7 +131,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => {
             tokenizer.enter(TokenType::HeadingSetextText);
-            tokenizer.enter(TokenType::ChunkText);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
             text_inside(tokenizer, code)
         }
     }
@@ -148,7 +148,7 @@ fn text_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::ChunkText);
+            tokenizer.exit(TokenType::Data);
             tokenizer.exit(TokenType::HeadingSetextText);
             tokenizer.attempt(underline_before, |ok| {
                 Box::new(if ok { after } else { text_continue })
@@ -176,16 +176,23 @@ fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.enter_with_content(TokenType::LineEnding, Some(ContentType::Text));
             let index = tokenizer.events.len() - 1;
             link(&mut tokenizer.events, index);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
 
             (
-                State::Fn(Box::new(
-                    tokenizer.attempt_opt(space_or_tab(), text_line_start),
-                )),
+                State::Fn(Box::new(tokenizer.attempt_opt(
+                    space_or_tab_with_options(Options {
+                        kind: TokenType::SpaceOrTab,
+                        min: 1,
+                        max: usize::MAX,
+                        content_type: Some(ContentType::Text),
+                        connect: true,
+                    }),
+                    text_line_start,
+                ))),
                 None,
             )
         }
@@ -201,18 +208,11 @@ fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ==
 /// ```
 fn text_line_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let index = tokenizer.events.len() - 2;
-
-    // Link the whitespace, if it exists.
-    if tokenizer.events[index].token_type == TokenType::SpaceOrTab {
-        link(&mut tokenizer.events, index);
-    }
-
     match code {
         // Blank lines not allowed.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
         _ => {
-            tokenizer.enter(TokenType::ChunkText);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
             let index = tokenizer.events.len() - 1;
             link(&mut tokenizer.events, index);
             text_inside(tokenizer, code)

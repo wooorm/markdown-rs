@@ -103,7 +103,7 @@
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::span::from_exit_event;
 
 /// Kind of fences.
@@ -259,7 +259,7 @@ fn info_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
         }
         _ => {
             tokenizer.enter(TokenType::CodeFencedFenceInfo);
-            tokenizer.enter(TokenType::ChunkString);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
             info_inside(tokenizer, code, info, vec![])
         }
     }
@@ -280,13 +280,13 @@ fn info_inside(
 ) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::ChunkString);
+            tokenizer.exit(TokenType::Data);
             tokenizer.exit(TokenType::CodeFencedFenceInfo);
             tokenizer.exit(TokenType::CodeFencedFence);
             at_break(tokenizer, code, info)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.exit(TokenType::ChunkString);
+            tokenizer.exit(TokenType::Data);
             tokenizer.exit(TokenType::CodeFencedFenceInfo);
             tokenizer.attempt_opt(space_or_tab(), |t, c| meta_before(t, c, info))(tokenizer, code)
         }
@@ -317,7 +317,7 @@ fn meta_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
         }
         _ => {
             tokenizer.enter(TokenType::CodeFencedFenceMeta);
-            tokenizer.enter(TokenType::ChunkString);
+            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
             meta(tokenizer, code, info)
         }
     }
@@ -333,7 +333,7 @@ fn meta_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 fn meta(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::ChunkString);
+            tokenizer.exit(TokenType::Data);
             tokenizer.exit(TokenType::CodeFencedFenceMeta);
             tokenizer.exit(TokenType::CodeFencedFence);
             at_break(tokenizer, code, info)

@@ -871,7 +871,7 @@ pub enum TokenType {
     /// *   **Content model**:
     ///     [`HeadingAtxSequence`][TokenType::HeadingAtxSequence],
     ///     [`HeadingAtxText`][TokenType::HeadingAtxText],
-    ///     [`HeadingAtxSpaceOrTab`][TokenType::HeadingAtxSpaceOrTab]
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
     ///     [`heading_atx`][crate::construct::heading_atx]
     ///
@@ -887,8 +887,7 @@ pub enum TokenType {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`HeadingAtx`][TokenType::HeadingAtx],
-    ///     [flow content][crate::content::flow]
+    ///     [`HeadingAtx`][TokenType::HeadingAtx]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -908,7 +907,7 @@ pub enum TokenType {
     /// *   **Context**:
     ///     [`HeadingAtx`][TokenType::HeadingAtx],
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [text content][crate::content::text]
     /// *   **Construct**:
     ///     [`heading_atx`][crate::construct::heading_atx]
     ///
@@ -919,24 +918,6 @@ pub enum TokenType {
     ///       ^^^^^
     /// ```
     HeadingAtxText,
-    /// Heading (atx) spaces.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`HeadingAtx`][TokenType::HeadingAtx],
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`heading_atx`][crate::construct::heading_atx]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | # alpha
-    ///      ^
-    /// ```
-    HeadingAtxSpaceOrTab,
     /// Whole heading (setext).
     ///
     /// ## Info
@@ -1194,18 +1175,13 @@ pub enum TokenType {
     ///     ^ ^ ^ ^
     /// ```
     SpaceOrTab,
+}
 
-    /// Chunk (string).
-    ///
-    /// Tokenized where [string content][crate::content::string] can exist and
-    /// unraveled by [`subtokenize`][crate::subtokenize].
-    ChunkString,
-
-    /// Chunk (text).
-    ///
-    /// Tokenized where [text content][crate::content::text] can exist and
-    /// unraveled by [`subtokenize`][crate::subtokenize].
-    ChunkText,
+/// To do
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ContentType {
+    Text,
+    String,
 }
 
 /// Enum representing a character code.
@@ -1259,6 +1235,7 @@ pub struct Event {
     pub index: usize,
     pub previous: Option<usize>,
     pub next: Option<usize>,
+    pub content_type: Option<ContentType>,
 }
 
 /// The essence of the state machine are functions: `StateFn`.
@@ -1467,6 +1444,10 @@ impl<'a> Tokenizer<'a> {
 
     /// Mark the start of a semantic label.
     pub fn enter(&mut self, token_type: TokenType) {
+        self.enter_with_content(token_type, None);
+    }
+
+    pub fn enter_with_content(&mut self, token_type: TokenType, content_type: Option<ContentType>) {
         log::debug!("enter `{:?}` ({:?})", token_type, self.point);
         self.events.push(Event {
             event_type: EventType::Enter,
@@ -1475,6 +1456,7 @@ impl<'a> Tokenizer<'a> {
             index: self.index,
             previous: None,
             next: None,
+            content_type,
         });
         self.stack.push(token_type);
     }
@@ -1504,6 +1486,7 @@ impl<'a> Tokenizer<'a> {
             index: self.index,
             previous: None,
             next: None,
+            content_type: None,
         });
     }
 
