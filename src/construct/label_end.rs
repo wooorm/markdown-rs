@@ -13,7 +13,7 @@
 //! ; those parts.
 //! ```
 //!
-//! See [`destination`][destination], [`title`][title], and [`label`][label]
+//! See [`destination`][destination], [`label`][label], and [`title`][title]
 //! for grammar, notes, and recommendations.
 //!
 //! Label end does not, on its own, relate to anything in HTML.
@@ -95,8 +95,8 @@
 //!
 //! This limiation is imposed because links in links is invalid according to
 //! HTML.
-//! Technically though, it is possible by using an [autolink][] in a link,
-//! but you definitely should not do that.
+//! Technically though, it is still possible to construct them by using an
+//! [autolink][] in a link, but you definitely should not do that.
 //!
 //! ## Tokens
 //!

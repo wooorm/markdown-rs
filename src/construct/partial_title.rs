@@ -1,4 +1,4 @@
-//! Title occurs in [definition][] and label end.
+//! Title occurs in [definition][] and [label end][label_end].
 //!
 //! They’re formed with the following BNF:
 //!
@@ -28,8 +28,7 @@
 //! [string]: crate::content::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
-//!
-//! <!-- To do: link label end. -->
+//! [label_end]: crate::construct::label_end
 
 use super::partial_space_or_tab::{
     space_or_tab_one_line_ending_with_options, OneLineEndingOptions,

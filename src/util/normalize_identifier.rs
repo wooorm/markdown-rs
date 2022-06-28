@@ -1,6 +1,6 @@
 //! Utility to normalize identifiers.
 
-/// Normalize an identifier, as found in references and
+/// Normalize an identifier, as found in [references][label_end] and
 /// [definitions][definition], so it can be compared when matching.
 ///
 /// This collapsed whitespace found in markdown (`\t`, `\r`, `\n`, and ` `)
@@ -30,8 +30,7 @@
 /// *   [`micromark-util-normalize-identifier` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-normalize-identifier)
 ///
 /// [definition]: crate::construct::definition
-///
-/// <!--To do: link resource.-->
+/// [label_end]: crate::construct::label_end
 pub fn normalize_identifier(value: &str) -> String {
     let mut codes = vec![];
     let mut at_start = true;

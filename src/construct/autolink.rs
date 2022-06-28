@@ -62,8 +62,8 @@
 //! are not considered HTML.
 //!
 //! While `CommonMark` restricts links from occurring in other links in the
-//! case of bracketed links, this restriction is not in place for autolinks
-//! inside autolinks:
+//! case of labels (see [label end][label_end]), this restriction is not in
+//! place for autolinks inside labels:
 //!
 //! ```markdown
 //! [<https://example.com>](#)
@@ -95,6 +95,7 @@
 //! *   [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.30/#autolinks)
 //!
 //! [text]: crate::content::text
+//! [label_end]: crate::construct::label_end
 //! [autolink_scheme_size_max]: crate::constant::AUTOLINK_SCHEME_SIZE_MAX
 //! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX
 //! [sanitize_uri]: crate::util::sanitize_uri

@@ -37,9 +37,11 @@
 //! > `y`.
 //! >
 //! > The thing that contains `x` is not a single thing when parsing markdown,
-//! > but instead constists of an opening (label start (image) or label start
-//! > (link)) and a closing (label end), so as to allow further phrasing such
-//! > as code (text) or attention.
+//! > but instead constists of an opening
+//! > ([label start (image)][label_start_image] or
+//! > [label start (link)][label_start_link]) and a closing
+//! > ([label end][label_end]), so as to allow further phrasing such as
+//! > [code (text)][code_text] or attention.
 //!
 //! ## References
 //!
@@ -49,11 +51,13 @@
 //! [string]: crate::content::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
+//! [label_start_image]: crate::construct::label_start_image
+//! [label_start_link]: crate::construct::label_start_link
+//! [label_end]: crate::construct::label_end
+//! [code_text]: crate::construct::code_text
 //! [link_reference_size_max]: crate::constant::LINK_REFERENCE_SIZE_MAX
 //!
-//! <!-- To do: link label end, label starts. -->
-
-// To do: pass token types in.
+//! <!-- To do: link attention. -->
 
 use super::partial_space_or_tab::{
     space_or_tab_one_line_ending_with_options, OneLineEndingOptions,

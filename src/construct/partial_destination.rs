@@ -1,4 +1,4 @@
-//! Destination occurs in [definition][] and [label end][].
+//! Destination occurs in [definition][] and [label end][label_end].
 //!
 //! They’re formed with the following BNF:
 //!

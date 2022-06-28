@@ -5,22 +5,20 @@
 //! ```bnf
 //! definition ::= label ':' whitespace destination [ whitespace title ] [ space_or_tab ]
 //!
-//! whitespace ::= eol *whitespace | 1*space_or_tab [ eol *whitespace ]
-//! space_or_tab ::= ' ' | '\t'
+//! ; See the `destination`, `title`, and `label` constructs for the BNF of
+//! ; those parts.
 //! ```
 //!
-//! See [`destination`][destination], [`title`][title], and [`label`][label]
+//! See [`destination`][destination], [`label`][label], and [`title`][title]
 //! for grammar, notes, and recommendations.
 //!
 //! Definitions in markdown do not, on their own, relate to anything in HTML.
-//! When matched with a link (reference), they together relate to the `<a>`
-//! element in HTML.
-//! The definition forms its `href`, and optionally `title`, attributes.
-//! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
-//! Definitions can also match with image (reference), in which case they
-//! form an `<img>` element, where the definition contributes the `src`, and
-//! optionally `title`, attributes.
-//! See [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
+//! When matched with a [label end (reference)][label_end], they together
+//! relate to the `<a>` or `<img>` elements in HTML.
+//! The definition forms its `href` or `src`, and optionally `title`,
+//! attributes.
+//! See [*§ 4.5.1 The `a` element*][html-a] and
+//! [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
 //!
 //! The `label`, `destination`, and `title` parts are interpreted as the
 //! [string][] content type.
@@ -86,6 +84,7 @@
 //! [string]: crate::content::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
+//! [label_end]: crate::construct::label_end
 //! [destination]: crate::construct::partial_destination
 //! [title]: crate::construct::partial_title
 //! [label]: crate::construct::partial_label
@@ -93,8 +92,6 @@
 //! [normalize_identifier]: crate::util::normalize_identifier
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
-//!
-//! <!-- To do: link link/image (reference) -->
 
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},

@@ -149,11 +149,8 @@ cargo doc --document-private-items
       `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
       `misc_tabs`, `thematic_break`)
 - [ ] (3) Interrupting (html flow complete)
-- [ ] (5) labels\
-       test (`character_escape`, `character_reference`, `definition`)\
-       link link reference (definition)\
-       link label end (destination, label, title)\
-       link label start (label)
+- [ ] (5) label end (reference)\
+       test (`character_escape`, `character_reference`, `definition`)
 - [ ] (5) attention\
        test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `thematic_break`)\
