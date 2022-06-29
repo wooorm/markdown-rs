@@ -20,7 +20,7 @@ use crate::parser::ParseState;
 /// Semantic label of a span.
 // To do: figure out how to share this so extensions can add their own stuff,
 // though perhaps that’s impossible and we should inline all extensions?
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum TokenType {
     /// Whole autolink.
     ///

@@ -49,8 +49,6 @@ cargo doc --document-private-items
 - [ ] (8) Can paragraphs (and to a lesser extent string data and text data)
       operate more performantly than checking whether other flow constructs
       start a line, before exiting and actually attempting flow constructs?
-- [ ] (5) Figure out sharing definition and identifiers, and references before
-      definitions
 - [ ] (3) Interrupting: sometimes flow can or cannot start depending on the
       previous construct (typically paragraph)
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
@@ -284,3 +282,5 @@ important.
 - [x] (1) Add docs for `label_start_image`, `label_start_link`
 - [x] (1) Add docs for `label_end`
 - [x] (1) Move map handling from `resolve_media`
+- [x] (5) Add support for sharing identifiers, references before definitions
+- [x] (2) Refactor to externalize handlers of compiler
