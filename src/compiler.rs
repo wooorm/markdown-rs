@@ -68,22 +68,27 @@ impl LineEnding {
 }
 
 /// Representation of a link or image, resource or reference.
+/// Reused for temporary definitions as well, in the first pass.
 #[derive(Debug)]
 struct Media {
-    /// Whether this represents an image (`true`) or a link (`false`).
+    /// Whether this represents an image (`true`) or a link or definition
+    /// (`false`).
     image: bool,
     /// The text between the brackets (`x` in `![x]()` and `[x]()`), as an
     /// identifier, meaning that the original source characters are used
     /// instead of interpreting them.
+    /// Not interpreted.
     label_id: Option<String>,
     /// The text between the brackets (`x` in `![x]()` and `[x]()`), as
-    /// content.
+    /// interpreted content.
     /// When this is a link, it can contain further text content and thus HTML
     /// tags.
     /// Otherwise, when an image, text content is also allowed, but resulting
     /// tags are ignored.
     label: Option<String>,
-    /// To do.
+    /// The text between the explicit brackets of the reference (`y` in
+    /// `[x][y]`), as content.
+    /// Not interpreted.
     reference_id: Option<String>,
     /// The destination (url).
     /// Interpreted string content.
@@ -101,14 +106,6 @@ struct Definition {
     destination: Option<String>,
     /// The title.
     /// Interpreted string content.
-    title: Option<String>,
-}
-
-/// To do.
-#[derive(Debug, Clone, PartialEq)]
-struct DefinitionInfo {
-    id: Option<String>,
-    destination: Option<String>,
     title: Option<String>,
 }
 
@@ -220,13 +217,15 @@ pub struct Options {
     pub default_line_ending: Option<LineEnding>,
 }
 
-/// To do.
-type Handler = fn(&mut CompileContext, &Event);
+/// Handle an event.
+///
+/// The current event is available at `context.events[context.index]`.
+type Handle = fn(&mut CompileContext);
 
-/// To do.
-type Map = HashMap<TokenType, Handler>;
+/// Map of [`TokenType`][] to [`Handle`][].
+type Map = HashMap<TokenType, Handle>;
 
-/// To do.
+/// Context used to compile markdown.
 struct CompileContext<'a> {
     /// Static info.
     pub events: &'a [Event],
@@ -380,13 +379,12 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut index = 0;
     let mut line_ending_inferred: Option<LineEnding> = None;
 
-    // To do: actually do a compile pass, so that `buffer`, `resume`, etc can be used.
+    // First, we figure out what the used line ending style is.
+    // Stop when we find a line ending.
     while index < events.len() {
         let event = &events[index];
 
-        // Find the used line ending style.
-        if line_ending_inferred.is_none()
-            && event.event_type == EventType::Exit
+        if event.event_type == EventType::Exit
             && (event.token_type == TokenType::BlankLineEnding
                 || event.token_type == TokenType::CodeTextLineEnding
                 || event.token_type == TokenType::LineEnding)
@@ -399,6 +397,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         index += 1;
     }
 
+    // Figure out which line ending style we’ll use.
     let line_ending_default = if let Some(value) = line_ending_inferred {
         value
     } else if let Some(value) = &options.default_line_ending {
@@ -424,7 +423,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     enter_map.insert(TokenType::Resource, on_enter_resource);
     enter_map.insert(
         TokenType::ResourceDestinationString,
-        on_enter_destination_string,
+        on_enter_resource_destination_string,
     );
     enter_map.insert(TokenType::Paragraph, on_enter_paragraph);
     enter_map.insert(TokenType::Definition, on_enter_definition);
@@ -450,9 +449,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     );
     exit_map.insert(TokenType::Image, on_exit_media);
     exit_map.insert(TokenType::Link, on_exit_media);
-    exit_map.insert(TokenType::CodeTextData, on_exit_push);
-    exit_map.insert(TokenType::Data, on_exit_push);
-    exit_map.insert(TokenType::CharacterEscapeValue, on_exit_push);
+    exit_map.insert(TokenType::CodeTextData, on_exit_data);
+    exit_map.insert(TokenType::Data, on_exit_data);
+    exit_map.insert(TokenType::CharacterEscapeValue, on_exit_data);
     exit_map.insert(TokenType::AutolinkEmail, on_exit_autolink_email);
     exit_map.insert(TokenType::AutolinkProtocol, on_exit_autolink_protocol);
     exit_map.insert(
@@ -478,8 +477,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         TokenType::CodeFencedFenceInfo,
         on_exit_code_fenced_fence_info,
     );
-    exit_map.insert(TokenType::CodeFencedFenceMeta, on_exit_resume);
-    exit_map.insert(TokenType::Resource, on_exit_resume);
+    exit_map.insert(TokenType::CodeFencedFenceMeta, on_exit_drop);
+    exit_map.insert(TokenType::Resource, on_exit_drop);
     exit_map.insert(TokenType::CodeFlowChunk, on_exit_code_flow_chunk);
     exit_map.insert(TokenType::CodeText, on_exit_code_text);
     exit_map.insert(TokenType::CodeTextLineEnding, on_exit_code_text_line_ending);
@@ -514,9 +513,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         on_exit_definition_title_string,
     );
 
+    // Handle one event.
     let handle = |context: &mut CompileContext, index: usize| {
         let event = &events[index];
-        context.index = index;
 
         let map = if event.event_type == EventType::Enter {
             &enter_map
@@ -525,7 +524,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         };
 
         if let Some(func) = map.get(&event.token_type) {
-            func(context, event);
+            context.index = index;
+            func(context);
         }
     };
 
@@ -534,6 +534,12 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut index = 0;
     let mut definition_inside = false;
 
+    // Handle all definitions first.
+    // We have to do two passes because we need to compile the events in
+    // definitions which come after references already.
+    //
+    // To speed things up, we collect the places we can jump over for the
+    // second pass.
     while index < events.len() {
         let event = &events[index];
 
@@ -543,7 +549,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
 
         if event.token_type == TokenType::Definition {
             if event.event_type == EventType::Enter {
-                handle(&mut context, index); // also handle start.
+                handle(&mut context, index); // Also handle start.
                 definition_inside = true;
                 definition_indices.push((index, index));
             } else {
@@ -569,6 +575,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
             jump = definition_indices
                 .get(definition_index)
                 .unwrap_or(&jump_default);
+            // Ignore line endings after definitions.
             context.slurp_one_line_ending = true;
         } else {
             handle(&mut context, index);
@@ -584,17 +591,22 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         .concat()
 }
 
-fn on_enter_buffer(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:`*`.
+///
+/// Buffers data.
+fn on_enter_buffer(context: &mut CompileContext) {
     context.buffer();
 }
 
-fn on_enter_code_indented(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`CodeIndented`][TokenType::CodeIndented].
+fn on_enter_code_indented(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
     context.push("<pre><code>".to_string());
 }
 
-fn on_enter_code_fenced(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`CodeFenced`][TokenType::CodeFenced].
+fn on_enter_code_fenced(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
     // Note that no `>` is used, which is added later.
@@ -602,25 +614,29 @@ fn on_enter_code_fenced(context: &mut CompileContext, _event: &Event) {
     context.code_fenced_fences_count = Some(0);
 }
 
-fn on_enter_code_text(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`CodeText`][TokenType::CodeText].
+fn on_enter_code_text(context: &mut CompileContext) {
     context.push("<code>".to_string());
     context.buffer();
 }
 
-fn on_enter_html_flow(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`HtmlFlow`][TokenType::HtmlFlow].
+fn on_enter_html_flow(context: &mut CompileContext) {
     context.line_ending_if_needed();
     if context.allow_dangerous_html {
         context.ignore_encode = true;
     }
 }
 
-fn on_enter_html_text(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`HtmlText`][TokenType::HtmlText].
+fn on_enter_html_text(context: &mut CompileContext) {
     if context.allow_dangerous_html {
         context.ignore_encode = true;
     }
 }
 
-fn on_enter_image(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`Image`][TokenType::Image].
+fn on_enter_image(context: &mut CompileContext) {
     context.media_stack.push(Media {
         image: true,
         label_id: None,
@@ -632,7 +648,8 @@ fn on_enter_image(context: &mut CompileContext, _event: &Event) {
     // tags = undefined // Disallow tags.
 }
 
-fn on_enter_link(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`Link`][TokenType::Link].
+fn on_enter_link(context: &mut CompileContext) {
     context.media_stack.push(Media {
         image: false,
         label_id: None,
@@ -643,30 +660,35 @@ fn on_enter_link(context: &mut CompileContext, _event: &Event) {
     });
 }
 
-fn on_enter_resource(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`Resource`][TokenType::Resource].
+fn on_enter_resource(context: &mut CompileContext) {
     context.buffer(); // We can have line endings in the resource, ignore them.
     let media = context.media_stack.last_mut().unwrap();
     media.destination = Some("".to_string());
 }
 
-fn on_enter_destination_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`ResourceDestinationString`][TokenType::ResourceDestinationString].
+fn on_enter_resource_destination_string(context: &mut CompileContext) {
     context.buffer();
     // Ignore encoding the result, as we’ll first percent encode the url and
     // encode manually after.
     context.ignore_encode = true;
 }
 
-fn on_enter_paragraph(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`Paragraph`][TokenType::Paragraph].
+fn on_enter_paragraph(context: &mut CompileContext) {
     context.buf_tail_mut().push("<p>".to_string());
 }
 
-fn on_exit_label(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`Label`][TokenType::Label].
+fn on_exit_label(context: &mut CompileContext) {
     let buf = context.resume();
     let media = context.media_stack.last_mut().unwrap();
     media.label = Some(buf);
 }
 
-fn on_exit_label_text(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`LabelText`][TokenType::LabelText].
+fn on_exit_label_text(context: &mut CompileContext) {
     let media = context.media_stack.last_mut().unwrap();
     media.label_id = Some(serialize(
         context.codes,
@@ -675,7 +697,8 @@ fn on_exit_label_text(context: &mut CompileContext, _event: &Event) {
     ));
 }
 
-fn on_exit_reference_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`ReferenceString`][TokenType::ReferenceString].
+fn on_exit_reference_string(context: &mut CompileContext) {
     // Drop stuff.
     context.resume();
     let media = context.media_stack.last_mut().unwrap();
@@ -686,20 +709,23 @@ fn on_exit_reference_string(context: &mut CompileContext, _event: &Event) {
     ));
 }
 
-fn on_exit_resource_destination_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`ResourceDestinationString`][TokenType::ResourceDestinationString].
+fn on_exit_resource_destination_string(context: &mut CompileContext) {
     let buf = context.resume();
     let media = context.media_stack.last_mut().unwrap();
     media.destination = Some(buf);
     context.ignore_encode = false;
 }
 
-fn on_exit_resource_title_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`ResourceTitleString`][TokenType::ResourceTitleString].
+fn on_exit_resource_title_string(context: &mut CompileContext) {
     let buf = context.resume();
     let media = context.media_stack.last_mut().unwrap();
     media.title = Some(buf);
 }
 
-fn on_exit_media(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:{[`Image`][TokenType::Image],[`Link`][TokenType::Link]}.
+fn on_exit_media(context: &mut CompileContext) {
     let mut is_in_image = false;
     let mut index = 0;
     // Skip current.
@@ -762,7 +788,8 @@ fn on_exit_media(context: &mut CompileContext, _event: &Event) {
     context.push(result);
 }
 
-fn on_exit_push(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][TokenType::CodeTextData],[`Data`][TokenType::Data],[`CharacterEscapeValue`][TokenType::CharacterEscapeValue]}.
+fn on_exit_data(context: &mut CompileContext) {
     // Just output it.
     // last_was_tag = false;
     context.push(context.encode_opt(&serialize(
@@ -772,7 +799,8 @@ fn on_exit_push(context: &mut CompileContext, _event: &Event) {
     )));
 }
 
-fn on_exit_autolink_email(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`AutolinkEmail`][TokenType::AutolinkEmail].
+fn on_exit_autolink_email(context: &mut CompileContext) {
     let slice = serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
@@ -785,7 +813,8 @@ fn on_exit_autolink_email(context: &mut CompileContext, _event: &Event) {
     ));
 }
 
-fn on_exit_autolink_protocol(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`AutolinkProtocol`][TokenType::AutolinkProtocol].
+fn on_exit_autolink_protocol(context: &mut CompileContext) {
     let slice = serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
@@ -798,19 +827,23 @@ fn on_exit_autolink_protocol(context: &mut CompileContext, _event: &Event) {
     ));
 }
 
-fn on_exit_character_reference_marker(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker].
+fn on_exit_character_reference_marker(context: &mut CompileContext) {
     context.character_reference_kind = Some(CharacterReferenceKind::Named);
 }
 
-fn on_exit_character_reference_marker_numeric(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarkerNumeric`][TokenType::CharacterReferenceMarkerNumeric].
+fn on_exit_character_reference_marker_numeric(context: &mut CompileContext) {
     context.character_reference_kind = Some(CharacterReferenceKind::Decimal);
 }
 
-fn on_exit_character_reference_marker_hexadecimal(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarkerHexadecimal`][TokenType::CharacterReferenceMarkerHexadecimal].
+fn on_exit_character_reference_marker_hexadecimal(context: &mut CompileContext) {
     context.character_reference_kind = Some(CharacterReferenceKind::Hexadecimal);
 }
 
-fn on_exit_character_reference_value(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceValue`][TokenType::CharacterReferenceValue].
+fn on_exit_character_reference_value(context: &mut CompileContext) {
     let kind = context
         .character_reference_kind
         .take()
@@ -830,7 +863,8 @@ fn on_exit_character_reference_value(context: &mut CompileContext, _event: &Even
     context.push(context.encode_opt(&value));
 }
 
-fn on_exit_code_flow(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:{[`CodeFenced`][TokenType::CodeFenced],[`CodeIndented`][TokenType::CodeIndented]}.
+fn on_exit_code_flow(context: &mut CompileContext) {
     let seen_data = context
         .code_flow_seen_data
         .take()
@@ -863,7 +897,8 @@ fn on_exit_code_flow(context: &mut CompileContext, _event: &Event) {
     context.slurp_one_line_ending = false;
 }
 
-fn on_exit_code_fenced_fence(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CodeFencedFence`][TokenType::CodeFencedFence].
+fn on_exit_code_fenced_fence(context: &mut CompileContext) {
     let count = if let Some(count) = context.code_fenced_fences_count {
         count
     } else {
@@ -879,17 +914,22 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext, _event: &Event) {
     context.code_fenced_fences_count = Some(count + 1);
 }
 
-fn on_exit_code_fenced_fence_info(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo].
+fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
     let value = context.resume();
     context.push(format!(" class=\"language-{}\"", value));
     // tag = true;
 }
 
-fn on_exit_resume(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:*.
+///
+/// Resumes, and ignores what was resumed.
+fn on_exit_drop(context: &mut CompileContext) {
     context.resume();
 }
 
-fn on_exit_code_flow_chunk(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][TokenType::CodeFlowChunk].
+fn on_exit_code_flow_chunk(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(true);
     context.push(context.encode_opt(&serialize(
         context.codes,
@@ -898,7 +938,8 @@ fn on_exit_code_flow_chunk(context: &mut CompileContext, _event: &Event) {
     )));
 }
 
-fn on_exit_code_text(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CodeText`][TokenType::CodeText].
+fn on_exit_code_text(context: &mut CompileContext) {
     let result = context.resume();
     let mut chars = result.chars();
     let mut trim = false;
@@ -921,15 +962,18 @@ fn on_exit_code_text(context: &mut CompileContext, _event: &Event) {
     context.push("</code>".to_string());
 }
 
-fn on_exit_code_text_line_ending(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`CodeTextLineEnding`][TokenType::CodeTextLineEnding].
+fn on_exit_code_text_line_ending(context: &mut CompileContext) {
     context.push(" ".to_string());
 }
 
-fn on_exit_break(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:{[`HardBreakEscape`][TokenType::HardBreakEscape],[`HardBreakTrailing`][TokenType::HardBreakTrailing]}.
+fn on_exit_break(context: &mut CompileContext) {
     context.push("<br />".to_string());
 }
 
-fn on_exit_heading_atx(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`HeadingAtx`][TokenType::HeadingAtx].
+fn on_exit_heading_atx(context: &mut CompileContext) {
     let rank = context
         .atx_opening_sequence_size
         .take()
@@ -938,7 +982,8 @@ fn on_exit_heading_atx(context: &mut CompileContext, _event: &Event) {
     context.push(format!("</h{}>", rank));
 }
 
-fn on_exit_heading_atx_sequence(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`HeadingAtxSequence`][TokenType::HeadingAtxSequence].
+fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
     // First fence we see.
     if context.atx_opening_sequence_size.is_none() {
         let rank = serialize(
@@ -952,18 +997,21 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext, _event: &Event) {
     }
 }
 
-fn on_exit_heading_atx_text(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`HeadingAtxText`][TokenType::HeadingAtxText].
+fn on_exit_heading_atx_text(context: &mut CompileContext) {
     let value = context.resume();
     context.push(value);
 }
 
-fn on_exit_heading_setext_text(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`HeadingSetextText`][TokenType::HeadingSetextText].
+fn on_exit_heading_setext_text(context: &mut CompileContext) {
     let buf = context.resume();
     context.heading_setext_buffer = Some(buf);
     context.slurp_one_line_ending = true;
 }
 
-fn on_exit_heading_setext_underline(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`HeadingSetextUnderline`][TokenType::HeadingSetextUnderline].
+fn on_exit_heading_setext_underline(context: &mut CompileContext) {
     let text = context
         .heading_setext_buffer
         .take()
@@ -977,11 +1025,13 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext, _event: &Event
     context.push(format!("<h{}>{}</h{}>", level, text, level));
 }
 
-fn on_exit_html(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:{[`HtmlFlow`][TokenType::HtmlFlow],[`HtmlText`][TokenType::HtmlText]}.
+fn on_exit_html(context: &mut CompileContext) {
     context.ignore_encode = false;
 }
 
-fn on_exit_html_data(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:{[`HtmlFlowData`][TokenType::HtmlFlowData],[`HtmlTextData`][TokenType::HtmlTextData]}.
+fn on_exit_html_data(context: &mut CompileContext) {
     let slice = serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
@@ -991,7 +1041,8 @@ fn on_exit_html_data(context: &mut CompileContext, _event: &Event) {
     context.push(context.encode_opt(&slice));
 }
 
-fn on_exit_line_ending(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`LineEnding`][TokenType::LineEnding].
+fn on_exit_line_ending(context: &mut CompileContext) {
     // if slurp_all_line_endings {
     //     // Empty.
     // } else
@@ -1006,15 +1057,18 @@ fn on_exit_line_ending(context: &mut CompileContext, _event: &Event) {
     }
 }
 
-fn on_exit_paragraph(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`Paragraph`][TokenType::Paragraph].
+fn on_exit_paragraph(context: &mut CompileContext) {
     context.push("</p>".to_string());
 }
 
-fn on_exit_thematic_break(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][TokenType::ThematicBreak].
+fn on_exit_thematic_break(context: &mut CompileContext) {
     context.push("<hr />".to_string());
 }
 
-fn on_enter_definition(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`Definition`][TokenType::Definition].
+fn on_enter_definition(context: &mut CompileContext) {
     context.buffer();
     context.media_stack.push(Media {
         image: false,
@@ -1026,19 +1080,22 @@ fn on_enter_definition(context: &mut CompileContext, _event: &Event) {
     });
 }
 
-fn on_enter_definition_destination_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Enter`][EventType::Enter]:[`DefinitionDestinationString`][TokenType::DefinitionDestinationString].
+fn on_enter_definition_destination_string(context: &mut CompileContext) {
     context.buffer();
     context.ignore_encode = true;
 }
 
-fn on_exit_definition_destination_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`DefinitionDestinationString`][TokenType::DefinitionDestinationString].
+fn on_exit_definition_destination_string(context: &mut CompileContext) {
     let buf = context.resume();
     let definition = context.media_stack.last_mut().unwrap();
     definition.destination = Some(buf);
     context.ignore_encode = false;
 }
 
-fn on_exit_definition_label_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`DefinitionLabelString`][TokenType::DefinitionLabelString].
+fn on_exit_definition_label_string(context: &mut CompileContext) {
     // Discard label, use the source content instead.
     context.resume();
     let definition = context.media_stack.last_mut().unwrap();
@@ -1049,13 +1106,15 @@ fn on_exit_definition_label_string(context: &mut CompileContext, _event: &Event)
     ));
 }
 
-fn on_exit_definition_title_string(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`DefinitionTitleString`][TokenType::DefinitionTitleString].
+fn on_exit_definition_title_string(context: &mut CompileContext) {
     let buf = context.resume();
     let definition = context.media_stack.last_mut().unwrap();
     definition.title = Some(buf);
 }
 
-fn on_exit_definition(context: &mut CompileContext, _event: &Event) {
+/// Handle [`Exit`][EventType::Exit]:[`Definition`][TokenType::Definition].
+fn on_exit_definition(context: &mut CompileContext) {
     let definition = context.media_stack.pop().unwrap();
     let reference_id = normalize_identifier(&definition.reference_id.unwrap());
     let destination = definition.destination;
