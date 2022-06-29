@@ -181,7 +181,7 @@ fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
             info.size += 1;
             (State::Fn(Box::new(|t, c| label(t, c, info))), None)
         }
-        Code::Char('/') => {
+        Code::Char('\\') => {
             tokenizer.consume(code);
             info.size += 1;
             if !info.data {

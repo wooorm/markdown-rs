@@ -149,7 +149,7 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::DefinitionMarker);
             (
                 State::Fn(Box::new(
-                    tokenizer.go(space_or_tab_one_line_ending(), destination_before),
+                    tokenizer.attempt_opt(space_or_tab_one_line_ending(), destination_before),
                 )),
                 None,
             )

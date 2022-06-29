@@ -27,12 +27,17 @@ fn definition() {
         "should support whitespace and line endings in definitions"
     );
 
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[Foo*bar\\]]:my_(url) 'title (with parens)'\n\n[Foo*bar\\]]"),
-    //     "<p><a href=\"my_(url)\" title=\"title (with parens)\">Foo*bar]</a></p>",
-    //     "should support complex definitions (1)"
-    // );
+    assert_eq!(
+        micromark("[a]:b 'c'\n\n[a]"),
+        "<p><a href=\"b\" title=\"c\">a</a></p>",
+        "should support no whitespace after `:` in definitions"
+    );
+
+    assert_eq!(
+        micromark("[Foo*bar\\]]:my_(url) 'title (with parens)'\n\n[Foo*bar\\]]"),
+        "<p><a href=\"my_(url)\" title=\"title (with parens)\">Foo*bar]</a></p>",
+        "should support complex definitions (1)"
+    );
 
     assert_eq!(
         micromark("[Foo bar]:\n<my url>\n'title'\n\n[Foo bar]"),
@@ -82,33 +87,29 @@ fn definition() {
         "should support character escapes in destinations and titles"
     );
 
-    // Some bug.
-    // assert_eq!(
-    //     micromark("[foo]\n\n[foo]: url"),
-    //     "<p><a href=\"url\">foo</a></p>\n",
-    //     "should support a link before a definition"
-    // );
+    assert_eq!(
+        micromark("[foo]\n\n[foo]: url"),
+        "<p><a href=\"url\">foo</a></p>\n",
+        "should support a link before a definition"
+    );
 
-    // Some bug.
-    // assert_eq!(
-    //     micromark("[foo]: first\n[foo]: second\n\n[foo]"),
-    //     "<p><a href=\"first\">foo</a></p>",
-    //     "should match w/ the first definition"
-    // );
+    assert_eq!(
+        micromark("[foo]: first\n[foo]: second\n\n[foo]"),
+        "<p><a href=\"first\">foo</a></p>",
+        "should match w/ the first definition"
+    );
 
-    // Some bug.
-    // assert_eq!(
-    //     micromark("[FOO]: /url\n\n[Foo]"),
-    //     "<p><a href=\"/url\">Foo</a></p>",
-    //     "should match w/ case-insensitive (1)"
-    // );
+    assert_eq!(
+        micromark("[FOO]: /url\n\n[Foo]"),
+        "<p><a href=\"/url\">Foo</a></p>",
+        "should match w/ case-insensitive (1)"
+    );
 
-    // Some bug.
-    // assert_eq!(
-    //     micromark("[ΑΓΩ]: /φου\n\n[αγω]"),
-    //     "<p><a href=\"/%CF%86%CE%BF%CF%85\">αγω</a></p>",
-    //     "should match w/ case-insensitive (2)"
-    // );
+    assert_eq!(
+        micromark("[ΑΓΩ]: /φου\n\n[αγω]"),
+        "<p><a href=\"/%CF%86%CE%BF%CF%85\">αγω</a></p>",
+        "should match w/ case-insensitive (2)"
+    );
 
     assert_eq!(
         micromark("[foo]: /url"),
@@ -183,14 +184,13 @@ fn definition() {
         "should not support setext heading underlines after definitions"
     );
 
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark(
-    //     "[foo]: /foo-url \"foo\"\n[bar]: /bar-url\n  \"bar\"\n[baz]: /baz-url\n\n[foo],\n[bar],\n[baz]"
-    //     ),
-    //     "<p><a href=\"/foo-url\" title=\"foo\">foo</a>,\n<a href=\"/bar-url\" title=\"bar\">bar</a>,\n<a href=\"/baz-url\">baz</a></p>",
-    //     "should support definitions after definitions"
-    // );
+    assert_eq!(
+        micromark(
+        "[foo]: /foo-url \"foo\"\n[bar]: /bar-url\n  \"bar\"\n[baz]: /baz-url\n\n[foo],\n[bar],\n[baz]"
+        ),
+        "<p><a href=\"/foo-url\" title=\"foo\">foo</a>,\n<a href=\"/bar-url\" title=\"bar\">bar</a>,\n<a href=\"/baz-url\">baz</a></p>",
+        "should support definitions after definitions"
+    );
 
     // To do: block quote.
     // assert_eq!(
@@ -200,12 +200,11 @@ fn definition() {
     // );
 
     // Extra
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[\\[\\+\\]]: example.com\n\nLink: [\\[\\+\\]]."),
-    //     "<p>Link: <a href=\"example.com\">[+]</a>.</p>",
-    //     "should match w/ character escapes"
-    // );
+    assert_eq!(
+        micromark("[\\[\\+\\]]: example.com\n\nLink: [\\[\\+\\]]."),
+        "<p>Link: <a href=\"example.com\">[+]</a>.</p>",
+        "should match w/ character escapes"
+    );
 
     assert_eq!(
         micromark("[x]: \\\"&#x20;\\(\\)\\\"\n\n[x]"),
@@ -261,25 +260,23 @@ fn definition() {
         "should support character escapes at the start of a title"
     );
 
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[x]: a \"\\\"\"\n\n[x]"),
-    //     "<p><a href=\"a\" title=\"\"\">x</a></p>",
-    //     "should support double quoted titles"
-    // );
+    assert_eq!(
+        micromark("[x]: a \"'\"\n\n[x]"),
+        "<p><a href=\"a\" title=\"'\">x</a></p>",
+        "should support double quoted titles"
+    );
 
     assert_eq!(
         micromark("[x]: a '\"'\n\n[x]"),
         "<p><a href=\"a\" title=\"&quot;\">x</a></p>",
-        "should support double quoted titles"
+        "should support single quoted titles"
     );
 
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[x]: a (\"\")\n\n[x]"),
-    //     "<p><a href=\"a\" title=\"&quot;\"\">x</a></p>",
-    //     "should support paren enclosed titles"
-    // );
+    assert_eq!(
+        micromark("[x]: a (\"')\n\n[x]"),
+        "<p><a href=\"a\" title=\"&quot;'\">x</a></p>",
+        "should support paren enclosed titles"
+    );
 
     assert_eq!(
         micromark("[x]: a(()\n\n[x]"),
@@ -305,12 +302,11 @@ fn definition() {
         "should support trailing whitespace after a destination"
     );
 
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[x]: a \"\"X \t\n\n[x]"),
-    //     "<p><a href=\"a\" title=\"\"X>x</a></p>",
-    //     "should support trailing whitespace after a destination"
-    // );
+    assert_eq!(
+        micromark("[x]: a \"X\" \t\n\n[x]"),
+        "<p><a href=\"a\" title=\"X\">x</a></p>",
+        "should support trailing whitespace after a title"
+    );
 
     assert_eq!(
         micromark("[&amp;&copy;&]: example.com/&amp;&copy;& \"&amp;&copy;&\"\n\n[&amp;&copy;&]"),
@@ -331,12 +327,11 @@ fn definition() {
     );
 
     // See: <https://github.com/commonmark/commonmark.js/issues/192>
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[x]: <> \"\"\n[][x]"),
-    //     "<p><a href=\"\"></a></p>",
-    //     "should ignore an empty title"
-    // );
+    assert_eq!(
+        micromark("[x]: <> \"\"\n[][x]"),
+        "<p><a href=\"\"></a></p>",
+        "should ignore an empty title"
+    );
 
     assert_eq!(
         micromark_with_options("[a]\n\n[a]: <b<c>", DANGER),
@@ -362,12 +357,11 @@ fn definition() {
         "should not support an extra right paren (`)`) in a raw destination"
     );
 
-    // To do: some bug.
-    // assert_eq!(
-    //     micromark("[a]\n\n[a]: a(1(2(3(4()))))b"),
-    //     "<p><a href=\"a(1(2(3(4()))))b\">a</a></p>\n",
-    //     "should support 4 or more sets of parens in a raw destination (link resources don’t)"
-    // );
+    assert_eq!(
+        micromark("[a]\n\n[a]: a(1(2(3(4()))))b"),
+        "<p><a href=\"a(1(2(3(4()))))b\">a</a></p>\n",
+        "should support 4 or more sets of parens in a raw destination (link resources don’t)"
+    );
 
     assert_eq!(
         micromark("[a]\n\n[a]: aaa)"),
@@ -381,14 +375,14 @@ fn definition() {
         "should not support a final (unbalanced) right paren in a raw destination “before” a title"
     );
 
-    // To do: some bug.
+    // To do: do not let code (indented) interrupt definitions.
     // assert_eq!(
     //     micromark(" [a]: b \"c\"\n  [d]: e\n   [f]: g \"h\"\n    [i]: j\n\t[k]: l (m)\n\t n [k] o"),
     //     "<p>n <a href=\"l\" title=\"m\">k</a> o</p>",
     //     "should support subsequent indented definitions"
     // );
 
-    // To do: some bug.
+    // To do: trim whitespace in paragraphs.
     // assert_eq!(
     //     micromark("[a\n  b]: c\n\n[a\n  b]"),
     //     "<p><a href=\"c\">a\nb</a></p>",

@@ -2,6 +2,7 @@
 use crate::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
 use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::tokenizer::{Code, Event, EventType, TokenType};
+use crate::util::normalize_identifier::normalize_identifier;
 use crate::util::{
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
@@ -431,16 +432,14 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         TokenType::DefinitionDestinationString,
         on_enter_definition_destination_string,
     );
+    enter_map.insert(TokenType::ReferenceString, on_enter_buffer);
     enter_map.insert(TokenType::DefinitionLabelString, on_enter_buffer);
     enter_map.insert(TokenType::DefinitionTitleString, on_enter_buffer);
 
     let mut exit_map: Map = HashMap::new();
     exit_map.insert(TokenType::Label, on_exit_label);
     exit_map.insert(TokenType::LabelText, on_exit_label_text);
-    exit_map.insert(
-        TokenType::ReferenceString,
-        on_exit_reference_destination_string,
-    );
+    exit_map.insert(TokenType::ReferenceString, on_exit_reference_string);
     exit_map.insert(
         TokenType::ResourceDestinationString,
         on_exit_resource_destination_string,
@@ -525,11 +524,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
             &exit_map
         };
 
-        println!(
-            "handle {:?}:{:?} ({:?})",
-            event.event_type, event.token_type, index
-        );
-
         if let Some(func) = map.get(&event.token_type) {
             func(context, event);
         }
@@ -561,8 +555,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         index += 1;
     }
 
-    println!("xxx: {:?}", definition_indices);
-
     index = 0;
     let jump_default = (events.len(), events.len());
     let mut definition_index = 0;
@@ -572,12 +564,12 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
 
     while index < events.len() {
         if index == jump.0 {
-            println!("jump {:?}", jump);
             index = jump.1 + 1;
             definition_index += 1;
             jump = definition_indices
                 .get(definition_index)
                 .unwrap_or(&jump_default);
+            context.slurp_one_line_ending = true;
         } else {
             handle(&mut context, index);
             index += 1;
@@ -683,7 +675,9 @@ fn on_exit_label_text(context: &mut CompileContext, _event: &Event) {
     ));
 }
 
-fn on_exit_reference_destination_string(context: &mut CompileContext, _event: &Event) {
+fn on_exit_reference_string(context: &mut CompileContext, _event: &Event) {
+    // Drop stuff.
+    context.resume();
     let media = context.media_stack.last_mut().unwrap();
     media.reference_id = Some(serialize(
         context.codes,
@@ -720,7 +714,10 @@ fn on_exit_media(context: &mut CompileContext, _event: &Event) {
     // context.tags = is_in_image;
 
     let media = context.media_stack.pop().unwrap();
-    let id = media.reference_id.or(media.label_id);
+    let id = media
+        .reference_id
+        .or(media.label_id)
+        .map(|id| normalize_identifier(&id));
     let label = media.label.unwrap();
     let definition = id.and_then(|id| context.definitions.get(&id));
     let destination = if let Some(definition) = definition {
@@ -733,8 +730,6 @@ fn on_exit_media(context: &mut CompileContext, _event: &Event) {
     } else {
         &media.title
     };
-
-    println!("media: {:?} {:?}", destination, title);
 
     let destination = if let Some(destination) = destination {
         destination.clone()
@@ -1047,8 +1042,7 @@ fn on_exit_definition_label_string(context: &mut CompileContext, _event: &Event)
     // Discard label, use the source content instead.
     context.resume();
     let definition = context.media_stack.last_mut().unwrap();
-    // To do: put this on `reference_id` instead?
-    definition.label_id = Some(serialize(
+    definition.reference_id = Some(serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
         false,
@@ -1063,13 +1057,14 @@ fn on_exit_definition_title_string(context: &mut CompileContext, _event: &Event)
 
 fn on_exit_definition(context: &mut CompileContext, _event: &Event) {
     let definition = context.media_stack.pop().unwrap();
-    let label_id = definition.label_id.unwrap();
+    let reference_id = normalize_identifier(&definition.reference_id.unwrap());
     let destination = definition.destination;
     let title = definition.title;
 
     context.resume();
+
     context
         .definitions
-        .insert(label_id, Definition { destination, title });
-    context.slurp_one_line_ending = true;
+        .entry(reference_id)
+        .or_insert(Definition { destination, title });
 }

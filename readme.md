@@ -143,15 +143,15 @@ cargo doc --document-private-items
 #### Parse
 
 - [ ] (1) Parse initial and final space_or_tab of paragraphs (in text)\
-       test (`code_indented`, `hard_break_escape`, `hard_break_trailing`,
+       test (`code_indented`, `definition`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
       `misc_tabs`, `thematic_break`)
-- [ ] (3) Interrupting (html flow complete)
+- [ ] (3) Interrupting (html flow complete, definition + code_indented)
 - [ ] (5) attention\
        test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `thematic_break`)\
 - [ ] (8) block quote\
-       test (`code_fenced`, `code_indented`, `heading_atx`, `heading_setext`,
+       test (`code_fenced`, `definition`, `code_indented`, `heading_atx`, `heading_setext`,
       `html_flow`, `misc_default_line_ending`, `thematic_break`)
 - [ ] (8) list\
        test (`character_reference`, `code_indented`, `heading_setext`,
