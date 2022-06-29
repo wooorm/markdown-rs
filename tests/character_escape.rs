@@ -67,12 +67,11 @@ fn character_escape() {
         "should escape in resource and title"
     );
 
-    // To do: link (reference).
-    // assert_eq!(
-    //     micromark("[foo]: /bar\\* \"ti\\*tle\"\n\n[foo]"),
-    //     "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>",
-    //     "should escape in definition resource and title"
-    // );
+    assert_eq!(
+        micromark("[foo]: /bar\\* \"ti\\*tle\"\n\n[foo]"),
+        "<p><a href=\"/bar*\" title=\"ti*tle\">foo</a></p>",
+        "should escape in definition resource and title"
+    );
 
     assert_eq!(
         micromark("``` foo\\+bar\nfoo\n```"),

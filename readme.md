@@ -147,8 +147,6 @@ cargo doc --document-private-items
       `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
       `misc_tabs`, `thematic_break`)
 - [ ] (3) Interrupting (html flow complete)
-- [ ] (5) label end (reference)\
-       test (`character_escape`, `character_reference`, `definition`)
 - [ ] (5) attention\
        test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `thematic_break`)\
@@ -284,3 +282,4 @@ important.
 - [x] (1) Move map handling from `resolve_media`
 - [x] (5) Add support for sharing identifiers, references before definitions
 - [x] (2) Refactor to externalize handlers of compiler
+- [x] (1) Add support for compiling shared references and definitions
