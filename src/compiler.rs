@@ -620,6 +620,25 @@ fn on_enter_code_text(context: &mut CompileContext) {
     context.buffer();
 }
 
+/// Handle [`Enter`][EventType::Enter]:[`Definition`][TokenType::Definition].
+fn on_enter_definition(context: &mut CompileContext) {
+    context.buffer();
+    context.media_stack.push(Media {
+        image: false,
+        label: None,
+        label_id: None,
+        reference_id: None,
+        destination: None,
+        title: None,
+    });
+}
+
+/// Handle [`Enter`][EventType::Enter]:[`DefinitionDestinationString`][TokenType::DefinitionDestinationString].
+fn on_enter_definition_destination_string(context: &mut CompileContext) {
+    context.buffer();
+    context.ignore_encode = true;
+}
+
 /// Handle [`Enter`][EventType::Enter]:[`HtmlFlow`][TokenType::HtmlFlow].
 fn on_enter_html_flow(context: &mut CompileContext) {
     context.line_ending_if_needed();
@@ -660,6 +679,11 @@ fn on_enter_link(context: &mut CompileContext) {
     });
 }
 
+/// Handle [`Enter`][EventType::Enter]:[`Paragraph`][TokenType::Paragraph].
+fn on_enter_paragraph(context: &mut CompileContext) {
+    context.buf_tail_mut().push("<p>".to_string());
+}
+
 /// Handle [`Enter`][EventType::Enter]:[`Resource`][TokenType::Resource].
 fn on_enter_resource(context: &mut CompileContext) {
     context.buffer(); // We can have line endings in the resource, ignore them.
@@ -673,130 +697,6 @@ fn on_enter_resource_destination_string(context: &mut CompileContext) {
     // Ignore encoding the result, as we’ll first percent encode the url and
     // encode manually after.
     context.ignore_encode = true;
-}
-
-/// Handle [`Enter`][EventType::Enter]:[`Paragraph`][TokenType::Paragraph].
-fn on_enter_paragraph(context: &mut CompileContext) {
-    context.buf_tail_mut().push("<p>".to_string());
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`Label`][TokenType::Label].
-fn on_exit_label(context: &mut CompileContext) {
-    let buf = context.resume();
-    let media = context.media_stack.last_mut().unwrap();
-    media.label = Some(buf);
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`LabelText`][TokenType::LabelText].
-fn on_exit_label_text(context: &mut CompileContext) {
-    let media = context.media_stack.last_mut().unwrap();
-    media.label_id = Some(serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`ReferenceString`][TokenType::ReferenceString].
-fn on_exit_reference_string(context: &mut CompileContext) {
-    // Drop stuff.
-    context.resume();
-    let media = context.media_stack.last_mut().unwrap();
-    media.reference_id = Some(serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`ResourceDestinationString`][TokenType::ResourceDestinationString].
-fn on_exit_resource_destination_string(context: &mut CompileContext) {
-    let buf = context.resume();
-    let media = context.media_stack.last_mut().unwrap();
-    media.destination = Some(buf);
-    context.ignore_encode = false;
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`ResourceTitleString`][TokenType::ResourceTitleString].
-fn on_exit_resource_title_string(context: &mut CompileContext) {
-    let buf = context.resume();
-    let media = context.media_stack.last_mut().unwrap();
-    media.title = Some(buf);
-}
-
-/// Handle [`Exit`][EventType::Exit]:{[`Image`][TokenType::Image],[`Link`][TokenType::Link]}.
-fn on_exit_media(context: &mut CompileContext) {
-    let mut is_in_image = false;
-    let mut index = 0;
-    // Skip current.
-    while index < (context.media_stack.len() - 1) {
-        if context.media_stack[index].image {
-            is_in_image = true;
-            break;
-        }
-        index += 1;
-    }
-
-    // context.tags = is_in_image;
-
-    let media = context.media_stack.pop().unwrap();
-    let id = media
-        .reference_id
-        .or(media.label_id)
-        .map(|id| normalize_identifier(&id));
-    let label = media.label.unwrap();
-    let definition = id.and_then(|id| context.definitions.get(&id));
-    let destination = if let Some(definition) = definition {
-        &definition.destination
-    } else {
-        &media.destination
-    };
-    let title = if let Some(definition) = definition {
-        &definition.title
-    } else {
-        &media.title
-    };
-
-    let destination = if let Some(destination) = destination {
-        destination.clone()
-    } else {
-        "".to_string()
-    };
-
-    let title = if let Some(title) = title {
-        format!(" title=\"{}\"", title)
-    } else {
-        "".to_string()
-    };
-
-    let result = if media.image {
-        format!(
-            "<img src=\"{}\" alt=\"{}\"{} />",
-            sanitize_uri(&destination, &context.protocol_src),
-            label,
-            title
-        )
-    } else {
-        format!(
-            "<a href=\"{}\"{}>{}</a>",
-            sanitize_uri(&destination, &context.protocol_href),
-            title,
-            label
-        )
-    };
-
-    context.push(result);
-}
-
-/// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][TokenType::CodeTextData],[`Data`][TokenType::Data],[`CharacterEscapeValue`][TokenType::CharacterEscapeValue]}.
-fn on_exit_data(context: &mut CompileContext) {
-    // Just output it.
-    // last_was_tag = false;
-    context.push(context.encode_opt(&serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    )));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkEmail`][TokenType::AutolinkEmail].
@@ -827,19 +727,24 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
     ));
 }
 
+/// Handle [`Exit`][EventType::Exit]:{[`HardBreakEscape`][TokenType::HardBreakEscape],[`HardBreakTrailing`][TokenType::HardBreakTrailing]}.
+fn on_exit_break(context: &mut CompileContext) {
+    context.push("<br />".to_string());
+}
+
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker].
 fn on_exit_character_reference_marker(context: &mut CompileContext) {
     context.character_reference_kind = Some(CharacterReferenceKind::Named);
 }
 
-/// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarkerNumeric`][TokenType::CharacterReferenceMarkerNumeric].
-fn on_exit_character_reference_marker_numeric(context: &mut CompileContext) {
-    context.character_reference_kind = Some(CharacterReferenceKind::Decimal);
-}
-
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarkerHexadecimal`][TokenType::CharacterReferenceMarkerHexadecimal].
 fn on_exit_character_reference_marker_hexadecimal(context: &mut CompileContext) {
     context.character_reference_kind = Some(CharacterReferenceKind::Hexadecimal);
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarkerNumeric`][TokenType::CharacterReferenceMarkerNumeric].
+fn on_exit_character_reference_marker_numeric(context: &mut CompileContext) {
+    context.character_reference_kind = Some(CharacterReferenceKind::Decimal);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceValue`][TokenType::CharacterReferenceValue].
@@ -861,6 +766,40 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
     };
 
     context.push(context.encode_opt(&value));
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][TokenType::CodeFlowChunk].
+fn on_exit_code_flow_chunk(context: &mut CompileContext) {
+    context.code_flow_seen_data = Some(true);
+    context.push(context.encode_opt(&serialize(
+        context.codes,
+        &from_exit_event(context.events, context.index),
+        false,
+    )));
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`CodeFencedFence`][TokenType::CodeFencedFence].
+fn on_exit_code_fenced_fence(context: &mut CompileContext) {
+    let count = if let Some(count) = context.code_fenced_fences_count {
+        count
+    } else {
+        0
+    };
+
+    if count == 0 {
+        context.push(">".to_string());
+        // tag = true;
+        context.slurp_one_line_ending = true;
+    }
+
+    context.code_fenced_fences_count = Some(count + 1);
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo].
+fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
+    let value = context.resume();
+    context.push(format!(" class=\"language-{}\"", value));
+    // tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`CodeFenced`][TokenType::CodeFenced],[`CodeIndented`][TokenType::CodeIndented]}.
@@ -897,47 +836,6 @@ fn on_exit_code_flow(context: &mut CompileContext) {
     context.slurp_one_line_ending = false;
 }
 
-/// Handle [`Exit`][EventType::Exit]:[`CodeFencedFence`][TokenType::CodeFencedFence].
-fn on_exit_code_fenced_fence(context: &mut CompileContext) {
-    let count = if let Some(count) = context.code_fenced_fences_count {
-        count
-    } else {
-        0
-    };
-
-    if count == 0 {
-        context.push(">".to_string());
-        // tag = true;
-        context.slurp_one_line_ending = true;
-    }
-
-    context.code_fenced_fences_count = Some(count + 1);
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo].
-fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
-    let value = context.resume();
-    context.push(format!(" class=\"language-{}\"", value));
-    // tag = true;
-}
-
-/// Handle [`Exit`][EventType::Exit]:*.
-///
-/// Resumes, and ignores what was resumed.
-fn on_exit_drop(context: &mut CompileContext) {
-    context.resume();
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][TokenType::CodeFlowChunk].
-fn on_exit_code_flow_chunk(context: &mut CompileContext) {
-    context.code_flow_seen_data = Some(true);
-    context.push(context.encode_opt(&serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    )));
-}
-
 /// Handle [`Exit`][EventType::Exit]:[`CodeText`][TokenType::CodeText].
 fn on_exit_code_text(context: &mut CompileContext) {
     let result = context.resume();
@@ -967,9 +865,64 @@ fn on_exit_code_text_line_ending(context: &mut CompileContext) {
     context.push(" ".to_string());
 }
 
-/// Handle [`Exit`][EventType::Exit]:{[`HardBreakEscape`][TokenType::HardBreakEscape],[`HardBreakTrailing`][TokenType::HardBreakTrailing]}.
-fn on_exit_break(context: &mut CompileContext) {
-    context.push("<br />".to_string());
+/// Handle [`Exit`][EventType::Exit]:*.
+///
+/// Resumes, and ignores what was resumed.
+fn on_exit_drop(context: &mut CompileContext) {
+    context.resume();
+}
+
+/// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][TokenType::CodeTextData],[`Data`][TokenType::Data],[`CharacterEscapeValue`][TokenType::CharacterEscapeValue]}.
+fn on_exit_data(context: &mut CompileContext) {
+    // Just output it.
+    // last_was_tag = false;
+    context.push(context.encode_opt(&serialize(
+        context.codes,
+        &from_exit_event(context.events, context.index),
+        false,
+    )));
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`Definition`][TokenType::Definition].
+fn on_exit_definition(context: &mut CompileContext) {
+    let definition = context.media_stack.pop().unwrap();
+    let reference_id = normalize_identifier(&definition.reference_id.unwrap());
+    let destination = definition.destination;
+    let title = definition.title;
+
+    context.resume();
+
+    context
+        .definitions
+        .entry(reference_id)
+        .or_insert(Definition { destination, title });
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`DefinitionDestinationString`][TokenType::DefinitionDestinationString].
+fn on_exit_definition_destination_string(context: &mut CompileContext) {
+    let buf = context.resume();
+    let definition = context.media_stack.last_mut().unwrap();
+    definition.destination = Some(buf);
+    context.ignore_encode = false;
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`DefinitionLabelString`][TokenType::DefinitionLabelString].
+fn on_exit_definition_label_string(context: &mut CompileContext) {
+    // Discard label, use the source content instead.
+    context.resume();
+    let definition = context.media_stack.last_mut().unwrap();
+    definition.reference_id = Some(serialize(
+        context.codes,
+        &from_exit_event(context.events, context.index),
+        false,
+    ));
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`DefinitionTitleString`][TokenType::DefinitionTitleString].
+fn on_exit_definition_title_string(context: &mut CompileContext) {
+    let buf = context.resume();
+    let definition = context.media_stack.last_mut().unwrap();
+    definition.title = Some(buf);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtx`][TokenType::HeadingAtx].
@@ -1041,6 +994,23 @@ fn on_exit_html_data(context: &mut CompileContext) {
     context.push(context.encode_opt(&slice));
 }
 
+/// Handle [`Exit`][EventType::Exit]:[`Label`][TokenType::Label].
+fn on_exit_label(context: &mut CompileContext) {
+    let buf = context.resume();
+    let media = context.media_stack.last_mut().unwrap();
+    media.label = Some(buf);
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`LabelText`][TokenType::LabelText].
+fn on_exit_label_text(context: &mut CompileContext) {
+    let media = context.media_stack.last_mut().unwrap();
+    media.label_id = Some(serialize(
+        context.codes,
+        &from_exit_event(context.events, context.index),
+        false,
+    ));
+}
+
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][TokenType::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
     // if slurp_all_line_endings {
@@ -1057,73 +1027,103 @@ fn on_exit_line_ending(context: &mut CompileContext) {
     }
 }
 
+/// Handle [`Exit`][EventType::Exit]:{[`Image`][TokenType::Image],[`Link`][TokenType::Link]}.
+fn on_exit_media(context: &mut CompileContext) {
+    let mut is_in_image = false;
+    let mut index = 0;
+    // Skip current.
+    while index < (context.media_stack.len() - 1) {
+        if context.media_stack[index].image {
+            is_in_image = true;
+            break;
+        }
+        index += 1;
+    }
+
+    // context.tags = is_in_image;
+
+    let media = context.media_stack.pop().unwrap();
+    let id = media
+        .reference_id
+        .or(media.label_id)
+        .map(|id| normalize_identifier(&id));
+    let label = media.label.unwrap();
+    let definition = id.and_then(|id| context.definitions.get(&id));
+    let destination = if let Some(definition) = definition {
+        &definition.destination
+    } else {
+        &media.destination
+    };
+    let title = if let Some(definition) = definition {
+        &definition.title
+    } else {
+        &media.title
+    };
+
+    let destination = if let Some(destination) = destination {
+        destination.clone()
+    } else {
+        "".to_string()
+    };
+
+    let title = if let Some(title) = title {
+        format!(" title=\"{}\"", title)
+    } else {
+        "".to_string()
+    };
+
+    let result = if media.image {
+        format!(
+            "<img src=\"{}\" alt=\"{}\"{} />",
+            sanitize_uri(&destination, &context.protocol_src),
+            label,
+            title
+        )
+    } else {
+        format!(
+            "<a href=\"{}\"{}>{}</a>",
+            sanitize_uri(&destination, &context.protocol_href),
+            title,
+            label
+        )
+    };
+
+    context.push(result);
+}
+
 /// Handle [`Exit`][EventType::Exit]:[`Paragraph`][TokenType::Paragraph].
 fn on_exit_paragraph(context: &mut CompileContext) {
     context.push("</p>".to_string());
 }
 
-/// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][TokenType::ThematicBreak].
-fn on_exit_thematic_break(context: &mut CompileContext) {
-    context.push("<hr />".to_string());
-}
-
-/// Handle [`Enter`][EventType::Enter]:[`Definition`][TokenType::Definition].
-fn on_enter_definition(context: &mut CompileContext) {
-    context.buffer();
-    context.media_stack.push(Media {
-        image: false,
-        label: None,
-        label_id: None,
-        reference_id: None,
-        destination: None,
-        title: None,
-    });
-}
-
-/// Handle [`Enter`][EventType::Enter]:[`DefinitionDestinationString`][TokenType::DefinitionDestinationString].
-fn on_enter_definition_destination_string(context: &mut CompileContext) {
-    context.buffer();
-    context.ignore_encode = true;
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`DefinitionDestinationString`][TokenType::DefinitionDestinationString].
-fn on_exit_definition_destination_string(context: &mut CompileContext) {
-    let buf = context.resume();
-    let definition = context.media_stack.last_mut().unwrap();
-    definition.destination = Some(buf);
-    context.ignore_encode = false;
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`DefinitionLabelString`][TokenType::DefinitionLabelString].
-fn on_exit_definition_label_string(context: &mut CompileContext) {
-    // Discard label, use the source content instead.
+/// Handle [`Exit`][EventType::Exit]:[`ReferenceString`][TokenType::ReferenceString].
+fn on_exit_reference_string(context: &mut CompileContext) {
+    // Drop stuff.
     context.resume();
-    let definition = context.media_stack.last_mut().unwrap();
-    definition.reference_id = Some(serialize(
+    let media = context.media_stack.last_mut().unwrap();
+    media.reference_id = Some(serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
         false,
     ));
 }
 
-/// Handle [`Exit`][EventType::Exit]:[`DefinitionTitleString`][TokenType::DefinitionTitleString].
-fn on_exit_definition_title_string(context: &mut CompileContext) {
+/// Handle [`Exit`][EventType::Exit]:[`ResourceDestinationString`][TokenType::ResourceDestinationString].
+fn on_exit_resource_destination_string(context: &mut CompileContext) {
     let buf = context.resume();
-    let definition = context.media_stack.last_mut().unwrap();
-    definition.title = Some(buf);
+    let media = context.media_stack.last_mut().unwrap();
+    media.destination = Some(buf);
+    context.ignore_encode = false;
 }
 
-/// Handle [`Exit`][EventType::Exit]:[`Definition`][TokenType::Definition].
-fn on_exit_definition(context: &mut CompileContext) {
-    let definition = context.media_stack.pop().unwrap();
-    let reference_id = normalize_identifier(&definition.reference_id.unwrap());
-    let destination = definition.destination;
-    let title = definition.title;
+/// Handle [`Exit`][EventType::Exit]:[`ResourceTitleString`][TokenType::ResourceTitleString].
+fn on_exit_resource_title_string(context: &mut CompileContext) {
+    let buf = context.resume();
+    let media = context.media_stack.last_mut().unwrap();
+    media.title = Some(buf);
+}
 
-    context.resume();
-
-    context
-        .definitions
-        .entry(reference_id)
-        .or_insert(Definition { destination, title });
+/// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][TokenType::ThematicBreak].
+fn on_exit_thematic_break(context: &mut CompileContext) {
+    context.push("<hr />".to_string());
 }
