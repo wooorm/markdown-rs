@@ -33,12 +33,13 @@ use crate::util::{
     normalize_identifier::normalize_identifier,
     span::{from_exit_event, serialize},
 };
+use std::collections::HashSet;
 
 /// Turn `codes` as the flow content type into events.
-pub fn flow(parse_state: &ParseState, point: Point, index: usize) -> Vec<Event> {
+pub fn flow(parse_state: &mut ParseState, point: Point, index: usize) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, index, parse_state);
-
     tokenizer.push(&parse_state.codes, Box::new(start), true);
+    let mut next_definitions: HashSet<String> = HashSet::new();
 
     let mut index = 0;
 
@@ -48,21 +49,22 @@ pub fn flow(parse_state: &ParseState, point: Point, index: usize) -> Vec<Event> 
         if event.event_type == EventType::Exit
             && event.token_type == TokenType::DefinitionLabelString
         {
-            let id = normalize_identifier(
+            next_definitions.insert(normalize_identifier(
                 serialize(
                     &parse_state.codes,
                     &from_exit_event(&tokenizer.events, index),
                     false,
                 )
                 .as_str(),
-            );
-            println!("to do: use definition identifier {:?}", id);
+            ));
         }
 
         index += 1;
     }
 
     let mut result = (tokenizer.events, false);
+
+    parse_state.definitions = next_definitions;
 
     while !result.1 {
         result = subtokenize(result.0, parse_state);

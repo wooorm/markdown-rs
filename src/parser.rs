@@ -4,24 +4,32 @@
 use crate::content::flow::flow;
 use crate::tokenizer::{as_codes, Code, Event, Point};
 
+/// To do: could we do without `HashSet`, so we don’t need `std`?
+use std::collections::HashSet;
+
+/// Information needed, in all content types, when parsing markdown.
+///
+/// Importantly, this contains a set of known definitions.
+/// It also references the input value as [`Code`][]s.
+#[derive(Debug)]
 pub struct ParseState {
-    /// To do.
+    /// List of codes.
     pub codes: Vec<Code>,
-    /// To do.
-    pub definitions: Vec<String>,
+    /// Set of defined identifiers.
+    pub definitions: HashSet<String>,
 }
 
 /// Turn a string of markdown into events.
 ///
 /// Passes the codes back so the compiler can access the source.
 pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
-    let parse_state = ParseState {
+    let mut parse_state = ParseState {
         codes: as_codes(value),
-        definitions: vec![],
+        definitions: HashSet::new(),
     };
 
     let events = flow(
-        &parse_state,
+        &mut parse_state,
         Point {
             line: 1,
             column: 1,

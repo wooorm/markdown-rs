@@ -71,31 +71,14 @@ impl EditMap {
         assert!(!self.consumed, "cannot consume after consuming");
         self.consumed = true;
 
-        let mut index = 0;
-
-        while index < events.len() {
-            let event = &events[index];
-            println!(
-                "ev: {:?} {:?} {:?} {:?} {:?} {:?}",
-                index,
-                event.event_type,
-                event.token_type,
-                event.content_type,
-                event.previous,
-                event.next
-            );
-            index += 1;
-        }
-
         indices.sort_unstable();
 
         let mut jumps: Vec<(usize, isize)> = vec![];
         let mut index_into_indices = 0;
-        let mut shift: isize = 0;
+        let mut shift = 0;
         while index_into_indices < indices.len() {
             let index = *indices[index_into_indices];
             let edit = self.map.get(&index).unwrap();
-            println!("?? {:?} {:?} {:?}", shift, edit.1.len(), edit.0);
 
             #[allow(clippy::pedantic)]
             let next = shift + (edit.1.len() as isize) - (edit.0 as isize);

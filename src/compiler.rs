@@ -91,6 +91,14 @@ struct Media {
     title: Option<String>,
 }
 
+/// To do.
+#[derive(Debug, Clone, PartialEq)]
+struct DefinitionInfo {
+    id: Option<String>,
+    destination: Option<String>,
+    title: Option<String>,
+}
+
 /// Configuration (optional).
 #[derive(Default, Debug)]
 pub struct Options {
@@ -226,17 +234,39 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut media_stack: Vec<Media> = vec![];
 
     // let mut slurp_all_line_endings = false;
+    let mut definition: Option<DefinitionInfo> = None;
+
+    // To do: actually do a compile pass, so that `buffer`, `resume`, etc can be used.
     while index < events.len() {
         let event = &events[index];
 
-        if event.event_type == EventType::Exit
+        // Find the used line ending style.
+        if line_ending_inferred.is_none()
+            && event.event_type == EventType::Exit
             && (event.token_type == TokenType::BlankLineEnding
                 || event.token_type == TokenType::CodeTextLineEnding
                 || event.token_type == TokenType::LineEnding)
         {
             let codes = codes_from_span(codes, &from_exit_event(events, index));
             line_ending_inferred = Some(LineEnding::from_code(*codes.first().unwrap()));
-            break;
+        }
+
+        if event.event_type == EventType::Enter {
+            if event.token_type == TokenType::Definition {
+                definition = Some(DefinitionInfo {
+                    id: None,
+                    destination: None,
+                    title: None,
+                });
+            }
+        } else if event.token_type == TokenType::Definition {
+            definition = None;
+        } else if event.token_type == TokenType::DefinitionLabelString
+            || event.token_type == TokenType::DefinitionDestinationString
+            || event.token_type == TokenType::DefinitionTitleString
+        {
+            let slice = serialize(codes, &from_exit_event(events, index), false);
+            println!("set: {:?} {:?}", slice, definition);
         }
 
         index += 1;
@@ -250,7 +280,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         LineEnding::LineFeed
     };
 
-    index = 0;
+    let mut index = 0;
 
     while index < events.len() {
         let event = &events[index];
@@ -483,7 +513,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
                     let label = media.label.unwrap();
                     let buf = buf_tail_mut(buffers);
                     // To do: get from definition.
-                    let destination = media.destination.unwrap();
+                    let destination = media.destination.unwrap_or_else(|| "".to_string());
                     let title = if let Some(title) = media.title {
                         format!(" title=\"{}\"", title)
                     } else {

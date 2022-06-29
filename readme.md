@@ -180,6 +180,8 @@ cargo doc --document-private-items
 - [ ] (1) Remove todos in `span.rs` if not needed
 - [ ] (1) Get markers from constructs (`string`, `text`)
 - [ ] (3) Clean compiler
+- [ ] (3) Read through rust docs to figure out what useful functions there are,
+      and fix stuff I’m doing manually now
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
       how to integrate with streams or so?
 - [ ] (1) Go through clippy rules, and such, to add strict code styles

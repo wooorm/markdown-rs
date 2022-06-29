@@ -413,13 +413,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a]: z
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    // let label_start = tokenizer
-    //     .label_start_stack
-    //     .get_mut(info.label_start_index)
-    //     .unwrap();
-    // To do: figure out if defined or not.
-    let defined = false;
-    println!("to do: is `{:?}` defined?", info);
+    let defined = tokenizer.parse_state.definitions.contains(&info.media.id);
+
     match code {
         // Resource (`[asd](fgh)`)?
         Code::Char('(') => tokenizer.attempt(resource, move |is_ok| {
@@ -487,10 +482,6 @@ fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// [a]: z
 /// ```
 fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
-    println!(
-        "ok res, ref full, ref, collapsed, or ref shortcut: {:?}",
-        info.media
-    );
     // Remove this one and everything after it.
     let mut left: Vec<LabelStart> = tokenizer
         .label_start_stack
@@ -725,8 +716,8 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
         },
         false,
     ));
-    println!("to do: is `{:?}` defined?", id);
-    let defined = false;
+    let defined = tokenizer.parse_state.definitions.contains(&id);
+    // To do: set `id` on the media somehow?
 
     if defined {
         (State::Ok, Some(vec![code]))
