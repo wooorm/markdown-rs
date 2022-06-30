@@ -123,8 +123,6 @@ cargo doc --document-private-items
 #### Docs
 
 - [ ] (1) `space_or_tab_one_line_ending`
-- [ ] (1) `ParseState`
-- [ ] (1) Resolvers, push, feed, etc.
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add overview docs on how everything works
@@ -283,3 +281,4 @@ important.
 - [x] (2) Refactor to externalize handlers of compiler
 - [x] (1) Add support for compiling shared references and definitions
 - [x] (1) Add docs to Image, Link, and other media tokens
+- [x] (1) Add docs on resolver, clean feed

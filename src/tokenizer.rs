@@ -1595,10 +1595,12 @@ pub enum TokenType {
     ThematicBreakSequence,
 }
 
-/// To do
+/// Embedded content type.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContentType {
+    /// Represents [text content][crate::content::text].
     Text,
+    /// Represents [string content][crate::content::string].
     String,
 }
 
@@ -1665,7 +1667,11 @@ pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> StateFnResult;
 /// In certain cases, it can also yield back up parsed codes that were passed down.
 pub type StateFnResult = (State, Option<Vec<Code>>);
 
-/// To do.
+/// Callback that can be registered and is called when the tokenizer is done.
+///
+/// Resolvers are supposed to change the list of events, because parsing is
+/// sometimes messy, and they help expose a cleaner interface of events to
+/// the compiler and other users.
 pub type Resolver = dyn FnOnce(&mut Tokenizer) -> Vec<Event>;
 
 /// The result of a state.
@@ -1678,10 +1684,10 @@ pub enum State {
     Nok,
 }
 
-/// To do.
+/// Loose label starts we found.
 #[derive(Debug)]
 pub struct LabelStart {
-    /// To do.
+    /// Indices of where the label starts and ends in `events`.
     pub start: (usize, usize),
     /// A boolean used internally to figure out if a label start link can’t be
     /// used (because links in links are incorrect).
@@ -1691,14 +1697,14 @@ pub struct LabelStart {
     pub balanced: bool,
 }
 
-/// To do.
+/// Media we found.
 #[derive(Debug)]
 pub struct Media {
-    /// To do.
+    /// Indices of where the media’s label start starts and ends in `events`.
     pub start: (usize, usize),
-    /// To do.
+    /// Indices of where the media’s label end starts and ends in `events`.
     pub end: (usize, usize),
-    /// To do.
+    /// Identifier
     pub id: String,
 }
 
@@ -1731,6 +1737,8 @@ pub struct Tokenizer<'a> {
     ///
     /// Tracked to make sure everything’s valid.
     consumed: bool,
+    /// Track whether this tokenizer is done.
+    drained: bool,
     /// Semantic labels of one or more codes in `codes`.
     pub events: Vec<Event>,
     /// Hierarchy of semantic labels.
@@ -1767,6 +1775,7 @@ impl<'a> Tokenizer<'a> {
             column_start: HashMap::new(),
             index,
             consumed: true,
+            drained: false,
             point,
             stack: vec![],
             events: vec![],
@@ -1955,7 +1964,12 @@ impl<'a> Tokenizer<'a> {
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
                 if ok {
-                    tokenizer.feed(&if ok { result.1 } else { result.0 }, after, false)
+                    feed_impl(
+                        tokenizer,
+                        &if ok { result.1 } else { result.0 },
+                        after,
+                        false,
+                    )
                 } else {
                     (State::Nok, None)
                 }
@@ -1984,7 +1998,7 @@ impl<'a> Tokenizer<'a> {
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
                 tokenizer.free(previous);
-                tokenizer.feed(&result.0, done(ok), false)
+                feed_impl(tokenizer, &result.0, done(ok), false)
             },
         )
     }
@@ -2023,7 +2037,7 @@ impl<'a> Tokenizer<'a> {
                     codes,
                     tokenizer.point
                 );
-                tokenizer.feed(&codes, done(ok), false)
+                feed_impl(tokenizer, &codes, done(ok), false)
             },
         )
     }
@@ -2063,80 +2077,19 @@ impl<'a> Tokenizer<'a> {
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
     /// When `done: true` is passed, the EOF is fed.
-    // To do: call this `feed_impl`, and rename `push` to `feed`?
-    fn feed(
-        &mut self,
-        codes: &[Code],
-        start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        drain: bool,
-    ) -> StateFnResult {
-        let codes = codes;
-        let mut state = State::Fn(Box::new(start));
-        let mut index = 0;
-
-        self.consumed = true;
-
-        while index < codes.len() {
-            let code = codes[index];
-
-            match state {
-                State::Nok | State::Ok => {
-                    break;
-                }
-                State::Fn(func) => {
-                    log::debug!("main: passing `{:?}`", code);
-                    self.expect(code);
-                    let (next, remainder) = check_statefn_result(func(self, code));
-                    state = next;
-                    index = index + 1
-                        - (if let Some(ref x) = remainder {
-                            x.len()
-                        } else {
-                            0
-                        });
-                }
-            }
-        }
-
-        // Yield to a higher loop if we shouldn’t feed EOFs.
-        if !drain {
-            return check_statefn_result((state, Some(codes[index..].to_vec())));
-        }
-
-        loop {
-            // Feed EOF.
-            match state {
-                State::Ok | State::Nok => break,
-                State::Fn(func) => {
-                    let code = Code::None;
-                    log::debug!("main: passing eof");
-                    self.expect(code);
-                    let (next, remainder) = check_statefn_result(func(self, code));
-                    assert!(remainder.is_none(), "expected no remainder");
-                    state = next;
-                }
-            }
-        }
-
-        match state {
-            State::Ok => {}
-            _ => unreachable!("expected final state to be `State::Ok`"),
-        }
-
-        check_statefn_result((state, None))
-    }
-
-    /// To do.
-    // To do: set a `drained` to prevent passing after draining?
     pub fn push(
         &mut self,
         codes: &[Code],
         start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
         drain: bool,
     ) -> StateFnResult {
-        let result = self.feed(codes, start, drain);
+        assert!(!self.drained, "cannot feed after drain");
+
+        let result = feed_impl(self, codes, start, drain);
 
         if drain {
+            self.drained = true;
+
             while !self.resolvers.is_empty() {
                 let resolver = self.resolvers.remove(0);
                 self.events = resolver(self);
@@ -2185,6 +2138,73 @@ fn attempt_impl(
             }
         }
     })
+}
+
+/// Feed a list of `codes` into `start`.
+///
+/// This is set up to support repeatedly calling `feed`, and thus streaming
+/// markdown into the state machine, and normally pauses after feeding.
+/// When `done: true` is passed, the EOF is fed.
+fn feed_impl(
+    tokenizer: &mut Tokenizer,
+    codes: &[Code],
+    start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+    drain: bool,
+) -> StateFnResult {
+    let codes = codes;
+    let mut state = State::Fn(Box::new(start));
+    let mut index = 0;
+
+    tokenizer.consumed = true;
+
+    while index < codes.len() {
+        let code = codes[index];
+
+        match state {
+            State::Nok | State::Ok => {
+                break;
+            }
+            State::Fn(func) => {
+                log::debug!("main: passing `{:?}`", code);
+                tokenizer.expect(code);
+                let (next, remainder) = check_statefn_result(func(tokenizer, code));
+                state = next;
+                index = index + 1
+                    - (if let Some(ref x) = remainder {
+                        x.len()
+                    } else {
+                        0
+                    });
+            }
+        }
+    }
+
+    // Yield to a higher loop if we shouldn’t feed EOFs.
+    if !drain {
+        return check_statefn_result((state, Some(codes[index..].to_vec())));
+    }
+
+    loop {
+        // Feed EOF.
+        match state {
+            State::Ok | State::Nok => break,
+            State::Fn(func) => {
+                let code = Code::None;
+                log::debug!("main: passing eof");
+                tokenizer.expect(code);
+                let (next, remainder) = check_statefn_result(func(tokenizer, code));
+                assert!(remainder.is_none(), "expected no remainder");
+                state = next;
+            }
+        }
+    }
+
+    match state {
+        State::Ok => {}
+        _ => unreachable!("expected final state to be `State::Ok`"),
+    }
+
+    check_statefn_result((state, None))
 }
 
 /// Turn a string into codes.
