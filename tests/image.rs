@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Options};
 
 #[test]
 fn image() {
@@ -14,7 +14,7 @@ fn image() {
         "should support image w/ resource"
     );
 
-    // To do: attention.
+    // To do: attention, tags in images.
     // assert_eq!(
     //     micromark("[foo *bar*]: train.jpg \"train & tracks\"\n\n![foo *bar*]"),
     //     "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>",
@@ -35,14 +35,14 @@ fn image() {
     //     "should “support” links in images"
     // );
 
-    // To do: tags in images.
+    // To do: attention, tags in images.
     // assert_eq!(
     //     micromark("[foo *bar*]: train.jpg \"train & tracks\"\n\n![foo *bar*][]"),
     //     "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>",
     //     "should support “content” in images"
     // );
 
-    // To do: tags in images, attention, references.
+    // To do: attention, tags in images.
     // assert_eq!(
     //     micromark("[FOOBAR]: train.jpg \"train & tracks\"\n\n![foo *bar*][foobar]"),
     //     "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>",
@@ -73,56 +73,51 @@ fn image() {
         "should support images w/ empty labels"
     );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[bar]: /url\n\n![foo][bar]"),
-    //     "<p><img src=\"/url\" alt=\"foo\" /></p>",
-    //     "should support full references (1)"
-    // );
+    assert_eq!(
+        micromark("[bar]: /url\n\n![foo][bar]"),
+        "<p><img src=\"/url\" alt=\"foo\" /></p>",
+        "should support full references (1)"
+    );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[BAR]: /url\n\n![foo][bar]"),
-    //     "<p><img src=\"/url\" alt=\"foo\" /></p>",
-    //     "should support full references (2)"
-    // );
+    assert_eq!(
+        micromark("[BAR]: /url\n\n![foo][bar]"),
+        "<p><img src=\"/url\" alt=\"foo\" /></p>",
+        "should support full references (2)"
+    );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n![foo][]"),
-    //     "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>",
-    //     "should support collapsed references (1)"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n![foo][]"),
+        "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>",
+        "should support collapsed references (1)"
+    );
 
-    // To do: references, attention, tags in images.
+    // To do: attention, tags in images.
     // assert_eq!(
     //     micromark("[*foo* bar]: /url \"title\"\n\n![*foo* bar][]"),
     //     "<p><img src=\"/url\" alt=\"foo bar\" title=\"title\" /></p>",
     //     "should support collapsed references (2)"
     // );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n![Foo][]"),
-    //     "<p><img src=\"/url\" alt=\"Foo\" title=\"title\" /></p>",
-    //     "should support case-insensitive labels"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n![Foo][]"),
+        "<p><img src=\"/url\" alt=\"Foo\" title=\"title\" /></p>",
+        "should support case-insensitive labels"
+    );
 
-    // To do: references.
+    // To do: trim paragraphs.
     // assert_eq!(
     //     micromark("[foo]: /url \"title\"\n\n![foo] \n[]"),
     //     "<p><img src=\"/url\" alt=\"foo\" title=\"title\" />\n[]</p>",
     //     "should not support whitespace between sets of brackets"
     // );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n![foo]"),
-    //     "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>",
-    //     "should support shortcut references (1)"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n![foo]"),
+        "<p><img src=\"/url\" alt=\"foo\" title=\"title\" /></p>",
+        "should support shortcut references (1)"
+    );
 
-    // To do: references, tags in images, attention.
+    // To do: attention, tags in images.
     // assert_eq!(
     //     micromark("[*foo* bar]: /url \"title\"\n\n![*foo* bar]"),
     //     "<p><img src=\"/url\" alt=\"foo bar\" title=\"title\" /></p>",
@@ -135,26 +130,23 @@ fn image() {
         "should not support link labels w/ unescaped brackets"
     );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n![Foo]"),
-    //     "<p><img src=\"/url\" alt=\"Foo\" title=\"title\" /></p>",
-    //     "should support case-insensitive label matching"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n![Foo]"),
+        "<p><img src=\"/url\" alt=\"Foo\" title=\"title\" /></p>",
+        "should support case-insensitive label matching"
+    );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n!\\[foo]"),
-    //     "<p>![foo]</p>",
-    //     "should “support” an escaped bracket instead of an image"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n!\\[foo]"),
+        "<p>![foo]</p>",
+        "should “support” an escaped bracket instead of an image"
+    );
 
-    // To do: references.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n\\![foo]"),
-    //     "<p>!<a href=\"/url\" title=\"title\">foo</a></p>",
-    //     "should support an escaped bang instead of an image, but still have a link"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n\\![foo]"),
+        "<p>!<a href=\"/url\" title=\"title\">foo</a></p>",
+        "should support an escaped bang instead of an image, but still have a link"
+    );
 
     // Extra
     assert_eq!(
@@ -207,7 +199,7 @@ fn image() {
         "should ignore an empty title"
     );
 
-    // To do: extensions
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("![x]()", {extensions: [{disable: {null: ["labelStartImage"]}}]}),
     //   "<p>!<a href=\"\">x</a></p>",
@@ -220,10 +212,16 @@ fn image() {
         "should ignore non-http protocols by default"
     );
 
-    // To do: extensions
-    // assert_eq!(
-    //   micromark("![](javascript:alert(1))", {allowDangerousProtocol: true}),
-    //   "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
-    //   "should allow non-http protocols w/ `allowDangerousProtocol`"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "![](javascript:alert(1))",
+            &Options {
+                allow_dangerous_protocol: true,
+                allow_dangerous_html: false,
+                default_line_ending: None
+            }
+        ),
+        "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
+        "should allow non-http protocols w/ `allowDangerousProtocol`"
+    );
 }
