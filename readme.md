@@ -124,7 +124,6 @@ cargo doc --document-private-items
 
 - [ ] (1) `space_or_tab_one_line_ending`
 - [ ] (1) `ParseState`
-- [ ] (1) Image, Link, and other media token types; `LabelStart`, `Media`
 - [ ] (1) Resolvers, push, feed, etc.
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
@@ -283,3 +282,4 @@ important.
 - [x] (5) Add support for sharing identifiers, references before definitions
 - [x] (2) Refactor to externalize handlers of compiler
 - [x] (1) Add support for compiling shared references and definitions
+- [x] (1) Add docs to Image, Link, and other media tokens
