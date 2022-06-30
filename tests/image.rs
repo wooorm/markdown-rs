@@ -102,12 +102,11 @@ fn image() {
         "should support case-insensitive labels"
     );
 
-    // To do: trim paragraphs.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n![foo] \n[]"),
-    //     "<p><img src=\"/url\" alt=\"foo\" title=\"title\" />\n[]</p>",
-    //     "should not support whitespace between sets of brackets"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n![foo] \n[]"),
+        "<p><img src=\"/url\" alt=\"foo\" title=\"title\" />\n[]</p>",
+        "should not support whitespace between sets of brackets"
+    );
 
     assert_eq!(
         micromark("[foo]: /url \"title\"\n\n![foo]"),

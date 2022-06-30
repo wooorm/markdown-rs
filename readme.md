@@ -138,10 +138,6 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (1) Parse initial and final space_or_tab of paragraphs (in text)\
-       test (`code_indented`, `definition`, `hard_break_escape`, `hard_break_trailing`,
-      `heading_atx`, `heading_setext`, `html_flow`, `misc_soft_break`,
-      `misc_tabs`, `thematic_break`)
 - [ ] (3) Interrupting (html flow complete, definition + code_indented)
 - [ ] (5) attention\
        test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
@@ -281,3 +277,4 @@ important.
 - [x] (1) Add docs to Image, Link, and other media tokens
 - [x] (1) Add docs on resolver, clean feed
 - [x] (3) Clean compiler
+- [x] (1) Parse initial and final space_or_tab of paragraphs (in string, text)

@@ -24,18 +24,21 @@ use crate::construct::{
     hard_break_trailing::start as hard_break_trailing, html_text::start as html_text,
     label_end::start as label_end, label_start_image::start as label_start_image,
     label_start_link::start as label_start_link, partial_data::start as data,
+    partial_whitespace::whitespace,
 };
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
-const MARKERS: [Code; 8] = [
-    Code::Char(' '),  // `hard_break_trailing`
-    Code::Char('!'),  // `label_start_image`
-    Code::Char('&'),  // `character_reference`
-    Code::Char('<'),  // `autolink`, `html_text`
-    Code::Char('['),  // `label_start_link`
-    Code::Char('\\'), // `character_escape`, `hard_break_escape`
-    Code::Char(']'),  // `label_end`
-    Code::Char('`'),  // `code_text`
+const MARKERS: [Code; 10] = [
+    Code::VirtualSpace, // `whitespace`
+    Code::Char('\t'),   // `whitespace`
+    Code::Char(' '),    // `hard_break_trailing`, `whitespace`
+    Code::Char('!'),    // `label_start_image`
+    Code::Char('&'),    // `character_reference`
+    Code::Char('<'),    // `autolink`, `html_text`
+    Code::Char('['),    // `label_start_link`
+    Code::Char('\\'),   // `character_escape`, `hard_break_escape`
+    Code::Char(']'),    // `label_end`
+    Code::Char('`'),    // `code_text`
 ];
 
 /// Before text.
@@ -62,6 +65,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 Box::new(label_end),
                 Box::new(label_start_image),
                 Box::new(label_start_link),
+                Box::new(whitespace),
             ],
             |ok| Box::new(if ok { start } else { before_data }),
         )(tokenizer, code),

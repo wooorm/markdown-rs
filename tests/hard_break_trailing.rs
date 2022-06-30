@@ -15,12 +15,11 @@ fn hard_break_trailing() {
         "should support multiple trailing spaces"
     );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("foo  \n     bar"),
-    //     "<p>foo<br />\nbar</p>",
-    //     "should support leading spaces after a trailing hard break"
-    // );
+    assert_eq!(
+        micromark("foo  \n     bar"),
+        "<p>foo<br />\nbar</p>",
+        "should support leading spaces after a trailing hard break"
+    );
 
     // To do: attention.
     // assert_eq!(
@@ -42,12 +41,11 @@ fn hard_break_trailing() {
         "should not support trailing hard breaks in code"
     );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("foo  "),
-    //     "<p>foo</p>",
-    //     "should not support trailing hard breaks at the end of a paragraph"
-    // );
+    assert_eq!(
+        micromark("foo  "),
+        "<p>foo</p>",
+        "should not support trailing hard breaks at the end of a paragraph"
+    );
 
     assert_eq!(
         micromark("### foo  "),
@@ -55,26 +53,23 @@ fn hard_break_trailing() {
         "should not support trailing hard breaks at the end of a heading"
     );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("aaa  \t\nbb"),
-    //     "<p>aaa\nbb</p>",
-    //     "should support a mixed line suffix (1)"
-    // );
+    assert_eq!(
+        micromark("aaa  \t\nbb"),
+        "<p>aaa\nbb</p>",
+        "should support a mixed line suffix (1)"
+    );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("aaa\t  \nbb"),
-    //     "<p>aaa\nbb</p>",
-    //     "should support a mixed line suffix (2)"
-    // );
+    assert_eq!(
+        micromark("aaa\t  \nbb"),
+        "<p>aaa\nbb</p>",
+        "should support a mixed line suffix (2)"
+    );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("aaa  \t  \nbb"),
-    //     "<p>aaa\nbb</p>",
-    //     "should support a mixed line suffix (3)"
-    // );
+    assert_eq!(
+        micromark("aaa  \t  \nbb"),
+        "<p>aaa\nbb</p>",
+        "should support a mixed line suffix (3)"
+    );
 
     assert_eq!(
         micromark("aaa\0  \nbb"),
@@ -82,12 +77,11 @@ fn hard_break_trailing() {
         "should support a hard break after a replacement character"
     );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("aaa\0\t\nbb"),
-    //     "<p>aaa�\nbb</p>",
-    //     "should support a line suffix after a replacement character"
-    // );
+    assert_eq!(
+        micromark("aaa\0\t\nbb"),
+        "<p>aaa�\nbb</p>",
+        "should support a line suffix after a replacement character"
+    );
 
     // To do: attention.
     // assert_eq!(
@@ -96,28 +90,28 @@ fn hard_break_trailing() {
     //     "should support a hard break after a span"
     // );
 
-    // To do: attention, trimming whitespace in paragraphs.
+    // To do: attention.
     // assert_eq!(
     //     micromark("*a*\t\nbb"),
     //     "<p><em>a</em>\nbb</p>",
     //     "should support a line suffix after a span"
     // );
 
-    // To do: attention, trimming whitespace in paragraphs.
+    // To do: attention.
     // assert_eq!(
     //     micromark("*a*  \t\nbb"),
     //     "<p><em>a</em>\nbb</p>",
     //     "should support a mixed line suffix after a span (1)"
     // );
 
-    // To do: attention, trimming whitespace in paragraphs.
+    // To do: attention.
     // assert_eq!(
     //     micromark("*a*\t  \nbb"),
     //     "<p><em>a</em>\nbb</p>",
     //     "should support a mixed line suffix after a span (2)"
     // );
 
-    // To do: attention, trimming whitespace in paragraphs.
+    // To do: attention.
     // assert_eq!(
     //     micromark("*a*  \t  \nbb"),
     //     "<p><em>a</em>\nbb</p>",

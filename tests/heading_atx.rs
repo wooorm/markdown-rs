@@ -99,12 +99,11 @@ fn heading_atx() {
         "should not support four initial spaces"
     );
 
-    // To do: trimming paragraphs.
-    // assert_eq!(
-    //     micromark("foo\n    # bar"),
-    //     "<p>foo\n# bar</p>",
-    //     "should not support four initial spaces when interrupting"
-    // );
+    assert_eq!(
+        micromark("foo\n    # bar"),
+        "<p>foo\n# bar</p>",
+        "should not support four initial spaces when interrupting"
+    );
 
     assert_eq!(
         micromark("## foo ##"),

@@ -510,7 +510,7 @@ fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
 
     info.media.end.1 = tokenizer.events.len() - 1;
     tokenizer.media_list.push(info.media);
-    tokenizer.register_resolver("media".to_string(), Box::new(resolve_media));
+    tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
     (State::Ok, Some(vec![code]))
 }
 

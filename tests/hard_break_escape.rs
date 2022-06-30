@@ -9,12 +9,11 @@ fn hard_break_escape() {
         "should support a backslash to form a hard break"
     );
 
-    // To do: trimming whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("foo\\\n     bar"),
-    //     "<p>foo<br />\nbar</p>",
-    //     "should support leading spaces after an escape hard break"
-    // );
+    assert_eq!(
+        micromark("foo\\\n     bar"),
+        "<p>foo<br />\nbar</p>",
+        "should support leading spaces after an escape hard break"
+    );
 
     // To do: attention.
     // assert_eq!(

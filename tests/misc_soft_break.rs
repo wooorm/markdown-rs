@@ -9,10 +9,9 @@ fn soft_break() {
         "should support line endings"
     );
 
-    // To do: trim whitespace.
-    // assert_eq!(
-    //     micromark("foo \n baz"),
-    //     "<p>foo\nbaz</p>",
-    //     "should trim spaces around line endings"
-    // );
+    assert_eq!(
+        micromark("foo \n baz"),
+        "<p>foo\nbaz</p>",
+        "should trim spaces around line endings"
+    );
 }

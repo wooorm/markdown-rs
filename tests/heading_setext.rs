@@ -24,7 +24,7 @@ fn heading_setext() {
     //     "should support line endings in setext headings"
     // );
 
-    // To do: attention, trim.
+    // To do: attention.
     // assert_eq!(
     //     micromark("  Foo *bar\nbaz*\t\n===="),
     //     "<h1>Foo <em>bar\nbaz</em></h1>",
@@ -85,19 +85,17 @@ fn heading_setext() {
         "should support whitespace before underline"
     );
 
-    // To do: trim paragraphs.
-    // assert_eq!(
-    //     micromark("Foo\n    ="),
-    //     "<p>Foo\n=</p>",
-    //     "should not support too much whitespace before underline (1)"
-    // );
+    assert_eq!(
+        micromark("Foo\n    ="),
+        "<p>Foo\n=</p>",
+        "should not support too much whitespace before underline (1)"
+    );
 
-    // To do: trim paragraphs.
-    // assert_eq!(
-    //     micromark("Foo\n\t="),
-    //     "<p>Foo\n=</p>",
-    //     "should not support too much whitespace before underline (2)"
-    // );
+    assert_eq!(
+        micromark("Foo\n\t="),
+        "<p>Foo\n=</p>",
+        "should not support too much whitespace before underline (2)"
+    );
 
     assert_eq!(
         micromark("Foo\n= ="),
@@ -111,12 +109,11 @@ fn heading_setext() {
         "should not support whitespace in the underline (2)"
     );
 
-    // To do: trim setext.
-    // assert_eq!(
-    //     micromark("Foo  \n-----"),
-    //     "<h2>Foo</h2>",
-    //     "should not support a hard break w/ spaces at the end"
-    // );
+    assert_eq!(
+        micromark("Foo  \n-----"),
+        "<h2>Foo</h2>",
+        "should not support a hard break w/ spaces at the end"
+    );
 
     assert_eq!(
         micromark("Foo\\\n-----"),

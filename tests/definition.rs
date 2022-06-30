@@ -382,12 +382,11 @@ fn definition() {
     //     "should support subsequent indented definitions"
     // );
 
-    // To do: trim whitespace in paragraphs.
-    // assert_eq!(
-    //     micromark("[a\n  b]: c\n\n[a\n  b]"),
-    //     "<p><a href=\"c\">a\nb</a></p>",
-    //     "should support line prefixes in definition labels"
-    // );
+    assert_eq!(
+        micromark("[a\n  b]: c\n\n[a\n  b]"),
+        "<p><a href=\"c\">a\nb</a></p>",
+        "should support line prefixes in definition labels"
+    );
 
     assert_eq!(
         micromark("[a]: )\n\n[a]"),

@@ -814,12 +814,11 @@ fn html_flow_7_complete() {
         "should not support a line ending directly after a tag name"
     );
 
-    // To do: trimming paragraphs.
-    // assert_eq!(
-    //     micromark_with_options("<x ", DANGER),
-    //     "<p>&lt;x</p>",
-    //     "should not support an eof after a space directly after a tag name"
-    // );
+    assert_eq!(
+        micromark_with_options("<x ", DANGER),
+        "<p>&lt;x</p>",
+        "should not support an eof after a space directly after a tag name"
+    );
 
     assert_eq!(
         micromark_with_options("<x/", DANGER),

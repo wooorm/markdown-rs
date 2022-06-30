@@ -44,6 +44,7 @@
 //! *   [label][partial_label]
 //! *   [space or tab][partial_space_or_tab]
 //! *   [title][partial_title]
+//! *   [whitespace][partial_whitespace]
 //!
 //! Each construct maintained here is explained with a BNF diagram.
 //! For example, the docs for [character escape][character_escape] contain:
@@ -83,4 +84,5 @@ pub mod partial_destination;
 pub mod partial_label;
 pub mod partial_space_or_tab;
 pub mod partial_title;
+pub mod partial_whitespace;
 pub mod thematic_break;

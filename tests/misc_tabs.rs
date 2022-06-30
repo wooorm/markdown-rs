@@ -204,22 +204,20 @@ fn tabs_text() {
         "should support a space starting, and a tab ending, code"
     );
 
-    // To do: trim trailing whitespace.
-    // // Note: CM does not strip it in this case.
-    // // However, that should be a bug there: makes more sense to remove it like
-    // // trailing spaces.
-    // assert_eq!(
-    //     micromark("x\t\ny"),
-    //     "<p>x\ny</p>",
-    //     "should support a trailing tab at a line ending in a paragraph"
-    // );
+    // Note: CM does not strip it in this case.
+    // However, that should be a bug there: makes more sense to remove it like
+    // trailing spaces.
+    assert_eq!(
+        micromark("x\t\ny"),
+        "<p>x\ny</p>",
+        "should support a trailing tab at a line ending in a paragraph"
+    );
 
-    // To do: trim trailing whitespace.
-    // assert_eq!(
-    //     micromark("x\n\ty"),
-    //     "<p>x\ny</p>",
-    //     "should support an initial tab after a line ending in a paragraph"
-    // );
+    assert_eq!(
+        micromark("x\n\ty"),
+        "<p>x\ny</p>",
+        "should support an initial tab after a line ending in a paragraph"
+    );
 
     assert_eq!(
         micromark("x[\ty](z)"),

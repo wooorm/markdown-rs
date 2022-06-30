@@ -1796,6 +1796,13 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    pub fn register_resolver_before(&mut self, id: String, resolver: Box<Resolver>) {
+        if !self.resolver_ids.contains(&id) {
+            self.resolver_ids.push(id);
+            self.resolvers.insert(0, resolver);
+        }
+    }
+
     /// Prepare for a next code to get consumed.
     fn expect(&mut self, code: Code) {
         assert!(self.consumed, "expected previous character to be consumed");
@@ -1901,7 +1908,7 @@ impl<'a> Tokenizer<'a> {
         let point = self.point.clone();
 
         assert!(
-            current_token != previous.token_type || previous.point != point,
+            current_token != previous.token_type || previous.index != self.index,
             "expected non-empty token"
         );
 

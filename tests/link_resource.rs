@@ -443,12 +443,11 @@ fn link_resource() {
         "should not support 33 or more sets of parens"
     );
 
-    // To do: trim whitespace in string?
-    // assert_eq!(
-    //     micromark("[a](b \"\n c\")"),
-    //     "<p><a href=\"b\" title=\"\nc\">a</a></p>",
-    //     "should support an eol at the start of a title"
-    // );
+    assert_eq!(
+        micromark("[a](b \"\n c\")"),
+        "<p><a href=\"b\" title=\"\nc\">a</a></p>",
+        "should support an eol at the start of a title"
+    );
 
     assert_eq!(
         micromark("[a](b( \"c\")"),

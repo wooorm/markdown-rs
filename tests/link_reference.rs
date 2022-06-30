@@ -66,7 +66,7 @@ fn link_reference() {
     );
 
     assert_eq!(
-        micromark_with_options("[ref]: /uri\n\n[foo <bar attr=\"][ref]\">", &DANGER),
+        micromark_with_options("[ref]: /uri\n\n[foo <bar attr=\"][ref]\">", DANGER),
         "<p>[foo <bar attr=\"][ref]\"></p>",
         "should prefer HTML over link references"
     );
@@ -161,12 +161,11 @@ fn link_reference() {
         "should not support empty references"
     );
 
-    // To do: trimming whitespace.
-    // assert_eq!(
-    //     micromark("[\n ]: /uri\n\n[\n ]"),
-    //     "<p>[\n]: /uri</p>\n<p>[\n]</p>",
-    //     "should not support blank references"
-    // );
+    assert_eq!(
+        micromark("[\n ]: /uri\n\n[\n ]"),
+        "<p>[\n]: /uri</p>\n<p>[\n]</p>",
+        "should not support blank references"
+    );
 
     assert_eq!(
         micromark("[foo]: /url \"title\"\n\n[foo][]"),
@@ -187,12 +186,11 @@ fn link_reference() {
         "should match references to definitions case-insensitively"
     );
 
-    // To do: trimming whitespace.
-    // assert_eq!(
-    //     micromark("[foo]: /url \"title\"\n\n[foo] \n[]"),
-    //     "<p><a href=\"/url\" title=\"title\">foo</a>\n[]</p>",
-    //     "should not support whitespace between label and collaped reference"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n[foo] \n[]"),
+        "<p><a href=\"/url\" title=\"title\">foo</a>\n[]</p>",
+        "should not support whitespace between label and collaped reference"
+    );
 
     assert_eq!(
         micromark("[foo]: /url \"title\"\n\n[foo]"),
