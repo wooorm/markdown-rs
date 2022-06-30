@@ -30,7 +30,7 @@
 //! [definition][].
 //! Full references (`[x][y]`) match to definitions through their explicit,
 //! second, label (`y`).
-//! Collapsed labels (`[x][]`) and shortcut labels (`[x]`) match by
+//! Collapsed references (`[x][]`) and shortcut references (`[x]`) match by
 //! interpreting the text provided between the first, implicit, label (`x`).
 //! To match, the effective label of the reference must be equal to the label
 //! of the definition after normalizing with
@@ -50,11 +50,11 @@
 //! When the resource or reference matches, the destination forms the `href`
 //! attribute in case of a [label start (link)][label_start_link], and an
 //! `src` attribute otherwise.
-//! The title is, optionally, formed, on either `<a>` or `<img>`.
+//! The title is formed, optionally, on either `<a>` or `<img>`.
 //!
 //! For info on how to encode characters in URLs, see
 //! [`destination`][destination].
-//! For info on how to characters are encoded as `href` on `<a>` or `src` on
+//! For info on how characters are encoded as `href` on `<a>` or `src` on
 //! `<img>` when compiling, see
 //! [`sanitize_uri`][sanitize_uri].
 //!
@@ -78,9 +78,10 @@
 //! ```
 //!
 //! It is possible to use images in links.
-//! It’s, somewhat, possible to have links in images (the text will be used,
-//! not the HTML, see above).
-//! But it’s not possible to use links in links, and the “deepest” link wins.
+//! It’s somewhat possible to have links in images (the text will be used, not
+//! the HTML, see above).
+//! But it’s not possible to use links in links.
+//! The “deepest” link wins.
 //! To illustrate:
 //!
 //! ```markdown
@@ -95,8 +96,9 @@
 //!
 //! This limiation is imposed because links in links is invalid according to
 //! HTML.
-//! Technically though, it is still possible to construct them by using an
-//! [autolink][] in a link, but you definitely should not do that.
+//! Technically though, in markdown it is still possible to construct them by
+//! using an [autolink][] in a link.
+//! You definitely should not do that.
 //!
 //! ## Tokens
 //!
@@ -140,7 +142,7 @@
 //! [definition]: crate::construct::definition
 //! [autolink]: crate::construct::autolink
 //! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
-//! [normalize_identifier]: crate::util::normalize_identifier
+//! [normalize_identifier]: crate::util::normalize_identifier::normalize_identifier
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
@@ -169,8 +171,10 @@ struct Info {
     media: Media,
 }
 
-/// Resolve media: turn correct label start (image, link) and label end
-/// into links and images, or turn them back into data.
+/// Resolve media.
+///
+/// This turns correct label start (image, link) and label end into links and
+/// images, or turns them back into data.
 #[allow(clippy::too_many_lines)]
 pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut left: Vec<LabelStart> = tokenizer.label_start_list_loose.drain(..).collect();

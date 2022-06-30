@@ -248,8 +248,6 @@ struct CompileContext<'a> {
     pub protocol_src: Option<Vec<&'static str>>,
     pub line_ending_default: LineEnding,
     pub allow_dangerous_html: bool,
-    /// Data inferred about the document.
-    // To do: definitions.
     /// Intermediate results.
     pub buffers: Vec<Vec<String>>,
     pub index: usize,

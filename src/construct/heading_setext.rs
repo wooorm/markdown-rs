@@ -25,8 +25,10 @@
 //! headings.
 //! Due to this limitation, it is recommended to use atx headings.
 //!
-//! [Thematic breaks][thematic_break] formed with dashes (without whitespace)
-//! can also form heading (setext).
+//! [Thematic breaks][thematic_break] formed with dashes and without whitespace
+//! could be interpreted as a heading (setext).
+//! Which one forms depends on whether there is text directly in fron of the
+//! sequence.
 //!
 //! > 🏛 **Background**: the word *setext* originates from a small markup
 //! > language by Ian Feldman from 1991.

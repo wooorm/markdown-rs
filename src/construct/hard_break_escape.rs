@@ -15,7 +15,8 @@
 //! It is also possible to create a hard break with a
 //! [hard break (trailing)][hard_break_trailing].
 //! That construct is not recommended because trailing spaces are typically
-//! invisible in editors, or even automatically removed, making them to use.
+//! invisible in editors, or even automatically removed, making them hard to
+//! use.
 //!
 //! It is also possible to escape punctuation characters with a similar
 //! construct: a [character escape][character_escape] is a backslash followed

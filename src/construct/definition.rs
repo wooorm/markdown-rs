@@ -3,7 +3,7 @@
 //! They’re formed with the following BNF:
 //!
 //! ```bnf
-//! definition ::= label ':' whitespace destination [ whitespace title ] [ space_or_tab ]
+//! definition ::= label ':' [ whitespace ] destination [ whitespace title ] [ space_or_tab ]
 //!
 //! ; See the `destination`, `title`, and `label` constructs for the BNF of
 //! ; those parts.
@@ -20,7 +20,7 @@
 //! See [*§ 4.5.1 The `a` element*][html-a] and
 //! [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
 //!
-//! The `label`, `destination`, and `title` parts are interpreted as the
+//! The `destination`, `label`, and `title` parts are interpreted as the
 //! [string][] content type.
 //! That means that [character escapes][character_escape] and
 //! [character references][character_reference] are allowed.
@@ -28,7 +28,7 @@
 //! Definitions match to references through their label.
 //! To match, both labels must be equal after normalizing with
 //! [`normalize_identifier`][normalize_identifier].
-//! One definitions can match to multiple references.
+//! One definition can match to multiple references.
 //! Multiple definitions with the same, normalized, identifier are ignored: the
 //! first definition is preferred.
 //! To illustrate, the definition with a destination of `x` wins:
@@ -53,7 +53,7 @@
 //!
 //! For info on how to encode characters in URLs, see
 //! [`destination`][destination].
-//! For info on how to characters are encoded as `href` on `<a>` or `src` on
+//! For info on how characters are encoded as `href` on `<a>` or `src` on
 //! `<img>` when compiling, see
 //! [`sanitize_uri`][sanitize_uri].
 //!

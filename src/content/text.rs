@@ -11,8 +11,9 @@
 //! *   [Hard break (escape)][crate::construct::hard_break_escape]
 //! *   [Hard break (trailing)][crate::construct::hard_break_trailing]
 //! *   [Code (text)][crate::construct::code_text]
-//! *   Label start (image)
-//! *   Label start (link)
+//! *   [Label start (image)][crate::construct::label_start_image]
+//! *   [Label start (link)][crate::construct::label_start_link]
+//! *   [Label end][crate::construct::label_end]
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
 
