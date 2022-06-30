@@ -3,28 +3,28 @@ use micromark::micromark;
 
 #[test]
 fn heading_setext() {
-    // To do: emphasis.
+    // To do: attention.
     // assert_eq!(
     //     micromark("Foo *bar*\n========="),
     //     "<h1>Foo <em>bar</em></h1>",
     //     "should support a heading w/ an equals to (rank of 1)"
     // );
 
-    // To do: emphasis.
+    // To do: attention.
     // assert_eq!(
     //     micromark("Foo *bar*\n---------"),
     //     "<h2>Foo <em>bar</em></h2>",
     //     "should support a heading w/ a dash (rank of 2)"
     // );
 
-    // To do: emphasis.
+    // To do: attention.
     // assert_eq!(
     //     micromark("Foo *bar\nbaz*\n===="),
     //     "<h1>Foo <em>bar\nbaz</em></h1>",
     //     "should support line endings in setext headings"
     // );
 
-    // To do: emphasis, trim.
+    // To do: attention, trim.
     // assert_eq!(
     //     micromark("  Foo *bar\nbaz*\t\n===="),
     //     "<h1>Foo <em>bar\nbaz</em></h1>",

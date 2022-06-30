@@ -257,12 +257,11 @@ fn link_resource() {
     //     "should not support links in links (2)"
     // );
 
-    // To do: tags in images.
-    // assert_eq!(
-    //     micromark("![[[foo](uri1)](uri2)](uri3)"),
-    //     "<p><img src=\"uri3\" alt=\"[foo](uri2)\" /></p>",
-    //     "should not support links in links (3)"
-    // );
+    assert_eq!(
+        micromark("![[[foo](uri1)](uri2)](uri3)"),
+        "<p><img src=\"uri3\" alt=\"[foo](uri2)\" /></p>",
+        "should not support links in links (3)"
+    );
 
     assert_eq!(
         micromark("*[foo*](/uri)"),

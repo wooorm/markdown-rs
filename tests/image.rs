@@ -14,35 +14,33 @@ fn image() {
         "should support image w/ resource"
     );
 
-    // To do: attention, tags in images.
+    // To do: attention.
     // assert_eq!(
     //     micromark("[foo *bar*]: train.jpg \"train & tracks\"\n\n![foo *bar*]"),
     //     "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>",
     //     "should support image as shortcut reference"
     // );
 
-    // To do: tags in images.
-    // assert_eq!(
-    //     micromark("![foo ![bar](/url)](/url2)"),
-    //     "<p><img src=\"/url2\" alt=\"foo bar\" /></p>",
-    //     "should “support” images in images"
-    // );
+    assert_eq!(
+        micromark("![foo ![bar](/url)](/url2)"),
+        "<p><img src=\"/url2\" alt=\"foo bar\" /></p>",
+        "should “support” images in images"
+    );
 
-    // To do: tags in images.
-    // assert_eq!(
-    //     micromark("![foo [bar](/url)](/url2)"),
-    //     "<p><img src=\"/url2\" alt=\"foo bar\" /></p>",
-    //     "should “support” links in images"
-    // );
+    assert_eq!(
+        micromark("![foo [bar](/url)](/url2)"),
+        "<p><img src=\"/url2\" alt=\"foo bar\" /></p>",
+        "should “support” links in images"
+    );
 
-    // To do: attention, tags in images.
+    // To do: attention.
     // assert_eq!(
     //     micromark("[foo *bar*]: train.jpg \"train & tracks\"\n\n![foo *bar*][]"),
     //     "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>",
     //     "should support “content” in images"
     // );
 
-    // To do: attention, tags in images.
+    // To do: attention.
     // assert_eq!(
     //     micromark("[FOOBAR]: train.jpg \"train & tracks\"\n\n![foo *bar*][foobar]"),
     //     "<p><img src=\"train.jpg\" alt=\"foo bar\" title=\"train &amp; tracks\" /></p>",
@@ -91,7 +89,7 @@ fn image() {
         "should support collapsed references (1)"
     );
 
-    // To do: attention, tags in images.
+    // To do: attention.
     // assert_eq!(
     //     micromark("[*foo* bar]: /url \"title\"\n\n![*foo* bar][]"),
     //     "<p><img src=\"/url\" alt=\"foo bar\" title=\"title\" /></p>",
@@ -117,7 +115,7 @@ fn image() {
         "should support shortcut references (1)"
     );
 
-    // To do: attention, tags in images.
+    // To do: attention.
     // assert_eq!(
     //     micromark("[*foo* bar]: /url \"title\"\n\n![*foo* bar]"),
     //     "<p><img src=\"/url\" alt=\"foo bar\" title=\"title\" /></p>",

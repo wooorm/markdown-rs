@@ -241,6 +241,7 @@ struct CompileContext<'a> {
     pub definitions: HashMap<String, Definition>,
     /// Fields used to influance the current compilation.
     pub slurp_one_line_ending: bool,
+    pub tags: bool,
     pub ignore_encode: bool,
     pub last_was_tag: bool,
     /// Configuration
@@ -272,6 +273,7 @@ impl<'a> CompileContext<'a> {
             media_stack: vec![],
             definitions: HashMap::new(),
             slurp_one_line_ending: false,
+            tags: true,
             ignore_encode: false,
             last_was_tag: false,
             protocol_href: if options.allow_dangerous_protocol {
@@ -309,6 +311,17 @@ impl<'a> CompileContext<'a> {
             .last_mut()
             .expect("Cannot push w/o buffer")
             .push(value);
+        self.last_was_tag = false;
+    }
+
+    pub fn tag(&mut self, value: String) {
+        if self.tags {
+            self.buffers
+                .last_mut()
+                .expect("Cannot push w/o buffer")
+                .push(value);
+            self.last_was_tag = true;
+        }
     }
 
     /// Get the last chunk of current buffer.
@@ -320,13 +333,6 @@ impl<'a> CompileContext<'a> {
     pub fn buf_tail(&self) -> &Vec<String> {
         self.buffers
             .last()
-            .expect("at least one buffer should exist")
-    }
-
-    /// Get the mutable last chunk of current buffer.
-    pub fn buf_tail_mut(&mut self) -> &mut Vec<String> {
-        self.buffers
-            .last_mut()
             .expect("at least one buffer should exist")
     }
 
@@ -600,7 +606,7 @@ fn on_enter_buffer(context: &mut CompileContext) {
 fn on_enter_code_indented(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
-    context.push("<pre><code>".to_string());
+    context.tag("<pre><code>".to_string());
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeFenced`][TokenType::CodeFenced].
@@ -608,13 +614,13 @@ fn on_enter_code_fenced(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
     // Note that no `>` is used, which is added later.
-    context.push("<pre><code".to_string());
+    context.tag("<pre><code".to_string());
     context.code_fenced_fences_count = Some(0);
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeText`][TokenType::CodeText].
 fn on_enter_code_text(context: &mut CompileContext) {
-    context.push("<code>".to_string());
+    context.tag("<code>".to_string());
     context.buffer();
 }
 
@@ -662,7 +668,7 @@ fn on_enter_image(context: &mut CompileContext) {
         destination: None,
         title: None,
     });
-    // tags = undefined // Disallow tags.
+    context.tags = false; // Disallow tags.
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Link`][TokenType::Link].
@@ -679,7 +685,7 @@ fn on_enter_link(context: &mut CompileContext) {
 
 /// Handle [`Enter`][EventType::Enter]:[`Paragraph`][TokenType::Paragraph].
 fn on_enter_paragraph(context: &mut CompileContext) {
-    context.buf_tail_mut().push("<p>".to_string());
+    context.tag("<p>".to_string());
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Resource`][TokenType::Resource].
@@ -704,11 +710,16 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    context.push(format!(
-        "<a href=\"mailto:{}\">{}</a>",
-        sanitize_uri(slice.as_str(), &context.protocol_href),
-        context.encode_opt(&slice)
+    // To do:
+    context.tag(format!(
+        "<a href=\"{}\">",
+        sanitize_uri(
+            format!("mailto:{}", slice.as_str()).as_str(),
+            &context.protocol_href
+        )
     ));
+    context.push(context.encode_opt(&slice));
+    context.tag("</a>".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkProtocol`][TokenType::AutolinkProtocol].
@@ -718,16 +729,17 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    context.push(format!(
-        "<a href=\"{}\">{}</a>",
-        sanitize_uri(slice.as_str(), &context.protocol_href),
-        context.encode_opt(&slice)
+    context.tag(format!(
+        "<a href=\"{}\">",
+        sanitize_uri(slice.as_str(), &context.protocol_href)
     ));
+    context.push(context.encode_opt(&slice));
+    context.tag("</a>".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`HardBreakEscape`][TokenType::HardBreakEscape],[`HardBreakTrailing`][TokenType::HardBreakTrailing]}.
 fn on_exit_break(context: &mut CompileContext) {
-    context.push("<br />".to_string());
+    context.tag("<br />".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker].
@@ -785,8 +797,7 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext) {
     };
 
     if count == 0 {
-        context.push(">".to_string());
-        // tag = true;
+        context.tag(">".to_string());
         context.slurp_one_line_ending = true;
     }
 
@@ -796,8 +807,7 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo].
 fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
     let value = context.resume();
-    context.push(format!(" class=\"language-{}\"", value));
-    // tag = true;
+    context.tag(format!(" class=\"language-{}\"", value));
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`CodeFenced`][TokenType::CodeFenced],[`CodeIndented`][TokenType::CodeIndented]}.
@@ -823,7 +833,7 @@ fn on_exit_code_flow(context: &mut CompileContext) {
         context.line_ending_if_needed();
     }
 
-    context.push("</code></pre>".to_string());
+    context.tag("</code></pre>".to_string());
 
     if let Some(count) = context.code_fenced_fences_count.take() {
         if count < 2 {
@@ -855,7 +865,7 @@ fn on_exit_code_text(context: &mut CompileContext) {
     } else {
         result
     });
-    context.push("</code>".to_string());
+    context.tag("</code>".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeTextLineEnding`][TokenType::CodeTextLineEnding].
@@ -873,7 +883,6 @@ fn on_exit_drop(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][TokenType::CodeTextData],[`Data`][TokenType::Data],[`CharacterEscapeValue`][TokenType::CharacterEscapeValue]}.
 fn on_exit_data(context: &mut CompileContext) {
     // Just output it.
-    // last_was_tag = false;
     context.push(context.encode_opt(&serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
@@ -930,7 +939,7 @@ fn on_exit_heading_atx(context: &mut CompileContext) {
         .take()
         .expect("`atx_opening_sequence_size` must be set in headings");
 
-    context.push(format!("</h{}>", rank));
+    context.tag(format!("</h{}>", rank));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtxSequence`][TokenType::HeadingAtxSequence].
@@ -944,7 +953,7 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
         )
         .len();
         context.atx_opening_sequence_size = Some(rank);
-        context.push(format!("<h{}>", rank));
+        context.tag(format!("<h{}>", rank));
     }
 }
 
@@ -973,7 +982,9 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
     )[0];
     let level: usize = if head == Code::Char('-') { 2 } else { 1 };
 
-    context.push(format!("<h{}>{}</h{}>", level, text, level));
+    context.tag(format!("<h{}>", level));
+    context.push(text);
+    context.tag(format!("</h{}>", level));
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlow`][TokenType::HtmlFlow],[`HtmlText`][TokenType::HtmlText]}.
@@ -988,7 +999,6 @@ fn on_exit_html_data(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    // last_was_tag = false;
     context.push(context.encode_opt(&slice));
 }
 
@@ -1029,6 +1039,7 @@ fn on_exit_line_ending(context: &mut CompileContext) {
 fn on_exit_media(context: &mut CompileContext) {
     let mut is_in_image = false;
     let mut index = 0;
+
     // Skip current.
     while index < (context.media_stack.len() - 1) {
         if context.media_stack[index].image {
@@ -1038,7 +1049,7 @@ fn on_exit_media(context: &mut CompileContext) {
         index += 1;
     }
 
-    // context.tags = is_in_image;
+    context.tags = !is_in_image;
 
     let media = context.media_stack.pop().unwrap();
     let id = media
@@ -1070,28 +1081,27 @@ fn on_exit_media(context: &mut CompileContext) {
         "".to_string()
     };
 
-    let result = if media.image {
-        format!(
-            "<img src=\"{}\" alt=\"{}\"{} />",
+    if media.image {
+        context.tag(format!(
+            "<img src=\"{}\" alt=\"",
             sanitize_uri(&destination, &context.protocol_src),
-            label,
-            title
-        )
+        ));
+        context.push(label);
+        context.tag(format!("\"{} />", title));
     } else {
-        format!(
-            "<a href=\"{}\"{}>{}</a>",
+        context.tag(format!(
+            "<a href=\"{}\"{}>",
             sanitize_uri(&destination, &context.protocol_href),
             title,
-            label
-        )
+        ));
+        context.push(label);
+        context.tag("</a>".to_string());
     };
-
-    context.push(result);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Paragraph`][TokenType::Paragraph].
 fn on_exit_paragraph(context: &mut CompileContext) {
-    context.push("</p>".to_string());
+    context.tag("</p>".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ReferenceString`][TokenType::ReferenceString].
@@ -1123,5 +1133,5 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][TokenType::ThematicBreak].
 fn on_exit_thematic_break(context: &mut CompileContext) {
-    context.push("<hr />".to_string());
+    context.tag("<hr />".to_string());
 }
