@@ -50,7 +50,7 @@ cargo doc --document-private-items
       operate more performantly than checking whether other flow constructs
       start a line, before exiting and actually attempting flow constructs?
 - [ ] (3) Interrupting: sometimes flow can or cannot start depending on the
-      previous construct (typically paragraph)
+      previous construct (paragraph, definition)
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
       subtokenization is solved
 - [ ] (3) Concrete constructs: HTML or code (fenced) cannot be “pierced” into by
@@ -64,7 +64,7 @@ cargo doc --document-private-items
 
 ### Constructs
 
-- [ ] (5) attention (strong, emphasis)
+- [ ] (5) attention (emphasis, strong)
 - [x] autolink
 - [x] blank line
 - [ ] (5) block quote
@@ -103,7 +103,7 @@ cargo doc --document-private-items
   - [x] paragraph
   - [x] thematic break
 - [ ] (8) text
-  - [ ] attention (strong, emphasis) (text)
+  - [ ] attention (emphasis, strong) (text)
   - [x] autolink
   - [x] character escape
   - [x] character reference
@@ -123,19 +123,18 @@ cargo doc --document-private-items
 #### Docs
 
 - [ ] (1) `space_or_tab_one_line_ending`
+- [ ] (1) `edit_map`
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add overview docs on how everything works
 
 #### Refactor
 
-- [ ] (1) Use `edit_map` in `subtokenize`
-- [ ] (1) Clean shifting, assertions in the above helper
+- [ ] (1) Clean shifting, assertions in `edit_map`
 - [ ] (1) Clean `space_or_tab_one_line_ending`
 - [ ] (1) Use `link_to` (and `space_or_tab_one_line_ending`) in more places?
       It’s probably better
-- [ ] (1) Force chunks in `link_to`, disallowing `LineEnding` and such
-- [ ] (1) Clean feeding, resolving
+- [ ] (1) Use `edit_map` in `subtokenize`
 
 #### Parse
 
@@ -157,7 +156,7 @@ cargo doc --document-private-items
 - [ ] (3) Lazy lines (`code indented`, `html flow`)
 - [ ] (3) Concrete (`html flow`)
 - [ ] (3) Turn off things (enable every test for these)
-- [ ] (3) Make tokenizer tokens extendable
+- [ ] (3) Make tokenizer tokens extendable?
 
 #### Test
 
@@ -172,7 +171,6 @@ cargo doc --document-private-items
 - [ ] (3) Pass more references around
 - [ ] (1) Remove todos in `span.rs` if not needed
 - [ ] (1) Get markers from constructs (`string`, `text`)
-- [ ] (3) Clean compiler
 - [ ] (3) Read through rust docs to figure out what useful functions there are,
       and fix stuff I’m doing manually now
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
@@ -282,3 +280,4 @@ important.
 - [x] (1) Add support for compiling shared references and definitions
 - [x] (1) Add docs to Image, Link, and other media tokens
 - [x] (1) Add docs on resolver, clean feed
+- [x] (3) Clean compiler
