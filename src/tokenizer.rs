@@ -211,24 +211,6 @@ pub enum TokenType {
     ///       ^       ^         ^
     /// ```
     CharacterReferenceMarker,
-    /// Character reference numeric marker.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`CharacterReference`][TokenType::CharacterReference]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`character_reference`][crate::construct::character_reference]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a &amp; b &#8800; c &#x1D306; d
-    ///                ^         ^
-    /// ```
-    CharacterReferenceMarkerNumeric,
     /// Character reference hexadecimal numeric marker.
     ///
     /// ## Info
@@ -247,6 +229,24 @@ pub enum TokenType {
     ///                           ^
     /// ```
     CharacterReferenceMarkerHexadecimal,
+    /// Character reference numeric marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CharacterReference`][TokenType::CharacterReference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`character_reference`][crate::construct::character_reference]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a &amp; b &#8800; c &#x1D306; d
+    ///                ^         ^
+    /// ```
+    CharacterReferenceMarkerNumeric,
     /// Character reference closing marker.
     ///
     /// ## Info
@@ -332,27 +332,6 @@ pub enum TokenType {
     ///     ^^^
     /// ````
     CodeFencedFence,
-    /// A code (fenced) fence sequence.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
-    ///
-    /// ## Example
-    ///
-    /// ````markdown
-    /// > | ```js
-    ///     ^^^
-    ///   | console.log(1)
-    /// > | ```
-    ///     ^^^
-    /// ````
-    CodeFencedFenceSequence,
     /// A code (fenced) fence info word.
     ///
     /// ## Info
@@ -393,6 +372,27 @@ pub enum TokenType {
     ///   | ```
     /// ````
     CodeFencedFenceMeta,
+    /// A code (fenced) fence sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ```js
+    ///     ^^^
+    ///   | console.log(1)
+    /// > | ```
+    ///     ^^^
+    /// ````
+    CodeFencedFenceSequence,
     /// A code (fenced, indented) chunk.
     ///
     /// ## Info
@@ -478,24 +478,6 @@ pub enum TokenType {
     ///        ^
     /// ```
     CodeTextData,
-    /// Code (text) sequence.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`CodeText`][TokenType::CodeText],
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`code_text`][crate::construct::code_text]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a `b` c
-    ///       ^ ^
-    /// ```
-    CodeTextSequence,
     /// Line ending in code (text).
     ///
     /// ## Info
@@ -515,6 +497,24 @@ pub enum TokenType {
     ///   | c` d
     /// ```
     CodeTextLineEnding,
+    /// Code (text) sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`CodeText`][TokenType::CodeText],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`code_text`][crate::construct::code_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a `b` c
+    ///       ^ ^
+    /// ```
+    CodeTextSequence,
     /// Data.
     ///
     /// ## Info
@@ -557,81 +557,6 @@ pub enum TokenType {
     ///     ^^^^^^^^^^
     /// ```
     Definition,
-    /// Whole definition label.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Definition`][TokenType::Definition]
-    /// *   **Content model**:
-    ///     [`DefinitionLabelMarker`][TokenType::DefinitionLabelMarker],
-    ///     [`DefinitionLabelString`][TokenType::DefinitionLabelString],
-    ///     [`LineEnding`][TokenType::LineEnding],
-    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
-    /// *   **Construct**:
-    ///     [`label`][crate::construct::partial_label]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | [a]: b "c"
-    ///     ^^^
-    /// ```
-    DefinitionLabel,
-    /// Definition label marker.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`DefinitionLabel`][TokenType::DefinitionLabel]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`label`][crate::construct::partial_label]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | [a]: b "c"
-    ///     ^ ^
-    /// ```
-    DefinitionLabelMarker,
-    /// Definition label data.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`DefinitionLabel`][TokenType::DefinitionLabel]
-    /// *   **Content model**:
-    ///     [string content][crate::content::string]
-    /// *   **Construct**:
-    ///     [`label`][crate::construct::partial_label]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | [a]: b "c"
-    ///      ^
-    /// ```
-    DefinitionLabelString,
-    /// Definition marker.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Definition`][TokenType::Definition]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`definition`][crate::construct::definition]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | [a]: b "c"
-    ///        ^
-    /// ```
-    DefinitionMarker,
     /// Whole definition destination.
     ///
     /// ## Info
@@ -729,6 +654,81 @@ pub enum TokenType {
     ///           ^
     /// ```
     DefinitionDestinationString,
+    /// Whole definition label.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Definition`][TokenType::Definition]
+    /// *   **Content model**:
+    ///     [`DefinitionLabelMarker`][TokenType::DefinitionLabelMarker],
+    ///     [`DefinitionLabelString`][TokenType::DefinitionLabelString],
+    ///     [`LineEnding`][TokenType::LineEnding],
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///     ^^^
+    /// ```
+    DefinitionLabel,
+    /// Definition label marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionLabel`][TokenType::DefinitionLabel]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///     ^ ^
+    /// ```
+    DefinitionLabelMarker,
+    /// Definition label data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`DefinitionLabel`][TokenType::DefinitionLabel]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///      ^
+    /// ```
+    DefinitionLabelString,
+    /// Definition marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Definition`][TokenType::Definition]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`definition`][crate::construct::definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///        ^
+    /// ```
+    DefinitionMarker,
     /// Whole definition title.
     ///
     /// ## Info
@@ -1055,6 +1055,76 @@ pub enum TokenType {
     ///       ^^^
     /// ```
     HtmlTextData,
+    /// Image.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`Label`][TokenType::Label],
+    ///     [`Resource`][TokenType::Resource],
+    ///     [`Reference`][TokenType::Reference]
+    /// *   **Construct**:
+    ///     [`label_end`][crate::construct::label_end]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a ![b] c
+    ///       ^^^^
+    /// > | a ![b][c] d
+    ///       ^^^^^^^
+    /// > | a ![b](c) d
+    ///       ^^^^^^^
+    /// ```
+    Image,
+    /// Label.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Image`][TokenType::Image],
+    ///     [`Link`][TokenType::Link]
+    /// *   **Content model**:
+    ///     [`LabelImage`][TokenType::LabelImage],
+    ///     [`LabelLink`][TokenType::LabelLink],
+    ///     [`LabelEnd`][TokenType::LabelEnd],
+    ///     [`LabelText`][TokenType::LabelText]
+    /// *   **Construct**:
+    ///     [`label_end`][crate::construct::label_end]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a [b] c
+    ///       ^^^
+    /// > | a ![b][c] d
+    ///       ^^^^
+    /// > | a [b](c) d
+    ///       ^^^
+    /// ```
+    Label,
+    /// Label end.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Label`][TokenType::Label]
+    /// *   **Content model**:
+    ///     [`LabelMarker`][TokenType::LabelMarker]
+    /// *   **Construct**:
+    ///     [`label_end`][crate::construct::label_end]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a ![b](c) d
+    ///          ^
+    /// > | a [b](c) d
+    ///         ^
+    /// ```
+    LabelEnd,
     /// Label start (image).
     ///
     /// ## Info
@@ -1134,26 +1204,147 @@ pub enum TokenType {
     ///       ^ ^
     /// ```
     LabelMarker,
-    /// Label end.
+    /// Label text.
     ///
     /// ## Info
     ///
     /// *   **Context**:
     ///     [`Label`][TokenType::Label]
     /// *   **Content model**:
-    ///     [`LabelMarker`][TokenType::LabelMarker]
+    ///     [text content][crate::content::text]
     /// *   **Construct**:
     ///     [`label_end`][crate::construct::label_end]
     ///
     /// ## Example
     ///
     /// ```markdown
-    /// > | a ![b](c) d
-    ///          ^
-    /// > | a [b](c) d
+    /// > | a [b] c
+    ///        ^
+    /// > | a ![b][c] d
     ///         ^
+    /// > | a [b](c) d
+    ///        ^
     /// ```
-    LabelEnd,
+    LabelText,
+    /// Line ending.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     basically everywhere
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     n/a
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a␊
+    ///      ^
+    ///   | b
+    /// ```
+    LineEnding,
+    /// Link.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`Label`][TokenType::Label],
+    ///     [`Resource`][TokenType::Resource],
+    ///     [`Reference`][TokenType::Reference]
+    /// *   **Construct**:
+    ///     [`label_end`][crate::construct::label_end]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a [b] c
+    ///       ^^^
+    /// > | a [b][c] d
+    ///       ^^^^^^
+    /// > | a [b](c) d
+    ///       ^^^^^^
+    /// ```
+    Link,
+    /// Whole paragraph.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::content::flow]
+    /// *   **Content model**:
+    ///     [text content][crate::content::text]
+    /// *   **Construct**:
+    ///     [`paragraph`][crate::construct::paragraph]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a b
+    ///     ^^^
+    /// > | c.
+    ///     ^^
+    /// ```
+    Paragraph,
+    /// Reference.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Image`][TokenType::Image],
+    ///     [`Link`][TokenType::Link]
+    /// *   **Content model**:
+    ///     [`ReferenceMarker`][TokenType::ReferenceMarker],
+    ///     [`ReferenceString`][TokenType::ReferenceString]
+    /// *   **Construct**:
+    ///     [`label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a ![b][c] d
+    ///           ^^^
+    /// ```
+    Reference,
+    /// Reference marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Reference`][TokenType::Reference]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a ![b][c] d
+    ///           ^ ^
+    /// ```
+    ReferenceMarker,
+    /// Reference string.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Reference`][TokenType::Reference]
+    /// *   **Content model**:
+    ///     [string content][crate::content::string]
+    /// *   **Construct**:
+    ///     [`label`][crate::construct::partial_label]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a ![b][c] d
+    ///            ^
+    /// ```
+    ReferenceString,
     /// Resource.
     ///
     /// ## Info
@@ -1179,24 +1370,6 @@ pub enum TokenType {
     ///          ^^^
     /// ```
     Resource,
-    /// Resource marker.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Resource`][TokenType::Resource]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`label_end`][crate::construct::label_end]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a ![b](c "d") e
-    ///           ^     ^
-    /// ```
-    ResourceMarker,
     /// Resource destination.
     ///
     /// ## Info
@@ -1292,6 +1465,24 @@ pub enum TokenType {
     ///            ^
     /// ```
     ResourceDestinationString,
+    /// Resource marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Resource`][TokenType::Resource]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`label_end`][crate::construct::label_end]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a ![b](c "d") e
+    ///           ^     ^
+    /// ```
+    ResourceMarker,
     /// Resource title.
     ///
     /// ## Info
@@ -1347,159 +1538,7 @@ pub enum TokenType {
     ///                 ^
     /// ```
     ResourceTitleString,
-    /// Reference.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Image`][TokenType::Image],
-    ///     [`Link`][TokenType::Link]
-    /// *   **Content model**:
-    ///     [`ReferenceMarker`][TokenType::ReferenceMarker],
-    ///     [`ReferenceString`][TokenType::ReferenceString]
-    /// *   **Construct**:
-    ///     [`label`][crate::construct::partial_label]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a ![b][c] d
-    ///           ^^^
-    /// ```
-    Reference,
-    /// Reference marker.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Reference`][TokenType::Reference]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`label`][crate::construct::partial_label]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a ![b][c] d
-    ///           ^ ^
-    /// ```
-    ReferenceMarker,
-    /// Reference string.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Reference`][TokenType::Reference]
-    /// *   **Content model**:
-    ///     [string content][crate::content::string]
-    /// *   **Construct**:
-    ///     [`label`][crate::construct::partial_label]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a ![b][c] d
-    ///            ^
-    /// ```
-    ReferenceString,
-    /// Link.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [text content][crate::content::text]
-    /// *   **Content model**:
-    ///     [`Label`][TokenType::Label],
-    ///     [`Resource`][TokenType::Resource],
-    ///     [`Reference`][TokenType::Reference]
-    /// *   **Construct**:
-    ///     [`label_end`][crate::construct::label_end]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a [b] c
-    ///       ^^^
-    /// > | a [b][c] d
-    ///       ^^^^^^
-    /// > | a [b](c) d
-    ///       ^^^^^^
-    /// ```
-    Link,
-    /// Image.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [text content][crate::content::text]
-    /// *   **Content model**:
-    ///     [`Label`][TokenType::Label],
-    ///     [`Resource`][TokenType::Resource],
-    ///     [`Reference`][TokenType::Reference]
-    /// *   **Construct**:
-    ///     [`label_end`][crate::construct::label_end]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a ![b] c
-    ///       ^^^^
-    /// > | a ![b][c] d
-    ///       ^^^^^^^
-    /// > | a ![b](c) d
-    ///       ^^^^^^^
-    /// ```
-    Image,
-    /// Label.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Image`][TokenType::Image],
-    ///     [`Link`][TokenType::Link]
-    /// *   **Content model**:
-    ///     [`LabelImage`][TokenType::LabelImage],
-    ///     [`LabelLink`][TokenType::LabelLink],
-    ///     [`LabelEnd`][TokenType::LabelEnd],
-    ///     [`LabelText`][TokenType::LabelText]
-    /// *   **Construct**:
-    ///     [`label_end`][crate::construct::label_end]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a [b] c
-    ///       ^^^
-    /// > | a ![b][c] d
-    ///       ^^^^
-    /// > | a [b](c) d
-    ///       ^^^
-    /// ```
-    Label,
-    /// Label text.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Label`][TokenType::Label]
-    /// *   **Content model**:
-    ///     [text content][crate::content::text]
-    /// *   **Construct**:
-    ///     [`label_end`][crate::construct::label_end]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a [b] c
-    ///        ^
-    /// > | a ![b][c] d
-    ///         ^
-    /// > | a [b](c) d
-    ///        ^
-    /// ```
-    LabelText,
-    /// Line ending.
+    /// SpaceOrTab.
     ///
     /// ## Info
     ///
@@ -1513,31 +1552,10 @@ pub enum TokenType {
     /// ## Example
     ///
     /// ```markdown
-    /// > | a␊
-    ///      ^
-    ///   | b
+    /// > | ␠* * *␠
+    ///     ^ ^ ^ ^
     /// ```
-    LineEnding,
-    /// Whole paragraph.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [flow content][crate::content::flow]
-    /// *   **Content model**:
-    ///     [text content][crate::content::text]
-    /// *   **Construct**:
-    ///     [`paragraph`][crate::construct::paragraph]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a b
-    ///     ^^^
-    /// > | c.
-    ///     ^^
-    /// ```
-    Paragraph,
+    SpaceOrTab,
     /// Whole thematic break.
     ///
     /// ## Info
@@ -1575,24 +1593,6 @@ pub enum TokenType {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
-    /// SpaceOrTab.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     basically everywhere
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     n/a
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | ␠* * *␠
-    ///     ^ ^ ^ ^
-    /// ```
-    SpaceOrTab,
 }
 
 /// To do
