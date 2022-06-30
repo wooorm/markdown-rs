@@ -1047,15 +1047,15 @@ fn on_exit_media(context: &mut CompileContext) {
         .map(|id| normalize_identifier(&id));
     let label = media.label.unwrap();
     let definition = id.and_then(|id| context.definitions.get(&id));
-    let destination = if let Some(definition) = definition {
-        &definition.destination
-    } else {
+    let destination = if media.destination.is_some() {
         &media.destination
-    };
-    let title = if let Some(definition) = definition {
-        &definition.title
     } else {
+        &definition.unwrap().destination
+    };
+    let title = if media.destination.is_some() {
         &media.title
+    } else {
+        &definition.unwrap().title
     };
 
     let destination = if let Some(destination) = destination {

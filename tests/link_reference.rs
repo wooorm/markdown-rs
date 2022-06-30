@@ -256,12 +256,17 @@ fn link_reference() {
         "should prefer collapsed references over shortcut references"
     );
 
-    // To do: some bug!
-    // assert_eq!(
-    //     micromark("[foo]: /url1\n\n[foo]()"),
-    //     "<p><a href=\"\">foo</a></p>",
-    //     "should prefer resources over shortcut references"
-    // );
+    assert_eq!(
+        micromark("[foo]: /url\n\n[foo]()"),
+        "<p><a href=\"\">foo</a></p>",
+        "should prefer resources over shortcut references (1)"
+    );
+
+    assert_eq!(
+        micromark("[foo]: /url \"title\"\n\n[foo]()"),
+        "<p><a href=\"\">foo</a></p>",
+        "should prefer resources over shortcut references (2)"
+    );
 
     assert_eq!(
         micromark("[foo]: /url1\n\n[foo](not a link)"),
