@@ -1,9 +1,22 @@
-use crate::tokenizer::Event;
+//! Helpers to deal with several changes in events, batching them together.
+//!
+//! Preferably, changes should be kept to a minumum.
+//! Sometimes, it’s needed to change the list of events, because parsing can be
+//! messy, and it helps to expose a cleaner interface of events to the compiler
+//! and other users.
+//! It can also help to merge many adjacent similar events.
+//! And, in other cases, it’s needed to parse subcontent: pass some events
+//! through another tokenizer and inject the result.
 
 /// To do: could we do without `HashMap`, so we don’t need `std`?
 use std::collections::HashMap;
 
-pub fn shift_links(events: &mut [Event], jumps: &[(usize, isize)]) {
+use crate::tokenizer::Event;
+
+/// Shift `previous` and `next` links according to `jumps`.
+///
+/// This fixes links in case there are events removed or added between them.
+fn shift_links(events: &mut [Event], jumps: &[(usize, isize)]) {
     let map = |before| {
         let mut jump_index = 0;
         let mut jump = 0;
@@ -38,7 +51,9 @@ pub fn shift_links(events: &mut [Event], jumps: &[(usize, isize)]) {
 /// Make it easy to insert and remove things while being performant and keeping
 /// links in check.
 pub struct EditMap {
+    /// Whether this map was consumed already.
     consumed: bool,
+    /// Record of changes.
     map: HashMap<usize, (usize, Vec<Event>)>,
 }
 
@@ -55,6 +70,8 @@ impl EditMap {
         assert!(!self.consumed, "cannot add after consuming");
 
         if let Some((curr_remove, mut curr_add)) = self.map.remove(&index) {
+            // To do: these might have to be split in several chunks instead
+            // of one, if links in `curr_add` are supported.
             remove += curr_remove;
             curr_add.append(&mut add);
             add = curr_add;

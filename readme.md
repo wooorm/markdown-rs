@@ -122,14 +122,12 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) `edit_map`
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add overview docs on how everything works
 
 #### Refactor
 
-- [ ] (1) Clean shifting, assertions in `edit_map`
 - [ ] (1) Use `link_to` in more places? It’s probably better
 - [ ] (1) Use `edit_map` in `subtokenize`
 
@@ -276,3 +274,4 @@ important.
 - [x] (3) Clean compiler
 - [x] (1) Parse initial and final space_or_tab of paragraphs (in string, text)
 - [x] (1) Refactor to clean and document `space_or_tab`
+- [x] (1) Refactor to clean and document `edit_map`
