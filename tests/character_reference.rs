@@ -190,7 +190,7 @@ fn character_reference() {
         "should not support the other characters inside a hexademical"
     );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("&amp;", {
     //     extensions: [{disable: {null: ["characterReferences"]}}]

@@ -252,7 +252,7 @@ fn autolink() {
         "should not support a dash before a dot in email autolinks"
     );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("<a@b.co>", {extensions: [{disable: {null: ["autolink"]}}]}),
     //   "<p>&lt;a@b.co&gt;</p>",

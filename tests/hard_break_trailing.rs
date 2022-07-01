@@ -118,7 +118,7 @@ fn hard_break_trailing() {
     //     "should support a mixed line suffix after a span (3)"
     // );
 
-    // // To do: turning off things.
+    // // To do: turning things off.
     // assert_eq!(
     //   micromark("a  \nb", {extensions: [{disable: {null: ["hardBreakTrailing"]}}]}),
     //   "<p>a\nb</p>",

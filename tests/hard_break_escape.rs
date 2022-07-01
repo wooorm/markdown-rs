@@ -40,7 +40,7 @@ fn hard_break_escape() {
         "should not support escape hard breaks at the end of a heading"
     );
 
-    // // To do: turning off things.
+    // // To do: turning things off.
     // assert_eq!(
     //   micromark("a\\\nb", {extensions: [{disable: {null: ["hardBreakEscape"]}}]}),
     //   "<p>a\\\nb</p>",

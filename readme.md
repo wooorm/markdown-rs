@@ -46,11 +46,6 @@ cargo doc --document-private-items
 
 ### Some major obstacles
 
-- [ ] (8) Can paragraphs operate more performantly than checking whether other
-      flow constructs start a line, before exiting and actually attempting flow
-      constructs?
-- [ ] (3) Interrupting: sometimes flow can or cannot start depending on the
-      previous construct (paragraph, definition)
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
       subtokenization is solved
 - [ ] (3) Concrete constructs: HTML or code (fenced) cannot be “pierced” into by
@@ -132,7 +127,6 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (3) Interrupting (html flow complete, definition + code_indented)
 - [ ] (5) attention\
        test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
       `heading_atx`, `heading_setext`, `html_flow`, `thematic_break`)\
@@ -274,3 +268,6 @@ important.
 - [x] (1) Parse initial and final space_or_tab of paragraphs (in string, text)
 - [x] (1) Refactor to clean and document `space_or_tab`
 - [x] (1) Refactor to clean and document `edit_map`
+- [x] (8) Make paragraphs fast by merging them at the end, not checking whether
+      things interrupt them each line
+- [x] (3) Add support for interrupting (or not)

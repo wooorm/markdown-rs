@@ -49,8 +49,8 @@
 //!
 //! <!-- To do: link `lists` -->
 
-use super::partial_space_or_tab::space_or_tab;
-use crate::constant::THEMATIC_BREAK_MARKER_COUNT_MIN;
+use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
+use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Type of thematic break.
@@ -122,7 +122,8 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::ThematicBreak);
-    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+    // To do: allow arbitrary when code (indented) is turned off.
+    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
 
 /// Start of a thematic break, after whitespace.
@@ -157,6 +158,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
             if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN =>
         {
             tokenizer.exit(TokenType::ThematicBreak);
+            // Feel free to interrupt.
+            tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
         }
         Code::Char(char) if char == info.kind.as_char() => {

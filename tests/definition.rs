@@ -375,12 +375,11 @@ fn definition() {
         "should not support a final (unbalanced) right paren in a raw destination “before” a title"
     );
 
-    // To do: do not let code (indented) interrupt definitions.
-    // assert_eq!(
-    //     micromark(" [a]: b \"c\"\n  [d]: e\n   [f]: g \"h\"\n    [i]: j\n\t[k]: l (m)\n\t n [k] o"),
-    //     "<p>n <a href=\"l\" title=\"m\">k</a> o</p>",
-    //     "should support subsequent indented definitions"
-    // );
+    assert_eq!(
+        micromark(" [a]: b \"c\"\n  [d]: e\n   [f]: g \"h\"\n    [i]: j\n\t[k]: l (m)\n\t n [k] o"),
+        "<p>n <a href=\"l\" title=\"m\">k</a> o</p>",
+        "should support subsequent indented definitions"
+    );
 
     assert_eq!(
         micromark("[a\n  b]: c\n\n[a\n  b]"),
@@ -406,7 +405,7 @@ fn definition() {
         "should not support definitions w/ text + a closing paren as a raw destination"
     );
 
-    // To do: support turning off things.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("[foo]: /url \"title\"", {
     //     extensions: [{disable: {null: ["definition"]}}]

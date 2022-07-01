@@ -252,7 +252,7 @@ fn code_fenced() {
     //   "should not support lazyness (3)"
     // );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("```", {extensions: [{disable: {null: ["codeFenced"]}}]}),
     //   "<p>```</p>",

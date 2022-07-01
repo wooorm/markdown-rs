@@ -54,8 +54,8 @@
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
-use super::partial_space_or_tab::space_or_tab;
-use crate::constant::HEADING_ATX_OPENING_FENCE_SIZE_MAX;
+use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
+use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
 use crate::tokenizer::{
     Code, ContentType, Event, EventType, State, StateFnResult, TokenType, Tokenizer,
 };
@@ -68,7 +68,8 @@ use crate::util::edit_map::EditMap;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::HeadingAtx);
-    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+    // To do: allow arbitrary when code (indented) is turned off.
+    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
 
 /// Start of a heading (atx), after whitespace.
@@ -127,6 +128,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::HeadingAtx);
             tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
+            // Feel free to interrupt.
+            tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {

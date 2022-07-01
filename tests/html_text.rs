@@ -418,7 +418,7 @@ micromark_with_options("<x> a", DANGER),
         "should support an EOL in an instruction"
     );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //     micromark_with_options("a <x>", {extensions: [{disable: {null: ["htmlText"]}}]}),
     //     "<p>a &lt;x&gt;</p>",

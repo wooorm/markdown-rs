@@ -58,10 +58,9 @@
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
 use crate::constant::TAB_SIZE;
-use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_with_options, Options};
-use crate::subtokenize::link;
-use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::span::from_exit_event;
+use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
+use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::edit_map::EditMap;
 
 /// Kind of underline.
 #[derive(Debug, Clone, PartialEq)]
@@ -109,150 +108,23 @@ impl Kind {
     }
 }
 
-/// Start of a heading (setext).
-///
-/// ```markdown
-/// |alpha
-/// ==
-/// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::HeadingSetext);
-    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
-}
-
-/// Start of a heading (setext), after whitespace.
-///
-/// ```markdown
-/// |alpha
-/// ==
-/// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            unreachable!("expected non-eol/eof");
-        }
-        _ => {
-            tokenizer.enter(TokenType::HeadingSetextText);
-            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
-            text_inside(tokenizer, code)
-        }
-    }
-}
-
-/// Inside text.
-///
-/// ```markdown
-/// al|pha
-/// bra|vo
-/// ==
-/// ```
-fn text_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Nok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::Data);
-            tokenizer.exit(TokenType::HeadingSetextText);
-            tokenizer.attempt(underline_before, |ok| {
-                Box::new(if ok { after } else { text_continue })
-            })(tokenizer, code)
-        }
-        _ => {
-            tokenizer.consume(code);
-            (State::Fn(Box::new(text_inside)), None)
-        }
-    }
-}
-
-/// At a line ending, not at an underline.
-///
-/// ```markdown
-/// alpha
-/// |bravo
-/// ==
-/// ```
-fn text_continue(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // Needed to connect the text.
-    tokenizer.enter(TokenType::HeadingSetextText);
-    tokenizer.events.pop();
-    tokenizer.events.pop();
-
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter_with_content(TokenType::LineEnding, Some(ContentType::Text));
-            let index = tokenizer.events.len() - 1;
-            link(&mut tokenizer.events, index);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-
-            (
-                State::Fn(Box::new(tokenizer.attempt_opt(
-                    space_or_tab_with_options(Options {
-                        kind: TokenType::SpaceOrTab,
-                        min: 1,
-                        max: usize::MAX,
-                        content_type: Some(ContentType::Text),
-                        connect: true,
-                    }),
-                    text_line_start,
-                ))),
-                None,
-            )
-        }
-        _ => unreachable!("expected eol"),
-    }
-}
-
-/// At a line ending after whitespace, not at an underline.
-///
-/// ```markdown
-/// alpha
-/// |bravo
-/// ==
-/// ```
-fn text_line_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        // Blank lines not allowed.
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
-        _ => {
-            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
-            let index = tokenizer.events.len() - 1;
-            link(&mut tokenizer.events, index);
-            text_inside(tokenizer, code)
-        }
-    }
-}
-
-/// After a heading (setext).
-///
-/// ```markdown
-/// alpha
-/// ==|
-/// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(TokenType::HeadingSetext);
-    (State::Ok, Some(vec![code]))
-}
-
 /// At a line ending, presumably an underline.
 ///
 /// ```markdown
 /// alpha|
 /// ==
 /// ```
-fn underline_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (
-                State::Fn(Box::new(
-                    tokenizer.attempt_opt(space_or_tab(), underline_sequence_start),
-                )),
-                None,
-            )
-        }
-        _ => unreachable!("expected eol"),
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    let index = tokenizer.events.len();
+    let paragraph_before = index > 3
+        && tokenizer.events[index - 1].token_type == TokenType::LineEnding
+        && tokenizer.events[index - 3].token_type == TokenType::Paragraph;
+
+    if paragraph_before {
+        // To do: allow arbitrary when code (indented) is turned off.
+        tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
+    } else {
+        (State::Nok, None)
     }
 }
 
@@ -262,26 +134,11 @@ fn underline_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// alpha
 /// |==
 /// ```
-fn underline_sequence_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let tail = tokenizer.events.last();
-    let mut prefix = 0;
-
-    if let Some(event) = tail {
-        if event.token_type == TokenType::SpaceOrTab {
-            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
-            prefix = span.end_index - span.start_index;
-        }
-    }
-
-    // To do: 4+ should be okay if code (indented) is turned off!
-    if prefix >= TAB_SIZE {
-        return (State::Nok, None);
-    }
-
+fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char == '-' || char == '=' => {
             tokenizer.enter(TokenType::HeadingSetextUnderline);
-            underline_sequence_inside(tokenizer, code, Kind::from_char(char))
+            inside(tokenizer, code, Kind::from_char(char))
         }
         _ => (State::Nok, None),
     }
@@ -293,16 +150,13 @@ fn underline_sequence_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
 /// alpha
 /// =|=
 /// ```
-fn underline_sequence_inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
     match code {
         Code::Char(char) if char == kind.as_char() => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| underline_sequence_inside(t, c, kind))),
-                None,
-            )
+            (State::Fn(Box::new(move |t, c| inside(t, c, kind))), None)
         }
-        _ => tokenizer.attempt_opt(space_or_tab(), underline_after)(tokenizer, code),
+        _ => tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code),
     }
 }
 
@@ -312,12 +166,59 @@ fn underline_sequence_inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) 
 /// alpha
 /// ==|
 /// ```
-fn underline_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::HeadingSetextUnderline);
+            // Feel free to interrupt.
+            tokenizer.interrupt = false;
+            tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));
             (State::Ok, Some(vec![code]))
         }
         _ => (State::Nok, None),
     }
+}
+
+/// To do.
+pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+    let mut edit_map = EditMap::new();
+    let mut index = 0;
+    let mut paragraph_enter: Option<usize> = None;
+    let mut paragraph_exit: Option<usize> = None;
+
+    while index < tokenizer.events.len() {
+        let event = &tokenizer.events[index];
+
+        // Find paragraphs.
+        if event.event_type == EventType::Enter {
+            if event.token_type == TokenType::Paragraph {
+                paragraph_enter = Some(index);
+            }
+        } else if event.token_type == TokenType::Paragraph {
+            paragraph_exit = Some(index);
+        }
+        // We know this is preceded by a paragraph.
+        // Otherwise we don’t parse.
+        else if event.token_type == TokenType::HeadingSetextUnderline {
+            let enter = paragraph_enter.take().unwrap();
+            let exit = paragraph_exit.take().unwrap();
+
+            // Change types of Enter:Paragraph, Exit:Paragraph.
+            tokenizer.events[enter].token_type = TokenType::HeadingSetextText;
+            tokenizer.events[exit].token_type = TokenType::HeadingSetextText;
+
+            // Add of Enter:HeadingSetext, Exit:HeadingSetext.
+            let mut heading_enter = tokenizer.events[enter].clone();
+            heading_enter.token_type = TokenType::HeadingSetext;
+            let mut heading_exit = tokenizer.events[index].clone();
+            heading_exit.token_type = TokenType::HeadingSetext;
+
+            edit_map.add(enter, 0, vec![heading_enter]);
+            edit_map.add(index + 1, 0, vec![heading_exit]);
+        }
+
+        index += 1;
+    }
+
+    edit_map.consume(&mut tokenizer.events)
 }

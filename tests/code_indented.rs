@@ -119,7 +119,7 @@ fn code_indented() {
     //         "should not support lazyness (7)"
     //     );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("   a", {extensions: [{disable: {null: ["codeIndented"]}}]}),
     //   "<p>a</p>",

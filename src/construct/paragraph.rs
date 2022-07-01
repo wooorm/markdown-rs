@@ -32,14 +32,10 @@
 //! [code_text]: crate::construct::code_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
-use crate::constant::TAB_SIZE;
-use crate::construct::{
-    blank_line::start as blank_line, code_fenced::start as code_fenced,
-    heading_atx::start as heading_atx, html_flow::start as html_flow,
-    partial_space_or_tab::space_or_tab_min_max, thematic_break::start as thematic_break,
+use crate::tokenizer::{
+    Code, ContentType, Event, EventType, State, StateFnResult, TokenType, Tokenizer,
 };
-use crate::subtokenize::link;
-use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::edit_map::EditMap;
 
 /// Before a paragraph.
 ///
@@ -66,11 +62,14 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => end(tokenizer, code),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer
-            .check(interrupt, |ok| {
-                Box::new(if ok { at_line_ending } else { end })
-            })(tokenizer, code),
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            tokenizer.exit(TokenType::Data);
+            tokenizer.exit(TokenType::Paragraph);
+            tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));
+            // You’d be interrupting.
+            tokenizer.interrupt = true;
+            (State::Ok, Some(vec![code]))
+        }
         _ => {
             tokenizer.consume(code);
             (State::Fn(Box::new(inside)), None)
@@ -78,90 +77,55 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// At a line ending, not interrupting.
-///
-/// ```markdown
-/// alpha|
-/// bravo.
-/// ```
-fn at_line_ending(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.consume(code);
-    tokenizer.exit(TokenType::Data);
-    tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
-    let index = tokenizer.events.len() - 1;
-    link(&mut tokenizer.events, index);
-    (State::Fn(Box::new(inside)), None)
-}
+/// Merge “`Paragraph`”s, which currently span a single line, into actual
+/// `Paragraph`s that span multiple lines.
+pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+    let mut edit_map = EditMap::new();
+    let len = tokenizer.events.len();
+    let mut index = 0;
 
-/// At a line ending, done.
-///
-/// ```markdown
-/// alpha|
-/// ***
-/// ```
-fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(TokenType::Data);
-    tokenizer.exit(TokenType::Paragraph);
-    (State::Ok, Some(vec![code]))
-}
+    while index < len {
+        let event = &tokenizer.events[index];
 
-/// Before a potential interruption.
-///
-/// ```markdown
-/// alpha|
-/// ***
-/// ```
-fn interrupt(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
-            (State::Fn(Box::new(interrupt_start)), None)
+        if event.event_type == EventType::Enter && event.token_type == TokenType::Paragraph {
+            // Exit:Paragraph
+            let mut exit_index = index + 3;
+            // Enter:Paragraph
+            let mut enter_next_index = exit_index + 3;
+
+            // To do: assert that `LineEnding` between?
+            while enter_next_index < len
+                && tokenizer.events[enter_next_index].token_type == TokenType::Paragraph
+            {
+                // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
+                edit_map.add(exit_index, 4, vec![]);
+                println!("rm {:?} {:?}", exit_index, exit_index + 4);
+
+                // Add Exit:LineEnding position info to Exit:Data.
+                let line_ending_exit = &tokenizer.events[enter_next_index - 1];
+                let line_ending_point = line_ending_exit.point.clone();
+                let line_ending_index = line_ending_exit.index;
+                let data_exit = &mut tokenizer.events[exit_index - 1];
+                data_exit.point = line_ending_point;
+                data_exit.index = line_ending_index;
+
+                // Link Enter:Data on the previous line to Enter:Data on this line.
+                let data_enter_prev = &mut tokenizer.events[exit_index - 2];
+                data_enter_prev.next = Some(enter_next_index + 1);
+                let data_enter_next = &mut tokenizer.events[enter_next_index + 1];
+                data_enter_next.previous = Some(exit_index - 2);
+
+                // Potential next start.
+                exit_index = enter_next_index + 3;
+                enter_next_index = exit_index + 3;
+            }
+
+            // Move to `Exit:Paragraph`.
+            index = exit_index;
         }
-        _ => unreachable!("expected eol"),
+
+        index += 1;
     }
-}
 
-/// After a line ending.
-///
-/// ```markdown
-/// alpha
-/// |~~~js
-/// ~~~
-/// ```
-fn interrupt_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: If code is disabled, indented lines are allowed to interrupt.
-    tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
-        Box::new(if ok { interrupt_indent } else { interrupt_cont })
-    })(tokenizer, code)
-}
-
-/// At an indent.
-///
-/// ```markdown
-/// alpha
-///     |
-/// ```
-fn interrupt_indent(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    (State::Ok, Some(vec![code]))
-}
-
-/// Not at an indented line.
-///
-/// ```markdown
-/// alpha
-/// |<div>
-/// ```
-fn interrupt_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_n(
-        vec![
-            Box::new(blank_line),
-            Box::new(code_fenced),
-            Box::new(html_flow),
-            Box::new(heading_atx),
-            Box::new(thematic_break),
-        ],
-        |ok| Box::new(move |_t, code| (if ok { State::Nok } else { State::Ok }, Some(vec![code]))),
-    )(tokenizer, code)
+    edit_map.consume(&mut tokenizer.events)
 }

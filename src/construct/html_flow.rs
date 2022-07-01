@@ -98,8 +98,10 @@
 //! [html_block_names]: crate::constant::HTML_BLOCK_NAMES
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
-use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX};
-use crate::construct::{blank_line::start as blank_line, partial_space_or_tab::space_or_tab};
+use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_SIZE};
+use crate::construct::{
+    blank_line::start as blank_line, partial_space_or_tab::space_or_tab_min_max,
+};
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Kind of HTML (flow).
@@ -191,7 +193,8 @@ struct Info {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::HtmlFlow);
     tokenizer.enter(TokenType::HtmlFlowData);
-    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+    // To do: allow arbitrary when code (indented) is turned off.
+    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
 
 /// After optional whitespace, before `<`.
@@ -400,8 +403,10 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             } else {
                 info.kind = Kind::Complete;
 
-                // To do: do not support complete HTML when interrupting.
-                if info.start_tag {
+                // Do not support complete HTML when interrupting.
+                if tokenizer.interrupt {
+                    (State::Nok, None)
+                } else if info.start_tag {
                     complete_attribute_name_before(tokenizer, code, info)
                 } else {
                     complete_closing_tag_after(tokenizer, code, info)
@@ -784,6 +789,8 @@ fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Sta
     match code {
         Code::None => {
             tokenizer.exit(TokenType::HtmlFlow);
+            // Feel free to interrupt.
+            tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
         }
         // To do: do not allow lazy lines.
@@ -949,6 +956,8 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::HtmlFlowData);
             tokenizer.exit(TokenType::HtmlFlow);
+            // Feel free to interrupt.
+            tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
         }
         _ => {

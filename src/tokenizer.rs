@@ -1760,6 +1760,8 @@ pub struct Tokenizer<'a> {
     /// To do.
     pub label_start_list_loose: Vec<LabelStart>,
     /// To do.
+    pub interrupt: bool,
+    /// To do.
     pub media_list: Vec<Media>,
     /// To do.
     resolvers: Vec<Box<Resolver>>,
@@ -1783,6 +1785,7 @@ impl<'a> Tokenizer<'a> {
             label_start_stack: vec![],
             label_start_list_loose: vec![],
             media_list: vec![],
+            interrupt: false,
             resolvers: vec![],
             resolver_ids: vec![],
         }

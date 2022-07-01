@@ -179,7 +179,8 @@ struct Info {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::CodeFenced);
     tokenizer.enter(TokenType::CodeFencedFence);
-    tokenizer.attempt_opt(space_or_tab(), before_sequence_open)(tokenizer, code)
+    // To do: allow arbitrary when code (indented) is turned off.
+    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before_sequence_open)(tokenizer, code)
 }
 
 /// Inside the opening fence, after an optional prefix, before a sequence.
@@ -550,5 +551,7 @@ fn content_continue(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateF
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(TokenType::CodeFenced);
+    // Feel free to interrupt.
+    tokenizer.interrupt = false;
     (State::Ok, Some(vec![code]))
 }

@@ -59,8 +59,13 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// > filled line (that it has a non-whitespace character), because blank lines
 /// > are parsed already, so we never run into that.
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::CodeIndented);
-    tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer, code)
+    // Do not interrupt paragraphs.
+    if tokenizer.interrupt {
+        (State::Nok, None)
+    } else {
+        tokenizer.enter(TokenType::CodeIndented);
+        tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer, code)
+    }
 }
 
 /// At a break.
@@ -110,6 +115,8 @@ fn content(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(TokenType::CodeIndented);
+    // Feel free to interrupt.
+    tokenizer.interrupt = false;
     (State::Ok, Some(vec![code]))
 }
 

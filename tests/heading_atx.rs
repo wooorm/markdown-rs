@@ -196,7 +196,7 @@ fn heading_atx() {
     //     "should not support lazyness (2)"
     // );
 
-    // Extensions:
+    // To do: turning things off:
     // assert_eq!(
     //   micromark("# a", {extensions: [{disable: {null: ["headingAtx"]}}]}),
     //   "<p># a</p>",

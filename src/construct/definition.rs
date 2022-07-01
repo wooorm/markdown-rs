@@ -107,8 +107,19 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 /// |[a]: b "c"
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::Definition);
-    tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+    let index = tokenizer.events.len();
+    let definition_before = index > 3
+        && tokenizer.events[index - 1].token_type == TokenType::LineEnding
+        && tokenizer.events[index - 3].token_type == TokenType::Definition;
+
+    // Do not interrupt paragraphs (but do follow definitions).
+    if tokenizer.interrupt && !definition_before {
+        (State::Nok, None)
+    } else {
+        tokenizer.enter(TokenType::Definition);
+        // Note: arbitrary whitespace allowed even if code (indented) is on.
+        tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+    }
 }
 
 /// At the start of a definition, after whitespace.
@@ -218,6 +229,8 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
             tokenizer.exit(TokenType::Definition);
+            // You’d be interrupting.
+            tokenizer.interrupt = true;
             (State::Ok, Some(vec![code]))
         }
         _ => (State::Nok, None),

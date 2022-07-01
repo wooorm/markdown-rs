@@ -79,7 +79,7 @@ fn character_escape() {
         "should escape in fenced code info"
     );
 
-    //   // To do: extensions
+    //   // To do: turning things off
     //   assert_eq!(
     //     micromark("\\> a", {extensions: [{disable: {null: ["characterEscape"]}}]}),
     //     "<p>\\&gt; a</p>",

@@ -92,26 +92,6 @@ fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// After a blank line.
-///
-/// Move to `start` afterwards.
-///
-/// ```markdown
-/// ␠␠|
-/// ```
-fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::None => (State::Ok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::BlankLineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(TokenType::BlankLineEnding);
-            (State::Fn(Box::new(start)), None)
-        }
-        _ => unreachable!("expected eol/eof after blank line `{:?}`", code),
-    }
-}
-
 /// Before flow (initial).
 ///
 /// “Initial” flow means unprefixed flow, so right at the start of a line.
@@ -133,16 +113,38 @@ fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 Box::new(code_fenced),
                 Box::new(html_flow),
                 Box::new(heading_atx),
+                Box::new(heading_setext),
                 Box::new(thematic_break),
                 Box::new(definition),
-                Box::new(heading_setext),
             ],
             |ok| Box::new(if ok { after } else { before_paragraph }),
         )(tokenizer, code),
     }
 }
 
-/// After a flow construct.
+/// After a blank line.
+///
+/// Move to `start` afterwards.
+///
+/// ```markdown
+/// ␠␠|
+/// ```
+fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::None => (State::Ok, None),
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            tokenizer.enter(TokenType::BlankLineEnding);
+            tokenizer.consume(code);
+            tokenizer.exit(TokenType::BlankLineEnding);
+            // Feel free to interrupt.
+            tokenizer.interrupt = false;
+            (State::Fn(Box::new(start)), None)
+        }
+        _ => unreachable!("expected eol/eof after blank line `{:?}`", code),
+    }
+}
+
+/// After something.
 ///
 /// ```markdown
 /// ## alpha|

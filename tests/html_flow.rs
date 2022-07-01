@@ -21,7 +21,7 @@ fn html_flow() {
         "should support a heading w/ rank 1"
     );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark_with_options("<x>", {extensions: [{disable: {null: ["htmlFlow"]}}]}),
     //   "<p>&lt;x&gt;</p>",
@@ -789,12 +789,11 @@ fn html_flow_7_complete() {
         "should support interleaving w/ whitespace-only blank lines"
     );
 
-    // To do: disallow html (complete) from interrupting.
-    // assert_eq!(
-    //     micromark_with_options("Foo\n<a href=\"bar\">\nbaz", DANGER),
-    //     "<p>Foo\n<a href=\"bar\">\nbaz</p>",
-    //     "should not support interrupting paragraphs w/ complete tags"
-    // );
+    assert_eq!(
+        micromark_with_options("Foo\n<a href=\"bar\">\nbaz", DANGER),
+        "<p>Foo\n<a href=\"bar\">\nbaz</p>",
+        "should not support interrupting paragraphs w/ complete tags"
+    );
 
     assert_eq!(
         micromark_with_options("<x", DANGER),

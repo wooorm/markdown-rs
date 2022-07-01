@@ -169,7 +169,7 @@ fn thematic_break() {
     //     "should not support lazyness (2)"
     // );
 
-    // To do: extensions.
+    // To do: turning things off.
     // assert_eq!(
     //   micromark("***", {extensions: [{disable: {null: ["thematicBreak"]}}]}),
     //   "<p>***</p>",
