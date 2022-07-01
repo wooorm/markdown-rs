@@ -102,28 +102,28 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Link`][TokenType::Link]
+//! *   [`Data`][TokenType::Data]
 //! *   [`Image`][TokenType::Image]
 //! *   [`Label`][TokenType::Label]
-//! *   [`LabelText`][TokenType::LabelText]
 //! *   [`LabelEnd`][TokenType::LabelEnd]
 //! *   [`LabelMarker`][TokenType::LabelMarker]
+//! *   [`LabelText`][TokenType::LabelText]
+//! *   [`LineEnding`][TokenType::LineEnding]
+//! *   [`Link`][TokenType::Link]
+//! *   [`Reference`][TokenType::Reference]
+//! *   [`ReferenceMarker`][TokenType::ReferenceMarker]
+//! *   [`ReferenceString`][TokenType::ReferenceString]
 //! *   [`Resource`][TokenType::Resource]
-//! *   [`ResourceMarker`][TokenType::ResourceMarker]
 //! *   [`ResourceDestination`][TokenType::ResourceDestination]
 //! *   [`ResourceDestinationLiteral`][TokenType::ResourceDestinationLiteral]
 //! *   [`ResourceDestinationLiteralMarker`][TokenType::ResourceDestinationLiteralMarker]
 //! *   [`ResourceDestinationRaw`][TokenType::ResourceDestinationRaw]
 //! *   [`ResourceDestinationString`][TokenType::ResourceDestinationString]
+//! *   [`ResourceMarker`][TokenType::ResourceMarker]
 //! *   [`ResourceTitle`][TokenType::ResourceTitle]
 //! *   [`ResourceTitleMarker`][TokenType::ResourceTitleMarker]
 //! *   [`ResourceTitleString`][TokenType::ResourceTitleString]
-//! *   [`Reference`][TokenType::Reference]
-//! *   [`ReferenceMarker`][TokenType::ReferenceMarker]
-//! *   [`ReferenceString`][TokenType::ReferenceString]
-//! *   [`Data`][TokenType::Data]
 //! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
-//! *   [`LineEnding`][TokenType::LineEnding]
 //!
 //! ## References
 //!

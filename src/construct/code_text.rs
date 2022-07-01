@@ -69,8 +69,8 @@
 //!
 //! *   [`CodeText`][TokenType::CodeText]
 //! *   [`CodeTextData`][TokenType::CodeTextData]
-//! *   [`CodeTextSequence`][TokenType::CodeTextSequence]
 //! *   [`CodeTextLineEnding`][TokenType::CodeTextLineEnding]
+//! *   [`CodeTextSequence`][TokenType::CodeTextSequence]
 //!
 //! ## References
 //!

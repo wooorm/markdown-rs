@@ -79,9 +79,9 @@
 //!
 //! *   [`CodeFenced`][TokenType::CodeFenced]
 //! *   [`CodeFencedFence`][TokenType::CodeFencedFence]
-//! *   [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence]
 //! *   [`CodeFencedFenceInfo`][TokenType::CodeFencedFenceInfo]
 //! *   [`CodeFencedFenceMeta`][TokenType::CodeFencedFenceMeta]
+//! *   [`CodeFencedFenceSequence`][TokenType::CodeFencedFenceSequence]
 //! *   [`CodeFlowChunk`][TokenType::CodeFlowChunk]
 //! *   [`LineEnding`][TokenType::LineEnding]
 //! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
