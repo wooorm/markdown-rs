@@ -46,9 +46,9 @@ cargo doc --document-private-items
 
 ### Some major obstacles
 
-- [ ] (8) Can paragraphs (and to a lesser extent string data and text data)
-      operate more performantly than checking whether other flow constructs
-      start a line, before exiting and actually attempting flow constructs?
+- [ ] (8) Can paragraphs operate more performantly than checking whether other
+      flow constructs start a line, before exiting and actually attempting flow
+      constructs?
 - [ ] (3) Interrupting: sometimes flow can or cannot start depending on the
       previous construct (paragraph, definition)
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
@@ -59,8 +59,8 @@ cargo doc --document-private-items
       need to be indented
 - [ ] (5) There’s a lot of rust-related choosing whether to pass (mutable)
       references or whatever around that should be refactored
-- [ ] (5) Figure out extensions
 - [ ] (1) Support turning off constructs
+- [ ] (5) Figure out extensions
 
 ### Constructs
 
@@ -128,8 +128,7 @@ cargo doc --document-private-items
 
 #### Refactor
 
-- [ ] (1) Use `link_to` in more places? It’s probably better
-- [ ] (1) Use `edit_map` in `subtokenize`
+- [ ] (1) Use `edit_map` in `subtokenize` (needs to support links in edits)
 
 #### Parse
 

@@ -226,6 +226,7 @@ type Handle = fn(&mut CompileContext);
 type Map = HashMap<TokenType, Handle>;
 
 /// Context used to compile markdown.
+#[allow(clippy::struct_excessive_bools)]
 struct CompileContext<'a> {
     /// Static info.
     pub events: &'a [Event],
