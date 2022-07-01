@@ -59,9 +59,7 @@
 //!
 //! <!-- To do: link attention. -->
 
-use super::partial_space_or_tab::{
-    space_or_tab_one_line_ending_with_options, OneLineEndingOptions,
-};
+use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
 use crate::subtokenize::link;
 use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
@@ -137,7 +135,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             (State::Ok, None)
         }
         Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => tokenizer.go(
-            space_or_tab_one_line_ending_with_options(OneLineEndingOptions {
+            space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
             }),

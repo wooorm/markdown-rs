@@ -96,7 +96,7 @@
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},
     partial_label::{start as label, Options as LabelOptions},
-    partial_space_or_tab::{space_or_tab, space_or_tab_one_line_ending},
+    partial_space_or_tab::{space_or_tab, space_or_tab_eol},
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
@@ -149,7 +149,7 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::DefinitionMarker);
             (
                 State::Fn(Box::new(
-                    tokenizer.attempt_opt(space_or_tab_one_line_ending(), destination_before),
+                    tokenizer.attempt_opt(space_or_tab_eol(), destination_before),
                 )),
                 None,
             )
@@ -233,7 +233,7 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///  "c"
 /// ```
 fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.go(space_or_tab_one_line_ending(), title_before_marker)(tokenizer, code)
+    tokenizer.go(space_or_tab_eol(), title_before_marker)(tokenizer, code)
 }
 
 /// Before a title, after a line ending.

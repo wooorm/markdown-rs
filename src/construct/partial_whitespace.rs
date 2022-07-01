@@ -10,12 +10,18 @@
 //! whitespace ::= 0.*space_or_tab eol 0.*space_or_tab
 //! ```
 //!
+//! This is similar to [`space_or_tab_eol`][space_or_tab_eol], with the main
+//! difference that that *does not* require a line ending and parses any
+//! `space_or_tab` with one line ending.
+//! This instead *requires* the line ending (or eol).
+//!
 //! ## References
 //!
 //! *   [`initialize/text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark/dev/lib/initialize/text.js)
 //!
 //! [string]: crate::content::string
 //! [text]: crate::content::text
+//! [space_or_tab_eol]: crate::construct::partial_space_or_tab::space_or_tab_eol
 
 use super::partial_space_or_tab::space_or_tab;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};

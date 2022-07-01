@@ -122,7 +122,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) `space_or_tab_one_line_ending`
 - [ ] (1) `edit_map`
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
@@ -131,9 +130,7 @@ cargo doc --document-private-items
 #### Refactor
 
 - [ ] (1) Clean shifting, assertions in `edit_map`
-- [ ] (1) Clean `space_or_tab_one_line_ending`
-- [ ] (1) Use `link_to` (and `space_or_tab_one_line_ending`) in more places?
-      It’s probably better
+- [ ] (1) Use `link_to` in more places? It’s probably better
 - [ ] (1) Use `edit_map` in `subtokenize`
 
 #### Parse
@@ -278,3 +275,4 @@ important.
 - [x] (1) Add docs on resolver, clean feed
 - [x] (3) Clean compiler
 - [x] (1) Parse initial and final space_or_tab of paragraphs (in string, text)
+- [x] (1) Refactor to clean and document `space_or_tab`

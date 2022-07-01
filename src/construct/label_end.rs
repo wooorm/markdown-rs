@@ -150,7 +150,7 @@ use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::{
     partial_destination::{start as destination, Options as DestinationOptions},
     partial_label::{start as label, Options as LabelOptions},
-    partial_space_or_tab::space_or_tab_one_line_ending,
+    partial_space_or_tab::space_or_tab_eol,
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::tokenizer::{
@@ -561,7 +561,7 @@ fn resource(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a](|b) c
 /// ```
 fn resource_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_opt(space_or_tab_one_line_ending(), resource_open)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab_eol(), resource_open)(tokenizer, code)
 }
 
 /// At the start of a resource, after optional whitespace.
@@ -599,7 +599,7 @@ fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a](b| "c") d
 /// ```
 fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt(space_or_tab_one_line_ending(), |ok| {
+    tokenizer.attempt(space_or_tab_eol(), |ok| {
         Box::new(if ok { resource_between } else { resource_end })
     })(tokenizer, code)
 }
@@ -636,7 +636,7 @@ fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// [a](b "c"|) d
 /// ```
 fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.attempt_opt(space_or_tab_one_line_ending(), resource_end)(tokenizer, code)
+    tokenizer.attempt_opt(space_or_tab_eol(), resource_end)(tokenizer, code)
 }
 
 /// In a resource, at the `)`.
