@@ -165,9 +165,12 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
     while close < runs.len() {
         let run_close = &runs[close];
+        let mut next_index = close + 1;
+        println!("walk! {:?} {:?}", close, runs.len());
 
         // Find a run that can close.
         if run_close.close {
+            println!("close! {:?} {:?}", close, run_close);
             let mut open = close;
 
             // Now walk back to find an opener.
@@ -176,8 +179,9 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
                 let run_open = &runs[open];
 
-                // Find a token that can open the closer.
+                // We found a run that can open the closer we found.
                 if run_open.open && run_close.marker == run_open.marker {
+                    println!("open! {:?} {:?}", open, run_open);
                     // If the opening can close or the closing can open,
                     // and the close size *is not* a multiple of three,
                     // but the sum of the opening and closing size *is*
@@ -188,6 +192,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     {
                         continue;
                     }
+
+                    // We’ve found a match!
 
                     // Number of markers to use from the sequence.
                     let take = if run_open.size > 1 && run_close.size > 1 {
@@ -202,12 +208,27 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     run_close.size -= take;
                     run_close.start_point.column += take;
                     run_close.start_point.offset += take;
+                    run_close.start_index += take;
                     let seq_close_exit = (run_close.start_point.clone(), run_close.start_index);
+
+                    // Stay on this closing run for the next iteration: it
+                    // might close more things.
+                    next_index -= 1;
 
                     // Remove closing run if fully used.
                     if run_close.size == 0 {
                         runs.remove(close);
                         edit_map.add(close_event_index, 2, vec![]);
+                        println!("remove close");
+                    } else {
+                        // Shift remaining closing run forward.
+                        // Do it here because a run can open and close different
+                        // other runs, and the remainder can be on any side or
+                        // somewhere in the middle.
+                        let mut enter = &mut tokenizer.events[close_event_index];
+                        enter.point = seq_close_exit.0.clone();
+                        enter.index = seq_close_exit.1;
+                        println!("change close");
                     }
 
                     let run_open = &mut runs[open];
@@ -216,12 +237,22 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     run_open.size -= take;
                     run_open.end_point.column -= take;
                     run_open.end_point.offset -= take;
+                    run_open.end_index -= take;
                     let seq_open_enter = (run_open.end_point.clone(), run_open.end_index);
 
                     // Remove opening run if fully used.
                     if run_open.size == 0 {
                         runs.remove(open);
                         edit_map.add(open_event_index, 2, vec![]);
+                        next_index -= 1;
+                        println!("remove open");
+                    } else {
+                        // Shift remaining opening run backwards.
+                        // See note above for why that happens here.
+                        let mut exit = &mut tokenizer.events[open_event_index + 1];
+                        exit.point = seq_open_enter.0.clone();
+                        exit.index = seq_open_enter.1;
+                        println!("change open");
                     }
 
                     // Opening.
@@ -348,17 +379,15 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
             }
         }
 
-        close += 1;
+        close = next_index;
     }
 
     // Mark remaining sequences as data.
     let mut index = 0;
     while index < runs.len() {
         let run = &runs[index];
-        // To do: resize!
         tokenizer.events[run.event_index].token_type = TokenType::Data;
         tokenizer.events[run.event_index + 1].token_type = TokenType::Data;
-
         index += 1;
     }
 

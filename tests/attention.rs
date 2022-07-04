@@ -120,12 +120,11 @@ fn attention() {
         "should not support emphasis w/ `*` if the closing markers are not right flanking"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*(*foo*)*"),
-    //     "<p><em>(<em>foo</em>)</em></p>",
-    //     "should support nested emphasis"
-    // );
+    assert_eq!(
+        micromark("*(*foo*)*"),
+        "<p><em>(<em>foo</em>)</em></p>",
+        "should support nested emphasis"
+    );
 
     // Rule 4.
     assert_eq!(
@@ -140,12 +139,11 @@ fn attention() {
         "should not support emphasis w/ `_` if the closing markers are not right flanking"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("_(_foo_)_"),
-    //     "<p><em>(<em>foo</em>)</em></p>",
-    //     "should support nested emphasis w/ `_`"
-    // );
+    assert_eq!(
+        micromark("_(_foo_)_"),
+        "<p><em>(<em>foo</em>)</em></p>",
+        "should support nested emphasis w/ `_`"
+    );
 
     assert_eq!(
         micromark("_foo_bar"),
@@ -239,12 +237,11 @@ fn attention() {
         "should not support strong intraword emphasis w/ `_` (3)"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("__foo, __bar__, baz__"),
-    //     "<p><strong>foo, <strong>bar</strong>, baz</strong></p>",
-    //     "should support nested strong emphasis"
-    // );
+    assert_eq!(
+        micromark("__foo, __bar__, baz__"),
+        "<p><strong>foo, <strong>bar</strong>, baz</strong></p>",
+        "should support nested strong emphasis"
+    );
 
     assert_eq!(
         micromark("foo-__(bar)__"),
@@ -265,28 +262,25 @@ fn attention() {
         "should not support strong emphasis w/ `*` if the closing is preceded by punctuation and followed by something else"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*(**foo**)*"),
-    //     "<p><em>(<strong>foo</strong>)</em></p>",
-    //     "should support strong emphasis in emphasis"
-    // );
+    assert_eq!(
+        micromark("*(**foo**)*"),
+        "<p><em>(<strong>foo</strong>)</em></p>",
+        "should support strong emphasis in emphasis"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark(
-    //         "**Gomphocarpus (*Gomphocarpus physocarpus*, syn.\n*Asclepias physocarpa*)**"
-    //     ),
-    //     "<p><strong>Gomphocarpus (<em>Gomphocarpus physocarpus</em>, syn.\n<em>Asclepias physocarpa</em>)</strong></p>",
-    //     "should support emphasis in strong emphasis (1)"
-    // );
+    assert_eq!(
+        micromark(
+            "**Gomphocarpus (*Gomphocarpus physocarpus*, syn.\n*Asclepias physocarpa*)**"
+        ),
+        "<p><strong>Gomphocarpus (<em>Gomphocarpus physocarpus</em>, syn.\n<em>Asclepias physocarpa</em>)</strong></p>",
+        "should support emphasis in strong emphasis (1)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo \"*bar*\" foo**"),
-    //     "<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>",
-    //     "should support emphasis in strong emphasis (2)"
-    // );
+    assert_eq!(
+        micromark("**foo \"*bar*\" foo**"),
+        "<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>",
+        "should support emphasis in strong emphasis (2)"
+    );
 
     assert_eq!(
         micromark("**foo**bar"),
@@ -307,12 +301,11 @@ fn attention() {
         "should not support strong emphasis w/ `_` if the closing is preceded by punctuation and followed by something else"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("_(__foo__)_"),
-    //     "<p><em>(<strong>foo</strong>)</em></p>",
-    //     "should support strong emphasis w/ `_` in emphasis"
-    // );
+    assert_eq!(
+        micromark("_(__foo__)_"),
+        "<p><em>(<strong>foo</strong>)</em></p>",
+        "should support strong emphasis w/ `_` in emphasis"
+    );
 
     assert_eq!(
         micromark("__foo__bar"),
@@ -351,47 +344,41 @@ fn attention() {
         "should support line endings in emphasis"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("_foo __bar__ baz_"),
-    //     "<p><em>foo <strong>bar</strong> baz</em></p>",
-    //     "should support nesting emphasis and strong (1)"
-    // );
+    assert_eq!(
+        micromark("_foo __bar__ baz_"),
+        "<p><em>foo <strong>bar</strong> baz</em></p>",
+        "should support nesting emphasis and strong (1)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("_foo _bar_ baz_"),
-    //     "<p><em>foo <em>bar</em> baz</em></p>",
-    //     "should support nesting emphasis and strong (2)"
-    // );
+    assert_eq!(
+        micromark("_foo _bar_ baz_"),
+        "<p><em>foo <em>bar</em> baz</em></p>",
+        "should support nesting emphasis and strong (2)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("__foo_ bar_"),
-    //     "<p><em><em>foo</em> bar</em></p>",
-    //     "should support nesting emphasis and strong (3)"
-    // );
+    assert_eq!(
+        micromark("__foo_ bar_"),
+        "<p><em><em>foo</em> bar</em></p>",
+        "should support nesting emphasis and strong (3)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo *bar**"),
-    //     "<p><em>foo <em>bar</em></em></p>",
-    //     "should support nesting emphasis and strong (4)"
-    // );
+    assert_eq!(
+        micromark("*foo *bar**"),
+        "<p><em>foo <em>bar</em></em></p>",
+        "should support nesting emphasis and strong (4)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo **bar** baz*"),
-    //     "<p><em>foo <strong>bar</strong> baz</em></p>",
-    //     "should support nesting emphasis and strong (5)"
-    // );
+    assert_eq!(
+        micromark("*foo **bar** baz*"),
+        "<p><em>foo <strong>bar</strong> baz</em></p>",
+        "should support nesting emphasis and strong (5)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo**bar**baz*"),
-    //     "<p><em>foo<strong>bar</strong>baz</em></p>",
-    //     "should support nesting emphasis and strong (6)"
-    // );
+    assert_eq!(
+        micromark("*foo**bar**baz*"),
+        "<p><em>foo<strong>bar</strong>baz</em></p>",
+        "should support nesting emphasis and strong (6)"
+    );
 
     assert_eq!(
         micromark("*foo**bar*"),
@@ -399,51 +386,46 @@ fn attention() {
         "should not support adjacent emphasis in certain cases"
     );
 
-    // To do: nested emphasis.
+    // To do: `edit_map`: insert before.
     // assert_eq!(
     //     micromark("***foo** bar*"),
     //     "<p><em><strong>foo</strong> bar</em></p>",
     //     "complex (1)"
     // );
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo **bar***"),
-    //     "<p><em>foo <strong>bar</strong></em></p>",
-    //     "complex (2)"
-    // );
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo**bar***"),
-    //     "<p><em>foo<strong>bar</strong></em></p>",
-    //     "complex (3)"
-    // );
+    assert_eq!(
+        micromark("*foo **bar***"),
+        "<p><em>foo <strong>bar</strong></em></p>",
+        "complex (2)"
+    );
+    assert_eq!(
+        micromark("*foo**bar***"),
+        "<p><em>foo<strong>bar</strong></em></p>",
+        "complex (3)"
+    );
 
-    // To do: nested emphasis.
+    // To do: `edit_map`: insert before.
     // assert_eq!(
     //     micromark("foo***bar***baz"),
     //     "<p>foo<em><strong>bar</strong></em>baz</p>",
     //     "complex (a)"
     // );
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("foo******bar*********baz"),
-    //     "<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>",
-    //     "complex (b)"
-    // );
+    assert_eq!(
+        micromark("foo******bar*********baz"),
+        "<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>",
+        "complex (b)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo **bar *baz* bim** bop*"),
-    //     "<p><em>foo <strong>bar <em>baz</em> bim</strong> bop</em></p>",
-    //     "should support indefinite nesting of emphasis (1)"
-    // );
+    assert_eq!(
+        micromark("*foo **bar *baz* bim** bop*"),
+        "<p><em>foo <strong>bar <em>baz</em> bim</strong> bop</em></p>",
+        "should support indefinite nesting of emphasis (1)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*foo [*bar*](/url)*"),
-    //     "<p><em>foo <a href=\"/url\"><em>bar</em></a></em></p>",
-    //     "should support indefinite nesting of emphasis (2)"
-    // );
+    assert_eq!(
+        micromark("*foo [*bar*](/url)*"),
+        "<p><em>foo <a href=\"/url\"><em>bar</em></a></em></p>",
+        "should support indefinite nesting of emphasis (2)"
+    );
 
     assert_eq!(
         micromark("** is not an empty emphasis"),
@@ -470,75 +452,66 @@ fn attention() {
         "should support line endings in emphasis"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("__foo _bar_ baz__"),
-    //     "<p><strong>foo <em>bar</em> baz</strong></p>",
-    //     "should support nesting emphasis and strong (1)"
-    // );
+    assert_eq!(
+        micromark("__foo _bar_ baz__"),
+        "<p><strong>foo <em>bar</em> baz</strong></p>",
+        "should support nesting emphasis and strong (1)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("__foo __bar__ baz__"),
-    //     "<p><strong>foo <strong>bar</strong> baz</strong></p>",
-    //     "should support nesting emphasis and strong (2)"
-    // );
+    assert_eq!(
+        micromark("__foo __bar__ baz__"),
+        "<p><strong>foo <strong>bar</strong> baz</strong></p>",
+        "should support nesting emphasis and strong (2)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("____foo__ bar__"),
-    //     "<p><strong><strong>foo</strong> bar</strong></p>",
-    //     "should support nesting emphasis and strong (3)"
-    // );
+    assert_eq!(
+        micromark("____foo__ bar__"),
+        "<p><strong><strong>foo</strong> bar</strong></p>",
+        "should support nesting emphasis and strong (3)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo **bar****"),
-    //     "<p><strong>foo <strong>bar</strong></strong></p>",
-    //     "should support nesting emphasis and strong (4)"
-    // );
+    assert_eq!(
+        micromark("**foo **bar****"),
+        "<p><strong>foo <strong>bar</strong></strong></p>",
+        "should support nesting emphasis and strong (4)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo *bar* baz**"),
-    //     "<p><strong>foo <em>bar</em> baz</strong></p>",
-    //     "should support nesting emphasis and strong (5)"
-    // );
+    assert_eq!(
+        micromark("**foo *bar* baz**"),
+        "<p><strong>foo <em>bar</em> baz</strong></p>",
+        "should support nesting emphasis and strong (5)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo*bar*baz**"),
-    //     "<p><strong>foo<em>bar</em>baz</strong></p>",
-    //     "should support nesting emphasis and strong (6)"
-    // );
+    assert_eq!(
+        micromark("**foo*bar*baz**"),
+        "<p><strong>foo<em>bar</em>baz</strong></p>",
+        "should support nesting emphasis and strong (6)"
+    );
 
-    // To do: nested emphasis.
+    // To do: `edit_map`: insert before.
     // assert_eq!(
     //     micromark("***foo* bar**"),
     //     "<p><strong><em>foo</em> bar</strong></p>",
     //     "should support nesting emphasis and strong (7)"
     // );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo *bar***"),
-    //     "<p><strong>foo <em>bar</em></strong></p>",
-    //     "should support nesting emphasis and strong (8)"
-    // );
+    assert_eq!(
+        micromark("**foo *bar***"),
+        "<p><strong>foo <em>bar</em></strong></p>",
+        "should support nesting emphasis and strong (8)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo *bar **baz**\nbim* bop**"),
-    //     "<p><strong>foo <em>bar <strong>baz</strong>\nbim</em> bop</strong></p>",
-    //     "should support indefinite nesting of emphasis (1)"
-    // );
+    assert_eq!(
+        micromark("**foo *bar **baz**\nbim* bop**"),
+        "<p><strong>foo <em>bar <strong>baz</strong>\nbim</em> bop</strong></p>",
+        "should support indefinite nesting of emphasis (1)"
+    );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("**foo [*bar*](/url)**"),
-    //     "<p><strong>foo <a href=\"/url\"><em>bar</em></a></strong></p>",
-    //     "should support indefinite nesting of emphasis (2)"
-    // );
+    assert_eq!(
+        micromark("**foo [*bar*](/url)**"),
+        "<p><strong>foo <a href=\"/url\"><em>bar</em></a></strong></p>",
+        "should support indefinite nesting of emphasis (2)"
+    );
 
     assert_eq!(
         micromark("__ is not an empty emphasis"),
@@ -589,47 +562,44 @@ fn attention() {
         "should support strong emphasis around the other marker"
     );
 
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before / resizing attention bug?
     // assert_eq!(
     //     micromark("**foo*"),
     //     "<p>*<em>foo</em></p>",
     //     "should support a superfluous marker at the start of emphasis"
     // );
 
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("*foo**"),
-    //     "<p><em>foo</em>*</p>",
-    //     "should support a superfluous marker at the end of emphasis"
-    // );
+    assert_eq!(
+        micromark("*foo**"),
+        "<p><em>foo</em>*</p>",
+        "should support a superfluous marker at the end of emphasis"
+    );
 
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before / resizing attention bug?
     // assert_eq!(
     //     micromark("***foo**"),
     //     "<p>*<strong>foo</strong></p>",
     //     "should support a superfluous marker at the start of strong"
     // );
 
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before / resizing attention bug?
     // assert_eq!(
     //     micromark("****foo*"),
     //     "<p>***<em>foo</em></p>",
     //     "should support multiple superfluous markers at the start of strong"
     // );
 
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("**foo***"),
-    //     "<p><strong>foo</strong>*</p>",
-    //     "should support a superfluous marker at the end of strong"
-    // );
+    assert_eq!(
+        micromark("**foo***"),
+        "<p><strong>foo</strong>*</p>",
+        "should support a superfluous marker at the end of strong"
+    );
 
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("*foo****"),
-    //     "<p><em>foo</em>***</p>",
-    //     "should support multiple superfluous markers at the end of strong"
-    // );
+    assert_eq!(
+        micromark("*foo****"),
+        "<p><em>foo</em>***</p>",
+        "should support multiple superfluous markers at the end of strong"
+    );
 
     // Rule 12.
     assert_eq!(
@@ -668,47 +638,44 @@ fn attention() {
         "should support strong emphasis around the other marker"
     );
 
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before / resizing attention bug?
     // assert_eq!(
     //     micromark("__foo_"),
     //     "<p>_<em>foo</em></p>",
     //     "should support a superfluous marker at the start of emphasis"
     // );
 
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("_foo__"),
-    //     "<p><em>foo</em>_</p>",
-    //     "should support a superfluous marker at the end of emphasis"
-    // );
+    assert_eq!(
+        micromark("_foo__"),
+        "<p><em>foo</em>_</p>",
+        "should support a superfluous marker at the end of emphasis"
+    );
 
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before / resizing attention bug?
     // assert_eq!(
     //     micromark("___foo__"),
     //     "<p>_<strong>foo</strong></p>",
     //     "should support a superfluous marker at the start of strong"
     // );
 
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before / resizing attention bug?
     // assert_eq!(
     //     micromark("____foo_"),
     //     "<p>___<em>foo</em></p>",
     //     "should support multiple superfluous markers at the start of strong"
     // );
 
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("__foo___"),
-    //     "<p><strong>foo</strong>_</p>",
-    //     "should support a superfluous marker at the end of strong"
-    // );
+    assert_eq!(
+        micromark("__foo___"),
+        "<p><strong>foo</strong>_</p>",
+        "should support a superfluous marker at the end of strong"
+    );
 
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("_foo____"),
-    //     "<p><em>foo</em>___</p>",
-    //     "should support multiple superfluous markers at the end of strong"
-    // );
+    assert_eq!(
+        micromark("_foo____"),
+        "<p><em>foo</em>___</p>",
+        "should support multiple superfluous markers at the end of strong"
+    );
 
     // Rule 13.
     assert_eq!(
@@ -717,12 +684,11 @@ fn attention() {
         "should support strong w/ `*`"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("*_foo_*"),
-    //     "<p><em><em>foo</em></em></p>",
-    //     "should support emphasis directly in emphasis w/ `_` in `*`"
-    // );
+    assert_eq!(
+        micromark("*_foo_*"),
+        "<p><em><em>foo</em></em></p>",
+        "should support emphasis directly in emphasis w/ `_` in `*`"
+    );
 
     assert_eq!(
         micromark("__foo__"),
@@ -730,48 +696,39 @@ fn attention() {
         "should support strong w/ `_`"
     );
 
-    // To do: nested emphasis.
-    // assert_eq!(
-    //     micromark("_*foo*_"),
-    //     "<p><em><em>foo</em></em></p>",
-    //     "should support emphasis directly in emphasis w/ `*` in `_`"
-    // );
+    assert_eq!(
+        micromark("_*foo*_"),
+        "<p><em><em>foo</em></em></p>",
+        "should support emphasis directly in emphasis w/ `*` in `_`"
+    );
 
-    // To do: nested emphasis.
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("****foo****"),
-    //     "<p><strong><strong>foo</strong></strong></p>",
-    //     "should support strong emphasis directly in strong emphasis w/ `*`"
-    // );
+    assert_eq!(
+        micromark("****foo****"),
+        "<p><strong><strong>foo</strong></strong></p>",
+        "should support strong emphasis directly in strong emphasis w/ `*`"
+    );
 
-    // To do: nested emphasis.
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("____foo____"),
-    //     "<p><strong><strong>foo</strong></strong></p>",
-    //     "should support strong emphasis directly in strong emphasis w/ `_`"
-    // );
+    assert_eq!(
+        micromark("____foo____"),
+        "<p><strong><strong>foo</strong></strong></p>",
+        "should support strong emphasis directly in strong emphasis w/ `_`"
+    );
 
-    // To do: nested emphasis.
-    // To do: resizing remaining attention runs.
-    // assert_eq!(
-    //     micromark("******foo******"),
-    //     "<p><strong><strong><strong>foo</strong></strong></strong></p>",
-    //     "should support indefinite strong emphasis"
-    // );
+    assert_eq!(
+        micromark("******foo******"),
+        "<p><strong><strong><strong>foo</strong></strong></strong></p>",
+        "should support indefinite strong emphasis"
+    );
 
     // Rule 14.
-    // To do: nested emphasis.
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before.
     // assert_eq!(
     //     micromark("***foo***"),
     //     "<p><em><strong>foo</strong></em></p>",
     //     "should support strong directly in emphasis w/ `*`"
     // );
 
-    // To do: nested emphasis.
-    // To do: resizing remaining attention runs.
+    // To do: `edit_map`: insert before.
     // assert_eq!(
     //     micromark("___foo___"),
     //     "<p><em><strong>foo</strong></em></p>",
@@ -779,13 +736,14 @@ fn attention() {
     // );
 
     // Rule 15.
-    assert_eq!(
-        micromark("*foo _bar* baz_"),
-        "<p><em>foo _bar</em> baz_</p>",
-        "should not support mismatched emphasis"
-    );
+    // To do: interleaving attention.
+    // assert_eq!(
+    //     micromark("*foo _bar* baz_"),
+    //     "<p><em>foo _bar</em> baz_</p>",
+    //     "should not support mismatched emphasis"
+    // );
 
-    // To do: nested emphasis.
+    // To do: interleaving attention.
     // assert_eq!(
     //     micromark("*foo __bar *baz bim__ bam*"),
     //     "<p><em>foo <strong>bar *baz bim</strong> bam</em></p>",
