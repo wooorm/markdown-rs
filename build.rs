@@ -10,12 +10,7 @@ async fn main() {
     let value = if let Ok(value) = fs::read_to_string(data_url) {
         value
     } else {
-        let value = reqwest::get(url)
-            .await
-            .unwrap()
-            .text()
-            .await
-            .unwrap();
+        let value = reqwest::get(url).await.unwrap().text().await.unwrap();
 
         fs::write(data_url, value.clone()).unwrap();
 
