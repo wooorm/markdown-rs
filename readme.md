@@ -125,6 +125,7 @@ cargo doc --document-private-items
 #### Refactor
 
 - [ ] (1) Use `edit_map` in `subtokenize` (needs to support links in edits)
+- [ ] (1) Use rust to crawl unicode
 
 #### Parse
 
@@ -151,7 +152,6 @@ cargo doc --document-private-items
 #### Misc
 
 - [ ] (1) use `char::REPLACEMENT_CHARACTER`?
-- [ ] (3) Unicode punctuation
 - [ ] (3) `nostd`
 - [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
@@ -275,3 +275,4 @@ important.
       things interrupt them each line
 - [x] (3) Add support for interrupting (or not)
 - [x] (5) attention
+- [x] (3) Unicode punctuation

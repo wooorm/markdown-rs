@@ -19,7 +19,6 @@
 //! *   [HTML (flow)][crate::construct::html_flow]
 //! *   [Thematic break][crate::construct::thematic_break]
 
-use std::collections::HashSet;
 use crate::construct::{
     blank_line::start as blank_line, code_fenced::start as code_fenced,
     code_indented::start as code_indented, definition::start as definition,
@@ -34,6 +33,7 @@ use crate::util::{
     normalize_identifier::normalize_identifier,
     span::{from_exit_event, serialize},
 };
+use std::collections::HashSet;
 
 /// Turn `codes` as the flow content type into events.
 pub fn flow(parse_state: &mut ParseState, point: Point, index: usize) -> Vec<Event> {

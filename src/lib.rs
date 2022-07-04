@@ -11,6 +11,7 @@ mod content;
 mod parser;
 mod subtokenize;
 mod tokenizer;
+mod unicode;
 mod util;
 
 use crate::compiler::compile;

@@ -21,11 +21,11 @@
 //! thus the whole document needs to be parsed up to the level of definitions,
 //! before any level that can include references can be parsed.
 
-use std::collections::HashMap;
 use crate::content::{string::start as string, text::start as text};
 use crate::parser::ParseState;
 use crate::tokenizer::{ContentType, Event, EventType, State, StateFn, StateFnResult, Tokenizer};
 use crate::util::span;
+use std::collections::HashMap;
 
 /// Create a link between two [`Event`][]s.
 ///

@@ -11,9 +11,9 @@
 //! [`attempt`]: Tokenizer::attempt
 //! [`check`]: Tokenizer::check
 
-use std::collections::HashMap;
 use crate::constant::TAB_SIZE;
 use crate::parser::ParseState;
+use std::collections::HashMap;
 
 /// Semantic label of a span.
 // To do: figure out how to share this so extensions can add their own stuff,

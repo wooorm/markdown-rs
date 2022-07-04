@@ -1,6 +1,7 @@
 //! To do.
 
 use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, TokenType, Tokenizer};
+use crate::unicode::PUNCTUATION;
 use crate::util::edit_map::EditMap;
 
 /// To do
@@ -421,10 +422,7 @@ fn classify_character(code: Code) -> GroupKind {
         // Unicode whitespace.
         Code::Char(char) if char.is_whitespace() => GroupKind::Whitespace,
         // Unicode punctuation.
-        // To do: `is_punctuation` is not in rust? Why not?
-        // Perhaps we need to generate stuff just like:
-        // <https://github.com/micromark/micromark/blob/main/packages/micromark-util-character/dev/lib/unicode-punctuation-regex.js>.
-        Code::Char(char) if char.is_ascii_punctuation() => GroupKind::Punctuation,
+        Code::Char(char) if PUNCTUATION.contains(&char) => GroupKind::Punctuation,
         Code::Char(_) => GroupKind::Other,
     }
 }
