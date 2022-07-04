@@ -2,7 +2,7 @@
 name = "micromark"
 version = "0.0.0"
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
-edition = "2015"
+edition = "2018"
 rust-version = "1.56"
 description = "small commonmark compliant markdown parser with positional info and concrete tokens"
 homepage = "https://github.com/micromark/micromark-rs"
@@ -14,5 +14,9 @@ include = ["src/", "license"]
 publish = false
 
 [dependencies]
-log = "0.4"
 env_logger = "0.9"
+log = "0.4"
+
+[build-dependencies]
+reqwest = "0.11"
+tokio = { version = "1.12", features = ["full"] }

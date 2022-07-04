@@ -125,7 +125,6 @@ cargo doc --document-private-items
 #### Refactor
 
 - [ ] (1) Use `edit_map` in `subtokenize` (needs to support links in edits)
-- [ ] (1) Use rust to crawl unicode
 
 #### Parse
 
@@ -276,3 +275,4 @@ important.
 - [x] (3) Add support for interrupting (or not)
 - [x] (5) attention
 - [x] (3) Unicode punctuation
+- [x] (1) Use rust to crawl unicode

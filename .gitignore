@@ -3,4 +3,4 @@
 *.lock
 coverage/
 target
-script/unicode-data.txt
+unicode-data.txt
