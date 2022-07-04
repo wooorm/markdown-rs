@@ -1,11 +1,9 @@
 //! Turn a string of markdown into events.
 
+use std::collections::HashSet;
 // To do: this should start with `containers`, when they’re done.
 use crate::content::flow::flow;
 use crate::tokenizer::{as_codes, Code, Event, Point};
-
-/// To do: could we do without `HashSet`, so we don’t need `std`?
-use std::collections::HashSet;
 
 /// Information needed, in all content types, when parsing markdown.
 ///

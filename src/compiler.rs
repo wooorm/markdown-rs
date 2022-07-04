@@ -1,4 +1,5 @@
 //! Turn events into a string of HTML.
+use std::collections::HashMap;
 use crate::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
 use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::tokenizer::{Code, Event, EventType, TokenType};
@@ -9,7 +10,6 @@ use crate::util::{
     sanitize_uri::sanitize_uri,
     span::{codes as codes_from_span, from_exit_event, serialize},
 };
-use std::collections::HashMap;
 
 /// Type of line endings in markdown.
 #[derive(Debug, Clone, PartialEq)]
@@ -725,7 +725,6 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    // To do:
     context.tag(format!(
         "<a href=\"{}\">",
         sanitize_uri(

@@ -8,9 +8,7 @@
 //! And, in other cases, it’s needed to parse subcontent: pass some events
 //! through another tokenizer and inject the result.
 
-/// To do: could we do without `HashMap`, so we don’t need `std`?
 use std::collections::HashMap;
-
 use crate::tokenizer::Event;
 
 /// Shift `previous` and `next` links according to `jumps`.
@@ -136,6 +134,7 @@ impl EditMap {
     }
 }
 
+/// To do.
 fn add_impl(
     edit_map: &mut EditMap,
     index: usize,

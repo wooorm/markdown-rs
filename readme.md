@@ -128,7 +128,8 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (2) attention/label interplay
+- [ ] (2) Fix attention/label interplay
+- [ ] (2) Fix resizing attention bug
 - [ ] (8) block quote\
        test (`code_fenced`, `definition`, `code_indented`, `heading_atx`, `heading_setext`,
       `html_flow`, `misc_default_line_ending`, `thematic_break`)
@@ -149,8 +150,9 @@ cargo doc --document-private-items
 
 #### Misc
 
-- [ ] (3) Unicode punctuation
 - [ ] (1) use `char::REPLACEMENT_CHARACTER`?
+- [ ] (3) Unicode punctuation
+- [ ] (3) `nostd`
 - [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
 - [ ] (3) Pass more references around

@@ -11,9 +11,7 @@
 //! [`attempt`]: Tokenizer::attempt
 //! [`check`]: Tokenizer::check
 
-/// To do: could we do without `HashMap`, so we don’t need `std`?
 use std::collections::HashMap;
-
 use crate::constant::TAB_SIZE;
 use crate::parser::ParseState;
 
