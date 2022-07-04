@@ -421,6 +421,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     enter_map.insert(TokenType::CodeIndented, on_enter_code_indented);
     enter_map.insert(TokenType::CodeFenced, on_enter_code_fenced);
     enter_map.insert(TokenType::CodeText, on_enter_code_text);
+    enter_map.insert(TokenType::Emphasis, on_enter_emphasis);
     enter_map.insert(TokenType::HtmlFlow, on_enter_html_flow);
     enter_map.insert(TokenType::HtmlText, on_enter_html_text);
     enter_map.insert(TokenType::Image, on_enter_image);
@@ -431,6 +432,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         on_enter_resource_destination_string,
     );
     enter_map.insert(TokenType::Paragraph, on_enter_paragraph);
+    enter_map.insert(TokenType::Strong, on_enter_strong);
     enter_map.insert(TokenType::Definition, on_enter_definition);
     enter_map.insert(
         TokenType::DefinitionDestinationString,
@@ -441,6 +443,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     enter_map.insert(TokenType::DefinitionTitleString, on_enter_buffer);
 
     let mut exit_map: Map = HashMap::new();
+    exit_map.insert(TokenType::Emphasis, on_exit_emphasis);
     exit_map.insert(TokenType::Label, on_exit_label);
     exit_map.insert(TokenType::LabelText, on_exit_label_text);
     exit_map.insert(TokenType::ReferenceString, on_exit_reference_string);
@@ -452,6 +455,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         TokenType::ResourceTitleString,
         on_exit_resource_title_string,
     );
+    exit_map.insert(TokenType::Strong, on_exit_strong);
     exit_map.insert(TokenType::Image, on_exit_media);
     exit_map.insert(TokenType::Link, on_exit_media);
     exit_map.insert(TokenType::CodeTextData, on_exit_data);
@@ -644,6 +648,11 @@ fn on_enter_definition_destination_string(context: &mut CompileContext) {
     context.ignore_encode = true;
 }
 
+/// Handle [`Enter`][EventType::Enter]:[`Emphasis`][TokenType::Emphasis].
+fn on_enter_emphasis(context: &mut CompileContext) {
+    context.tag("<em>".to_string());
+}
+
 /// Handle [`Enter`][EventType::Enter]:[`HtmlFlow`][TokenType::HtmlFlow].
 fn on_enter_html_flow(context: &mut CompileContext) {
     context.line_ending_if_needed();
@@ -702,6 +711,11 @@ fn on_enter_resource_destination_string(context: &mut CompileContext) {
     // Ignore encoding the result, as we’ll first percent encode the url and
     // encode manually after.
     context.ignore_encode = true;
+}
+
+/// Handle [`Enter`][EventType::Enter]:[`Strong`][TokenType::Strong].
+fn on_enter_strong(context: &mut CompileContext) {
+    context.tag("<strong>".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkEmail`][TokenType::AutolinkEmail].
@@ -933,6 +947,11 @@ fn on_exit_definition_title_string(context: &mut CompileContext) {
     definition.title = Some(buf);
 }
 
+/// Handle [`Exit`][EventType::Exit]:[`Strong`][TokenType::Emphasis].
+fn on_exit_emphasis(context: &mut CompileContext) {
+    context.tag("</em>".to_string());
+}
+
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtx`][TokenType::HeadingAtx].
 fn on_exit_heading_atx(context: &mut CompileContext) {
     let rank = context
@@ -1130,6 +1149,11 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
     let buf = context.resume();
     let media = context.media_stack.last_mut().unwrap();
     media.title = Some(buf);
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`Strong`][TokenType::Strong].
+fn on_exit_strong(context: &mut CompileContext) {
+    context.tag("</strong>".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][TokenType::ThematicBreak].

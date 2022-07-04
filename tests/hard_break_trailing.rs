@@ -21,19 +21,17 @@ fn hard_break_trailing() {
         "should support leading spaces after a trailing hard break"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*foo  \nbar*"),
-    //     "<p><em>foo<br />\nbar</em></p>",
-    //     "should support trailing hard breaks in emphasis"
-    // );
+    assert_eq!(
+        micromark("*foo  \nbar*"),
+        "<p><em>foo<br />\nbar</em></p>",
+        "should support trailing hard breaks in emphasis"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*foo\\\nbar*"),
-    //     "<p><em>foo<br />\nbar</em></p>",
-    //     "should support escape hard breaks in emphasis"
-    // );
+    assert_eq!(
+        micromark("*foo\\\nbar*"),
+        "<p><em>foo<br />\nbar</em></p>",
+        "should support escape hard breaks in emphasis"
+    );
 
     assert_eq!(
         micromark("`code  \ntext`"),
@@ -83,40 +81,35 @@ fn hard_break_trailing() {
         "should support a line suffix after a replacement character"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*a*  \nbb"),
-    //     "<p><em>a</em><br />\nbb</p>",
-    //     "should support a hard break after a span"
-    // );
+    assert_eq!(
+        micromark("*a*  \nbb"),
+        "<p><em>a</em><br />\nbb</p>",
+        "should support a hard break after a span"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*a*\t\nbb"),
-    //     "<p><em>a</em>\nbb</p>",
-    //     "should support a line suffix after a span"
-    // );
+    assert_eq!(
+        micromark("*a*\t\nbb"),
+        "<p><em>a</em>\nbb</p>",
+        "should support a line suffix after a span"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*a*  \t\nbb"),
-    //     "<p><em>a</em>\nbb</p>",
-    //     "should support a mixed line suffix after a span (1)"
-    // );
+    assert_eq!(
+        micromark("*a*  \t\nbb"),
+        "<p><em>a</em>\nbb</p>",
+        "should support a mixed line suffix after a span (1)"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*a*\t  \nbb"),
-    //     "<p><em>a</em>\nbb</p>",
-    //     "should support a mixed line suffix after a span (2)"
-    // );
+    assert_eq!(
+        micromark("*a*\t  \nbb"),
+        "<p><em>a</em>\nbb</p>",
+        "should support a mixed line suffix after a span (2)"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*a*  \t  \nbb"),
-    //     "<p><em>a</em>\nbb</p>",
-    //     "should support a mixed line suffix after a span (3)"
-    // );
+    assert_eq!(
+        micromark("*a*  \t  \nbb"),
+        "<p><em>a</em>\nbb</p>",
+        "should support a mixed line suffix after a span (3)"
+    );
 
     // // To do: turning things off.
     // assert_eq!(

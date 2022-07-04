@@ -117,12 +117,11 @@ fn thematic_break() {
         "should not support thematic breaks w/ other characters (3)"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark(" *-*"),
-    //     "<p><em>-</em></p>",
-    //     "should not support thematic breaks w/ mixed markers"
-    // );
+    assert_eq!(
+        micromark(" *-*"),
+        "<p><em>-</em></p>",
+        "should not support thematic breaks w/ mixed markers"
+    );
 
     // To do: lists.
     // assert_eq!(

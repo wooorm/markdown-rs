@@ -98,12 +98,11 @@ p {color:blue;}
         "should support raw tags w/o ending"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<style>p{color:red;}</style>\n*foo*", DANGER),
-    //     "<style>p{color:red;}</style>\n<p><em>foo</em></p>",
-    //     "should support raw tags w/ start and end on a single line"
-    // );
+    assert_eq!(
+        micromark_with_options("<style>p{color:red;}</style>\n*foo*", DANGER),
+        "<style>p{color:red;}</style>\n<p><em>foo</em></p>",
+        "should support raw tags w/ start and end on a single line"
+    );
 
     assert_eq!(
         micromark_with_options("<script>\nfoo\n</script>1. *bar*", DANGER),
@@ -129,12 +128,11 @@ p {color:blue;}
         "should not support an eof after a self-closing slash"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<script/\n*asd*", DANGER),
-    //     "<p>&lt;script/\n<em>asd</em></p>",
-    //     "should not support a line ending after a self-closing slash"
-    // );
+    assert_eq!(
+        micromark_with_options("<script/\n*asd*", DANGER),
+        "<p>&lt;script/\n<em>asd</em></p>",
+        "should not support a line ending after a self-closing slash"
+    );
 
     assert_eq!(
         micromark_with_options("<script/>", DANGER),
@@ -195,12 +193,11 @@ fn html_flow_2_comment() {
         "should support comments (type 2)"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<!-- foo -->*bar*\n*baz*", DANGER),
-    //     "<!-- foo -->*bar*\n<p><em>baz</em></p>",
-    //     "should support comments w/ start and end on a single line"
-    // );
+    assert_eq!(
+        micromark_with_options("<!-- foo -->*bar*\n*baz*", DANGER),
+        "<!-- foo -->*bar*\n<p><em>baz</em></p>",
+        "should support comments w/ start and end on a single line"
+    );
 
     assert_eq!(
         micromark_with_options("<!-asd-->", DANGER),
@@ -455,15 +452,14 @@ fn html_flow_5_cdata() {
 
 #[test]
 fn html_flow_6_basic() {
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options(
-    //         "<table><tr><td>\n<pre>\n**Hello**,\n\n_world_.\n</pre>\n</td></tr></table>",
-    //         DANGER
-    //     ),
-    //     "<table><tr><td>\n<pre>\n**Hello**,\n<p><em>world</em>.\n</pre></p>\n</td></tr></table>",
-    //     "should support html (basic)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "<table><tr><td>\n<pre>\n**Hello**,\n\n_world_.\n</pre>\n</td></tr></table>",
+            DANGER
+        ),
+        "<table><tr><td>\n<pre>\n**Hello**,\n<p><em>world</em>.\n</pre></p>\n</td></tr></table>",
+        "should support html (basic)"
+    );
 
     assert_eq!(
         micromark_with_options(
@@ -501,12 +497,11 @@ okay.",
         "should support html starting w/ a closing tag"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<DIV CLASS=\"foo\">\n\n*Markdown*\n\n</DIV>", DANGER),
-    //     "<DIV CLASS=\"foo\">\n<p><em>Markdown</em></p>\n</DIV>",
-    //     "should support html w/ markdown in between"
-    // );
+    assert_eq!(
+        micromark_with_options("<DIV CLASS=\"foo\">\n\n*Markdown*\n\n</DIV>", DANGER),
+        "<DIV CLASS=\"foo\">\n<p><em>Markdown</em></p>\n</DIV>",
+        "should support html w/ markdown in between"
+    );
 
     assert_eq!(
         micromark_with_options("<div id=\"foo\"\n  class=\"bar\">\n</div>", DANGER),
@@ -520,12 +515,11 @@ okay.",
         "should support html w/ line endings (2)"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<div>\n*foo*\n\n*bar*", DANGER),
-    //     "<div>\n*foo*\n<p><em>bar</em></p>",
-    //     "should support an unclosed html element"
-    // );
+    assert_eq!(
+        micromark_with_options("<div>\n*foo*\n\n*bar*", DANGER),
+        "<div>\n*foo*\n<p><em>bar</em></p>",
+        "should support an unclosed html element"
+    );
 
     assert_eq!(
         micromark_with_options("<div id=\"foo\"\n*hi*", DANGER),
@@ -601,12 +595,11 @@ okay.",
         "should require a blank line to end"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<div>\n\n*Emphasized* text.\n\n</div>", DANGER),
-    //     "<div>\n<p><em>Emphasized</em> text.</p>\n</div>",
-    //     "should support interleaving w/ blank lines"
-    // );
+    assert_eq!(
+        micromark_with_options("<div>\n\n*Emphasized* text.\n\n</div>", DANGER),
+        "<div>\n<p><em>Emphasized</em> text.</p>\n</div>",
+        "should support interleaving w/ blank lines"
+    );
 
     assert_eq!(
         micromark_with_options("<div>\n*Emphasized* text.\n</div>", DANGER),
@@ -679,12 +672,11 @@ okay.",
         "should not support an eof directly after a self-closing slash"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<div/\n*asd*", DANGER),
-    //     "<p>&lt;div/\n<em>asd</em></p>",
-    //     "should not support a line ending after a self-closing slash"
-    // );
+    assert_eq!(
+        micromark_with_options("<div/\n*asd*", DANGER),
+        "<p>&lt;div/\n<em>asd</em></p>",
+        "should not support a line ending after a self-closing slash"
+    );
 
     assert_eq!(
         micromark_with_options("<div/>", DANGER),
@@ -769,19 +761,17 @@ fn html_flow_7_complete() {
         "should support closing tags"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<del>\n\n*foo*\n\n</del>", DANGER),
-    //     "<del>\n<p><em>foo</em></p>\n</del>",
-    //     "should support interleaving"
-    // );
+    assert_eq!(
+        micromark_with_options("<del>\n\n*foo*\n\n</del>", DANGER),
+        "<del>\n<p><em>foo</em></p>\n</del>",
+        "should support interleaving"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<del>*foo*</del>", DANGER),
-    //     "<p><del><em>foo</em></del></p>",
-    //     "should not support interleaving w/o blank lines"
-    // );
+    assert_eq!(
+        micromark_with_options("<del>*foo*</del>", DANGER),
+        "<p><del><em>foo</em></del></p>",
+        "should not support interleaving w/o blank lines"
+    );
 
     assert_eq!(
         micromark_with_options("<div>\n  \nasd", DANGER),
@@ -825,12 +815,11 @@ fn html_flow_7_complete() {
         "should not support an eof directly after a self-closing slash"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark_with_options("<x/\n*asd*", DANGER),
-    //     "<p>&lt;x/\n<em>asd</em></p>",
-    //     "should not support a line ending after a self-closing slash"
-    // );
+    assert_eq!(
+        micromark_with_options("<x/\n*asd*", DANGER),
+        "<p>&lt;x/\n<em>asd</em></p>",
+        "should not support a line ending after a self-closing slash"
+    );
 
     assert_eq!(
         micromark_with_options("<x/>", DANGER),

@@ -15,12 +15,11 @@ fn hard_break_escape() {
         "should support leading spaces after an escape hard break"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("*foo\\\nbar*"),
-    //     "<p><em>foo<br />\nbar</em></p>",
-    //     "should support escape hard breaks in emphasis"
-    // );
+    assert_eq!(
+        micromark("*foo\\\nbar*"),
+        "<p><em>foo<br />\nbar</em></p>",
+        "should support escape hard breaks in emphasis"
+    );
 
     assert_eq!(
         micromark("``code\\\ntext``"),

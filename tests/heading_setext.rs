@@ -3,33 +3,29 @@ use micromark::micromark;
 
 #[test]
 fn heading_setext() {
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("Foo *bar*\n========="),
-    //     "<h1>Foo <em>bar</em></h1>",
-    //     "should support a heading w/ an equals to (rank of 1)"
-    // );
+    assert_eq!(
+        micromark("Foo *bar*\n========="),
+        "<h1>Foo <em>bar</em></h1>",
+        "should support a heading w/ an equals to (rank of 1)"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("Foo *bar*\n---------"),
-    //     "<h2>Foo <em>bar</em></h2>",
-    //     "should support a heading w/ a dash (rank of 2)"
-    // );
+    assert_eq!(
+        micromark("Foo *bar*\n---------"),
+        "<h2>Foo <em>bar</em></h2>",
+        "should support a heading w/ a dash (rank of 2)"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("Foo *bar\nbaz*\n===="),
-    //     "<h1>Foo <em>bar\nbaz</em></h1>",
-    //     "should support line endings in setext headings"
-    // );
+    assert_eq!(
+        micromark("Foo *bar\nbaz*\n===="),
+        "<h1>Foo <em>bar\nbaz</em></h1>",
+        "should support line endings in setext headings"
+    );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("  Foo *bar\nbaz*\t\n===="),
-    //     "<h1>Foo <em>bar\nbaz</em></h1>",
-    //     "should not include initial and final whitespace around content"
-    // );
+    assert_eq!(
+        micromark("  Foo *bar\nbaz*\t\n===="),
+        "<h1>Foo <em>bar\nbaz</em></h1>",
+        "should not include initial and final whitespace around content"
+    );
 
     assert_eq!(
         micromark("Foo\n-------------------------"),

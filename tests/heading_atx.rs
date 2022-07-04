@@ -62,12 +62,11 @@ fn heading_atx() {
         "should not support a heading for an escaped number sign"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("# foo *bar* \\*baz\\*"),
-    //     "<h1>foo <em>bar</em> *baz*</h1>",
-    //     "should support text content in headings"
-    // );
+    assert_eq!(
+        micromark("# foo *bar* \\*baz\\*"),
+        "<h1>foo <em>bar</em> *baz*</h1>",
+        "should support text content in headings"
+    );
 
     assert_eq!(
         micromark("#                  foo                     "),

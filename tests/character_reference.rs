@@ -85,12 +85,11 @@ fn character_reference() {
         "should not support character references in indented code"
     );
 
-    // To do: attention.
-    // assert_eq!(
-    //     micromark("&#42;foo&#42;\n*foo*"),
-    //     "<p>*foo*\n<em>foo</em></p>",
-    //     "should not support character references as construct markers (1)"
-    // );
+    assert_eq!(
+        micromark("&#42;foo&#42;\n*foo*"),
+        "<p>*foo*\n<em>foo</em></p>",
+        "should not support character references as construct markers (1)"
+    );
 
     // To do: list.
     // assert_eq!(

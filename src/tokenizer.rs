@@ -1593,6 +1593,15 @@ pub enum TokenType {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+    Strong,
+    StrongSequence,
+    StrongText,
+    Emphasis,
+    EmphasisSequence,
+    EmphasisText,
+    // To do: this is removed.
+    // Should it reuse something e.g., emphasis? Data?
+    AttentionSequence,
 }
 
 /// Embedded content type.

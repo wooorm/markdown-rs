@@ -41,7 +41,7 @@
 //! > ([label start (image)][label_start_image] or
 //! > [label start (link)][label_start_link]) and a closing
 //! > ([label end][label_end]), so as to allow further phrasing such as
-//! > [code (text)][code_text] or attention.
+//! > [code (text)][code_text] or [attention][].
 //!
 //! ## References
 //!
@@ -49,6 +49,7 @@
 //!
 //! [definition]: crate::construct::definition
 //! [string]: crate::content::string
+//! [attention]: crate::construct::attention
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
 //! [label_start_image]: crate::construct::label_start_image
@@ -56,8 +57,6 @@
 //! [label_end]: crate::construct::label_end
 //! [code_text]: crate::construct::code_text
 //! [link_reference_size_max]: crate::constant::LINK_REFERENCE_SIZE_MAX
-//!
-//! <!-- To do: link attention. -->
 
 use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::constant::LINK_REFERENCE_SIZE_MAX;

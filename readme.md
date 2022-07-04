@@ -59,7 +59,7 @@ cargo doc --document-private-items
 
 ### Constructs
 
-- [ ] (5) attention (emphasis, strong)
+- [x] attention (emphasis, strong)
 - [x] autolink
 - [x] blank line
 - [ ] (5) block quote
@@ -97,8 +97,8 @@ cargo doc --document-private-items
   - [x] html (flow)
   - [x] paragraph
   - [x] thematic break
-- [ ] (8) text
-  - [ ] attention (emphasis, strong) (text)
+- [x] text
+  - [x] attention (emphasis, strong) (text)
   - [x] autolink
   - [x] character escape
   - [x] character reference
@@ -117,6 +117,7 @@ cargo doc --document-private-items
 
 #### Docs
 
+- [ ] (1) Document attention
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add overview docs on how everything works
@@ -127,9 +128,7 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (5) attention\
-       test (`character_reference`, `hard_break_escape`, `hard_break_trailing`,
-      `heading_atx`, `heading_setext`, `html_flow`, `thematic_break`)\
+- [ ] (2) attention/label interplay
 - [ ] (8) block quote\
        test (`code_fenced`, `definition`, `code_indented`, `heading_atx`, `heading_setext`,
       `html_flow`, `misc_default_line_ending`, `thematic_break`)
@@ -150,6 +149,8 @@ cargo doc --document-private-items
 
 #### Misc
 
+- [ ] (3) Unicode punctuation
+- [ ] (1) use `char::REPLACEMENT_CHARACTER`?
 - [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
 - [ ] (3) Pass more references around
@@ -271,3 +272,4 @@ important.
 - [x] (8) Make paragraphs fast by merging them at the end, not checking whether
       things interrupt them each line
 - [x] (3) Add support for interrupting (or not)
+- [x] (5) attention

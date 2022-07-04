@@ -14,7 +14,7 @@
 //!
 //! The following constructs are found in markdown:
 //!
-//! *   attention (strong, emphasis)
+//! *   [attention (strong, emphasis)][attention]
 //! *   [autolink][]
 //! *   [blank line][blank_line]
 //! *   block quote
@@ -61,6 +61,7 @@
 //! example `ascii_punctuation` refers to
 //! [`char::is_ascii_punctuation`][char::is_ascii_punctuation].
 
+pub mod attention;
 pub mod autolink;
 pub mod blank_line;
 pub mod character_escape;
