@@ -256,7 +256,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     }
 
                     // Opening.
-                    edit_map.add(
+                    edit_map.add_before(
                         open_event_index,
                         0,
                         vec![

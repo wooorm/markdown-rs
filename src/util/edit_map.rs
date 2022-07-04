@@ -66,18 +66,11 @@ impl EditMap {
         }
     }
     /// Create an edit: a remove and/or add at a certain place.
-    pub fn add(&mut self, index: usize, mut remove: usize, mut add: Vec<Event>) {
-        assert!(!self.consumed, "cannot add after consuming");
-
-        if let Some((curr_remove, mut curr_add)) = self.map.remove(&index) {
-            // To do: these might have to be split in several chunks instead
-            // of one, if links in `curr_add` are supported.
-            remove += curr_remove;
-            curr_add.append(&mut add);
-            add = curr_add;
-        }
-
-        self.map.insert(index, (remove, add));
+    pub fn add(&mut self, index: usize, remove: usize, add: Vec<Event>) {
+        add_impl(self, index, remove, add, false);
+    }
+    pub fn add_before(&mut self, index: usize, remove: usize, add: Vec<Event>) {
+        add_impl(self, index, remove, add, true);
     }
     /// Done, change the events.
     pub fn consume(&mut self, events: &mut [Event]) -> Vec<Event> {
@@ -141,4 +134,28 @@ impl EditMap {
 
         next_events
     }
+}
+
+fn add_impl(
+    edit_map: &mut EditMap,
+    index: usize,
+    mut remove: usize,
+    mut add: Vec<Event>,
+    before: bool,
+) {
+    assert!(!edit_map.consumed, "cannot add after consuming");
+
+    if let Some((curr_remove, mut curr_add)) = edit_map.map.remove(&index) {
+        // To do: these might have to be split in several chunks instead
+        // of one, if links in `curr_add` are supported.
+        remove += curr_remove;
+        if before {
+            add.append(&mut curr_add);
+        } else {
+            curr_add.append(&mut add);
+            add = curr_add;
+        }
+    }
+
+    edit_map.map.insert(index, (remove, add));
 }
