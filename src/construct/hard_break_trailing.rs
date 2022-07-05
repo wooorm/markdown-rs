@@ -76,7 +76,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
                 None,
             )
         }
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if size >= HARD_BREAK_PREFIX_SIZE_MIN =>
         {
             tokenizer.exit(TokenType::HardBreakTrailingSpace);

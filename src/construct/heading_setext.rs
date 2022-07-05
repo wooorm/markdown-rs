@@ -179,7 +179,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// Resolve heading (setext).
 pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut edit_map = EditMap::new();
     let mut index = 0;
@@ -207,7 +207,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
             tokenizer.events[enter].token_type = TokenType::HeadingSetextText;
             tokenizer.events[exit].token_type = TokenType::HeadingSetextText;
 
-            // Add of Enter:HeadingSetext, Exit:HeadingSetext.
+            // Add Enter:HeadingSetext, Exit:HeadingSetext.
             let mut heading_enter = tokenizer.events[enter].clone();
             heading_enter.token_type = TokenType::HeadingSetext;
             let mut heading_exit = tokenizer.events[index].clone();

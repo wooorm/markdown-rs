@@ -11,7 +11,6 @@
 //! [`attempt`]: Tokenizer::attempt
 //! [`check`]: Tokenizer::check
 
-use crate::constant::TAB_SIZE;
 use crate::parser::ParseState;
 use std::collections::HashMap;
 
@@ -2222,83 +2221,6 @@ fn feed_impl(
     }
 
     check_statefn_result((state, None))
-}
-
-/// Turn a string into codes.
-pub fn as_codes(value: &str) -> Vec<Code> {
-    let mut codes: Vec<Code> = vec![];
-    let mut at_start = true;
-    let mut at_carriage_return = false;
-    let mut column = 1;
-
-    for char in value.chars() {
-        if at_start {
-            if char == '\u{feff}' {
-                // Ignore.
-                continue;
-            }
-
-            at_start = false;
-        }
-
-        // Send a CRLF.
-        if at_carriage_return && '\n' == char {
-            at_carriage_return = false;
-            codes.push(Code::CarriageReturnLineFeed);
-        } else {
-            // Send the previous CR: we’re not at a next `\n`.
-            if at_carriage_return {
-                at_carriage_return = false;
-                codes.push(Code::Char('\r'));
-            }
-
-            match char {
-                // Send a replacement character.
-                '\0' => {
-                    column += 1;
-                    codes.push(Code::Char('�'));
-                }
-                // Send a tab and virtual spaces.
-                '\t' => {
-                    let remainder = column % TAB_SIZE;
-                    let mut virtual_spaces = if remainder == 0 {
-                        0
-                    } else {
-                        TAB_SIZE - remainder
-                    };
-                    codes.push(Code::Char(char));
-                    column += 1;
-                    while virtual_spaces > 0 {
-                        codes.push(Code::VirtualSpace);
-                        column += 1;
-                        virtual_spaces -= 1;
-                    }
-                }
-                // Send an LF.
-                '\n' => {
-                    column = 1;
-                    codes.push(Code::Char(char));
-                }
-                // Don’t send anything yet.
-                '\r' => {
-                    column = 1;
-                    at_carriage_return = true;
-                }
-                // Send the char.
-                _ => {
-                    column += 1;
-                    codes.push(Code::Char(char));
-                }
-            }
-        };
-    }
-
-    // Send the last CR: we’re not at a next `\n`.
-    if at_carriage_return {
-        codes.push(Code::Char('\r'));
-    }
-
-    codes
 }
 
 /// Check a [`StateFnResult`][], make sure its valid (that there are no bugs),

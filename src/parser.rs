@@ -3,7 +3,8 @@
 use std::collections::HashSet;
 // To do: this should start with `containers`, when they’re done.
 use crate::content::flow::flow;
-use crate::tokenizer::{as_codes, Code, Event, Point};
+use crate::tokenizer::{Code, Event, Point};
+use crate::util::codes::parse as parse_codes;
 
 /// Information needed, in all content types, when parsing markdown.
 ///
@@ -22,7 +23,7 @@ pub struct ParseState {
 /// Passes the codes back so the compiler can access the source.
 pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
     let mut parse_state = ParseState {
-        codes: as_codes(value),
+        codes: parse_codes(value),
         definitions: HashSet::new(),
     };
 

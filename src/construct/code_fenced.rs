@@ -151,6 +151,17 @@ impl Kind {
             _ => unreachable!("invalid char"),
         }
     }
+    /// Turn [Code] into a kind.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `code` is not ``Code::Char('~' | '`')``.
+    fn from_code(code: Code) -> Kind {
+        match code {
+            Code::Char(char) => Kind::from_char(char),
+            _ => unreachable!("invalid code"),
+        }
+    }
 }
 
 /// State needed to parse code (fenced).
@@ -172,10 +183,6 @@ struct Info {
 ///  console.log(1);
 ///  ~~~
 /// ```
-///
-/// Parsing note: normally, the prefix is already stripped.
-/// `flow.rs` makes sure that that doesn’t happen for code (fenced), as we need
-/// it.
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(TokenType::CodeFenced);
     tokenizer.enter(TokenType::CodeFencedFence);
@@ -202,7 +209,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
     }
 
     match code {
-        Code::Char(char) if char == '`' || char == '~' => {
+        Code::Char('`' | '~') => {
             tokenizer.enter(TokenType::CodeFencedFenceSequence);
             sequence_open(
                 tokenizer,
@@ -210,7 +217,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
                 Info {
                     prefix,
                     size: 0,
-                    kind: Kind::from_char(char),
+                    kind: Kind::from_code(code),
                 },
             )
         }
@@ -237,11 +244,11 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State
                 None,
             )
         }
-        _ if info.size < CODE_FENCED_SEQUENCE_SIZE_MIN => (State::Nok, None),
-        _ => {
+        _ if info.size >= CODE_FENCED_SEQUENCE_SIZE_MIN => {
             tokenizer.exit(TokenType::CodeFencedFenceSequence);
             tokenizer.attempt_opt(space_or_tab(), |t, c| info_before(t, c, info))(tokenizer, code)
         }
+        _ => (State::Nok, None),
     }
 }
 
@@ -291,7 +298,7 @@ fn info_inside(
             tokenizer.exit(TokenType::CodeFencedFenceInfo);
             tokenizer.attempt_opt(space_or_tab(), |t, c| meta_before(t, c, info))(tokenizer, code)
         }
-        Code::Char(char) if char == '`' && info.kind == Kind::GraveAccent => (State::Nok, None),
+        Code::Char('`') if info.kind == Kind::GraveAccent => (State::Nok, None),
         Code::Char(_) => {
             codes.push(code);
             tokenizer.consume(code);
@@ -339,7 +346,7 @@ fn meta(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
             tokenizer.exit(TokenType::CodeFencedFence);
             at_break(tokenizer, code, info)
         }
-        Code::Char(char) if char == '`' && info.kind == Kind::GraveAccent => (State::Nok, None),
+        Code::Char('`') if info.kind == Kind::GraveAccent => (State::Nok, None),
         _ => {
             tokenizer.consume(code);
             (State::Fn(Box::new(|t, c| meta(t, c, info))), None)
@@ -369,7 +376,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
                 }
             },
         )(tokenizer, code),
-        _ => unreachable!("unexpected non-eol/eof after `at_break` `{:?}`", code),
+        _ => unreachable!("expected eof/eol"),
     }
 }
 

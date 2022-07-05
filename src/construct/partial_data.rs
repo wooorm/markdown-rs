@@ -6,8 +6,6 @@
 //! [string]: crate::content::string
 //! [text]: crate::content::text
 
-// To do: pass token types in?
-
 use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::edit_map::EditMap;
 
@@ -34,7 +32,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnR
 fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(TokenType::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::LineEnding);
@@ -58,7 +56,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnRe
 /// ```
 fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
     let done = match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => true,
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => true,
         _ if stop.contains(&code) => true,
         _ => false,
     };

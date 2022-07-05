@@ -140,7 +140,7 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.interrupt = false;
             (State::Fn(Box::new(start)), None)
         }
-        _ => unreachable!("expected eol/eof after blank line `{:?}`", code),
+        _ => unreachable!("expected eol/eof"),
     }
 }
 
@@ -162,7 +162,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(TokenType::LineEnding);
             (State::Fn(Box::new(start)), None)
         }
-        _ => unreachable!("unexpected non-eol/eof after flow `{:?}`", code),
+        _ => unreachable!("expected eol/eof"),
     }
 }
 

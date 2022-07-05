@@ -21,11 +21,36 @@
 ///
 /// *   [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
 pub fn encode(value: &str) -> String {
-    // To do: replacing 4 times might just be slow.
-    // Perhaps we can walk the chars.
-    value
-        .replace('&', "&amp;")
-        .replace('"', "&quot;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
+    let mut result: Vec<&str> = vec![];
+    let mut start = 0;
+    let mut index = 0;
+
+    for byte in value.bytes() {
+        if let Some(replacement) = match byte {
+            b'&' => Some("&amp;"),
+            b'"' => Some("&quot;"),
+            b'<' => Some("&lt;"),
+            b'>' => Some("&gt;"),
+            _ => None,
+        } {
+            if start != index {
+                result.push(&value[start..index]);
+            }
+
+            result.push(replacement);
+            start = index + 1;
+        }
+
+        index += 1;
+    }
+
+    if start == 0 {
+        value.to_string()
+    } else {
+        if start < index {
+            result.push(&value[start..index]);
+        }
+
+        result.join("")
+    }
 }

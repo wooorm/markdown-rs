@@ -227,7 +227,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
@@ -293,7 +293,7 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn title_after_after_optional_whitespace(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             (State::Ok, Some(vec![code]))
         }
         _ => (State::Nok, None),

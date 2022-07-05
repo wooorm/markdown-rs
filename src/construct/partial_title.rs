@@ -102,6 +102,19 @@ impl Kind {
             _ => unreachable!("invalid char"),
         }
     }
+    /// Turn [Code] into a kind.
+    ///
+    /// > 👉 **Note**: an opening paren must be used for `Kind::Paren`.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `code` is not `Code::Char('(' | '"' | '\'')`.
+    fn from_code(code: Code) -> Kind {
+        match code {
+            Code::Char(char) => Kind::from_char(char),
+            _ => unreachable!("invalid code"),
+        }
+    }
 }
 
 /// State needed to parse titles.
@@ -124,10 +137,10 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     match code {
-        Code::Char(char) if char == '"' || char == '\'' || char == '(' => {
+        Code::Char('"' | '\'' | '(') => {
             let info = Info {
                 connect: false,
-                kind: Kind::from_char(char),
+                kind: Kind::from_code(code),
                 options,
             };
             tokenizer.enter(info.options.title.clone());
@@ -180,7 +193,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             begin(tokenizer, code, info)
         }
         Code::None => (State::Nok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => tokenizer.go(
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
@@ -216,7 +229,7 @@ fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
             tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
         }
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
         }

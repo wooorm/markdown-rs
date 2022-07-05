@@ -138,7 +138,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnR
 fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
         Code::None => (State::Nok, None),
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(TokenType::CodeTextLineEnding);
             tokenizer.consume(code);
             tokenizer.exit(TokenType::CodeTextLineEnding);
@@ -165,7 +165,7 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnRe
 /// ```
 fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '`') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '`') => {
             tokenizer.exit(TokenType::CodeTextData);
             between(tokenizer, code, size_open)
         }

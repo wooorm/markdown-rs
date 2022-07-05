@@ -171,7 +171,7 @@ fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
             tokenizer.exit(info.options.string.clone());
             enclosed_before(tokenizer, code, info)
         }
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '<') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '<') => {
             (State::Nok, None)
         }
         Code::Char('\\') => {
@@ -235,7 +235,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
         Code::None
         | Code::CarriageReturnLineFeed
         | Code::VirtualSpace
-        | Code::Char('\t' | '\r' | '\n' | ' ') => {
+        | Code::Char('\t' | '\n' | '\r' | ' ') => {
             if info.balance > 0 {
                 (State::Nok, None)
             } else {

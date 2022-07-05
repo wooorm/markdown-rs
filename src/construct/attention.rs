@@ -109,6 +109,13 @@ enum MarkerKind {
 }
 
 impl MarkerKind {
+    /// Turn the kind into a [char].
+    fn as_char(&self) -> char {
+        match self {
+            MarkerKind::Asterisk => '*',
+            MarkerKind::Underscore => '_',
+        }
+    }
     /// Turn [char] into a kind.
     ///
     /// ## Panics
@@ -137,14 +144,23 @@ impl MarkerKind {
 /// Attentention sequence that we can take markers from.
 #[derive(Debug)]
 struct Sequence {
+    /// Marker used in this sequence.
     marker: MarkerKind,
+    /// The index into events where this sequence’s `Enter` currently resides.
     event_index: usize,
+    /// The (shifted) point where this sequence starts.
     start_point: Point,
+    /// The (shifted) index where this sequence starts.
     start_index: usize,
+    /// The (shifted) point where this sequence end.
     end_point: Point,
+    /// The (shifted) index where this sequence end.
     end_index: usize,
+    /// The number of markers we can still use.
     size: usize,
+    /// Whether this sequence can open attention.
     open: bool,
+    /// Whether this sequence can close attention.
     close: bool,
 }
 
@@ -155,9 +171,9 @@ struct Sequence {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char(char) if char == '*' || char == '_' => {
+        Code::Char('*' | '_') => {
             tokenizer.enter(TokenType::AttentionSequence);
-            inside(tokenizer, code, char)
+            inside(tokenizer, code, MarkerKind::from_code(code))
         }
         _ => (State::Nok, None),
     }
@@ -168,9 +184,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// *|*
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, marker: char) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnResult {
     match code {
-        Code::Char(char) if char == marker => {
+        Code::Char(char) if char == marker.as_char() => {
             tokenizer.consume(code);
             (State::Fn(Box::new(move |t, c| inside(t, c, marker))), None)
         }

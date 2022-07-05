@@ -67,7 +67,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(TokenType::HardBreakEscape);
             (State::Ok, Some(vec![code]))
         }

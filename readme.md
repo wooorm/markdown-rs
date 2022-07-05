@@ -154,7 +154,6 @@ cargo doc --document-private-items
 - [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
 - [ ] (3) Pass more references around
-- [ ] (1) Remove todos in `span.rs` if not needed
 - [ ] (1) Get markers from constructs (`string`, `text`)
 - [ ] (3) Read through rust docs to figure out what useful functions there are,
       and fix stuff I’m doing manually now
@@ -276,3 +275,4 @@ important.
 - [x] (3) Unicode punctuation
 - [x] (1) Use rust to crawl unicode
 - [x] (1) Document attention
+- [x] (1) Remove todos in `span.rs` if not needed

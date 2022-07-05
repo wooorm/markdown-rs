@@ -195,7 +195,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
 /// ```
 fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) -> StateFnResult {
     match code {
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter_with_content(TokenType::LineEnding, info.options.content_type);
 
             if info.connect {
@@ -254,7 +254,7 @@ fn after_more_space_or_tab(_tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
     // Blank line not allowed.
     if matches!(
         code,
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
     ) {
         (State::Nok, None)
     } else {

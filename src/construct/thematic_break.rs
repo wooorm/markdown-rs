@@ -95,13 +95,26 @@ impl Kind {
     ///
     /// ## Panics
     ///
-    /// Panics if `char` is not `*`, `_`, or `_`.
+    /// Panics if `char` is not `*`, `-`, or `_`.
     fn from_char(char: char) -> Kind {
         match char {
             '*' => Kind::Asterisk,
             '-' => Kind::Dash,
             '_' => Kind::Underscore,
             _ => unreachable!("invalid char"),
+        }
+    }
+    /// Turn [Code] into a kind.
+    ///
+    /// > 👉 **Note**: an opening paren must be used for `Kind::Paren`.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `code` is not `Code::Char('*' | '-' | '_')`.
+    fn from_code(code: Code) -> Kind {
+        match code {
+            Code::Char(char) => Kind::from_char(char),
+            _ => unreachable!("invalid code"),
         }
     }
 }
@@ -133,11 +146,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char(char) if char == '*' || char == '-' || char == '_' => at_break(
+        Code::Char('*' | '-' | '_') => at_break(
             tokenizer,
             code,
             Info {
-                kind: Kind::from_char(char),
+                kind: Kind::from_code(code),
                 size: 0,
             },
         ),

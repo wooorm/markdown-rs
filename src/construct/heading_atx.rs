@@ -181,7 +181,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// Resolve heading (atx).
 pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut edit_map = EditMap::new();
     let mut index = 0;

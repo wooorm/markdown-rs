@@ -45,7 +45,7 @@ use crate::util::edit_map::EditMap;
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            unreachable!("unexpected eol/eof at start of paragraph")
+            unreachable!("unexpected eol/eof")
         }
         _ => {
             tokenizer.enter(TokenType::Paragraph);
@@ -99,7 +99,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
             {
                 // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
                 edit_map.add(exit_index, 4, vec![]);
-                println!("rm {:?} {:?}", exit_index, exit_index + 4);
 
                 // Add Exit:LineEnding position info to Exit:Data.
                 let line_ending_exit = &tokenizer.events[enter_next_index - 1];

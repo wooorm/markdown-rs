@@ -103,6 +103,7 @@ use crate::construct::{
     blank_line::start as blank_line, partial_space_or_tab::space_or_tab_min_max,
 };
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::util::codes::{parse, serialize};
 
 /// Kind of HTML (flow).
 #[derive(Debug, PartialEq)]
@@ -164,6 +165,17 @@ impl QuoteKind {
             _ => unreachable!("invalid char"),
         }
     }
+    /// Turn [Code] into a kind.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `code` is not `Code::Char('"' | '\'')`.
+    fn from_code(code: Code) -> QuoteKind {
+        match code {
+            Code::Char(char) => QuoteKind::from_char(char),
+            _ => unreachable!("invalid code"),
+        }
+    }
 }
 
 /// State needed to parse HTML (flow).
@@ -175,7 +187,7 @@ struct Info {
     start_tag: bool,
     /// Used depending on `kind` to either collect all parsed characters, or to
     /// store expected characters.
-    buffer: Vec<char>,
+    buffer: Vec<Code>,
     /// `index` into `buffer` when expecting certain characters.
     index: usize,
     /// Current quote, when in a double or single quoted attribute value.
@@ -254,7 +266,7 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 None,
             )
         }
-        Code::Char(char) if char.is_ascii_alphabetic() => {
+        Code::Char('A'..='Z' | 'a'..='z') => {
             info.start_tag = true;
             tag_name(tokenizer, code, info)
         }
@@ -282,14 +294,14 @@ fn declaration_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> St
         Code::Char('[') => {
             tokenizer.consume(code);
             info.kind = Kind::Cdata;
-            info.buffer = vec!['C', 'D', 'A', 'T', 'A', '['];
+            info.buffer = parse("CDATA[");
             info.index = 0;
             (
                 State::Fn(Box::new(|t, c| cdata_open_inside(t, c, info))),
                 None,
             )
         }
-        Code::Char(char) if char.is_ascii_alphabetic() => {
+        Code::Char('A'..='Z' | 'a'..='z') => {
             tokenizer.consume(code);
             info.kind = Kind::Declaration;
             (
@@ -329,22 +341,21 @@ fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Sta
 /// <![CDATA|[>&<]]>
 /// ```
 fn cdata_open_inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
-    match code {
-        Code::Char(char) if char == info.buffer[info.index] => {
-            info.index += 1;
-            tokenizer.consume(code);
+    if code == info.buffer[info.index] {
+        info.index += 1;
+        tokenizer.consume(code);
 
-            if info.index == info.buffer.len() {
-                info.buffer.clear();
-                (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
-            } else {
-                (
-                    State::Fn(Box::new(|t, c| cdata_open_inside(t, c, info))),
-                    None,
-                )
-            }
+        if info.index == info.buffer.len() {
+            info.buffer.clear();
+            (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
+        } else {
+            (
+                State::Fn(Box::new(|t, c| cdata_open_inside(t, c, info))),
+                None,
+            )
         }
-        _ => (State::Nok, None),
+    } else {
+        (State::Nok, None)
     }
 }
 
@@ -355,9 +366,9 @@ fn cdata_open_inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> S
 /// ```
 fn tag_close_start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::Char(char) if char.is_ascii_alphabetic() => {
+        Code::Char('A'..='Z' | 'a'..='z') => {
             tokenizer.consume(code);
-            info.buffer.push(char);
+            info.buffer.push(code);
             (State::Fn(Box::new(|t, c| tag_name(t, c, info))), None)
         }
         _ => (State::Nok, None),
@@ -376,13 +387,9 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
         | Code::CarriageReturnLineFeed
         | Code::VirtualSpace
         | Code::Char('\t' | '\n' | '\r' | ' ' | '/' | '>') => {
-            let tag_name_buffer = info.buffer.iter().collect::<String>().to_lowercase();
+            let tag_name_buffer = serialize(&info.buffer, false).to_lowercase();
             let name = tag_name_buffer.as_str();
-            let slash = if let Code::Char(char) = code {
-                char == '/'
-            } else {
-                false
-            };
+            let slash = matches!(code, Code::Char('/'));
 
             info.buffer.clear();
 
@@ -413,9 +420,9 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
                 }
             }
         }
-        Code::Char(char) if char == '-' || char.is_ascii_alphanumeric() => {
+        Code::Char('-' | '0'..='9' | 'A'..='Z' | 'a'..='z') => {
             tokenizer.consume(code);
-            info.buffer.push(char);
+            info.buffer.push(code);
             (State::Fn(Box::new(|t, c| tag_name(t, c, info))), None)
         }
         Code::Char(_) => (State::Nok, None),
@@ -481,7 +488,7 @@ fn complete_attribute_name_before(
             tokenizer.consume(code);
             (State::Fn(Box::new(|t, c| complete_end(t, c, info))), None)
         }
-        Code::Char(char) if char == ':' || char == '_' || char.is_ascii_alphabetic() => {
+        Code::Char('0'..='9' | ':' | 'A'..='Z' | '_' | 'a'..='z') => {
             tokenizer.consume(code);
             (
                 State::Fn(Box::new(|t, c| complete_attribute_name(t, c, info))),
@@ -508,13 +515,7 @@ fn complete_attribute_name_before(
 /// ```
 fn complete_attribute_name(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
-        Code::Char(char)
-            if char == '-'
-                || char == '.'
-                || char == ':'
-                || char == '_'
-                || char.is_ascii_alphanumeric() =>
-        {
+        Code::Char('-' | '.' | '0'..='9' | ':' | 'A'..='Z' | '_' | 'a'..='z') => {
             tokenizer.consume(code);
             (
                 State::Fn(Box::new(|t, c| complete_attribute_name(t, c, info))),
@@ -571,9 +572,9 @@ fn complete_attribute_value_before(
 ) -> StateFnResult {
     match code {
         Code::None | Code::Char('<' | '=' | '>' | '`') => (State::Nok, None),
-        Code::Char(char) if char == '"' || char == '\'' => {
+        Code::Char('"' | '\'') => {
             tokenizer.consume(code);
-            info.quote = Some(QuoteKind::from_char(char));
+            info.quote = Some(QuoteKind::from_code(code));
             (
                 State::Fn(Box::new(|t, c| complete_attribute_value_quoted(t, c, info))),
                 None,
@@ -602,7 +603,7 @@ fn complete_attribute_value_quoted(
     info: Info,
 ) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => (State::Nok, None),
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => (State::Nok, None),
         Code::Char(char) if char == info.quote.as_ref().unwrap().as_char() => {
             tokenizer.consume(code);
             (
@@ -860,7 +861,7 @@ fn continuation_raw_end_tag(
 ) -> StateFnResult {
     match code {
         Code::Char('>') => {
-            let tag_name_buffer = info.buffer.iter().collect::<String>().to_lowercase();
+            let tag_name_buffer = serialize(&info.buffer, false).to_lowercase();
             info.buffer.clear();
 
             if HTML_RAW_NAMES.contains(&tag_name_buffer.as_str()) {
@@ -873,9 +874,9 @@ fn continuation_raw_end_tag(
                 continuation(tokenizer, code, info)
             }
         }
-        Code::Char(char) if char.is_ascii_alphabetic() && info.buffer.len() < HTML_RAW_SIZE_MAX => {
+        Code::Char('A'..='Z' | 'a'..='z') if info.buffer.len() < HTML_RAW_SIZE_MAX => {
             tokenizer.consume(code);
-            info.buffer.push(char);
+            info.buffer.push(code);
             (
                 State::Fn(Box::new(|t, c| continuation_raw_end_tag(t, c, info))),
                 None,

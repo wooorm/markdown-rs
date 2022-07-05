@@ -39,7 +39,7 @@ pub fn normalize_identifier(value: &str) -> String {
     // Collapse markdown whitespace and trim it.
     for char in value.chars() {
         match char {
-            '\t' | '\r' | '\n' | ' ' => {
+            '\t' | '\n' | '\r' | ' ' => {
                 at_whitespace = true;
             }
             _ => {

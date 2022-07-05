@@ -133,7 +133,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             tokenizer.exit(info.options.label);
             (State::Ok, None)
         }
-        Code::CarriageReturnLineFeed | Code::Char('\r' | '\n') => tokenizer.go(
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
@@ -165,7 +165,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 /// ```
 fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n' | '[' | ']') => {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '[' | ']') => {
             tokenizer.exit(TokenType::Data);
             at_break(tokenizer, code, info)
         }

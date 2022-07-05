@@ -8,15 +8,15 @@
 //!
 //! *   [Attention][crate::construct::attention]
 //! *   [Autolink][crate::construct::autolink]
-//! *   [HTML (text)][crate::construct::html_text]
+//! *   [Character escape][crate::construct::character_escape]
+//! *   [Character reference][crate::construct::character_reference]
+//! *   [Code (text)][crate::construct::code_text]
 //! *   [Hard break (escape)][crate::construct::hard_break_escape]
 //! *   [Hard break (trailing)][crate::construct::hard_break_trailing]
-//! *   [Code (text)][crate::construct::code_text]
+//! *   [HTML (text)][crate::construct::html_text]
 //! *   [Label start (image)][crate::construct::label_start_image]
 //! *   [Label start (link)][crate::construct::label_start_link]
 //! *   [Label end][crate::construct::label_end]
-//! *   [Character escape][crate::construct::character_escape]
-//! *   [Character reference][crate::construct::character_reference]
 
 use crate::construct::{
     attention::start as attention, autolink::start as autolink,

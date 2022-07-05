@@ -33,7 +33,7 @@ pub fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         space_or_tab(),
         if matches!(
             tokenizer.previous,
-            Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
+            Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
         ) {
             // If there’s whitespace, and we were at an eol/eof, `ok`
             ok
@@ -48,7 +48,7 @@ pub fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn at_eol(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if matches!(
         code,
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\r' | '\n')
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
     ) {
         ok(tokenizer, code)
     } else {
