@@ -725,19 +725,17 @@ fn attention() {
     );
 
     // Rule 15.
-    // To do: interleaving attention.
-    // assert_eq!(
-    //     micromark("*foo _bar* baz_"),
-    //     "<p><em>foo _bar</em> baz_</p>",
-    //     "should not support mismatched emphasis"
-    // );
+    assert_eq!(
+        micromark("*foo _bar* baz_"),
+        "<p><em>foo _bar</em> baz_</p>",
+        "should not support mismatched emphasis"
+    );
 
-    // To do: interleaving attention.
-    // assert_eq!(
-    //     micromark("*foo __bar *baz bim__ bam*"),
-    //     "<p><em>foo <strong>bar *baz bim</strong> bam</em></p>",
-    //     "should not support mismatched strong emphasis"
-    // );
+    assert_eq!(
+        micromark("*foo __bar *baz bim__ bam*"),
+        "<p><em>foo <strong>bar *baz bim</strong> bam</em></p>",
+        "should not support mismatched strong emphasis"
+    );
 
     // Rule 16.
     assert_eq!(

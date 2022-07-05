@@ -328,6 +328,25 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         1
                     };
 
+                    // We’re *on* a closing sequence, with a matching opening
+                    // sequence.
+                    // Now we make sure that we can’t have misnested attention:
+                    //
+                    // ```html
+                    // <em>a <strong>b</em> c</strong>
+                    // ```
+                    //
+                    // Do that by marking everything between it as no longer
+                    // possible to open anything.
+                    // Theoretically we could mark non-closing as well, but we
+                    // don’t look for closers backwards.
+                    let mut between = open + 1;
+
+                    while between < close {
+                        sequences[between].open = false;
+                        between += 1;
+                    }
+
                     let sequence_close = &mut sequences[close];
                     let close_event_index = sequence_close.event_index;
                     let seq_close_enter = (
