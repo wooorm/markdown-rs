@@ -231,12 +231,11 @@ fn link_resource() {
         "should support characer escapes"
     );
 
-    // To do: link/attention interplay.
-    // assert_eq!(
-    //     micromark("[link *foo **bar** `#`*](/uri)"),
-    //     "<p><a href=\"/uri\">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>",
-    //     "should support content"
-    // );
+    assert_eq!(
+        micromark("[link *foo **bar** `#`*](/uri)"),
+        "<p><a href=\"/uri\">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>",
+        "should support content"
+    );
 
     assert_eq!(
         micromark("[![moon](moon.jpg)](/uri)"),

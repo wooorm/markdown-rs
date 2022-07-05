@@ -559,12 +559,11 @@ fn attention() {
         "should support strong emphasis around the other marker"
     );
 
-    // To do: resizing attention bug?
-    // assert_eq!(
-    //     micromark("**foo*"),
-    //     "<p>*<em>foo</em></p>",
-    //     "should support a superfluous marker at the start of emphasis"
-    // );
+    assert_eq!(
+        micromark("**foo*"),
+        "<p>*<em>foo</em></p>",
+        "should support a superfluous marker at the start of emphasis"
+    );
 
     assert_eq!(
         micromark("*foo**"),
@@ -572,19 +571,17 @@ fn attention() {
         "should support a superfluous marker at the end of emphasis"
     );
 
-    // To do: resizing attention bug?
-    // assert_eq!(
-    //     micromark("***foo**"),
-    //     "<p>*<strong>foo</strong></p>",
-    //     "should support a superfluous marker at the start of strong"
-    // );
+    assert_eq!(
+        micromark("***foo**"),
+        "<p>*<strong>foo</strong></p>",
+        "should support a superfluous marker at the start of strong"
+    );
 
-    // To do: resizing attention bug?
-    // assert_eq!(
-    //     micromark("****foo*"),
-    //     "<p>***<em>foo</em></p>",
-    //     "should support multiple superfluous markers at the start of strong"
-    // );
+    assert_eq!(
+        micromark("****foo*"),
+        "<p>***<em>foo</em></p>",
+        "should support multiple superfluous markers at the start of strong"
+    );
 
     assert_eq!(
         micromark("**foo***"),
@@ -635,12 +632,11 @@ fn attention() {
         "should support strong emphasis around the other marker"
     );
 
-    // To do: resizing attention bug?
-    // assert_eq!(
-    //     micromark("__foo_"),
-    //     "<p>_<em>foo</em></p>",
-    //     "should support a superfluous marker at the start of emphasis"
-    // );
+    assert_eq!(
+        micromark("__foo_"),
+        "<p>_<em>foo</em></p>",
+        "should support a superfluous marker at the start of emphasis"
+    );
 
     assert_eq!(
         micromark("_foo__"),
@@ -648,19 +644,17 @@ fn attention() {
         "should support a superfluous marker at the end of emphasis"
     );
 
-    // To do: resizing attention bug?
-    // assert_eq!(
-    //     micromark("___foo__"),
-    //     "<p>_<strong>foo</strong></p>",
-    //     "should support a superfluous marker at the start of strong"
-    // );
+    assert_eq!(
+        micromark("___foo__"),
+        "<p>_<strong>foo</strong></p>",
+        "should support a superfluous marker at the start of strong"
+    );
 
-    // To do: resizing attention bug?
-    // assert_eq!(
-    //     micromark("____foo_"),
-    //     "<p>___<em>foo</em></p>",
-    //     "should support multiple superfluous markers at the start of strong"
-    // );
+    assert_eq!(
+        micromark("____foo_"),
+        "<p>___<em>foo</em></p>",
+        "should support multiple superfluous markers at the start of strong"
+    );
 
     assert_eq!(
         micromark("__foo___"),

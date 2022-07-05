@@ -379,7 +379,8 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
                     // Opening.
                     edit_map.add_before(
-                        open_event_index,
+                        // Add after the current sequence (it might remain).
+                        open_event_index + 2,
                         0,
                         vec![
                             Event {
