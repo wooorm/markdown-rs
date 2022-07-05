@@ -21,7 +21,7 @@ pub struct ParseState {
 /// Turn a string of markdown into events.
 ///
 /// Passes the codes back so the compiler can access the source.
-pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
+pub fn parse(value: &str) -> (Vec<Event>, ParseState) {
     let mut parse_state = ParseState {
         codes: parse_codes(value),
         definitions: HashSet::new(),
@@ -37,6 +37,5 @@ pub fn parse(value: &str) -> (Vec<Event>, Vec<Code>) {
         0,
     );
 
-    // To do: pass whole `parse_state` back?
-    (events, parse_state.codes)
+    (events, parse_state)
 }

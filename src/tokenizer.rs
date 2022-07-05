@@ -15,8 +15,6 @@ use crate::parser::ParseState;
 use std::collections::HashMap;
 
 /// Semantic label of a span.
-// To do: figure out how to share this so extensions can add their own stuff,
-// though perhaps that’s impossible and we should inline all extensions?
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum TokenType {
     /// Whole autolink.
@@ -1590,14 +1588,119 @@ pub enum TokenType {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+    /// Strong.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`StrongSequence`][TokenType::StrongSequence],
+    ///     [`StrongText`][TokenType::StrongText]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | **a**
+    ///     ^^^^^
+    /// ```
     Strong,
+    /// Strong sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Strong`][TokenType::Strong]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | **a**
+    ///     ^^ ^^
+    /// ```
     StrongSequence,
+    /// Strong text.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Strong`][TokenType::Strong]
+    /// *   **Content model**:
+    ///     [text content][crate::content::text]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | **a**
+    ///       ^
+    /// ```
     StrongText,
+    /// Emphasis.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`EmphasisSequence`][TokenType::EmphasisSequence],
+    ///     [`EmphasisText`][TokenType::EmphasisText]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | *a*
+    ///     ^^^
+    /// ```
     Emphasis,
+    /// Emphasis sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Emphasis`][TokenType::Emphasis]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | *a*
+    ///     ^ ^
+    /// ```
     EmphasisSequence,
+    /// Emphasis text.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Emphasis`][TokenType::Emphasis]
+    /// *   **Content model**:
+    ///     [text content][crate::content::text]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | *a*
+    ///      ^
+    /// ```
     EmphasisText,
-    // To do: this is removed.
-    // Should it reuse something e.g., emphasis? Data?
+    /// Attention sequence.
+    ///
+    /// > 👉 **Note**: this is used while parsing but compiled away.
     AttentionSequence,
 }
 
@@ -1759,19 +1862,29 @@ pub struct Tokenizer<'a> {
     index: usize,
     /// Current relative and absolute place in the file.
     point: Point,
-    /// To do.
-    pub parse_state: &'a ParseState,
-    /// To do.
-    pub label_start_stack: Vec<LabelStart>,
-    /// To do.
-    pub label_start_list_loose: Vec<LabelStart>,
-    /// To do.
-    pub interrupt: bool,
-    /// To do.
-    pub media_list: Vec<Media>,
-    /// To do.
+    /// List of attached resolvers, which will be called when done feeding,
+    /// to clean events.
     resolvers: Vec<Box<Resolver>>,
+    /// List of names associated with attached resolvers.
     resolver_ids: Vec<String>,
+    /// Shared parsing state across tokenizers.
+    pub parse_state: &'a ParseState,
+    /// Stack of label (start) that could form images and links.
+    ///
+    /// Used when tokenizing [text content][crate::content::text].
+    pub label_start_stack: Vec<LabelStart>,
+    /// Stack of label (start) that cannot form images and links.
+    ///
+    /// Used when tokenizing [text content][crate::content::text].
+    pub label_start_list_loose: Vec<LabelStart>,
+    /// Stack of images and links.
+    ///
+    /// Used when tokenizing [text content][crate::content::text].
+    pub media_list: Vec<Media>,
+    /// Whether we would be interrupting something.
+    ///
+    /// Used when tokenizing [flow content][crate::content::flow].
+    pub interrupt: bool,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -1797,7 +1910,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// To do.
+    /// Register a resolver.
     pub fn register_resolver(&mut self, id: String, resolver: Box<Resolver>) {
         if !self.resolver_ids.contains(&id) {
             self.resolver_ids.push(id);
@@ -1805,6 +1918,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    /// Register a resolver, before others.
     pub fn register_resolver_before(&mut self, id: String, resolver: Box<Resolver>) {
         if !self.resolver_ids.contains(&id) {
             self.resolver_ids.push(id);
@@ -1823,12 +1937,10 @@ impl<'a> Tokenizer<'a> {
     ///
     /// This defines how much columns are increased when consuming a line
     /// ending.
-    /// `index` is currently not used (yet).
-    // To do: remove `index` as a parameter if not needed.
-    pub fn define_skip(&mut self, point: &Point, index: usize) {
+    pub fn define_skip(&mut self, point: &Point) {
         self.column_start.insert(point.line, point.column);
         self.account_for_potential_skip();
-        log::debug!("position: define skip: `{:?}` ({:?})", point, index);
+        log::debug!("position: define skip: `{:?}`", point);
     }
 
     /// Increment the current positional info if we’re right after a line

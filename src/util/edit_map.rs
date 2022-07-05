@@ -67,6 +67,7 @@ impl EditMap {
     pub fn add(&mut self, index: usize, remove: usize, add: Vec<Event>) {
         add_impl(self, index, remove, add, false);
     }
+    /// Create an edit: but insert `add` before existing additions.
     pub fn add_before(&mut self, index: usize, remove: usize, add: Vec<Event>) {
         add_impl(self, index, remove, add, true);
     }
@@ -134,7 +135,7 @@ impl EditMap {
     }
 }
 
-/// To do.
+/// Create an edit.
 fn add_impl(
     edit_map: &mut EditMap,
     index: usize,
@@ -145,9 +146,10 @@ fn add_impl(
     assert!(!edit_map.consumed, "cannot add after consuming");
 
     if let Some((curr_remove, mut curr_add)) = edit_map.map.remove(&index) {
-        // To do: these might have to be split in several chunks instead
+        // To do: these might have to be split into several chunks instead
         // of one, if links in `curr_add` are supported.
         remove += curr_remove;
+
         if before {
             add.append(&mut curr_add);
         } else {

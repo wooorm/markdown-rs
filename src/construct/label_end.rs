@@ -531,9 +531,7 @@ fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> Stat
         .label_start_stack
         .get_mut(label_start_index)
         .unwrap();
-    println!("just balanced braces: {:?}", label_start);
     label_start.balanced = true;
-    // To do: pop things off the list?
     (State::Nok, None)
 }
 
@@ -708,22 +706,19 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
         }
     }
 
-    // Always found, otherwise we don’t get here.
-    let start = start.unwrap();
-    let end = end.unwrap();
-
-    let id = normalize_identifier(&serialize(
-        &tokenizer.parse_state.codes,
-        &Span {
-            start_index: start,
-            end_index: end,
-        },
-        false,
-    ));
-    let defined = tokenizer.parse_state.definitions.contains(&id);
-    // To do: set `id` on the media somehow?
-
-    if defined {
+    if tokenizer
+        .parse_state
+        .definitions
+        .contains(&normalize_identifier(&serialize(
+            &tokenizer.parse_state.codes,
+            &Span {
+                // Always found, otherwise we don’t get here.
+                start_index: start.unwrap(),
+                end_index: end.unwrap(),
+            },
+            false,
+        )))
+    {
         (State::Ok, Some(vec![code]))
     } else {
         (State::Nok, None)

@@ -544,7 +544,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut definition_inside = false;
 
     // Handle all definitions first.
-    // We have to do two passes because we need to compile the events in
+    // We must do two passes because we need to compile the events in
     // definitions which come after references already.
     //
     // To speed things up, we collect the places we can jump over for the

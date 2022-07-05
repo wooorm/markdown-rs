@@ -36,7 +36,7 @@ pub fn link(events: &mut [Event], index: usize) {
     link_to(events, index - 2, index);
 }
 
-/// To do
+/// Link two arbitrary [`Event`][]s together.
 pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
     let prev = &mut events[pevious];
     assert!(
@@ -111,7 +111,7 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
                     ends.push(span.end_index);
 
                     if enter.previous != None {
-                        tokenizer.define_skip(&enter.point, span.start_index);
+                        tokenizer.define_skip(&enter.point);
                     }
 
                     let func: Box<StateFn> = match result.0 {
@@ -143,7 +143,6 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
 
                     // Find the first event that starts after the end we’re looking
                     // for.
-                    // To do: is this logic correct?
                     if subevent.event_type == EventType::Enter && subevent.index >= ends[end_index]
                     {
                         let link = index_opt.unwrap();

@@ -93,7 +93,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
             // Enter:Paragraph
             let mut enter_next_index = exit_index + 3;
 
-            // To do: assert that `LineEnding` between?
+            // Find future `Paragraphs`.
+            // There will be `LineEnding` between.
             while enter_next_index < len
                 && tokenizer.events[enter_next_index].token_type == TokenType::Paragraph
             {
