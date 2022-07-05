@@ -194,7 +194,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
         edit_map.add(
             data_enter_index,
-            data_exit_index - data_enter_index,
+            data_exit_index - data_enter_index + 1,
             vec![
                 Event {
                     event_type: EventType::Enter,
