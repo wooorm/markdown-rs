@@ -79,7 +79,7 @@ enum Kind {
 impl Kind {
     /// Turn the kind into a [char].
     ///
-    /// > 👉 **Note**: a closing paren is used.
+    /// > 👉 **Note**: a closing paren is used for `Kind::Paren`.
     fn as_char(&self) -> char {
         match self {
             Kind::Paren => ')',
@@ -89,7 +89,7 @@ impl Kind {
     }
     /// Turn a [char] into a kind.
     ///
-    /// > 👉 **Note**: an opening paren must be used.
+    /// > 👉 **Note**: an opening paren must be used for `Kind::Paren`.
     ///
     /// ## Panics
     ///

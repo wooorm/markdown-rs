@@ -117,7 +117,6 @@ cargo doc --document-private-items
 
 #### Docs
 
-- [ ] (1) Document attention
 - [ ] (1) Go through all bnf
 - [ ] (1) Go through all docs
 - [ ] (1) Add overview docs on how everything works
@@ -276,3 +275,4 @@ important.
 - [x] (5) attention
 - [x] (3) Unicode punctuation
 - [x] (1) Use rust to crawl unicode
+- [x] (1) Document attention
