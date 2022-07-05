@@ -127,7 +127,6 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (2) Fix attention/label interplay
 - [ ] (8) block quote\
        test (`code_fenced`, `definition`, `code_indented`, `heading_atx`, `heading_setext`,
       `html_flow`, `misc_default_line_ending`, `thematic_break`)
@@ -276,3 +275,4 @@ important.
 - [x] (1) Document attention
 - [x] (1) Remove todos in `span.rs` if not needed
 - [x] (2) Fix resizing attention bug
+- [x] (2) Fix interleaving of attention/label

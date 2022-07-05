@@ -51,12 +51,11 @@ fn link_reference() {
         "should not support deep links in link references"
     );
 
-    // To do: link/attention interplay.
-    // assert_eq!(
-    //     micromark("[ref]: /uri\n\n*[foo*][ref]"),
-    //     "<p>*<a href=\"/uri\">foo*</a></p>",
-    //     "should prefer link references over emphasis (1)"
-    // );
+    assert_eq!(
+        micromark("[ref]: /uri\n\n*[foo*][ref]"),
+        "<p>*<a href=\"/uri\">foo*</a></p>",
+        "should prefer link references over emphasis (1)"
+    );
 
     assert_eq!(
         micromark("[ref]: /uri\n\n[foo *bar][ref]"),
@@ -232,12 +231,11 @@ fn link_reference() {
         "should “support” an escaped shortcut reference"
     );
 
-    // To do: link/attention interplay.
-    // assert_eq!(
-    //     micromark("[foo*]: /url\n\n*[foo*]"),
-    //     "<p>*<a href=\"/url\">foo*</a></p>",
-    //     "should prefer shortcut references over emphasis"
-    // );
+    assert_eq!(
+        micromark("[foo*]: /url\n\n*[foo*]"),
+        "<p>*<a href=\"/url\">foo*</a></p>",
+        "should prefer shortcut references over emphasis"
+    );
 
     assert_eq!(
         micromark("[foo]: /url1\n[bar]: /url2\n\n[foo][bar]"),

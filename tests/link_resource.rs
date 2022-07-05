@@ -261,12 +261,11 @@ fn link_resource() {
         "should not support links in links (3)"
     );
 
-    // To do: link/attention interplay.
-    // assert_eq!(
-    //     micromark("*[foo*](/uri)"),
-    //     "<p>*<a href=\"/uri\">foo*</a></p>",
-    //     "should prefer links over emphasis (1)"
-    // );
+    assert_eq!(
+        micromark("*[foo*](/uri)"),
+        "<p>*<a href=\"/uri\">foo*</a></p>",
+        "should prefer links over emphasis (1)"
+    );
 
     assert_eq!(
         micromark("[foo *bar](baz*)"),

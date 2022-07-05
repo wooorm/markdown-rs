@@ -753,19 +753,17 @@ fn attention() {
     );
 
     // Rule 17.
-    // To do: attention/link interplay.
-    // assert_eq!(
-    //     micromark("*[bar*](/url)"),
-    //     "<p>*<a href=\"/url\">bar*</a></p>",
-    //     "should not mismatch inside links (1)"
-    // );
+    assert_eq!(
+        micromark("*[bar*](/url)"),
+        "<p>*<a href=\"/url\">bar*</a></p>",
+        "should not mismatch inside links (1)"
+    );
 
-    // To do: attention/link interplay.
-    // assert_eq!(
-    //     micromark("_[bar_](/url)"),
-    //     "<p>_<a href=\"/url\">bar_</a></p>",
-    //     "should not mismatch inside links (1)"
-    // );
+    assert_eq!(
+        micromark("_[bar_](/url)"),
+        "<p>_<a href=\"/url\">bar_</a></p>",
+        "should not mismatch inside links (1)"
+    );
 
     assert_eq!(
         micromark_with_options("*<img src=\"foo\" title=\"*\"/>", DANGER),

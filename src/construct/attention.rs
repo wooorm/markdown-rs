@@ -146,6 +146,8 @@ impl MarkerKind {
 struct Sequence {
     /// Marker used in this sequence.
     marker: MarkerKind,
+    /// The depth in events where this sequence resides.
+    balance: usize,
     /// The index into events where this sequence’s `Enter` currently resides.
     event_index: usize,
     /// The (shifted) point where this sequence starts.
@@ -220,57 +222,62 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let codes = &tokenizer.parse_state.codes;
     let mut edit_map = EditMap::new();
     let mut start = 0;
+    let mut balance = 0;
     let mut sequences: Vec<Sequence> = vec![];
 
     // Find sequences of sequences and information about them.
     while start < tokenizer.events.len() {
         let enter = &tokenizer.events[start];
 
-        if enter.event_type == EventType::Enter && enter.token_type == TokenType::AttentionSequence
-        {
-            let end = start + 1;
-            let exit = &tokenizer.events[end];
-            let marker = MarkerKind::from_code(codes[enter.index]);
-            let before = classify_character(if enter.index > 0 {
-                codes[enter.index - 1]
-            } else {
-                Code::None
-            });
-            let after = classify_character(if exit.index < codes.len() {
-                codes[exit.index]
-            } else {
-                Code::None
-            });
-            let open = after == GroupKind::Other
-                || (after == GroupKind::Punctuation && before != GroupKind::Other);
-            // To do: GFM strikethrough?
-            // || attentionMarkers.includes(code)
-            let close = before == GroupKind::Other
-                || (before == GroupKind::Punctuation && after != GroupKind::Other);
-            // To do: GFM strikethrough?
-            // || attentionMarkers.includes(previous)
+        if enter.event_type == EventType::Enter {
+            balance += 1;
 
-            sequences.push(Sequence {
-                event_index: start,
-                start_point: enter.point.clone(),
-                start_index: enter.index,
-                end_point: exit.point.clone(),
-                end_index: exit.index,
-                size: exit.index - enter.index,
-                open: if marker == MarkerKind::Asterisk {
-                    open
+            if enter.token_type == TokenType::AttentionSequence {
+                let end = start + 1;
+                let exit = &tokenizer.events[end];
+                let marker = MarkerKind::from_code(codes[enter.index]);
+                let before = classify_character(if enter.index > 0 {
+                    codes[enter.index - 1]
                 } else {
-                    open && (before != GroupKind::Other || !close)
-                },
-                close: if marker == MarkerKind::Asterisk {
-                    close
+                    Code::None
+                });
+                let after = classify_character(if exit.index < codes.len() {
+                    codes[exit.index]
                 } else {
-                    close && (after != GroupKind::Other || !open)
-                },
-                marker,
-            });
+                    Code::None
+                });
+                let open = after == GroupKind::Other
+                    || (after == GroupKind::Punctuation && before != GroupKind::Other);
+                // To do: GFM strikethrough?
+                // || attentionMarkers.includes(code)
+                let close = before == GroupKind::Other
+                    || (before == GroupKind::Punctuation && after != GroupKind::Other);
+                // To do: GFM strikethrough?
+                // || attentionMarkers.includes(previous)
 
-            start += 1;
+                sequences.push(Sequence {
+                    event_index: start,
+                    balance,
+                    start_point: enter.point.clone(),
+                    start_index: enter.index,
+                    end_point: exit.point.clone(),
+                    end_index: exit.index,
+                    size: exit.index - enter.index,
+                    open: if marker == MarkerKind::Asterisk {
+                        open
+                    } else {
+                        open && (before != GroupKind::Other || !close)
+                    },
+                    close: if marker == MarkerKind::Asterisk {
+                        close
+                    } else {
+                        close && (after != GroupKind::Other || !open)
+                    },
+                    marker,
+                });
+            }
+        } else {
+            balance -= 1;
         }
 
         start += 1;
@@ -296,7 +303,10 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 let sequence_open = &sequences[open];
 
                 // We found a sequence that can open the closer we found.
-                if sequence_open.open && sequence_close.marker == sequence_open.marker {
+                if sequence_open.open
+                    && sequence_close.marker == sequence_open.marker
+                    && sequence_close.balance == sequence_open.balance
+                {
                     println!("open! {:?} {:?}", open, sequence_open);
                     // If the opening can close or the closing can open,
                     // and the close size *is not* a multiple of three,
