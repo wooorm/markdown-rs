@@ -105,6 +105,8 @@ use crate::construct::{
 use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 use crate::util::codes::{parse, serialize};
 
+// To do: mark as concrete (block quotes or lists can’t “pierce” into HTML).
+
 /// Kind of HTML (flow).
 #[derive(Debug, PartialEq)]
 enum Kind {
@@ -193,8 +195,6 @@ struct Info {
     /// Current quote, when in a double or single quoted attribute value.
     quote: Option<QuoteKind>,
 }
-
-// To do: mark as concrete (block quotes or lists can’t “pierce” into HTML).
 
 /// Start of HTML (flow), before optional whitespace.
 ///

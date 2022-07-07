@@ -1,16 +1,18 @@
+//! Utilities to deal with lists of events.
+
 use crate::tokenizer::{Event, TokenType};
 
-/// To do.
+/// Skip from `index`, optionally past `token_types`.
 pub fn opt(events: &[Event], index: usize, token_types: &[TokenType]) -> usize {
     skip_opt_with_direction(events, index, token_types, true)
 }
 
-/// To do.
+/// Skip from `index`, optionally past `token_types`, backwards.
 pub fn opt_back(events: &[Event], index: usize, token_types: &[TokenType]) -> usize {
     skip_opt_with_direction(events, index, token_types, false)
 }
 
-/// To do.
+/// Skip internals.
 fn skip_opt_with_direction(
     events: &[Event],
     index: usize,

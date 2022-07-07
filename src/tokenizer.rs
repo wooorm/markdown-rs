@@ -2190,7 +2190,8 @@ impl<'a> Tokenizer<'a> {
         )
     }
 
-    /// To do.
+    /// Like `go`, but this lets you *hijack* back to some other state after a
+    /// certain code.
     #[allow(clippy::unused_self)]
     pub fn go_until(
         &mut self,
