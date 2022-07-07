@@ -21,7 +21,7 @@
 //! thus the whole document needs to be parsed up to the level of definitions,
 //! before any level that can include references can be parsed.
 
-use crate::content::{string::start as string, text::start as text};
+use crate::content::{flow::start as flow, string::start as string, text::start as text};
 use crate::parser::ParseState;
 use crate::tokenizer::{ContentType, Event, EventType, State, StateFn, StateFnResult, Tokenizer};
 use crate::util::span;
@@ -90,7 +90,9 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
                 let mut tokenizer = Tokenizer::new(event.point.clone(), event.index, parse_state);
                 // Substate.
                 let mut result: StateFnResult = (
-                    State::Fn(Box::new(if *content_type == ContentType::String {
+                    State::Fn(Box::new(if *content_type == ContentType::Flow {
+                        flow
+                    } else if *content_type == ContentType::String {
                         string
                     } else {
                         text
