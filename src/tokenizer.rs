@@ -17,6 +17,10 @@ use std::collections::HashMap;
 /// Semantic label of a span.
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub enum TokenType {
+    /// Attention sequence.
+    ///
+    /// > 👉 **Note**: this is used while parsing but compiled away.
+    AttentionSequence,
     /// Whole autolink.
     ///
     /// ## Info
@@ -109,6 +113,10 @@ pub enum TokenType {
     ///       ^
     /// ```
     BlankLineEnding,
+    BlockQuote,
+    BlockQuoteMarker,
+    BlockQuotePrefix,
+    BlockQuotePrefixWhitespace,
     /// Whole character escape.
     ///
     /// ## Info
@@ -781,6 +789,61 @@ pub enum TokenType {
     ///             ^
     /// ```
     DefinitionTitleString,
+    /// Emphasis.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::content::text]
+    /// *   **Content model**:
+    ///     [`EmphasisSequence`][TokenType::EmphasisSequence],
+    ///     [`EmphasisText`][TokenType::EmphasisText]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | *a*
+    ///     ^^^
+    /// ```
+    Emphasis,
+    /// Emphasis sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Emphasis`][TokenType::Emphasis]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | *a*
+    ///     ^ ^
+    /// ```
+    EmphasisSequence,
+    /// Emphasis text.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Emphasis`][TokenType::Emphasis]
+    /// *   **Content model**:
+    ///     [text content][crate::content::text]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | *a*
+    ///      ^
+    /// ```
+    EmphasisText,
     /// Whole hard break (escape).
     ///
     /// ## Info
@@ -1551,43 +1614,6 @@ pub enum TokenType {
     ///     ^ ^ ^ ^
     /// ```
     SpaceOrTab,
-    /// Whole thematic break.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [flow content][crate::content::flow]
-    /// *   **Content model**:
-    ///     [`ThematicBreakSequence`][TokenType::ThematicBreakSequence],
-    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
-    /// *   **Construct**:
-    ///     [`thematic_break`][crate::construct::thematic_break]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | * * *
-    ///     ^^^^^
-    /// ```
-    ThematicBreak,
-    /// Thematic break sequence.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`ThematicBreak`][TokenType::ThematicBreak]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`thematic_break`][crate::construct::thematic_break]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | * * *
-    ///     ^ ^ ^
-    /// ```
-    ThematicBreakSequence,
     /// Strong.
     ///
     /// ## Info
@@ -1643,69 +1669,43 @@ pub enum TokenType {
     ///       ^
     /// ```
     StrongText,
-    /// Emphasis.
+    /// Whole thematic break.
     ///
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [flow content][crate::content::flow]
     /// *   **Content model**:
-    ///     [`EmphasisSequence`][TokenType::EmphasisSequence],
-    ///     [`EmphasisText`][TokenType::EmphasisText]
+    ///     [`ThematicBreakSequence`][TokenType::ThematicBreakSequence],
+    ///     [`SpaceOrTab`][TokenType::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`attention`][crate::construct::attention]
+    ///     [`thematic_break`][crate::construct::thematic_break]
     ///
     /// ## Example
     ///
     /// ```markdown
-    /// > | *a*
-    ///     ^^^
+    /// > | * * *
+    ///     ^^^^^
     /// ```
-    Emphasis,
-    /// Emphasis sequence.
+    ThematicBreak,
+    /// Thematic break sequence.
     ///
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`Emphasis`][TokenType::Emphasis]
+    ///     [`ThematicBreak`][TokenType::ThematicBreak]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`attention`][crate::construct::attention]
+    ///     [`thematic_break`][crate::construct::thematic_break]
     ///
     /// ## Example
     ///
     /// ```markdown
-    /// > | *a*
-    ///     ^ ^
+    /// > | * * *
+    ///     ^ ^ ^
     /// ```
-    EmphasisSequence,
-    /// Emphasis text.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Emphasis`][TokenType::Emphasis]
-    /// *   **Content model**:
-    ///     [text content][crate::content::text]
-    /// *   **Construct**:
-    ///     [`attention`][crate::construct::attention]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | *a*
-    ///      ^
-    /// ```
-    EmphasisText,
-    /// Attention sequence.
-    ///
-    /// > 👉 **Note**: this is used while parsing but compiled away.
-    AttentionSequence,
-    BlockQuote,
-    BlockQuoteMarker,
-    BlockQuotePrefix,
-    BlockQuotePrefixWhitespace,
+    ThematicBreakSequence,
 }
 
 /// Embedded content type.
