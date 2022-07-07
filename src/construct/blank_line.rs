@@ -20,7 +20,7 @@
 //!
 //! ## Tokens
 //!
-//! *   [`SpaceOrTab`][crate::tokenizer::TokenType::SpaceOrTab]
+//! *   [`SpaceOrTab`][crate::token::Token::SpaceOrTab]
 //!
 //! ## References
 //!

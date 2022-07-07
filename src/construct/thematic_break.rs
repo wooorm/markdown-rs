@@ -35,8 +35,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`ThematicBreak`][TokenType::ThematicBreak]
-//! *   [`ThematicBreakSequence`][TokenType::ThematicBreakSequence]
+//! *   [`ThematicBreak`][Token::ThematicBreak]
+//! *   [`ThematicBreakSequence`][Token::ThematicBreakSequence]
 //!
 //! ## References
 //!
@@ -51,7 +51,8 @@
 
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Type of thematic break.
 #[derive(Debug, PartialEq)]
@@ -134,7 +135,7 @@ struct Info {
 /// |***
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::ThematicBreak);
+    tokenizer.enter(Token::ThematicBreak);
     // To do: allow arbitrary when code (indented) is turned off.
     tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
@@ -170,13 +171,13 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN =>
         {
-            tokenizer.exit(TokenType::ThematicBreak);
+            tokenizer.exit(Token::ThematicBreak);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
         }
         Code::Char(char) if char == info.kind.as_char() => {
-            tokenizer.enter(TokenType::ThematicBreakSequence);
+            tokenizer.enter(Token::ThematicBreakSequence);
             sequence(tokenizer, code, info)
         }
         _ => (State::Nok, None),
@@ -198,7 +199,7 @@ fn sequence(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             (State::Fn(Box::new(|t, c| sequence(t, c, info))), None)
         }
         _ => {
-            tokenizer.exit(TokenType::ThematicBreakSequence);
+            tokenizer.exit(Token::ThematicBreakSequence);
             tokenizer.attempt_opt(space_or_tab(), |t, c| at_break(t, c, info))(tokenizer, code)
         }
     }

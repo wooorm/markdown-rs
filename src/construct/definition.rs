@@ -59,21 +59,21 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Definition`][TokenType::Definition]
-//! *   [`DefinitionDestination`][TokenType::DefinitionDestination]
-//! *   [`DefinitionDestinationLiteral`][TokenType::DefinitionDestinationLiteral]
-//! *   [`DefinitionDestinationLiteralMarker`][TokenType::DefinitionDestinationLiteralMarker]
-//! *   [`DefinitionDestinationRaw`][TokenType::DefinitionDestinationRaw]
-//! *   [`DefinitionDestinationString`][TokenType::DefinitionDestinationString]
-//! *   [`DefinitionLabel`][TokenType::DefinitionLabel]
-//! *   [`DefinitionLabelMarker`][TokenType::DefinitionLabelMarker]
-//! *   [`DefinitionLabelString`][TokenType::DefinitionLabelString]
-//! *   [`DefinitionMarker`][TokenType::DefinitionMarker]
-//! *   [`DefinitionTitle`][TokenType::DefinitionTitle]
-//! *   [`DefinitionTitleMarker`][TokenType::DefinitionTitleMarker]
-//! *   [`DefinitionTitleString`][TokenType::DefinitionTitleString]
-//! *   [`LineEnding`][TokenType::LineEnding]
-//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
+//! *   [`Definition`][Token::Definition]
+//! *   [`DefinitionDestination`][Token::DefinitionDestination]
+//! *   [`DefinitionDestinationLiteral`][Token::DefinitionDestinationLiteral]
+//! *   [`DefinitionDestinationLiteralMarker`][Token::DefinitionDestinationLiteralMarker]
+//! *   [`DefinitionDestinationRaw`][Token::DefinitionDestinationRaw]
+//! *   [`DefinitionDestinationString`][Token::DefinitionDestinationString]
+//! *   [`DefinitionLabel`][Token::DefinitionLabel]
+//! *   [`DefinitionLabelMarker`][Token::DefinitionLabelMarker]
+//! *   [`DefinitionLabelString`][Token::DefinitionLabelString]
+//! *   [`DefinitionMarker`][Token::DefinitionMarker]
+//! *   [`DefinitionTitle`][Token::DefinitionTitle]
+//! *   [`DefinitionTitleMarker`][Token::DefinitionTitleMarker]
+//! *   [`DefinitionTitleString`][Token::DefinitionTitleString]
+//! *   [`LineEnding`][Token::LineEnding]
+//! *   [`SpaceOrTab`][Token::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -99,7 +99,8 @@ use crate::construct::{
     partial_space_or_tab::{space_or_tab, space_or_tab_eol},
     partial_title::{start as title, Options as TitleOptions},
 };
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// At the start of a definition.
 ///
@@ -109,14 +110,14 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let index = tokenizer.events.len();
     let definition_before = index > 3
-        && tokenizer.events[index - 1].token_type == TokenType::LineEnding
-        && tokenizer.events[index - 3].token_type == TokenType::Definition;
+        && tokenizer.events[index - 1].token_type == Token::LineEnding
+        && tokenizer.events[index - 3].token_type == Token::Definition;
 
     // Do not interrupt paragraphs (but do follow definitions).
     if tokenizer.interrupt && !definition_before {
         (State::Nok, None)
     } else {
-        tokenizer.enter(TokenType::Definition);
+        tokenizer.enter(Token::Definition);
         // Note: arbitrary whitespace allowed even if code (indented) is on.
         tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
     }
@@ -135,9 +136,9 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     t,
                     c,
                     LabelOptions {
-                        label: TokenType::DefinitionLabel,
-                        marker: TokenType::DefinitionLabelMarker,
-                        string: TokenType::DefinitionLabelString,
+                        label: Token::DefinitionLabel,
+                        marker: Token::DefinitionLabelMarker,
+                        string: Token::DefinitionLabelString,
                     },
                 )
             },
@@ -155,9 +156,9 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(':') => {
-            tokenizer.enter(TokenType::DefinitionMarker);
+            tokenizer.enter(Token::DefinitionMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::DefinitionMarker);
+            tokenizer.exit(Token::DefinitionMarker);
             (
                 State::Fn(Box::new(
                     tokenizer.attempt_opt(space_or_tab_eol(), destination_before),
@@ -185,11 +186,11 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 c,
                 DestinationOptions {
                     limit: usize::MAX,
-                    destination: TokenType::DefinitionDestination,
-                    literal: TokenType::DefinitionDestinationLiteral,
-                    marker: TokenType::DefinitionDestinationLiteralMarker,
-                    raw: TokenType::DefinitionDestinationRaw,
-                    string: TokenType::DefinitionDestinationString,
+                    destination: Token::DefinitionDestination,
+                    literal: Token::DefinitionDestinationLiteral,
+                    marker: Token::DefinitionDestinationLiteralMarker,
+                    raw: Token::DefinitionDestinationRaw,
+                    string: Token::DefinitionDestinationString,
                 },
             )
         },
@@ -228,7 +229,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::Definition);
+            tokenizer.exit(Token::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
             (State::Ok, Some(vec![code]))
@@ -262,9 +263,9 @@ fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 t,
                 c,
                 TitleOptions {
-                    title: TokenType::DefinitionTitle,
-                    marker: TokenType::DefinitionTitleMarker,
-                    string: TokenType::DefinitionTitleString,
+                    title: Token::DefinitionTitle,
+                    marker: Token::DefinitionTitleMarker,
+                    string: Token::DefinitionTitleString,
                 },
             )
         },

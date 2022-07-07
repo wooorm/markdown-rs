@@ -15,8 +15,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LabelLink`][TokenType::LabelLink]
-//! *   [`LabelMarker`][TokenType::LabelMarker]
+//! *   [`LabelLink`][Token::LabelLink]
+//! *   [`LabelMarker`][Token::LabelMarker]
 //!
 //! ## References
 //!
@@ -28,7 +28,8 @@
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use super::label_end::resolve_media;
-use crate::tokenizer::{Code, LabelStart, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 
 /// Start of label (link) start.
 ///
@@ -39,11 +40,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('[') => {
             let start = tokenizer.events.len();
-            tokenizer.enter(TokenType::LabelLink);
-            tokenizer.enter(TokenType::LabelMarker);
+            tokenizer.enter(Token::LabelLink);
+            tokenizer.enter(Token::LabelMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LabelMarker);
-            tokenizer.exit(TokenType::LabelLink);
+            tokenizer.exit(Token::LabelMarker);
+            tokenizer.exit(Token::LabelLink);
             tokenizer.label_start_stack.push(LabelStart {
                 start: (start, tokenizer.events.len() - 1),
                 balanced: false,

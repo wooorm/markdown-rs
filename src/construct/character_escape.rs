@@ -19,9 +19,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CharacterEscape`][TokenType::CharacterEscape]
-//! *   [`CharacterEscapeMarker`][TokenType::CharacterEscapeMarker]
-//! *   [`CharacterEscapeValue`][TokenType::CharacterEscapeValue]
+//! *   [`CharacterEscape`][Token::CharacterEscape]
+//! *   [`CharacterEscapeMarker`][Token::CharacterEscapeMarker]
+//! *   [`CharacterEscapeValue`][Token::CharacterEscapeValue]
 //!
 //! ## References
 //!
@@ -33,7 +33,8 @@
 //! [character_reference]: crate::construct::character_reference
 //! [hard_break_escape]: crate::construct::hard_break_escape
 
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of a character escape.
 ///
@@ -45,10 +46,10 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('\\') => {
-            tokenizer.enter(TokenType::CharacterEscape);
-            tokenizer.enter(TokenType::CharacterEscapeMarker);
+            tokenizer.enter(Token::CharacterEscape);
+            tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::CharacterEscapeMarker);
+            tokenizer.exit(Token::CharacterEscapeMarker);
             (State::Fn(Box::new(inside)), None)
         }
         _ => (State::Nok, None),
@@ -65,10 +66,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(char) if char.is_ascii_punctuation() => {
-            tokenizer.enter(TokenType::CharacterEscapeValue);
+            tokenizer.enter(Token::CharacterEscapeValue);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::CharacterEscapeValue);
-            tokenizer.exit(TokenType::CharacterEscape);
+            tokenizer.exit(Token::CharacterEscapeValue);
+            tokenizer.exit(Token::CharacterEscape);
             (State::Ok, None)
         }
         _ => (State::Nok, None),

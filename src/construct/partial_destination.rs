@@ -71,7 +71,8 @@
 //! [label_end]: crate::construct::label_end
 //! [sanitize_uri]: crate::util::sanitize_uri
 
-use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, Tokenizer};
 
 /// Configuration.
 ///
@@ -79,15 +80,15 @@ use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Token
 #[derive(Debug)]
 pub struct Options {
     /// Token for the whole destination.
-    pub destination: TokenType,
+    pub destination: Token,
     /// Token for a literal (enclosed) destination.
-    pub literal: TokenType,
+    pub literal: Token,
     /// Token for a literal marker.
-    pub marker: TokenType,
+    pub marker: Token,
     /// Token for a raw destination.
-    pub raw: TokenType,
+    pub raw: Token,
     /// Token for a the string.
-    pub string: TokenType,
+    pub string: Token,
     /// Maximum unbalanced parens.
     pub limit: usize,
 }
@@ -133,7 +134,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.raw.clone());
             tokenizer.enter(info.options.string.clone());
-            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
+            tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
             raw(tokenizer, code, info)
         }
     }
@@ -154,7 +155,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
         (State::Ok, None)
     } else {
         tokenizer.enter(info.options.string.clone());
-        tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
+        tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
         enclosed(tokenizer, code, info)
     }
 }
@@ -167,7 +168,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char('>') => {
-            tokenizer.exit(TokenType::Data);
+            tokenizer.exit(Token::Data);
             tokenizer.exit(info.options.string.clone());
             enclosed_before(tokenizer, code, info)
         }
@@ -221,7 +222,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
         }
         Code::Char(')') => {
             if info.balance == 0 {
-                tokenizer.exit(TokenType::Data);
+                tokenizer.exit(Token::Data);
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
@@ -239,7 +240,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
             if info.balance > 0 {
                 (State::Nok, None)
             } else {
-                tokenizer.exit(TokenType::Data);
+                tokenizer.exit(Token::Data);
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);

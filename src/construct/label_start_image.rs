@@ -15,9 +15,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LabelImage`][TokenType::LabelImage]
-//! *   [`LabelImageMarker`][TokenType::LabelImageMarker]
-//! *   [`LabelMarker`][TokenType::LabelMarker]
+//! *   [`LabelImage`][Token::LabelImage]
+//! *   [`LabelImageMarker`][Token::LabelImageMarker]
+//! *   [`LabelMarker`][Token::LabelMarker]
 //!
 //! ## References
 //!
@@ -29,7 +29,8 @@
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use super::label_end::resolve_media;
-use crate::tokenizer::{Code, LabelStart, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 
 /// Start of label (image) start.
 ///
@@ -39,10 +40,10 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, TokenType, Tokeni
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('!') => {
-            tokenizer.enter(TokenType::LabelImage);
-            tokenizer.enter(TokenType::LabelImageMarker);
+            tokenizer.enter(Token::LabelImage);
+            tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LabelImageMarker);
+            tokenizer.exit(Token::LabelImageMarker);
             (State::Fn(Box::new(open)), None)
         }
         _ => (State::Nok, None),
@@ -57,10 +58,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('[') => {
-            tokenizer.enter(TokenType::LabelMarker);
+            tokenizer.enter(Token::LabelMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LabelMarker);
-            tokenizer.exit(TokenType::LabelImage);
+            tokenizer.exit(Token::LabelMarker);
+            tokenizer.exit(Token::LabelImage);
             let end = tokenizer.events.len() - 1;
             tokenizer.label_start_stack.push(LabelStart {
                 start: (end - 5, end),

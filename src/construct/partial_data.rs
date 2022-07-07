@@ -6,7 +6,8 @@
 //! [string]: crate::content::string
 //! [text]: crate::content::text
 
-use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, Tokenizer};
 use crate::util::edit_map::EditMap;
 
 /// At the beginning of data.
@@ -16,7 +17,7 @@ use crate::util::edit_map::EditMap;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
     if stop.contains(&code) {
-        tokenizer.enter(TokenType::Data);
+        tokenizer.enter(Token::Data);
         tokenizer.consume(code);
         (State::Fn(Box::new(|t, c| data(t, c, stop))), None)
     } else {
@@ -33,9 +34,9 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnRe
     match code {
         Code::None => (State::Ok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
+            tokenizer.exit(Token::LineEnding);
             (State::Fn(Box::new(|t, c| at_break(t, c, stop))), None)
         }
         _ if stop.contains(&code) => {
@@ -43,7 +44,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnRe
             (State::Ok, Some(vec![code]))
         }
         _ => {
-            tokenizer.enter(TokenType::Data);
+            tokenizer.enter(Token::Data);
             data(tokenizer, code, stop)
         }
     }
@@ -62,7 +63,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult
     };
 
     if done {
-        tokenizer.exit(TokenType::Data);
+        tokenizer.exit(Token::Data);
         at_break(tokenizer, code, stop)
     } else {
         tokenizer.consume(code);
@@ -80,13 +81,13 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     while index < len {
         let event = &tokenizer.events[index];
 
-        if event.event_type == EventType::Enter && event.token_type == TokenType::Data {
+        if event.event_type == EventType::Enter && event.token_type == Token::Data {
             let exit_index = index + 1;
             let mut exit_far_index = exit_index;
 
             // Find multiple `data` events.
             while exit_far_index + 1 < len
-                && tokenizer.events[exit_far_index + 1].token_type == TokenType::Data
+                && tokenizer.events[exit_far_index + 1].token_type == Token::Data
             {
                 exit_far_index += 2;
             }

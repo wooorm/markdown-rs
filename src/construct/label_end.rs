@@ -102,28 +102,28 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Data`][TokenType::Data]
-//! *   [`Image`][TokenType::Image]
-//! *   [`Label`][TokenType::Label]
-//! *   [`LabelEnd`][TokenType::LabelEnd]
-//! *   [`LabelMarker`][TokenType::LabelMarker]
-//! *   [`LabelText`][TokenType::LabelText]
-//! *   [`LineEnding`][TokenType::LineEnding]
-//! *   [`Link`][TokenType::Link]
-//! *   [`Reference`][TokenType::Reference]
-//! *   [`ReferenceMarker`][TokenType::ReferenceMarker]
-//! *   [`ReferenceString`][TokenType::ReferenceString]
-//! *   [`Resource`][TokenType::Resource]
-//! *   [`ResourceDestination`][TokenType::ResourceDestination]
-//! *   [`ResourceDestinationLiteral`][TokenType::ResourceDestinationLiteral]
-//! *   [`ResourceDestinationLiteralMarker`][TokenType::ResourceDestinationLiteralMarker]
-//! *   [`ResourceDestinationRaw`][TokenType::ResourceDestinationRaw]
-//! *   [`ResourceDestinationString`][TokenType::ResourceDestinationString]
-//! *   [`ResourceMarker`][TokenType::ResourceMarker]
-//! *   [`ResourceTitle`][TokenType::ResourceTitle]
-//! *   [`ResourceTitleMarker`][TokenType::ResourceTitleMarker]
-//! *   [`ResourceTitleString`][TokenType::ResourceTitleString]
-//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
+//! *   [`Data`][Token::Data]
+//! *   [`Image`][Token::Image]
+//! *   [`Label`][Token::Label]
+//! *   [`LabelEnd`][Token::LabelEnd]
+//! *   [`LabelMarker`][Token::LabelMarker]
+//! *   [`LabelText`][Token::LabelText]
+//! *   [`LineEnding`][Token::LineEnding]
+//! *   [`Link`][Token::Link]
+//! *   [`Reference`][Token::Reference]
+//! *   [`ReferenceMarker`][Token::ReferenceMarker]
+//! *   [`ReferenceString`][Token::ReferenceString]
+//! *   [`Resource`][Token::Resource]
+//! *   [`ResourceDestination`][Token::ResourceDestination]
+//! *   [`ResourceDestinationLiteral`][Token::ResourceDestinationLiteral]
+//! *   [`ResourceDestinationLiteralMarker`][Token::ResourceDestinationLiteralMarker]
+//! *   [`ResourceDestinationRaw`][Token::ResourceDestinationRaw]
+//! *   [`ResourceDestinationString`][Token::ResourceDestinationString]
+//! *   [`ResourceMarker`][Token::ResourceMarker]
+//! *   [`ResourceTitle`][Token::ResourceTitle]
+//! *   [`ResourceTitleMarker`][Token::ResourceTitleMarker]
+//! *   [`ResourceTitleString`][Token::ResourceTitleString]
+//! *   [`SpaceOrTab`][Token::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -153,8 +153,9 @@ use crate::construct::{
     partial_space_or_tab::space_or_tab_eol,
     partial_title::{start as title, Options as TitleOptions},
 };
+use crate::token::Token;
 use crate::tokenizer::{
-    Code, Event, EventType, LabelStart, Media, State, StateFnResult, TokenType, Tokenizer,
+    Code, Event, EventType, LabelStart, Media, State, StateFnResult, Tokenizer,
 };
 use crate::util::{
     edit_map::EditMap,
@@ -198,7 +199,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
             vec![
                 Event {
                     event_type: EventType::Enter,
-                    token_type: TokenType::Data,
+                    token_type: Token::Data,
                     point: events[data_enter_index].point.clone(),
                     index: events[data_enter_index].index,
                     previous: None,
@@ -207,7 +208,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 },
                 Event {
                     event_type: EventType::Exit,
-                    token_type: TokenType::Data,
+                    token_type: Token::Data,
                     point: events[data_exit_index].point.clone(),
                     index: events[data_exit_index].index,
                     previous: None,
@@ -229,7 +230,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
         let group_enter_event = &events[group_enter_index];
         // LabelLink:Exit or LabelImage:Exit.
         let text_enter_index = media.start.0
-            + (if group_enter_event.token_type == TokenType::LabelLink {
+            + (if group_enter_event.token_type == Token::LabelLink {
                 4
             } else {
                 6
@@ -248,10 +249,10 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
             vec![
                 Event {
                     event_type: EventType::Enter,
-                    token_type: if group_enter_event.token_type == TokenType::LabelLink {
-                        TokenType::Link
+                    token_type: if group_enter_event.token_type == Token::LabelLink {
+                        Token::Link
                     } else {
-                        TokenType::Image
+                        Token::Image
                     },
                     point: group_enter_event.point.clone(),
                     index: group_enter_event.index,
@@ -261,7 +262,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 },
                 Event {
                     event_type: EventType::Enter,
-                    token_type: TokenType::Label,
+                    token_type: Token::Label,
                     point: group_enter_event.point.clone(),
                     index: group_enter_event.index,
                     previous: None,
@@ -279,7 +280,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 0,
                 vec![Event {
                     event_type: EventType::Enter,
-                    token_type: TokenType::LabelText,
+                    token_type: Token::LabelText,
                     point: events[text_enter_index].point.clone(),
                     index: events[text_enter_index].index,
                     previous: None,
@@ -294,7 +295,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 0,
                 vec![Event {
                     event_type: EventType::Exit,
-                    token_type: TokenType::LabelText,
+                    token_type: Token::LabelText,
                     point: events[text_exit_index].point.clone(),
                     index: events[text_exit_index].index,
                     previous: None,
@@ -310,7 +311,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
             0,
             vec![Event {
                 event_type: EventType::Exit,
-                token_type: TokenType::Label,
+                token_type: Token::Label,
                 point: events[label_exit_index].point.clone(),
                 index: events[label_exit_index].index,
                 previous: None,
@@ -325,7 +326,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
             0,
             vec![Event {
                 event_type: EventType::Exit,
-                token_type: TokenType::Link,
+                token_type: Token::Link,
                 point: events[group_end_index].point.clone(),
                 index: events[group_end_index].index,
                 previous: None,
@@ -393,11 +394,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 },
             };
 
-            tokenizer.enter(TokenType::LabelEnd);
-            tokenizer.enter(TokenType::LabelMarker);
+            tokenizer.enter(Token::LabelEnd);
+            tokenizer.enter(Token::LabelMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LabelMarker);
-            tokenizer.exit(TokenType::LabelEnd);
+            tokenizer.exit(Token::LabelMarker);
+            tokenizer.exit(Token::LabelEnd);
 
             return (State::Fn(Box::new(move |t, c| after(t, c, info))), None);
         }
@@ -495,13 +496,13 @@ fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     left.remove(0);
     tokenizer.label_start_list_loose.append(&mut left);
 
-    let is_link = tokenizer.events[info.media.start.0].token_type == TokenType::LabelLink;
+    let is_link = tokenizer.events[info.media.start.0].token_type == Token::LabelLink;
 
     if is_link {
         let mut index = 0;
         while index < tokenizer.label_start_stack.len() {
             let label_start = &mut tokenizer.label_start_stack[index];
-            if tokenizer.events[label_start.start.0].token_type == TokenType::LabelLink {
+            if tokenizer.events[label_start.start.0].token_type == Token::LabelLink {
                 label_start.inactive = true;
             }
             index += 1;
@@ -543,10 +544,10 @@ fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> Stat
 fn resource(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('(') => {
-            tokenizer.enter(TokenType::Resource);
-            tokenizer.enter(TokenType::ResourceMarker);
+            tokenizer.enter(Token::Resource);
+            tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::ResourceMarker);
+            tokenizer.exit(Token::ResourceMarker);
             (State::Fn(Box::new(resource_start)), None)
         }
         _ => unreachable!("expected `(`"),
@@ -577,11 +578,11 @@ fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     c,
                     DestinationOptions {
                         limit: RESOURCE_DESTINATION_BALANCE_MAX,
-                        destination: TokenType::ResourceDestination,
-                        literal: TokenType::ResourceDestinationLiteral,
-                        marker: TokenType::ResourceDestinationLiteralMarker,
-                        raw: TokenType::ResourceDestinationRaw,
-                        string: TokenType::ResourceDestinationString,
+                        destination: Token::ResourceDestination,
+                        literal: Token::ResourceDestinationLiteral,
+                        marker: Token::ResourceDestinationLiteralMarker,
+                        raw: Token::ResourceDestinationRaw,
+                        string: Token::ResourceDestinationString,
                     },
                 )
             },
@@ -616,9 +617,9 @@ fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     t,
                     c,
                     TitleOptions {
-                        title: TokenType::ResourceTitle,
-                        marker: TokenType::ResourceTitleMarker,
-                        string: TokenType::ResourceTitleString,
+                        title: Token::ResourceTitle,
+                        marker: Token::ResourceTitleMarker,
+                        string: Token::ResourceTitleString,
                     },
                 )
             },
@@ -647,10 +648,10 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(')') => {
-            tokenizer.enter(TokenType::ResourceMarker);
+            tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::ResourceMarker);
-            tokenizer.exit(TokenType::Resource);
+            tokenizer.exit(Token::ResourceMarker);
+            tokenizer.exit(Token::Resource);
             (State::Ok, None)
         }
         _ => (State::Nok, None),
@@ -670,9 +671,9 @@ fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     t,
                     c,
                     LabelOptions {
-                        label: TokenType::Reference,
-                        marker: TokenType::ReferenceMarker,
-                        string: TokenType::ReferenceString,
+                        label: Token::Reference,
+                        marker: Token::ReferenceMarker,
+                        string: Token::ReferenceString,
                     },
                 )
             },
@@ -696,7 +697,7 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
     while index > 0 {
         index -= 1;
         let event = &events[index];
-        if event.token_type == TokenType::ReferenceString {
+        if event.token_type == Token::ReferenceString {
             if event.event_type == EventType::Exit {
                 end = Some(event.index);
             } else {
@@ -735,10 +736,10 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('[') => {
-            tokenizer.enter(TokenType::Reference);
-            tokenizer.enter(TokenType::ReferenceMarker);
+            tokenizer.enter(Token::Reference);
+            tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::ReferenceMarker);
+            tokenizer.exit(Token::ReferenceMarker);
             (State::Fn(Box::new(collapsed_reference_open)), None)
         }
         _ => (State::Nok, None),
@@ -755,10 +756,10 @@ fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(']') => {
-            tokenizer.enter(TokenType::ReferenceMarker);
+            tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::ReferenceMarker);
-            tokenizer.exit(TokenType::Reference);
+            tokenizer.exit(Token::ReferenceMarker);
+            tokenizer.exit(Token::Reference);
             (State::Ok, None)
         }
         _ => (State::Nok, None),

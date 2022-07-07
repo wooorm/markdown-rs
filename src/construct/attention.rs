@@ -32,14 +32,14 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Emphasis`][TokenType::Emphasis]
-//! *   [`EmphasisSequence`][TokenType::EmphasisSequence]
-//! *   [`EmphasisText`][TokenType::EmphasisText]
-//! *   [`Strong`][TokenType::Strong]
-//! *   [`StrongSequence`][TokenType::StrongSequence]
-//! *   [`StrongText`][TokenType::StrongText]
+//! *   [`Emphasis`][Token::Emphasis]
+//! *   [`EmphasisSequence`][Token::EmphasisSequence]
+//! *   [`EmphasisText`][Token::EmphasisText]
+//! *   [`Strong`][Token::Strong]
+//! *   [`StrongSequence`][Token::StrongSequence]
+//! *   [`StrongText`][Token::StrongText]
 //!
-//! > 👉 **Note**: while parsing, [`AttentionSequence`][TokenType::AttentionSequence]
+//! > 👉 **Note**: while parsing, [`AttentionSequence`][Token::AttentionSequence]
 //! > is used, which is later compiled away.
 //!
 //! ## References
@@ -51,7 +51,8 @@
 //! [html-em]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 
-use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, Tokenizer};
 use crate::unicode::PUNCTUATION;
 use crate::util::edit_map::EditMap;
 
@@ -174,7 +175,7 @@ struct Sequence {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('*' | '_') => {
-            tokenizer.enter(TokenType::AttentionSequence);
+            tokenizer.enter(Token::AttentionSequence);
             inside(tokenizer, code, MarkerKind::from_code(code))
         }
         _ => (State::Nok, None),
@@ -193,7 +194,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnR
             (State::Fn(Box::new(move |t, c| inside(t, c, marker))), None)
         }
         _ => {
-            tokenizer.exit(TokenType::AttentionSequence);
+            tokenizer.exit(Token::AttentionSequence);
             tokenizer.register_resolver("attention".to_string(), Box::new(resolve));
             (State::Ok, Some(vec![code]))
         }
@@ -216,7 +217,7 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         if enter.event_type == EventType::Enter {
             balance += 1;
 
-            if enter.token_type == TokenType::AttentionSequence {
+            if enter.token_type == Token::AttentionSequence {
                 let end = start + 1;
                 let exit = &tokenizer.events[end];
                 let marker = MarkerKind::from_code(codes[enter.index]);
@@ -392,9 +393,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Enter,
                                 token_type: if take == 1 {
-                                    TokenType::Emphasis
+                                    Token::Emphasis
                                 } else {
-                                    TokenType::Strong
+                                    Token::Strong
                                 },
                                 point: seq_open_enter.0.clone(),
                                 index: seq_open_enter.1,
@@ -405,9 +406,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Enter,
                                 token_type: if take == 1 {
-                                    TokenType::EmphasisSequence
+                                    Token::EmphasisSequence
                                 } else {
-                                    TokenType::StrongSequence
+                                    Token::StrongSequence
                                 },
                                 point: seq_open_enter.0.clone(),
                                 index: seq_open_enter.1,
@@ -418,9 +419,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Exit,
                                 token_type: if take == 1 {
-                                    TokenType::EmphasisSequence
+                                    Token::EmphasisSequence
                                 } else {
-                                    TokenType::StrongSequence
+                                    Token::StrongSequence
                                 },
                                 point: seq_open_exit.0.clone(),
                                 index: seq_open_exit.1,
@@ -431,9 +432,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Enter,
                                 token_type: if take == 1 {
-                                    TokenType::EmphasisText
+                                    Token::EmphasisText
                                 } else {
-                                    TokenType::StrongText
+                                    Token::StrongText
                                 },
                                 point: seq_open_exit.0.clone(),
                                 index: seq_open_exit.1,
@@ -451,9 +452,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Exit,
                                 token_type: if take == 1 {
-                                    TokenType::EmphasisText
+                                    Token::EmphasisText
                                 } else {
-                                    TokenType::StrongText
+                                    Token::StrongText
                                 },
                                 point: seq_close_enter.0.clone(),
                                 index: seq_close_enter.1,
@@ -464,9 +465,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Enter,
                                 token_type: if take == 1 {
-                                    TokenType::EmphasisSequence
+                                    Token::EmphasisSequence
                                 } else {
-                                    TokenType::StrongSequence
+                                    Token::StrongSequence
                                 },
                                 point: seq_close_enter.0.clone(),
                                 index: seq_close_enter.1,
@@ -477,9 +478,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Exit,
                                 token_type: if take == 1 {
-                                    TokenType::EmphasisSequence
+                                    Token::EmphasisSequence
                                 } else {
-                                    TokenType::StrongSequence
+                                    Token::StrongSequence
                                 },
                                 point: seq_close_exit.0.clone(),
                                 index: seq_close_exit.1,
@@ -490,9 +491,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             Event {
                                 event_type: EventType::Exit,
                                 token_type: if take == 1 {
-                                    TokenType::Emphasis
+                                    Token::Emphasis
                                 } else {
-                                    TokenType::Strong
+                                    Token::Strong
                                 },
                                 point: seq_close_exit.0.clone(),
                                 index: seq_close_exit.1,
@@ -515,8 +516,8 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut index = 0;
     while index < sequences.len() {
         let sequence = &sequences[index];
-        tokenizer.events[sequence.event_index].token_type = TokenType::Data;
-        tokenizer.events[sequence.event_index + 1].token_type = TokenType::Data;
+        tokenizer.events[sequence.event_index].token_type = Token::Data;
+        tokenizer.events[sequence.event_index + 1].token_type = Token::Data;
         index += 1;
     }
 

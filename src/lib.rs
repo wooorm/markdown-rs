@@ -10,6 +10,7 @@ mod construct;
 mod content;
 mod parser;
 mod subtokenize;
+mod token;
 mod tokenizer;
 mod unicode;
 mod util;

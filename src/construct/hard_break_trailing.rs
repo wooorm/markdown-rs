@@ -26,8 +26,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HardBreakTrailing`][TokenType::HardBreakTrailing]
-//! *   [`HardBreakTrailingSpace`][TokenType::HardBreakTrailingSpace]
+//! *   [`HardBreakTrailing`][Token::HardBreakTrailing]
+//! *   [`HardBreakTrailingSpace`][Token::HardBreakTrailingSpace]
 //!
 //! ## References
 //!
@@ -41,7 +41,8 @@
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
 use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of a hard break (trailing).
 ///
@@ -52,8 +53,8 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char(' ') => {
-            tokenizer.enter(TokenType::HardBreakTrailing);
-            tokenizer.enter(TokenType::HardBreakTrailingSpace);
+            tokenizer.enter(Token::HardBreakTrailing);
+            tokenizer.enter(Token::HardBreakTrailingSpace);
             tokenizer.consume(code);
             (State::Fn(Box::new(|t, c| inside(t, c, 1))), None)
         }
@@ -79,8 +80,8 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if size >= HARD_BREAK_PREFIX_SIZE_MIN =>
         {
-            tokenizer.exit(TokenType::HardBreakTrailingSpace);
-            tokenizer.exit(TokenType::HardBreakTrailing);
+            tokenizer.exit(Token::HardBreakTrailingSpace);
+            tokenizer.exit(Token::HardBreakTrailing);
             (State::Ok, Some(vec![code]))
         }
         _ => (State::Nok, None),

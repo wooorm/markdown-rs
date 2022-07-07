@@ -42,12 +42,12 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CharacterReference`][TokenType::CharacterReference]
-//! *   [`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker]
-//! *   [`CharacterReferenceMarkerHexadecimal`][TokenType::CharacterReferenceMarkerHexadecimal]
-//! *   [`CharacterReferenceMarkerNumeric`][TokenType::CharacterReferenceMarkerNumeric]
-//! *   [`CharacterReferenceMarkerSemi`][TokenType::CharacterReferenceMarkerSemi]
-//! *   [`CharacterReferenceValue`][TokenType::CharacterReferenceValue]
+//! *   [`CharacterReference`][Token::CharacterReference]
+//! *   [`CharacterReferenceMarker`][Token::CharacterReferenceMarker]
+//! *   [`CharacterReferenceMarkerHexadecimal`][Token::CharacterReferenceMarkerHexadecimal]
+//! *   [`CharacterReferenceMarkerNumeric`][Token::CharacterReferenceMarkerNumeric]
+//! *   [`CharacterReferenceMarkerSemi`][Token::CharacterReferenceMarkerSemi]
+//! *   [`CharacterReferenceValue`][Token::CharacterReferenceValue]
 //!
 //! ## References
 //!
@@ -65,7 +65,8 @@ use crate::constant::{
     CHARACTER_REFERENCE_DECIMAL_SIZE_MAX, CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
     CHARACTER_REFERENCE_NAMED_SIZE_MAX, CHARACTER_REFERENCE_NAMES,
 };
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Kind of a character reference.
 #[derive(Debug, Clone, PartialEq)]
@@ -119,10 +120,10 @@ struct Info {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('&') => {
-            tokenizer.enter(TokenType::CharacterReference);
-            tokenizer.enter(TokenType::CharacterReferenceMarker);
+            tokenizer.enter(Token::CharacterReference);
+            tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::CharacterReferenceMarker);
+            tokenizer.exit(Token::CharacterReferenceMarker);
             (State::Fn(Box::new(open)), None)
         }
         _ => (State::Nok, None),
@@ -143,12 +144,12 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         kind: Kind::Named,
     };
     if let Code::Char('#') = code {
-        tokenizer.enter(TokenType::CharacterReferenceMarkerNumeric);
+        tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume(code);
-        tokenizer.exit(TokenType::CharacterReferenceMarkerNumeric);
+        tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
         (State::Fn(Box::new(|t, c| numeric(t, c, info))), None)
     } else {
-        tokenizer.enter(TokenType::CharacterReferenceValue);
+        tokenizer.enter(Token::CharacterReferenceValue);
         value(tokenizer, code, info)
     }
 }
@@ -162,14 +163,14 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     if let Code::Char('x' | 'X') = code {
-        tokenizer.enter(TokenType::CharacterReferenceMarkerHexadecimal);
+        tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.consume(code);
-        tokenizer.exit(TokenType::CharacterReferenceMarkerHexadecimal);
-        tokenizer.enter(TokenType::CharacterReferenceValue);
+        tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
+        tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Hexadecimal;
         (State::Fn(Box::new(|t, c| value(t, c, info))), None)
     } else {
-        tokenizer.enter(TokenType::CharacterReferenceValue);
+        tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Decimal;
         value(tokenizer, code, info)
     }
@@ -194,11 +195,11 @@ fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
             {
                 (State::Nok, None)
             } else {
-                tokenizer.exit(TokenType::CharacterReferenceValue);
-                tokenizer.enter(TokenType::CharacterReferenceMarkerSemi);
+                tokenizer.exit(Token::CharacterReferenceValue);
+                tokenizer.enter(Token::CharacterReferenceMarkerSemi);
                 tokenizer.consume(code);
-                tokenizer.exit(TokenType::CharacterReferenceMarkerSemi);
-                tokenizer.exit(TokenType::CharacterReference);
+                tokenizer.exit(Token::CharacterReferenceMarkerSemi);
+                tokenizer.exit(Token::CharacterReference);
                 (State::Ok, None)
             }
         }

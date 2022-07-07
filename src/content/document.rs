@@ -14,9 +14,8 @@ use crate::construct::block_quote::{
 use crate::content::flow::start as flow;
 use crate::parser::ParseState;
 use crate::subtokenize::subtokenize;
-use crate::tokenizer::{
-    Code, Event, EventType, Point, State, StateFn, StateFnResult, TokenType, Tokenizer,
-};
+use crate::token::Token;
+use crate::tokenizer::{Code, Event, EventType, Point, State, StateFn, StateFnResult, Tokenizer};
 use crate::util::edit_map::EditMap;
 use crate::util::{
     normalize_identifier::normalize_identifier,
@@ -44,9 +43,7 @@ pub fn document(parse_state: &mut ParseState, point: Point, index: usize) -> Vec
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
-        if event.event_type == EventType::Exit
-            && event.token_type == TokenType::DefinitionLabelString
-        {
+        if event.event_type == EventType::Exit && event.token_type == Token::DefinitionLabelString {
             next_definitions.insert(normalize_identifier(
                 serialize(
                     &parse_state.codes,
@@ -409,7 +406,7 @@ fn flow_end(
 
     // To do: blank lines? Other things?
     if tokenizer.events.len() > 2
-        && tokenizer.events[tokenizer.events.len() - 1].token_type == TokenType::LineEnding
+        && tokenizer.events[tokenizer.events.len() - 1].token_type == Token::LineEnding
     {
         info.last_line_ending_index = Some(tokenizer.events.len() - 2);
     } else {

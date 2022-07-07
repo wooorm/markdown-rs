@@ -19,7 +19,7 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Paragraph`][TokenType::Paragraph]
+//! *   [`Paragraph`][Token::Paragraph]
 //!
 //! ## References
 //!
@@ -32,9 +32,8 @@
 //! [code_text]: crate::construct::code_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
-use crate::tokenizer::{
-    Code, ContentType, Event, EventType, State, StateFnResult, TokenType, Tokenizer,
-};
+use crate::token::Token;
+use crate::tokenizer::{Code, ContentType, Event, EventType, State, StateFnResult, Tokenizer};
 use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
 
 /// Before a paragraph.
@@ -48,8 +47,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             unreachable!("unexpected eol/eof")
         }
         _ => {
-            tokenizer.enter(TokenType::Paragraph);
-            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
+            tokenizer.enter(Token::Paragraph);
+            tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
             inside(tokenizer, code)
         }
     }
@@ -63,8 +62,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::Data);
-            tokenizer.exit(TokenType::Paragraph);
+            tokenizer.exit(Token::Data);
+            tokenizer.exit(Token::Paragraph);
             tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));
             // You’d be interrupting.
             tokenizer.interrupt = true;
@@ -87,21 +86,21 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     while index < len {
         let event = &tokenizer.events[index];
 
-        if event.event_type == EventType::Enter && event.token_type == TokenType::Paragraph {
+        if event.event_type == EventType::Enter && event.token_type == Token::Paragraph {
             // Exit:Paragraph
             let mut exit_index = index + 3;
             let mut enter_next_index =
-                skip_opt(&tokenizer.events, exit_index + 1, &[TokenType::LineEnding]);
+                skip_opt(&tokenizer.events, exit_index + 1, &[Token::LineEnding]);
             // Enter:Paragraph
             enter_next_index = skip_opt(
                 &tokenizer.events,
                 enter_next_index,
-                &[TokenType::SpaceOrTab, TokenType::BlockQuotePrefix],
+                &[Token::SpaceOrTab, Token::BlockQuotePrefix],
             );
 
             // Find future `Paragraphs`.
             while enter_next_index < tokenizer.events.len()
-                && tokenizer.events[enter_next_index].token_type == TokenType::Paragraph
+                && tokenizer.events[enter_next_index].token_type == Token::Paragraph
             {
                 // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
                 edit_map.add(exit_index, 3, vec![]);
@@ -126,11 +125,11 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 // Potential next start.
                 exit_index = enter_next_index + 3;
                 enter_next_index =
-                    skip_opt(&tokenizer.events, exit_index + 1, &[TokenType::LineEnding]);
+                    skip_opt(&tokenizer.events, exit_index + 1, &[Token::LineEnding]);
                 enter_next_index = skip_opt(
                     &tokenizer.events,
                     enter_next_index,
-                    &[TokenType::SpaceOrTab, TokenType::BlockQuotePrefix],
+                    &[Token::SpaceOrTab, Token::BlockQuotePrefix],
                 );
             }
 

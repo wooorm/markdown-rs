@@ -5,7 +5,8 @@
 //! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
 
 use crate::subtokenize::link;
-use crate::tokenizer::{Code, ContentType, State, StateFn, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, ContentType, State, StateFn, StateFnResult, Tokenizer};
 
 /// Options to parse `space_or_tab`.
 #[derive(Debug)]
@@ -15,7 +16,7 @@ pub struct Options {
     /// Maximum allowed characters (inclusive).
     pub max: usize,
     /// Token type to use for whitespace events.
-    pub kind: TokenType,
+    pub kind: Token,
     /// Connect this whitespace to the previous.
     pub connect: bool,
     /// Embedded content type to use.
@@ -67,7 +68,7 @@ pub fn space_or_tab() -> Box<StateFn> {
 /// ```
 pub fn space_or_tab_min_max(min: usize, max: usize) -> Box<StateFn> {
     space_or_tab_with_options(Options {
-        kind: TokenType::SpaceOrTab,
+        kind: Token::SpaceOrTab,
         min,
         max,
         content_type: None,
@@ -104,7 +105,7 @@ pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
 
         tokenizer.attempt(
             space_or_tab_with_options(Options {
-                kind: TokenType::SpaceOrTab,
+                kind: Token::SpaceOrTab,
                 min: 1,
                 max: usize::MAX,
                 content_type: info.options.content_type,
@@ -196,7 +197,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
 fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter_with_content(TokenType::LineEnding, info.options.content_type);
+            tokenizer.enter_with_content(Token::LineEnding, info.options.content_type);
 
             if info.connect {
                 let index = tokenizer.events.len() - 1;
@@ -206,7 +207,7 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
             }
 
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
+            tokenizer.exit(Token::LineEnding);
             (State::Fn(Box::new(|t, c| after_eol(t, c, info))), None)
         }
         _ if info.ok => (State::Ok, Some(vec![code])),
@@ -229,7 +230,7 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
 fn after_eol(tokenizer: &mut Tokenizer, code: Code, info: EolInfo) -> StateFnResult {
     tokenizer.attempt_opt(
         space_or_tab_with_options(Options {
-            kind: TokenType::SpaceOrTab,
+            kind: Token::SpaceOrTab,
             min: 1,
             max: usize::MAX,
             content_type: info.options.content_type,

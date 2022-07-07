@@ -67,10 +67,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeText`][TokenType::CodeText]
-//! *   [`CodeTextData`][TokenType::CodeTextData]
-//! *   [`CodeTextLineEnding`][TokenType::CodeTextLineEnding]
-//! *   [`CodeTextSequence`][TokenType::CodeTextSequence]
+//! *   [`CodeText`][Token::CodeText]
+//! *   [`CodeTextData`][Token::CodeTextData]
+//! *   [`CodeTextLineEnding`][Token::CodeTextLineEnding]
+//! *   [`CodeTextSequence`][Token::CodeTextSequence]
 //!
 //! ## References
 //!
@@ -83,7 +83,8 @@
 //! [code_fenced]: crate::construct::code_fenced
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of code (text).
 ///
@@ -100,11 +101,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('`')
             if tokenizer.previous != Code::Char('`')
-                || (len > 0
-                    && tokenizer.events[len - 1].token_type == TokenType::CharacterEscape) =>
+                || (len > 0 && tokenizer.events[len - 1].token_type == Token::CharacterEscape) =>
         {
-            tokenizer.enter(TokenType::CodeText);
-            tokenizer.enter(TokenType::CodeTextSequence);
+            tokenizer.enter(Token::CodeText);
+            tokenizer.enter(Token::CodeTextSequence);
             sequence_open(tokenizer, code, 0)
         }
         _ => (State::Nok, None),
@@ -124,7 +124,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnR
             None,
         )
     } else {
-        tokenizer.exit(TokenType::CodeTextSequence);
+        tokenizer.exit(Token::CodeTextSequence);
         between(tokenizer, code, size)
     }
 }
@@ -139,20 +139,20 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnRe
     match code {
         Code::None => (State::Nok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::CodeTextLineEnding);
+            tokenizer.enter(Token::CodeTextLineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::CodeTextLineEnding);
+            tokenizer.exit(Token::CodeTextLineEnding);
             (
                 State::Fn(Box::new(move |t, c| between(t, c, size_open))),
                 None,
             )
         }
         Code::Char('`') => {
-            tokenizer.enter(TokenType::CodeTextSequence);
+            tokenizer.enter(Token::CodeTextSequence);
             sequence_close(tokenizer, code, size_open, 0)
         }
         _ => {
-            tokenizer.enter(TokenType::CodeTextData);
+            tokenizer.enter(Token::CodeTextData);
             data(tokenizer, code, size_open)
         }
     }
@@ -166,7 +166,7 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnRe
 fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '`') => {
-            tokenizer.exit(TokenType::CodeTextData);
+            tokenizer.exit(Token::CodeTextData);
             between(tokenizer, code, size_open)
         }
         _ => {
@@ -198,16 +198,16 @@ fn sequence_close(
             )
         }
         _ if size_open == size => {
-            tokenizer.exit(TokenType::CodeTextSequence);
-            tokenizer.exit(TokenType::CodeText);
+            tokenizer.exit(Token::CodeTextSequence);
+            tokenizer.exit(Token::CodeText);
             (State::Ok, Some(vec![code]))
         }
         _ => {
             let index = tokenizer.events.len();
-            tokenizer.exit(TokenType::CodeTextSequence);
+            tokenizer.exit(Token::CodeTextSequence);
             // Change the token type.
-            tokenizer.events[index - 1].token_type = TokenType::CodeTextData;
-            tokenizer.events[index].token_type = TokenType::CodeTextData;
+            tokenizer.events[index - 1].token_type = Token::CodeTextData;
+            tokenizer.events[index].token_type = Token::CodeTextData;
             between(tokenizer, code, size_open)
         }
     }

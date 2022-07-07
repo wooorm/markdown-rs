@@ -82,9 +82,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HtmlFlow`][TokenType::HtmlFlow]
-//! *   [`HtmlFlowData`][TokenType::HtmlFlowData]
-//! *   [`LineEnding`][TokenType::LineEnding]
+//! *   [`HtmlFlow`][Token::HtmlFlow]
+//! *   [`HtmlFlowData`][Token::HtmlFlowData]
+//! *   [`LineEnding`][Token::LineEnding]
 //!
 //! ## References
 //!
@@ -102,7 +102,8 @@ use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_S
 use crate::construct::{
     blank_line::start as blank_line, partial_space_or_tab::space_or_tab_min_max,
 };
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 use crate::util::codes::{parse, serialize};
 
 // To do: mark as concrete (block quotes or lists can’t “pierce” into HTML).
@@ -203,8 +204,8 @@ struct Info {
 /// ```
 ///
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::HtmlFlow);
-    tokenizer.enter(TokenType::HtmlFlowData);
+    tokenizer.enter(Token::HtmlFlow);
+    tokenizer.enter(Token::HtmlFlowData);
     // To do: allow arbitrary when code (indented) is turned off.
     tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
@@ -776,7 +777,7 @@ fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
 /// <x>|
 /// ```
 fn continuation_at_line_ending(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    tokenizer.exit(TokenType::HtmlFlowData);
+    tokenizer.exit(Token::HtmlFlowData);
     html_continue_start(tokenizer, code, info)
 }
 
@@ -789,23 +790,23 @@ fn continuation_at_line_ending(tokenizer: &mut Tokenizer, code: Code, info: Info
 fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None => {
-            tokenizer.exit(TokenType::HtmlFlow);
+            tokenizer.exit(Token::HtmlFlow);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
         }
         // To do: do not allow lazy lines.
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
+            tokenizer.exit(Token::LineEnding);
             (
                 State::Fn(Box::new(|t, c| html_continue_start(t, c, info))),
                 None,
             )
         }
         _ => {
-            tokenizer.enter(TokenType::HtmlFlowData);
+            tokenizer.enter(Token::HtmlFlowData);
             continuation(tokenizer, code, info)
         }
     }
@@ -955,8 +956,8 @@ fn continuation_declaration_inside(
 fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::HtmlFlowData);
-            tokenizer.exit(TokenType::HtmlFlow);
+            tokenizer.exit(Token::HtmlFlowData);
+            tokenizer.exit(Token::HtmlFlow);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             (State::Ok, Some(vec![code]))
@@ -978,8 +979,8 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 ///
 /// ```
 fn blank_line_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::LineEnding);
+    tokenizer.enter(Token::LineEnding);
     tokenizer.consume(code);
-    tokenizer.exit(TokenType::LineEnding);
+    tokenizer.exit(Token::LineEnding);
     (State::Fn(Box::new(blank_line)), None)
 }

@@ -37,10 +37,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HeadingAtx`][TokenType::HeadingAtx]
-//! *   [`HeadingAtxSequence`][TokenType::HeadingAtxSequence]
-//! *   [`HeadingAtxText`][TokenType::HeadingAtxText]
-//! *   [`SpaceOrTab`][TokenType::SpaceOrTab]
+//! *   [`HeadingAtx`][Token::HeadingAtx]
+//! *   [`HeadingAtxSequence`][Token::HeadingAtxSequence]
+//! *   [`HeadingAtxText`][Token::HeadingAtxText]
+//! *   [`SpaceOrTab`][Token::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -56,9 +56,8 @@
 
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
-use crate::tokenizer::{
-    Code, ContentType, Event, EventType, State, StateFnResult, TokenType, Tokenizer,
-};
+use crate::token::Token;
+use crate::tokenizer::{Code, ContentType, Event, EventType, State, StateFnResult, Tokenizer};
 use crate::util::edit_map::EditMap;
 
 /// Start of a heading (atx).
@@ -67,7 +66,7 @@ use crate::util::edit_map::EditMap;
 /// |## alpha
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(TokenType::HeadingAtx);
+    tokenizer.enter(Token::HeadingAtx);
     // To do: allow arbitrary when code (indented) is turned off.
     tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
@@ -79,7 +78,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('#') == code {
-        tokenizer.enter(TokenType::HeadingAtxSequence);
+        tokenizer.enter(Token::HeadingAtxSequence);
         sequence_open(tokenizer, code, 0)
     } else {
         (State::Nok, None)
@@ -94,7 +93,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') if rank > 0 => {
-            tokenizer.exit(TokenType::HeadingAtxSequence);
+            tokenizer.exit(Token::HeadingAtxSequence);
             at_break(tokenizer, code)
         }
         Code::Char('#') if rank < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
@@ -107,7 +106,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
             )
         }
         _ if rank > 0 => {
-            tokenizer.exit(TokenType::HeadingAtxSequence);
+            tokenizer.exit(Token::HeadingAtxSequence);
             tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
         }
         _ => (State::Nok, None),
@@ -126,7 +125,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
 fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::HeadingAtx);
+            tokenizer.exit(Token::HeadingAtx);
             tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
             // Feel free to interrupt.
             tokenizer.interrupt = false;
@@ -136,11 +135,11 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
         }
         Code::Char('#') => {
-            tokenizer.enter(TokenType::HeadingAtxSequence);
+            tokenizer.enter(Token::HeadingAtxSequence);
             further_sequence(tokenizer, code)
         }
         Code::Char(_) => {
-            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::Text));
+            tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
             data(tokenizer, code)
         }
     }
@@ -157,7 +156,7 @@ fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.consume(code);
         (State::Fn(Box::new(further_sequence)), None)
     } else {
-        tokenizer.exit(TokenType::HeadingAtxSequence);
+        tokenizer.exit(Token::HeadingAtxSequence);
         at_break(tokenizer, code)
     }
 }
@@ -171,7 +170,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\t' | '\n' | '\r' | ' ') => {
-            tokenizer.exit(TokenType::Data);
+            tokenizer.exit(Token::Data);
             at_break(tokenizer, code)
         }
         _ => {
@@ -192,7 +191,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
-        if event.token_type == TokenType::HeadingAtx {
+        if event.token_type == Token::HeadingAtx {
             if event.event_type == EventType::Enter {
                 heading_start = Some(index);
             } else if let Some(start) = data_start {
@@ -204,7 +203,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     0,
                     vec![Event {
                         event_type: EventType::Enter,
-                        token_type: TokenType::HeadingAtxText,
+                        token_type: Token::HeadingAtxText,
                         point: tokenizer.events[start].point.clone(),
                         index: tokenizer.events[start].index,
                         previous: None,
@@ -221,7 +220,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     0,
                     vec![Event {
                         event_type: EventType::Exit,
-                        token_type: TokenType::HeadingAtxText,
+                        token_type: Token::HeadingAtxText,
                         point: tokenizer.events[end].point.clone(),
                         index: tokenizer.events[end].index,
                         previous: None,
@@ -234,7 +233,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 data_start = None;
                 data_end = None;
             }
-        } else if heading_start.is_some() && event.token_type == TokenType::Data {
+        } else if heading_start.is_some() && event.token_type == Token::Data {
             if event.event_type == EventType::Enter {
                 if data_start.is_none() {
                     data_start = Some(index);

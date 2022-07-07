@@ -26,7 +26,8 @@ use crate::construct::{
     html_flow::start as html_flow, paragraph::start as paragraph,
     thematic_break::start as thematic_break,
 };
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Before flow.
 ///
@@ -88,9 +89,9 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::BlankLineEnding);
+            tokenizer.enter(Token::BlankLineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::BlankLineEnding);
+            tokenizer.exit(Token::BlankLineEnding);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             (State::Fn(Box::new(start)), None)
@@ -112,9 +113,9 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
+            tokenizer.exit(Token::LineEnding);
             (State::Fn(Box::new(start)), None)
         }
         _ => unreachable!("expected eol/eof"),

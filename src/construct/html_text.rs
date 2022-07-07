@@ -42,8 +42,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HtmlText`][TokenType::HtmlText]
-//! *   [`HtmlTextData`][TokenType::HtmlTextData]
+//! *   [`HtmlText`][Token::HtmlText]
+//! *   [`HtmlTextData`][Token::HtmlTextData]
 //!
 //! ## References
 //!
@@ -55,7 +55,8 @@
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
 use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::tokenizer::{Code, State, StateFn, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFn, StateFnResult, Tokenizer};
 use crate::util::codes::parse;
 
 /// Start of HTML (text)
@@ -65,8 +66,8 @@ use crate::util::codes::parse;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('<') == code {
-        tokenizer.enter(TokenType::HtmlText);
-        tokenizer.enter(TokenType::HtmlTextData);
+        tokenizer.enter(Token::HtmlText);
+        tokenizer.enter(Token::HtmlTextData);
         tokenizer.consume(code);
         (State::Fn(Box::new(open)), None)
     } else {
@@ -617,8 +618,8 @@ fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => {
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::HtmlTextData);
-            tokenizer.exit(TokenType::HtmlText);
+            tokenizer.exit(Token::HtmlTextData);
+            tokenizer.exit(Token::HtmlText);
             (State::Ok, None)
         }
         _ => (State::Nok, None),
@@ -641,10 +642,10 @@ fn at_line_ending(
 ) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::HtmlTextData);
-            tokenizer.enter(TokenType::LineEnding);
+            tokenizer.exit(Token::HtmlTextData);
+            tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::LineEnding);
+            tokenizer.exit(Token::LineEnding);
             (
                 State::Fn(Box::new(|t, c| after_line_ending(t, c, return_state))),
                 None,
@@ -687,6 +688,6 @@ fn after_line_ending_prefix(
     code: Code,
     return_state: Box<StateFn>,
 ) -> StateFnResult {
-    tokenizer.enter(TokenType::HtmlTextData);
+    tokenizer.enter(Token::HtmlTextData);
     return_state(tokenizer, code)
 }

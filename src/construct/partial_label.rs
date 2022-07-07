@@ -61,7 +61,8 @@
 use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
 use crate::subtokenize::link;
-use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, ContentType, State, StateFnResult, Tokenizer};
 
 /// Configuration.
 ///
@@ -69,11 +70,11 @@ use crate::tokenizer::{Code, ContentType, State, StateFnResult, TokenType, Token
 #[derive(Debug)]
 pub struct Options {
     /// Token for the whole label.
-    pub label: TokenType,
+    pub label: Token,
     /// Token for the markers.
-    pub marker: TokenType,
+    pub marker: Token,
     /// Token for the string (inside the markers).
-    pub string: TokenType,
+    pub string: Token,
 }
 
 /// State needed to parse labels.
@@ -144,7 +145,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             },
         )(tokenizer, code),
         _ => {
-            tokenizer.enter_with_content(TokenType::Data, Some(ContentType::String));
+            tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
 
             if info.connect {
                 let index = tokenizer.events.len() - 1;
@@ -166,11 +167,11 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '[' | ']') => {
-            tokenizer.exit(TokenType::Data);
+            tokenizer.exit(Token::Data);
             at_break(tokenizer, code, info)
         }
         _ if info.size > LINK_REFERENCE_SIZE_MAX => {
-            tokenizer.exit(TokenType::Data);
+            tokenizer.exit(Token::Data);
             at_break(tokenizer, code, info)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {

@@ -26,8 +26,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HardBreakEscape`][TokenType::HardBreakEscape]
-//! *   [`HardBreakEscapeMarker`][TokenType::HardBreakEscapeMarker]
+//! *   [`HardBreakEscape`][Token::HardBreakEscape]
+//! *   [`HardBreakEscapeMarker`][Token::HardBreakEscapeMarker]
 //!
 //! ## References
 //!
@@ -40,7 +40,8 @@
 //! [hard_break_trailing]: crate::construct::hard_break_trailing
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of a hard break (escape).
 ///
@@ -50,10 +51,10 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('\\') => {
-            tokenizer.enter(TokenType::HardBreakEscape);
-            tokenizer.enter(TokenType::HardBreakEscapeMarker);
+            tokenizer.enter(Token::HardBreakEscape);
+            tokenizer.enter(Token::HardBreakEscapeMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::HardBreakEscapeMarker);
+            tokenizer.exit(Token::HardBreakEscapeMarker);
             (State::Fn(Box::new(inside)), None)
         }
         _ => (State::Nok, None),
@@ -68,7 +69,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(TokenType::HardBreakEscape);
+            tokenizer.exit(Token::HardBreakEscape);
             (State::Ok, Some(vec![code]))
         }
         _ => (State::Nok, None),

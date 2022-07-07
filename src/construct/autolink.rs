@@ -84,10 +84,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Autolink`][TokenType::Autolink]
-//! *   [`AutolinkEmail`][TokenType::AutolinkEmail]
-//! *   [`AutolinkMarker`][TokenType::AutolinkMarker]
-//! *   [`AutolinkProtocol`][TokenType::AutolinkProtocol]
+//! *   [`Autolink`][Token::Autolink]
+//! *   [`AutolinkEmail`][Token::AutolinkEmail]
+//! *   [`AutolinkMarker`][Token::AutolinkMarker]
+//! *   [`AutolinkProtocol`][Token::AutolinkProtocol]
 //!
 //! ## References
 //!
@@ -102,7 +102,8 @@
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
-use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
+use crate::token::Token;
+use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of an autolink.
 ///
@@ -113,11 +114,11 @@ use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('<') => {
-            tokenizer.enter(TokenType::Autolink);
-            tokenizer.enter(TokenType::AutolinkMarker);
+            tokenizer.enter(Token::Autolink);
+            tokenizer.enter(Token::AutolinkMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::AutolinkMarker);
-            tokenizer.enter(TokenType::AutolinkProtocol);
+            tokenizer.exit(Token::AutolinkMarker);
+            tokenizer.enter(Token::AutolinkProtocol);
             (State::Fn(Box::new(open)), None)
         }
         _ => (State::Nok, None),
@@ -195,7 +196,7 @@ fn scheme_inside_or_email_atext(
 fn url_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => {
-            tokenizer.exit(TokenType::AutolinkProtocol);
+            tokenizer.exit(Token::AutolinkProtocol);
             end(tokenizer, code)
         }
         Code::Char(char) if char.is_ascii_control() => (State::Nok, None),
@@ -260,10 +261,10 @@ fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnRes
         }
         Code::Char('>') => {
             let index = tokenizer.events.len();
-            tokenizer.exit(TokenType::AutolinkProtocol);
+            tokenizer.exit(Token::AutolinkProtocol);
             // Change the token type.
-            tokenizer.events[index - 1].token_type = TokenType::AutolinkEmail;
-            tokenizer.events[index].token_type = TokenType::AutolinkEmail;
+            tokenizer.events[index - 1].token_type = Token::AutolinkEmail;
+            tokenizer.events[index].token_type = Token::AutolinkEmail;
             end(tokenizer, code)
         }
         _ => email_value(tokenizer, code, size),
@@ -306,10 +307,10 @@ fn email_value(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnRes
 fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::Char('>') => {
-            tokenizer.enter(TokenType::AutolinkMarker);
+            tokenizer.enter(Token::AutolinkMarker);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::AutolinkMarker);
-            tokenizer.exit(TokenType::Autolink);
+            tokenizer.exit(Token::AutolinkMarker);
+            tokenizer.exit(Token::Autolink);
             (State::Ok, None)
         }
         _ => unreachable!("expected `>`"),
