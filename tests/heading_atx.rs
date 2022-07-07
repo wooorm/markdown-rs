@@ -182,12 +182,11 @@ fn heading_atx() {
         "should support empty atx headings"
     );
 
-    // To do: block quote.
-    // assert_eq!(
-    //     micromark("> #\na"),
-    //     "<blockquote>\n<h1></h1>\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark("> #\na"),
+        "<blockquote>\n<h1></h1>\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     // assert_eq!(
     //     micromark("> a\n#"),

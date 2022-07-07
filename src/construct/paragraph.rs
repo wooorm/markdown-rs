@@ -35,7 +35,7 @@
 use crate::tokenizer::{
     Code, ContentType, Event, EventType, State, StateFnResult, TokenType, Tokenizer,
 };
-use crate::util::edit_map::EditMap;
+use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
 
 /// Before a paragraph.
 ///
@@ -90,19 +90,27 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         if event.event_type == EventType::Enter && event.token_type == TokenType::Paragraph {
             // Exit:Paragraph
             let mut exit_index = index + 3;
+            let mut enter_next_index =
+                skip_opt(&tokenizer.events, exit_index + 1, &[TokenType::LineEnding]);
             // Enter:Paragraph
-            let mut enter_next_index = exit_index + 3;
+            enter_next_index = skip_opt(
+                &tokenizer.events,
+                enter_next_index,
+                &[TokenType::SpaceOrTab, TokenType::BlockQuotePrefix],
+            );
 
             // Find future `Paragraphs`.
-            // There will be `LineEnding` between.
-            while enter_next_index < len
+            while enter_next_index < tokenizer.events.len()
                 && tokenizer.events[enter_next_index].token_type == TokenType::Paragraph
             {
                 // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
-                edit_map.add(exit_index, 4, vec![]);
+                edit_map.add(exit_index, 3, vec![]);
+
+                // Remove Enter:Paragraph.
+                edit_map.add(enter_next_index, 1, vec![]);
 
                 // Add Exit:LineEnding position info to Exit:Data.
-                let line_ending_exit = &tokenizer.events[enter_next_index - 1];
+                let line_ending_exit = &tokenizer.events[exit_index + 2];
                 let line_ending_point = line_ending_exit.point.clone();
                 let line_ending_index = line_ending_exit.index;
                 let data_exit = &mut tokenizer.events[exit_index - 1];
@@ -117,7 +125,13 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
                 // Potential next start.
                 exit_index = enter_next_index + 3;
-                enter_next_index = exit_index + 3;
+                enter_next_index =
+                    skip_opt(&tokenizer.events, exit_index + 1, &[TokenType::LineEnding]);
+                enter_next_index = skip_opt(
+                    &tokenizer.events,
+                    enter_next_index,
+                    &[TokenType::SpaceOrTab, TokenType::BlockQuotePrefix],
+                );
             }
 
             // Move to `Exit:Paragraph`.

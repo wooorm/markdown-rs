@@ -148,19 +148,18 @@ fn thematic_break() {
         "should not support thematic breaks w/ dashes interrupting paragraphs (setext heading)"
     );
 
-    // To do: list.
+    // To do: lists.
     // assert_eq!(
     //     micromark("- Foo\n- * * *"),
     //     "<ul>\n<li>Foo</li>\n<li>\n<hr />\n</li>\n</ul>",
     //     "should support thematic breaks in lists"
     // );
 
-    // To do: blockquote.
-    // assert_eq!(
-    //     micromark("> ---\na"),
-    //     "<blockquote>\n<hr />\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark("> ---\na"),
+        "<blockquote>\n<hr />\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     // assert_eq!(
     //     micromark("> a\n---"),

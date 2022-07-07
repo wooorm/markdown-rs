@@ -26,52 +26,7 @@ use crate::construct::{
     html_flow::start as html_flow, paragraph::start as paragraph,
     thematic_break::start as thematic_break,
 };
-use crate::parser::ParseState;
-use crate::subtokenize::subtokenize;
-use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::{
-    normalize_identifier::normalize_identifier,
-    span::{from_exit_event, serialize},
-};
-use std::collections::HashSet;
-
-/// Turn `codes` as the flow content type into events.
-pub fn flow(parse_state: &mut ParseState, point: Point, index: usize) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new(point, index, parse_state);
-    tokenizer.push(&parse_state.codes, Box::new(start), true);
-    let mut next_definitions: HashSet<String> = HashSet::new();
-
-    let mut index = 0;
-
-    while index < tokenizer.events.len() {
-        let event = &tokenizer.events[index];
-
-        if event.event_type == EventType::Exit
-            && event.token_type == TokenType::DefinitionLabelString
-        {
-            next_definitions.insert(normalize_identifier(
-                serialize(
-                    &parse_state.codes,
-                    &from_exit_event(&tokenizer.events, index),
-                    false,
-                )
-                .as_str(),
-            ));
-        }
-
-        index += 1;
-    }
-
-    let mut result = (tokenizer.events, false);
-
-    parse_state.definitions = next_definitions;
-
-    while !result.1 {
-        result = subtokenize(result.0, parse_state);
-    }
-
-    result.0
-}
+use crate::tokenizer::{Code, State, StateFnResult, TokenType, Tokenizer};
 
 /// Before flow.
 ///
@@ -83,7 +38,7 @@ pub fn flow(parse_state: &mut ParseState, point: Point, index: usize) -> Vec<Eve
 /// |    bravo
 /// |***
 /// ```
-fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         _ => tokenizer.attempt(blank_line, |ok| {

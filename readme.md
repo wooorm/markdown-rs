@@ -62,7 +62,7 @@ cargo doc --document-private-items
 - [x] attention (emphasis, strong)
 - [x] autolink
 - [x] blank line
-- [ ] (5) block quote
+- [x] block quote
 - [x] character escape
 - [x] character reference
 - [x] code (fenced)
@@ -85,7 +85,7 @@ cargo doc --document-private-items
 ### Content types
 
 - [ ] (8) container
-  - [ ] block quote
+  - [x] block quote
   - [ ] list
 - [x] flow
   - [x] blank line
@@ -127,15 +127,13 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (8) block quote\
-       test (`code_fenced`, `definition`, `code_indented`, `heading_atx`, `heading_setext`,
-      `html_flow`, `misc_default_line_ending`, `thematic_break`)
+- [ ] (3) Fix some block quote bugs
+- [ ] (3) Lazy lines (`code indented`, `html flow`)
+- [ ] (3) Concrete (`html flow`)
 - [ ] (8) list\
        test (`character_reference`, `code_indented`, `heading_setext`,
       `html_flow`, `thematic_break`)\
        link (`blank line`, `thematic break`)
-- [ ] (3) Lazy lines (`code indented`, `html flow`)
-- [ ] (3) Concrete (`html flow`)
 - [ ] (3) Turn off things (enable every test for these)
 - [ ] (3) Make tokenizer tokens extendable?
 
@@ -276,3 +274,4 @@ important.
 - [x] (1) Remove todos in `span.rs` if not needed
 - [x] (2) Fix resizing attention bug
 - [x] (2) Fix interleaving of attention/label
+- [x] (8) Add basic support for block quotes

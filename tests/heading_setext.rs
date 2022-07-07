@@ -129,14 +129,13 @@ fn heading_setext() {
         "should precede over inline constructs (2)"
     );
 
-    // To do: block quote.
-    // assert_eq!(
-    //     micromark("> Foo\n---"),
-    //     "<blockquote>\n<p>Foo</p>\n</blockquote>\n<hr />",
-    //     "should not allow underline to be lazy (1)"
-    // );
+    assert_eq!(
+        micromark("> Foo\n---"),
+        "<blockquote>\n<p>Foo</p>\n</blockquote>\n<hr />",
+        "should not allow underline to be lazy (1)"
+    );
 
-    // To do: block quote.
+    // To do: block quote (lazy).
     // assert_eq!(
     //     micromark("> foo\nbar\n==="),
     //     "<blockquote>\n<p>foo\nbar\n===</p>\n</blockquote>",
@@ -187,12 +186,11 @@ fn heading_setext() {
         "should prefer other constructs over setext headings (3)"
     );
 
-    // To do: block quote.
-    // assert_eq!(
-    //     micromark("> foo\n-----"),
-    //     "<blockquote>\n<p>foo</p>\n</blockquote>\n<hr />",
-    //     "should prefer other constructs over setext headings (4)"
-    // );
+    assert_eq!(
+        micromark("> foo\n-----"),
+        "<blockquote>\n<p>foo</p>\n</blockquote>\n<hr />",
+        "should prefer other constructs over setext headings (4)"
+    );
 
     assert_eq!(
         micromark("\\> foo\n------"),
@@ -249,14 +247,14 @@ fn heading_setext() {
         "should prefer a setext heading over an interrupting list"
     );
 
-    // To do: block quote.
+    // To do: block quote (lazy).
     // assert_eq!(
     //     micromark("> ===\na"),
     //     "<blockquote>\n<p>===\na</p>\n</blockquote>",
     //     "should not support lazyness (1)"
     // );
 
-    // To do: block quote.
+    // To do: block quote (lazy).
     // assert_eq!(
     //     micromark("> a\n==="),
     //     "<blockquote>\n<p>a\n===</p>\n</blockquote>",

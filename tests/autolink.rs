@@ -10,12 +10,6 @@ const DANGER: &Options = &Options {
 #[test]
 fn autolink() {
     assert_eq!(
-        micromark("```\n<\n >\n```"),
-        "<pre><code>&lt;\n &gt;\n</code></pre>",
-        "should support fenced code w/ grave accents"
-    );
-
-    assert_eq!(
         micromark("<http://foo.bar.baz>"),
         "<p><a href=\"http://foo.bar.baz\">http://foo.bar.baz</a></p>",
         "should support protocol autolinks (1)"

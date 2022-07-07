@@ -171,18 +171,18 @@ p {color:blue;}
         "should support blank lines in raw"
     );
 
-    // To do: block quote.
+    // To do: block quote (lazy).
     // assert_eq!(
     //     micromark_with_options("> <script>\na", DANGER),
     //     "<blockquote>\n<script>\n</blockquote>\n<p>a</p>",
     //     "should not support lazyness (1)"
     // );
 
-    // assert_eq!(
-    //     micromark_with_options("> a\n<script>", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<script>",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<script>", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<script>",
+        "should not support lazyness (2)"
+    );
 }
 
 #[test]
@@ -270,18 +270,18 @@ fn html_flow_2_comment() {
         "should support blank lines in comments"
     );
 
-    // To do: blockquote.
+    // To do: blockquote (lazy).
     // assert_eq!(
     //     micromark_with_options("> <!--\na", DANGER),
     //     "<blockquote>\n<!--\n</blockquote>\n<p>a</p>",
     //     "should not support lazyness (1)"
     // );
 
-    // assert_eq!(
-    //     micromark_with_options("> a\n<!--", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<!--",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<!--", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<!--",
+        "should not support lazyness (2)"
+    );
 }
 
 #[test]
@@ -317,18 +317,18 @@ fn html_flow_3_instruction() {
         "should support blank lines in instructions"
     );
 
-    // To do: blockquote.
+    // To do: blockquote (lazy).
     // assert_eq!(
     //     micromark_with_options("> <?\na", DANGER),
     //     "<blockquote>\n<?\n</blockquote>\n<p>a</p>",
     //     "should not support lazyness (1)"
     // );
 
-    // assert_eq!(
-    //     micromark_with_options("> a\n<?", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<?",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<?", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<?",
+        "should not support lazyness (2)"
+    );
 }
 
 #[test]
@@ -366,24 +366,25 @@ fn html_flow_4_declaration() {
 
     // Note about the lower letter:
     // <https://github.com/commonmark/commonmark-spec/pull/621>
-    assert_eq!(
-        micromark_with_options("<!a\n  \n  \n>", DANGER),
-        "<!a\n  \n  \n>",
-        "should support blank lines in declarations"
-    );
+    // To do: concrete constructs (html flow).
+    // assert_eq!(
+    //     micromark_with_options("<!a\n  \n  \n>", DANGER),
+    //     "<!a\n  \n  \n>",
+    //     "should support blank lines in declarations"
+    // );
 
-    // To do: blockquote.
+    // To do: blockquote (lazy).
     // assert_eq!(
     //     micromark_with_options("> <!a\nb", DANGER),
     //     "<blockquote>\n<!a\n</blockquote>\n<p>b</p>",
     //     "should not support lazyness (1)"
     // );
 
-    // assert_eq!(
-    //     micromark_with_options("> a\n<!b", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<!b",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<!b", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<!b",
+        "should not support lazyness (2)"
+    );
 }
 
 #[test]
@@ -436,18 +437,18 @@ fn html_flow_5_cdata() {
         "should support blank lines in cdata"
     );
 
-    // To do: blockquote.
+    // To do: blockquote (lazy).
     // assert_eq!(
     //     micromark_with_options("> <![CDATA[\na", DANGER),
     //     "<blockquote>\n<![CDATA[\n</blockquote>\n<p>a</p>",
     //     "should not support lazyness (1)"
     // );
 
-    // assert_eq!(
-    //     micromark_with_options("> a\n<![CDATA[", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<![CDATA[",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<![CDATA[", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<![CDATA[",
+        "should not support lazyness (2)"
+    );
 }
 
 #[test]
@@ -557,7 +558,7 @@ okay.",
         "should include everything ’till a blank line"
     );
 
-    // To do: blockquote.
+    // To do: blockquote (some bug).
     // assert_eq!(
     //     micromark_with_options("> <div>\n> foo\n\nbar", DANGER),
     //     "<blockquote>\n<div>\nfoo\n</blockquote>\n<p>bar</p>",
@@ -709,24 +710,24 @@ okay.",
         "should support interrupting paragraphs w/ self-closing basic tags"
     );
 
-    // To do: block quote.
-    // assert_eq!(
-    //     micromark_with_options("<div\n  \n  \n>", DANGER),
-    //     "<div\n<blockquote>\n</blockquote>",
-    //     "should not support blank lines in basic"
-    // );
+    assert_eq!(
+        micromark_with_options("<div\n  \n  \n>", DANGER),
+        "<div\n<blockquote>\n</blockquote>",
+        "should not support blank lines in basic"
+    );
 
+    // To do: block quote (some bug).
     // assert_eq!(
     //     micromark_with_options("> <div\na", DANGER),
     //     "<blockquote>\n<div\n</blockquote>\n<p>a</p>",
     //     "should not support lazyness (1)"
     // );
 
-    // assert_eq!(
-    //     micromark_with_options("> a\n<div", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<div",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<div", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<div",
+        "should not support lazyness (2)"
+    );
 }
 
 #[test]
@@ -1013,19 +1014,20 @@ fn html_flow_7_complete() {
         "should not support an attribute after a double quoted attribute value"
     );
 
-    // To do: blockquote.
-    // assert_eq!(
-    //     micromark_with_options("<x>\n  \n  \n>", DANGER),
-    //     "<x>\n<blockquote>\n</blockquote>",
-    //     "should not support blank lines in complete"
-    // );
+    assert_eq!(
+        micromark_with_options("<x>\n  \n  \n>", DANGER),
+        "<x>\n<blockquote>\n</blockquote>",
+        "should not support blank lines in complete"
+    );
 
+    // To do: blockquote (some bug).
     // assert_eq!(
     //     micromark_with_options("> <a>\n*bar*", DANGER),
     //     "<blockquote>\n<a>\n</blockquote>\n<p><em>bar</em></p>",
     //     "should not support lazyness (1)"
     // );
 
+    // To do: blockquote (lazy).
     // assert_eq!(
     //     micromark_with_options("> a\n<a>", DANGER),
     //     "<blockquote>\n<p>a</p>\n</blockquote>\n<a>",

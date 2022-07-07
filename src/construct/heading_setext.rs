@@ -60,7 +60,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, TokenType, Tokenizer};
-use crate::util::edit_map::EditMap;
+use crate::util::{edit_map::EditMap, skip::opt_back as skip_opt_back};
 
 /// Kind of underline.
 #[derive(Debug, Clone, PartialEq)]
@@ -116,11 +116,26 @@ impl Kind {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let index = tokenizer.events.len();
-    let paragraph_before = index > 3
-        && tokenizer.events[index - 1].token_type == TokenType::LineEnding
-        && tokenizer.events[index - 3].token_type == TokenType::Paragraph;
+    let previous = if index > 1 {
+        skip_opt_back(
+            &tokenizer.events,
+            index - 1,
+            &[TokenType::SpaceOrTab, TokenType::BlockQuotePrefix],
+        )
+    } else {
+        0
+    };
+    let previous = skip_opt_back(&tokenizer.events, previous, &[TokenType::LineEnding]);
+    let paragraph_before =
+        previous > 1 && tokenizer.events[previous].token_type == TokenType::Paragraph;
 
-    if paragraph_before {
+    println!(
+        "setext-start: {:?} {:?} {:?}",
+        tokenizer.interrupt, tokenizer.lazy, paragraph_before
+    );
+
+    // Require a paragraph before and do not allow on a lazy line.
+    if paragraph_before && !tokenizer.lazy {
         // To do: allow arbitrary when code (indented) is turned off.
         tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
     } else {

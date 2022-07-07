@@ -64,6 +64,7 @@
 pub mod attention;
 pub mod autolink;
 pub mod blank_line;
+pub mod block_quote;
 pub mod character_escape;
 pub mod character_reference;
 pub mod code_fenced;

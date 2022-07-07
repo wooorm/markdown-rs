@@ -48,6 +48,7 @@ fn shift_links(events: &mut [Event], jumps: &[(usize, isize)]) {
 
 /// Make it easy to insert and remove things while being performant and keeping
 /// links in check.
+#[derive(Debug)]
 pub struct EditMap {
     /// Whether this map was consumed already.
     consumed: bool,

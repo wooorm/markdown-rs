@@ -193,9 +193,7 @@ pub struct Options {
     /// // micromark is safe by default:
     /// assert_eq!(
     ///     micromark("> a"),
-    ///     // To do: block quote
-    ///     // "<blockquote>\n<p>a</p>\n</blockquote>"
-    ///     "<p>&gt; a</p>"
+    ///     "<blockquote>\n<p>a</p>\n</blockquote>"
     /// );
     ///
     /// // Define `default_line_ending` to configure the default:
@@ -209,9 +207,7 @@ pub struct Options {
     ///
     ///         }
     ///     ),
-    ///     // To do: block quote
-    ///     // "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
-    ///     "<p>&gt; a</p>"
+    ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
     /// );
     /// ```
     pub default_line_ending: Option<LineEnding>,
@@ -418,6 +414,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     enter_map.insert(TokenType::HeadingSetextText, on_enter_buffer);
     enter_map.insert(TokenType::Label, on_enter_buffer);
     enter_map.insert(TokenType::ResourceTitleString, on_enter_buffer);
+    enter_map.insert(TokenType::BlockQuote, on_enter_block_quote);
     enter_map.insert(TokenType::CodeIndented, on_enter_code_indented);
     enter_map.insert(TokenType::CodeFenced, on_enter_code_fenced);
     enter_map.insert(TokenType::CodeText, on_enter_code_text);
@@ -491,6 +488,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     exit_map.insert(TokenType::CodeFlowChunk, on_exit_code_flow_chunk);
     exit_map.insert(TokenType::CodeText, on_exit_code_text);
     exit_map.insert(TokenType::CodeTextLineEnding, on_exit_code_text_line_ending);
+    exit_map.insert(TokenType::BlockQuote, on_exit_block_quote);
     exit_map.insert(TokenType::HardBreakEscape, on_exit_break);
     exit_map.insert(TokenType::HardBreakTrailing, on_exit_break);
     exit_map.insert(TokenType::HeadingAtx, on_exit_heading_atx);
@@ -607,6 +605,13 @@ fn on_enter_buffer(context: &mut CompileContext) {
     context.buffer();
 }
 
+/// Handle [`Enter`][EventType::Enter]:[`BlockQuote`][TokenType::BlockQuote].
+fn on_enter_block_quote(context: &mut CompileContext) {
+    // tightStack.push(false)
+    context.line_ending_if_needed();
+    context.tag("<blockquote>".to_string());
+}
+
 /// Handle [`Enter`][EventType::Enter]:[`CodeIndented`][TokenType::CodeIndented].
 fn on_enter_code_indented(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
@@ -695,6 +700,7 @@ fn on_enter_link(context: &mut CompileContext) {
 
 /// Handle [`Enter`][EventType::Enter]:[`Paragraph`][TokenType::Paragraph].
 fn on_enter_paragraph(context: &mut CompileContext) {
+    context.line_ending_if_needed();
     context.tag("<p>".to_string());
 }
 
@@ -754,6 +760,14 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:{[`HardBreakEscape`][TokenType::HardBreakEscape],[`HardBreakTrailing`][TokenType::HardBreakTrailing]}.
 fn on_exit_break(context: &mut CompileContext) {
     context.tag("<br />".to_string());
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`BlockQuote`][TokenType::BlockQuote].
+fn on_exit_block_quote(context: &mut CompileContext) {
+    // tightStack.pop()
+    context.line_ending_if_needed();
+    context.tag("</blockquote>".to_string());
+    // let mut slurp_all_line_endings = false;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][TokenType::CharacterReferenceMarker].
@@ -971,6 +985,7 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
             false,
         )
         .len();
+        context.line_ending_if_needed();
         context.atx_opening_sequence_size = Some(rank);
         context.tag(format!("<h{}>", rank));
     }
@@ -1001,6 +1016,7 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
     )[0];
     let level: usize = if head == Code::Char('-') { 2 } else { 1 };
 
+    context.line_ending_if_needed();
     context.tag(format!("<h{}>", level));
     context.push(text);
     context.tag(format!("</h{}>", level));
@@ -1157,5 +1173,6 @@ fn on_exit_strong(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][TokenType::ThematicBreak].
 fn on_exit_thematic_break(context: &mut CompileContext) {
+    context.line_ending_if_needed();
     context.tag("<hr />".to_string());
 }

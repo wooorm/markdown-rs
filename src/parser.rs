@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 // To do: this should start with `containers`, when they’re done.
-use crate::content::flow::flow;
+use crate::content::document::document;
 use crate::tokenizer::{Code, Event, Point};
 use crate::util::codes::parse as parse_codes;
 
@@ -27,7 +27,7 @@ pub fn parse(value: &str) -> (Vec<Event>, ParseState) {
         definitions: HashSet::new(),
     };
 
-    let events = flow(
+    let events = document(
         &mut parse_state,
         Point {
             line: 1,

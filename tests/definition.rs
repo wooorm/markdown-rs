@@ -165,7 +165,7 @@ fn definition() {
         "should not support definitions in paragraphs"
     );
 
-    // To do: block quote.
+    // To do: block quote (some bug).
     // assert_eq!(
     //     micromark("# [Foo]\n[foo]: /url\n> bar"),
     //     "<h1><a href=\"/url\">Foo</a></h1>\n<blockquote>\n<p>bar</p>\n</blockquote>",
@@ -192,7 +192,7 @@ fn definition() {
         "should support definitions after definitions"
     );
 
-    // To do: block quote.
+    // To do: block quote (some bug).
     // assert_eq!(
     //     micromark("> [foo]: /url\n\n[foo]"),
     //     "<blockquote>\n</blockquote>\n<p><a href=\"/url\">foo</a></p>",

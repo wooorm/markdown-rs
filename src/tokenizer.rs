@@ -1702,6 +1702,10 @@ pub enum TokenType {
     ///
     /// > 👉 **Note**: this is used while parsing but compiled away.
     AttentionSequence,
+    BlockQuote,
+    BlockQuoteMarker,
+    BlockQuotePrefix,
+    BlockQuotePrefixWhitespace,
 }
 
 /// Embedded content type.
@@ -1841,6 +1845,7 @@ struct InternalState {
 // #[derive(Debug)]
 
 /// A tokenizer itself.
+#[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
     column_start: HashMap<usize, usize>,
     /// Track whether a character is expected to be consumed, and whether it’s
@@ -1855,15 +1860,15 @@ pub struct Tokenizer<'a> {
     /// Hierarchy of semantic labels.
     ///
     /// Tracked to make sure everything’s valid.
-    stack: Vec<TokenType>,
+    pub stack: Vec<TokenType>,
     /// Previous character code.
     pub previous: Code,
     /// Current character code.
     current: Code,
     /// `index` in codes of the current code.
-    index: usize,
+    pub index: usize,
     /// Current relative and absolute place in the file.
-    point: Point,
+    pub point: Point,
     /// List of attached resolvers, which will be called when done feeding,
     /// to clean events.
     resolvers: Vec<Box<Resolver>>,
@@ -1887,6 +1892,7 @@ pub struct Tokenizer<'a> {
     ///
     /// Used when tokenizing [flow content][crate::content::flow].
     pub interrupt: bool,
+    pub lazy: bool,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -1907,6 +1913,7 @@ impl<'a> Tokenizer<'a> {
             label_start_list_loose: vec![],
             media_list: vec![],
             interrupt: false,
+            lazy: false,
             resolvers: vec![],
             resolver_ids: vec![],
         }
@@ -2120,7 +2127,8 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             until,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), _ok, _tokenizer: &mut Tokenizer, state| {
+            |result: (Vec<Code>, Vec<Code>), _ok, tokenizer: &mut Tokenizer, state| {
+                tokenizer.consumed = true;
                 done(check_statefn_result((state, Some(result.1))))
             },
         )
@@ -2262,6 +2270,20 @@ fn attempt_impl(
     done: impl FnOnce((Vec<Code>, Vec<Code>), bool, &mut Tokenizer, State) -> StateFnResult + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
+        // To do: `pause` is currently used after the code.
+        // Should it be before?
+        // How to match `eof`?
+        if !codes.is_empty() && pause(tokenizer.previous) {
+            tokenizer.consumed = true;
+            println!("pause!: {:?}", (codes.clone(), vec![code]));
+            return done(
+                (codes, vec![code]),
+                false,
+                tokenizer,
+                State::Fn(Box::new(state)),
+            );
+        }
+
         let (next, remainder) = check_statefn_result(state(tokenizer, code));
 
         match code {
@@ -2276,14 +2298,6 @@ fn attempt_impl(
                 list.len() <= codes.len(),
                 "`remainder` must be less than or equal to `codes`"
             );
-        }
-
-        // To do: `pause` is currently used after the code.
-        // Should it be before?
-        if pause(code) {
-            tokenizer.consumed = true;
-            let remaining = if let Some(x) = remainder { x } else { vec![] };
-            return done((codes, remaining), false, tokenizer, next);
         }
 
         match next {
