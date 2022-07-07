@@ -2089,8 +2089,9 @@ impl<'a> Tokenizer<'a> {
     ) -> Box<StateFn> {
         attempt_impl(
             state_fn,
+            |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
+            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
                 if ok {
                     feed_impl(
                         tokenizer,
@@ -2101,6 +2102,24 @@ impl<'a> Tokenizer<'a> {
                 } else {
                     (State::Nok, None)
                 }
+            },
+        )
+    }
+
+    /// To do.
+    #[allow(clippy::unused_self)]
+    pub fn go_until(
+        &mut self,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        until: impl FnMut(Code) -> bool + 'static,
+        done: impl FnOnce(StateFnResult) -> StateFnResult + 'static,
+    ) -> Box<StateFn> {
+        attempt_impl(
+            state_fn,
+            until,
+            vec![],
+            |result: (Vec<Code>, Vec<Code>), _ok, _tokenizer: &mut Tokenizer, state| {
+                done(check_statefn_result((state, Some(result.1))))
             },
         )
     }
@@ -2123,8 +2142,9 @@ impl<'a> Tokenizer<'a> {
 
         attempt_impl(
             state_fn,
+            |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
+            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
                 tokenizer.free(previous);
                 feed_impl(tokenizer, &result.0, done(ok), false)
             },
@@ -2151,8 +2171,9 @@ impl<'a> Tokenizer<'a> {
 
         attempt_impl(
             state_fn,
+            |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer| {
+            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
                 if !ok {
                     tokenizer.free(previous);
                 }
@@ -2234,8 +2255,9 @@ impl<'a> Tokenizer<'a> {
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+    mut pause: impl FnMut(Code) -> bool + 'static,
     mut codes: Vec<Code>,
-    done: impl FnOnce((Vec<Code>, Vec<Code>), bool, &mut Tokenizer) -> StateFnResult + 'static,
+    done: impl FnOnce((Vec<Code>, Vec<Code>), bool, &mut Tokenizer, State) -> StateFnResult + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
         let (next, remainder) = check_statefn_result(state(tokenizer, code));
@@ -2254,15 +2276,23 @@ fn attempt_impl(
             );
         }
 
+        // To do: `pause` is currently used after the code.
+        // Should it be before?
+        if pause(code) {
+            tokenizer.consumed = true;
+            let remaining = if let Some(x) = remainder { x } else { vec![] };
+            return done((codes, remaining), false, tokenizer, next);
+        }
+
         match next {
             State::Ok => {
                 let remaining = if let Some(x) = remainder { x } else { vec![] };
-                check_statefn_result(done((codes, remaining), true, tokenizer))
+                check_statefn_result(done((codes, remaining), true, tokenizer, next))
             }
-            State::Nok => check_statefn_result(done((codes, vec![]), false, tokenizer)),
+            State::Nok => check_statefn_result(done((codes, vec![]), false, tokenizer, next)),
             State::Fn(func) => {
                 assert!(remainder.is_none(), "expected no remainder");
-                check_statefn_result((State::Fn(attempt_impl(func, codes, done)), None))
+                check_statefn_result((State::Fn(attempt_impl(func, pause, codes, done)), None))
             }
         }
     })
