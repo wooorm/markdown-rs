@@ -20,9 +20,9 @@
 //! ## Tokens
 //!
 //! *   [`BlockQuote`][TokenType::BlockQuote]
-//! *   [`BlockQuotePrefix`][TokenType::BlockQuotePrefix]
 //! *   [`BlockQuoteMarker`][TokenType::BlockQuoteMarker]
-//! *   [`BlockQuotePrefixWhitespace`][TokenType::BlockQuotePrefixWhitespace]
+//! *   [`BlockQuotePrefix`][TokenType::BlockQuotePrefix]
+//! *   [`BlockQuoteWhitespace`][TokenType::BlockQuoteWhitespace]
 //!
 //! ## References
 //!
@@ -101,9 +101,9 @@ fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.enter(TokenType::BlockQuotePrefixWhitespace);
+            tokenizer.enter(TokenType::BlockQuoteWhitespace);
             tokenizer.consume(code);
-            tokenizer.exit(TokenType::BlockQuotePrefixWhitespace);
+            tokenizer.exit(TokenType::BlockQuoteWhitespace);
             tokenizer.exit(TokenType::BlockQuotePrefix);
             (State::Ok, None)
         }

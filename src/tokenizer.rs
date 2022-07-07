@@ -113,10 +113,85 @@ pub enum TokenType {
     ///       ^
     /// ```
     BlankLineEnding,
+    /// Whole block quote.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [document content][crate::content::document]
+    /// *   **Content model**:
+    ///     [`BlockQuotePrefix`][TokenType::BlockQuotePrefix],
+    ///     [flow content][crate::content::flow]
+    /// *   **Construct**:
+    ///     [`block_quote`][crate::construct::block_quote]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | > a
+    ///     ^^^
+    /// > | b
+    ///     ^
+    /// ```
     BlockQuote,
+    /// Block quote marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`BlockQuotePrefix`][TokenType::BlockQuotePrefix]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`block_quote`][crate::construct::block_quote]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | > a
+    ///     ^
+    ///   | b
+    /// ```
     BlockQuoteMarker,
+    /// Block quote prefix.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`BlockQuote`][TokenType::BlockQuote]
+    /// *   **Content model**:
+    ///     [`BlockQuoteMarker`][TokenType::BlockQuoteMarker],
+    ///     [`BlockQuoteWhitespace`][TokenType::BlockQuoteWhitespace]
+    /// *   **Construct**:
+    ///     [`block_quote`][crate::construct::block_quote]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | > a
+    ///     ^^
+    ///   | b
+    /// ```
     BlockQuotePrefix,
-    BlockQuotePrefixWhitespace,
+    /// Block quote white space.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`BlockQuotePrefix`][TokenType::BlockQuotePrefix]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`block_quote`][crate::construct::block_quote]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | > a
+    ///      ^
+    ///   | b
+    /// ```
+    BlockQuoteWhitespace,
     /// Whole character escape.
     ///
     /// ## Info
