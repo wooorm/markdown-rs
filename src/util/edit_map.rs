@@ -128,7 +128,9 @@ impl EditMap {
         }
 
         if start < events.len() {
-            next_events.append(&mut events[start..].to_vec());
+            let append = &mut events[start..].to_vec();
+            shift_links(append, &jumps);
+            next_events.append(append);
         }
 
         next_events
