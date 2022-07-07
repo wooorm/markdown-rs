@@ -96,7 +96,7 @@ pub fn decode_numeric(value: &str, radix: u32) -> char {
     // Out of range
     code > 0x0010_ffff
     {
-        '�'
+        char::REPLACEMENT_CHARACTER
     } else {
         char::from_u32(code).expect("expected valid `code`")
     }

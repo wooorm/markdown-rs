@@ -145,7 +145,6 @@ cargo doc --document-private-items
 
 #### Misc
 
-- [ ] (1) use `char::REPLACEMENT_CHARACTER`?
 - [ ] (3) `nostd`
 - [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
@@ -275,3 +274,4 @@ important.
 - [x] (2) Fix resizing attention bug
 - [x] (2) Fix interleaving of attention/label
 - [x] (8) Add basic support for block quotes
+- [x] (1) use `char::REPLACEMENT_CHARACTER`?

@@ -35,7 +35,7 @@ pub fn parse(value: &str) -> Vec<Code> {
                 // Send a replacement character.
                 '\0' => {
                     column += 1;
-                    codes.push(Code::Char('�'));
+                    codes.push(Code::Char(char::REPLACEMENT_CHARACTER));
                 }
                 // Send a tab and virtual spaces.
                 '\t' => {
