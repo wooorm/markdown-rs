@@ -203,22 +203,6 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnR
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
 fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
-    let mut index = 0;
-    println!("before: {:?}", tokenizer.events.len());
-    while index < tokenizer.events.len() {
-        let event = &tokenizer.events[index];
-        println!(
-            "ev: {:?} {:?} {:?} {:?} {:?} {:?}",
-            index,
-            event.event_type,
-            event.token_type,
-            event.content_type,
-            event.previous,
-            event.next
-        );
-        index += 1;
-    }
-
     let codes = &tokenizer.parse_state.codes;
     let mut edit_map = EditMap::new();
     let mut start = 0;
@@ -289,11 +273,9 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     while close < sequences.len() {
         let sequence_close = &sequences[close];
         let mut next_index = close + 1;
-        println!("walk! {:?} {:?}", close, sequences.len());
 
         // Find a sequence that can close.
         if sequence_close.close {
-            println!("close! {:?} {:?}", close, sequence_close);
             let mut open = close;
 
             // Now walk back to find an opener.
@@ -307,7 +289,6 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     && sequence_close.marker == sequence_open.marker
                     && sequence_close.balance == sequence_open.balance
                 {
-                    println!("open! {:?} {:?}", open, sequence_open);
                     // If the opening can close or the closing can open,
                     // and the close size *is not* a multiple of three,
                     // but the sum of the opening and closing size *is*
@@ -370,7 +351,6 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     if sequence_close.size == 0 {
                         sequences.remove(close);
                         edit_map.add(close_event_index, 2, vec![]);
-                        println!("remove close");
                     } else {
                         // Shift remaining closing sequence forward.
                         // Do it here because a sequence can open and close different
@@ -379,7 +359,6 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         let mut enter = &mut tokenizer.events[close_event_index];
                         enter.point = seq_close_exit.0.clone();
                         enter.index = seq_close_exit.1;
-                        println!("change close");
                     }
 
                     let sequence_open = &mut sequences[open];
@@ -396,14 +375,12 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         sequences.remove(open);
                         edit_map.add(open_event_index, 2, vec![]);
                         next_index -= 1;
-                        println!("remove open");
                     } else {
                         // Shift remaining opening sequence backwards.
                         // See note above for why that happens here.
                         let mut exit = &mut tokenizer.events[open_event_index + 1];
                         exit.point = seq_open_enter.0.clone();
                         exit.index = seq_open_enter.1;
-                        println!("change open");
                     }
 
                     // Opening.
@@ -543,24 +520,7 @@ fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    let events = edit_map.consume(&mut tokenizer.events);
-    let mut index = 0;
-    println!("after: {:?}", events.len());
-    while index < events.len() {
-        let event = &events[index];
-        println!(
-            "ev: {:?} {:?} {:?} {:?} {:?} {:?}",
-            index,
-            event.event_type,
-            event.token_type,
-            event.content_type,
-            event.previous,
-            event.next
-        );
-        index += 1;
-    }
-
-    events
+    edit_map.consume(&mut tokenizer.events)
 }
 
 /// Classify whether a character code represents whitespace, punctuation, or
