@@ -408,58 +408,43 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     };
 
     let mut enter_map: Map = HashMap::new();
-    enter_map.insert(TokenType::CodeFencedFenceInfo, on_enter_buffer);
-    enter_map.insert(TokenType::CodeFencedFenceMeta, on_enter_buffer);
-    enter_map.insert(TokenType::HeadingAtxText, on_enter_buffer);
-    enter_map.insert(TokenType::HeadingSetextText, on_enter_buffer);
-    enter_map.insert(TokenType::Label, on_enter_buffer);
-    enter_map.insert(TokenType::ResourceTitleString, on_enter_buffer);
+
     enter_map.insert(TokenType::BlockQuote, on_enter_block_quote);
     enter_map.insert(TokenType::CodeIndented, on_enter_code_indented);
     enter_map.insert(TokenType::CodeFenced, on_enter_code_fenced);
+    enter_map.insert(TokenType::CodeFencedFenceInfo, on_enter_buffer);
+    enter_map.insert(TokenType::CodeFencedFenceMeta, on_enter_buffer);
     enter_map.insert(TokenType::CodeText, on_enter_code_text);
-    enter_map.insert(TokenType::Emphasis, on_enter_emphasis);
-    enter_map.insert(TokenType::HtmlFlow, on_enter_html_flow);
-    enter_map.insert(TokenType::HtmlText, on_enter_html_text);
-    enter_map.insert(TokenType::Image, on_enter_image);
-    enter_map.insert(TokenType::Link, on_enter_link);
-    enter_map.insert(TokenType::Resource, on_enter_resource);
-    enter_map.insert(
-        TokenType::ResourceDestinationString,
-        on_enter_resource_destination_string,
-    );
-    enter_map.insert(TokenType::Paragraph, on_enter_paragraph);
-    enter_map.insert(TokenType::Strong, on_enter_strong);
     enter_map.insert(TokenType::Definition, on_enter_definition);
     enter_map.insert(
         TokenType::DefinitionDestinationString,
         on_enter_definition_destination_string,
     );
-    enter_map.insert(TokenType::ReferenceString, on_enter_buffer);
     enter_map.insert(TokenType::DefinitionLabelString, on_enter_buffer);
     enter_map.insert(TokenType::DefinitionTitleString, on_enter_buffer);
+    enter_map.insert(TokenType::Emphasis, on_enter_emphasis);
+    enter_map.insert(TokenType::HeadingAtxText, on_enter_buffer);
+    enter_map.insert(TokenType::HeadingSetextText, on_enter_buffer);
+    enter_map.insert(TokenType::HtmlFlow, on_enter_html_flow);
+    enter_map.insert(TokenType::HtmlText, on_enter_html_text);
+    enter_map.insert(TokenType::Image, on_enter_image);
+    enter_map.insert(TokenType::Label, on_enter_buffer);
+    enter_map.insert(TokenType::Link, on_enter_link);
+    enter_map.insert(TokenType::Paragraph, on_enter_paragraph);
+    enter_map.insert(TokenType::ReferenceString, on_enter_buffer);
+    enter_map.insert(TokenType::Resource, on_enter_resource);
+    enter_map.insert(
+        TokenType::ResourceDestinationString,
+        on_enter_resource_destination_string,
+    );
+    enter_map.insert(TokenType::ResourceTitleString, on_enter_buffer);
+    enter_map.insert(TokenType::Strong, on_enter_strong);
 
     let mut exit_map: Map = HashMap::new();
-    exit_map.insert(TokenType::Emphasis, on_exit_emphasis);
-    exit_map.insert(TokenType::Label, on_exit_label);
-    exit_map.insert(TokenType::LabelText, on_exit_label_text);
-    exit_map.insert(TokenType::ReferenceString, on_exit_reference_string);
-    exit_map.insert(
-        TokenType::ResourceDestinationString,
-        on_exit_resource_destination_string,
-    );
-    exit_map.insert(
-        TokenType::ResourceTitleString,
-        on_exit_resource_title_string,
-    );
-    exit_map.insert(TokenType::Strong, on_exit_strong);
-    exit_map.insert(TokenType::Image, on_exit_media);
-    exit_map.insert(TokenType::Link, on_exit_media);
-    exit_map.insert(TokenType::CodeTextData, on_exit_data);
-    exit_map.insert(TokenType::Data, on_exit_data);
-    exit_map.insert(TokenType::CharacterEscapeValue, on_exit_data);
     exit_map.insert(TokenType::AutolinkEmail, on_exit_autolink_email);
     exit_map.insert(TokenType::AutolinkProtocol, on_exit_autolink_protocol);
+    exit_map.insert(TokenType::BlockQuote, on_exit_block_quote);
+    exit_map.insert(TokenType::CharacterEscapeValue, on_exit_data);
     exit_map.insert(
         TokenType::CharacterReferenceMarker,
         on_exit_character_reference_marker,
@@ -477,18 +462,33 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         on_exit_character_reference_value,
     );
     exit_map.insert(TokenType::CodeFenced, on_exit_code_flow);
-    exit_map.insert(TokenType::CodeIndented, on_exit_code_flow);
     exit_map.insert(TokenType::CodeFencedFence, on_exit_code_fenced_fence);
     exit_map.insert(
         TokenType::CodeFencedFenceInfo,
         on_exit_code_fenced_fence_info,
     );
     exit_map.insert(TokenType::CodeFencedFenceMeta, on_exit_drop);
-    exit_map.insert(TokenType::Resource, on_exit_drop);
     exit_map.insert(TokenType::CodeFlowChunk, on_exit_code_flow_chunk);
+    exit_map.insert(TokenType::CodeIndented, on_exit_code_flow);
     exit_map.insert(TokenType::CodeText, on_exit_code_text);
+    exit_map.insert(TokenType::CodeTextData, on_exit_data);
     exit_map.insert(TokenType::CodeTextLineEnding, on_exit_code_text_line_ending);
-    exit_map.insert(TokenType::BlockQuote, on_exit_block_quote);
+    exit_map.insert(TokenType::Data, on_exit_data);
+    exit_map.insert(TokenType::Definition, on_exit_definition);
+    exit_map.insert(
+        TokenType::DefinitionDestinationString,
+        on_exit_definition_destination_string,
+    );
+    exit_map.insert(
+        TokenType::DefinitionLabelString,
+        on_exit_definition_label_string,
+    );
+    exit_map.insert(
+        TokenType::DefinitionTitleString,
+        on_exit_definition_title_string,
+    );
+    exit_map.insert(TokenType::Emphasis, on_exit_emphasis);
+
     exit_map.insert(TokenType::HardBreakEscape, on_exit_break);
     exit_map.insert(TokenType::HardBreakTrailing, on_exit_break);
     exit_map.insert(TokenType::HeadingAtx, on_exit_heading_atx);
@@ -503,22 +503,24 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     exit_map.insert(TokenType::HtmlText, on_exit_html);
     exit_map.insert(TokenType::HtmlFlowData, on_exit_html_data);
     exit_map.insert(TokenType::HtmlTextData, on_exit_html_data);
+    exit_map.insert(TokenType::Image, on_exit_media);
+    exit_map.insert(TokenType::Label, on_exit_label);
+    exit_map.insert(TokenType::LabelText, on_exit_label_text);
     exit_map.insert(TokenType::LineEnding, on_exit_line_ending);
+    exit_map.insert(TokenType::Link, on_exit_media);
     exit_map.insert(TokenType::Paragraph, on_exit_paragraph);
+    exit_map.insert(TokenType::ReferenceString, on_exit_reference_string);
+    exit_map.insert(TokenType::Resource, on_exit_drop);
+    exit_map.insert(
+        TokenType::ResourceDestinationString,
+        on_exit_resource_destination_string,
+    );
+    exit_map.insert(
+        TokenType::ResourceTitleString,
+        on_exit_resource_title_string,
+    );
+    exit_map.insert(TokenType::Strong, on_exit_strong);
     exit_map.insert(TokenType::ThematicBreak, on_exit_thematic_break);
-    exit_map.insert(TokenType::Definition, on_exit_definition);
-    exit_map.insert(
-        TokenType::DefinitionDestinationString,
-        on_exit_definition_destination_string,
-    );
-    exit_map.insert(
-        TokenType::DefinitionLabelString,
-        on_exit_definition_label_string,
-    );
-    exit_map.insert(
-        TokenType::DefinitionTitleString,
-        on_exit_definition_title_string,
-    );
 
     // Handle one event.
     let handle = |context: &mut CompileContext, index: usize| {
