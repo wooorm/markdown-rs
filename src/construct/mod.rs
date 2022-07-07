@@ -17,7 +17,7 @@
 //! *   [attention (strong, emphasis)][attention]
 //! *   [autolink][]
 //! *   [blank line][blank_line]
-//! *   block quote
+//! *   [block quote][block_quote]
 //! *   [character escape][character_escape]
 //! *   [character reference][character_reference]
 //! *   [code (fenced)][code_fenced]
