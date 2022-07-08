@@ -299,6 +299,9 @@ fn exit_containers(
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
         assert!(matches!(result.0, State::Ok));
         assert!(result.1.is_none());
+
+        println!("  setting `interrupt: false`");
+        tokenizer.interrupt = false;
     }
 
     while info.stack.len() > size {

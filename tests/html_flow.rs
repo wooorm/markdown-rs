@@ -1018,10 +1018,9 @@ fn html_flow_7_complete() {
         "should not support lazyness (1)"
     );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark_with_options("> a\n<a>", DANGER),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<a>",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("> a\n<a>", DANGER),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<a>",
+        "should not support lazyness (2)"
+    );
 }
