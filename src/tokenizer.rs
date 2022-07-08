@@ -346,19 +346,32 @@ impl<'a> Tokenizer<'a> {
         );
 
         let previous = self.events.last().expect("cannot close w/o open event");
-        let point = self.point.clone();
+        let mut index = self.index;
+        let mut point = self.point.clone();
 
         assert!(
-            current_token != previous.token_type || previous.index != self.index,
+            current_token != previous.token_type || previous.index != index,
             "expected non-empty token"
         );
 
-        log::debug!("exit `{:?}` ({:?})", token_type, self.point);
+        // A bit weird, but if we exit right after a line ending, we *don’t* want to consider\
+        // potential skips.
+        if matches!(
+            self.previous,
+            Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
+        ) {
+            let shift = point.column - 1;
+            point.column -= shift;
+            point.offset -= shift;
+            index -= shift;
+        }
+
+        log::debug!("exit `{:?}` ({:?})", token_type, point);
         self.events.push(Event {
             event_type: EventType::Exit,
             token_type,
             point,
-            index: self.index,
+            index,
             previous: None,
             next: None,
             content_type: None,
