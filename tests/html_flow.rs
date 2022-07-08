@@ -552,12 +552,11 @@ okay.",
         "should include everything ’till a blank line"
     );
 
-    // To do: blockquote (some bug).
-    // assert_eq!(
-    //     micromark_with_options("> <div>\n> foo\n\nbar", DANGER),
-    //     "<blockquote>\n<div>\nfoo\n</blockquote>\n<p>bar</p>",
-    //     "should support basic tags w/o ending in containers (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <div>\n> foo\n\nbar", DANGER),
+        "<blockquote>\n<div>\nfoo\n</blockquote>\n<p>bar</p>",
+        "should support basic tags w/o ending in containers (1)"
+    );
 
     // To do: list.
     // assert_eq!(

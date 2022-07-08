@@ -57,7 +57,7 @@ fn code_fenced() {
         "should support an eof somewhere in content"
     );
 
-    // To do: blockquote (some bug).
+    // To do: blockquote (fix exits, fix compiler).
     // assert_eq!(
     //     micromark("> ```\n> aaa\n\nbbb"),
     //     "<blockquote>\n<pre><code>aaa\n</code></pre>\n</blockquote>\n<p>bbb</p>",
@@ -227,14 +227,14 @@ fn code_fenced() {
       "should not support a closing sequence w/ too much indent, regardless of opening sequence (1)"
     );
 
-    // To do: blockquote (some bug).
+    // To do: blockquote (fix exits, fix compiler).
     // assert_eq!(
     //     micromark("> ```\n>\n>\n>\n\na"),
     //     "<blockquote>\n<pre><code>\n\n\n</code></pre>\n</blockquote>\n<p>a</p>",
     //     "should not support a closing sequence w/ too much indent, regardless of opening sequence (2)"
     // );
 
-    // To do: blockquote (some bug, perhaps compiler).
+    // To do: blockquote (fix exits, fix compiler).
     // assert_eq!(
     //     micromark("> ```a\nb"),
     //     "<blockquote>\n<pre><code class=\"language-a\"></code></pre>\n</blockquote>\n<p>b</p>",
@@ -247,7 +247,7 @@ fn code_fenced() {
         "should not support lazyness (2)"
     );
 
-    // To do: blockquote (some bug, also compiler).
+    // To do: blockquote (fix exits, fix compiler).
     // assert_eq!(
     //     micromark("> ```a\n```"),
     //     "<blockquote>\n<pre><code class=\"language-a\"></code></pre>\n</blockquote>\n<pre><code></code></pre>\n",
