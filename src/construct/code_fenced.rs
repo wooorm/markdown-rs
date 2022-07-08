@@ -568,6 +568,7 @@ fn content_continue(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateF
 /// console.log('1')
 /// ~~~|
 /// ```
+#[allow(clippy::needless_pass_by_value)]
 fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.exit(Token::CodeFenced);
     // Feel free to interrupt.

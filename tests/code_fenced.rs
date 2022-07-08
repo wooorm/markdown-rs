@@ -234,7 +234,7 @@ fn code_fenced() {
     //     "should not support a closing sequence w/ too much indent, regardless of opening sequence (2)"
     // );
 
-    // To do: blockquote (some bug).
+    // To do: blockquote (some bug, perhaps compiler).
     // assert_eq!(
     //     micromark("> ```a\nb"),
     //     "<blockquote>\n<pre><code class=\"language-a\"></code></pre>\n</blockquote>\n<p>b</p>",
@@ -247,7 +247,7 @@ fn code_fenced() {
         "should not support lazyness (2)"
     );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (some bug, also compiler).
     // assert_eq!(
     //     micromark("> ```a\n```"),
     //     "<blockquote>\n<pre><code class=\"language-a\"></code></pre>\n</blockquote>\n<pre><code></code></pre>\n",

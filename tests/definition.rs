@@ -192,12 +192,11 @@ fn definition() {
         "should support definitions after definitions"
     );
 
-    // To do: block quote (some bug).
-    // assert_eq!(
-    //     micromark("> [foo]: /url\n\n[foo]"),
-    //     "<blockquote>\n</blockquote>\n<p><a href=\"/url\">foo</a></p>",
-    //     "should support definitions in block quotes"
-    // );
+    assert_eq!(
+        micromark("> [foo]: /url\n\n[foo]"),
+        "<blockquote>\n</blockquote>\n<p><a href=\"/url\">foo</a></p>",
+        "should support definitions in block quotes"
+    );
 
     // Extra
     assert_eq!(

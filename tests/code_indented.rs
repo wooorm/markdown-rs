@@ -76,12 +76,11 @@ fn code_indented() {
         "should support trailing whitespace"
     );
 
-    // To do: blockquote (some bug).
-    // assert_eq!(
-    //     micromark(">     a\nb"),
-    //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<p>b</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark(">     a\nb"),
+        "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<p>b</p>",
+        "should not support lazyness (1)"
+    );
 
     // To do: blockquote (lazy).
     // assert_eq!(

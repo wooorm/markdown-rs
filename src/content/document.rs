@@ -155,7 +155,7 @@ fn document_continue(
     //   assert(point, 'could not find previous flow chunk')
 
     let size = info.continued;
-    exit_containers(tokenizer, &mut info, size);
+    info = exit_containers(tokenizer, info, size);
 
     //   // Fix positions.
     //   let index = indexBeforeExits
@@ -195,8 +195,7 @@ fn check_new_containers(
     // step 1 before creating the new block as a child of the last matched
     // block.
     if info.continued == info.stack.len() {
-        println!("  to do: interrupt ({:?})?", tokenizer.interrupt);
-        //   // No need to `check` whether there’s a container, of `exitContainers`
+        //   // No need to `check` whether there’s a container, if `exitContainers`
         //   // would be moot.
         //   // We can instead immediately `attempt` to parse one.
         //   if (!childFlow) {
@@ -211,6 +210,7 @@ fn check_new_containers(
             return flow_start(tokenizer, code, info);
         }
 
+        println!("  to do: interrupt ({:?})?", tokenizer.interrupt);
         //   // If we do have flow, it could still be a blank line,
         //   // but we’d be interrupting it w/ a new container if there’s a current
         //   // construct.
@@ -237,17 +237,26 @@ fn there_is_a_new_container(
     name: String,
 ) -> StateFnResult {
     println!("there_is_a_new_container");
-    println!("  todo: close_flow");
-    // if (childFlow) closeFlow()
     let size = info.continued;
-    exit_containers(tokenizer, &mut info, size);
+    info = exit_containers(tokenizer, info, size);
     info.stack.push(name);
     info.continued += 1;
     document_continued(tokenizer, code, info)
 }
 
 /// Exit open containers.
-fn exit_containers(tokenizer: &mut Tokenizer, info: &mut DocumentInfo, size: usize) {
+fn exit_containers(tokenizer: &mut Tokenizer, mut info: DocumentInfo, size: usize) -> DocumentInfo {
+    if info.stack.len() > size {
+        println!("closing flow. To do: are these resulting exits okay?");
+        let index_before = tokenizer.events.len();
+        let result = tokenizer.flush(info.next);
+        info.next = Box::new(flow); // This is weird but Rust needs a function there.
+        assert!(matches!(result.0, State::Ok));
+        assert!(result.1.is_none());
+        let shift = tokenizer.events.len() - index_before;
+        info.last_line_ending_index = info.last_line_ending_index.map(|d| d + shift);
+    }
+
     while info.stack.len() > size {
         let name = info.stack.pop().unwrap();
 
@@ -280,6 +289,8 @@ fn exit_containers(tokenizer: &mut Tokenizer, info: &mut DocumentInfo, size: usi
         let mut index = 0;
         while index < token_types.len() {
             let token_type = &token_types[index];
+
+            println!("injected exit for `{:?}`", token_type);
 
             info.map.add(
                 insert_index,
@@ -314,6 +325,8 @@ fn exit_containers(tokenizer: &mut Tokenizer, info: &mut DocumentInfo, size: usi
             index += 1;
         }
     }
+
+    info
 }
 
 fn there_is_no_new_container(
@@ -373,14 +386,15 @@ fn container_continue(
 }
 
 fn flow_start(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> StateFnResult {
-    println!("flow_start");
-    let next = info.next;
-    info.next = Box::new(flow); // This is weird but Rust needs a function there.
+    println!("flow_start {:?}", code);
 
     let size = info.continued;
-    exit_containers(tokenizer, &mut info, size);
+    info = exit_containers(tokenizer, info, size);
 
-    tokenizer.go_until(next, eof_eol, move |(state, remainder)| {
+    let state = info.next;
+    info.next = Box::new(flow); // This is weird but Rust needs a function there.
+
+    tokenizer.go_until(state, eof_eol, move |(state, remainder)| {
         (
             State::Fn(Box::new(move |t, c| flow_end(t, c, info, state))),
             remainder,
@@ -414,10 +428,15 @@ fn flow_end(
         info.last_line_ending_index = None;
     }
 
+    println!(
+        "set `last_line_ending_index` to {:?}",
+        info.last_line_ending_index
+    );
+
     match result {
         State::Ok => {
             println!("State::Ok");
-            exit_containers(tokenizer, &mut info, 0);
+            info = exit_containers(tokenizer, info, 0);
             tokenizer.events = info.map.consume(&mut tokenizer.events);
             (State::Ok, Some(vec![code]))
         }

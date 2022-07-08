@@ -413,12 +413,7 @@ impl<'a> Tokenizer<'a> {
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
                 if ok {
-                    feed_impl(
-                        tokenizer,
-                        &if ok { result.1 } else { result.0 },
-                        after,
-                        false,
-                    )
+                    feed_impl(tokenizer, &if ok { result.1 } else { result.0 }, after)
                 } else {
                     (State::Nok, None)
                 }
@@ -468,7 +463,7 @@ impl<'a> Tokenizer<'a> {
             vec![],
             |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
                 tokenizer.free(previous);
-                feed_impl(tokenizer, &result.0, done(ok), false)
+                feed_impl(tokenizer, &result.0, done(ok))
             },
         )
     }
@@ -508,7 +503,7 @@ impl<'a> Tokenizer<'a> {
                     codes,
                     tokenizer.point
                 );
-                feed_impl(tokenizer, &codes, done(ok), false)
+                feed_impl(tokenizer, &codes, done(ok))
             },
         )
     }
@@ -556,9 +551,16 @@ impl<'a> Tokenizer<'a> {
     ) -> StateFnResult {
         assert!(!self.drained, "cannot feed after drain");
 
-        let result = feed_impl(self, codes, start, drain);
+        let mut result = feed_impl(self, codes, start);
 
         if drain {
+            let func = match result.0 {
+                State::Fn(func) => func,
+                _ => unreachable!("expected next state"),
+            };
+
+            result = flush_impl(self, func);
+
             self.drained = true;
 
             while !self.resolvers.is_empty() {
@@ -568,6 +570,14 @@ impl<'a> Tokenizer<'a> {
         }
 
         result
+    }
+
+    /// To do.
+    pub fn flush(
+        &mut self,
+        start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+    ) -> StateFnResult {
+        flush_impl(self, start)
     }
 }
 
@@ -635,7 +645,6 @@ fn feed_impl(
     tokenizer: &mut Tokenizer,
     codes: &[Code],
     start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-    drain: bool,
 ) -> StateFnResult {
     let codes = codes;
     let mut state = State::Fn(Box::new(start));
@@ -665,10 +674,17 @@ fn feed_impl(
         }
     }
 
-    // Yield to a higher loop if we shouldn’t feed EOFs.
-    if !drain {
-        return check_statefn_result((state, Some(codes[index..].to_vec())));
-    }
+    // Yield to a higher loop.
+    check_statefn_result((state, Some(codes[index..].to_vec())))
+}
+
+/// To do.
+fn flush_impl(
+    tokenizer: &mut Tokenizer,
+    start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+) -> StateFnResult {
+    let mut state = State::Fn(Box::new(start));
+    tokenizer.consumed = true;
 
     loop {
         // Feed EOF.

@@ -171,12 +171,11 @@ p {color:blue;}
         "should support blank lines in raw"
     );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark_with_options("> <script>\na", DANGER),
-    //     "<blockquote>\n<script>\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <script>\na", DANGER),
+        "<blockquote>\n<script>\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     assert_eq!(
         micromark_with_options("> a\n<script>", DANGER),
@@ -270,12 +269,11 @@ fn html_flow_2_comment() {
         "should support blank lines in comments"
     );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark_with_options("> <!--\na", DANGER),
-    //     "<blockquote>\n<!--\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <!--\na", DANGER),
+        "<blockquote>\n<!--\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     assert_eq!(
         micromark_with_options("> a\n<!--", DANGER),
@@ -317,12 +315,11 @@ fn html_flow_3_instruction() {
         "should support blank lines in instructions"
     );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark_with_options("> <?\na", DANGER),
-    //     "<blockquote>\n<?\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <?\na", DANGER),
+        "<blockquote>\n<?\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     assert_eq!(
         micromark_with_options("> a\n<?", DANGER),
@@ -372,12 +369,11 @@ fn html_flow_4_declaration() {
         "should support blank lines in declarations"
     );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark_with_options("> <!a\nb", DANGER),
-    //     "<blockquote>\n<!a\n</blockquote>\n<p>b</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <!a\nb", DANGER),
+        "<blockquote>\n<!a\n</blockquote>\n<p>b</p>",
+        "should not support lazyness (1)"
+    );
 
     assert_eq!(
         micromark_with_options("> a\n<!b", DANGER),
@@ -436,12 +432,11 @@ fn html_flow_5_cdata() {
         "should support blank lines in cdata"
     );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark_with_options("> <![CDATA[\na", DANGER),
-    //     "<blockquote>\n<![CDATA[\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <![CDATA[\na", DANGER),
+        "<blockquote>\n<![CDATA[\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     assert_eq!(
         micromark_with_options("> a\n<![CDATA[", DANGER),
@@ -715,12 +710,11 @@ okay.",
         "should not support blank lines in basic"
     );
 
-    // To do: block quote (some bug).
-    // assert_eq!(
-    //     micromark_with_options("> <div\na", DANGER),
-    //     "<blockquote>\n<div\n</blockquote>\n<p>a</p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <div\na", DANGER),
+        "<blockquote>\n<div\n</blockquote>\n<p>a</p>",
+        "should not support lazyness (1)"
+    );
 
     assert_eq!(
         micromark_with_options("> a\n<div", DANGER),
@@ -1019,12 +1013,11 @@ fn html_flow_7_complete() {
         "should not support blank lines in complete"
     );
 
-    // To do: containers: close flow when closing container.
-    // assert_eq!(
-    //     micromark_with_options("> <a>\n*bar*", DANGER),
-    //     "<blockquote>\n<a>\n</blockquote>\n<p><em>bar</em></p>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("> <a>\n*bar*", DANGER),
+        "<blockquote>\n<a>\n</blockquote>\n<p><em>bar</em></p>",
+        "should not support lazyness (1)"
+    );
 
     // To do: blockquote (lazy).
     // assert_eq!(

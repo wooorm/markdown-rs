@@ -47,12 +47,11 @@ fn block_quote() {
         "should support setext headings underlines in block quotes"
     );
 
-    // To do: block quote (lazy, setext underline)
-    // assert_eq!(
-    //     micromark("> a\n---"),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<hr />",
-    //     "should not support lazy setext headings underlines in block quotes"
-    // );
+    assert_eq!(
+        micromark("> a\n---"),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<hr />",
+        "should not support lazy setext headings underlines in block quotes"
+    );
 
     // To do: list.
     // assert_eq!(
@@ -156,26 +155,25 @@ fn block_quote() {
         "should not support interrupting a blank line in a block quotes w/ paragraphs"
     );
 
-    // To do: block quote (multi, lazy).
+    // To do: block quote (lazy).
     // assert_eq!(
     //     micromark("> > > a\nb"),
     //     "<blockquote>\n<blockquote>\n<blockquote>\n<p>a\nb</p>\n</blockquote>\n</blockquote>\n</blockquote>",
     //     "should not support interrupting many block quotes w/ paragraphs (1)"
     // );
 
-    // To do: block quote (multi, lazy).
+    // To do: block quote (lazy).
     // assert_eq!(
     //     micromark(">>> a\n> b\n>>c"),
     //     "<blockquote>\n<blockquote>\n<blockquote>\n<p>a\nb\nc</p>\n</blockquote>\n</blockquote>\n</blockquote>",
     //     "should not support interrupting many block quotes w/ paragraphs (2)"
     // );
 
-    // To do: block quote (exit flow if container exits).
-    // assert_eq!(
-    //     micromark(">     a\n\n>    b"),
-    //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<blockquote>\n<p>b</p>\n</blockquote>",
-    //     "should support 5 spaces for indented code, not 4"
-    // );
+    assert_eq!(
+        micromark(">     a\n\n>    b"),
+        "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<blockquote>\n<p>b</p>\n</blockquote>",
+        "should support 5 spaces for indented code, not 4"
+    );
 
     // To do: turning things off.
     // assert_eq!(
