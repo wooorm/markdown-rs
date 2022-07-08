@@ -199,6 +199,9 @@ pub struct Tokenizer<'a> {
     ///
     /// Used when tokenizing [flow content][crate::content::flow].
     pub interrupt: bool,
+    /// To do.
+    pub concrete: bool,
+    /// To do.
     pub lazy: bool,
 }
 
@@ -220,6 +223,7 @@ impl<'a> Tokenizer<'a> {
             label_start_list_loose: vec![],
             media_list: vec![],
             interrupt: false,
+            concrete: false,
             lazy: false,
             resolvers: vec![],
             resolver_ids: vec![],

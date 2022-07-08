@@ -48,8 +48,6 @@ cargo doc --document-private-items
 
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
       subtokenization is solved
-- [ ] (3) Concrete constructs: HTML or code (fenced) cannot be “pierced” into by
-      containers
 - [ ] (3) Lazy lines, in containers, in flow in a paragraph, a line does not
       need to be indented
 - [ ] (5) There’s a lot of rust-related choosing whether to pass (mutable)
@@ -129,7 +127,6 @@ cargo doc --document-private-items
 
 - [ ] (3) Fix some block quote bugs
 - [ ] (3) Lazy lines (`code indented`, `html flow`)
-- [ ] (3) Concrete (`html flow`)
 - [ ] (8) list\
        test (`character_reference`, `code_indented`, `heading_setext`,
       `html_flow`, `thematic_break`)\
@@ -274,4 +271,6 @@ important.
 - [x] (2) Fix resizing attention bug
 - [x] (2) Fix interleaving of attention/label
 - [x] (8) Add basic support for block quotes
-- [x] (1) use `char::REPLACEMENT_CHARACTER`?
+- [x] (1) Use `char::REPLACEMENT_CHARACTER`?
+- [x] (3) Add support for concrete constructs
+      (html (flow) or code (fenced) cannot be “pierced” into by containers)

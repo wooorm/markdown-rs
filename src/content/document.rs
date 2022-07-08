@@ -195,7 +195,7 @@ fn check_new_containers(
     // step 1 before creating the new block as a child of the last matched
     // block.
     if info.continued == info.stack.len() {
-        println!("  to do: concrete? interrupt?");
+        println!("  to do: interrupt ({:?})?", tokenizer.interrupt);
         //   // No need to `check` whether there’s a container, of `exitContainers`
         //   // would be moot.
         //   // We can instead immediately `attempt` to parse one.
@@ -203,12 +203,13 @@ fn check_new_containers(
         //     return documentContinued(code)
         //   }
 
-        //   // If we have concrete content, such as block HTML or fenced code,
-        //   // we can’t have containers “pierce” into them, so we can immediately
-        //   // start.
-        //   if (childFlow.currentConstruct && childFlow.currentConstruct.concrete) {
-        //     return flowStart(code)
-        //   }
+        // If we have concrete content, such as block HTML or fenced code,
+        // we can’t have containers “pierce” into them, so we can immediately
+        // start.
+        if tokenizer.concrete {
+            println!("  concrete!");
+            return flow_start(tokenizer, code, info);
+        }
 
         //   // If we do have flow, it could still be a blank line,
         //   // but we’d be interrupting it w/ a new container if there’s a current

@@ -106,8 +106,6 @@ use crate::token::Token;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 use crate::util::codes::{parse, serialize};
 
-// To do: mark as concrete (block quotes or lists can’t “pierce” into HTML).
-
 /// Kind of HTML (flow).
 #[derive(Debug, PartialEq)]
 enum Kind {
@@ -195,6 +193,8 @@ struct Info {
     index: usize,
     /// Current quote, when in a double or single quoted attribute value.
     quote: Option<QuoteKind>,
+    /// To do.
+    concrete: bool,
 }
 
 /// Start of HTML (flow), before optional whitespace.
@@ -240,6 +240,7 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         buffer: vec![],
         index: 0,
         quote: None,
+        concrete: tokenizer.concrete,
     };
 
     match code {
@@ -260,6 +261,8 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::Char('?') => {
             info.kind = Kind::Instruction;
             tokenizer.consume(code);
+            // Do not form containers.
+            tokenizer.concrete = true;
             // While we’re in an instruction instead of a declaration, we’re on a `?`
             // right now, so we do need to search for `>`, similar to declarations.
             (
@@ -305,6 +308,8 @@ fn declaration_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> St
         Code::Char('A'..='Z' | 'a'..='z') => {
             tokenizer.consume(code);
             info.kind = Kind::Declaration;
+            // Do not form containers.
+            tokenizer.concrete = true;
             (
                 State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
@@ -323,6 +328,8 @@ fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Sta
     match code {
         Code::Char('-') => {
             tokenizer.consume(code);
+            // Do not form containers.
+            tokenizer.concrete = true;
             (
                 State::Fn(Box::new(|t, c| continuation_declaration_inside(t, c, info))),
                 None,
@@ -348,6 +355,8 @@ fn cdata_open_inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> S
 
         if info.index == info.buffer.len() {
             info.buffer.clear();
+            // Do not form containers.
+            tokenizer.concrete = true;
             (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
         } else {
             (
@@ -396,6 +405,8 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 
             if !slash && info.start_tag && HTML_RAW_NAMES.contains(&name) {
                 info.kind = Kind::Raw;
+                // Do not form containers.
+                tokenizer.concrete = true;
                 continuation(tokenizer, code, info)
             } else if HTML_BLOCK_NAMES.contains(&name) {
                 // Basic is assumed, no need to set `kind`.
@@ -406,6 +417,8 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
                         None,
                     )
                 } else {
+                    // Do not form containers.
+                    tokenizer.concrete = true;
                     continuation(tokenizer, code, info)
                 }
             } else {
@@ -439,6 +452,8 @@ fn basic_self_closing(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
     match code {
         Code::Char('>') => {
             tokenizer.consume(code);
+            // Do not form containers.
+            tokenizer.concrete = true;
             (State::Fn(Box::new(|t, c| continuation(t, c, info))), None)
         }
         _ => (State::Nok, None),
@@ -695,6 +710,8 @@ fn complete_end(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
 fn complete_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            // Do not form containers.
+            tokenizer.concrete = true;
             continuation(tokenizer, code, info)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
@@ -793,6 +810,8 @@ fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Sta
             tokenizer.exit(Token::HtmlFlow);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
+            // Restore previous `concrete`.
+            tokenizer.concrete = info.concrete;
             (State::Ok, Some(vec![code]))
         }
         // To do: do not allow lazy lines.
@@ -960,6 +979,8 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
             tokenizer.exit(Token::HtmlFlow);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
+            // Restore previous `concrete`.
+            tokenizer.concrete = info.concrete;
             (State::Ok, Some(vec![code]))
         }
         _ => {

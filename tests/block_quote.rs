@@ -170,7 +170,7 @@ fn block_quote() {
     //     "should not support interrupting many block quotes w/ paragraphs (2)"
     // );
 
-    // To do: block quote (some bug).
+    // To do: block quote (exit flow if container exits).
     // assert_eq!(
     //     micromark(">     a\n\n>    b"),
     //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<blockquote>\n<p>b</p>\n</blockquote>",

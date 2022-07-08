@@ -3,19 +3,17 @@ use micromark::micromark;
 
 #[test]
 fn code_fenced() {
-    // To do: concrete constructs (code fenced).
-    // assert_eq!(
-    //     micromark("```\n<\n >\n```"),
-    //     "<pre><code>&lt;\n &gt;\n</code></pre>",
-    //     "should support fenced code w/ grave accents"
-    // );
+    assert_eq!(
+        micromark("```\n<\n >\n```"),
+        "<pre><code>&lt;\n &gt;\n</code></pre>",
+        "should support fenced code w/ grave accents"
+    );
 
-    // To do: concrete constructs (code fenced).
-    // assert_eq!(
-    //     micromark("~~~\n<\n >\n~~~"),
-    //     "<pre><code>&lt;\n &gt;\n</code></pre>",
-    //     "should support fenced code w/ tildes"
-    // );
+    assert_eq!(
+        micromark("~~~\n<\n >\n~~~"),
+        "<pre><code>&lt;\n &gt;\n</code></pre>",
+        "should support fenced code w/ tildes"
+    );
 
     assert_eq!(
         micromark("``\nfoo\n``"),

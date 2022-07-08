@@ -366,12 +366,11 @@ fn html_flow_4_declaration() {
 
     // Note about the lower letter:
     // <https://github.com/commonmark/commonmark-spec/pull/621>
-    // To do: concrete constructs (html flow).
-    // assert_eq!(
-    //     micromark_with_options("<!a\n  \n  \n>", DANGER),
-    //     "<!a\n  \n  \n>",
-    //     "should support blank lines in declarations"
-    // );
+    assert_eq!(
+        micromark_with_options("<!a\n  \n  \n>", DANGER),
+        "<!a\n  \n  \n>",
+        "should support blank lines in declarations"
+    );
 
     // To do: blockquote (lazy).
     // assert_eq!(
@@ -1020,7 +1019,7 @@ fn html_flow_7_complete() {
         "should not support blank lines in complete"
     );
 
-    // To do: blockquote (some bug).
+    // To do: containers: close flow when closing container.
     // assert_eq!(
     //     micromark_with_options("> <a>\n*bar*", DANGER),
     //     "<blockquote>\n<a>\n</blockquote>\n<p><em>bar</em></p>",
