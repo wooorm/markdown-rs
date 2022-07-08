@@ -295,10 +295,25 @@ fn exit_containers(
     if info.stack.len() > size {
         // To do: inject these somewhere? Fix positions?
         println!("closing flow. To do: are these resulting exits okay?");
+        let index = tokenizer.events.len();
         let result = tokenizer.flush(info.next);
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
         assert!(matches!(result.0, State::Ok));
         assert!(result.1.is_none());
+
+        let mut end = tokenizer.events.len();
+        while end > 0 && end > index {
+            if tokenizer.events[end - 1].token_type != Token::LineEnding {
+                break;
+            }
+
+            end -= 1;
+        }
+
+        let mut add = tokenizer.events.drain(index..end).collect::<Vec<_>>();
+
+        println!("evs: {:#?}", add);
+        exits.append(&mut add);
 
         println!("  setting `interrupt: false`");
         tokenizer.interrupt = false;

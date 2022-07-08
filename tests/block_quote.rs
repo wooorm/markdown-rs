@@ -74,12 +74,11 @@ fn block_quote() {
     //     "should not support lazy indented code in block quotes"
     // );
 
-    // To do: block quote (lazy, code (fenced)).
-    // assert_eq!(
-    //     micromark("> ```\na\n```"),
-    //     "<blockquote>\n<pre><code></code></pre>\n</blockquote>\n<p>a</p>\n<pre><code></code></pre>\n",
-    //     "should not support lazy fenced code in block quotes"
-    // );
+    assert_eq!(
+        micromark("> ```\na\n```"),
+        "<blockquote>\n<pre><code></code></pre>\n</blockquote>\n<p>a</p>\n<pre><code></code></pre>\n",
+        "should not support lazy fenced code in block quotes"
+    );
 
     // To do: list.
     // assert_eq!(
