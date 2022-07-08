@@ -82,42 +82,42 @@ fn code_indented() {
         "should not support lazyness (1)"
     );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (lazy, some bug).
     // assert_eq!(
     //     micromark("> a\n    b"),
     //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
     //     "should not support lazyness (2)"
     // );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (lazy, some bug).
     // assert_eq!(
     //     micromark("> a\n     b"),
     //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
     //     "should not support lazyness (3)"
     // );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (lazy, some bug).
     // assert_eq!(
     //     micromark("> a\n      b"),
     //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
     //     "should not support lazyness (4)"
     // );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (lazy, some bug).
     // assert_eq!(
     //     micromark(">     a\n    b"),
     //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<pre><code>b\n</code></pre>",
     //     "should not support lazyness (5)"
     // );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (lazy, some bug).
     // assert_eq!(
     //     micromark(">     a\n     b"),
     //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<pre><code> b\n</code></pre>",
     //     "should not support lazyness (6)"
     // );
 
-    // To do: blockquote (lazy).
+    // To do: blockquote (lazy, some bug).
     // assert_eq!(
     //     micromark(">     a\n      b"),
     //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<pre><code>  b\n</code></pre>",

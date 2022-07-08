@@ -241,8 +241,44 @@ fn there_is_a_new_container(
     println!("there_is_a_new_container");
     let size = info.continued;
     info = exit_containers(tokenizer, info, size, true);
+
+    // Remove from the event stack.
+    // We’ll properly add exits at different points manually.
+    // To do: list.
+    let end = if name == "blockquote" {
+        block_quote_end
+    } else {
+        unreachable!("todo: cont {:?}", name)
+    };
+
+    println!("creating exit for `{:?}`", name);
+
+    let token_types = end();
+
+    let mut index = 0;
+    while index < token_types.len() {
+        let token_type = &token_types[index];
+        let mut stack_index = tokenizer.stack.len();
+        println!("stack: {:?}", tokenizer.stack);
+        let mut found = false;
+
+        while stack_index > 0 {
+            stack_index -= 1;
+
+            if tokenizer.stack[stack_index] == *token_type {
+                tokenizer.stack.remove(stack_index);
+                found = true;
+                break;
+            }
+        }
+
+        assert!(found, "expected to find container token to exit");
+        index += 1;
+    }
+
     println!("add to stack: {:?}", name);
     info.stack.push(name);
+
     info.continued += 1;
     document_continued(tokenizer, code, info)
 }
@@ -294,20 +330,6 @@ fn exit_containers(
                 content_type: None,
             });
 
-            let mut stack_index = tokenizer.stack.len();
-            let mut found = false;
-
-            while stack_index > 0 {
-                stack_index -= 1;
-
-                if tokenizer.stack[stack_index] == *token_type {
-                    tokenizer.stack.remove(stack_index);
-                    found = true;
-                    break;
-                }
-            }
-
-            assert!(found, "expected to find container token to exit");
             index += 1;
         }
     }
