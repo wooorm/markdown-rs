@@ -125,7 +125,6 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (3) Fix some block quote bugs
 - [ ] (3) Lazy lines (`code indented`, `html flow`)
 - [ ] (8) list\
        test (`character_reference`, `code_indented`, `heading_setext`,
@@ -273,3 +272,4 @@ important.
 - [x] (3) Add support for concrete constructs
       (html (flow) or code (fenced) cannot be “pierced” into by containers)
 - [x] (1) Make sure that rust character groups match CM character groups
+- [x] (3) Fix block quote bug

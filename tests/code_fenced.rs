@@ -226,12 +226,11 @@ fn code_fenced() {
       "should not support a closing sequence w/ too much indent, regardless of opening sequence (1)"
     );
 
-    // To do: blockquote (fix compiler).
-    // assert_eq!(
-    //     micromark("> ```\n>\n>\n>\n\na"),
-    //     "<blockquote>\n<pre><code>\n\n\n</code></pre>\n</blockquote>\n<p>a</p>",
-    //     "should not support a closing sequence w/ too much indent, regardless of opening sequence (2)"
-    // );
+    assert_eq!(
+        micromark("> ```\n>\n>\n>\n\na"),
+        "<blockquote>\n<pre><code>\n\n\n</code></pre>\n</blockquote>\n<p>a</p>",
+        "should not support a closing sequence w/ too much indent, regardless of opening sequence (2)"
+    );
 
     assert_eq!(
         micromark("> ```a\nb"),

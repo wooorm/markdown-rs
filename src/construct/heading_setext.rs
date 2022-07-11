@@ -130,11 +130,6 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let paragraph_before =
         previous > 1 && tokenizer.events[previous].token_type == Token::Paragraph;
 
-    println!(
-        "setext-start: {:?} {:?} {:?}",
-        tokenizer.interrupt, tokenizer.lazy, paragraph_before
-    );
-
     // Require a paragraph before and do not allow on a lazy line.
     if paragraph_before && !tokenizer.lazy {
         // To do: allow arbitrary when code (indented) is turned off.

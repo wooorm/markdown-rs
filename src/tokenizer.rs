@@ -247,8 +247,10 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Prepare for a next code to get consumed.
-    fn expect(&mut self, code: Code) {
-        assert!(self.consumed, "expected previous character to be consumed");
+    pub fn expect(&mut self, code: Code, force: bool) {
+        if !force {
+            assert!(self.consumed, "expected previous character to be consumed");
+        }
         self.consumed = false;
         self.current = code;
     }
@@ -609,7 +611,6 @@ fn attempt_impl(
         // Should it be before?
         // How to match `eof`?
         if !codes.is_empty() && pause(tokenizer.previous) {
-            tokenizer.consumed = true;
             println!("pause!: {:?}", (codes.clone(), vec![code]));
             return done(
                 (codes, vec![code]),
@@ -674,7 +675,7 @@ fn feed_impl(
             }
             State::Fn(func) => {
                 log::debug!("main: passing `{:?}`", code);
-                tokenizer.expect(code);
+                tokenizer.expect(code, false);
                 let (next, remainder) = check_statefn_result(func(tokenizer, code));
                 state = next;
                 index = index + 1
@@ -706,7 +707,7 @@ fn flush_impl(
             State::Fn(func) => {
                 let code = Code::None;
                 log::debug!("main: passing eof");
-                tokenizer.expect(code);
+                tokenizer.expect(code, false);
                 let (next, remainder) = check_statefn_result(func(tokenizer, code));
                 assert!(remainder.is_none(), "expected no remainder");
                 state = next;

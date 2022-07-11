@@ -237,6 +237,7 @@ struct CompileContext<'a> {
     pub character_reference_kind: Option<CharacterReferenceKind>,
     pub media_stack: Vec<Media>,
     pub definitions: HashMap<String, Definition>,
+    pub tight_stack: Vec<bool>,
     /// Fields used to influance the current compilation.
     pub slurp_one_line_ending: bool,
     pub tags: bool,
@@ -270,6 +271,7 @@ impl<'a> CompileContext<'a> {
             character_reference_kind: None,
             media_stack: vec![],
             definitions: HashMap::new(),
+            tight_stack: vec![],
             slurp_one_line_ending: false,
             tags: true,
             ignore_encode: false,
@@ -604,7 +606,7 @@ fn on_enter_buffer(context: &mut CompileContext) {
 
 /// Handle [`Enter`][EventType::Enter]:[`BlockQuote`][Token::BlockQuote].
 fn on_enter_block_quote(context: &mut CompileContext) {
-    // tightStack.push(false)
+    context.tight_stack.push(false);
     context.line_ending_if_needed();
     context.tag("<blockquote>".to_string());
 }
@@ -761,7 +763,7 @@ fn on_exit_break(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`BlockQuote`][Token::BlockQuote].
 fn on_exit_block_quote(context: &mut CompileContext) {
-    // tightStack.pop()
+    context.tight_stack.pop();
     context.line_ending_if_needed();
     context.tag("</blockquote>".to_string());
     // let mut slurp_all_line_endings = false;
@@ -842,15 +844,16 @@ fn on_exit_code_flow(context: &mut CompileContext) {
         .take()
         .expect("`code_flow_seen_data` must be defined");
 
-    // To do: containers.
     // One special case is if we are inside a container, and the fenced code was
     // not closed (meaning it runs to the end).
     // In that case, the following line ending, is considered *outside* the
     // fenced code and block quote by micromark, but CM wants to treat that
     // ending as part of the code.
-    // if fenced_count != None && fenced_count < 2 && tightStack.length > 0 && !last_was_tag {
-    //     line_ending();
-    // }
+    if let Some(count) = context.code_fenced_fences_count {
+        if count == 1 && !context.tight_stack.is_empty() && !context.last_was_tag {
+            context.line_ending();
+        }
+    }
 
     // But in most cases, it’s simpler: when we’ve seen some data, emit an extra
     // line ending when needed.

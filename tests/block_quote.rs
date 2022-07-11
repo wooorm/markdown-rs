@@ -67,12 +67,11 @@ fn block_quote() {
     //     "should not support lazy lists in block quotes"
     // );
 
-    // To do: block quote (lazy, code (indented), some bug).
-    // assert_eq!(
-    //     micromark(">     a\n    b"),
-    //     "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<pre><code>b\n</code></pre>",
-    //     "should not support lazy indented code in block quotes"
-    // );
+    assert_eq!(
+        micromark(">     a\n    b"),
+        "<blockquote>\n<pre><code>a\n</code></pre>\n</blockquote>\n<pre><code>b\n</code></pre>",
+        "should not support lazy indented code in block quotes"
+    );
 
     assert_eq!(
         micromark("> ```\na\n```"),

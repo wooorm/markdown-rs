@@ -158,6 +158,7 @@ fn document_continue(
 
     let size = info.continued;
     info = exit_containers(tokenizer, info, size, true);
+    tokenizer.expect(code, true);
 
     //   // Fix positions.
     //   let index = indexBeforeExits
@@ -241,6 +242,7 @@ fn there_is_a_new_container(
     println!("there_is_a_new_container");
     let size = info.continued;
     info = exit_containers(tokenizer, info, size, true);
+    tokenizer.expect(code, true);
 
     // Remove from the event stack.
     // We’ll properly add exits at different points manually.
@@ -251,7 +253,7 @@ fn there_is_a_new_container(
         unreachable!("todo: cont {:?}", name)
     };
 
-    println!("creating exit for `{:?}`", name);
+    println!("creating exit (a) for `{:?}`", name);
 
     let token_types = end();
 
@@ -329,7 +331,7 @@ fn exit_containers(
             unreachable!("todo: cont {:?}", name)
         };
 
-        println!("creating exit for `{:?}`", name);
+        println!("creating exit (b) for `{:?}`", name);
 
         let token_types = end();
 
@@ -429,6 +431,7 @@ fn flow_start(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> 
     // Exit containers.
     let size = info.continued;
     info = exit_containers(tokenizer, info, size, true);
+    tokenizer.expect(code, true);
 
     // Define start.
     let point = tokenizer.point.clone();
@@ -469,6 +472,7 @@ fn flow_end(
         State::Ok => {
             println!("State::Ok");
             info = exit_containers(tokenizer, info, 0, false);
+            tokenizer.expect(code, true);
             // println!("document:inject: {:?}", info.inject);
 
             let mut map = EditMap::new();
