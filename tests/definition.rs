@@ -112,6 +112,31 @@ fn definition() {
     );
 
     assert_eq!(
+        micromark("[ı]: a\n\n[I]"),
+        "<p><a href=\"a\">I</a></p>",
+        "should match w/ undotted turkish i (1)"
+    );
+    assert_eq!(
+        micromark("[I]: a\n\n[ı]"),
+        "<p><a href=\"a\">ı</a></p>",
+        "should match w/ undotted turkish i (2)"
+    );
+    // Ref: <https://spec.commonmark.org/dingus/?text=%5Bi%5D%3A%20a%0A%0A%5Bİ%5D>
+    // GFM parses the same (last checked: 2022-07-11).
+    assert_eq!(
+        micromark("[i]: a\n\n[İ]"),
+        "<p>[İ]</p>",
+        "should *not* match w/ dotted turkish i (1)"
+    );
+    // Ref: <https://spec.commonmark.org/dingus/?text=%5Bİ%5D%3A%20a%0A%0A%5Bi%5D>
+    // GFM parses the same (last checked: 2022-07-11).
+    assert_eq!(
+        micromark("[İ]: a\n\n[i]"),
+        "<p>[i]</p>",
+        "should *not* match w/ dotted turkish i (2)"
+    );
+
+    assert_eq!(
         micromark("[foo]: /url"),
         "",
         "should not contribute anything w/o reference (1)"

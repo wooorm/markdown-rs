@@ -152,8 +152,6 @@ cargo doc --document-private-items
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
       how to integrate with streams or so?
 - [ ] (1) Go through clippy rules, and such, to add strict code styles
-- [ ] (1) Make sure that rust character groups match CM character groups (e.g., is
-      `unicode_whitespace` or so the same?)
 - [ ] (1) Any special handling of surrogates?
 - [ ] (1) Make sure debugging, assertions are useful for other folks
 - [ ] (3) Add some benchmarks (against comrak, pulldown-cmark, kramdown?), do some perf testing
@@ -274,3 +272,4 @@ important.
 - [x] (1) Use `char::REPLACEMENT_CHARACTER`?
 - [x] (3) Add support for concrete constructs
       (html (flow) or code (fenced) cannot be “pierced” into by containers)
+- [x] (1) Make sure that rust character groups match CM character groups

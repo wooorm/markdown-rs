@@ -54,7 +54,6 @@ pub fn normalize_identifier(value: &str) -> String {
         }
     }
 
-    // To do: test if this matches unicode.
     // Some characters are considered “uppercase”, but if their lowercase
     // counterpart is uppercased will result in a different uppercase
     // character.
