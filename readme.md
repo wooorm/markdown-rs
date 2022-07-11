@@ -142,7 +142,7 @@ cargo doc --document-private-items
 
 #### Misc
 
-- [ ] (3) `nostd`
+- [ ] (3) `no_std`: remove all `HashSet`s/`HashMap` to use vecs, vecs w/ tuples?
 - [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
 - [ ] (3) Pass more references around
