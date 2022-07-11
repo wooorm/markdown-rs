@@ -27,19 +27,17 @@ fn block_quote() {
         "should not support block quotes w/ 4 spaces"
     );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> # a\n> b\nc"),
-    //     "<blockquote>\n<h1>a</h1>\n<p>b\nc</p>\n</blockquote>",
-    //     "should support lazy content lines"
-    // );
+    assert_eq!(
+        micromark("> # a\n> b\nc"),
+        "<blockquote>\n<h1>a</h1>\n<p>b\nc</p>\n</blockquote>",
+        "should support lazy content lines"
+    );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> a\nb\n> c"),
-    //     "<blockquote>\n<p>a\nb\nc</p>\n</blockquote>",
-    //     "should support lazy content lines inside block quotes"
-    // );
+    assert_eq!(
+        micromark("> a\nb\n> c"),
+        "<blockquote>\n<p>a\nb\nc</p>\n</blockquote>",
+        "should support lazy content lines inside block quotes"
+    );
 
     assert_eq!(
         micromark("> a\n> ---"),
@@ -134,12 +132,11 @@ fn block_quote() {
         "should support interrupting block quotes w/ thematic breaks"
     );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> a\nb"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support interrupting block quotes w/ paragraphs"
-    // );
+    assert_eq!(
+        micromark("> a\nb"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support interrupting block quotes w/ paragraphs"
+    );
 
     assert_eq!(
         micromark("> a\n\nb"),
@@ -153,19 +150,17 @@ fn block_quote() {
         "should not support interrupting a blank line in a block quotes w/ paragraphs"
     );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> > > a\nb"),
-    //     "<blockquote>\n<blockquote>\n<blockquote>\n<p>a\nb</p>\n</blockquote>\n</blockquote>\n</blockquote>",
-    //     "should not support interrupting many block quotes w/ paragraphs (1)"
-    // );
+    assert_eq!(
+        micromark("> > > a\nb"),
+        "<blockquote>\n<blockquote>\n<blockquote>\n<p>a\nb</p>\n</blockquote>\n</blockquote>\n</blockquote>",
+        "should not support interrupting many block quotes w/ paragraphs (1)"
+    );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark(">>> a\n> b\n>>c"),
-    //     "<blockquote>\n<blockquote>\n<blockquote>\n<p>a\nb\nc</p>\n</blockquote>\n</blockquote>\n</blockquote>",
-    //     "should not support interrupting many block quotes w/ paragraphs (2)"
-    // );
+    assert_eq!(
+        micromark(">>> a\n> b\n>>c"),
+        "<blockquote>\n<blockquote>\n<blockquote>\n<p>a\nb\nc</p>\n</blockquote>\n</blockquote>\n</blockquote>",
+        "should not support interrupting many block quotes w/ paragraphs (2)"
+    );
 
     assert_eq!(
         micromark(">     a\n\n>    b"),

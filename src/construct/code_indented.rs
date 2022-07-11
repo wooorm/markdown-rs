@@ -128,17 +128,20 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///     cd
 /// ```
 fn further_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: `nok` if lazy line.
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(Token::LineEnding);
-            tokenizer.consume(code);
-            tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(further_start)), None)
+    if tokenizer.lazy {
+        (State::Nok, None)
+    } else {
+        match code {
+            Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+                tokenizer.enter(Token::LineEnding);
+                tokenizer.consume(code);
+                tokenizer.exit(Token::LineEnding);
+                (State::Fn(Box::new(further_start)), None)
+            }
+            _ => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
+                Box::new(if ok { further_end } else { further_begin })
+            })(tokenizer, code),
         }
-        _ => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
-            Box::new(if ok { further_end } else { further_begin })
-        })(tokenizer, code),
     }
 }
 

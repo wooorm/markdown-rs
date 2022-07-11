@@ -84,6 +84,7 @@ pub mod paragraph;
 pub mod partial_data;
 pub mod partial_destination;
 pub mod partial_label;
+pub mod partial_non_lazy_continuation;
 pub mod partial_space_or_tab;
 pub mod partial_title;
 pub mod partial_whitespace;

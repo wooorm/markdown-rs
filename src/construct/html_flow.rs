@@ -100,7 +100,9 @@
 
 use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_SIZE};
 use crate::construct::{
-    blank_line::start as blank_line, partial_space_or_tab::space_or_tab_min_max,
+    blank_line::start as blank_line,
+    partial_non_lazy_continuation::start as partial_non_lazy_continuation,
+    partial_space_or_tab::space_or_tab_min_max,
 };
 use crate::token::Token;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
@@ -425,7 +427,7 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
                 info.kind = Kind::Complete;
 
                 // Do not support complete HTML when interrupting.
-                if tokenizer.interrupt {
+                if tokenizer.interrupt && !tokenizer.lazy {
                     (State::Nok, None)
                 } else if info.start_tag {
                     complete_attribute_name_before(tokenizer, code, info)
@@ -805,24 +807,51 @@ fn continuation_at_line_ending(tokenizer: &mut Tokenizer, code: Code, info: Info
 /// asd
 /// ```
 fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    tokenizer.check(partial_non_lazy_continuation, |ok| {
+        let func = if ok {
+            html_continue_start_non_lazy
+        } else {
+            html_continue_after
+        };
+        Box::new(move |t, c| func(t, c, info))
+    })(tokenizer, code)
+}
+
+/// To do.
+#[allow(clippy::needless_pass_by_value)]
+fn html_continue_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    tokenizer.exit(Token::HtmlFlow);
+    // Feel free to interrupt.
+    tokenizer.interrupt = false;
+    // Restore previous `concrete`.
+    tokenizer.concrete = info.concrete;
+    (State::Ok, Some(vec![code]))
+}
+
+/// To do.
+fn html_continue_start_non_lazy(
+    tokenizer: &mut Tokenizer,
+    code: Code,
+    info: Info,
+) -> StateFnResult {
     match code {
-        Code::None => {
-            tokenizer.exit(Token::HtmlFlow);
-            // Feel free to interrupt.
-            tokenizer.interrupt = false;
-            // Restore previous `concrete`.
-            tokenizer.concrete = info.concrete;
-            (State::Ok, Some(vec![code]))
-        }
-        // To do: do not allow lazy lines.
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
             (
-                State::Fn(Box::new(|t, c| html_continue_start(t, c, info))),
+                State::Fn(Box::new(|t, c| html_continue_before(t, c, info))),
                 None,
             )
+        }
+        _ => unreachable!("expected eol"),
+    }
+}
+
+fn html_continue_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    match code {
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            html_continue_start(tokenizer, code, info)
         }
         _ => {
             tokenizer.enter(Token::HtmlFlowData);
@@ -976,12 +1005,7 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HtmlFlowData);
-            tokenizer.exit(Token::HtmlFlow);
-            // Feel free to interrupt.
-            tokenizer.interrupt = false;
-            // Restore previous `concrete`.
-            tokenizer.concrete = info.concrete;
-            (State::Ok, Some(vec![code]))
+            html_continue_after(tokenizer, code, info)
         }
         _ => {
             tokenizer.consume(code);

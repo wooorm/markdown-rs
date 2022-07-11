@@ -102,7 +102,10 @@
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
-use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
+use crate::construct::{
+    partial_non_lazy_continuation::start as partial_non_lazy_continuation,
+    partial_space_or_tab::{space_or_tab, space_or_tab_min_max},
+};
 use crate::token::Token;
 use crate::tokenizer::{Code, ContentType, State, StateFnResult, Tokenizer};
 use crate::util::span::from_exit_event;
@@ -376,20 +379,33 @@ fn meta(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     let clone = info.clone();
 
-    match code {
-        Code::None => after(tokenizer, code, info),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.attempt(
-            |t, c| close_begin(t, c, info),
-            |ok| {
-                if ok {
-                    Box::new(|t, c| after(t, c, clone))
-                } else {
-                    Box::new(|t, c| content_before(t, c, clone))
-                }
-            },
-        )(tokenizer, code),
-        _ => unreachable!("expected eof/eol"),
+    if tokenizer.lazy {
+        after(tokenizer, code, info)
+    } else {
+        tokenizer.check(partial_non_lazy_continuation, |ok| {
+            if ok {
+                Box::new(move |t, c| at_non_lazy_break(t, c, clone))
+            } else {
+                Box::new(move |t, c| after(t, c, clone))
+            }
+        })(tokenizer, code)
     }
+}
+
+/// To do.
+fn at_non_lazy_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+    let clone = info.clone();
+
+    tokenizer.attempt(
+        |t, c| close_begin(t, c, info),
+        |ok| {
+            if ok {
+                Box::new(|t, c| after(t, c, clone))
+            } else {
+                Box::new(|t, c| content_before(t, c, clone))
+            }
+        },
+    )(tokenizer, code)
 }
 
 /// Before a closing fence, at the line ending.

@@ -188,11 +188,11 @@ fn heading_atx() {
         "should not support lazyness (1)"
     );
 
-    // assert_eq!(
-    //     micromark("> a\n#"),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<h1></h1>",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark("> a\n#"),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<h1></h1>",
+        "should not support lazyness (2)"
+    );
 
     // To do: turning things off:
     // assert_eq!(

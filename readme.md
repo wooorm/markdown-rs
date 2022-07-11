@@ -48,8 +48,6 @@ cargo doc --document-private-items
 
 - [ ] (5) Containers: this will be rather messy, and depends a lot on how
       subtokenization is solved
-- [ ] (3) Lazy lines, in containers, in flow in a paragraph, a line does not
-      need to be indented
 - [ ] (5) There’s a lot of rust-related choosing whether to pass (mutable)
       references or whatever around that should be refactored
 - [ ] (1) Support turning off constructs
@@ -125,7 +123,6 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (3) Lazy lines (`code indented`, `html flow`)
 - [ ] (8) list\
        test (`character_reference`, `code_indented`, `heading_setext`,
       `html_flow`, `thematic_break`)\
@@ -273,3 +270,4 @@ important.
       (html (flow) or code (fenced) cannot be “pierced” into by containers)
 - [x] (1) Make sure that rust character groups match CM character groups
 - [x] (3) Fix block quote bug
+- [x] (3) Add support for lazy lines

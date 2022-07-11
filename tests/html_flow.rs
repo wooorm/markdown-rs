@@ -385,13 +385,13 @@ fn html_flow_4_declaration() {
 #[test]
 fn html_flow_5_cdata() {
     assert_eq!(
-    micromark_with_options(
-      "<![CDATA[\nfunction matchwo(a,b)\n{\n  if (a < b && a < 0) then {\n    return 1;\n\n  } else {\n\n    return 0;\n  }\n}\n]]>\nokay",
-      DANGER
-    ),
-    "<![CDATA[\nfunction matchwo(a,b)\n{\n  if (a < b && a < 0) then {\n    return 1;\n\n  } else {\n\n    return 0;\n  }\n}\n]]>\n<p>okay</p>",
-    "should support cdata (type 5)"
-  );
+        micromark_with_options(
+            "<![CDATA[\nfunction matchwo(a,b)\n{\n  if (a < b && a < 0) then {\n    return 1;\n\n  } else {\n\n    return 0;\n  }\n}\n]]>\nokay",
+            DANGER
+        ),
+        "<![CDATA[\nfunction matchwo(a,b)\n{\n  if (a < b && a < 0) then {\n    return 1;\n\n  } else {\n\n    return 0;\n  }\n}\n]]>\n<p>okay</p>",
+        "should support cdata (type 5)"
+    );
 
     assert_eq!(
         micromark_with_options("<![CDATA[]]>", DANGER),

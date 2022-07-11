@@ -611,7 +611,6 @@ fn attempt_impl(
         // Should it be before?
         // How to match `eof`?
         if !codes.is_empty() && pause(tokenizer.previous) {
-            println!("pause!: {:?}", (codes.clone(), vec![code]));
             return done(
                 (codes, vec![code]),
                 false,

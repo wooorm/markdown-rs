@@ -135,12 +135,11 @@ fn heading_setext() {
         "should not allow underline to be lazy (1)"
     );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> foo\nbar\n==="),
-    //     "<blockquote>\n<p>foo\nbar\n===</p>\n</blockquote>",
-    //     "should not allow underline to be lazy (2)"
-    // );
+    assert_eq!(
+        micromark("> foo\nbar\n==="),
+        "<blockquote>\n<p>foo\nbar\n===</p>\n</blockquote>",
+        "should not allow underline to be lazy (2)"
+    );
 
     // To do: list.
     // assert_eq!(
@@ -247,19 +246,17 @@ fn heading_setext() {
         "should prefer a setext heading over an interrupting list"
     );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> ===\na"),
-    //     "<blockquote>\n<p>===\na</p>\n</blockquote>",
-    //     "should not support lazyness (1)"
-    // );
+    assert_eq!(
+        micromark("> ===\na"),
+        "<blockquote>\n<p>===\na</p>\n</blockquote>",
+        "should not support lazyness (1)"
+    );
 
-    // To do: block quote (lazy).
-    // assert_eq!(
-    //     micromark("> a\n==="),
-    //     "<blockquote>\n<p>a\n===</p>\n</blockquote>",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark("> a\n==="),
+        "<blockquote>\n<p>a\n===</p>\n</blockquote>",
+        "should not support lazyness (2)"
+    );
 
     // To do: turning things off.
     //   assert_eq!(

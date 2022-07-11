@@ -16,11 +16,12 @@ fn code_indented() {
     //     "should prefer list item content over indented code (1)"
     // );
 
-    //     assert_eq!(
-    //         micromark("1.  foo\n\n    - bar"),
-    //         "<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>",
-    //         "should prefer list item content over indented code (2)"
-    //     );
+    // To do: list.
+    // assert_eq!(
+    //     micromark("1.  foo\n\n    - bar"),
+    //     "<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>",
+    //     "should prefer list item content over indented code (2)"
+    // );
 
     assert_eq!(
         micromark("    <a/>\n    *hi*\n\n    - one"),
@@ -82,26 +83,23 @@ fn code_indented() {
         "should not support lazyness (1)"
     );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark("> a\n    b"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark("> a\n    b"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support lazyness (2)"
+    );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark("> a\n     b"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support lazyness (3)"
-    // );
+    assert_eq!(
+        micromark("> a\n     b"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support lazyness (3)"
+    );
 
-    // To do: blockquote (lazy).
-    // assert_eq!(
-    //     micromark("> a\n      b"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support lazyness (4)"
-    // );
+    assert_eq!(
+        micromark("> a\n      b"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support lazyness (4)"
+    );
 
     assert_eq!(
         micromark(">     a\n    b"),
