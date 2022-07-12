@@ -59,7 +59,10 @@ fn skip_opt_with_direction(
             };
 
             if events[index].token_type == *current && balance == 0 {
-                println!("close:it! {:?} {:?}", events[index].token_type, balance);
+                println!(
+                    "close:it! {:?} {:?} {:?}",
+                    events[index].token_type, balance, index
+                );
                 index = if forward { index + 1 } else { index - 1 };
                 println!("index:break: {:?}", index);
                 break;

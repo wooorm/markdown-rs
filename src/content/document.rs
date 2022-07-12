@@ -156,6 +156,8 @@ fn check_new_containers(
         //   self.interrupt = Boolean(
         //     childFlow.currentConstruct && !childFlow._gfmTableDynamicInterruptHack
         //   )
+    } else {
+        tokenizer.interrupt = false;
     }
 
     // Check if there is a new container.
@@ -299,6 +301,7 @@ fn exit_containers(
             println!("inject:0: {:?}", index);
             index = 0;
         } else {
+            index -= before;
             println!("set: {:?}", index);
         }
         info.inject[index].1.append(&mut exits);
