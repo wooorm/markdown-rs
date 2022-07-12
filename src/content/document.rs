@@ -10,7 +10,7 @@
 
 use crate::construct::{
     block_quote::{cont as block_quote_cont, end as block_quote_end, start as block_quote},
-    list::{end as list_end, start as list},
+    list::{cont as list_const, end as list_end, start as list},
 };
 use crate::content::flow::start as flow;
 use crate::parser::ParseState;
@@ -100,7 +100,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code, info: DocumentInfo) -> StateFnR
         let cont = if name == "blockquote" {
             block_quote_cont
         } else if name == "list" {
-            unreachable!("todo: list cont {:?}", name)
+            list_const
         } else {
             unreachable!("todo: cont construct {:?}", name)
         };
@@ -183,7 +183,8 @@ fn there_is_a_new_container(
     name: String,
 ) -> StateFnResult {
     let size = info.continued;
-    info = exit_containers(tokenizer, info, size, true);
+    println!("exit:0: {:?}", false);
+    info = exit_containers(tokenizer, info, size, false);
     tokenizer.expect(code, true);
 
     // Remove from the event stack.
@@ -272,6 +273,7 @@ fn exit_containers(
         let mut index = 0;
         while index < token_types.len() {
             let token_type = &token_types[index];
+            println!("creating exit: {:?}", token_type);
 
             exits.push(Event {
                 event_type: EventType::Exit,
@@ -289,7 +291,16 @@ fn exit_containers(
     }
 
     if !exits.is_empty() {
-        let index = info.inject.len() - 1 - (if before { 1 } else { 0 });
+        let before = if before { 1 } else { 0 };
+        let mut index = info.inject.len() - 1;
+        println!("inject: {:?} {:?}", info.inject.len() - 1, before);
+        if before >= index {
+            // To do: maybe, if this branch happens, it’s a bug?
+            println!("inject:0: {:?}", index);
+            index = 0;
+        } else {
+            println!("set: {:?}", index);
+        }
         info.inject[index].1.append(&mut exits);
     }
 
@@ -377,6 +388,7 @@ fn flow_end(
     }
 
     // Exit containers.
+    println!("exit:1: {:?}", true);
     info = exit_containers(tokenizer, info, continued, true);
     tokenizer.expect(code, true);
 
@@ -386,6 +398,7 @@ fn flow_end(
 
     match result {
         State::Ok => {
+            println!("exit:3: {:?}", false);
             info = exit_containers(tokenizer, info, 0, false);
             tokenizer.expect(code, true);
 
@@ -433,7 +446,7 @@ fn flow_end(
             tokenizer.events = map.consume(&mut tokenizer.events);
             let mut index = 0;
 
-            println!("after: {:?}", tokenizer.events.len());
+            println!("document:after: {:?}", tokenizer.events.len());
             while index < tokenizer.events.len() {
                 let event = &tokenizer.events[index];
                 println!(

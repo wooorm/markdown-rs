@@ -9,19 +9,17 @@ fn code_indented() {
         "should support indented code"
     );
 
-    // To do: list.
-    // assert_eq!(
-    //     micromark("  - foo\n\n    bar"),
-    //     "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>",
-    //     "should prefer list item content over indented code (1)"
-    // );
+    assert_eq!(
+        micromark("  - foo\n\n    bar"),
+        "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>",
+        "should prefer list item content over indented code (1)"
+    );
 
-    // To do: list.
-    // assert_eq!(
-    //     micromark("1.  foo\n\n    - bar"),
-    //     "<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>",
-    //     "should prefer list item content over indented code (2)"
-    // );
+    assert_eq!(
+        micromark("1.  foo\n\n    - bar"),
+        "<ol>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n</li>\n</ol>",
+        "should prefer list item content over indented code (2)"
+    );
 
     assert_eq!(
         micromark("    <a/>\n    *hi*\n\n    - one"),

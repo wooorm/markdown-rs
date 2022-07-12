@@ -141,12 +141,11 @@ fn heading_setext() {
         "should not allow underline to be lazy (2)"
     );
 
-    // To do: list.
-    // assert_eq!(
-    //     micromark("- Foo\n---"),
-    //     "<ul>\n<li>Foo</li>\n</ul>\n<hr />",
-    //     "should not allow underline to be lazy (3)"
-    // );
+    assert_eq!(
+        micromark("- Foo\n---"),
+        "<ul>\n<li>Foo</li>\n</ul>\n<hr />",
+        "should not allow underline to be lazy (3)"
+    );
 
     assert_eq!(
         micromark("Foo\nBar\n---"),
@@ -172,12 +171,11 @@ fn heading_setext() {
         "should prefer other constructs over setext headings (1)"
     );
 
-    // To do: list.
-    // assert_eq!(
-    //     micromark("- foo\n-----"),
-    //     "<ul>\n<li>foo</li>\n</ul>\n<hr />",
-    //     "should prefer other constructs over setext headings (2)"
-    // );
+    assert_eq!(
+        micromark("- foo\n-----"),
+        "<ul>\n<li>foo</li>\n</ul>\n<hr />",
+        "should prefer other constructs over setext headings (2)"
+    );
 
     assert_eq!(
         micromark("    foo\n---"),

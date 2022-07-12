@@ -126,14 +126,13 @@ fn thematic_break() {
         "should not support thematic breaks w/ mixed markers"
     );
 
-    // To do: lists.
-    // assert_eq!(
-    //     micromark("- foo\n***\n- bar"),
-    //     "<ul>\n<li>foo</li>\n</ul>\n<hr />\n<ul>\n<li>bar</li>\n</ul>",
-    //     "should support thematic breaks mixed w/ lists (1)"
-    // );
+    assert_eq!(
+        micromark("- foo\n***\n- bar"),
+        "<ul>\n<li>foo</li>\n</ul>\n<hr />\n<ul>\n<li>bar</li>\n</ul>",
+        "should support thematic breaks mixed w/ lists (1)"
+    );
 
-    // To do: lists.
+    // To do: list (prefer thematic break).
     // assert_eq!(
     //     micromark("* Foo\n* * *\n* Bar"),
     //     "<ul>\n<li>Foo</li>\n</ul>\n<hr />\n<ul>\n<li>Bar</li>\n</ul>",
@@ -152,7 +151,7 @@ fn thematic_break() {
         "should not support thematic breaks w/ dashes interrupting paragraphs (setext heading)"
     );
 
-    // To do: lists.
+    // To do: list (prefer thematic break).
     // assert_eq!(
     //     micromark("- Foo\n- * * *"),
     //     "<ul>\n<li>Foo</li>\n<li>\n<hr />\n</li>\n</ul>",

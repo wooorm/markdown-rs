@@ -1767,7 +1767,9 @@ pub enum Token {
     ThematicBreakSequence,
 
     // To do: sort.
-    List,
+    ListOrdered,
+    ListUnordered,
+    ListItem,
     ListItemPrefix,
     ListItemValue,
     ListItemMarker,
