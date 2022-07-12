@@ -3,6 +3,7 @@
 use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
 use crate::construct::{
     blank_line::start as blank_line, partial_space_or_tab::space_or_tab_min_max,
+    thematic_break::start as thematic_break,
 };
 use crate::token::Token;
 use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, Tokenizer};
@@ -106,12 +107,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         // Unordered.
-        Code::Char('*' | '+' | '-') => {
-            // To do: check if this is a thematic break?
-            tokenizer.enter(Token::ListItem);
-            tokenizer.enter(Token::ListItemPrefix);
-            marker(tokenizer, code)
-        }
+        Code::Char('*' | '+' | '-') => tokenizer.check(thematic_break, |ok| {
+            let func = if ok { nok } else { before_unordered };
+            Box::new(func)
+        })(tokenizer, code),
         // Ordered.
         Code::Char(char) if char.is_ascii_digit() => {
             tokenizer.enter(Token::ListItem);
@@ -122,6 +121,19 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => (State::Nok, None),
     }
+}
+
+/// To do.
+fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
+    (State::Nok, None)
+}
+
+/// To do.
+fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    // To do: check if this is a thematic break?
+    tokenizer.enter(Token::ListItem);
+    tokenizer.enter(Token::ListItemPrefix);
+    marker(tokenizer, code)
 }
 
 /// To do.

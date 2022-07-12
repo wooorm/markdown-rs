@@ -123,19 +123,17 @@ fn tabs_flow() {
         "should support tabs in HTML (if whitespace is allowed)"
     );
 
-    // To do: list (prefer thematic break).
-    // assert_eq!(
-    //     micromark("*\t*\t*\t"),
-    //     "<hr />",
-    //     "should support tabs in thematic breaks"
-    // );
+    assert_eq!(
+        micromark("*\t*\t*\t"),
+        "<hr />",
+        "should support tabs in thematic breaks"
+    );
 
-    // To do: list (prefer thematic break).
-    // assert_eq!(
-    //     micromark("*\t\t*\t\t*\t\t"),
-    //     "<hr />",
-    //     "should support arbitrary tabs in thematic breaks"
-    // );
+    assert_eq!(
+        micromark("*\t\t*\t\t*\t\t"),
+        "<hr />",
+        "should support arbitrary tabs in thematic breaks"
+    );
 }
 
 #[test]

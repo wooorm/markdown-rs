@@ -213,12 +213,11 @@ fn heading_setext() {
         "paragraph and heading interplay (3)"
     );
 
-    // To do: list (prefer thematic break).
-    // assert_eq!(
-    //     micromark("Foo\nbar\n* * *\nbaz"),
-    //     "<p>Foo\nbar</p>\n<hr />\n<p>baz</p>",
-    //     "paragraph and heading interplay (4)"
-    // );
+    assert_eq!(
+        micromark("Foo\nbar\n* * *\nbaz"),
+        "<p>Foo\nbar</p>\n<hr />\n<p>baz</p>",
+        "paragraph and heading interplay (4)"
+    );
 
     assert_eq!(
         micromark("Foo\nbar\n\\---\nbaz"),
