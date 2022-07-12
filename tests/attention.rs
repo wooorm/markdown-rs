@@ -29,8 +29,8 @@ fn attention() {
     );
 
     assert_eq!(
-        micromark("* a *"),
-        "<p>* a *</p>",
+        micromark("* a *"),
+        "<p>* a *</p>",
         "should not support emphasis unicode whitespace either"
     );
 

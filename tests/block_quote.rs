@@ -51,14 +51,14 @@ fn block_quote() {
         "should not support lazy setext headings underlines in block quotes"
     );
 
-    // To do: list.
+    // To do: list (some bug).
     // assert_eq!(
     //     micromark("> - a\n> - b"),
     //     "<blockquote>\n<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n</blockquote>",
     //     "should support lists in block quotes"
     // );
 
-    // To do: list.
+    // To do: list (some bug).
     // assert_eq!(
     //     micromark("> - a\n- b"),
     //     "<blockquote>\n<ul>\n<li>a</li>\n</ul>\n</blockquote>\n<ul>\n<li>b</li>\n</ul>",
@@ -77,12 +77,11 @@ fn block_quote() {
         "should not support lazy fenced code in block quotes"
     );
 
-    // To do: list.
-    // assert_eq!(
-    //     micromark("> a\n    - b"),
-    //     "<blockquote>\n<p>a\n- b</p>\n</blockquote>",
-    //     "should not support lazy indented code (or lazy list) in block quotes"
-    // );
+    assert_eq!(
+        micromark("> a\n    - b"),
+        "<blockquote>\n<p>a\n- b</p>\n</blockquote>",
+        "should not support lazy indented code (or lazy list) in block quotes"
+    );
 
     assert_eq!(
         micromark(">"),

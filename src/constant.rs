@@ -193,6 +193,10 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
+/// To do.
+/// See: <https://spec.commonmark.org/0.30/#ordered-list-marker>
+pub const LIST_ITEM_VALUE_SIZE_MAX: usize = 10;
+
 /// Maximum allowed unbalanced parens in destination.
 ///
 /// There can be many balanced parens, but if there are 33 opens that were not

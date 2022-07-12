@@ -1765,4 +1765,11 @@ pub enum Token {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+
+    // To do: sort.
+    List,
+    ListItemPrefix,
+    ListItemValue,
+    ListItemMarker,
+    // ListItemPrefixSpaceOrTab,
 }

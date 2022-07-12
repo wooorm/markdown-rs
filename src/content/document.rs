@@ -8,8 +8,9 @@
 //! *   [Block quote][crate::construct::block_quote]
 //! *   List
 
-use crate::construct::block_quote::{
-    cont as block_quote_cont, end as block_quote_end, start as block_quote,
+use crate::construct::{
+    block_quote::{cont as block_quote_cont, end as block_quote_end, start as block_quote},
+    list::{end as list_end, start as list},
 };
 use crate::content::flow::start as flow;
 use crate::parser::ParseState;
@@ -96,9 +97,10 @@ fn before(tokenizer: &mut Tokenizer, code: Code, info: DocumentInfo) -> StateFnR
     // continuation line.
     if info.continued < info.stack.len() {
         let name = &info.stack[info.continued];
-        // To do: list.
         let cont = if name == "blockquote" {
             block_quote_cont
+        } else if name == "list" {
+            unreachable!("todo: list cont {:?}", name)
         } else {
             unreachable!("todo: cont construct {:?}", name)
         };
@@ -157,12 +159,19 @@ fn check_new_containers(
     }
 
     // Check if there is a new container.
-    // To do: list.
     tokenizer.attempt(block_quote, move |ok| {
         if ok {
             Box::new(|t, c| there_is_a_new_container(t, c, info, "blockquote".to_string()))
         } else {
-            Box::new(|t, c| there_is_no_new_container(t, c, info))
+            Box::new(|tokenizer, code| {
+                tokenizer.attempt(list, move |ok| {
+                    if ok {
+                        Box::new(|t, c| there_is_a_new_container(t, c, info, "list".to_string()))
+                    } else {
+                        Box::new(|t, c| there_is_no_new_container(t, c, info))
+                    }
+                })(tokenizer, code)
+            })
         }
     })(tokenizer, code)
 }
@@ -179,11 +188,12 @@ fn there_is_a_new_container(
 
     // Remove from the event stack.
     // We’ll properly add exits at different points manually.
-    // To do: list.
     let end = if name == "blockquote" {
         block_quote_end
+    } else if name == "list" {
+        list_end
     } else {
-        unreachable!("todo: cont {:?}", name)
+        unreachable!("todo: end {:?}", name)
     };
 
     let token_types = end();
@@ -249,11 +259,12 @@ fn exit_containers(
     while info.stack.len() > size {
         let name = info.stack.pop().unwrap();
 
-        // To do: list.
         let end = if name == "blockquote" {
             block_quote_end
+        } else if name == "list" {
+            list_end
         } else {
-            unreachable!("todo: cont {:?}", name)
+            unreachable!("todo: end {:?}", name)
         };
 
         let token_types = end();
@@ -265,7 +276,7 @@ fn exit_containers(
             exits.push(Event {
                 event_type: EventType::Exit,
                 token_type: token_type.clone(),
-                // To do: fix position later.
+                // Note: positions are fixed later.
                 point: tokenizer.point.clone(),
                 index: tokenizer.index,
                 previous: None,

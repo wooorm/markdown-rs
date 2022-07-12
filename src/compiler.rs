@@ -235,6 +235,7 @@ struct CompileContext<'a> {
     pub code_flow_seen_data: Option<bool>,
     pub code_fenced_fences_count: Option<usize>,
     pub character_reference_kind: Option<CharacterReferenceKind>,
+    pub expect_first_item: Option<bool>,
     pub media_stack: Vec<Media>,
     pub definitions: HashMap<String, Definition>,
     pub tight_stack: Vec<bool>,
@@ -269,6 +270,7 @@ impl<'a> CompileContext<'a> {
             code_flow_seen_data: None,
             code_fenced_fences_count: None,
             character_reference_kind: None,
+            expect_first_item: None,
             media_stack: vec![],
             definitions: HashMap::new(),
             tight_stack: vec![],
@@ -379,7 +381,7 @@ impl<'a> CompileContext<'a> {
 /// Turn events and codes into a string of HTML.
 #[allow(clippy::too_many_lines)]
 pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
-    // let mut slurp_all_line_endings = false;
+    // let slurp_all_line_endings = false;
     let mut index = 0;
     let mut line_ending_inferred: Option<LineEnding> = None;
 
@@ -443,6 +445,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     enter_map.insert(Token::ResourceTitleString, on_enter_buffer);
     enter_map.insert(Token::Strong, on_enter_strong);
 
+    // To do: sort.
+    enter_map.insert(Token::ListItemMarker, on_enter_list_item_marker);
+    enter_map.insert(Token::List, on_enter_list);
+
     let mut exit_map: Map = HashMap::new();
     exit_map.insert(Token::AutolinkEmail, on_exit_autolink_email);
     exit_map.insert(Token::AutolinkProtocol, on_exit_autolink_protocol);
@@ -488,7 +494,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         on_exit_definition_title_string,
     );
     exit_map.insert(Token::Emphasis, on_exit_emphasis);
-
     exit_map.insert(Token::HardBreakEscape, on_exit_break);
     exit_map.insert(Token::HardBreakTrailing, on_exit_break);
     exit_map.insert(Token::HeadingAtx, on_exit_heading_atx);
@@ -518,6 +523,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     exit_map.insert(Token::ResourceTitleString, on_exit_resource_title_string);
     exit_map.insert(Token::Strong, on_exit_strong);
     exit_map.insert(Token::ThematicBreak, on_exit_thematic_break);
+
+    // To do: sort.
+    exit_map.insert(Token::List, on_exit_list);
+    exit_map.insert(Token::ListItemValue, on_exit_list_item_value);
 
     // Handle one event.
     let handle = |context: &mut CompileContext, index: usize| {
@@ -766,7 +775,7 @@ fn on_exit_block_quote(context: &mut CompileContext) {
     context.tight_stack.pop();
     context.line_ending_if_needed();
     context.tag("</blockquote>".to_string());
-    // let mut slurp_all_line_endings = false;
+    // context.slurp_all_line_endings = false;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][Token::CharacterReferenceMarker].
@@ -1056,7 +1065,7 @@ fn on_exit_label_text(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
-    // if slurp_all_line_endings {
+    // if context.slurp_all_line_endings {
     //     // Empty.
     // } else
     if context.slurp_one_line_ending {
@@ -1175,4 +1184,69 @@ fn on_exit_strong(context: &mut CompileContext) {
 fn on_exit_thematic_break(context: &mut CompileContext) {
     context.line_ending_if_needed();
     context.tag("<hr />".to_string());
+}
+
+// To do: sort.
+/// To do
+fn on_enter_list_item_marker(context: &mut CompileContext) {
+    let expect_first_item = context.expect_first_item.take().unwrap();
+
+    if expect_first_item {
+        context.tag(">".to_string());
+    } else {
+        on_exit_list_item(context);
+    }
+
+    context.line_ending_if_needed();
+    context.tag("<li>".to_string());
+    context.expect_first_item = Some(false);
+    // “Hack” to prevent a line ending from showing up if the item is empty.
+    context.last_was_tag = false;
+}
+
+/// To do (onenterlist{un,}ordered)
+fn on_enter_list(context: &mut CompileContext) {
+    // To do: !token._loose
+    context.tight_stack.push(false);
+    context.line_ending_if_needed();
+    context.tag("<ol".to_string()); // To do: `ol` / `ul`.
+    context.expect_first_item = Some(true);
+}
+
+/// To do
+fn on_exit_list_item_value(context: &mut CompileContext) {
+    let expect_first_item = context.expect_first_item.unwrap();
+
+    if expect_first_item {
+        let slice = serialize(
+            context.codes,
+            &from_exit_event(context.events, context.index),
+            false,
+        );
+        let value = slice.parse::<u32>().ok().unwrap();
+
+        if value != 1 {
+            context.tag(format!(" start=\"{}\"", encode(&value.to_string())));
+        }
+    }
+}
+
+/// To do.
+/// Note: there is no actual `Token::ListItem`.
+fn on_exit_list_item(context: &mut CompileContext) {
+    //  && !context.slurp_all_line_endings
+    if context.last_was_tag {
+        context.line_ending_if_needed();
+    }
+
+    context.tag("</li>".to_string()); // To do: `ol` / `ul`.
+    // context.slurp_all_line_endings = false;
+}
+
+/// To do.
+fn on_exit_list(context: &mut CompileContext) {
+    on_exit_list_item(context);
+    context.tight_stack.pop();
+    context.line_ending();
+    context.tag("</ol>".to_string()); // To do: `ol` / `ul`.
 }

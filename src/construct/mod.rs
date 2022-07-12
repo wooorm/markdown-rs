@@ -33,7 +33,7 @@
 //! *   [label end][label_end]
 //! *   [label start (image)][label_start_image]
 //! *   [label start (link)][label_start_link]
-//! *   list
+//! *   [list][]
 //! *   [paragraph][]
 //! *   [thematic break][thematic_break]
 //!
@@ -42,6 +42,7 @@
 //! *   [data][partial_data]
 //! *   [destination][partial_destination]
 //! *   [label][partial_label]
+//! *   [non lazy continuation][partial_non_lazy_continuation]
 //! *   [space or tab][partial_space_or_tab]
 //! *   [title][partial_title]
 //! *   [whitespace][partial_whitespace]
@@ -80,6 +81,7 @@ pub mod html_text;
 pub mod label_end;
 pub mod label_start_image;
 pub mod label_start_link;
+pub mod list;
 pub mod paragraph;
 pub mod partial_data;
 pub mod partial_destination;

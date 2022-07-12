@@ -91,7 +91,7 @@ fn character_reference() {
         "should not support character references as construct markers (1)"
     );
 
-    // To do: list.
+    // To do: list (ordered vs unordered).
     // assert_eq!(
     //     micromark("&#42; foo\n\n* foo"),
     //     "<p>* foo</p>\n<ul>\n<li>foo</li>\n</ul>",
