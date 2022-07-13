@@ -383,19 +383,17 @@ fn list() {
     //     "should support blank lines between items (2)"
     // );
 
-    // To do: list (for some weird reason seen as one list?).
-    // assert_eq!(
-    //     micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", DANGER),
-    //     "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<!-- -->\n<ul>\n<li>baz</li>\n<li>bim</li>\n</ul>",
-    //     "should support HTML comments between lists"
-    // );
+    assert_eq!(
+        micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", DANGER),
+        "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<!-- -->\n<ul>\n<li>baz</li>\n<li>bim</li>\n</ul>",
+        "should support HTML comments between lists"
+    );
 
-    // To do: list (for some weird reason the HTML is in the list?).
-    // assert_eq!(
-    //     micromark_with_options("-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code", DANGER),
-    //     "<ul>\n<li>\n<p>foo</p>\n<p>notcode</p>\n</li>\n<li>\n<p>foo</p>\n</li>\n</ul>\n<!-- -->\n<pre><code>code\n</code></pre>",
-    //     "should support HTML comments between lists and indented code"
-    // );
+    assert_eq!(
+        micromark_with_options("-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code", DANGER),
+        "<ul>\n<li>\n<p>foo</p>\n<p>notcode</p>\n</li>\n<li>\n<p>foo</p>\n</li>\n</ul>\n<!-- -->\n<pre><code>code\n</code></pre>",
+        "should support HTML comments between lists and indented code"
+    );
 
     // To do: list (indent).
     // assert_eq!(
@@ -529,14 +527,13 @@ fn list() {
     //     "should support blank lines in code after an initial blank line"
     // );
 
-    // To do: list (blank lines).
-    // assert_eq!(
-    //     micromark(
-    //         "* a tight item that ends with an html element: `x`\n\nParagraph"
-    //     ),
-    //     "<ul>\n<li>a tight item that ends with an html element: <code>x</code></li>\n</ul>\n<p>Paragraph</p>",
-    //     "should ignore line endings after tight items ending in tags"
-    // );
+    assert_eq!(
+        micromark(
+            "* a tight item that ends with an html element: `x`\n\nParagraph"
+        ),
+        "<ul>\n<li>a tight item that ends with an html element: <code>x</code></li>\n</ul>\n<p>Paragraph</p>",
+        "should ignore line endings after tight items ending in tags"
+    );
 
     // To do: list (empty).
     // assert_eq!(
@@ -608,12 +605,11 @@ fn list() {
     //     "should support complex nested and empty lists (3)"
     // );
 
-    // To do: list (blank lines in lists?).
-    // assert_eq!(
-    //     micromark_with_options("* a\n\n<!---->\n\n* b", DANGER),
-    //     "<ul>\n<li>a</li>\n</ul>\n<!---->\n<ul>\n<li>b</li>\n</ul>",
-    //     "should support the common list breaking comment method"
-    // );
+    assert_eq!(
+        micromark_with_options("* a\n\n<!---->\n\n* b", DANGER),
+        "<ul>\n<li>a</li>\n</ul>\n<!---->\n<ul>\n<li>b</li>\n</ul>",
+        "should support the common list breaking comment method"
+    );
 
     // To do: turning things off.
     // assert_eq!(

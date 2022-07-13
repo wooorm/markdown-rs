@@ -410,6 +410,7 @@ fn flow_end(
             let mut index = 0;
 
             let add = info.inject[line_index].0.clone();
+            let mut first_line_ending_in_run: Option<usize> = None;
             map.add(0, 0, add);
 
             while index < tokenizer.events.len() {
@@ -419,19 +420,28 @@ fn flow_end(
                     || event.token_type == Token::BlankLineEnding
                 {
                     if event.event_type == EventType::Enter {
+                        first_line_ending_in_run = first_line_ending_in_run.or(Some(index));
                         let mut add = info.inject[line_index].1.clone();
-                        let mut deep_index = 0;
-                        while deep_index < add.len() {
-                            add[deep_index].point = event.point.clone();
-                            add[deep_index].index = event.index;
-                            deep_index += 1;
+                        let mut index = 0;
+                        while index < add.len() {
+                            add[index].point = event.point.clone();
+                            add[index].index = event.index;
+                            index += 1;
                         }
-                        map.add(index, 0, add);
+                        if !add.is_empty() {
+                            map.add(first_line_ending_in_run.unwrap(), 0, add);
+                        }
                     } else {
                         line_index += 1;
                         let add = info.inject[line_index].0.clone();
-                        map.add(index + 1, 0, add);
+                        if !add.is_empty() {
+                            map.add(index + 1, 0, add);
+                        }
                     }
+                } else if event.token_type == Token::SpaceOrTab {
+                    // Empty to allow whitespace in blank lines.
+                } else {
+                    first_line_ending_in_run = None;
                 }
 
                 index += 1;

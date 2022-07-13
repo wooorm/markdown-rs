@@ -143,12 +143,11 @@ fn block_quote() {
         "should support interrupting block quotes w/ blank lines"
     );
 
-    // To do: some container bug introduces due to lists?
-    // assert_eq!(
-    //     micromark("> a\n>\nb"),
-    //     "<blockquote>\n<p>a</p>\n</blockquote>\n<p>b</p>",
-    //     "should not support interrupting a blank line in a block quotes w/ paragraphs"
-    // );
+    assert_eq!(
+        micromark("> a\n>\nb"),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<p>b</p>",
+        "should not support interrupting a blank line in a block quotes w/ paragraphs"
+    );
 
     assert_eq!(
         micromark("> > > a\nb"),

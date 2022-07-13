@@ -57,12 +57,11 @@ fn code_fenced() {
         "should support an eof somewhere in content"
     );
 
-    // To do: container exits before (blank) line endings.
-    // assert_eq!(
-    //     micromark("> ```\n> aaa\n\nbbb"),
-    //     "<blockquote>\n<pre><code>aaa\n</code></pre>\n</blockquote>\n<p>bbb</p>",
-    //     "should support no closing sequence in a block quote"
-    // );
+    assert_eq!(
+        micromark("> ```\n> aaa\n\nbbb"),
+        "<blockquote>\n<pre><code>aaa\n</code></pre>\n</blockquote>\n<p>bbb</p>",
+        "should support no closing sequence in a block quote"
+    );
 
     assert_eq!(
         micromark("```\n\n  \n```"),
@@ -227,12 +226,11 @@ fn code_fenced() {
       "should not support a closing sequence w/ too much indent, regardless of opening sequence (1)"
     );
 
-    // To do: container exits before (blank) line endings.
-    // assert_eq!(
-    //     micromark("> ```\n>\n>\n>\n\na"),
-    //     "<blockquote>\n<pre><code>\n\n\n</code></pre>\n</blockquote>\n<p>a</p>",
-    //     "should not support a closing sequence w/ too much indent, regardless of opening sequence (2)"
-    // );
+    assert_eq!(
+        micromark("> ```\n>\n>\n>\n\na"),
+        "<blockquote>\n<pre><code>\n\n\n</code></pre>\n</blockquote>\n<p>a</p>",
+        "should not support a closing sequence w/ too much indent, regardless of opening sequence (2)"
+    );
 
     assert_eq!(
         micromark("> ```a\nb"),

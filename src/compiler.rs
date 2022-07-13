@@ -241,6 +241,7 @@ struct CompileContext<'a> {
     pub tight_stack: Vec<bool>,
     /// Fields used to influance the current compilation.
     pub slurp_one_line_ending: bool,
+    pub slurp_all_line_endings: bool,
     pub tags: bool,
     pub ignore_encode: bool,
     pub last_was_tag: bool,
@@ -275,6 +276,7 @@ impl<'a> CompileContext<'a> {
             definitions: HashMap::new(),
             tight_stack: vec![],
             slurp_one_line_ending: false,
+            slurp_all_line_endings: false,
             tags: true,
             ignore_encode: false,
             last_was_tag: false,
@@ -381,7 +383,6 @@ impl<'a> CompileContext<'a> {
 /// Turn events and codes into a string of HTML.
 #[allow(clippy::too_many_lines)]
 pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
-    // let slurp_all_line_endings = false;
     let mut index = 0;
     let mut line_ending_inferred: Option<LineEnding> = None;
 
@@ -718,7 +719,7 @@ fn on_enter_paragraph(context: &mut CompileContext) {
         context.tag("<p>".to_string());
     }
 
-    // context.slurp_all_line_endings = false;
+    context.slurp_all_line_endings = false;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Resource`][Token::Resource].
@@ -784,7 +785,7 @@ fn on_exit_block_quote(context: &mut CompileContext) {
     context.tight_stack.pop();
     context.line_ending_if_needed();
     context.tag("</blockquote>".to_string());
-    // context.slurp_all_line_endings = false;
+    context.slurp_all_line_endings = false;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][Token::CharacterReferenceMarker].
@@ -1074,10 +1075,9 @@ fn on_exit_label_text(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
-    // if context.slurp_all_line_endings {
-    //     // Empty.
-    // } else
-    if context.slurp_one_line_ending {
+    if context.slurp_all_line_endings {
+        // Empty.
+    } else if context.slurp_one_line_ending {
         context.slurp_one_line_ending = false;
     } else {
         context.push(context.encode_opt(&serialize(
@@ -1156,7 +1156,9 @@ fn on_exit_media(context: &mut CompileContext) {
 fn on_exit_paragraph(context: &mut CompileContext) {
     let tight = context.tight_stack.last().unwrap_or(&false);
 
-    if !tight {
+    if *tight {
+        context.slurp_all_line_endings = true;
+    } else {
         context.tag("</p>".to_string());
     }
 }
@@ -1281,13 +1283,12 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
 
 /// To do.
 fn on_exit_list_item(context: &mut CompileContext) {
-    //  && !context.slurp_all_line_endings
-    if context.last_was_tag {
+    if context.last_was_tag && !context.slurp_all_line_endings {
         context.line_ending_if_needed();
     }
 
     context.tag("</li>".to_string());
-    // context.slurp_all_line_endings = false;
+    context.slurp_all_line_endings = false;
 }
 
 /// To do.
