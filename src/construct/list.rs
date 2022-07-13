@@ -155,7 +155,6 @@ fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::ListItemMarker);
     tokenizer.consume(code);
     tokenizer.exit(Token::ListItemMarker);
-    println!("check:blank_line:before");
     (State::Fn(Box::new(marker_after)), None)
 }
 
@@ -187,7 +186,6 @@ fn on_blank(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// To do.
 fn marker_after_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    println!("marker:after:before");
     let interrupt = tokenizer.interrupt;
     tokenizer.attempt(list_item_prefix_whitespace, move |ok| {
         println!("marker:after:after: {:?} {:?}", ok, interrupt);
@@ -240,7 +238,6 @@ fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
 
 /// To do.
 pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    println!("cont:check:blank:before");
     tokenizer.check(blank_line, |ok| {
         println!("cont:check:blank:after: {:?}", ok);
         let func = if ok { blank_cont } else { not_blank_cont };
@@ -270,14 +267,13 @@ pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         index > 0 && tokenizer.events[index - 1].token_type == Token::BlankLineEnding;
     let mut further_blank = false;
 
-    if currently_blank {
+    if currently_blank && index > 3 {
         let before = skip::opt_back(&tokenizer.events, index - 3, &[Token::SpaceOrTab]);
         further_blank = tokenizer.events[before].token_type == Token::BlankLineEnding;
     }
 
     if further_blank || !matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
         println!("cont: not blank after further blank, or not blank w/o whitespace");
-        println!("cont:nok:1");
         (State::Nok, None)
     } else {
         println!("cont: not blank");
@@ -313,7 +309,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
     let mut index = 0;
     let mut balance = 0;
-    let mut list_items: Vec<(Kind, usize, usize, usize)> = vec![];
+    let mut lists_wip: Vec<(Kind, usize, usize, usize)> = vec![];
+    let mut lists: Vec<(Kind, usize, usize, usize)> = vec![];
     // To do: track balance? Or, check what’s between them?
 
     while index < tokenizer.events.len() {
@@ -330,12 +327,12 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 let kind = Kind::from_code(codes[0]);
                 let current = (kind, balance, index, end);
 
-                let previous = list_items.last();
+                let mut list_index = lists_wip.len();
                 let mut matched = false;
 
-                // There’s a previous list item.
-                if let Some(previous) = previous {
-                    // …with the same marker and depth, and with only (blank) line endings between them.
+                while list_index > 0 {
+                    list_index -= 1;
+                    let previous = &lists_wip[list_index];
                     if previous.0 == current.0
                         && previous.1 == current.1
                         && skip::opt(
@@ -344,21 +341,24 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             &[Token::LineEnding, Token::BlankLineEnding],
                         ) == current.2
                     {
+                        println!("prev:match {:?} {:?}", previous, current);
+                        let previous_mut = &mut lists_wip[list_index];
+                        previous_mut.3 = current.3;
+                        let mut remainder = lists_wip.drain((list_index + 1)..).collect::<Vec<_>>();
+                        lists.append(&mut remainder);
                         matched = true;
+                        break;
                     }
+
+                    println!(
+                        "todo: move them over to `lists` at some point? {:?}",
+                        previous
+                    );
                 }
 
-                if matched {
-                    let previous = list_items.last_mut().unwrap();
-                    previous.3 = current.3;
-                } else {
-                    // let previous = list_items.pop();
-                    // if let Some(previous) = previous {
-                    //     lists.push(previous);
-                    // }
-
-                    println!("prev:!match {:?} {:?}", previous, current);
-                    list_items.push(current);
+                if !matched {
+                    println!("prev:!match {:?} {:?}", lists_wip, current);
+                    lists_wip.push(current);
                 }
 
                 println!("enter: {:?}", event.token_type);
@@ -372,9 +372,11 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
+    lists.append(&mut lists_wip);
+
     let mut index = 0;
-    while index < list_items.len() {
-        let list_item = &list_items[index];
+    while index < lists.len() {
+        let list_item = &lists[index];
         let mut list_start = tokenizer.events[list_item.2].clone();
         let token_type = if matches!(list_item.0, Kind::Paren | Kind::Dot) {
             Token::ListOrdered
@@ -384,7 +386,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         list_start.token_type = token_type.clone();
         let mut list_end = tokenizer.events[list_item.3].clone();
         list_end.token_type = token_type;
-        println!("inject: {:?} {:?}", list_start, list_end);
+        println!("inject:list: {:?} {:?}", list_start, list_end);
 
         edit_map.add(list_item.2, 0, vec![list_start]);
         edit_map.add(list_item.3 + 1, 0, vec![list_end]);
@@ -392,7 +394,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    println!("list items: {:#?}", list_items);
+    println!("list items: {:#?}", lists);
 
     let events = edit_map.consume(&mut tokenizer.events);
 

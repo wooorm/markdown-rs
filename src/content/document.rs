@@ -275,7 +275,6 @@ fn exit_containers(
         let mut index = 0;
         while index < token_types.len() {
             let token_type = &token_types[index];
-            println!("creating exit: {:?}", token_type);
 
             exits.push(Event {
                 event_type: EventType::Exit,
@@ -295,14 +294,13 @@ fn exit_containers(
     if !exits.is_empty() {
         let before = if before { 1 } else { 0 };
         let mut index = info.inject.len() - 1;
-        println!("inject: {:?} {:?}", info.inject.len() - 1, before);
-        if before >= index {
+        if before > index {
             // To do: maybe, if this branch happens, it’s a bug?
             println!("inject:0: {:?}", index);
             index = 0;
         } else {
             index -= before;
-            println!("set: {:?}", index);
+            println!("inject:set: {:?}", index);
         }
         info.inject[index].1.append(&mut exits);
     }
@@ -435,6 +433,8 @@ fn flow_end(
                         line_index += 1;
                         let add = info.inject[line_index].0.clone();
                         if !add.is_empty() {
+                            // No longer empty.
+                            first_line_ending_in_run = None;
                             map.add(index + 1, 0, add);
                         }
                     }

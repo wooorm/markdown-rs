@@ -416,7 +416,7 @@ fn list() {
     //     "should not support lists in lists w/ too few spaces (3)"
     // );
 
-    // To do: list (seen as seeveral lists?).
+    // To do: list (seen as several lists?).
     // assert_eq!(
     //     micromark("1. a\n\n  2. b\n\n    3. c"),
     //     "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n</ol>\n<pre><code>3. c\n</code></pre>",
@@ -429,12 +429,11 @@ fn list() {
         "should support loose lists w/ a blank line between (1)"
     );
 
-    // To do: list (multiple blank lines).
-    // assert_eq!(
-    //     micromark("* a\n*\n\n* c"),
-    //     "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>c</p>\n</li>\n</ul>",
-    //     "should support loose lists w/ a blank line between (2)"
-    // );
+    assert_eq!(
+        micromark("* a\n*\n\n* c"),
+        "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>c</p>\n</li>\n</ul>",
+        "should support loose lists w/ a blank line between (2)"
+    );
 
     // To do: list (indent).
     // assert_eq!(
@@ -513,12 +512,11 @@ fn list() {
     // );
 
     // Extra.
-    // To do: list (empty).
-    // assert_eq!(
-    //     micromark("* a\n*\n\n  \n\t\n* b"),
-    //     "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>b</p>\n</li>\n</ul>",
-    //     "should support continued list items after an empty list item w/ many blank lines"
-    // );
+    assert_eq!(
+        micromark("* a\n*\n\n  \n\t\n* b"),
+        "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>b</p>\n</li>\n</ul>",
+        "should support continued list items after an empty list item w/ many blank lines"
+    );
 
     // To do: list (indent).
     // assert_eq!(
@@ -535,75 +533,71 @@ fn list() {
         "should ignore line endings after tight items ending in tags"
     );
 
-    // To do: list (empty).
-    // assert_eq!(
-    //     micromark("*   foo\n\n*\n\n*   bar"),
-    //     "<ul>\n<li>\n<p>foo</p>\n</li>\n<li></li>\n<li>\n<p>bar</p>\n</li>\n</ul>",
-    //     "should support empty items in a spread list"
-    // );
+    assert_eq!(
+        micromark("*   foo\n\n*\n\n*   bar"),
+        "<ul>\n<li>\n<p>foo</p>\n</li>\n<li></li>\n<li>\n<p>bar</p>\n</li>\n</ul>",
+        "should support empty items in a spread list"
+    );
 
-    // To do: list (slurp?).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("- ```\n\n  ```"),
     //     "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
     //     "should remove indent of code (fenced) in list (0 space)"
     // );
 
-    // To do: list (slurp?).
+    // To do: list (indent, slurp?).
     // assert_eq!(
     //     micromark("- ```\n \n  ```"),
     //     "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
     //     "should remove indent of code (fenced) in list (1 space)"
     // );
 
-    // To do: list (slurp?).
+    // To do: list (indent, slurp?).
     // assert_eq!(
     //     micromark("- ```\n  \n  ```"),
     //     "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
     //     "should remove indent of code (fenced) in list (2 spaces)"
     // );
 
-    // To do: list (slurp?).
+    // To do: list (indent, slurp?).
     // assert_eq!(
     //     micromark("- ```\n   \n  ```"),
     //     "<ul>\n<li>\n<pre><code> \n</code></pre>\n</li>\n</ul>",
     //     "should remove indent of code (fenced) in list (3 spaces)"
     // );
 
-    // To do: list (slurp?).
+    // To do: list (indent, slurp?).
     // assert_eq!(
     //     micromark("- ```\n    \n  ```"),
     //     "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",
     //     "should remove indent of code (fenced) in list (4 spaces)"
     // );
 
-    // To do: list (slurp?).
+    // To do: list (indent, slurp?).
     // assert_eq!(
     //     micromark("- ```\n\t\n  ```"),
     //     "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",
     //     "should remove indent of code (fenced) in list (1 tab)"
     // );
 
-    // To do: list (empty).
-    // assert_eq!(
-    //     micromark("- +\n-"),
-    //     "<ul>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n<li></li>\n</ul>",
-    //     "should support complex nested and empty lists (1)"
-    // );
+    assert_eq!(
+        micromark("- +\n-"),
+        "<ul>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n<li></li>\n</ul>",
+        "should support complex nested and empty lists (1)"
+    );
 
-    // To do: list (empty).
-    // assert_eq!(
-    //     micromark("- 1.\n-"),
-    //     "<ul>\n<li>\n<ol>\n<li></li>\n</ol>\n</li>\n<li></li>\n</ul>",
-    //     "should support complex nested and empty lists (2)"
-    // );
+    assert_eq!(
+        micromark("- 1.\n-"),
+        "<ul>\n<li>\n<ol>\n<li></li>\n</ol>\n</li>\n<li></li>\n</ul>",
+        "should support complex nested and empty lists (2)"
+    );
 
-    // To do: list (empty).
-    // assert_eq!(
-    //     micromark("* - +\n* -"),
-    //     "<ul>\n<li>\n<ul>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n</ul>\n</li>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n</ul>",
-    //     "should support complex nested and empty lists (3)"
-    // );
+    assert_eq!(
+        micromark("* - +\n* -"),
+        "<ul>\n<li>\n<ul>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n</ul>\n</li>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n</ul>",
+        "should support complex nested and empty lists (3)"
+    );
 
     assert_eq!(
         micromark_with_options("* a\n\n<!---->\n\n* b", DANGER),
