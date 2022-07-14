@@ -112,10 +112,9 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             Box::new(if ok { nok } else { before_unordered })
         })(tokenizer, code),
         // Ordered.
-        Code::Char(char) if char.is_ascii_digit() => {
+        Code::Char(char) if char.is_ascii_digit() && (!tokenizer.interrupt || char == '1') => {
             tokenizer.enter(Token::ListItemPrefix);
             tokenizer.enter(Token::ListItemValue);
-            // To do: `interrupt || !1`?
             inside(tokenizer, code, 0)
         }
         _ => (State::Nok, None),
@@ -271,7 +270,6 @@ pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
     // We have a blank line.
     // Still, try to consume at most the items size.
-    // To do: eat at most `size` whitespace.
     tokenizer.go(space_or_tab_min_max(0, size), cont_after)(tokenizer, code)
 }
 

@@ -37,6 +37,7 @@ struct DocumentInfo {
     continued: usize,
     index: usize,
     paragraph_before: bool,
+    interrupt_before: bool,
     inject: Vec<(Vec<Event>, Vec<Event>)>,
     stack: Vec<Container>,
     states: Vec<ContainerState>,
@@ -88,6 +89,7 @@ fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         inject: vec![],
         next: Box::new(flow),
         paragraph_before: false,
+        interrupt_before: false,
         stack: vec![],
         states: vec![],
         stack_close: vec![],
@@ -101,6 +103,8 @@ fn line_start(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> 
     info.index = tokenizer.events.len();
     info.inject.push((vec![], vec![]));
     info.continued = 0;
+    // Containers would only be interrupting if we’ve continued.
+    tokenizer.interrupt = false;
     container_existing_before(tokenizer, code, info)
 }
 
@@ -189,9 +193,11 @@ fn container_new_before(
         }
 
         println!(
-            "  to do: set interrupt? (before: {:?})",
-            tokenizer.interrupt
+            "  set interrupt to {:?} because we have continued (was: {:?})",
+            info.interrupt_before, tokenizer.interrupt
         );
+        tokenizer.interrupt = info.interrupt_before;
+
         //   // If we do have flow, it could still be a blank line,
         //   // but we’d be interrupting it w/ a new container if there’s a current
         //   // construct.
@@ -267,6 +273,13 @@ fn container_new_after(
     info.states.push(container);
     info.stack.push(kind);
     info.continued = info.stack.len(); // To do: `+= 1`?
+    println!(
+        "  set `interrupt`, `info.interrupt_before: false` because we have new containers (before: {:?}, {:?})",
+        info.interrupt_before,
+        tokenizer.interrupt
+    );
+    info.interrupt_before = false;
+    tokenizer.interrupt = info.interrupt_before;
     container_new_before(tokenizer, code, info)
 }
 
@@ -282,6 +295,11 @@ fn containers_after(
     info.inject.last_mut().unwrap().0.append(&mut containers);
 
     tokenizer.lazy = info.continued != info.stack.len();
+    println!(
+        "  restoring interrupt: {:?} (was: {:?})",
+        info.interrupt_before, tokenizer.interrupt
+    );
+    tokenizer.interrupt = info.interrupt_before;
 
     // Define start.
     let point = tokenizer.point.clone();
@@ -358,6 +376,7 @@ fn flow_end(
     tokenizer.expect(code, true);
 
     info.paragraph_before = paragraph;
+    info.interrupt_before = tokenizer.interrupt;
 
     match result {
         State::Ok => {
@@ -521,10 +540,10 @@ fn line_end(
     info.inject[index].1.append(&mut exits);
 
     println!(
-        "  setting `interrupt: false` (before: {:?})",
-        tokenizer.interrupt
+        "  setting `info.interrupt_before: false` (before: {:?})",
+        info.interrupt_before
     );
-    tokenizer.interrupt = false;
+    info.interrupt_before = false;
 
     info
 }
