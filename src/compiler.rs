@@ -8,6 +8,7 @@ use crate::util::{
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
     sanitize_uri::sanitize_uri,
+    skip,
     span::{codes as codes_from_span, from_exit_event, serialize},
 };
 use std::collections::HashMap;
@@ -241,7 +242,6 @@ struct CompileContext<'a> {
     pub tight_stack: Vec<bool>,
     /// Fields used to influance the current compilation.
     pub slurp_one_line_ending: bool,
-    pub slurp_all_line_endings: bool,
     pub tags: bool,
     pub ignore_encode: bool,
     pub last_was_tag: bool,
@@ -276,7 +276,6 @@ impl<'a> CompileContext<'a> {
             definitions: HashMap::new(),
             tight_stack: vec![],
             slurp_one_line_ending: false,
-            slurp_all_line_endings: false,
             tags: true,
             ignore_encode: false,
             last_was_tag: false,
@@ -718,8 +717,6 @@ fn on_enter_paragraph(context: &mut CompileContext) {
         context.line_ending_if_needed();
         context.tag("<p>".to_string());
     }
-
-    context.slurp_all_line_endings = false;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Resource`][Token::Resource].
@@ -785,7 +782,6 @@ fn on_exit_block_quote(context: &mut CompileContext) {
     context.tight_stack.pop();
     context.line_ending_if_needed();
     context.tag("</blockquote>".to_string());
-    context.slurp_all_line_endings = false;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][Token::CharacterReferenceMarker].
@@ -1075,9 +1071,7 @@ fn on_exit_label_text(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
-    if context.slurp_all_line_endings {
-        // Empty.
-    } else if context.slurp_one_line_ending {
+    if context.slurp_one_line_ending {
         context.slurp_one_line_ending = false;
     } else {
         context.push(context.encode_opt(&serialize(
@@ -1156,9 +1150,7 @@ fn on_exit_media(context: &mut CompileContext) {
 fn on_exit_paragraph(context: &mut CompileContext) {
     let tight = context.tight_stack.last().unwrap_or(&false);
 
-    if *tight {
-        context.slurp_all_line_endings = true;
-    } else {
+    if !tight {
         context.tag("</p>".to_string());
     }
 }
@@ -1218,10 +1210,29 @@ fn on_enter_list(context: &mut CompileContext) {
         } else {
             balance -= 1;
 
-            // Blank line directly in list or directly in list item.
-            if balance < 3 && event.token_type == Token::BlankLineEnding {
-                loose = true;
-                break;
+            // Blank line directly in list or directly in list item,
+            // but not a blank line after an empty list item.
+            // To do: does this check if the item is empty?
+            if balance < 3 && event.token_type == Token::BlankLineEnding
+            // && !(balance == 1 && events[index - 2].token_type == Token::ListItem)
+            {
+                let at_list_item = balance == 1 && events[index - 2].token_type == Token::ListItem;
+                let at_empty_list_item = if at_list_item {
+                    let before_item = skip::opt_back(events, index - 2, &[Token::ListItem]);
+                    let before_prefix = skip::opt_back(
+                        events,
+                        index - 3,
+                        &[Token::ListItemPrefix, Token::SpaceOrTab],
+                    );
+                    before_item + 1 == before_prefix
+                } else {
+                    false
+                };
+
+                if !at_list_item || !at_empty_list_item {
+                    loose = true;
+                    break;
+                }
             }
 
             // Done.
@@ -1233,7 +1244,6 @@ fn on_enter_list(context: &mut CompileContext) {
         index += 1;
     }
 
-    println!("list: {:?} {:?}", token_type, loose);
     context.tight_stack.push(!loose);
     context.line_ending_if_needed();
     // Note: no `>`.
@@ -1283,12 +1293,21 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
 
 /// To do.
 fn on_exit_list_item(context: &mut CompileContext) {
-    if context.last_was_tag && !context.slurp_all_line_endings {
+    let tight = context.tight_stack.last().unwrap_or(&false);
+    let before_item = skip::opt_back(
+        context.events,
+        context.index - 1,
+        &[Token::BlankLineEnding, Token::LineEnding, Token::SpaceOrTab],
+    );
+    let previous = &context.events[before_item];
+    let tight_paragraph = *tight && previous.token_type == Token::Paragraph;
+    let empty_item = previous.token_type == Token::ListItemPrefix;
+
+    if !tight_paragraph && !empty_item {
         context.line_ending_if_needed();
     }
 
     context.tag("</li>".to_string());
-    context.slurp_all_line_endings = false;
 }
 
 /// To do.

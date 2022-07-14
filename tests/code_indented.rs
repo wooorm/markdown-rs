@@ -81,26 +81,23 @@ fn code_indented() {
         "should not support lazyness (1)"
     );
 
-    // To do: container interrupt.
-    // assert_eq!(
-    //     micromark("> a\n    b"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support lazyness (2)"
-    // );
+    assert_eq!(
+        micromark("> a\n    b"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support lazyness (2)"
+    );
 
-    // To do: container interrupt.
-    // assert_eq!(
-    //     micromark("> a\n     b"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support lazyness (3)"
-    // );
+    assert_eq!(
+        micromark("> a\n     b"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support lazyness (3)"
+    );
 
-    // To do: container interrupt.
-    // assert_eq!(
-    //     micromark("> a\n      b"),
-    //     "<blockquote>\n<p>a\nb</p>\n</blockquote>",
-    //     "should not support lazyness (4)"
-    // );
+    assert_eq!(
+        micromark("> a\n      b"),
+        "<blockquote>\n<p>a\nb</p>\n</blockquote>",
+        "should not support lazyness (4)"
+    );
 
     assert_eq!(
         micromark(">     a\n    b"),

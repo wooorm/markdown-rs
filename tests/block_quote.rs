@@ -76,12 +76,11 @@ fn block_quote() {
         "should not support lazy fenced code in block quotes"
     );
 
-    // To do: container interrupt.
-    // assert_eq!(
-    //     micromark("> a\n    - b"),
-    //     "<blockquote>\n<p>a\n- b</p>\n</blockquote>",
-    //     "should not support lazy indented code (or lazy list) in block quotes"
-    // );
+    assert_eq!(
+        micromark("> a\n    - b"),
+        "<blockquote>\n<p>a\n- b</p>\n</blockquote>",
+        "should not support lazy indented code (or lazy list) in block quotes"
+    );
 
     assert_eq!(
         micromark(">"),

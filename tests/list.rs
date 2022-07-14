@@ -167,14 +167,14 @@ fn list() {
     //     "should support indented code in list items (8)"
     // );
 
-    // To do: list (blank).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("-\n  foo\n-\n  ```\n  bar\n  ```\n-\n      baz"),
     //     "<ul>\n<li>foo</li>\n<li>\n<pre><code>bar\n</code></pre>\n</li>\n<li>\n<pre><code>baz\n</code></pre>\n</li>\n</ul>",
     //     "should support blank first lines (1)"
     // );
 
-    // To do: list (blank).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("-   \n  foo"),
     //     "<ul>\n<li>foo</li>\n</ul>",
@@ -187,21 +187,21 @@ fn list() {
         "should support empty only items"
     );
 
-    // To do: list (“blank” lines).
+    // To do: list (empty item is allowed to follow another item).
     // assert_eq!(
     //     micromark("- foo\n-\n- bar"),
     //     "<ul>\n<li>foo</li>\n<li></li>\n<li>bar</li>\n</ul>",
     //     "should support empty continued items"
     // );
 
-    // To do: list (“blank” lines).
+    // To do: list (empty item is allowed to follow another item).
     // assert_eq!(
     //     micromark("- foo\n-   \n- bar"),
     //     "<ul>\n<li>foo</li>\n<li></li>\n<li>bar</li>\n</ul>",
     //     "should support blank continued items"
     // );
 
-    // To do: list (“blank” lines).
+    // To do: list (empty item is allowed to follow another item).
     // assert_eq!(
     //     micromark("1. foo\n2.\n3. bar"),
     //     "<ol>\n<li>foo</li>\n<li></li>\n<li>bar</li>\n</ol>",
@@ -320,7 +320,7 @@ fn list() {
         "should support sublists (2)"
     );
 
-    // To do: list (indent?).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("- # Foo\n- Bar\n  ---\n  baz"),
     //     "<ul>\n<li>\n<h1>Foo</h1>\n</li>\n<li>\n<h2>Bar</h2>\nbaz</li>\n</ul>",
@@ -395,19 +395,17 @@ fn list() {
         "should support HTML comments between lists and indented code"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n - b\n  - c\n   - d\n  - e\n - f\n- g"),
-    //     "<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n<li>d</li>\n<li>e</li>\n<li>f</li>\n<li>g</li>\n</ul>",
-    //     "should not support lists in lists w/ too few spaces (1)"
-    // );
+    assert_eq!(
+        micromark("- a\n - b\n  - c\n   - d\n  - e\n - f\n- g"),
+        "<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n<li>d</li>\n<li>e</li>\n<li>f</li>\n<li>g</li>\n</ul>",
+        "should not support lists in lists w/ too few spaces (1)"
+    );
 
-    // To do: list (whitespace, tight).
-    // assert_eq!(
-    //     micromark("1. a\n\n  2. b\n\n   3. c"),
-    //     "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ol>",
-    //     "should not support lists in lists w/ too few spaces (2)"
-    // );
+    assert_eq!(
+        micromark("1. a\n\n  2. b\n\n   3. c"),
+        "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n<li>\n<p>c</p>\n</li>\n</ol>",
+        "should not support lists in lists w/ too few spaces (2)"
+    );
 
     // To do: list (indent).
     // assert_eq!(
@@ -416,7 +414,7 @@ fn list() {
     //     "should not support lists in lists w/ too few spaces (3)"
     // );
 
-    // To do: list (seen as several lists?).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("1. a\n\n  2. b\n\n    3. c"),
     //     "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n</ol>\n<pre><code>3. c\n</code></pre>",
@@ -429,11 +427,12 @@ fn list() {
         "should support loose lists w/ a blank line between (1)"
     );
 
-    assert_eq!(
-        micromark("* a\n*\n\n* c"),
-        "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>c</p>\n</li>\n</ul>",
-        "should support loose lists w/ a blank line between (2)"
-    );
+    // To do: list (empty item is allowed to follow another item).
+    // assert_eq!(
+    //     micromark("* a\n*\n\n* c"),
+    //     "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>c</p>\n</li>\n</ul>",
+    //     "should support loose lists w/ a blank line between (2)"
+    // );
 
     // To do: list (indent).
     // assert_eq!(
@@ -497,14 +496,14 @@ fn list() {
     //     "should support loose lists w/ a blank line in an item"
     // );
 
-    // To do: list (blank lines).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("* foo\n  * bar\n\n  baz"),
     //     "<ul>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n<p>baz</p>\n</li>\n</ul>",
     //     "should support loose lists w/ tight sublists (1)"
     // );
 
-    // To do: list (blank lines).
+    // To do: list (indent).
     // assert_eq!(
     //     micromark("- a\n  - b\n  - c\n\n- d\n  - e\n  - f"),
     //     "<ul>\n<li>\n<p>a</p>\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n</li>\n<li>\n<p>d</p>\n<ul>\n<li>e</li>\n<li>f</li>\n</ul>\n</li>\n</ul>",
@@ -512,11 +511,12 @@ fn list() {
     // );
 
     // Extra.
-    assert_eq!(
-        micromark("* a\n*\n\n  \n\t\n* b"),
-        "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>b</p>\n</li>\n</ul>",
-        "should support continued list items after an empty list item w/ many blank lines"
-    );
+    // To do: list (empty item is allowed to follow another item).
+    // assert_eq!(
+    //     micromark("* a\n*\n\n  \n\t\n* b"),
+    //     "<ul>\n<li>\n<p>a</p>\n</li>\n<li></li>\n<li>\n<p>b</p>\n</li>\n</ul>",
+    //     "should support continued list items after an empty list item w/ many blank lines"
+    // );
 
     // To do: list (indent).
     // assert_eq!(

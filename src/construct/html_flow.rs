@@ -207,7 +207,6 @@ struct Info {
 ///
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::HtmlFlow);
-    tokenizer.enter(Token::HtmlFlowData);
     // To do: allow arbitrary when code (indented) is turned off.
     tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
@@ -219,6 +218,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('<') == code {
+        tokenizer.enter(Token::HtmlFlowData);
         tokenizer.consume(code);
         (State::Fn(Box::new(open)), None)
     } else {
@@ -771,11 +771,12 @@ fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if info.kind == Kind::Basic || info.kind == Kind::Complete =>
         {
+            tokenizer.exit(Token::HtmlFlowData);
             tokenizer.check(blank_line_before, |ok| {
                 let func = if ok {
-                    continuation_close
+                    html_continue_after
                 } else {
-                    continuation_at_line_ending
+                    html_continue_start // continuation_at_line_ending
                 };
                 Box::new(move |t, c| func(t, c, info))
             })(tokenizer, code)

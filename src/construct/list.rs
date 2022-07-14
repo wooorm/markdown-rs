@@ -267,7 +267,7 @@ pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         index > 0 && tokenizer.events[index - 1].token_type == Token::BlankLineEnding;
     let mut further_blank = false;
 
-    if currently_blank && index > 3 {
+    if currently_blank && index > 5 {
         let before = skip::opt_back(&tokenizer.events, index - 3, &[Token::SpaceOrTab]);
         further_blank = tokenizer.events[before].token_type == Token::BlankLineEnding;
     }
@@ -338,7 +338,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         && skip::opt(
                             &tokenizer.events,
                             previous.3 + 1,
-                            &[Token::LineEnding, Token::BlankLineEnding],
+                            &[Token::SpaceOrTab, Token::LineEnding, Token::BlankLineEnding],
                         ) == current.2
                     {
                         println!("prev:match {:?} {:?}", previous, current);
