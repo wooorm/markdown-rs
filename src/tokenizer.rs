@@ -130,6 +130,13 @@ pub struct Media {
     pub id: String,
 }
 
+/// To do.
+#[derive(Default, Debug)]
+pub struct ContainerState {
+    pub blank_initial: bool,
+    pub size: usize,
+}
+
 /// The internal state of a tokenizer, not to be confused with states from the
 /// state machine, this instead is all the information about where we currently
 /// are and what’s going on.
@@ -203,6 +210,8 @@ pub struct Tokenizer<'a> {
     pub concrete: bool,
     /// To do.
     pub lazy: bool,
+    /// To do.
+    pub container: Option<ContainerState>,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -225,6 +234,7 @@ impl<'a> Tokenizer<'a> {
             interrupt: false,
             concrete: false,
             lazy: false,
+            container: None,
             resolvers: vec![],
             resolver_ids: vec![],
         }

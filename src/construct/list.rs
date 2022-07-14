@@ -99,6 +99,7 @@ impl Kind {
 
 /// To do.
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.enter(Token::ListItem);
     // To do: allow arbitrary when code (indented) is turned off.
     tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
@@ -108,12 +109,10 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         // Unordered.
         Code::Char('*' | '+' | '-') => tokenizer.check(thematic_break, |ok| {
-            let func = if ok { nok } else { before_unordered };
-            Box::new(func)
+            Box::new(if ok { nok } else { before_unordered })
         })(tokenizer, code),
         // Ordered.
         Code::Char(char) if char.is_ascii_digit() => {
-            tokenizer.enter(Token::ListItem);
             tokenizer.enter(Token::ListItemPrefix);
             tokenizer.enter(Token::ListItemValue);
             // To do: `interrupt || !1`?
@@ -125,8 +124,6 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// To do.
 fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: check if this is a thematic break?
-    tokenizer.enter(Token::ListItem);
     tokenizer.enter(Token::ListItemPrefix);
     marker(tokenizer, code)
 }
@@ -163,7 +160,6 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let interrupt = tokenizer.interrupt;
 
     tokenizer.check(blank_line, move |ok| {
-        println!("check:blank_line:after {:?} {:?}", ok, interrupt);
         let func = if ok {
             if interrupt {
                 nok
@@ -179,9 +175,12 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// To do.
 fn on_blank(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    if let Some(container) = tokenizer.container.as_mut() {
+        container.blank_initial = true;
+    }
+
     // self.containerState.initialBlankLine = true
-    // initialSize++
-    prefix_end(tokenizer, code)
+    prefix_end(tokenizer, code, true)
 }
 
 /// To do.
@@ -189,8 +188,11 @@ fn marker_after_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let interrupt = tokenizer.interrupt;
     tokenizer.attempt(list_item_prefix_whitespace, move |ok| {
         println!("marker:after:after: {:?} {:?}", ok, interrupt);
-        let func = if ok { prefix_end } else { prefix_other };
-        Box::new(func)
+        if ok {
+            Box::new(|t, c| prefix_end(t, c, false))
+        } else {
+            Box::new(prefix_other)
+        }
     })(tokenizer, code)
 }
 
@@ -203,15 +205,25 @@ fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume(code);
             tokenizer.exit(Token::SpaceOrTab);
-            (State::Fn(Box::new(prefix_end)), None)
+            (State::Fn(Box::new(|t, c| prefix_end(t, c, false))), None)
         }
         _ => (State::Nok, None),
     }
 }
 
 /// To do.
-fn prefix_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: calculate size.
+fn prefix_end(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
+    let start = skip::to_back(
+        &tokenizer.events,
+        tokenizer.events.len() - 1,
+        &[Token::ListItem],
+    );
+    let prefix = tokenizer.index - tokenizer.events[start].index + (if blank { 1 } else { 0 });
+
+    if let Some(container) = tokenizer.container.as_mut() {
+        container.size = prefix;
+    }
+
     tokenizer.exit(Token::ListItemPrefix);
     tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve));
     (State::Ok, Some(vec![code]))
@@ -221,14 +233,17 @@ fn prefix_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn list_item_prefix_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // To do: check how big this should be?
     tokenizer.go(
-        space_or_tab_min_max(1, TAB_SIZE - 1),
+        space_or_tab_min_max(1, TAB_SIZE),
         list_item_prefix_whitespace_after,
     )(tokenizer, code)
 }
 
 fn list_item_prefix_whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: check some stuff?
-    (State::Ok, Some(vec![code]))
+    if matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
+        (State::Nok, None)
+    } else {
+        (State::Ok, Some(vec![code]))
+    }
 }
 
 /// To do.
@@ -240,46 +255,40 @@ fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
 pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.check(blank_line, |ok| {
         println!("cont:check:blank:after: {:?}", ok);
-        let func = if ok { blank_cont } else { not_blank_cont };
-        Box::new(func)
+        Box::new(if ok { blank_cont } else { not_blank_cont })
     })(tokenizer, code)
 }
 
 pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // self.containerState.furtherBlankLines =
-    //   self.containerState.furtherBlankLines ||
-    //   self.containerState.initialBlankLine
+    let mut size = 0;
+    if let Some(container) = tokenizer.container.as_ref() {
+        size = container.size;
+
+        if container.blank_initial {
+            return (State::Nok, None);
+        }
+    }
 
     // We have a blank line.
     // Still, try to consume at most the items size.
     // To do: eat at most `size` whitespace.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE), blank_cont_after)(tokenizer, code)
-}
-
-pub fn blank_cont_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    println!("cont: blank: after");
-    (State::Ok, Some(vec![code]))
+    tokenizer.go(space_or_tab_min_max(0, size), cont_after)(tokenizer, code)
 }
 
 pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let index = tokenizer.events.len();
-    let currently_blank =
-        index > 0 && tokenizer.events[index - 1].token_type == Token::BlankLineEnding;
-    let mut further_blank = false;
+    let mut size = 0;
 
-    if currently_blank && index > 5 {
-        let before = skip::opt_back(&tokenizer.events, index - 3, &[Token::SpaceOrTab]);
-        further_blank = tokenizer.events[before].token_type == Token::BlankLineEnding;
+    if let Some(container) = tokenizer.container.as_mut() {
+        container.blank_initial = false;
+        size = container.size;
     }
 
-    if further_blank || !matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
-        println!("cont: not blank after further blank, or not blank w/o whitespace");
-        (State::Nok, None)
-    } else {
-        println!("cont: not blank");
-        // To do: eat exactly `size` whitespace.
-        tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), blank_cont_after)(tokenizer, code)
-    }
+    tokenizer.go(space_or_tab_min_max(size, size), cont_after)(tokenizer, code)
+}
+
+pub fn cont_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    println!("cont: blank: after");
+    (State::Ok, Some(vec![code]))
 }
 
 /// To do.

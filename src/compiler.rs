@@ -1150,7 +1150,9 @@ fn on_exit_media(context: &mut CompileContext) {
 fn on_exit_paragraph(context: &mut CompileContext) {
     let tight = context.tight_stack.last().unwrap_or(&false);
 
-    if !tight {
+    if *tight {
+        context.slurp_one_line_ending = true;
+    } else {
         context.tag("</p>".to_string());
     }
 }
@@ -1216,6 +1218,14 @@ fn on_enter_list(context: &mut CompileContext) {
             if balance < 3 && event.token_type == Token::BlankLineEnding
             // && !(balance == 1 && events[index - 2].token_type == Token::ListItem)
             {
+                let at_marker = balance == 2
+                    && events[skip::opt_back(
+                        events,
+                        index - 2,
+                        &[Token::BlankLineEnding, Token::SpaceOrTab],
+                    )]
+                    .token_type
+                        == Token::ListItemPrefix;
                 let at_list_item = balance == 1 && events[index - 2].token_type == Token::ListItem;
                 let at_empty_list_item = if at_list_item {
                     let before_item = skip::opt_back(events, index - 2, &[Token::ListItem]);
@@ -1229,7 +1239,7 @@ fn on_enter_list(context: &mut CompileContext) {
                     false
                 };
 
-                if !at_list_item || !at_empty_list_item {
+                if !at_marker && (!at_list_item || !at_empty_list_item) {
                     loose = true;
                     break;
                 }
@@ -1297,7 +1307,12 @@ fn on_exit_list_item(context: &mut CompileContext) {
     let before_item = skip::opt_back(
         context.events,
         context.index - 1,
-        &[Token::BlankLineEnding, Token::LineEnding, Token::SpaceOrTab],
+        &[
+            Token::BlankLineEnding,
+            Token::LineEnding,
+            Token::SpaceOrTab,
+            Token::BlockQuotePrefix,
+        ],
     );
     let previous = &context.events[before_item];
     let tight_paragraph = *tight && previous.token_type == Token::Paragraph;

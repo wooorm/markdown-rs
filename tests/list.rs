@@ -23,26 +23,23 @@ fn list() {
         "should support documents in list items"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- one\n\n two"),
-    //     "<ul>\n<li>one</li>\n</ul>\n<p>two</p>",
-    //     "should not support 1 space for a two-character list prefix"
-    // );
+    assert_eq!(
+        micromark("- one\n\n two"),
+        "<ul>\n<li>one</li>\n</ul>\n<p>two</p>",
+        "should not support 1 space for a two-character list prefix"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n\n  b"),
-    //     "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
-    //     "should support blank lines in list items"
-    // );
+    assert_eq!(
+        micromark("- a\n\n  b"),
+        "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
+        "should support blank lines in list items"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark(" -    one\n\n     two"),
-    //     "<ul>\n<li>one</li>\n</ul>\n<pre><code> two\n</code></pre>",
-    //     "should support indented code after lists"
-    // );
+    assert_eq!(
+        micromark(" -    one\n\n     two"),
+        "<ul>\n<li>one</li>\n</ul>\n<pre><code> two\n</code></pre>",
+        "should support indented code after lists"
+    );
 
     assert_eq!(
         micromark("   > > 1.  one\n>>\n>>     two"),
@@ -50,12 +47,11 @@ fn list() {
         "should support proper indent mixed w/ block quotes (1)"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark(">>- one\n>>\n  >  > two"),
-    //     "<blockquote>\n<blockquote>\n<ul>\n<li>one</li>\n</ul>\n<p>two</p>\n</blockquote>\n</blockquote>",
-    //     "should support proper indent mixed w/ block quotes (2)"
-    // );
+    assert_eq!(
+        micromark(">>- one\n>>\n  >  > two"),
+        "<blockquote>\n<blockquote>\n<ul>\n<li>one</li>\n</ul>\n<p>two</p>\n</blockquote>\n</blockquote>",
+        "should support proper indent mixed w/ block quotes (2)"
+    );
 
     assert_eq!(
         micromark("-one\n\n2.two"),
@@ -63,12 +59,11 @@ fn list() {
         "should not support a missing space after marker"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- foo\n\n\n  bar"),
-    //     "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>",
-    //     "should support multiple blank lines between items"
-    // );
+    assert_eq!(
+        micromark("- foo\n\n\n  bar"),
+        "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>",
+        "should support multiple blank lines between items"
+    );
 
     assert_eq!(
         micromark("1.  foo\n\n    ```\n    bar\n    ```\n\n    baz\n\n    > bam"),
@@ -76,12 +71,11 @@ fn list() {
         "should support flow in items"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- Foo\n\n      bar\n\n\n      baz"),
-    //     "<ul>\n<li>\n<p>Foo</p>\n<pre><code>bar\n\n\nbaz\n</code></pre>\n</li>\n</ul>",
-    //     "should support blank lines in indented code in items"
-    // );
+    assert_eq!(
+        micromark("- Foo\n\n      bar\n\n\n      baz"),
+        "<ul>\n<li>\n<p>Foo</p>\n<pre><code>bar\n\n\nbaz\n</code></pre>\n</li>\n</ul>",
+        "should support blank lines in indented code in items"
+    );
 
     assert_eq!(
         micromark("123456789. ok"),
@@ -113,19 +107,17 @@ fn list() {
         "should not support “negative” ordered item values"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- foo\n\n      bar"),
-    //     "<ul>\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ul>",
-    //     "should support indented code in list items (1)"
-    // );
+    assert_eq!(
+        micromark("- foo\n\n      bar"),
+        "<ul>\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ul>",
+        "should support indented code in list items (1)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("  10.  foo\n\n           bar"),
-    //     "<ol start=\"10\">\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ol>",
-    //     "should support indented code in list items (2)"
-    // );
+    assert_eq!(
+        micromark("  10.  foo\n\n           bar"),
+        "<ol start=\"10\">\n<li>\n<p>foo</p>\n<pre><code>bar\n</code></pre>\n</li>\n</ol>",
+        "should support indented code in list items (2)"
+    );
 
     assert_eq!(
         micromark("    indented code\n\nparagraph\n\n    more code"),
@@ -133,19 +125,17 @@ fn list() {
         "should support indented code in list items (3)"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("1.     indented code\n\n   paragraph\n\n       more code"),
-    //     "<ol>\n<li>\n<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>",
-    //     "should support indented code in list items (4)"
-    // );
+    assert_eq!(
+        micromark("1.     indented code\n\n   paragraph\n\n       more code"),
+        "<ol>\n<li>\n<pre><code>indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>",
+        "should support indented code in list items (4)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("1.      indented code\n\n   paragraph\n\n       more code"),
-    //     "<ol>\n<li>\n<pre><code> indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>",
-    //     "should support indented code in list items (5)"
-    // );
+    assert_eq!(
+        micromark("1.      indented code\n\n   paragraph\n\n       more code"),
+        "<ol>\n<li>\n<pre><code> indented code\n</code></pre>\n<p>paragraph</p>\n<pre><code>more code\n</code></pre>\n</li>\n</ol>",
+        "should support indented code in list items (5)"
+    );
 
     assert_eq!(
         micromark("   foo\n\nbar"),
@@ -153,33 +143,30 @@ fn list() {
         "should support indented code in list items (6)"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("-    foo\n\n  bar"),
-    //     "<ul>\n<li>foo</li>\n</ul>\n<p>bar</p>",
-    //     "should support indented code in list items (7)"
-    // );
+    assert_eq!(
+        micromark("-    foo\n\n  bar"),
+        "<ul>\n<li>foo</li>\n</ul>\n<p>bar</p>",
+        "should support indented code in list items (7)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("-  foo\n\n   bar"),
-    //     "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>",
-    //     "should support indented code in list items (8)"
-    // );
+    assert_eq!(
+        micromark("-  foo\n\n   bar"),
+        "<ul>\n<li>\n<p>foo</p>\n<p>bar</p>\n</li>\n</ul>",
+        "should support indented code in list items (8)"
+    );
 
-    // To do: list (indent).
+    // To do: list (empty item is allowed to follow another item).
     // assert_eq!(
     //     micromark("-\n  foo\n-\n  ```\n  bar\n  ```\n-\n      baz"),
     //     "<ul>\n<li>foo</li>\n<li>\n<pre><code>bar\n</code></pre>\n</li>\n<li>\n<pre><code>baz\n</code></pre>\n</li>\n</ul>",
     //     "should support blank first lines (1)"
     // );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("-   \n  foo"),
-    //     "<ul>\n<li>foo</li>\n</ul>",
-    //     "should support blank first lines (2)"
-    // );
+    assert_eq!(
+        micromark("-   \n  foo"),
+        "<ul>\n<li>foo</li>\n</ul>",
+        "should support blank first lines (2)"
+    );
 
     assert_eq!(
         micromark("-\n\n  foo"),
@@ -220,32 +207,29 @@ fn list() {
         "should not support empty items to interrupt paragraphs"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark(
-    //         " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote."
-    //     ),
-    //     "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
-    //     "should support indenting w/ 1 space"
-    // );
+    assert_eq!(
+        micromark(
+            " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote."
+        ),
+        "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
+        "should support indenting w/ 1 space"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark(
-    //         "  1.  A paragraph\n      with two lines.\n\n          indented code\n\n      > A block quote."
-    //     ),
-    //     "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
-    //     "should support indenting w/ 2 spaces"
-    // );
+    assert_eq!(
+        micromark(
+            "  1.  A paragraph\n      with two lines.\n\n          indented code\n\n      > A block quote."
+        ),
+        "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
+        "should support indenting w/ 2 spaces"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark(
-    //         "   1.  A paragraph\n       with two lines.\n\n           indented code\n\n       > A block quote."
-    //     ),
-    //     "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
-    //     "should support indenting w/ 3 spaces"
-    // );
+    assert_eq!(
+        micromark(
+            "   1.  A paragraph\n       with two lines.\n\n           indented code\n\n       > A block quote."
+        ),
+        "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
+        "should support indenting w/ 3 spaces"
+    );
 
     assert_eq!(
         micromark(
@@ -255,14 +239,13 @@ fn list() {
         "should not support indenting w/ 4 spaces"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark(
-    //         "  1.  A paragraph\nwith two lines.\n\n          indented code\n\n      > A block quote."
-    //     ),
-    //     "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
-    //     "should support lazy lines"
-    // );
+    assert_eq!(
+        micromark(
+            "  1.  A paragraph\nwith two lines.\n\n          indented code\n\n      > A block quote."
+        ),
+        "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
+        "should support lazy lines"
+    );
 
     assert_eq!(
         micromark("  1.  A paragraph\n    with two lines."),
@@ -282,19 +265,17 @@ fn list() {
         "should support partially continued, partially lazy lines combined w/ other containers"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- foo\n  - bar\n    - baz\n      - boo"),
-    //     "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz\n<ul>\n<li>boo</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
-    //     "should support sublists w/ enough spaces (1)"
-    // );
+    assert_eq!(
+        micromark("- foo\n  - bar\n    - baz\n      - boo"),
+        "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz\n<ul>\n<li>boo</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
+        "should support sublists w/ enough spaces (1)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- foo\n - bar\n  - baz\n   - boo"),
-    //     "<ul>\n<li>foo</li>\n<li>bar</li>\n<li>baz</li>\n<li>boo</li>\n</ul>",
-    //     "should not support sublists w/ too few spaces"
-    // );
+    assert_eq!(
+        micromark("- foo\n - bar\n  - baz\n   - boo"),
+        "<ul>\n<li>foo</li>\n<li>bar</li>\n<li>baz</li>\n<li>boo</li>\n</ul>",
+        "should not support sublists w/ too few spaces"
+    );
 
     assert_eq!(
         micromark("10) foo\n    - bar"),
@@ -320,12 +301,11 @@ fn list() {
         "should support sublists (2)"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- # Foo\n- Bar\n  ---\n  baz"),
-    //     "<ul>\n<li>\n<h1>Foo</h1>\n</li>\n<li>\n<h2>Bar</h2>\nbaz</li>\n</ul>",
-    //     "should support headings in list items"
-    // );
+    assert_eq!(
+        micromark("- # Foo\n- Bar\n  ---\n  baz"),
+        "<ul>\n<li>\n<h1>Foo</h1>\n</li>\n<li>\n<h2>Bar</h2>\nbaz</li>\n</ul>",
+        "should support headings in list items"
+    );
 
     assert_eq!(
         micromark("- foo\n- bar\n+ baz"),
@@ -376,12 +356,11 @@ fn list() {
         "should support blank lines between items (1)"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- foo\n  - bar\n    - baz\n\n\n      bim"),
-    //     "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>\n<p>baz</p>\n<p>bim</p>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
-    //     "should support blank lines between items (2)"
-    // );
+    assert_eq!(
+        micromark("- foo\n  - bar\n    - baz\n\n\n      bim"),
+        "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>\n<p>baz</p>\n<p>bim</p>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
+        "should support blank lines between items (2)"
+    );
 
     assert_eq!(
         micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", DANGER),
@@ -407,19 +386,17 @@ fn list() {
         "should not support lists in lists w/ too few spaces (2)"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n - b\n  - c\n   - d\n    - e"),
-    //     "<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n<li>d\n- e</li>\n</ul>",
-    //     "should not support lists in lists w/ too few spaces (3)"
-    // );
+    assert_eq!(
+        micromark("- a\n - b\n  - c\n   - d\n    - e"),
+        "<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n<li>d\n- e</li>\n</ul>",
+        "should not support lists in lists w/ too few spaces (3)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("1. a\n\n  2. b\n\n    3. c"),
-    //     "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n</ol>\n<pre><code>3. c\n</code></pre>",
-    //     "should not support lists in lists w/ too few spaces (3)"
-    // );
+    assert_eq!(
+        micromark("1. a\n\n  2. b\n\n    3. c"),
+        "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n</ol>\n<pre><code>3. c\n</code></pre>",
+        "should not support lists in lists w/ too few spaces (3)"
+    );
 
     assert_eq!(
         micromark("- a\n- b\n\n- c"),
@@ -434,42 +411,38 @@ fn list() {
     //     "should support loose lists w/ a blank line between (2)"
     // );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n- b\n\n  c\n- d"),
-    //     "<ul>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n<li>\n<p>d</p>\n</li>\n</ul>",
-    //     "should support loose lists w/ a blank line in an item (1)"
-    // );
+    assert_eq!(
+        micromark("- a\n- b\n\n  c\n- d"),
+        "<ul>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n<li>\n<p>d</p>\n</li>\n</ul>",
+        "should support loose lists w/ a blank line in an item (1)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n- b\n\n  [ref]: /url\n- d"),
-    //     "<ul>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n<li>\n<p>d</p>\n</li>\n</ul>",
-    //     "should support loose lists w/ a blank line in an item (2)"
-    // );
+    assert_eq!(
+        micromark("- a\n- b\n\n  [ref]: /url\n- d"),
+        "<ul>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n<li>\n<p>d</p>\n</li>\n</ul>",
+        "should support loose lists w/ a blank line in an item (2)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n- ```\n  b\n\n\n  ```\n- c"),
-    //     "<ul>\n<li>a</li>\n<li>\n<pre><code>b\n\n\n</code></pre>\n</li>\n<li>c</li>\n</ul>",
-    //     "should support tight lists w/ a blank line in fenced code"
-    // );
+    assert_eq!(
+        micromark("- a\n- ```\n  b\n\n\n  ```\n- c"),
+        "<ul>\n<li>a</li>\n<li>\n<pre><code>b\n\n\n</code></pre>\n</li>\n<li>c</li>\n</ul>",
+        "should support tight lists w/ a blank line in fenced code"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n  - b\n\n    c\n- d"),
-    //     "<ul>\n<li>a\n<ul>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n</ul>\n</li>\n<li>d</li>\n</ul>",
-    //     "should support tight lists w/ a blank line in a sublist"
-    // );
+    assert_eq!(
+        micromark("- a\n  - b\n\n    c\n- d"),
+        "<ul>\n<li>a\n<ul>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n</ul>\n</li>\n<li>d</li>\n</ul>",
+        "should support tight lists w/ a blank line in a sublist"
+    );
 
-    // To do: list (indent).
+    // To do: list (loose/tight bug).
     // assert_eq!(
     //     micromark("* a\n  > b\n  >\n* c"),
     //     "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n</li>\n<li>c</li>\n</ul>",
     //     "should support tight lists w/ a blank line in a block quote"
     // );
 
-    // To do: list (indent).
+    // To do: list (some crash).
     // assert_eq!(
     //     micromark("- a\n  > b\n  ```\n  c\n  ```\n- d"),
     //     "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n<pre><code>c\n</code></pre>\n</li>\n<li>d</li>\n</ul>",
@@ -482,33 +455,29 @@ fn list() {
         "should support tight lists w/ a single content"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n  - b"),
-    //     "<ul>\n<li>a\n<ul>\n<li>b</li>\n</ul>\n</li>\n</ul>",
-    //     "should support tight lists w/ a sublist"
-    // );
+    assert_eq!(
+        micromark("- a\n  - b"),
+        "<ul>\n<li>a\n<ul>\n<li>b</li>\n</ul>\n</li>\n</ul>",
+        "should support tight lists w/ a sublist"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("1. ```\n   foo\n   ```\n\n   bar"),
-    //     "<ol>\n<li>\n<pre><code>foo\n</code></pre>\n<p>bar</p>\n</li>\n</ol>",
-    //     "should support loose lists w/ a blank line in an item"
-    // );
+    assert_eq!(
+        micromark("1. ```\n   foo\n   ```\n\n   bar"),
+        "<ol>\n<li>\n<pre><code>foo\n</code></pre>\n<p>bar</p>\n</li>\n</ol>",
+        "should support loose lists w/ a blank line in an item"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("* foo\n  * bar\n\n  baz"),
-    //     "<ul>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n<p>baz</p>\n</li>\n</ul>",
-    //     "should support loose lists w/ tight sublists (1)"
-    // );
+    assert_eq!(
+        micromark("* foo\n  * bar\n\n  baz"),
+        "<ul>\n<li>\n<p>foo</p>\n<ul>\n<li>bar</li>\n</ul>\n<p>baz</p>\n</li>\n</ul>",
+        "should support loose lists w/ tight sublists (1)"
+    );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- a\n  - b\n  - c\n\n- d\n  - e\n  - f"),
-    //     "<ul>\n<li>\n<p>a</p>\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n</li>\n<li>\n<p>d</p>\n<ul>\n<li>e</li>\n<li>f</li>\n</ul>\n</li>\n</ul>",
-    //     "should support loose lists w/ tight sublists (2)"
-    // );
+    assert_eq!(
+        micromark("- a\n  - b\n  - c\n\n- d\n  - e\n  - f"),
+        "<ul>\n<li>\n<p>a</p>\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n</li>\n<li>\n<p>d</p>\n<ul>\n<li>e</li>\n<li>f</li>\n</ul>\n</li>\n</ul>",
+        "should support loose lists w/ tight sublists (2)"
+    );
 
     // Extra.
     // To do: list (empty item is allowed to follow another item).
@@ -518,12 +487,11 @@ fn list() {
     //     "should support continued list items after an empty list item w/ many blank lines"
     // );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("*\n  ~~~p\n\n  ~~~"),
-    //     "<ul>\n<li>\n<pre><code class=\"language-p\">\n</code></pre>\n</li>\n</ul>",
-    //     "should support blank lines in code after an initial blank line"
-    // );
+    assert_eq!(
+        micromark("*\n  ~~~p\n\n  ~~~"),
+        "<ul>\n<li>\n<pre><code class=\"language-p\">\n</code></pre>\n</li>\n</ul>",
+        "should support blank lines in code after an initial blank line"
+    );
 
     assert_eq!(
         micromark(
@@ -539,42 +507,37 @@ fn list() {
         "should support empty items in a spread list"
     );
 
-    // To do: list (indent).
-    // assert_eq!(
-    //     micromark("- ```\n\n  ```"),
-    //     "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
-    //     "should remove indent of code (fenced) in list (0 space)"
-    // );
+    assert_eq!(
+        micromark("- ```\n\n  ```"),
+        "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
+        "should remove indent of code (fenced) in list (0 space)"
+    );
 
-    // To do: list (indent, slurp?).
-    // assert_eq!(
-    //     micromark("- ```\n \n  ```"),
-    //     "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
-    //     "should remove indent of code (fenced) in list (1 space)"
-    // );
+    assert_eq!(
+        micromark("- ```\n \n  ```"),
+        "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
+        "should remove indent of code (fenced) in list (1 space)"
+    );
 
-    // To do: list (indent, slurp?).
-    // assert_eq!(
-    //     micromark("- ```\n  \n  ```"),
-    //     "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
-    //     "should remove indent of code (fenced) in list (2 spaces)"
-    // );
+    assert_eq!(
+        micromark("- ```\n  \n  ```"),
+        "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
+        "should remove indent of code (fenced) in list (2 spaces)"
+    );
 
-    // To do: list (indent, slurp?).
-    // assert_eq!(
-    //     micromark("- ```\n   \n  ```"),
-    //     "<ul>\n<li>\n<pre><code> \n</code></pre>\n</li>\n</ul>",
-    //     "should remove indent of code (fenced) in list (3 spaces)"
-    // );
+    assert_eq!(
+        micromark("- ```\n   \n  ```"),
+        "<ul>\n<li>\n<pre><code> \n</code></pre>\n</li>\n</ul>",
+        "should remove indent of code (fenced) in list (3 spaces)"
+    );
 
-    // To do: list (indent, slurp?).
-    // assert_eq!(
-    //     micromark("- ```\n    \n  ```"),
-    //     "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",
-    //     "should remove indent of code (fenced) in list (4 spaces)"
-    // );
+    assert_eq!(
+        micromark("- ```\n    \n  ```"),
+        "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",
+        "should remove indent of code (fenced) in list (4 spaces)"
+    );
 
-    // To do: list (indent, slurp?).
+    // To do: list (some off by one bug with tabs).
     // assert_eq!(
     //     micromark("- ```\n\t\n  ```"),
     //     "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",

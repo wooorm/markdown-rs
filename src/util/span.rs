@@ -6,9 +6,9 @@ use crate::util::codes::serialize as serialize_codes;
 /// A struct representing the span of an opening and closing event of a token.
 #[derive(Debug)]
 pub struct Span {
-    /// Absolute offset (and `index` in `codes`) of where this span starts.
+    /// Absolute offset (an `index` in `codes`) of where this span starts.
     pub start_index: usize,
-    /// Absolute offset (and `index` in `codes`) of where this span ends.
+    /// Absolute offset (an `index` in `codes`) of where this span ends.
     pub end_index: usize,
 }
 
