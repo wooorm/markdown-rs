@@ -102,7 +102,7 @@ use crate::constant::{HTML_BLOCK_NAMES, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_S
 use crate::construct::{
     blank_line::start as blank_line,
     partial_non_lazy_continuation::start as partial_non_lazy_continuation,
-    partial_space_or_tab::space_or_tab_min_max,
+    partial_space_or_tab::{space_or_tab_with_options, Options as SpaceOrTabOptions},
 };
 use crate::token::Token;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
@@ -208,7 +208,16 @@ struct Info {
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::HtmlFlow);
     // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
+    tokenizer.go(
+        space_or_tab_with_options(SpaceOrTabOptions {
+            kind: Token::HtmlFlowData,
+            min: 0,
+            max: TAB_SIZE - 1,
+            connect: false,
+            content_type: None,
+        }),
+        before,
+    )(tokenizer, code)
 }
 
 /// After optional whitespace, before `<`.
