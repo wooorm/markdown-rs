@@ -51,12 +51,11 @@ fn block_quote() {
         "should not support lazy setext headings underlines in block quotes"
     );
 
-    // To do: list (something with interrupting? 🤷‍♂️).
-    // assert_eq!(
-    //     micromark("> - a\n> - b"),
-    //     "<blockquote>\n<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n</blockquote>",
-    //     "should support lists in block quotes"
-    // );
+    assert_eq!(
+        micromark("> - a\n> - b"),
+        "<blockquote>\n<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n</blockquote>",
+        "should support lists in block quotes"
+    );
 
     assert_eq!(
         micromark("> - a\n- b"),

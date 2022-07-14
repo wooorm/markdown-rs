@@ -1239,7 +1239,7 @@ fn on_enter_list(context: &mut CompileContext) {
                     false
                 };
 
-                if !at_marker && (!at_list_item || !at_empty_list_item) {
+                if !at_marker && !at_list_item && !at_empty_list_item {
                     loose = true;
                     break;
                 }

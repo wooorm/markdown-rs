@@ -429,19 +429,18 @@ fn list() {
         "should support tight lists w/ a blank line in a sublist"
     );
 
-    // To do: list (loose/tight bug).
-    // assert_eq!(
-    //     micromark("* a\n  > b\n  >\n* c"),
-    //     "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n</li>\n<li>c</li>\n</ul>",
-    //     "should support tight lists w/ a blank line in a block quote"
-    // );
+    assert_eq!(
+        micromark("* a\n  > b\n  >\n* c"),
+        "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n</li>\n<li>c</li>\n</ul>",
+        "should support tight lists w/ a blank line in a block quote"
+    );
 
     // To do: list (some crash).
-    // assert_eq!(
-    //     micromark("- a\n  > b\n  ```\n  c\n  ```\n- d"),
-    //     "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n<pre><code>c\n</code></pre>\n</li>\n<li>d</li>\n</ul>",
-    //     "should support tight lists w/ flow w/o blank line"
-    // );
+    assert_eq!(
+        micromark("- a\n  > b\n  ```\n  c\n  ```\n- d"),
+        "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n<pre><code>c\n</code></pre>\n</li>\n<li>d</li>\n</ul>",
+        "should support tight lists w/ flow w/o blank line"
+    );
 
     assert_eq!(
         micromark("- a"),

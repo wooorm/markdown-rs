@@ -345,7 +345,12 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         && skip::opt(
                             &tokenizer.events,
                             previous.3 + 1,
-                            &[Token::SpaceOrTab, Token::LineEnding, Token::BlankLineEnding],
+                            &[
+                                Token::SpaceOrTab,
+                                Token::LineEnding,
+                                Token::BlankLineEnding,
+                                Token::BlockQuotePrefix,
+                            ],
                         ) == current.2
                     {
                         println!("prev:match {:?} {:?}", previous, current);
