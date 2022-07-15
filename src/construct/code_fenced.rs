@@ -383,7 +383,13 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
     })(tokenizer, code)
 }
 
-/// To do.
+/// At an eol/eof in code, before a non-lazy closing fence or content.
+///
+/// ```markdown
+/// ~~~js|
+/// aa|
+/// ~~~
+/// ```
 fn at_non_lazy_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     let clone = info.clone();
 

@@ -780,14 +780,15 @@ fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
             tokenizer.exit(Token::HtmlFlowData);
             tokenizer.check(blank_line_before, |ok| {
                 if ok {
-                    Box::new(html_continue_after)
+                    Box::new(continuation_after)
                 } else {
-                    Box::new(move |t, c| html_continue_start(t, c, info))
+                    Box::new(move |t, c| continuation_start(t, c, info))
                 }
             })(tokenizer, code)
         }
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            continuation_at_line_ending(tokenizer, code, info)
+            tokenizer.exit(Token::HtmlFlowData);
+            continuation_start(tokenizer, code, info)
         }
         _ => {
             tokenizer.consume(code);
@@ -796,55 +797,36 @@ fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
     }
 }
 
-/// In continuation, before an eol or eof.
-///
-/// ```markdown
-/// <x>|
-/// ```
-fn continuation_at_line_ending(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    tokenizer.exit(Token::HtmlFlowData);
-    html_continue_start(tokenizer, code, info)
-}
-
-/// In continuation, after an eol.
+/// In continuation, at an eol.
 ///
 /// ```markdown
 /// <x>|
 /// asd
 /// ```
-fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn continuation_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.check(partial_non_lazy_continuation, |ok| {
         if ok {
-            Box::new(move |t, c| html_continue_start_non_lazy(t, c, info))
+            Box::new(move |t, c| continuation_start_non_lazy(t, c, info))
         } else {
-            Box::new(html_continue_after)
+            Box::new(continuation_after)
         }
     })(tokenizer, code)
 }
 
-/// To do.
-fn html_continue_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.exit(Token::HtmlFlow);
-    // Feel free to interrupt.
-    tokenizer.interrupt = false;
-    // No longer concrete.
-    tokenizer.concrete = false;
-    (State::Ok, Some(vec![code]))
-}
-
-/// To do.
-fn html_continue_start_non_lazy(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    info: Info,
-) -> StateFnResult {
+/// In continuation, at an eol, before non-lazy content.
+///
+/// ```markdown
+/// <x>|
+/// asd
+/// ```
+fn continuation_start_non_lazy(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
             (
-                State::Fn(Box::new(|t, c| html_continue_before(t, c, info))),
+                State::Fn(Box::new(|t, c| continuation_before(t, c, info))),
                 None,
             )
         }
@@ -852,10 +834,16 @@ fn html_continue_start_non_lazy(
     }
 }
 
-fn html_continue_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+/// In continuation, after an eol, before non-lazy content.
+///
+/// ```markdown
+/// <x>
+/// |asd
+/// ```
+fn continuation_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            html_continue_start(tokenizer, code, info)
+            continuation_start(tokenizer, code, info)
         }
         _ => {
             tokenizer.enter(Token::HtmlFlowData);
@@ -1009,7 +997,7 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HtmlFlowData);
-            html_continue_after(tokenizer, code)
+            continuation_after(tokenizer, code)
         }
         _ => {
             tokenizer.consume(code);
@@ -1019,6 +1007,20 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
             )
         }
     }
+}
+
+/// Done.
+///
+/// ```markdown
+/// <!doctype>|
+/// ```
+fn continuation_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.exit(Token::HtmlFlow);
+    // Feel free to interrupt.
+    tokenizer.interrupt = false;
+    // No longer concrete.
+    tokenizer.concrete = false;
+    (State::Ok, Some(vec![code]))
 }
 
 /// Before a line ending, expecting a blank line.
