@@ -184,14 +184,16 @@ fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | 1. a
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, mut size: usize) -> StateFnResult {
-    size += 1;
+fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
-        Code::Char(char) if char.is_ascii_digit() && size < LIST_ITEM_VALUE_SIZE_MAX => {
+        Code::Char(char) if char.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| inside(t, c, size))), None)
+            (
+                State::Fn(Box::new(move |t, c| inside(t, c, size + 1))),
+                None,
+            )
         }
-        Code::Char('.' | ')') => {
+        Code::Char('.' | ')') if !tokenizer.interrupt || size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer, code)
         }

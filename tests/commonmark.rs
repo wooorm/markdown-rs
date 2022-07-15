@@ -999,7 +999,7 @@ of dashes"/>
         r###"Setext headings (91)"###
 );
 
-// To do: some interruption bug.
+// To do: lazy setext underline bug.
 //     assert_eq!(
 //         micromark_with_options(r###"> foo
 // bar
@@ -3913,16 +3913,15 @@ baz</li>
         r###"Lists (302)"###
 );
 
-    // To do: Some interruption bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"The number of windows in my house is
-    // 14.  The number of doors is 6.
-    // "###, DANGER),
-    //         r###"<p>The number of windows in my house is
-    // 14.  The number of doors is 6.</p>
-    // "###,
-    //         r###"Lists (303)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"The number of windows in my house is
+14.  The number of doors is 6.
+"###, DANGER),
+        r###"<p>The number of windows in my house is
+14.  The number of doors is 6.</p>
+"###,
+        r###"Lists (303)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"The number of windows in my house is
