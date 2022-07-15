@@ -435,6 +435,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     enter_map.insert(Token::Image, on_enter_image);
     enter_map.insert(Token::Label, on_enter_buffer);
     enter_map.insert(Token::Link, on_enter_link);
+    enter_map.insert(Token::ListItemMarker, on_enter_list_item_marker);
+    enter_map.insert(Token::ListOrdered, on_enter_list);
+    enter_map.insert(Token::ListUnordered, on_enter_list);
     enter_map.insert(Token::Paragraph, on_enter_paragraph);
     enter_map.insert(Token::ReferenceString, on_enter_buffer);
     enter_map.insert(Token::Resource, on_enter_resource);
@@ -444,11 +447,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     );
     enter_map.insert(Token::ResourceTitleString, on_enter_buffer);
     enter_map.insert(Token::Strong, on_enter_strong);
-
-    // To do: sort.
-    enter_map.insert(Token::ListItemMarker, on_enter_list_item_marker);
-    enter_map.insert(Token::ListOrdered, on_enter_list);
-    enter_map.insert(Token::ListUnordered, on_enter_list);
 
     let mut exit_map: Map = HashMap::new();
     exit_map.insert(Token::AutolinkEmail, on_exit_autolink_email);
@@ -513,6 +511,10 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     exit_map.insert(Token::Label, on_exit_label);
     exit_map.insert(Token::LabelText, on_exit_label_text);
     exit_map.insert(Token::LineEnding, on_exit_line_ending);
+    exit_map.insert(Token::ListOrdered, on_exit_list);
+    exit_map.insert(Token::ListUnordered, on_exit_list);
+    exit_map.insert(Token::ListItem, on_exit_list_item);
+    exit_map.insert(Token::ListItemValue, on_exit_list_item_value);
     exit_map.insert(Token::Link, on_exit_media);
     exit_map.insert(Token::Paragraph, on_exit_paragraph);
     exit_map.insert(Token::ReferenceString, on_exit_reference_string);
@@ -524,12 +526,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     exit_map.insert(Token::ResourceTitleString, on_exit_resource_title_string);
     exit_map.insert(Token::Strong, on_exit_strong);
     exit_map.insert(Token::ThematicBreak, on_exit_thematic_break);
-
-    // To do: sort.
-    exit_map.insert(Token::ListItemValue, on_exit_list_item_value);
-    exit_map.insert(Token::ListItem, on_exit_list_item);
-    exit_map.insert(Token::ListOrdered, on_exit_list);
-    exit_map.insert(Token::ListUnordered, on_exit_list);
 
     // Handle one event.
     let handle = |context: &mut CompileContext, index: usize| {
@@ -707,6 +703,91 @@ fn on_enter_link(context: &mut CompileContext) {
         destination: None,
         title: None,
     });
+}
+
+/// Handle [`Enter`][EventType::Enter]:{[`ListOrdered`][Token::ListOrdered],[`ListUnordered`][Token::ListUnordered]}.
+fn on_enter_list(context: &mut CompileContext) {
+    let events = &context.events;
+    let mut index = context.index;
+    let mut balance = 0;
+    let mut loose = false;
+    let token_type = &events[index].token_type;
+
+    while index < events.len() {
+        let event = &events[index];
+
+        if event.event_type == EventType::Enter {
+            balance += 1;
+        } else {
+            balance -= 1;
+
+            // Blank line directly in list or directly in list item,
+            // but not a blank line after an empty list item.
+            if balance < 3 && event.token_type == Token::BlankLineEnding
+            {
+                let at_marker = balance == 2
+                    && events[skip::opt_back(
+                        events,
+                        index - 2,
+                        &[Token::BlankLineEnding, Token::SpaceOrTab],
+                    )]
+                    .token_type
+                        == Token::ListItemPrefix;
+                let at_list_item = balance == 1 && events[index - 2].token_type == Token::ListItem;
+                let at_empty_list_item = if at_list_item {
+                    let before_item = skip::opt_back(events, index - 2, &[Token::ListItem]);
+                    let before_prefix = skip::opt_back(
+                        events,
+                        index - 3,
+                        &[Token::ListItemPrefix, Token::SpaceOrTab],
+                    );
+                    before_item + 1 == before_prefix
+                } else {
+                    false
+                };
+
+                if !at_marker && !at_list_item && !at_empty_list_item {
+                    loose = true;
+                    break;
+                }
+            }
+
+            // Done.
+            if balance == 0 && event.token_type == *token_type {
+                break;
+            }
+        }
+
+        index += 1;
+    }
+
+    context.tight_stack.push(!loose);
+    context.line_ending_if_needed();
+    // Note: no `>`.
+    context.tag(format!(
+        "<{}",
+        if *token_type == Token::ListOrdered {
+            "ol"
+        } else {
+            "ul"
+        }
+    ));
+    context.expect_first_item = Some(true);
+}
+
+/// Handle [`Enter`][EventType::Enter]:[`ListItemMarker`][Token::ListItemMarker].
+fn on_enter_list_item_marker(context: &mut CompileContext) {
+    let expect_first_item = context.expect_first_item.take().unwrap();
+
+    if expect_first_item {
+        context.tag(">".to_string());
+    }
+
+    context.line_ending_if_needed();
+    context.tag("<li>".to_string());
+    context.expect_first_item = Some(false);
+    // “Hack” to prevent a line ending from showing up if the item is empty.
+    context.last_was_tag = false;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Paragraph`][Token::Paragraph].
@@ -1082,6 +1163,60 @@ fn on_exit_line_ending(context: &mut CompileContext) {
     }
 }
 
+/// Handle [`Exit`][EventType::Exit]:{[`ListOrdered`][Token::ListOrdered],[`ListUnordered`][Token::ListUnordered]}.
+fn on_exit_list(context: &mut CompileContext) {
+    let tag_name = if context.events[context.index].token_type == Token::ListOrdered {
+        "ol"
+    } else {
+        "ul"
+    };
+    context.tight_stack.pop();
+    context.line_ending();
+    context.tag(format!("</{}>", tag_name));
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`ListItem`][Token::ListItem].
+fn on_exit_list_item(context: &mut CompileContext) {
+    let tight = context.tight_stack.last().unwrap_or(&false);
+    let before_item = skip::opt_back(
+        context.events,
+        context.index - 1,
+        &[
+            Token::BlankLineEnding,
+            Token::LineEnding,
+            Token::SpaceOrTab,
+            Token::BlockQuotePrefix,
+        ],
+    );
+    let previous = &context.events[before_item];
+    let tight_paragraph = *tight && previous.token_type == Token::Paragraph;
+    let empty_item = previous.token_type == Token::ListItemPrefix;
+
+    if !tight_paragraph && !empty_item {
+        context.line_ending_if_needed();
+    }
+
+    context.tag("</li>".to_string());
+}
+
+/// Handle [`Exit`][EventType::Exit]:[`ListItemValue`][Token::ListItemValue].
+fn on_exit_list_item_value(context: &mut CompileContext) {
+    let expect_first_item = context.expect_first_item.unwrap();
+
+    if expect_first_item {
+        let slice = serialize(
+            context.codes,
+            &from_exit_event(context.events, context.index),
+            false,
+        );
+        let value = slice.parse::<u32>().ok().unwrap();
+
+        if value != 1 {
+            context.tag(format!(" start=\"{}\"", encode(&value.to_string())));
+        }
+    }
+}
+
 /// Handle [`Exit`][EventType::Exit]:{[`Image`][Token::Image],[`Link`][Token::Link]}.
 fn on_exit_media(context: &mut CompileContext) {
     let mut is_in_image = false;
@@ -1193,146 +1328,4 @@ fn on_exit_strong(context: &mut CompileContext) {
 fn on_exit_thematic_break(context: &mut CompileContext) {
     context.line_ending_if_needed();
     context.tag("<hr />".to_string());
-}
-
-// To do: sort.
-/// To do (onenterlist{un,}ordered)
-fn on_enter_list(context: &mut CompileContext) {
-    let events = &context.events;
-    let mut index = context.index;
-    let mut balance = 0;
-    let mut loose = false;
-    let token_type = &events[index].token_type;
-
-    while index < events.len() {
-        let event = &events[index];
-
-        if event.event_type == EventType::Enter {
-            balance += 1;
-        } else {
-            balance -= 1;
-
-            // Blank line directly in list or directly in list item,
-            // but not a blank line after an empty list item.
-            // To do: does this check if the item is empty?
-            if balance < 3 && event.token_type == Token::BlankLineEnding
-            // && !(balance == 1 && events[index - 2].token_type == Token::ListItem)
-            {
-                let at_marker = balance == 2
-                    && events[skip::opt_back(
-                        events,
-                        index - 2,
-                        &[Token::BlankLineEnding, Token::SpaceOrTab],
-                    )]
-                    .token_type
-                        == Token::ListItemPrefix;
-                let at_list_item = balance == 1 && events[index - 2].token_type == Token::ListItem;
-                let at_empty_list_item = if at_list_item {
-                    let before_item = skip::opt_back(events, index - 2, &[Token::ListItem]);
-                    let before_prefix = skip::opt_back(
-                        events,
-                        index - 3,
-                        &[Token::ListItemPrefix, Token::SpaceOrTab],
-                    );
-                    before_item + 1 == before_prefix
-                } else {
-                    false
-                };
-
-                if !at_marker && !at_list_item && !at_empty_list_item {
-                    loose = true;
-                    break;
-                }
-            }
-
-            // Done.
-            if balance == 0 && event.token_type == *token_type {
-                break;
-            }
-        }
-
-        index += 1;
-    }
-
-    context.tight_stack.push(!loose);
-    context.line_ending_if_needed();
-    // Note: no `>`.
-    context.tag(format!(
-        "<{}",
-        if *token_type == Token::ListOrdered {
-            "ol"
-        } else {
-            "ul"
-        }
-    ));
-    context.expect_first_item = Some(true);
-}
-
-/// To do
-fn on_enter_list_item_marker(context: &mut CompileContext) {
-    let expect_first_item = context.expect_first_item.take().unwrap();
-
-    if expect_first_item {
-        context.tag(">".to_string());
-    }
-
-    context.line_ending_if_needed();
-    context.tag("<li>".to_string());
-    context.expect_first_item = Some(false);
-    // “Hack” to prevent a line ending from showing up if the item is empty.
-    context.last_was_tag = false;
-}
-
-/// To do
-fn on_exit_list_item_value(context: &mut CompileContext) {
-    let expect_first_item = context.expect_first_item.unwrap();
-
-    if expect_first_item {
-        let slice = serialize(
-            context.codes,
-            &from_exit_event(context.events, context.index),
-            false,
-        );
-        let value = slice.parse::<u32>().ok().unwrap();
-
-        if value != 1 {
-            context.tag(format!(" start=\"{}\"", encode(&value.to_string())));
-        }
-    }
-}
-
-/// To do.
-fn on_exit_list_item(context: &mut CompileContext) {
-    let tight = context.tight_stack.last().unwrap_or(&false);
-    let before_item = skip::opt_back(
-        context.events,
-        context.index - 1,
-        &[
-            Token::BlankLineEnding,
-            Token::LineEnding,
-            Token::SpaceOrTab,
-            Token::BlockQuotePrefix,
-        ],
-    );
-    let previous = &context.events[before_item];
-    let tight_paragraph = *tight && previous.token_type == Token::Paragraph;
-    let empty_item = previous.token_type == Token::ListItemPrefix;
-
-    if !tight_paragraph && !empty_item {
-        context.line_ending_if_needed();
-    }
-
-    context.tag("</li>".to_string());
-}
-
-/// To do.
-fn on_exit_list(context: &mut CompileContext) {
-    let tag_name = if context.events[context.index].token_type == Token::ListOrdered {
-        "ol"
-    } else {
-        "ul"
-    };
-    context.tight_stack.pop();
-    context.line_ending();
-    context.tag(format!("</{}>", tag_name));
 }
