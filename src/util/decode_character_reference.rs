@@ -1,6 +1,6 @@
 //! Utilities to decode character references.
 
-use crate::constant::{CHARACTER_REFERENCE_NAMES, CHARACTER_REFERENCE_VALUES};
+use crate::constant::CHARACTER_REFERENCES;
 
 /// Decode named character references.
 ///
@@ -35,12 +35,9 @@ use crate::constant::{CHARACTER_REFERENCE_NAMES, CHARACTER_REFERENCE_VALUES};
 /// *   [`wooorm/decode-named-character-reference`](https://github.com/wooorm/decode-named-character-reference)
 /// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.30/#entity-and-numeric-character-references)
 pub fn decode_named(value: &str) -> String {
-    let position = CHARACTER_REFERENCE_NAMES.iter().position(|&x| x == value);
-    if let Some(index) = position {
-        CHARACTER_REFERENCE_VALUES[index].to_string()
-    } else {
-        unreachable!("expected valid `name`")
-    }
+    let entry = CHARACTER_REFERENCES.iter().find(|d| d.0 == value);
+    let tuple = entry.expect("expected valid `name`");
+    tuple.1.to_string()
 }
 
 /// Decode numeric character references.

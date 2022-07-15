@@ -13,7 +13,7 @@ fn character_reference() {
       micromark(
         "&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;"
       ),
-      "<p>  &amp; © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸</p>",
+      "<p>\u{a0} &amp; © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸</p>",
       "should support named character references"
     );
 

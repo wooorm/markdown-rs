@@ -346,18 +346,20 @@ foo
         r###"Backslash escapes (23)"###
     );
 
-    // To do: bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"&nbsp; &amp; &copy; &AElig; &Dcaron;
-    // &frac34; &HilbertSpace; &DifferentialD;
-    // &ClockwiseContourIntegral; &ngE;
-    // "###, DANGER),
-    //         r###"<p>  &amp; © Æ Ď
-    // ¾ ℋ ⅆ
-    // ∲ ≧̸</p>
-    // "###,
-    //         r###"Entity and numeric character references (24)"###
-    // );
+    assert_eq!(
+        micromark_with_options(
+            r###"&nbsp; &amp; &copy; &AElig; &Dcaron;
+&frac34; &HilbertSpace; &DifferentialD;
+&ClockwiseContourIntegral; &ngE;
+"###,
+            DANGER
+        ),
+        r###"<p>  &amp; © Æ Ď
+¾ ℋ ⅆ
+∲ ≧̸</p>
+"###,
+        r###"Entity and numeric character references (24)"###
+    );
 
     assert_eq!(
         micromark_with_options(

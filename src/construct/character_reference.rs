@@ -62,8 +62,8 @@
 //! [html]: https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
 
 use crate::constant::{
-    CHARACTER_REFERENCE_DECIMAL_SIZE_MAX, CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
-    CHARACTER_REFERENCE_NAMED_SIZE_MAX, CHARACTER_REFERENCE_NAMES,
+    CHARACTER_REFERENCES, CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
+    CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
 use crate::token::Token;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
@@ -189,10 +189,12 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResu
 fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char(';') if !info.buffer.is_empty() => {
-            if Kind::Named == info.kind
-                && !CHARACTER_REFERENCE_NAMES
-                    .contains(&info.buffer.iter().collect::<String>().as_str())
-            {
+            let unknown_named = Kind::Named == info.kind && {
+                let value = info.buffer.iter().collect::<String>();
+                !CHARACTER_REFERENCES.iter().any(|d| d.0 == value)
+            };
+
+            if unknown_named {
                 (State::Nok, None)
             } else {
                 tokenizer.exit(Token::CharacterReferenceValue);
