@@ -435,7 +435,6 @@ fn list() {
         "should support tight lists w/ a blank line in a block quote"
     );
 
-    // To do: list (some crash).
     assert_eq!(
         micromark("- a\n  > b\n  ```\n  c\n  ```\n- d"),
         "<ul>\n<li>a\n<blockquote>\n<p>b</p>\n</blockquote>\n<pre><code>c\n</code></pre>\n</li>\n<li>d</li>\n</ul>",

@@ -377,19 +377,13 @@ fn meta(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// ~~~
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    let clone = info.clone();
-
-    if tokenizer.lazy {
-        after(tokenizer, code, info)
-    } else {
-        tokenizer.check(partial_non_lazy_continuation, |ok| {
-            if ok {
-                Box::new(move |t, c| at_non_lazy_break(t, c, clone))
-            } else {
-                Box::new(move |t, c| after(t, c, clone))
-            }
-        })(tokenizer, code)
-    }
+    tokenizer.check(partial_non_lazy_continuation, |ok| {
+        if ok {
+            Box::new(move |t, c| at_non_lazy_break(t, c, info))
+        } else {
+            Box::new(move |t, c| after(t, c, info))
+        }
+    })(tokenizer, code)
 }
 
 /// To do.
