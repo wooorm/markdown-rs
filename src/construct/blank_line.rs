@@ -12,7 +12,7 @@
 //! such as between two [heading (atx)][heading-atx]s.
 //! Sometimes, whether blank lines are present, changes the behavior of how
 //! HTML is rendered, such as whether blank lines are present between list
-//! items in a list.
+//! items in a [list][].
 //! More than one blank line is never needed in `CommonMark`.
 //!
 //! Because blank lines can be empty (line endings are not considered part of
@@ -27,11 +27,10 @@
 //! *   [`blank-line.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/blank-line.js)
 //! *   [*§ 4.9 Blank lines* in `CommonMark`](https://spec.commonmark.org/0.30/#blank-lines)
 //!
-//! [flow]: crate::content::flow
-//! [paragraph]: crate::construct::paragraph
 //! [heading-atx]: crate::construct::heading_atx
-//!
-//! <!-- To do: link `list` -->
+//! [list]: crate::construct::list
+//! [paragraph]: crate::construct::paragraph
+//! [flow]: crate::content::flow
 
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
