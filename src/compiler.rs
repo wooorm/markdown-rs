@@ -451,6 +451,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut exit_map: Map = HashMap::new();
     exit_map.insert(Token::AutolinkEmail, on_exit_autolink_email);
     exit_map.insert(Token::AutolinkProtocol, on_exit_autolink_protocol);
+    exit_map.insert(Token::BlankLineEnding, on_exit_blank_line_ending);
     exit_map.insert(Token::BlockQuote, on_exit_block_quote);
     exit_map.insert(Token::CharacterEscapeValue, on_exit_data);
     exit_map.insert(
@@ -857,10 +858,18 @@ fn on_exit_break(context: &mut CompileContext) {
     context.tag("<br />".to_string());
 }
 
+/// Handle [`Exit`][EventType::Exit]:[`BlankLineEnding`][Token::BlankLineEnding].
+fn on_exit_blank_line_ending(context: &mut CompileContext) {
+    if context.index == context.events.len() - 1 {
+        context.line_ending_if_needed();
+    }
+}
+
 /// Handle [`Exit`][EventType::Exit]:[`BlockQuote`][Token::BlockQuote].
 fn on_exit_block_quote(context: &mut CompileContext) {
     context.tight_stack.pop();
     context.line_ending_if_needed();
+    context.slurp_one_line_ending = false;
     context.tag("</blockquote>".to_string());
 }
 

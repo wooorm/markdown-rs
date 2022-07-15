@@ -2623,18 +2623,17 @@ bar
         r###"Link reference definitions (216)"###
 );
 
-    // To do: eol after definition in otherwise empty block quote.
-//     assert_eq!(
-//         micromark_with_options(r###"[foo]
+    assert_eq!(
+        micromark_with_options(r###"[foo]
 
-// > [foo]: /url
-// "###, DANGER),
-//         r###"<p><a href="/url">foo</a></p>
-// <blockquote>
-// </blockquote>
-// "###,
-//         r###"Link reference definitions (217)"###
-// );
+> [foo]: /url
+"###, DANGER),
+        r###"<p><a href="/url">foo</a></p>
+<blockquote>
+</blockquote>
+"###,
+        r###"Link reference definitions (217)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"aaa
@@ -2896,40 +2895,37 @@ foo
     //         r###"Block quotes (237)"###
     // );
 
-    // To do: some eol in empty block quote bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###">
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (238)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###">
+"###, DANGER),
+        r###"<blockquote>
+</blockquote>
+"###,
+        r###"Block quotes (238)"###
+);
 
-    // To do: some eol in empty block quote bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###">
-    // >  
-    // > 
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (239)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###">
+>  
+> 
+"###, DANGER),
+        r###"<blockquote>
+</blockquote>
+"###,
+        r###"Block quotes (239)"###
+);
 
-    // To do: some eol in empty block quote bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###">
-    // > foo
-    // >  
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <p>foo</p>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (240)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###">
+> foo
+>  
+"###, DANGER),
+        r###"<blockquote>
+<p>foo</p>
+</blockquote>
+"###,
+        r###"Block quotes (240)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"> foo
@@ -2999,7 +2995,7 @@ bar</p>
         r###"Block quotes (245)"###
 );
 
-    // To do: some eol in empty block quote bug.
+    // To do: some lazy bug.
     //     assert_eq!(
     //         micromark_with_options(r###"> bar
     // baz
@@ -3564,16 +3560,15 @@ bar
         r###"List items (282)"###
 );
 
-    // To do: some bug w/ line endings and empty items.
-    //     assert_eq!(
-    //         micromark_with_options(r###"*
-    // "###, DANGER),
-    //         r###"<ul>
-    // <li></li>
-    // </ul>
-    // "###,
-    //         r###"List items (283)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"*
+"###, DANGER),
+        r###"<ul>
+<li></li>
+</ul>
+"###,
+        r###"List items (283)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"foo
