@@ -78,6 +78,7 @@ const DANGER: &Options = &Options {{
     default_line_ending: None,
 }};
 
+#[rustfmt::skip]
 #[test]
 fn commonmark() {{
 {}
