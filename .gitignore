@@ -3,4 +3,5 @@
 *.lock
 coverage/
 target
+commonmark-data.txt
 unicode-data.txt

@@ -18,5 +18,6 @@ env_logger = "0.9"
 log = "0.4"
 
 [build-dependencies]
+regex = "1.5"
 reqwest = "0.11"
 tokio = { version = "1.12", features = ["full"] }
