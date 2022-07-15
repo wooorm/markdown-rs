@@ -3,10 +3,7 @@
 Crate docs are currently at
 [`wooorm.com/micromark-rs/micromark/`](https://wooorm.com/micromark-rs/micromark/).
 
-Here be dragons!
-🐉
-There’s a lot to do.
-Some major to dos are described here, more smaller ones are in the code.
+There’s still a lot to do, but, already: **100%** CommonMark 🥳
 
 ## Some useful scripts for now
 
@@ -46,68 +43,10 @@ cargo doc --document-private-items
 
 ### Some major obstacles
 
-- [ ] (5) Containers: this will be rather messy, and depends a lot on how
-      subtokenization is solved
 - [ ] (5) There’s a lot of rust-related choosing whether to pass (mutable)
       references or whatever around that should be refactored
 - [ ] (1) Support turning off constructs
 - [ ] (5) Figure out extensions
-
-### Constructs
-
-- [x] attention (emphasis, strong)
-- [x] autolink
-- [x] blank line
-- [x] block quote
-- [x] character escape
-- [x] character reference
-- [x] code (fenced)
-- [x] code (indented)
-- [x] code (text)
-- [x] definition
-- [x] hard break (escape)
-- [x] hard break (trailing)
-- [x] heading (atx)
-- [x] heading (setext)
-- [x] html (flow)
-- [x] html (text)
-- [x] label end
-- [x] label start (image)
-- [x] label start (link)
-- [ ] (8) list
-- [x] paragraph
-- [x] thematic break
-
-### Content types
-
-- [ ] (8) container
-  - [x] block quote
-  - [ ] list
-- [x] flow
-  - [x] blank line
-  - [x] code (fenced)
-  - [x] code (indented)
-  - [x] definition
-  - [x] heading (atx)
-  - [x] heading (setext)
-  - [x] html (flow)
-  - [x] paragraph
-  - [x] thematic break
-- [x] text
-  - [x] attention (emphasis, strong) (text)
-  - [x] autolink
-  - [x] character escape
-  - [x] character reference
-  - [x] code (text)
-  - [x] hard break (escape)
-  - [x] hard break (trailing)
-  - [x] html (text)
-  - [x] label end
-  - [x] label start (image)
-  - [x] label start (link)
-- [x] string
-  - [x] character escape
-  - [x] character reference
 
 ### All the things
 
@@ -123,10 +62,6 @@ cargo doc --document-private-items
 
 #### Parse
 
-- [ ] (8) list\
-       test (`character_reference`, `code_indented`, `heading_setext`,
-      `html_flow`, `thematic_break`)\
-       link (`blank line`, `thematic break`)
 - [ ] (3) Turn off things (enable every test for these)
 - [ ] (3) Make tokenizer tokens extendable?
 
@@ -271,3 +206,4 @@ important.
 - [x] (1) Make sure that rust character groups match CM character groups
 - [x] (3) Fix block quote bug
 - [x] (3) Add support for lazy lines
+- [x] (5) Containers!
