@@ -302,8 +302,7 @@ fn containers_after(
     tokenizer.interrupt = info.interrupt_before;
 
     // Define start.
-    let point = tokenizer.point.clone();
-    tokenizer.define_skip(&point);
+    tokenizer.define_skip(tokenizer.point.clone(), tokenizer.index);
 
     flow_start(tokenizer, code, info)
 }
@@ -491,7 +490,7 @@ fn line_end(
     // So, we’re at the end of a line, but we need to close the *previous* line.
     if !eof {
         println!("closing previous flow");
-        tokenizer.define_skip(&tokenizer.point.clone());
+        tokenizer.define_skip(tokenizer.point.clone(), tokenizer.index);
         let mut current_events = tokenizer.events.drain(info.index..).collect::<Vec<_>>();
         let next = info.next;
         info.next = Box::new(flow); // This is weird but Rust needs a function there.

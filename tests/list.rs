@@ -528,12 +528,11 @@ fn list() {
         "should remove indent of code (fenced) in list (4 spaces)"
     );
 
-    // To do: list (something ugly with tabs and counts and skips?).
-    // assert_eq!(
-    //     micromark("- ```\n\t\n  ```"),
-    //     "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",
-    //     "should remove indent of code (fenced) in list (1 tab)"
-    // );
+    assert_eq!(
+        micromark("- ```\n\t\n  ```"),
+        "<ul>\n<li>\n<pre><code>  \n</code></pre>\n</li>\n</ul>",
+        "should remove indent of code (fenced) in list (1 tab)"
+    );
 
     assert_eq!(
         micromark("- +\n-"),

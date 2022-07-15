@@ -161,7 +161,7 @@ struct InternalState {
 /// A tokenizer itself.
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
-    column_start: HashMap<usize, usize>,
+    column_start: HashMap<usize, (Point, usize)>,
     /// Track whether a character is expected to be consumed, and whether it’s
     /// actually consumed
     ///
@@ -269,10 +269,10 @@ impl<'a> Tokenizer<'a> {
     ///
     /// This defines how much columns are increased when consuming a line
     /// ending.
-    pub fn define_skip(&mut self, point: &Point) {
-        self.column_start.insert(point.line, point.column);
+    pub fn define_skip(&mut self, point: Point, index: usize) {
+        log::debug!("position: define skip: {:?}, {:?}", point, index);
+        self.column_start.insert(point.line, (point, index));
         self.account_for_potential_skip();
-        log::debug!("position: define skip: `{:?}`", point);
     }
 
     /// Increment the current positional info if we’re right after a line
@@ -281,11 +281,10 @@ impl<'a> Tokenizer<'a> {
         if self.point.column == 1 {
             match self.column_start.get(&self.point.line) {
                 None => {}
-                Some(next_column) => {
-                    let col = *next_column;
-                    self.point.column = col;
-                    self.point.offset += col - 1;
-                    self.index += col - 1;
+                Some((point, index)) => {
+                    self.point.column = point.column;
+                    self.point.offset = point.offset;
+                    self.index = *index;
                 }
             };
         }
@@ -301,6 +300,8 @@ impl<'a> Tokenizer<'a> {
         );
         log::debug!("consume: `{:?}` ({:?})", code, self.point);
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
+
+        self.index += 1;
 
         match code {
             Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -323,7 +324,6 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        self.index += 1;
         self.previous = code;
         // Mark as consumed.
         self.consumed = true;
@@ -335,7 +335,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     pub fn enter_with_content(&mut self, token_type: Token, content_type: Option<ContentType>) {
-        log::debug!("enter `{:?}` ({:?})", token_type, self.point);
+        log::debug!("enter: `{:?}` ({:?})", token_type, self.point);
         self.events.push(Event {
             event_type: EventType::Enter,
             token_type: token_type.clone(),
@@ -366,19 +366,23 @@ impl<'a> Tokenizer<'a> {
             "expected non-empty token"
         );
 
-        // A bit weird, but if we exit right after a line ending, we *don’t* want to consider\
+        // A bit weird, but if we exit right after a line ending, we *don’t* want to consider
         // potential skips.
         if matches!(
             self.previous,
             Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
         ) {
-            let shift = point.column - 1;
-            point.column -= shift;
-            point.offset -= shift;
-            index -= shift;
+            point.column = 1;
+            point.offset = previous.point.offset
+                + if self.previous == Code::CarriageReturnLineFeed {
+                    2
+                } else {
+                    1
+                };
+            index = previous.index + 1;
         }
 
-        log::debug!("exit `{:?}` ({:?})", token_type, point);
+        log::debug!("exit: `{:?}` ({:?})", token_type, point);
         self.events.push(Event {
             event_type: EventType::Exit,
             token_type,
@@ -683,7 +687,7 @@ fn feed_impl(
                 break;
             }
             State::Fn(func) => {
-                log::debug!("main: passing `{:?}`", code);
+                log::debug!("main: passing: `{:?}`", code);
                 tokenizer.expect(code, false);
                 let (next, remainder) = check_statefn_result(func(tokenizer, code));
                 state = next;
