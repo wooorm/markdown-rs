@@ -130,12 +130,21 @@ pub struct Media {
     pub id: String,
 }
 
+/// Supported containers.
+#[derive(Debug, PartialEq)]
+pub enum Container {
+    BlockQuote,
+    ListItem,
+}
+
 /// Info used to tokenize the current container.
 ///
 /// This info is shared between the initial construct and its continuation.
 /// It’s only used for list items.
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct ContainerState {
+    /// Kind.
+    pub kind: Container,
     /// Whether the first (and all future) lines were blank.
     pub blank_initial: bool,
     /// The size of the initial construct.
