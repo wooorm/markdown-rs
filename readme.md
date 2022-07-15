@@ -59,11 +59,13 @@ cargo doc --document-private-items
 #### Refactor
 
 - [ ] (1) Use `edit_map` in `subtokenize` (needs to support links in edits)
+- [ ] (1) Add list of void tokens, assert that there’s nothing between them
+- [ ] (1) Improve `interrupt`, `concrete`, `lazy` fields somehow?
 
 #### Parse
 
 - [ ] (3) Turn off things (enable every test for these)
-- [ ] (3) Make tokenizer tokens extendable?
+- [ ] (3) Make tokens extendable for extensions?
 
 #### Test
 
@@ -74,7 +76,6 @@ cargo doc --document-private-items
 #### Misc
 
 - [ ] (3) `no_std`: remove all `HashSet`s/`HashMap` to use vecs, vecs w/ tuples?
-- [ ] (3) Check subtokenizer unraveling is ok
 - [ ] (3) Remove splicing and cloning in subtokenizer
 - [ ] (3) Pass more references around
 - [ ] (1) Get markers from constructs (`string`, `text`)
@@ -207,3 +208,4 @@ important.
 - [x] (3) Fix block quote bug
 - [x] (3) Add support for lazy lines
 - [x] (5) Containers!
+- [x] (3) Check subtokenizer unraveling is ok
