@@ -1386,6 +1386,136 @@ pub enum Token {
     ///       ^^^^^^
     /// ```
     Link,
+    /// List item.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`ListOrdered`][Token::ListOrdered],
+    ///     [`ListUnordered`][Token::ListUnordered],
+    /// *   **Content model**:
+    ///     [`ListItemPrefix`][Token::ListItemPrefix],
+    ///     [flow content][crate::content::flow]
+    /// *   **Construct**:
+    ///     [`list`][crate::construct::list]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * a
+    ///     ^^^
+    /// > | 1. b
+    ///     ^^^^
+    /// ```
+    ListItem,
+    /// List item (marker).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`ListItemPrefix`][Token::ListItemPrefix]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`list`][crate::construct::list]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * a
+    ///     ^
+    /// > | 1. b
+    ///      ^
+    /// ```
+    ListItemMarker,
+    /// List item (prefix).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`ListItem`][Token::ListItem]
+    /// *   **Content model**:
+    ///     [`ListItemMarker`][Token::ListItemMarker],
+    ///     [`ListItemValue`][Token::ListItemValue],
+    ///     [`SpaceOrTab`][Token::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`list`][crate::construct::list]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * a
+    ///     ^^
+    /// > |   b
+    ///     ^^
+    /// ```
+    ListItemPrefix,
+    /// List item (value).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`ListItemPrefix`][Token::ListItemPrefix]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`list`][crate::construct::list]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | 1. b
+    ///     ^
+    /// ```
+    ListItemValue,
+    /// List (ordered).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [document content][crate::content::document]
+    /// *   **Content model**:
+    ///     [`BlankLineEnding`][Token::BlankLineEnding],
+    ///     [`BlockQuotePrefix`][Token::BlockQuotePrefix],
+    ///     [`ListItem`][Token::ListItem],
+    ///     [`LineEnding`][Token::LineEnding],
+    ///     [`SpaceOrTab`][Token::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`list`][crate::construct::list]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | 1. a
+    ///     ^^^^
+    /// > | 2. b
+    ///     ^^^^
+    /// ```
+    ListOrdered,
+    /// List (unordered).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [document content][crate::content::document]
+    /// *   **Content model**:
+    ///     [`BlankLineEnding`][Token::BlankLineEnding],
+    ///     [`BlockQuotePrefix`][Token::BlockQuotePrefix],
+    ///     [`ListItem`][Token::ListItem],
+    ///     [`LineEnding`][Token::LineEnding],
+    ///     [`SpaceOrTab`][Token::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`list`][crate::construct::list]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * a
+    ///     ^^^
+    /// > | * b
+    ///     ^^^
+    /// ```
+    ListUnordered,
     /// Whole paragraph.
     ///
     /// ## Info
@@ -1765,13 +1895,4 @@ pub enum Token {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
-
-    // To do: sort.
-    ListOrdered,
-    ListUnordered,
-    ListItem,
-    ListItemPrefix,
-    ListItemValue,
-    ListItemMarker,
-    // ListItemPrefixSpaceOrTab,
 }

@@ -193,7 +193,6 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
-
 /// The max number of decimals allowed to form an (ordered) [list][] item.
 ///
 /// `CommonMark` caps this at 10 digits (9 is fine, 10 not).

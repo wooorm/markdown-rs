@@ -723,8 +723,7 @@ fn on_enter_list(context: &mut CompileContext) {
 
             // Blank line directly in list or directly in list item,
             // but not a blank line after an empty list item.
-            if balance < 3 && event.token_type == Token::BlankLineEnding
-            {
+            if balance < 3 && event.token_type == Token::BlankLineEnding {
                 let at_marker = balance == 2
                     && events[skip::opt_back(
                         events,
