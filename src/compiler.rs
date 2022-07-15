@@ -1191,6 +1191,8 @@ fn on_exit_list_item(context: &mut CompileContext) {
     let tight_paragraph = *tight && previous.token_type == Token::Paragraph;
     let empty_item = previous.token_type == Token::ListItemPrefix;
 
+    context.slurp_one_line_ending = false;
+
     if !tight_paragraph && !empty_item {
         context.line_ending_if_needed();
     }
