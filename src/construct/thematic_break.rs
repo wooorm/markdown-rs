@@ -19,8 +19,8 @@
 //! writing markdown.
 //! As using more than three markers has no effect other than wasting space,
 //! it is recommended to use exactly three markers.
-//! Thematic breaks formed with asterisks or dashes can interfere with lists
-//! in if there is whitespace between them: `* * *` and `- - -`.
+//! Thematic breaks formed with asterisks or dashes can interfere with
+//! [list][]s if there is whitespace between them: `* * *` and `- - -`.
 //! For these reasons, it is recommend to not use spaces or tabs between the
 //! markers.
 //! Thematic breaks formed with dashes (without whitespace) can also form
@@ -45,9 +45,8 @@
 //!
 //! [flow]: crate::content::flow
 //! [heading_setext]: crate::construct::heading_setext
+//! [list]: crate::construct::list
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element
-//!
-//! <!-- To do: link `lists` -->
 
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
