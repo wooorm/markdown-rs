@@ -67,7 +67,7 @@ pub const CHARACTER_REFERENCE_NAMED_SIZE_MAX: usize = 31;
 /// [code_fenced]: crate::construct::code_fenced
 pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 
-/// The number of spaces needed, before a line ending, for a [hard break
+/// The number of preceding spaces needed for a [hard break
 /// (trailing)][hard_break_trailing] to form.
 ///
 /// [hard_break_trailing]: crate::construct::hard_break_trailing
@@ -193,8 +193,18 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
-/// To do.
-/// See: <https://spec.commonmark.org/0.30/#ordered-list-marker>
+
+/// The max number of decimals allowed to form an (ordered) [list][] item.
+///
+/// `CommonMark` caps this at 10 digits (9 is fine, 10 not).
+/// This limit is imposed because bigger numbers result in integer overflows
+/// in some browsers.
+///
+/// ## References
+///
+/// *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.30/#ordered-list-marker)
+///
+/// [list]: crate::construct::list
 pub const LIST_ITEM_VALUE_SIZE_MAX: usize = 10;
 
 /// Maximum allowed unbalanced parens in destination.
