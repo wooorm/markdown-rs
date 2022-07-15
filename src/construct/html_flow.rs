@@ -195,8 +195,6 @@ struct Info {
     index: usize,
     /// Current quote, when in a double or single quoted attribute value.
     quote: Option<QuoteKind>,
-    /// To do.
-    concrete: bool,
 }
 
 /// Start of HTML (flow), before optional whitespace.
@@ -251,7 +249,6 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         buffer: vec![],
         index: 0,
         quote: None,
-        concrete: tokenizer.concrete,
     };
 
     match code {
@@ -782,12 +779,11 @@ fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
         {
             tokenizer.exit(Token::HtmlFlowData);
             tokenizer.check(blank_line_before, |ok| {
-                let func = if ok {
-                    html_continue_after
+                if ok {
+                    Box::new(html_continue_after)
                 } else {
-                    html_continue_start // continuation_at_line_ending
-                };
-                Box::new(move |t, c| func(t, c, info))
+                    Box::new(move |t, c| html_continue_start(t, c, info))
+                }
             })(tokenizer, code)
         }
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -818,23 +814,21 @@ fn continuation_at_line_ending(tokenizer: &mut Tokenizer, code: Code, info: Info
 /// ```
 fn html_continue_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.check(partial_non_lazy_continuation, |ok| {
-        let func = if ok {
-            html_continue_start_non_lazy
+        if ok {
+            Box::new(move |t, c| html_continue_start_non_lazy(t, c, info))
         } else {
-            html_continue_after
-        };
-        Box::new(move |t, c| func(t, c, info))
+            Box::new(html_continue_after)
+        }
     })(tokenizer, code)
 }
 
 /// To do.
-#[allow(clippy::needless_pass_by_value)]
-fn html_continue_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn html_continue_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(Token::HtmlFlow);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
-    // Restore previous `concrete`.
-    tokenizer.concrete = info.concrete;
+    // No longer concrete.
+    tokenizer.concrete = false;
     (State::Ok, Some(vec![code]))
 }
 
@@ -1015,7 +1009,7 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HtmlFlowData);
-            html_continue_after(tokenizer, code, info)
+            html_continue_after(tokenizer, code)
         }
         _ => {
             tokenizer.consume(code);

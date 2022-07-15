@@ -178,8 +178,6 @@ struct Info {
     prefix: usize,
     /// Kind of fences.
     kind: Kind,
-    /// To do.
-    concrete: bool,
 }
 
 /// Start of fenced code.
@@ -223,7 +221,6 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
                 Info {
                     prefix,
                     size: 0,
-                    concrete: tokenizer.concrete,
                     kind: Kind::from_code(code),
                 },
             )
@@ -381,7 +378,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
         if ok {
             Box::new(move |t, c| at_non_lazy_break(t, c, info))
         } else {
-            Box::new(move |t, c| after(t, c, info))
+            Box::new(after)
         }
     })(tokenizer, code)
 }
@@ -394,7 +391,7 @@ fn at_non_lazy_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State
         |t, c| close_begin(t, c, info),
         |ok| {
             if ok {
-                Box::new(|t, c| after(t, c, clone))
+                Box::new(after)
             } else {
                 Box::new(|t, c| content_before(t, c, clone))
             }
@@ -578,12 +575,11 @@ fn content_continue(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateF
 /// console.log('1')
 /// ~~~|
 /// ```
-#[allow(clippy::needless_pass_by_value)]
-fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(Token::CodeFenced);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
-    // Restore previous `concrete`.
-    tokenizer.concrete = info.concrete;
+    // No longer concrete.
+    tokenizer.concrete = false;
     (State::Ok, Some(vec![code]))
 }
