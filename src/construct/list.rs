@@ -208,8 +208,6 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut size: usize) -> StateFnResu
 ///      ^
 /// ```
 fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let kind = Kind::from_code(code);
-    println!("list item kind: {:?}", kind);
     tokenizer.enter(Token::ListItemMarker);
     tokenizer.consume(code);
     tokenizer.exit(Token::ListItemMarker);
