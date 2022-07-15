@@ -9,8 +9,8 @@
 //! *   [List][crate::construct::list]
 
 use crate::construct::{
-    block_quote::{cont as block_quote_cont, end as block_quote_end, start as block_quote},
-    list::{cont as list_item_const, end as list_item_end, start as list_item},
+    block_quote::{cont as block_quote_cont, start as block_quote},
+    list::{cont as list_item_const, start as list_item},
 };
 use crate::content::flow::start as flow;
 use crate::parser::ParseState;
@@ -296,32 +296,25 @@ fn container_new_after(
 
     // Remove from the event stack.
     // We’ll properly add exits at different points manually.
-    let end = match container.kind {
-        Container::BlockQuote => block_quote_end,
-        Container::ListItem => list_item_end,
+    let token_type = match container.kind {
+        Container::BlockQuote => Token::BlockQuote,
+        Container::ListItem => Token::ListItem,
     };
 
-    let token_types = end();
+    let mut stack_index = tokenizer.stack.len();
+    let mut found = false;
 
-    let mut index = 0;
-    while index < token_types.len() {
-        let token_type = &token_types[index];
-        let mut stack_index = tokenizer.stack.len();
-        let mut found = false;
+    while stack_index > 0 {
+        stack_index -= 1;
 
-        while stack_index > 0 {
-            stack_index -= 1;
-
-            if tokenizer.stack[stack_index] == *token_type {
-                tokenizer.stack.remove(stack_index);
-                found = true;
-                break;
-            }
+        if tokenizer.stack[stack_index] == token_type {
+            tokenizer.stack.remove(stack_index);
+            found = true;
+            break;
         }
-
-        assert!(found, "expected to find container token to exit");
-        index += 1;
     }
+
+    assert!(found, "expected to find container token to exit");
 
     // If we did not continue all existing containers, and there is a new one,
     // close the flow and those containers.
@@ -467,30 +460,21 @@ fn exit_containers(
 
     while !stack_close.is_empty() {
         let container = stack_close.pop().unwrap();
-        let end = match container.kind {
-            Container::BlockQuote => block_quote_end,
-            Container::ListItem => list_item_end,
+        let token_type = match container.kind {
+            Container::BlockQuote => Token::BlockQuote,
+            Container::ListItem => Token::ListItem,
         };
 
-        let token_types = end();
-
-        let mut index = 0;
-        while index < token_types.len() {
-            let token_type = &token_types[index];
-
-            exits.push(Event {
-                event_type: EventType::Exit,
-                token_type: token_type.clone(),
-                // Note: positions are fixed later.
-                point: tokenizer.point.clone(),
-                index: tokenizer.index,
-                previous: None,
-                next: None,
-                content_type: None,
-            });
-
-            index += 1;
-        }
+        exits.push(Event {
+            event_type: EventType::Exit,
+            token_type: token_type.clone(),
+            // Note: positions are fixed later.
+            point: tokenizer.point.clone(),
+            index: tokenizer.index,
+            previous: None,
+            next: None,
+            content_type: None,
+        });
     }
 
     let index = info.inject.len() - (if *phase == Phase::Eof { 1 } else { 2 });

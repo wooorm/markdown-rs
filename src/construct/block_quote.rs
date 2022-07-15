@@ -114,8 +114,3 @@ fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
     }
 }
-
-/// End of a block quote.
-pub fn end() -> Vec<Token> {
-    vec![Token::BlockQuote]
-}

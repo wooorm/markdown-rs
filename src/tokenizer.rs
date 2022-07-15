@@ -145,7 +145,7 @@ pub enum Container {
 pub struct ContainerState {
     /// Kind.
     pub kind: Container,
-    /// Whether the first (and all future) lines were blank.
+    /// Whether the first line was blank.
     pub blank_initial: bool,
     /// The size of the initial construct.
     pub size: usize,

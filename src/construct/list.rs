@@ -1,4 +1,48 @@
-//! To do.
+//! List is a construct that occurs in the [document][] content type.
+//!
+//! It forms with, roughly, the following BNF:
+//!
+//! ```bnf
+//! ; Restriction: there must be `eol | space_or_tab` after the start.
+//! ; Restriction: if the first line after the marker is not blank and starts with `5( space_or_tab )`,
+//! ; only the first `space_or_tab` is part of the start.
+//! list_item_start ::= '*' | '+' | '-' | 1*9( ascii_decimal ) ( '.' | ')' ) [ 1*4 space_or_tab ]
+//! ; Restriction: blank line allowed, except when this is the first continuation after a blank start.
+//! ; Restriction: if not blank, the line must be indented, exactly `n` times.
+//! list_item_cont ::= [ n( space_or_tab ) ]
+//! ```
+//!
+//! Further lines that are not prefixed with `list_item_cont` cause the item
+//! to be exited, except when those lines are lazy continuation.
+//! Like so many things in markdown, list (items) too, are very complex.
+//! See [*§ Phase 1: block structure*][commonmark-block] for more on parsing
+//! details.
+//!
+//! Lists relates to the `<li>`, `<ol>`, and `<ul>` elements in HTML.
+//! See [*§ 4.4.8 The `li` element*][html-li],
+//! [*§ 4.4.5 The `ol` element*][html-ol], and
+//! [*§ 4.4.7 The `ul` element*][html-ul] in the HTML spec for more info.
+//!
+//! ## Tokens
+//!
+//! *   [`ListItem`][Token::ListItem]
+//! *   [`ListItemMarker`][Token::ListItemMarker]
+//! *   [`ListItemPrefix`][Token::ListItemPrefix]
+//! *   [`ListItemValue`][Token::ListItemValue]
+//! *   [`ListOrdered`][Token::ListOrdered]
+//! *   [`ListUnordered`][Token::ListUnordered]
+//!
+//! ## References
+//!
+//! *   [`list.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/list.js)
+//! *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.30/#list-items)
+//! *   [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.30/#lists)
+//!
+//! [document]: crate::content::document
+//! [html-li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
+//! [html-ol]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
+//! [html-ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
+//! [commonmark-block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
 
 use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
 use crate::construct::{
@@ -59,16 +103,6 @@ enum Kind {
 }
 
 impl Kind {
-    // /// Turn the kind into a [char].
-    // fn as_char(&self) -> char {
-    //     match self {
-    //         Kind::Dot => '.',
-    //         Kind::Paren => ')',
-    //         Kind::Asterisk => '*',
-    //         Kind::Plus => '+',
-    //         Kind::Dash => '-',
-    //     }
-    // }
     /// Turn a [char] into a kind.
     ///
     /// ## Panics
@@ -97,14 +131,24 @@ impl Kind {
     }
 }
 
-/// To do.
+/// Start of list item.
+///
+/// ```markdown
+/// > | * a
+///     ^
+/// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::ListItem);
     // To do: allow arbitrary when code (indented) is turned off.
     tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
 }
 
-/// To do.
+/// Start of list item, after whitespace.
+///
+/// ```markdown
+/// > | * a
+///     ^
+/// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         // Unordered.
@@ -121,13 +165,25 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// To do.
+/// Start of an unordered list item.
+///
+/// The line is not a thematic break.
+///
+/// ```markdown
+/// > | * a
+///     ^
+/// ```
 fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::ListItemPrefix);
     marker(tokenizer, code)
 }
 
-/// To do.
+/// In an ordered list item value.
+///
+/// ```markdown
+/// > | 1. a
+///     ^
+/// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code, mut size: usize) -> StateFnResult {
     size += 1;
     match code {
@@ -135,7 +191,6 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut size: usize) -> StateFnResu
             tokenizer.consume(code);
             (State::Fn(Box::new(move |t, c| inside(t, c, size))), None)
         }
-        // To do: `(!self.interrupt || size < 2)`
         Code::Char('.' | ')') => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer, code)
@@ -144,7 +199,14 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut size: usize) -> StateFnResu
     }
 }
 
-/// To do.
+/// At a list item marker.
+///
+/// ```markdown
+/// > | * a
+///     ^
+/// > | 1. b
+///      ^
+/// ```
 fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let kind = Kind::from_code(code);
     println!("list item kind: {:?}", kind);
@@ -154,90 +216,58 @@ fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     (State::Fn(Box::new(marker_after)), None)
 }
 
-/// To do.
+/// After a list item marker.
+///
+/// ```markdown
+/// > | * a
+///      ^
+/// > | 1. b
+///       ^
+/// ```
 fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let interrupt = tokenizer.interrupt;
-
     tokenizer.check(blank_line, move |ok| {
-        let func = if ok {
-            if interrupt {
-                nok
-            } else {
-                on_blank
-            }
+        if ok {
+            Box::new(|t, c| after(t, c, true))
         } else {
-            marker_after_after
-        };
-        Box::new(func)
+            Box::new(marker_after_not_blank)
+        }
     })(tokenizer, code)
 }
 
-/// To do.
-fn on_blank(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    if let Some(container) = tokenizer.container.as_mut() {
-        container.blank_initial = true;
-    }
-
-    // self.containerState.initialBlankLine = true
-    prefix_end(tokenizer, code, true)
-}
-
-/// To do.
-fn marker_after_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let interrupt = tokenizer.interrupt;
-    tokenizer.attempt(list_item_prefix_whitespace, move |ok| {
-        println!("marker:after:after: {:?} {:?}", ok, interrupt);
+/// After a list item marker, not followed by a blank line.
+///
+/// ```markdown
+/// > | * a
+///      ^
+/// ```
+fn marker_after_not_blank(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
+    tokenizer.attempt(whitespace, move |ok| {
         if ok {
-            Box::new(|t, c| prefix_end(t, c, false))
+            Box::new(|t, c| after(t, c, false))
         } else {
             Box::new(prefix_other)
         }
     })(tokenizer, code)
 }
 
-// To do: `on_blank`.
-
-/// To do.
-fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    match code {
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.enter(Token::SpaceOrTab);
-            tokenizer.consume(code);
-            tokenizer.exit(Token::SpaceOrTab);
-            (State::Fn(Box::new(|t, c| prefix_end(t, c, false))), None)
-        }
-        _ => (State::Nok, None),
-    }
+/// In whitespace after a marker.
+///
+/// ```markdown
+/// > | * a
+///      ^
+/// ```
+fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.go(space_or_tab_min_max(1, TAB_SIZE), whitespace_after)(tokenizer, code)
 }
 
-/// To do.
-fn prefix_end(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
-    let start = skip::to_back(
-        &tokenizer.events,
-        tokenizer.events.len() - 1,
-        &[Token::ListItem],
-    );
-    let prefix = tokenizer.index - tokenizer.events[start].index + (if blank { 1 } else { 0 });
-
-    if let Some(container) = tokenizer.container.as_mut() {
-        container.size = prefix;
-    }
-
-    tokenizer.exit(Token::ListItemPrefix);
-    tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve));
-    (State::Ok, Some(vec![code]))
-}
-
-/// To do.
-fn list_item_prefix_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: check how big this should be?
-    tokenizer.go(
-        space_or_tab_min_max(1, TAB_SIZE),
-        list_item_prefix_whitespace_after,
-    )(tokenizer, code)
-}
-
-fn list_item_prefix_whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+/// After acceptable whitespace.
+///
+/// ```markdown
+/// > | * a
+///      ^
+/// ```
+fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
         (State::Nok, None)
     } else {
@@ -245,81 +275,120 @@ fn list_item_prefix_whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> 
     }
 }
 
-/// To do.
-fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
-    (State::Nok, None)
+/// After a list item marker, followed by no indent or more indent that needed.
+///
+/// ```markdown
+/// > | * a
+///      ^
+/// ```
+fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    match code {
+        Code::VirtualSpace | Code::Char('\t' | ' ') => {
+            tokenizer.enter(Token::SpaceOrTab);
+            tokenizer.consume(code);
+            tokenizer.exit(Token::SpaceOrTab);
+            (State::Fn(Box::new(|t, c| after(t, c, false))), None)
+        }
+        _ => (State::Nok, None),
+    }
 }
 
-/// To do.
+/// After a list item prefix.
+///
+/// ```markdown
+/// > | * a
+///       ^
+/// ```
+fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
+    if blank && tokenizer.interrupt {
+        (State::Nok, None)
+    } else {
+        let start = skip::to_back(
+            &tokenizer.events,
+            tokenizer.events.len() - 1,
+            &[Token::ListItem],
+        );
+        let prefix = tokenizer.index - tokenizer.events[start].index + (if blank { 1 } else { 0 });
+
+        let container = tokenizer.container.as_mut().unwrap();
+        container.blank_initial = blank;
+        container.size = prefix;
+
+        tokenizer.exit(Token::ListItemPrefix);
+        tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve));
+        (State::Ok, Some(vec![code]))
+    }
+}
+
+/// Start of list item continuation.
+///
+/// ```markdown
+///   | * a
+/// > |   b
+///     ^
+/// ```
 pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.check(blank_line, |ok| {
-        println!("cont:check:blank:after: {:?}", ok);
         Box::new(if ok { blank_cont } else { not_blank_cont })
     })(tokenizer, code)
 }
 
+/// Start of blank list item continuation.
+///
+/// ```markdown
+///   | * a
+/// > |
+///     ^
+///   |   b
+/// ```
 pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let mut size = 0;
-    if let Some(container) = tokenizer.container.as_ref() {
-        size = container.size;
+    let container = tokenizer.container.as_ref().unwrap();
+    let size = container.size;
 
-        if container.blank_initial {
-            return (State::Nok, None);
-        }
+    if container.blank_initial {
+        (State::Nok, None)
+    } else {
+        // Consume, optionally, at most `size`.
+        tokenizer.go(space_or_tab_min_max(0, size), ok)(tokenizer, code)
     }
-
-    // We have a blank line.
-    // Still, try to consume at most the items size.
-    tokenizer.go(space_or_tab_min_max(0, size), cont_after)(tokenizer, code)
 }
 
+/// Start of non-blank list item continuation.
+///
+/// ```markdown
+///   | * a
+/// > |   b
+///     ^
+/// ```
 pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let mut size = 0;
+    let container = tokenizer.container.as_mut().unwrap();
+    let size = container.size;
 
-    if let Some(container) = tokenizer.container.as_mut() {
-        container.blank_initial = false;
-        size = container.size;
-    }
+    container.blank_initial = false;
 
-    tokenizer.go(space_or_tab_min_max(size, size), cont_after)(tokenizer, code)
+    // Consume exactly `size`.
+    tokenizer.go(space_or_tab_min_max(size, size), ok)(tokenizer, code)
 }
 
-pub fn cont_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    println!("cont: blank: after");
+/// A state fn to yield [`State::Ok`].
+pub fn ok(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     (State::Ok, Some(vec![code]))
 }
 
-/// To do.
-pub fn end() -> Vec<Token> {
-    vec![Token::ListItem]
+/// A state fn to yield [`State::Nok`].
+fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
+    (State::Nok, None)
 }
 
-/// To do.
+/// Find adjacent list items with the same marker.
 pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut edit_map = EditMap::new();
-
-    let mut index = 0;
-    println!("list item:before: {:?}", tokenizer.events.len());
-    while index < tokenizer.events.len() {
-        let event = &tokenizer.events[index];
-        println!(
-            "ev: {:?} {:?} {:?} {:?} {:?} {:?}",
-            index,
-            event.event_type,
-            event.token_type,
-            event.content_type,
-            event.previous,
-            event.next
-        );
-        index += 1;
-    }
-
     let mut index = 0;
     let mut balance = 0;
     let mut lists_wip: Vec<(Kind, usize, usize, usize)> = vec![];
     let mut lists: Vec<(Kind, usize, usize, usize)> = vec![];
-    // To do: track balance? Or, check what’s between them?
 
+    // Merge list items.
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
@@ -353,7 +422,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                             ],
                         ) == current.2
                     {
-                        println!("prev:match {:?} {:?}", previous, current);
                         let previous_mut = &mut lists_wip[list_index];
                         previous_mut.3 = current.3;
                         let mut remainder = lists_wip.drain((list_index + 1)..).collect::<Vec<_>>();
@@ -362,21 +430,16 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         break;
                     }
 
-                    println!(
-                        "todo: move them over to `lists` at some point? {:?}",
-                        previous
-                    );
+                    // To do: move items that could never match anymore over to `lists`,
+                    // This currently keeps on growing and growing!
                 }
 
                 if !matched {
-                    println!("prev:!match {:?} {:?}", lists_wip, current);
                     lists_wip.push(current);
                 }
 
-                println!("enter: {:?}", event.token_type);
                 balance += 1;
             } else {
-                println!("exit: {:?}", event.token_type);
                 balance -= 1;
             }
         }
@@ -386,19 +449,18 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
 
     lists.append(&mut lists_wip);
 
+    // Inject events.
     let mut index = 0;
     while index < lists.len() {
         let list_item = &lists[index];
         let mut list_start = tokenizer.events[list_item.2].clone();
-        let token_type = if matches!(list_item.0, Kind::Paren | Kind::Dot) {
-            Token::ListOrdered
-        } else {
-            Token::ListUnordered
+        let mut list_end = tokenizer.events[list_item.3].clone();
+        let token_type = match list_item.0 {
+            Kind::Paren | Kind::Dot => Token::ListOrdered,
+            _ => Token::ListUnordered,
         };
         list_start.token_type = token_type.clone();
-        let mut list_end = tokenizer.events[list_item.3].clone();
         list_end.token_type = token_type;
-        println!("inject:list: {:?} {:?}", list_start, list_end);
 
         edit_map.add(list_item.2, 0, vec![list_start]);
         edit_map.add(list_item.3 + 1, 0, vec![list_end]);
@@ -406,25 +468,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    println!("list items: {:#?}", lists);
-
-    let events = edit_map.consume(&mut tokenizer.events);
-
-    let mut index = 0;
-    println!("list item:after: {:?}", events.len());
-    while index < events.len() {
-        let event = &events[index];
-        println!(
-            "ev: {:?} {:?} {:?} {:?} {:?} {:?}",
-            index,
-            event.event_type,
-            event.token_type,
-            event.content_type,
-            event.previous,
-            event.next
-        );
-        index += 1;
-    }
-
-    events
+    edit_map.consume(&mut tokenizer.events)
 }
