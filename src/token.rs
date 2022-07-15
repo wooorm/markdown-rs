@@ -145,7 +145,7 @@ pub enum Token {
     ///     [`BlockQuote`][Token::BlockQuote]
     /// *   **Content model**:
     ///     [`BlockQuoteMarker`][Token::BlockQuoteMarker],
-    ///     [`BlockQuoteWhitespace`][Token::BlockQuoteWhitespace]
+    ///     [`SpaceOrTab`][Token::SpaceOrTab]
     /// *   **Construct**:
     ///     [`block_quote`][crate::construct::block_quote]
     ///
@@ -157,25 +157,6 @@ pub enum Token {
     ///   | b
     /// ```
     BlockQuotePrefix,
-    /// Block quote white space.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`BlockQuotePrefix`][Token::BlockQuotePrefix]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`block_quote`][crate::construct::block_quote]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | > a
-    ///      ^
-    ///   | b
-    /// ```
-    BlockQuoteWhitespace,
     /// Whole character escape.
     ///
     /// ## Info
