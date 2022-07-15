@@ -130,10 +130,15 @@ pub struct Media {
     pub id: String,
 }
 
-/// To do.
+/// Info used to tokenize the current container.
+///
+/// This info is shared between the initial construct and its continuation.
+/// It’s only used for list items.
 #[derive(Default, Debug)]
 pub struct ContainerState {
+    /// Whether the first (and all future) lines were blank.
     pub blank_initial: bool,
+    /// The size of the initial construct.
     pub size: usize,
 }
 
@@ -206,11 +211,16 @@ pub struct Tokenizer<'a> {
     ///
     /// Used when tokenizing [flow content][crate::content::flow].
     pub interrupt: bool,
-    /// To do.
+    /// Whether containers cannot “pierce” into the current construct.
+    ///
+    /// Used when tokenizing [document content][crate::content::document].
     pub concrete: bool,
-    /// To do.
+    /// Whether this line is lazy.
+    ///
+    /// The previous line was a paragraph, and this line’s containers did not
+    /// match.
     pub lazy: bool,
-    /// To do.
+    /// Current container state.
     pub container: Option<ContainerState>,
 }
 
@@ -571,7 +581,6 @@ impl<'a> Tokenizer<'a> {
     ///
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
-    /// When `done: true` is passed, the EOF is fed.
     pub fn push(
         &mut self,
         codes: &[Code],
@@ -601,7 +610,7 @@ impl<'a> Tokenizer<'a> {
         result
     }
 
-    /// To do.
+    /// Flush the tokenizer.
     pub fn flush(
         &mut self,
         start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
@@ -621,9 +630,6 @@ fn attempt_impl(
     done: impl FnOnce((Vec<Code>, Vec<Code>), bool, &mut Tokenizer, State) -> StateFnResult + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
-        // To do: `pause` is currently used after the code.
-        // Should it be before?
-        // How to match `eof`?
         if !codes.is_empty() && pause(tokenizer.previous) {
             return done(
                 (codes, vec![code]),
@@ -664,10 +670,6 @@ fn attempt_impl(
 }
 
 /// Feed a list of `codes` into `start`.
-///
-/// This is set up to support repeatedly calling `feed`, and thus streaming
-/// markdown into the state machine, and normally pauses after feeding.
-/// When `done: true` is passed, the EOF is fed.
 fn feed_impl(
     tokenizer: &mut Tokenizer,
     codes: &[Code],
@@ -705,7 +707,7 @@ fn feed_impl(
     check_statefn_result((state, Some(codes[index..].to_vec())))
 }
 
-/// To do.
+/// Flush `start`: pass `eof`s to it until done.
 fn flush_impl(
     tokenizer: &mut Tokenizer,
     start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,

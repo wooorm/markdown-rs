@@ -313,7 +313,7 @@ fn flow_start(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> 
     let state = info.next;
     info.next = Box::new(flow); // This is weird but Rust needs a function there.
 
-    tokenizer.go_until(state, eof_eol, move |(state, remainder)| {
+    tokenizer.go_until(state, eol, move |(state, remainder)| {
         (
             State::Fn(Box::new(move |t, c| flow_end(t, c, info, state))),
             remainder,
@@ -547,9 +547,6 @@ fn line_end(
     info
 }
 
-fn eof_eol(code: Code) -> bool {
-    matches!(
-        code,
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
-    )
+fn eol(code: Code) -> bool {
+    matches!(code, Code::CarriageReturnLineFeed | Code::Char('\n' | '\r'))
 }
