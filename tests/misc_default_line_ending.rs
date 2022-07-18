@@ -31,7 +31,7 @@ fn default_line_ending() {
         micromark_with_options(
             "> a",
             &Options {
-                default_line_ending: Some(LineEnding::CarriageReturn),
+                default_line_ending: LineEnding::CarriageReturn,
                 ..Options::default()
             }
         ),
@@ -43,7 +43,7 @@ fn default_line_ending() {
         micromark_with_options(
             "> a\n",
             &Options {
-                default_line_ending: Some(LineEnding::CarriageReturn),
+                default_line_ending: LineEnding::CarriageReturn,
                 ..Options::default()
             }
         ),

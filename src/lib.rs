@@ -20,7 +20,7 @@ use crate::parser::parse;
 use crate::tokenizer::Code;
 
 /// Type of line endings in markdown.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub enum LineEnding {
     /// Both a carriage return (`\r`) and a line feed (`\n`).
     ///
@@ -48,6 +48,7 @@ pub enum LineEnding {
     /// a␊
     /// b
     /// ```
+    #[default]
     LineFeed,
 }
 
@@ -349,15 +350,14 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "> a",
     ///         &Options {
-    ///             default_line_ending: Some(LineEnding::CarriageReturnLineFeed),
+    ///             default_line_ending: LineEnding::CarriageReturnLineFeed,
     ///             ..Options::default()
     ///         }
     ///     ),
     ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
     /// );
     /// ```
-    // To do: use `default`? <https://doc.rust-lang.org/std/default/trait.Default.html#enums>
-    pub default_line_ending: Option<LineEnding>,
+    pub default_line_ending: LineEnding,
 
     /// Which constructs to enable and disable.
     /// The default is to follow `CommonMark`.

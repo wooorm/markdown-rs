@@ -247,10 +247,8 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     // Figure out which line ending style we’ll use.
     let line_ending_default = if let Some(value) = line_ending_inferred {
         value
-    } else if let Some(value) = &options.default_line_ending {
-        value.clone()
     } else {
-        LineEnding::LineFeed
+        options.default_line_ending.clone()
     };
 
     let mut enter_map: Map = HashMap::new();
