@@ -6,8 +6,8 @@ use crate::constant::CHARACTER_REFERENCES;
 ///
 /// Turn the name coming from a named character reference (without the `&` or
 /// `;`) into a string.
-/// This looks the given string up in [`CHARACTER_REFERENCE_NAMES`][] and then
-/// takes the corresponding value from [`CHARACTER_REFERENCE_VALUES`][].
+/// This looks the given string up at `0` in the tuples of
+/// [`CHARACTER_REFERENCES`][] and then takes the corresponding value from `1`.
 ///
 /// The result is `String` instead of `char` because named character references
 /// can expand into multiple characters.
@@ -24,7 +24,7 @@ use crate::constant::CHARACTER_REFERENCES;
 ///
 /// ## Panics
 ///
-/// This function panics if a name not in [`CHARACTER_REFERENCE_NAMES`][] is
+/// This function panics if a name not in [`CHARACTER_REFERENCES`][] is
 /// given.
 /// It is expected that figuring out whether a name is allowed is handled in
 /// the parser.

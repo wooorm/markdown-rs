@@ -37,7 +37,7 @@
 //! but does affect whether they match.
 //! Depending on the name, one or more cases are allowed, such as that `AMP`
 //! and `amp` are both allowed but other cases are not.
-//! See [`CHARACTER_REFERENCE_NAMES`][character_reference_names] for which
+//! See [`CHARACTER_REFERENCES`][character_references] for which
 //! names match.
 //!
 //! ## Tokens
@@ -58,7 +58,7 @@
 //! [text]: crate::content::text
 //! [character_escape]: crate::construct::character_reference
 //! [decode_numeric]: crate::util::decode_character_reference::decode_numeric
-//! [character_reference_names]: crate::constant::CHARACTER_REFERENCE_NAMES
+//! [character_references]: crate::constant::CHARACTER_REFERENCES
 //! [html]: https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
 
 use crate::constant::{
