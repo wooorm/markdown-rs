@@ -13,9 +13,16 @@ categories = ["compilers", "encoding", "parser-implementations", "parsing", "tex
 include = ["src/", "license"]
 publish = false
 
+[[bench]]
+name = "bench"
+harness = false
+
 [dependencies]
 env_logger = "0.9"
 log = "0.4"
+
+[dev-dependencies]
+criterion = "0.3"
 
 [build-dependencies]
 regex = "1.5"
