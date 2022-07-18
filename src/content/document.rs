@@ -393,14 +393,7 @@ fn flow_end(
         .token_type
             == Token::Paragraph;
 
-    if tokenizer.lazy
-        && info.paragraph_before
-        && paragraph
-        && !(matches!(
-            tokenizer.previous,
-            Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
-        ) && matches!(code, Code::None))
-    {
+    if tokenizer.lazy && info.paragraph_before && paragraph {
         info.continued = info.stack.len();
     }
 

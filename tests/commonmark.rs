@@ -999,20 +999,19 @@ of dashes"/>
         r###"Setext headings (91)"###
 );
 
-// To do: lazy setext underline bug.
-//     assert_eq!(
-//         micromark_with_options(r###"> foo
-// bar
-// ===
-// "###, DANGER),
-//         r###"<blockquote>
-// <p>foo
-// bar
-// ===</p>
-// </blockquote>
-// "###,
-//         r###"Setext headings (92)"###
-// );
+    assert_eq!(
+        micromark_with_options(r###"> foo
+bar
+===
+"###, DANGER),
+        r###"<blockquote>
+<p>foo
+bar
+===</p>
+</blockquote>
+"###,
+        r###"Setext headings (92)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"- Foo
@@ -2797,20 +2796,19 @@ baz</p>
         r###"Block quotes (230)"###
 );
 
-    // To do: some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"> # Foo
-    // > bar
-    // baz
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <h1>Foo</h1>
-    // <p>bar
-    // baz</p>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (231)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"> # Foo
+> bar
+baz
+"###, DANGER),
+        r###"<blockquote>
+<h1>Foo</h1>
+<p>bar
+baz</p>
+</blockquote>
+"###,
+        r###"Block quotes (231)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"> bar
@@ -2882,18 +2880,17 @@ foo
         r###"Block quotes (236)"###
 );
 
-    // To do: some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"> foo
-    //     - bar
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <p>foo
-    // - bar</p>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (237)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"> foo
+    - bar
+"###, DANGER),
+        r###"<blockquote>
+<p>foo
+- bar</p>
+</blockquote>
+"###,
+        r###"Block quotes (237)"###
+);
 
     assert_eq!(
         micromark_with_options(r###">
@@ -2995,18 +2992,17 @@ bar</p>
         r###"Block quotes (245)"###
 );
 
-    // To do: some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"> bar
-    // baz
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <p>bar
-    // baz</p>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (246)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"> bar
+baz
+"###, DANGER),
+        r###"<blockquote>
+<p>bar
+baz</p>
+</blockquote>
+"###,
+        r###"Block quotes (246)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"> bar
@@ -3034,41 +3030,39 @@ baz
         r###"Block quotes (248)"###
 );
 
-    // To do: some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"> > > foo
-    // bar
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <blockquote>
-    // <blockquote>
-    // <p>foo
-    // bar</p>
-    // </blockquote>
-    // </blockquote>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (249)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"> > > foo
+bar
+"###, DANGER),
+        r###"<blockquote>
+<blockquote>
+<blockquote>
+<p>foo
+bar</p>
+</blockquote>
+</blockquote>
+</blockquote>
+"###,
+        r###"Block quotes (249)"###
+);
 
-    // To do: some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###">>> foo
-    // > bar
-    // >>baz
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <blockquote>
-    // <blockquote>
-    // <p>foo
-    // bar
-    // baz</p>
-    // </blockquote>
-    // </blockquote>
-    // </blockquote>
-    // "###,
-    //         r###"Block quotes (250)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###">>> foo
+> bar
+>>baz
+"###, DANGER),
+        r###"<blockquote>
+<blockquote>
+<blockquote>
+<p>foo
+bar
+baz</p>
+</blockquote>
+</blockquote>
+</blockquote>
+"###,
+        r###"Block quotes (250)"###
+);
 
     assert_eq!(
         micromark_with_options(r###">     code
@@ -3696,56 +3690,53 @@ with two lines.</p>
         r###"List items (289)"###
 );
 
-    // To do: Some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"  1.  A paragraph
-    //     with two lines.
-    // "###, DANGER),
-    //         r###"<ol>
-    // <li>A paragraph
-    // with two lines.</li>
-    // </ol>
-    // "###,
-    //         r###"List items (290)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"  1.  A paragraph
+    with two lines.
+"###, DANGER),
+        r###"<ol>
+<li>A paragraph
+with two lines.</li>
+</ol>
+"###,
+        r###"List items (290)"###
+);
 
-    // To do: Some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"> 1. > Blockquote
-    // continued here.
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <ol>
-    // <li>
-    // <blockquote>
-    // <p>Blockquote
-    // continued here.</p>
-    // </blockquote>
-    // </li>
-    // </ol>
-    // </blockquote>
-    // "###,
-    //         r###"List items (291)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"> 1. > Blockquote
+continued here.
+"###, DANGER),
+        r###"<blockquote>
+<ol>
+<li>
+<blockquote>
+<p>Blockquote
+continued here.</p>
+</blockquote>
+</li>
+</ol>
+</blockquote>
+"###,
+        r###"List items (291)"###
+);
 
-    // To do: Some lazy bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"> 1. > Blockquote
-    // > continued here.
-    // "###, DANGER),
-    //         r###"<blockquote>
-    // <ol>
-    // <li>
-    // <blockquote>
-    // <p>Blockquote
-    // continued here.</p>
-    // </blockquote>
-    // </li>
-    // </ol>
-    // </blockquote>
-    // "###,
-    //         r###"List items (292)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"> 1. > Blockquote
+> continued here.
+"###, DANGER),
+        r###"<blockquote>
+<ol>
+<li>
+<blockquote>
+<p>Blockquote
+continued here.</p>
+</blockquote>
+</li>
+</ol>
+</blockquote>
+"###,
+        r###"List items (292)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"- foo
@@ -4077,24 +4068,23 @@ baz</li>
         r###"Lists (310)"###
 );
 
-    // To do: Some interruption bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"- a
-    //  - b
-    //   - c
-    //    - d
-    //     - e
-    // "###, DANGER),
-    //         r###"<ul>
-    // <li>a</li>
-    // <li>b</li>
-    // <li>c</li>
-    // <li>d
-    // - e</li>
-    // </ul>
-    // "###,
-    //         r###"Lists (311)"###
-    // );
+    assert_eq!(
+        micromark_with_options(r###"- a
+ - b
+  - c
+   - d
+    - e
+"###, DANGER),
+        r###"<ul>
+<li>a</li>
+<li>b</li>
+<li>c</li>
+<li>d
+- e</li>
+</ul>
+"###,
+        r###"Lists (311)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"1. a
