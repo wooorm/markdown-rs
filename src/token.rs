@@ -492,7 +492,7 @@ pub enum Token {
     /// *   **Content model**:
     ///     [`CodeTextData`][Token::CodeTextData],
     ///     [`CodeTextSequence`][Token::CodeTextSequence],
-    ///     [`CodeTextLineEnding`][Token::CodeTextLineEnding]
+    ///     [`LineEnding`][Token::LineEnding]
     /// *   **Construct**:
     ///     [`code_text`][crate::construct::code_text]
     ///
@@ -521,25 +521,6 @@ pub enum Token {
     ///        ^
     /// ```
     CodeTextData,
-    /// Line ending in code (text).
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`CodeText`][Token::CodeText],
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`code_text`][crate::construct::code_text]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a `b␊
-    ///         ^
-    ///   | c` d
-    /// ```
-    CodeTextLineEnding,
     /// Code (text) sequence.
     ///
     /// ## Info
@@ -1879,7 +1860,7 @@ pub enum Token {
 }
 
 /// List of void tokens, used to make sure everything is working good.
-pub const VOID_TOKENS: [Token; 40] = [
+pub const VOID_TOKENS: [Token; 39] = [
     Token::AttentionSequence,
     Token::AutolinkEmail,
     Token::AutolinkMarker,
@@ -1896,7 +1877,6 @@ pub const VOID_TOKENS: [Token; 40] = [
     Token::CodeFencedFenceSequence,
     Token::CodeFlowChunk,
     Token::CodeTextData,
-    Token::CodeTextLineEnding,
     Token::CodeTextSequence,
     Token::Data,
     Token::DefinitionDestinationLiteralMarker,

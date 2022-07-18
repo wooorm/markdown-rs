@@ -235,6 +235,7 @@ struct CompileContext<'a> {
     pub heading_setext_buffer: Option<String>,
     pub code_flow_seen_data: Option<bool>,
     pub code_fenced_fences_count: Option<usize>,
+    pub code_text_inside: bool,
     pub character_reference_kind: Option<CharacterReferenceKind>,
     pub expect_first_item: Option<bool>,
     pub media_stack: Vec<Media>,
@@ -270,6 +271,7 @@ impl<'a> CompileContext<'a> {
             heading_setext_buffer: None,
             code_flow_seen_data: None,
             code_fenced_fences_count: None,
+            code_text_inside: false,
             character_reference_kind: None,
             expect_first_item: None,
             media_stack: vec![],
@@ -391,9 +393,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         let event = &events[index];
 
         if event.event_type == EventType::Exit
-            && (event.token_type == Token::BlankLineEnding
-                || event.token_type == Token::CodeTextLineEnding
-                || event.token_type == Token::LineEnding)
+            && (event.token_type == Token::BlankLineEnding || event.token_type == Token::LineEnding)
         {
             let codes = codes_from_span(codes, &from_exit_event(events, index));
             line_ending_inferred = Some(LineEnding::from_code(*codes.first().unwrap()));
@@ -478,7 +478,6 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     exit_map.insert(Token::CodeIndented, on_exit_code_flow);
     exit_map.insert(Token::CodeText, on_exit_code_text);
     exit_map.insert(Token::CodeTextData, on_exit_data);
-    exit_map.insert(Token::CodeTextLineEnding, on_exit_code_text_line_ending);
     exit_map.insert(Token::Data, on_exit_data);
     exit_map.insert(Token::Definition, on_exit_definition);
     exit_map.insert(
@@ -638,6 +637,7 @@ fn on_enter_code_fenced(context: &mut CompileContext) {
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeText`][Token::CodeText].
 fn on_enter_code_text(context: &mut CompileContext) {
+    context.code_text_inside = true;
     context.tag("<code>".to_string());
     context.buffer();
 }
@@ -992,17 +992,13 @@ fn on_exit_code_text(context: &mut CompileContext) {
         }
     }
 
+    context.code_text_inside = false;
     context.push(if trim {
         result[1..(result.len() - 1)].to_string()
     } else {
         result
     });
     context.tag("</code>".to_string());
-}
-
-/// Handle [`Exit`][EventType::Exit]:[`CodeTextLineEnding`][Token::CodeTextLineEnding].
-fn on_exit_code_text_line_ending(context: &mut CompileContext) {
-    context.push(" ".to_string());
 }
 
 /// Handle [`Exit`][EventType::Exit]:*.
@@ -1160,7 +1156,9 @@ fn on_exit_label_text(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
-    if context.slurp_one_line_ending {
+    if context.code_text_inside {
+        context.push(" ".to_string());
+    } else if context.slurp_one_line_ending {
         context.slurp_one_line_ending = false;
     } else {
         context.push(context.encode_opt(&serialize(

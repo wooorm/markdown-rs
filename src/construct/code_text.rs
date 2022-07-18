@@ -69,8 +69,8 @@
 //!
 //! *   [`CodeText`][Token::CodeText]
 //! *   [`CodeTextData`][Token::CodeTextData]
-//! *   [`CodeTextLineEnding`][Token::CodeTextLineEnding]
 //! *   [`CodeTextSequence`][Token::CodeTextSequence]
+//! *   [`LineEnding`][Token::LineEnding]
 //!
 //! ## References
 //!
@@ -139,9 +139,9 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnRe
     match code {
         Code::None => (State::Nok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter(Token::CodeTextLineEnding);
+            tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
-            tokenizer.exit(Token::CodeTextLineEnding);
+            tokenizer.exit(Token::LineEnding);
             (
                 State::Fn(Box::new(move |t, c| between(t, c, size_open))),
                 None,
