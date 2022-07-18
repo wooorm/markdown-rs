@@ -6130,16 +6130,15 @@ bar>)</p>
         r###"Links (537)"###
 );
 
-    // To do: Some unicode normalization bug.
-    //     assert_eq!(
-    //         micromark_with_options(r###"[ẞ]
+    assert_eq!(
+        micromark_with_options(r###"[ẞ]
 
-    // [SS]: /url
-    // "###, DANGER),
-    //         r###"<p><a href="/url">ẞ</a></p>
-    // "###,
-    //         r###"Links (538)"###
-    // );
+[SS]: /url
+"###, DANGER),
+        r###"<p><a href="/url">ẞ</a></p>
+"###,
+        r###"Links (538)"###
+);
 
     assert_eq!(
         micromark_with_options(r###"[Foo

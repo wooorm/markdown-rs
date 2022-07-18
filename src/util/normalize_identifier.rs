@@ -58,9 +58,17 @@ pub fn normalize_identifier(value: &str) -> String {
     // counterpart is uppercased will result in a different uppercase
     // character.
     // Hence, to get that form, we perform both lower- and uppercase.
+    // Performing these steps in that order works, but the inverse does not
+    // work.
+    // To illustrate, say the source markdown containes two identifiers `SS`
+    // (U+0053 U+0053) and `ẞ` (U+1E9E), which would be lowercased to `ss`
+    // (U+0073 U+0073) and `ß` (U+00DF), and those in turn would both uppercase
+    // to `SS` (U+0053 U+0053).
+    // If we’d inverse the steps, for `ẞ`, we’d first uppercase without a
+    // change, and then lowercase to `ß`, which would not match `ss`.
     codes
         .iter()
         .collect::<String>()
-        .to_uppercase()
         .to_lowercase()
+        .to_uppercase()
 }
