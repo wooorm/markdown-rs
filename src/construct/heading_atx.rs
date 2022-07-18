@@ -63,7 +63,8 @@ use crate::util::edit_map::EditMap;
 /// Start of a heading (atx).
 ///
 /// ```markdown
-/// |## alpha
+/// > | ## aa
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::HeadingAtx);
@@ -74,7 +75,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Start of a heading (atx), after whitespace.
 ///
 /// ```markdown
-/// |## alpha
+/// > | ## aa
+///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('#') == code {
@@ -88,7 +90,8 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In the opening sequence.
 ///
 /// ```markdown
-/// #|# alpha
+/// > | ## aa
+///     ^
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnResult {
     match code {
@@ -116,11 +119,8 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
 /// After something but before something else.
 ///
 /// ```markdown
-/// ## |alpha
-/// ## alpha| bravo
-/// ## alpha |bravo
-/// ## alpha bravo|##
-/// ## alpha bravo ##|
+/// > | ## aa
+///       ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -146,10 +146,12 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 }
 
 /// In a further sequence (after whitespace).
+///
 /// Could be normal “visible” hashes in the heading or a final sequence.
 ///
 /// ```markdown
-/// ## alpha #|#
+/// > | ## aa ##
+///           ^
 /// ```
 fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if let Code::Char('#') = code {
@@ -164,7 +166,8 @@ fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In text.
 ///
 /// ```markdown
-/// ## al|pha
+/// > | ## aa
+///        ^
 /// ```
 fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

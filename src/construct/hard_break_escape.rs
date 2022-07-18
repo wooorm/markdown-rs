@@ -46,7 +46,9 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Start of a hard break (escape).
 ///
 /// ```markdown
-/// a|\
+/// > | a\
+///      ^
+///   | b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -64,7 +66,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// At the end of a hard break (escape), after `\`.
 ///
 /// ```markdown
-/// a\|
+/// > | a\
+///       ^
+///   | b
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

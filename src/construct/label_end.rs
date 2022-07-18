@@ -344,12 +344,13 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
 /// Start of label end.
 ///
 /// ```markdown
-/// [a|](b) c
-/// [a|][b] c
-/// [a|][] b
-/// [a|] b
-///
-/// [a]: z
+/// > | [a](b) c
+///       ^
+/// > | [a][b] c
+///       ^
+/// > | [a][] b
+///       ^
+/// > | [a] b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char(']') == code {
@@ -410,12 +411,14 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `]`.
 ///
 /// ```markdown
-/// [a]|(b) c
-/// [a]|[b] c
-/// [a]|[] b
-/// [a]| b
-///
-/// [a]: z
+/// > | [a](b) c
+///       ^
+/// > | [a][b] c
+///       ^
+/// > | [a][] b
+///       ^
+/// > | [a] b
+///       ^
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     let defined = tokenizer.parse_state.definitions.contains(&info.media.id);
@@ -460,9 +463,10 @@ fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// > 👉 **Note**: we only get here if the label is defined.
 ///
 /// ```markdown
-/// [a]|[] b
-///
-/// [a]: z
+/// > | [a][] b
+///        ^
+/// > | [a] b
+///        ^
 /// ```
 fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.attempt(collapsed_reference, move |is_ok| {
@@ -479,12 +483,14 @@ fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// Done, we found something.
 ///
 /// ```markdown
-/// [a](b)| c
-/// [a][b]| c
-/// [a][]| b
-/// [a]| b
-///
-/// [a]: z
+/// > | [a](b) c
+///           ^
+/// > | [a][b] c
+///           ^
+/// > | [a][] b
+///          ^
+/// > | [a] b
+///        ^
 /// ```
 fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     // Remove this one and everything after it.
@@ -520,12 +526,12 @@ fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
 /// There was an okay opening, but we didn’t match anything.
 ///
 /// ```markdown
-/// [a]|(b c
-/// [a]|[b c
-/// [b]|[ c
-/// [b]| c
-///
-/// [a]: z
+/// > | [a](b c
+///        ^
+/// > | [a][b c
+///        ^
+/// > | [a] b
+///        ^
 /// ```
 fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> StateFnResult {
     let label_start = tokenizer
@@ -539,7 +545,8 @@ fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> Stat
 /// Before a resource, at `(`.
 ///
 /// ```markdown
-/// [a]|(b) c
+/// > | [a](b) c
+///        ^
 /// ```
 fn resource(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -554,10 +561,11 @@ fn resource(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     }
 }
 
-/// At the start of a resource, after `(`, before a definition.
+/// At the start of a resource, after `(`, before a destination.
 ///
 /// ```markdown
-/// [a](|b) c
+/// > | [a](b) c
+///         ^
 /// ```
 fn resource_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(space_or_tab_eol(), resource_open)(tokenizer, code)
@@ -566,7 +574,8 @@ fn resource_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// At the start of a resource, after optional whitespace.
 ///
 /// ```markdown
-/// [a](|b) c
+/// > | [a](b) c
+///         ^
 /// ```
 fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -594,8 +603,8 @@ fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a resource, after a destination, before optional whitespace.
 ///
 /// ```markdown
-/// [a](b|) c
-/// [a](b| "c") d
+/// > | [a](b) c
+///          ^
 /// ```
 fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt(space_or_tab_eol(), |ok| {
@@ -606,8 +615,8 @@ fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a resource, after a destination, after whitespace.
 ///
 /// ```markdown
-/// [a](b |) c
-/// [a](b |"c") d
+/// > | [a](b ) c
+///           ^
 /// ```
 fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -632,7 +641,8 @@ fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a resource, after a title.
 ///
 /// ```markdown
-/// [a](b "c"|) d
+/// > | [a](b "c") d
+///              ^
 /// ```
 fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(space_or_tab_eol(), resource_end)(tokenizer, code)
@@ -641,9 +651,8 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a resource, at the `)`.
 ///
 /// ```markdown
-/// [a](b|) c
-/// [a](b |) c
-/// [a](b "c"|) d
+/// > | [a](b) d
+///          ^
 /// ```
 fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -661,7 +670,8 @@ fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a reference (full), at the `[`.
 ///
 /// ```markdown
-/// [a]|[b]
+/// > | [a][b] d
+///        ^
 /// ```
 fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -686,7 +696,8 @@ fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a reference (full), after `]`.
 ///
 /// ```markdown
-/// [a][b]|
+/// > | [a][b] d
+///          ^
 /// ```
 fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let events = &tokenizer.events;
@@ -731,7 +742,8 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 /// > 👉 **Note**: we only get here if the label is defined.
 ///
 /// ```markdown
-/// [a]|[]
+/// > | [a][] d
+///        ^
 /// ```
 fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -751,7 +763,8 @@ fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > 👉 **Note**: we only get here if the label is defined.
 ///
 /// ```markdown
-/// [a][|]
+/// > | [a][] d
+///         ^
 /// ```
 fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

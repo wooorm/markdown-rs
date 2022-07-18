@@ -101,17 +101,23 @@ use crate::construct::{
 };
 use crate::token::Token;
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::util::skip::opt_back as skip_opt_back;
 
 /// At the start of a definition.
 ///
 /// ```markdown
-/// |[a]: b "c"
+/// > | [a]: b "c"
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let index = tokenizer.events.len();
-    let definition_before = index > 3
-        && tokenizer.events[index - 1].token_type == Token::LineEnding
-        && tokenizer.events[index - 3].token_type == Token::Definition;
+    let definition_before = !tokenizer.events.is_empty()
+        && tokenizer.events[skip_opt_back(
+            &tokenizer.events,
+            tokenizer.events.len() - 1,
+            &[Token::LineEnding, Token::SpaceOrTab],
+        )]
+        .token_type
+            == Token::Definition;
 
     // Do not interrupt paragraphs (but do follow definitions).
     if tokenizer.interrupt && !definition_before {
@@ -126,7 +132,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// At the start of a definition, after whitespace.
 ///
 /// ```markdown
-/// |[a]: b "c"
+/// > | [a]: b "c"
+///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -151,7 +158,8 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After the label of a definition.
 ///
 /// ```markdown
-/// [a]|: b "c"
+/// > | [a]: b "c"
+///        ^
 /// ```
 fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -173,10 +181,8 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Before a destination.
 ///
 /// ```markdown
-/// [a]: |b "c"
-///
-/// [a]:
-///  |b "c"
+/// > | [a]: b "c"
+///          ^
 /// ```
 fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.go(
@@ -201,10 +207,8 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a destination.
 ///
 /// ```markdown
-/// [a]: b| "c"
-///
-/// [a]: b| ␊
-///  "c"
+/// > | [a]: b "c"
+///           ^
 /// ```
 fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(title_before, after)(tokenizer, code)
@@ -213,8 +217,10 @@ fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a definition.
 ///
 /// ```markdown
-/// [a]: b|
-/// [a]: b "c"|
+/// > | [a]: b
+///           ^
+/// > | [a]: b "c"
+///               ^
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(space_or_tab(), after_whitespace)(tokenizer, code)
@@ -223,8 +229,10 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a definition, after optional whitespace.
 ///
 /// ```markdown
-/// [a]: b |
-/// [a]: b "c"|
+/// > | [a]: b
+///           ^
+/// > | [a]: b "c"
+///               ^
 /// ```
 fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -241,10 +249,10 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a destination, presumably before a title.
 ///
 /// ```markdown
-/// [a]: b| "c"
-///
-/// [a]: b| ␊
-///  "c"
+/// > | [a]: b
+///           ^
+/// > | [a]: b "c"
+///           ^
 /// ```
 fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.go(space_or_tab_eol(), title_before_marker)(tokenizer, code)
@@ -253,8 +261,9 @@ fn title_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Before a title, after a line ending.
 ///
 /// ```markdown
-/// [a]: b␊
-/// | "c"
+///   | [a]: b
+/// > | "c"
+///     ^
 /// ```
 fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.go(
@@ -276,10 +285,8 @@ fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a title.
 ///
 /// ```markdown
-/// [a]: b "c"|
-///
-/// [a]: b␊
-/// "c"|
+/// > | [a]: b "c"
+///               ^
 /// ```
 fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(space_or_tab(), title_after_after_optional_whitespace)(tokenizer, code)
@@ -288,9 +295,8 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a title, after optional whitespace.
 ///
 /// ```markdown
-/// [a]: b "c"|
-///
-/// [a]: b "c" |
+/// > | [a]: b "c"
+///               ^
 /// ```
 fn title_after_after_optional_whitespace(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

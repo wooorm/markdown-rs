@@ -200,9 +200,9 @@ struct Info {
 /// Start of HTML (flow), before optional whitespace.
 ///
 /// ```markdown
-/// |<x />
+/// > | <x />
+///     ^
 /// ```
-///
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::HtmlFlow);
     // To do: allow arbitrary when code (indented) is turned off.
@@ -221,7 +221,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After optional whitespace, before `<`.
 ///
 /// ```markdown
-/// |<x />
+/// > | <x />
+///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('<') == code {
@@ -236,9 +237,12 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<`, before a tag name or other stuff.
 ///
 /// ```markdown
-/// <|x />
-/// <|!doctype>
-/// <|!--xxx-->
+/// > | <x />
+///      ^
+/// > | <!doctype>
+///      ^
+/// > | <!--xxx-->
+///      ^
 /// ```
 fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let mut info = Info {
@@ -289,9 +293,12 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<!`, so inside a declaration, comment, or CDATA.
 ///
 /// ```markdown
-/// <!|doctype>
-/// <!|--xxx-->
-/// <!|[CDATA[>&<]]>
+/// > | <!doctype>
+///       ^
+/// > | <!--xxx-->
+///       ^
+/// > | <![CDATA[>&<]]>
+///       ^
 /// ```
 fn declaration_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -330,7 +337,8 @@ fn declaration_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> St
 /// After `<!-`, inside a comment, before another `-`.
 ///
 /// ```markdown
-/// <!-|-xxx-->
+/// > | <!--xxx-->
+///        ^
 /// ```
 fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -350,11 +358,8 @@ fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Sta
 /// After `<![`, inside CDATA, expecting `CDATA[`.
 ///
 /// ```markdown
-/// <![|CDATA[>&<]]>
-/// <![CD|ATA[>&<]]>
-/// <![CDA|TA[>&<]]>
-/// <![CDAT|A[>&<]]>
-/// <![CDATA|[>&<]]>
+/// > | <![CDATA[>&<]]>
+///        ^^^^^^
 /// ```
 fn cdata_open_inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     if code == info.buffer[info.index] {
@@ -380,7 +385,8 @@ fn cdata_open_inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> S
 /// After `</`, in a closing tag, before a tag name.
 ///
 /// ```markdown
-/// </|x>
+/// > | </x>
+///       ^
 /// ```
 fn tag_close_start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -396,8 +402,10 @@ fn tag_close_start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> Sta
 /// In a tag name.
 ///
 /// ```markdown
-/// <a|b>
-/// </a|b>
+/// > | <ab>
+///      ^^
+/// > | </ab>
+///       ^^
 /// ```
 fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -454,7 +462,8 @@ fn tag_name(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 /// After a closing slash of a basic tag name.
 ///
 /// ```markdown
-/// <div/|>
+/// > | <div/>
+///          ^
 /// ```
 fn basic_self_closing(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -471,8 +480,8 @@ fn basic_self_closing(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// After a closing slash of a complete tag name.
 ///
 /// ```markdown
-/// <x/|>
-/// </x/|>
+/// > | <x/>
+///        ^
 /// ```
 fn complete_closing_tag_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -495,12 +504,16 @@ fn complete_closing_tag_after(tokenizer: &mut Tokenizer, code: Code, info: Info)
 /// attributes.
 ///
 /// ```markdown
-/// <x |/>
-/// <x |:asd>
-/// <x |_asd>
-/// <x |asd>
-/// <x | >
-/// <x |>
+/// > | <a />
+///        ^
+/// > | <a :b>
+///        ^
+/// > | <a _b>
+///        ^
+/// > | <a b>
+///        ^
+/// > | <a >
+///        ^
 /// ```
 fn complete_attribute_name_before(
     tokenizer: &mut Tokenizer,
@@ -533,9 +546,12 @@ fn complete_attribute_name_before(
 /// In an attribute name.
 ///
 /// ```markdown
-/// <x :|>
-/// <x _|>
-/// <x a|>
+/// > | <a :b>
+///         ^
+/// > | <a _b>
+///         ^
+/// > | <a b>
+///         ^
 /// ```
 fn complete_attribute_name(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -554,9 +570,10 @@ fn complete_attribute_name(tokenizer: &mut Tokenizer, code: Code, info: Info) ->
 /// tag, or whitespace.
 ///
 /// ```markdown
-/// <x a|>
-/// <x a|=b>
-/// <x a|="c">
+/// > | <a b>
+///         ^
+/// > | <a b=c>
+///         ^
 /// ```
 fn complete_attribute_name_after(
     tokenizer: &mut Tokenizer,
@@ -586,8 +603,10 @@ fn complete_attribute_name_after(
 /// allowing whitespace.
 ///
 /// ```markdown
-/// <x a=|b>
-/// <x a=|"c">
+/// > | <a b=c>
+///          ^
+/// > | <a b="c">
+///          ^
 /// ```
 fn complete_attribute_value_before(
     tokenizer: &mut Tokenizer,
@@ -618,8 +637,10 @@ fn complete_attribute_value_before(
 /// In a double or single quoted attribute value.
 ///
 /// ```markdown
-/// <x a="|">
-/// <x a='|'>
+/// > | <a b="c">
+///           ^
+/// > | <a b='c'>
+///           ^
 /// ```
 fn complete_attribute_value_quoted(
     tokenizer: &mut Tokenizer,
@@ -650,7 +671,8 @@ fn complete_attribute_value_quoted(
 /// In an unquoted attribute value.
 ///
 /// ```markdown
-/// <x a=b|c>
+/// > | <a b=c>
+///          ^
 /// ```
 fn complete_attribute_value_unquoted(
     tokenizer: &mut Tokenizer,
@@ -680,7 +702,8 @@ fn complete_attribute_value_unquoted(
 /// end of the tag.
 ///
 /// ```markdown
-/// <x a="b"|>
+/// > | <a b="c">
+///            ^
 /// ```
 fn complete_attribute_value_quoted_after(
     tokenizer: &mut Tokenizer,
@@ -698,7 +721,8 @@ fn complete_attribute_value_quoted_after(
 /// In certain circumstances of a complete tag where only an `>` is allowed.
 ///
 /// ```markdown
-/// <x a="b"|>
+/// > | <a b="c">
+///             ^
 /// ```
 fn complete_end(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -713,7 +737,8 @@ fn complete_end(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
 /// After `>` in a complete tag.
 ///
 /// ```markdown
-/// <x>|
+/// > | <x>
+///        ^
 /// ```
 fn complete_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -733,7 +758,8 @@ fn complete_after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnR
 /// Inside continuation of any HTML kind.
 ///
 /// ```markdown
-/// <!--x|xx-->
+/// > | <!--xxx-->
+///          ^
 /// ```
 fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -800,8 +826,9 @@ fn continuation(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
 /// In continuation, at an eol.
 ///
 /// ```markdown
-/// <x>|
-/// asd
+/// > | <x>
+///        ^
+///   | asd
 /// ```
 fn continuation_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.check(partial_non_lazy_continuation, |ok| {
@@ -816,8 +843,9 @@ fn continuation_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// In continuation, at an eol, before non-lazy content.
 ///
 /// ```markdown
-/// <x>|
-/// asd
+/// > | <x>
+///        ^
+///   | asd
 /// ```
 fn continuation_start_non_lazy(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -837,8 +865,9 @@ fn continuation_start_non_lazy(tokenizer: &mut Tokenizer, code: Code, info: Info
 /// In continuation, after an eol, before non-lazy content.
 ///
 /// ```markdown
-/// <x>
-/// |asd
+///   | <x>
+/// > | asd
+///     ^
 /// ```
 fn continuation_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -855,7 +884,8 @@ fn continuation_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Sta
 /// In comment continuation, after one `-`, expecting another.
 ///
 /// ```markdown
-/// <!--xxx-|->
+/// > | <!--xxx-->
+///             ^
 /// ```
 fn continuation_comment_inside(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -873,7 +903,8 @@ fn continuation_comment_inside(tokenizer: &mut Tokenizer, code: Code, info: Info
 /// In raw continuation, after `<`, expecting a `/`.
 ///
 /// ```markdown
-/// <script>console.log(1)<|/script>
+/// > | <script>console.log(1)</script>
+///                            ^
 /// ```
 fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -891,9 +922,8 @@ fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, code: Code, info: Info) 
 /// In raw continuation, after `</`, expecting or inside a raw tag name.
 ///
 /// ```markdown
-/// <script>console.log(1)</|script>
-/// <script>console.log(1)</s|cript>
-/// <script>console.log(1)</script|>
+/// > | <script>console.log(1)</script>
+///                             ^^^^^^
 /// ```
 fn continuation_raw_end_tag(
     tokenizer: &mut Tokenizer,
@@ -933,7 +963,8 @@ fn continuation_raw_end_tag(
 /// In cdata continuation, after `]`, expecting `]>`.
 ///
 /// ```markdown
-/// <![CDATA[>&<]|]>
+/// > | <![CDATA[>&<]]>
+///                  ^
 /// ```
 fn continuation_character_data_inside(
     tokenizer: &mut Tokenizer,
@@ -955,14 +986,16 @@ fn continuation_character_data_inside(
 /// In declaration or instruction continuation, waiting for `>` to close it.
 ///
 /// ```markdown
-/// <!--|>
-/// <?ab?|>
-/// <?|>
-/// <!q|>
-/// <!--ab--|>
-/// <!--ab--|->
-/// <!--ab---|>
-/// <![CDATA[>&<]]|>
+/// > | <!-->
+///         ^
+/// > | <?>
+///       ^
+/// > | <!q>
+///        ^
+/// > | <!--ab-->
+///             ^
+/// > | <![CDATA[>&<]]>
+///                   ^
 /// ```
 fn continuation_declaration_inside(
     tokenizer: &mut Tokenizer,
@@ -991,7 +1024,8 @@ fn continuation_declaration_inside(
 /// In closed continuation: everything we get until the eol/eof is part of it.
 ///
 /// ```markdown
-/// <!doctype>|
+/// > | <!doctype>
+///               ^
 /// ```
 fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -1012,7 +1046,8 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// Done.
 ///
 /// ```markdown
-/// <!doctype>|
+/// > | <!doctype>
+///               ^
 /// ```
 fn continuation_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(Token::HtmlFlow);
@@ -1026,8 +1061,9 @@ fn continuation_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Before a line ending, expecting a blank line.
 ///
 /// ```markdown
-/// <div>|
-///
+/// > | <div>
+///          ^
+///   |
 /// ```
 fn blank_line_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::LineEnding);

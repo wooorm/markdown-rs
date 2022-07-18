@@ -52,13 +52,14 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 /// Start of code (indented).
 ///
-/// ```markdown
-/// |    asd
-/// ```
-///
 /// > **Parsing note**: it is not needed to check if this first line is a
 /// > filled line (that it has a non-whitespace character), because blank lines
 /// > are parsed already, so we never run into that.
+///
+/// ```markdown
+/// > |     aaa
+///     ^
+/// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // Do not interrupt paragraphs.
     if tokenizer.interrupt {
@@ -72,8 +73,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// At a break.
 ///
 /// ```markdown
-///     |asd
-///     asd|
+/// > |     aaa
+///         ^  ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -92,9 +93,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Inside code content.
 ///
 /// ```markdown
-///     |ab
-///     a|b
-///     ab|
+/// > |     aaa
+///         ^^^^
 /// ```
 fn content(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -112,7 +112,8 @@ fn content(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After indented code.
 ///
 /// ```markdown
-///     ab|
+/// > |     aaa
+///            ^
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(Token::CodeIndented);
@@ -124,8 +125,9 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Right at a line ending, trying to parse another indent.
 ///
 /// ```markdown
-///     ab|
-///     cd
+/// > |     aaa
+///            ^
+///   |     bbb
 /// ```
 fn further_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if tokenizer.lazy {
@@ -148,8 +150,9 @@ fn further_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After a proper indent.
 ///
 /// ```markdown
-///     asd
-///     |asd
+///   |     aaa
+/// > |     bbb
+///         ^
 /// ```
 fn further_end(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     (State::Ok, Some(vec![code]))
@@ -157,23 +160,21 @@ fn further_end(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// At the beginning of a line that is not indented enough.
 ///
-/// > 👉 **Note**: `␠` represents a space character.
-///
 /// ```markdown
-///     asd
-/// |␠␠
-///     asd
+///   |     aaa
+/// > |   bbb
+///     ^
 /// ```
 fn further_begin(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(space_or_tab(), further_after)(tokenizer, code)
 }
 
-/// After whitespace.
+/// After whitespace, not indented enough.
 ///
 /// ```markdown
-///     asd
-/// ␠␠|
-///     asd
+///   |     aaa
+/// > |   bbb
+///       ^
 /// ```
 fn further_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

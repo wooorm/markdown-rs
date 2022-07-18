@@ -105,8 +105,10 @@ struct Info {
 /// Before a destination.
 ///
 /// ```markdown
-/// |<ab>
-/// |ab
+/// > | <aa>
+///     ^
+/// > | aa
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     let info = Info {
@@ -143,7 +145,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
 /// After `<`, before an enclosed destination.
 ///
 /// ```markdown
-/// <|ab>
+/// > | <aa>
+///      ^
 /// ```
 fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     if let Code::Char('>') = code {
@@ -163,7 +166,8 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 /// In an enclosed destination.
 ///
 /// ```markdown
-/// <u|rl>
+/// > | <aa>
+///      ^
 /// ```
 fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -192,7 +196,8 @@ fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
 /// After `\`, in an enclosed destination.
 ///
 /// ```markdown
-/// <a\|>b>
+/// > | <a\*a>
+///        ^
 /// ```
 fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -207,7 +212,8 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 /// In a raw destination.
 ///
 /// ```markdown
-/// a|b
+/// > | aa
+///     ^
 /// ```
 fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -265,7 +271,8 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
 /// After `\`, in a raw destination.
 ///
 /// ```markdown
-/// a\|)b
+/// > | a\*a
+///       ^
 /// ```
 fn raw_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {

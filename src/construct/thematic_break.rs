@@ -131,7 +131,8 @@ struct Info {
 /// Start of a thematic break.
 ///
 /// ```markdown
-/// |***
+/// > | ***
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::ThematicBreak);
@@ -142,7 +143,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Start of a thematic break, after whitespace.
 ///
 /// ```markdown
-/// |***
+/// > | ***
+///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -161,9 +163,8 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After something but before something else.
 ///
 /// ```markdown
-/// |***
-/// *| * *
-/// * |* *
+/// > | ***
+///     ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -186,9 +187,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
 /// In a sequence of markers.
 ///
 /// ```markdown
-/// |***
-/// *|**
-/// **|*
+/// > | ***
+///     ^
 /// ```
 fn sequence(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {

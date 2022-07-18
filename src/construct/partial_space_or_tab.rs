@@ -129,7 +129,8 @@ pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
 /// Before `space_or_tab`.
 ///
 /// ```markdown
-/// alpha| bravo
+/// > | a␠␠b
+///      ^
 /// ```
 fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -159,8 +160,8 @@ fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
 /// In `space_or_tab`.
 ///
 /// ```markdown
-/// alpha |bravo
-/// alpha | bravo
+/// > | a␠␠b
+///       ^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -186,13 +187,9 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
 /// `space_or_tab_eol`: after optionally first `space_or_tab`.
 ///
 /// ```markdown
-/// alpha |
-/// bravo
-/// ```
-///
-/// ```markdown
-/// alpha|
-/// bravo
+/// > | a
+///      ^
+///   | b
 /// ```
 fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) -> StateFnResult {
     match code {
@@ -218,13 +215,9 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
 /// `space_or_tab_eol`: after eol.
 ///
 /// ```markdown
-/// alpha
-/// |bravo
-/// ```
-///
-/// ```markdown
-/// alpha
-/// |bravo
+///   | a
+/// > | b
+///     ^
 /// ```
 #[allow(clippy::needless_pass_by_value)]
 fn after_eol(tokenizer: &mut Tokenizer, code: Code, info: EolInfo) -> StateFnResult {
@@ -243,13 +236,9 @@ fn after_eol(tokenizer: &mut Tokenizer, code: Code, info: EolInfo) -> StateFnRes
 /// `space_or_tab_eol`: after more (optional) `space_or_tab`.
 ///
 /// ```markdown
-/// alpha
-/// |bravo
-/// ```
-///
-/// ```markdown
-/// alpha
-///  |bravo
+///   | a
+/// > | b
+///     ^
 /// ```
 fn after_more_space_or_tab(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // Blank line not allowed.

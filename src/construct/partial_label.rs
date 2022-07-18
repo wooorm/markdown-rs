@@ -93,7 +93,8 @@ struct Info {
 /// Before a label.
 ///
 /// ```markdown
-/// |[a]
+/// > | [a]
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     match code {
@@ -118,8 +119,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
 /// In a label, at something.
 ///
 /// ```markdown
-/// [|a]
-/// [a|]
+/// > | [a]
+///      ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -162,7 +163,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 /// In a label, in text.
 ///
 /// ```markdown
-/// [a|b]
+/// > | [a]
+///      ^
 /// ```
 fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -201,7 +203,8 @@ fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
 /// After `\` in a label.
 ///
 /// ```markdown
-/// [a\|[b]
+/// > | [a\*a]
+///        ^
 /// ```
 fn escape(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {

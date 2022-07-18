@@ -56,7 +56,7 @@ enum Kind {
     /// ## Example
     ///
     /// ```markdown
-    /// [a] b (c)
+    /// (a)
     /// ```
     Paren,
     /// In a double quoted (`"`) title.
@@ -64,7 +64,7 @@ enum Kind {
     /// ## Example
     ///
     /// ```markdown
-    /// [a] b "c"
+    /// "a"
     /// ```
     Double,
     /// In a single quoted (`'`) title.
@@ -72,7 +72,7 @@ enum Kind {
     /// ## Example
     ///
     /// ```markdown
-    /// [a] b 'c'
+    /// 'a'
     /// ```
     Single,
 }
@@ -132,9 +132,8 @@ struct Info {
 /// Before a title.
 ///
 /// ```markdown
-/// |"a"
-/// |'a'
-/// |(a)
+/// > | "a"
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
     match code {
@@ -159,9 +158,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
 /// This is also used when at the closing marker.
 ///
 /// ```markdown
-/// "|a"
-/// '|a'
-/// (|a)
+/// > | "a"
+///      ^
 /// ```
 fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -182,10 +180,8 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// At something, before something else.
 ///
 /// ```markdown
-/// "|a"
-/// 'a|'
-/// (a|
-/// b)
+/// > | "a"
+///      ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -222,7 +218,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 /// In title text.
 ///
 /// ```markdown
-/// "a|b"
+/// > | "a"
+///      ^
 /// ```
 fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -248,7 +245,8 @@ fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// After `\`, in title text.
 ///
 /// ```markdown
-/// "a\|"b"
+/// > | "a\*b"
+///      ^
 /// ```
 fn escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {

@@ -41,7 +41,8 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Start of block quote.
 ///
 /// ```markdown
-/// | > a
+/// > | > a
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // To do: allow arbitrary when code (indented) is turned off.
@@ -51,7 +52,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Start of block quote, after whitespace, before `>`.
 ///
 /// ```markdown
-/// |> a
+/// > | > a
+///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -66,8 +68,9 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Start of block quote continuation.
 ///
 /// ```markdown
-/// > a
-/// |> b
+///   | > a
+/// > | > b
+///     ^
 /// ```
 pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // To do: allow arbitrary when code (indented) is turned off.
@@ -77,8 +80,9 @@ pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After whitespace, before `>`.
 ///
 /// ```markdown
-/// > a
-/// |> b
+///   | > a
+/// > | > b
+///     ^
 /// ```
 fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -96,8 +100,10 @@ fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `>`, before optional whitespace.
 ///
 /// ```markdown
-/// >| a
-/// >|b
+/// > | > a
+///      ^
+/// > | >b
+///      ^
 /// ```
 fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

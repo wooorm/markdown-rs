@@ -112,23 +112,19 @@ impl Kind {
 /// At a line ending, presumably an underline.
 ///
 /// ```markdown
-/// alpha|
-/// ==
+///   | aa
+/// > | ==
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let index = tokenizer.events.len();
-    let previous = if index > 1 {
-        skip_opt_back(
+    let paragraph_before = !tokenizer.events.is_empty()
+        && tokenizer.events[skip_opt_back(
             &tokenizer.events,
-            index - 1,
-            &[Token::SpaceOrTab, Token::BlockQuotePrefix],
-        )
-    } else {
-        0
-    };
-    let previous = skip_opt_back(&tokenizer.events, previous, &[Token::LineEnding]);
-    let paragraph_before =
-        previous > 1 && tokenizer.events[previous].token_type == Token::Paragraph;
+            tokenizer.events.len() - 1,
+            &[Token::LineEnding, Token::SpaceOrTab],
+        )]
+        .token_type
+            == Token::Paragraph;
 
     // Require a paragraph before and do not allow on a lazy line.
     if paragraph_before && !tokenizer.lazy {
@@ -142,8 +138,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After optional whitespace, presumably an underline.
 ///
 /// ```markdown
-/// alpha
-/// |==
+///   | aa
+/// > | ==
+///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -158,8 +155,9 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In an underline sequence.
 ///
 /// ```markdown
-/// alpha
-/// =|=
+///   | aa
+/// > | ==
+///     ^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
     match code {
@@ -177,8 +175,9 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
 /// After an underline sequence, after optional whitespace.
 ///
 /// ```markdown
-/// alpha
-/// ==|
+///   | aa
+/// > | ==
+///       ^
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

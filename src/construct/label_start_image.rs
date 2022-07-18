@@ -35,7 +35,8 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 /// Start of label (image) start.
 ///
 /// ```markdown
-/// a |![ b
+/// > | a ![b] c
+///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -53,7 +54,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `!`, before a `[`.
 ///
 /// ```markdown
-/// a !|[ b
+/// > | a ![b] c
+///        ^
 /// ```
 pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

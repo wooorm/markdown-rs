@@ -13,7 +13,8 @@ use crate::util::edit_map::EditMap;
 /// At the beginning of data.
 ///
 /// ```markdown
-/// |&qwe
+/// > | abc
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
     if stop.contains(&code) {
@@ -28,7 +29,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnR
 /// Before something.
 ///
 /// ```markdown
-/// |qwe| |&
+/// > | abc
+///     ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
     match code {
@@ -53,7 +55,8 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnRe
 /// In data.
 ///
 /// ```markdown
-/// q|w|e
+/// > | abc
+///     ^^^
 /// ```
 fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
     let done = match code {

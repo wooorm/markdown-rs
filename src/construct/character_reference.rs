@@ -71,16 +71,32 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Kind of a character reference.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
-    /// Numeric decimal character reference (`&#x9;`).
+    /// Numeric decimal character reference.
+    ///
+    /// ```markdown
+    /// > | a&#x9;b
+    ///      ^^^^^
+    /// ```
     Decimal,
-    /// Numeric hexadecimal character reference (`&#123;`).
+    /// Numeric hexadecimal character reference.
+    ///
+    /// ```markdown
+    /// > | a&#123;b
+    ///      ^^^^^^
+    /// ```
     Hexadecimal,
-    /// Named character reference (`&amp;`).
+    /// Named character reference.
+    ///
+    /// ```markdown
+    /// > | a&amp;b
+    ///      ^^^^^
+    /// ```
     Named,
 }
 
 impl Kind {
-    /// Get the maximum size of characters allowed in a character reference.
+    /// Get the maximum size of characters allowed in the value of a character
+    /// reference.
     fn max(&self) -> usize {
         match self {
             Kind::Hexadecimal => CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
@@ -113,9 +129,12 @@ struct Info {
 /// Start of a character reference.
 ///
 /// ```markdown
-/// a|&amp;b
-/// a|&#123;b
-/// a|&#x9;b
+/// > | a&amp;b
+///      ^
+/// > | a&#123;b
+///      ^
+/// > | a&#x9;b
+///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -134,9 +153,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// or an alphanumeric for named references.
 ///
 /// ```markdown
-/// a&|amp;b
-/// a&|#123;b
-/// a&|#x9;b
+/// > | a&amp;b
+///       ^
+/// > | a&#123;b
+///       ^
+/// > | a&#x9;b
+///       ^
 /// ```
 fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let info = Info {
@@ -158,8 +180,10 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// or a digit for decimals.
 ///
 /// ```markdown
-/// a&#|123;b
-/// a&#|x9;b
+/// > | a&#123;b
+///        ^
+/// > | a&#x9;b
+///        ^
 /// ```
 fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     if let Code::Char('x' | 'X') = code {
@@ -182,9 +206,12 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResu
 /// allowed.
 ///
 /// ```markdown
-/// a&a|mp;b
-/// a&#1|23;b
-/// a&#x|9;b
+/// > | a&amp;b
+///       ^^^
+/// > | a&#123;b
+///        ^^^
+/// > | a&#x9;b
+///         ^
 /// ```
 fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {

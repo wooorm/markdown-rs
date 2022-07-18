@@ -183,9 +183,10 @@ struct Info {
 /// Start of fenced code.
 ///
 /// ```markdown
-/// | ~~~js
-///  console.log(1);
-///  ~~~
+/// > | ~~~js
+///     ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::CodeFenced);
@@ -197,9 +198,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Inside the opening fence, after an optional prefix, before a sequence.
 ///
 /// ```markdown
-/// |~~~js
-/// console.log(1);
-/// ~~~
+/// > | ~~~js
+///     ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let tail = tokenizer.events.last();
@@ -232,9 +234,10 @@ fn before_sequence_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 /// Inside the opening fence sequence.
 ///
 /// ```markdown
-/// ~|~~js
-/// console.log(1);
-/// ~~~
+/// > | ~~~js
+///      ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
@@ -259,9 +262,10 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State
 /// Inside the opening fence, after the sequence (and optional whitespace), before the info.
 ///
 /// ```markdown
-/// ~~~|js
-/// console.log(1);
-/// ~~~
+/// > | ~~~js
+///        ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 fn info_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -282,9 +286,10 @@ fn info_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 /// Inside the opening fence info.
 ///
 /// ```markdown
-/// ~~~j|s
-/// console.log(1);
-/// ~~~
+/// > | ~~~js
+///        ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 fn info_inside(
     tokenizer: &mut Tokenizer,
@@ -321,9 +326,10 @@ fn info_inside(
 /// Inside the opening fence, after the info and whitespace, before the meta.
 ///
 /// ```markdown
-/// ~~~js |eval
-/// console.log(1);
-/// ~~~
+/// > | ~~~js eval
+///           ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 fn meta_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -344,9 +350,10 @@ fn meta_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 /// Inside the opening fence meta.
 ///
 /// ```markdown
-/// ~~~js e|val
-/// console.log(1);
-/// ~~~
+/// > | ~~~js eval
+///           ^
+///   | console.log(1)
+///   | ~~~
 /// ```
 fn meta(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -369,9 +376,11 @@ fn meta(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// At an eol/eof in code, before a closing fence or before content.
 ///
 /// ```markdown
-/// ~~~js|
-/// aa|
-/// ~~~
+/// > | ~~~js
+///          ^
+/// > | console.log(1)
+///                   ^
+///   | ~~~
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.check(partial_non_lazy_continuation, |ok| {
@@ -386,9 +395,11 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
 /// At an eol/eof in code, before a non-lazy closing fence or content.
 ///
 /// ```markdown
-/// ~~~js|
-/// aa|
-/// ~~~
+/// > | ~~~js
+///          ^
+/// > | console.log(1)
+///                   ^
+///   | ~~~
 /// ```
 fn at_non_lazy_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     let clone = info.clone();
@@ -408,9 +419,10 @@ fn at_non_lazy_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State
 /// Before a closing fence, at the line ending.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')|
-/// ~~~
+///   | ~~~js
+/// > | console.log(1)
+///                   ^
+///   | ~~~
 /// ```
 fn close_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -427,13 +439,10 @@ fn close_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 /// Before a closing fence, before optional whitespace.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')
-/// |~~~
-///
-/// ~~~js
-/// console.log('1')
-/// |  ~~~
+///   | ~~~js
+///   | console.log(1)
+/// > | ~~~
+///     ^
 /// ```
 fn close_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.enter(Token::CodeFencedFence);
@@ -445,13 +454,10 @@ fn close_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 /// In a closing fence, after optional whitespace, before sequence.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')
-/// |~~~
-///
-/// ~~~js
-/// console.log('1')
-///   |~~~
+///   | ~~~js
+///   | console.log(1)
+/// > | ~~~
+///     ^
 /// ```
 fn close_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -466,9 +472,10 @@ fn close_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRes
 /// In the closing fence sequence.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')
-/// ~|~~
+///   | ~~~js
+///   | console.log(1)
+/// > | ~~~
+///     ^
 /// ```
 fn close_sequence(tokenizer: &mut Tokenizer, code: Code, info: Info, size: usize) -> StateFnResult {
     match code {
@@ -490,9 +497,10 @@ fn close_sequence(tokenizer: &mut Tokenizer, code: Code, info: Info, size: usize
 /// After the closing fence sequence after optional whitespace.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')
-/// ~~~ |
+///   | ~~~js
+///   | console.log(1)
+/// > | ~~~
+///        ^
 /// ```
 fn close_sequence_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -507,9 +515,10 @@ fn close_sequence_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
 /// Before a closing fence, at the line ending.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')|
-/// ~~~
+///   | ~~~js
+/// > | console.log(1)
+///                   ^
+///   | ~~~
 /// ```
 fn content_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.enter(Token::LineEnding);
@@ -520,9 +529,10 @@ fn content_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnR
 /// Before code content, definitely not before a closing fence.
 ///
 /// ```markdown
-/// ~~~js
-/// |aa
-/// ~~~
+///   | ~~~js
+/// > | console.log(1)
+///     ^
+///   | ~~~
 /// ```
 fn content_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     tokenizer.go(space_or_tab_min_max(0, info.prefix), |t, c| {
@@ -533,9 +543,10 @@ fn content_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRe
 /// Before code content, after a prefix.
 ///
 /// ```markdown
-///   ~~~js
-///  | aa
-///   ~~~
+///   | ~~~js
+/// > | console.log(1)
+///     ^
+///   | ~~~
 /// ```
 fn content_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -552,11 +563,10 @@ fn content_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnRe
 /// In code content.
 ///
 /// ```markdown
-/// ~~~js
-/// |ab
-/// a|b
-/// ab|
-/// ~~~
+///   | ~~~js
+/// > | console.log(1)
+///     ^^^^^^^^^^^^^^
+///   | ~~~
 /// ```
 fn content_continue(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
@@ -577,9 +587,10 @@ fn content_continue(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateF
 /// After fenced code.
 ///
 /// ```markdown
-/// ~~~js
-/// console.log('1')
-/// ~~~|
+///   | ~~~js
+///   | console.log(1)
+/// > | ~~~
+///        ^
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(Token::CodeFenced);

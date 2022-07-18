@@ -89,11 +89,10 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Start of code (text).
 ///
 /// ```markdown
-/// |`a`
-///
-/// |\``a`
-///
-/// |``a`
+/// > | `a`
+///     ^
+/// > | \`a`
+///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let len = tokenizer.events.len();
@@ -114,7 +113,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In the opening sequence.
 ///
 /// ```markdown
-/// `|`a``
+/// > | `a`
+///     ^
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     if let Code::Char('`') = code {
@@ -132,8 +132,8 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnR
 /// Between something and something else
 ///
 /// ```markdown
-/// `|a`
-/// `a|`
+/// > | `a`
+///      ^^
 /// ```
 fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
@@ -161,7 +161,8 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnRe
 /// In data.
 ///
 /// ```markdown
-/// `a|b`
+/// > | `a`
+///      ^
 /// ```
 fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
@@ -179,7 +180,8 @@ fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResul
 /// In the closing sequence.
 ///
 /// ```markdown
-/// ``a`|`
+/// > | `a`
+///       ^
 /// ```
 fn sequence_close(
     tokenizer: &mut Tokenizer,

@@ -34,7 +34,8 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 /// Start of label (link) start.
 ///
 /// ```markdown
-/// a |[ b
+/// > | a [b] c
+///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

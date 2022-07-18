@@ -170,7 +170,8 @@ struct Sequence {
 /// Before a sequence.
 ///
 /// ```markdown
-/// |**
+/// > | **
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -185,7 +186,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a sequence.
 ///
 /// ```markdown
-/// *|*
+/// > | **
+///     ^^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnResult {
     match code {

@@ -47,8 +47,9 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Start of a hard break (trailing).
 ///
 /// ```markdown
-/// a|  ␊
-/// b
+/// > | a␠␠
+///      ^
+///   | b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -65,8 +66,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Inside the hard break (trailing).
 ///
 /// ```markdown
-/// a  |␊
-/// b
+/// > | a␠␠
+///      ^
+///   | b
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {

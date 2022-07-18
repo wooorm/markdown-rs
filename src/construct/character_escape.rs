@@ -39,9 +39,8 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Start of a character escape.
 ///
 /// ```markdown
-/// a|\*b
-/// a|\b
-/// a|\ b
+/// > | a\*b
+///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -59,9 +58,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Inside a character escape, after `\`.
 ///
 /// ```markdown
-/// a\|*b
-/// a\|b
-/// a\| b
+/// > | a\*b
+///       ^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

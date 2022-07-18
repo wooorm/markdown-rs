@@ -39,7 +39,8 @@ use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
 /// Before a paragraph.
 ///
 /// ```markdown
-/// |qwe
+/// > | abc
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -57,7 +58,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a paragraph.
 ///
 /// ```markdown
-/// al|pha
+/// > | abc
+///     ^^^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

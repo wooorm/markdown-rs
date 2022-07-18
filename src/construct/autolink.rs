@@ -108,8 +108,10 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// Start of an autolink.
 ///
 /// ```markdown
-/// a|<https://example.com>b
-/// a|<user@example.com>b
+/// > | a<https://example.com>b
+///      ^
+/// > | a<user@example.com>b
+///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -128,8 +130,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<`, before the protocol.
 ///
 /// ```markdown
-/// a<|https://example.com>b
-/// a<|user@example.com>b
+/// > | a<https://example.com>b
+///       ^
+/// > | a<user@example.com>b
+///       ^
 /// ```
 fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -145,8 +149,10 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After the first character of the protocol or email name.
 ///
 /// ```markdown
-/// a<h|ttps://example.com>b
-/// a<u|ser@example.com>b
+/// > | a<https://example.com>b
+///        ^
+/// > | a<user@example.com>b
+///        ^
 /// ```
 fn scheme_or_email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -160,8 +166,10 @@ fn scheme_or_email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult
 /// Inside an ambiguous protocol or email name.
 ///
 /// ```markdown
-/// a<ht|tps://example.com>b
-/// a<us|er@example.com>b
+/// > | a<https://example.com>b
+///        ^
+/// > | a<user@example.com>b
+///        ^
 /// ```
 fn scheme_inside_or_email_atext(
     tokenizer: &mut Tokenizer,
@@ -191,7 +199,8 @@ fn scheme_inside_or_email_atext(
 /// Inside a URL, after the protocol.
 ///
 /// ```markdown
-/// a<https:|//example.com>b
+/// > | a<https://example.com>b
+///             ^
 /// ```
 fn url_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -213,7 +222,8 @@ fn url_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// Inside email atext.
 ///
 /// ```markdown
-/// a<user.na|me@example.com>b
+/// > | a<user.name@example.com>b
+///              ^
 /// ```
 fn email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -235,8 +245,8 @@ fn email_atext(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After an at-sign or a dot in the label.
 ///
 /// ```markdown
-/// a<user.name@|example.com>b
-/// a<user.name@example.|com>b
+/// > | a<user.name@example.com>b
+///                 ^       ^
 /// ```
 fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
@@ -248,7 +258,8 @@ fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, code: Code, size: usize) -> S
 /// In the label, where `.` and `>` are allowed.
 ///
 /// ```markdown
-/// a<user.name@ex|ample.com>b
+/// > | a<user.name@example.com>b
+///                   ^
 /// ```
 fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
@@ -276,7 +287,8 @@ fn email_label(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnRes
 /// Though, this is also used in `email_label` to parse other values.
 ///
 /// ```markdown
-/// a<user.name@ex-|ample.com>b
+/// > | a<user.name@ex-ample.com>b
+///                    ^
 /// ```
 fn email_value(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
@@ -301,8 +313,10 @@ fn email_value(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnRes
 /// At the `>`.
 ///
 /// ```markdown
-/// a<https://example.com|>b
-/// a<user@example.com|>b
+/// > | a<https://example.com>b
+///                          ^
+/// > | a<user@example.com>b
+///                       ^
 /// ```
 fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

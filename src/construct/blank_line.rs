@@ -40,8 +40,10 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// > 👉 **Note**: `␠` represents a space character.
 ///
 /// ```markdown
-/// |␠␠
-/// |
+/// > | ␠␠
+///     ^
+/// > |
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code)
@@ -49,11 +51,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// After zero or more spaces or tabs, before a line ending or EOF.
 ///
-/// > 👉 **Note**: `␠` represents a space character.
-///
 /// ```markdown
-/// |␠␠
-/// |
+/// > | ␠␠
+///       ^
+/// > |
+///     ^
 /// ```
 fn after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {

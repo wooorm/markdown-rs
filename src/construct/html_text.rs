@@ -62,7 +62,8 @@ use crate::util::codes::parse;
 /// Start of HTML (text)
 ///
 /// ```markdown
-/// a |<x> b
+/// > | a <b> c
+///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if Code::Char('<') == code {
@@ -78,9 +79,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<`, before a tag name or other stuff.
 ///
 /// ```markdown
-/// a <|x /> b
-/// a <|!doctype> b
-/// a <|!--xxx--/> b
+/// > | a <b> c
+///        ^
+/// > | a <!doctype> c
+///        ^
+/// > | a <!--b--> c
+///        ^
 /// ```
 fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -107,9 +111,12 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<!`, so inside a declaration, comment, or CDATA.
 ///
 /// ```markdown
-/// a <!|doctype> b
-/// a <!|--xxx--> b
-/// a <!|[CDATA[>&<]]> b
+/// > | a <!doctype> c
+///         ^
+/// > | a <!--b--> c
+///         ^
+/// > | a <![CDATA[>&<]]> c
+///         ^
 /// ```
 fn declaration_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -136,7 +143,8 @@ fn declaration_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<!-`, inside a comment, before another `-`.
 ///
 /// ```markdown
-/// a <!-|-xxx--> b
+/// > | a <!--b--> c
+///          ^
 /// ```
 fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -150,13 +158,14 @@ fn comment_open_inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// After `<!--`, inside a comment
 ///
-/// > **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
+/// > 👉 **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
 /// > empty comments.
 /// > This is prohibited in html (text).
 /// > See: <https://github.com/commonmark/commonmark-spec/issues/712>.
 ///
 /// ```markdown
-/// a <!--|xxx--> b
+/// > | a <!--b--> c
+///           ^
 /// ```
 ///
 /// [html_flow]: crate::construct::html_flow
@@ -173,13 +182,14 @@ fn comment_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// After `<!---`, inside a comment
 ///
-/// > **Note**: [html (flow)][html_flow] does allow `<!--->` as an empty
-/// > comment.
+/// > 👉 **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
+/// > empty comments.
 /// > This is prohibited in html (text).
 /// > See: <https://github.com/commonmark/commonmark-spec/issues/712>.
 ///
 /// ```markdown
-/// a <!---|xxx--> b
+/// > | a <!---b--> c
+///            ^
 /// ```
 ///
 /// [html_flow]: crate::construct::html_flow
@@ -193,8 +203,8 @@ fn comment_start_dash(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a comment.
 ///
 /// ```markdown
-/// a <!--|xxx--> b
-/// a <!--x|xx--> b
+/// > | a <!--b--> c
+///           ^
 /// ```
 fn comment(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -216,8 +226,8 @@ fn comment(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a comment, after `-`.
 ///
 /// ```markdown
-/// a <!--xxx-|-> b
-/// a <!--xxx-|yyy--> b
+/// > | a <!--b--> c
+///             ^
 /// ```
 fn comment_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -232,11 +242,8 @@ fn comment_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<![`, inside CDATA, expecting `CDATA[`.
 ///
 /// ```markdown
-/// a <![|CDATA[>&<]]> b
-/// a <![CD|ATA[>&<]]> b
-/// a <![CDA|TA[>&<]]> b
-/// a <![CDAT|A[>&<]]> b
-/// a <![CDATA|[>&<]]> b
+/// > | a <![CDATA[>&<]]> b
+///          ^^^^^^
 /// ```
 fn cdata_open_inside(
     tokenizer: &mut Tokenizer,
@@ -265,7 +272,8 @@ fn cdata_open_inside(
 /// In CDATA.
 ///
 /// ```markdown
-/// a <![CDATA[|>&<]]> b
+/// > | a <![CDATA[>&<]]> b
+///                ^^^
 /// ```
 fn cdata(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -287,7 +295,8 @@ fn cdata(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In CDATA, after `]`.
 ///
 /// ```markdown
-/// a <![CDATA[>&<]|]> b
+/// > | a <![CDATA[>&<]]> b
+///                    ^
 /// ```
 fn cdata_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -302,7 +311,8 @@ fn cdata_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In CDATA, after `]]`.
 ///
 /// ```markdown
-/// a <![CDATA[>&<]]|> b
+/// > | a <![CDATA[>&<]]> b
+///                     ^
 /// ```
 fn cdata_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -315,7 +325,8 @@ fn cdata_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a declaration.
 ///
 /// ```markdown
-/// a <!a|b> b
+/// > | a <!b> c
+///          ^
 /// ```
 fn declaration(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -333,8 +344,8 @@ fn declaration(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In an instruction.
 ///
 /// ```markdown
-/// a <?|ab?> b
-/// a <?a|b?> b
+/// > | a <?b?> c
+///         ^
 /// ```
 fn instruction(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -356,8 +367,8 @@ fn instruction(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In an instruction, after `?`.
 ///
 /// ```markdown
-/// a <?aa?|> b
-/// a <?aa?|bb?> b
+/// > | a <?b?> c
+///           ^
 /// ```
 fn instruction_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -369,7 +380,8 @@ fn instruction_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `</`, in a closing tag, before a tag name.
 ///
 /// ```markdown
-/// a </|x> b
+/// > | a </b> c
+///         ^
 /// ```
 fn tag_close_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -384,8 +396,8 @@ fn tag_close_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `</x`, in a tag name.
 ///
 /// ```markdown
-/// a </x|> b
-/// a </x|y> b
+/// > | a </b> c
+///          ^
 /// ```
 fn tag_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -400,8 +412,8 @@ fn tag_close(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In a closing tag, after the tag name.
 ///
 /// ```markdown
-/// a </x| > b
-/// a </xy |> b
+/// > | a </b> c
+///          ^
 /// ```
 fn tag_close_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -419,7 +431,8 @@ fn tag_close_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// After `<x`, in an opening tag name.
 ///
 /// ```markdown
-/// a <x|> b
+/// > | a <b> c
+///         ^
 /// ```
 fn tag_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -437,9 +450,8 @@ fn tag_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In an opening tag, after the tag name.
 ///
 /// ```markdown
-/// a <x| y> b
-/// a <x |y="z"> b
-/// a <x |/> b
+/// > | a <b> c
+///         ^
 /// ```
 fn tag_open_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -465,9 +477,8 @@ fn tag_open_between(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// In an attribute name.
 ///
 /// ```markdown
-/// a <x :|> b
-/// a <x _|> b
-/// a <x a|> b
+/// > | a <b c> d
+///          ^
 /// ```
 fn tag_open_attribute_name(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -483,9 +494,8 @@ fn tag_open_attribute_name(tokenizer: &mut Tokenizer, code: Code) -> StateFnResu
 /// tag, or whitespace.
 ///
 /// ```markdown
-/// a <x a|> b
-/// a <x a|=b> b
-/// a <x a|="c"> b
+/// > | a <b c> d
+///           ^
 /// ```
 fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -508,8 +518,8 @@ fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer, code: Code) -> State
 /// allowing whitespace.
 ///
 /// ```markdown
-/// a <x a=|b> b
-/// a <x a=|"c"> b
+/// > | a <b c=d> e
+///            ^
 /// ```
 fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -540,8 +550,8 @@ fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer, code: Code) -> Sta
 /// In a double or single quoted attribute value.
 ///
 /// ```markdown
-/// a <x a="|"> b
-/// a <x a='|'> b
+/// > | a <b c="d"> e
+///             ^
 /// ```
 fn tag_open_attribute_value_quoted(
     tokenizer: &mut Tokenizer,
@@ -577,7 +587,8 @@ fn tag_open_attribute_value_quoted(
 /// In an unquoted attribute value.
 ///
 /// ```markdown
-/// a <x a=b|c> b
+/// > | a <b c=d> e
+///            ^
 /// ```
 fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -596,7 +607,8 @@ fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer, code: Code) -> S
 /// end of the tag.
 ///
 /// ```markdown
-/// a <x a="b"|> b
+/// > | a <b c="d"> e
+///               ^
 /// ```
 fn tag_open_attribute_value_quoted_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -610,9 +622,8 @@ fn tag_open_attribute_value_quoted_after(tokenizer: &mut Tokenizer, code: Code) 
 /// In certain circumstances of a complete tag where only an `>` is allowed.
 ///
 /// ```markdown
-/// a <x a="b"|> b
-/// a <!--xx--|> b
-/// a <x /|> b
+/// > | a <b c="d"> e
+///               ^
 /// ```
 fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
@@ -628,12 +639,13 @@ fn end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// At an allowed line ending.
 ///
-/// > **Note**: we can’t have blank lines in text, so no need to worry about
+/// > 👉 **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
 ///
 /// ```markdown
-/// a <!--a|
-/// b--> b
+/// > | a <!--a
+///            ^
+///   | b-->
 /// ```
 fn at_line_ending(
     tokenizer: &mut Tokenizer,
@@ -657,12 +669,13 @@ fn at_line_ending(
 
 /// After a line ending.
 ///
-/// > **Note**: we can’t have blank lines in text, so no need to worry about
+/// > 👉 **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
 ///
 /// ```markdown
-/// a <!--a
-/// |b--> b
+///   | a <!--a
+/// > | b-->
+///     ^
 /// ```
 fn after_line_ending(
     tokenizer: &mut Tokenizer,
@@ -676,12 +689,13 @@ fn after_line_ending(
 
 /// After a line ending, after indent.
 ///
-/// > **Note**: we can’t have blank lines in text, so no need to worry about
+/// > 👉 **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
 ///
 /// ```markdown
-/// a <!--a
-///   |b--> b
+///   | a <!--a
+/// > | b-->
+///     ^
 /// ```
 fn after_line_ending_prefix(
     tokenizer: &mut Tokenizer,
