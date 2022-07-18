@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn heading_setext() {
@@ -256,10 +256,18 @@ fn heading_setext() {
         "should not support lazyness (2)"
     );
 
-    // To do: turning things off.
-    //   assert_eq!(
-    //     micromark("a\n-", {extensions: [{disable: {null: ["setextUnderline"]}}]}),
-    //     "<p>a\n-</p>",
-    //     "should support turning off setext underlines"
-    //   );
+    assert_eq!(
+        micromark_with_options(
+            "a\n-",
+            &Options {
+                constructs: Constructs {
+                    heading_setext: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>a\n-</p>",
+        "should support turning off setext underlines"
+    );
 }

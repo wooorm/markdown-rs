@@ -62,7 +62,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // Do not interrupt paragraphs.
-    if tokenizer.interrupt {
+    if tokenizer.interrupt || !tokenizer.parse_state.constructs.code_indented {
         (State::Nok, None)
     } else {
         tokenizer.enter(Token::CodeIndented);

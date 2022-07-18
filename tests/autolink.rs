@@ -1,14 +1,14 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn autolink() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("<http://foo.bar.baz>"),
         "<p><a href=\"http://foo.bar.baz\">http://foo.bar.baz</a></p>",
@@ -40,7 +40,7 @@ fn autolink() {
     );
 
     assert_eq!(
-        micromark_with_options("<a+b+c:d>", DANGER),
+        micromark_with_options("<a+b+c:d>", &danger),
         "<p><a href=\"a+b+c:d\">a+b+c:d</a></p>",
         "should support protocol autolinks w/ incorrect URIs (1, danger)"
     );
@@ -52,7 +52,7 @@ fn autolink() {
     );
 
     assert_eq!(
-        micromark_with_options("<made-up-scheme://foo,bar>", DANGER),
+        micromark_with_options("<made-up-scheme://foo,bar>", &danger),
         "<p><a href=\"made-up-scheme://foo,bar\">made-up-scheme://foo,bar</a></p>",
         "should support protocol autolinks w/ incorrect URIs (2, danger)"
     );
@@ -64,7 +64,7 @@ fn autolink() {
     );
 
     assert_eq!(
-        micromark_with_options("<localhost:5001/foo>", DANGER),
+        micromark_with_options("<localhost:5001/foo>", &danger),
         "<p><a href=\"localhost:5001/foo\">localhost:5001/foo</a></p>",
         "should support protocol autolinks w/ incorrect URIs (4)"
     );
@@ -246,10 +246,18 @@ fn autolink() {
         "should not support a dash before a dot in email autolinks"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("<a@b.co>", {extensions: [{disable: {null: ["autolink"]}}]}),
-    //   "<p>&lt;a@b.co&gt;</p>",
-    //   "should support turning off autolinks"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "<a@b.co>",
+            &Options {
+                constructs: Constructs {
+                    autolink: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>&lt;a@b.co&gt;</p>",
+        "should support turning off autolinks"
+    );
 }

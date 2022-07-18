@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn thematic_break() {
@@ -165,10 +165,18 @@ fn thematic_break() {
         "should not support lazyness (2)"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("***", {extensions: [{disable: {null: ["thematicBreak"]}}]}),
-    //   "<p>***</p>",
-    //   "should support turning off thematic breaks"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "***",
+            &Options {
+                constructs: Constructs {
+                    thematic_break: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>***</p>",
+        "should support turning off thematic breaks"
+    );
 }

@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn hard_break_escape() {
@@ -39,10 +39,18 @@ fn hard_break_escape() {
         "should not support escape hard breaks at the end of a heading"
     );
 
-    // // To do: turning things off.
-    // assert_eq!(
-    //   micromark("a\\\nb", {extensions: [{disable: {null: ["hardBreakEscape"]}}]}),
-    //   "<p>a\\\nb</p>",
-    //   "should support turning off hard break (escape)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "a\\\nb",
+            &Options {
+                constructs: Constructs {
+                    hard_break_escape: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>a\\\nb</p>",
+        "should support turning off hard break (escape)"
+    );
 }

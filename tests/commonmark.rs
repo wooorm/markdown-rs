@@ -6,18 +6,21 @@
 extern crate micromark;
 use micromark::{micromark_with_options, Options};
 
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
-
 #[rustfmt::skip]
 #[test]
 fn commonmark() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
-        micromark_with_options(r###"	foo	baz		bim
-"###, DANGER),
+        micromark_with_options(
+            r###"	foo	baz		bim
+"###,
+            &danger
+        ),
         r###"<pre><code>foo	baz		bim
 </code></pre>
 "###,
@@ -25,8 +28,11 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###"  	foo	baz		bim
-"###, DANGER),
+        micromark_with_options(
+            r###"  	foo	baz		bim
+"###,
+            &danger
+        ),
         r###"<pre><code>foo	baz		bim
 </code></pre>
 "###,
@@ -34,9 +40,12 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###"    a	a
+        micromark_with_options(
+            r###"    a	a
     ὐ	a
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>a	a
 ὐ	a
 </code></pre>
@@ -45,10 +54,13 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###"  - foo
+        micromark_with_options(
+            r###"  - foo
 
 	bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -60,10 +72,13 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 
 		bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -76,8 +91,11 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###">		foo
-"###, DANGER),
+        micromark_with_options(
+            r###">		foo
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <pre><code>  foo
 </code></pre>
@@ -87,8 +105,11 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###"-		foo
-"###, DANGER),
+        micromark_with_options(
+            r###"-		foo
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <pre><code>  foo
@@ -100,9 +121,12 @@ fn commonmark() {
 );
 
     assert_eq!(
-        micromark_with_options(r###"    foo
+        micromark_with_options(
+            r###"    foo
 	bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>foo
 bar
 </code></pre>
@@ -111,10 +135,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###" - foo
+        micromark_with_options(
+            r###" - foo
    - bar
 	 - baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo
 <ul>
@@ -131,39 +158,52 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"#	Foo
-"###, DANGER),
+        micromark_with_options(
+            r###"#	Foo
+"###,
+            &danger
+        ),
         r###"<h1>Foo</h1>
 "###,
         r###"Tabs (10)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*	*	*	
-"###, DANGER),
+        micromark_with_options(
+            r###"*	*	*	
+"###,
+            &danger
+        ),
         r###"<hr />
 "###,
         r###"Tabs (11)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~
-"###, DANGER),
+        micromark_with_options(
+            r###"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~
+"###,
+            &danger
+        ),
         r###"<p>!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~</p>
 "###,
         r###"Backslash escapes (12)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"\	\A\a\ \3\φ\«
-"###, DANGER),
+        micromark_with_options(
+            r###"\	\A\a\ \3\φ\«
+"###,
+            &danger
+        ),
         r###"<p>\	\A\a\ \3\φ\«</p>
 "###,
         r###"Backslash escapes (13)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"\*not emphasized*
+        micromark_with_options(
+            r###"\*not emphasized*
 \<br/> not a tag
 \[not a link](/foo)
 \`not code`
@@ -172,7 +212,9 @@ bar
 \# not a heading
 \[foo]: /url "not a reference"
 \&ouml; not a character entity
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>*not emphasized*
 &lt;br/&gt; not a tag
 [not a link](/foo)
@@ -187,17 +229,23 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"\\*emphasis*
-"###, DANGER),
+        micromark_with_options(
+            r###"\\*emphasis*
+"###,
+            &danger
+        ),
         r###"<p>\<em>emphasis</em></p>
 "###,
         r###"Backslash escapes (15)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo\
+        micromark_with_options(
+            r###"foo\
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo<br />
 bar</p>
 "###,
@@ -205,16 +253,22 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"`` \[\` ``
-"###, DANGER),
+        micromark_with_options(
+            r###"`` \[\` ``
+"###,
+            &danger
+        ),
         r###"<p><code>\[\`</code></p>
 "###,
         r###"Backslash escapes (17)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"    \[\]
-"###, DANGER),
+        micromark_with_options(
+            r###"    \[\]
+"###,
+            &danger
+        ),
         r###"<pre><code>\[\]
 </code></pre>
 "###,
@@ -222,10 +276,13 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~
+        micromark_with_options(
+            r###"~~~
 \[\]
 ~~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>\[\]
 </code></pre>
 "###,
@@ -233,44 +290,59 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://example.com?find=\*>
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://example.com?find=\*>
+"###,
+            &danger
+        ),
         r###"<p><a href="http://example.com?find=%5C*">http://example.com?find=\*</a></p>
 "###,
         r###"Backslash escapes (20)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="/bar\/)">
-"###, DANGER),
+        micromark_with_options(
+            r###"<a href="/bar\/)">
+"###,
+            &danger
+        ),
         r###"<a href="/bar\/)">
 "###,
         r###"Backslash escapes (21)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo](/bar\* "ti\*tle")
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo](/bar\* "ti\*tle")
+"###,
+            &danger
+        ),
         r###"<p><a href="/bar*" title="ti*tle">foo</a></p>
 "###,
         r###"Backslash escapes (22)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 
 [foo]: /bar\* "ti\*tle"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/bar*" title="ti*tle">foo</a></p>
 "###,
         r###"Backslash escapes (23)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"``` foo\+bar
+        micromark_with_options(
+            r###"``` foo\+bar
 foo
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code class="language-foo+bar">foo
 </code></pre>
 "###,
@@ -278,10 +350,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"&nbsp; &amp; &copy; &AElig; &Dcaron;
+        micromark_with_options(
+            r###"&nbsp; &amp; &copy; &AElig; &Dcaron;
 &frac34; &HilbertSpace; &DifferentialD;
 &ClockwiseContourIntegral; &ngE;
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>  &amp; © Æ Ď
 ¾ ℋ ⅆ
 ∲ ≧̸</p>
@@ -290,27 +365,36 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"&#35; &#1234; &#992; &#0;
-"###, DANGER),
+        micromark_with_options(
+            r###"&#35; &#1234; &#992; &#0;
+"###,
+            &danger
+        ),
         r###"<p># Ӓ Ϡ �</p>
 "###,
         r###"Entity and numeric character references (26)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"&#X22; &#XD06; &#xcab;
-"###, DANGER),
+        micromark_with_options(
+            r###"&#X22; &#XD06; &#xcab;
+"###,
+            &danger
+        ),
         r###"<p>&quot; ആ ಫ</p>
 "###,
         r###"Entity and numeric character references (27)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"&nbsp &x; &#; &#x;
+        micromark_with_options(
+            r###"&nbsp &x; &#; &#x;
 &#87654321;
 &#abcdef0;
 &ThisIsNotDefined; &hi?;
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>&amp;nbsp &amp;x; &amp;#; &amp;#x;
 &amp;#87654321;
 &amp;#abcdef0;
@@ -320,52 +404,70 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"&copy
-"###, DANGER),
+        micromark_with_options(
+            r###"&copy
+"###,
+            &danger
+        ),
         r###"<p>&amp;copy</p>
 "###,
         r###"Entity and numeric character references (29)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"&MadeUpEntity;
-"###, DANGER),
+        micromark_with_options(
+            r###"&MadeUpEntity;
+"###,
+            &danger
+        ),
         r###"<p>&amp;MadeUpEntity;</p>
 "###,
         r###"Entity and numeric character references (30)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="&ouml;&ouml;.html">
-"###, DANGER),
+        micromark_with_options(
+            r###"<a href="&ouml;&ouml;.html">
+"###,
+            &danger
+        ),
         r###"<a href="&ouml;&ouml;.html">
 "###,
         r###"Entity and numeric character references (31)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo](/f&ouml;&ouml; "f&ouml;&ouml;")
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo](/f&ouml;&ouml; "f&ouml;&ouml;")
+"###,
+            &danger
+        ),
         r###"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
 "###,
         r###"Entity and numeric character references (32)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 
 [foo]: /f&ouml;&ouml; "f&ouml;&ouml;"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
 "###,
         r###"Entity and numeric character references (33)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"``` f&ouml;&ouml;
+        micromark_with_options(
+            r###"``` f&ouml;&ouml;
 foo
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code class="language-föö">foo
 </code></pre>
 "###,
@@ -373,16 +475,22 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"`f&ouml;&ouml;`
-"###, DANGER),
+        micromark_with_options(
+            r###"`f&ouml;&ouml;`
+"###,
+            &danger
+        ),
         r###"<p><code>f&amp;ouml;&amp;ouml;</code></p>
 "###,
         r###"Entity and numeric character references (35)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"    f&ouml;f&ouml;
-"###, DANGER),
+        micromark_with_options(
+            r###"    f&ouml;f&ouml;
+"###,
+            &danger
+        ),
         r###"<pre><code>f&amp;ouml;f&amp;ouml;
 </code></pre>
 "###,
@@ -390,9 +498,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"&#42;foo&#42;
+        micromark_with_options(
+            r###"&#42;foo&#42;
 *foo*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>*foo*
 <em>foo</em></p>
 "###,
@@ -400,10 +511,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"&#42; foo
+        micromark_with_options(
+            r###"&#42; foo
 
 * foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>* foo</p>
 <ul>
 <li>foo</li>
@@ -413,8 +527,11 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo&#10;&#10;bar
-"###, DANGER),
+        micromark_with_options(
+            r###"foo&#10;&#10;bar
+"###,
+            &danger
+        ),
         r###"<p>foo
 
 bar</p>
@@ -423,25 +540,34 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"&#9;foo
-"###, DANGER),
+        micromark_with_options(
+            r###"&#9;foo
+"###,
+            &danger
+        ),
         r###"<p>	foo</p>
 "###,
         r###"Entity and numeric character references (40)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[a](url &quot;tit&quot;)
-"###, DANGER),
+        micromark_with_options(
+            r###"[a](url &quot;tit&quot;)
+"###,
+            &danger
+        ),
         r###"<p>[a](url &quot;tit&quot;)</p>
 "###,
         r###"Entity and numeric character references (41)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"- `one
+        micromark_with_options(
+            r###"- `one
 - two`
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>`one</li>
 <li>two`</li>
@@ -451,10 +577,13 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"***
+        micromark_with_options(
+            r###"***
 ---
 ___
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<hr />
 <hr />
 <hr />
@@ -463,26 +592,35 @@ ___
 );
 
     assert_eq!(
-        micromark_with_options(r###"+++
-"###, DANGER),
+        micromark_with_options(
+            r###"+++
+"###,
+            &danger
+        ),
         r###"<p>+++</p>
 "###,
         r###"Thematic breaks (44)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"===
-"###, DANGER),
+        micromark_with_options(
+            r###"===
+"###,
+            &danger
+        ),
         r###"<p>===</p>
 "###,
         r###"Thematic breaks (45)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"--
+        micromark_with_options(
+            r###"--
 **
 __
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>--
 **
 __</p>
@@ -491,10 +629,13 @@ __</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###" ***
+        micromark_with_options(
+            r###" ***
   ***
    ***
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<hr />
 <hr />
 <hr />
@@ -503,8 +644,11 @@ __</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    ***
-"###, DANGER),
+        micromark_with_options(
+            r###"    ***
+"###,
+            &danger
+        ),
         r###"<pre><code>***
 </code></pre>
 "###,
@@ -512,9 +656,12 @@ __</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
     ***
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 ***</p>
 "###,
@@ -522,52 +669,70 @@ __</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"_____________________________________
-"###, DANGER),
+        micromark_with_options(
+            r###"_____________________________________
+"###,
+            &danger
+        ),
         r###"<hr />
 "###,
         r###"Thematic breaks (50)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###" - - -
-"###, DANGER),
+        micromark_with_options(
+            r###" - - -
+"###,
+            &danger
+        ),
         r###"<hr />
 "###,
         r###"Thematic breaks (51)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###" **  * ** * ** * **
-"###, DANGER),
+        micromark_with_options(
+            r###" **  * ** * ** * **
+"###,
+            &danger
+        ),
         r###"<hr />
 "###,
         r###"Thematic breaks (52)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"-     -      -      -
-"###, DANGER),
+        micromark_with_options(
+            r###"-     -      -      -
+"###,
+            &danger
+        ),
         r###"<hr />
 "###,
         r###"Thematic breaks (53)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"- - - -    
-"###, DANGER),
+        micromark_with_options(
+            r###"- - - -    
+"###,
+            &danger
+        ),
         r###"<hr />
 "###,
         r###"Thematic breaks (54)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_ _ _ _ a
+        micromark_with_options(
+            r###"_ _ _ _ a
 
 a------
 
 ---a---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>_ _ _ _ a</p>
 <p>a------</p>
 <p>---a---</p>
@@ -576,18 +741,24 @@ a------
 );
 
     assert_eq!(
-        micromark_with_options(r###" *-*
-"###, DANGER),
+        micromark_with_options(
+            r###" *-*
+"###,
+            &danger
+        ),
         r###"<p><em>-</em></p>
 "###,
         r###"Thematic breaks (56)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 ***
 - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -600,10 +771,13 @@ a------
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 ***
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo</p>
 <hr />
 <p>bar</p>
@@ -612,10 +786,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 ---
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo</h2>
 <p>bar</p>
 "###,
@@ -623,10 +800,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"* Foo
+        micromark_with_options(
+            r###"* Foo
 * * *
 * Bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>Foo</li>
 </ul>
@@ -639,9 +819,12 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"- Foo
+        micromark_with_options(
+            r###"- Foo
 - * * *
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>Foo</li>
 <li>
@@ -653,13 +836,16 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"# foo
+        micromark_with_options(
+            r###"# foo
 ## foo
 ### foo
 #### foo
 ##### foo
 ###### foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>foo</h1>
 <h2>foo</h2>
 <h3>foo</h3>
@@ -671,18 +857,24 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"####### foo
-"###, DANGER),
+        micromark_with_options(
+            r###"####### foo
+"###,
+            &danger
+        ),
         r###"<p>####### foo</p>
 "###,
         r###"ATX headings (63)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"#5 bolt
+        micromark_with_options(
+            r###"#5 bolt
 
 #hashtag
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>#5 bolt</p>
 <p>#hashtag</p>
 "###,
@@ -690,34 +882,46 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"\## foo
-"###, DANGER),
+        micromark_with_options(
+            r###"\## foo
+"###,
+            &danger
+        ),
         r###"<p>## foo</p>
 "###,
         r###"ATX headings (65)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"# foo *bar* \*baz\*
-"###, DANGER),
+        micromark_with_options(
+            r###"# foo *bar* \*baz\*
+"###,
+            &danger
+        ),
         r###"<h1>foo <em>bar</em> *baz*</h1>
 "###,
         r###"ATX headings (66)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"#                  foo                     
-"###, DANGER),
+        micromark_with_options(
+            r###"#                  foo                     
+"###,
+            &danger
+        ),
         r###"<h1>foo</h1>
 "###,
         r###"ATX headings (67)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###" ### foo
+        micromark_with_options(
+            r###" ### foo
   ## foo
    # foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h3>foo</h3>
 <h2>foo</h2>
 <h1>foo</h1>
@@ -726,8 +930,11 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"    # foo
-"###, DANGER),
+        micromark_with_options(
+            r###"    # foo
+"###,
+            &danger
+        ),
         r###"<pre><code># foo
 </code></pre>
 "###,
@@ -735,9 +942,12 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo
+        micromark_with_options(
+            r###"foo
     # bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo
 # bar</p>
 "###,
@@ -745,9 +955,12 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"## foo ##
+        micromark_with_options(
+            r###"## foo ##
   ###   bar    ###
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>foo</h2>
 <h3>bar</h3>
 "###,
@@ -755,9 +968,12 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"# foo ##################################
+        micromark_with_options(
+            r###"# foo ##################################
 ##### foo ##
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>foo</h1>
 <h5>foo</h5>
 "###,
@@ -765,34 +981,46 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"### foo ###     
-"###, DANGER),
+        micromark_with_options(
+            r###"### foo ###     
+"###,
+            &danger
+        ),
         r###"<h3>foo</h3>
 "###,
         r###"ATX headings (73)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"### foo ### b
-"###, DANGER),
+        micromark_with_options(
+            r###"### foo ### b
+"###,
+            &danger
+        ),
         r###"<h3>foo ### b</h3>
 "###,
         r###"ATX headings (74)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"# foo#
-"###, DANGER),
+        micromark_with_options(
+            r###"# foo#
+"###,
+            &danger
+        ),
         r###"<h1>foo#</h1>
 "###,
         r###"ATX headings (75)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"### foo \###
+        micromark_with_options(
+            r###"### foo \###
 ## foo #\##
 # foo \#
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h3>foo ###</h3>
 <h2>foo ###</h2>
 <h1>foo #</h1>
@@ -801,10 +1029,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"****
+        micromark_with_options(
+            r###"****
 ## foo
 ****
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<hr />
 <h2>foo</h2>
 <hr />
@@ -813,10 +1044,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo bar
+        micromark_with_options(
+            r###"Foo bar
 # baz
 Bar foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo bar</p>
 <h1>baz</h1>
 <p>Bar foo</p>
@@ -825,10 +1059,13 @@ Bar foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"## 
+        micromark_with_options(
+            r###"## 
 #
 ### ###
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2></h2>
 <h1></h1>
 <h3></h3>
@@ -837,12 +1074,15 @@ Bar foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo *bar*
+        micromark_with_options(
+            r###"Foo *bar*
 =========
 
 Foo *bar*
 ---------
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>Foo <em>bar</em></h1>
 <h2>Foo <em>bar</em></h2>
 "###,
@@ -850,10 +1090,13 @@ Foo *bar*
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo *bar
+        micromark_with_options(
+            r###"Foo *bar
 baz*
 ====
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>Foo <em>bar
 baz</em></h1>
 "###,
@@ -861,10 +1104,13 @@ baz</em></h1>
 );
 
     assert_eq!(
-        micromark_with_options(r###"  Foo *bar
+        micromark_with_options(
+            r###"  Foo *bar
 baz*	
 ====
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>Foo <em>bar
 baz</em></h1>
 "###,
@@ -872,12 +1118,15 @@ baz</em></h1>
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 -------------------------
 
 Foo
 =
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo</h2>
 <h1>Foo</h1>
 "###,
@@ -885,7 +1134,8 @@ Foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"   Foo
+        micromark_with_options(
+            r###"   Foo
 ---
 
   Foo
@@ -893,7 +1143,9 @@ Foo
 
   Foo
   ===
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo</h2>
 <h2>Foo</h2>
 <h1>Foo</h1>
@@ -902,12 +1154,15 @@ Foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"    Foo
+        micromark_with_options(
+            r###"    Foo
     ---
 
     Foo
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>Foo
 ---
 
@@ -919,18 +1174,24 @@ Foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
    ----      
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo</h2>
 "###,
         r###"Setext headings (86)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
     ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 ---</p>
 "###,
@@ -938,12 +1199,15 @@ Foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 = =
 
 Foo
 --- -
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 = =</p>
 <p>Foo</p>
@@ -953,32 +1217,41 @@ Foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo  
+        micromark_with_options(
+            r###"Foo  
 -----
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo</h2>
 "###,
         r###"Setext headings (89)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo\
+        micromark_with_options(
+            r###"Foo\
 ----
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo\</h2>
 "###,
         r###"Setext headings (90)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`Foo
+        micromark_with_options(
+            r###"`Foo
 ----
 `
 
 <a title="a lot
 ---
 of dashes"/>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>`Foo</h2>
 <p>`</p>
 <h2>&lt;a title=&quot;a lot</h2>
@@ -988,9 +1261,12 @@ of dashes"/>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> Foo
+        micromark_with_options(
+            r###"> Foo
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>Foo</p>
 </blockquote>
@@ -1000,10 +1276,13 @@ of dashes"/>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
 bar
 ===
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo
 bar
@@ -1014,9 +1293,12 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"- Foo
+        micromark_with_options(
+            r###"- Foo
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>Foo</li>
 </ul>
@@ -1026,10 +1308,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 Bar
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>Foo
 Bar</h2>
 "###,
@@ -1037,13 +1322,16 @@ Bar</h2>
 );
 
     assert_eq!(
-        micromark_with_options(r###"---
+        micromark_with_options(
+            r###"---
 Foo
 ---
 Bar
 ---
 Baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<hr />
 <h2>Foo</h2>
 <h2>Bar</h2>
@@ -1053,18 +1341,24 @@ Baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"
+        micromark_with_options(
+            r###"
 ====
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>====</p>
 "###,
         r###"Setext headings (97)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"---
+        micromark_with_options(
+            r###"---
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<hr />
 <hr />
 "###,
@@ -1072,9 +1366,12 @@ Baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 -----
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -1084,9 +1381,12 @@ Baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"    foo
+        micromark_with_options(
+            r###"    foo
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>foo
 </code></pre>
 <hr />
@@ -1095,9 +1395,12 @@ Baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
 -----
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -1107,21 +1410,27 @@ Baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"\> foo
+        micromark_with_options(
+            r###"\> foo
 ------
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>&gt; foo</h2>
 "###,
         r###"Setext headings (102)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 
 bar
 ---
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo</p>
 <h2>bar</h2>
 <p>baz</p>
@@ -1130,13 +1439,16 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 bar
 
 ---
 
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 bar</p>
 <hr />
@@ -1146,11 +1458,14 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 bar
 * * *
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 bar</p>
 <hr />
@@ -1160,11 +1475,14 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 bar
 \---
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 bar
 ---
@@ -1174,9 +1492,12 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    a simple
+        micromark_with_options(
+            r###"    a simple
       indented code block
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>a simple
   indented code block
 </code></pre>
@@ -1185,10 +1506,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"  - foo
+        micromark_with_options(
+            r###"  - foo
 
     bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -1200,10 +1524,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1.  foo
+        micromark_with_options(
+            r###"1.  foo
 
     - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>foo</p>
@@ -1217,11 +1544,14 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    <a/>
+        micromark_with_options(
+            r###"    <a/>
     *hi*
 
     - one
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>&lt;a/&gt;
 *hi*
 
@@ -1232,14 +1562,17 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    chunk1
+        micromark_with_options(
+            r###"    chunk1
 
     chunk2
   
  
  
     chunk3
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>chunk1
 
 chunk2
@@ -1253,10 +1586,13 @@ chunk3
 );
 
     assert_eq!(
-        micromark_with_options(r###"    chunk1
+        micromark_with_options(
+            r###"    chunk1
       
       chunk2
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>chunk1
   
   chunk2
@@ -1266,10 +1602,13 @@ chunk3
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
     bar
 
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 bar</p>
 "###,
@@ -1277,9 +1616,12 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    foo
+        micromark_with_options(
+            r###"    foo
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>foo
 </code></pre>
 <p>bar</p>
@@ -1288,13 +1630,16 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"# Heading
+        micromark_with_options(
+            r###"# Heading
     foo
 Heading
 ------
     foo
 ----
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>Heading</h1>
 <pre><code>foo
 </code></pre>
@@ -1307,9 +1652,12 @@ Heading
 );
 
     assert_eq!(
-        micromark_with_options(r###"        foo
+        micromark_with_options(
+            r###"        foo
     bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>    foo
 bar
 </code></pre>
@@ -1318,12 +1666,15 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"
+        micromark_with_options(
+            r###"
     
     foo
     
 
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>foo
 </code></pre>
 "###,
@@ -1331,8 +1682,11 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"    foo  
-"###, DANGER),
+        micromark_with_options(
+            r###"    foo  
+"###,
+            &danger
+        ),
         r###"<pre><code>foo  
 </code></pre>
 "###,
@@ -1340,11 +1694,14 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 <
  >
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>&lt;
  &gt;
 </code></pre>
@@ -1353,11 +1710,14 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~
+        micromark_with_options(
+            r###"~~~
 <
  >
 ~~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>&lt;
  &gt;
 </code></pre>
@@ -1366,21 +1726,27 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"``
+        micromark_with_options(
+            r###"``
 foo
 ``
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>foo</code></p>
 "###,
         r###"Fenced code blocks (121)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 aaa
 ~~~
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 ~~~
 </code></pre>
@@ -1389,11 +1755,14 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~
+        micromark_with_options(
+            r###"~~~
 aaa
 ```
 ~~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 ```
 </code></pre>
@@ -1402,11 +1771,14 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"````
+        micromark_with_options(
+            r###"````
 aaa
 ```
 ``````
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 ```
 </code></pre>
@@ -1415,11 +1787,14 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~~
+        micromark_with_options(
+            r###"~~~~
 aaa
 ~~~
 ~~~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 ~~~
 </code></pre>
@@ -1428,19 +1803,25 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
-"###, DANGER),
+        micromark_with_options(
+            r###"```
+"###,
+            &danger
+        ),
         r###"<pre><code></code></pre>
 "###,
         r###"Fenced code blocks (126)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`````
+        micromark_with_options(
+            r###"`````
 
 ```
 aaa
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>
 ```
 aaa
@@ -1450,11 +1831,14 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"> ```
+        micromark_with_options(
+            r###"> ```
 > aaa
 
 bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <pre><code>aaa
 </code></pre>
@@ -1465,11 +1849,14 @@ bbb
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 
   
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>
   
 </code></pre>
@@ -1478,20 +1865,26 @@ bbb
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code></code></pre>
 "###,
         r###"Fenced code blocks (130)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###" ```
+        micromark_with_options(
+            r###" ```
  aaa
 aaa
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 aaa
 </code></pre>
@@ -1500,12 +1893,15 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"  ```
+        micromark_with_options(
+            r###"  ```
 aaa
   aaa
 aaa
   ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 aaa
 aaa
@@ -1515,12 +1911,15 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"   ```
+        micromark_with_options(
+            r###"   ```
    aaa
     aaa
   aaa
    ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
  aaa
 aaa
@@ -1530,10 +1929,13 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"    ```
+        micromark_with_options(
+            r###"    ```
     aaa
     ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>```
 aaa
 ```
@@ -1543,10 +1945,13 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 aaa
   ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 </code></pre>
 "###,
@@ -1554,10 +1959,13 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"   ```
+        micromark_with_options(
+            r###"   ```
 aaa
   ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 </code></pre>
 "###,
@@ -1565,10 +1973,13 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 aaa
     ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
     ```
 </code></pre>
@@ -1577,9 +1988,12 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"``` ```
+        micromark_with_options(
+            r###"``` ```
 aaa
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code> </code>
 aaa</p>
 "###,
@@ -1587,10 +2001,13 @@ aaa</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~~~~
+        micromark_with_options(
+            r###"~~~~~~
 aaa
 ~~~ ~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 ~~~ ~~
 </code></pre>
@@ -1599,12 +2016,15 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo
+        micromark_with_options(
+            r###"foo
 ```
 bar
 ```
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo</p>
 <pre><code>bar
 </code></pre>
@@ -1614,13 +2034,16 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo
+        micromark_with_options(
+            r###"foo
 ---
 ~~~
 bar
 ~~~
 # baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h2>foo</h2>
 <pre><code>bar
 </code></pre>
@@ -1630,12 +2053,15 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"```ruby
+        micromark_with_options(
+            r###"```ruby
 def foo(x)
   return 3
 end
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code class="language-ruby">def foo(x)
   return 3
 end
@@ -1645,12 +2071,15 @@ end
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~~    ruby startline=3 $%@#$
+        micromark_with_options(
+            r###"~~~~    ruby startline=3 $%@#$
 def foo(x)
   return 3
 end
 ~~~~~~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code class="language-ruby">def foo(x)
   return 3
 end
@@ -1660,18 +2089,24 @@ end
 );
 
     assert_eq!(
-        micromark_with_options(r###"````;
+        micromark_with_options(
+            r###"````;
 ````
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code class="language-;"></code></pre>
 "###,
         r###"Fenced code blocks (144)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"``` aa ```
+        micromark_with_options(
+            r###"``` aa ```
 foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>aa</code>
 foo</p>
 "###,
@@ -1679,10 +2114,13 @@ foo</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"~~~ aa ``` ~~~
+        micromark_with_options(
+            r###"~~~ aa ``` ~~~
 foo
 ~~~
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code class="language-aa">foo
 </code></pre>
 "###,
@@ -1690,10 +2128,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 ``` aaa
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>``` aaa
 </code></pre>
 "###,
@@ -1701,14 +2142,17 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<table><tr><td>
+        micromark_with_options(
+            r###"<table><tr><td>
 <pre>
 **Hello**,
 
 _world_.
 </pre>
 </td></tr></table>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<table><tr><td>
 <pre>
 **Hello**,
@@ -1720,7 +2164,8 @@ _world_.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<table>
+        micromark_with_options(
+            r###"<table>
   <tr>
     <td>
            hi
@@ -1729,7 +2174,9 @@ _world_.
 </table>
 
 okay.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<table>
   <tr>
     <td>
@@ -1743,10 +2190,13 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###" <div>
+        micromark_with_options(
+            r###" <div>
   *hello*
          <foo><a>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###" <div>
   *hello*
          <foo><a>
@@ -1755,9 +2205,12 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"</div>
+        micromark_with_options(
+            r###"</div>
 *foo*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"</div>
 *foo*
 "###,
@@ -1765,12 +2218,15 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<DIV CLASS="foo">
+        micromark_with_options(
+            r###"<DIV CLASS="foo">
 
 *Markdown*
 
 </DIV>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<DIV CLASS="foo">
 <p><em>Markdown</em></p>
 </DIV>
@@ -1779,10 +2235,13 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div id="foo"
+        micromark_with_options(
+            r###"<div id="foo"
   class="bar">
 </div>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div id="foo"
   class="bar">
 </div>
@@ -1791,10 +2250,13 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div id="foo" class="bar
+        micromark_with_options(
+            r###"<div id="foo" class="bar
   baz">
 </div>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div id="foo" class="bar
   baz">
 </div>
@@ -1803,11 +2265,14 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div>
+        micromark_with_options(
+            r###"<div>
 *foo*
 
 *bar*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div>
 *foo*
 <p><em>bar</em></p>
@@ -1816,9 +2281,12 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div id="foo"
+        micromark_with_options(
+            r###"<div id="foo"
 *hi*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div id="foo"
 *hi*
 "###,
@@ -1826,9 +2294,12 @@ okay.
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div class
+        micromark_with_options(
+            r###"<div class
 foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div class
 foo
 "###,
@@ -1836,9 +2307,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div *???-&&&-<---
+        micromark_with_options(
+            r###"<div *???-&&&-<---
 *foo*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div *???-&&&-<---
 *foo*
 "###,
@@ -1846,18 +2320,24 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div><a href="bar">*foo*</a></div>
-"###, DANGER),
+        micromark_with_options(
+            r###"<div><a href="bar">*foo*</a></div>
+"###,
+            &danger
+        ),
         r###"<div><a href="bar">*foo*</a></div>
 "###,
         r###"HTML blocks (159)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<table><tr><td>
+        micromark_with_options(
+            r###"<table><tr><td>
 foo
 </td></tr></table>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<table><tr><td>
 foo
 </td></tr></table>
@@ -1866,11 +2346,14 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div></div>
+        micromark_with_options(
+            r###"<div></div>
 ``` c
 int x = 33;
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div></div>
 ``` c
 int x = 33;
@@ -1880,10 +2363,13 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="foo">
+        micromark_with_options(
+            r###"<a href="foo">
 *bar*
 </a>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<a href="foo">
 *bar*
 </a>
@@ -1892,10 +2378,13 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"<Warning>
+        micromark_with_options(
+            r###"<Warning>
 *bar*
 </Warning>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<Warning>
 *bar*
 </Warning>
@@ -1904,10 +2393,13 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"<i class="foo">
+        micromark_with_options(
+            r###"<i class="foo">
 *bar*
 </i>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<i class="foo">
 *bar*
 </i>
@@ -1916,9 +2408,12 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"</ins>
+        micromark_with_options(
+            r###"</ins>
 *bar*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"</ins>
 *bar*
 "###,
@@ -1926,10 +2421,13 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"<del>
+        micromark_with_options(
+            r###"<del>
 *foo*
 </del>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<del>
 *foo*
 </del>
@@ -1938,12 +2436,15 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"<del>
+        micromark_with_options(
+            r###"<del>
 
 *foo*
 
 </del>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<del>
 <p><em>foo</em></p>
 </del>
@@ -1952,22 +2453,28 @@ int x = 33;
 );
 
     assert_eq!(
-        micromark_with_options(r###"<del>*foo*</del>
-"###, DANGER),
+        micromark_with_options(
+            r###"<del>*foo*</del>
+"###,
+            &danger
+        ),
         r###"<p><del><em>foo</em></del></p>
 "###,
         r###"HTML blocks (168)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<pre language="haskell"><code>
+        micromark_with_options(
+            r###"<pre language="haskell"><code>
 import Text.HTML.TagSoup
 
 main :: IO ()
 main = print $ parseTags tags
 </code></pre>
 okay
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre language="haskell"><code>
 import Text.HTML.TagSoup
 
@@ -1980,13 +2487,16 @@ main = print $ parseTags tags
 );
 
     assert_eq!(
-        micromark_with_options(r###"<script type="text/javascript">
+        micromark_with_options(
+            r###"<script type="text/javascript">
 // JavaScript example
 
 document.getElementById("demo").innerHTML = "Hello JavaScript!";
 </script>
 okay
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<script type="text/javascript">
 // JavaScript example
 
@@ -1998,14 +2508,17 @@ document.getElementById("demo").innerHTML = "Hello JavaScript!";
 );
 
     assert_eq!(
-        micromark_with_options(r###"<textarea>
+        micromark_with_options(
+            r###"<textarea>
 
 *foo*
 
 _bar_
 
 </textarea>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<textarea>
 
 *foo*
@@ -2018,14 +2531,17 @@ _bar_
 );
 
     assert_eq!(
-        micromark_with_options(r###"<style
+        micromark_with_options(
+            r###"<style
   type="text/css">
 h1 {color:red;}
 
 p {color:blue;}
 </style>
 okay
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<style
   type="text/css">
 h1 {color:red;}
@@ -2038,11 +2554,14 @@ p {color:blue;}
 );
 
     assert_eq!(
-        micromark_with_options(r###"<style
+        micromark_with_options(
+            r###"<style
   type="text/css">
 
 foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<style
   type="text/css">
 
@@ -2052,11 +2571,14 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"> <div>
+        micromark_with_options(
+            r###"> <div>
 > foo
 
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <div>
 foo
@@ -2067,9 +2589,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"- <div>
+        micromark_with_options(
+            r###"- <div>
 - foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <div>
@@ -2081,9 +2606,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<style>p{color:red;}</style>
+        micromark_with_options(
+            r###"<style>p{color:red;}</style>
 *foo*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<style>p{color:red;}</style>
 <p><em>foo</em></p>
 "###,
@@ -2091,9 +2619,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<!-- foo -->*bar*
+        micromark_with_options(
+            r###"<!-- foo -->*bar*
 *baz*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<!-- foo -->*bar*
 <p><em>baz</em></p>
 "###,
@@ -2101,10 +2632,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<script>
+        micromark_with_options(
+            r###"<script>
 foo
 </script>1. *bar*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<script>
 foo
 </script>1. *bar*
@@ -2113,12 +2647,15 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"<!-- Foo
+        micromark_with_options(
+            r###"<!-- Foo
 
 bar
    baz -->
 okay
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<!-- Foo
 
 bar
@@ -2129,13 +2666,16 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"<?php
+        micromark_with_options(
+            r###"<?php
 
   echo '>';
 
 ?>
 okay
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<?php
 
   echo '>';
@@ -2147,15 +2687,19 @@ okay
 );
 
     assert_eq!(
-        micromark_with_options(r###"<!DOCTYPE html>
-"###, DANGER),
+        micromark_with_options(
+            r###"<!DOCTYPE html>
+"###,
+            &danger
+        ),
         r###"<!DOCTYPE html>
 "###,
         r###"HTML blocks (181)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<![CDATA[
+        micromark_with_options(
+            r###"<![CDATA[
 function matchwo(a,b)
 {
   if (a < b && a < 0) then {
@@ -2168,7 +2712,9 @@ function matchwo(a,b)
 }
 ]]>
 okay
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<![CDATA[
 function matchwo(a,b)
 {
@@ -2187,10 +2733,13 @@ function matchwo(a,b)
 );
 
     assert_eq!(
-        micromark_with_options(r###"  <!-- foo -->
+        micromark_with_options(
+            r###"  <!-- foo -->
 
     <!-- foo -->
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"  <!-- foo -->
 <pre><code>&lt;!-- foo --&gt;
 </code></pre>
@@ -2199,10 +2748,13 @@ function matchwo(a,b)
 );
 
     assert_eq!(
-        micromark_with_options(r###"  <div>
+        micromark_with_options(
+            r###"  <div>
 
     <div>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"  <div>
 <pre><code>&lt;div&gt;
 </code></pre>
@@ -2211,11 +2763,14 @@ function matchwo(a,b)
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 <div>
 bar
 </div>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo</p>
 <div>
 bar
@@ -2225,11 +2780,14 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div>
+        micromark_with_options(
+            r###"<div>
 bar
 </div>
 *foo*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div>
 bar
 </div>
@@ -2239,10 +2797,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 <a href="bar">
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 <a href="bar">
 baz</p>
@@ -2251,12 +2812,15 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div>
+        micromark_with_options(
+            r###"<div>
 
 *Emphasized* text.
 
 </div>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div>
 <p><em>Emphasized</em> text.</p>
 </div>
@@ -2265,10 +2829,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<div>
+        micromark_with_options(
+            r###"<div>
 *Emphasized* text.
 </div>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<div>
 *Emphasized* text.
 </div>
@@ -2277,7 +2844,8 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<table>
+        micromark_with_options(
+            r###"<table>
 
 <tr>
 
@@ -2288,7 +2856,9 @@ Hi
 </tr>
 
 </table>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<table>
 <tr>
 <td>
@@ -2301,7 +2871,8 @@ Hi
 );
 
     assert_eq!(
-        micromark_with_options(r###"<table>
+        micromark_with_options(
+            r###"<table>
 
   <tr>
 
@@ -2312,7 +2883,9 @@ Hi
   </tr>
 
 </table>
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<table>
   <tr>
 <pre><code>&lt;td&gt;
@@ -2326,58 +2899,73 @@ Hi
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url "title"
+        micromark_with_options(
+            r###"[foo]: /url "title"
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Link reference definitions (192)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"   [foo]: 
+        micromark_with_options(
+            r###"   [foo]: 
       /url  
            'the title'  
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="the title">foo</a></p>
 "###,
         r###"Link reference definitions (193)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[Foo*bar\]]:my_(url) 'title (with parens)'
+        micromark_with_options(
+            r###"[Foo*bar\]]:my_(url) 'title (with parens)'
 
 [Foo*bar\]]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="my_(url)" title="title (with parens)">Foo*bar]</a></p>
 "###,
         r###"Link reference definitions (194)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[Foo bar]:
+        micromark_with_options(
+            r###"[Foo bar]:
 <my url>
 'title'
 
 [Foo bar]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="my%20url" title="title">Foo bar</a></p>
 "###,
         r###"Link reference definitions (195)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url '
+        micromark_with_options(
+            r###"[foo]: /url '
 title
 line1
 line2
 '
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="
 title
 line1
@@ -2388,12 +2976,15 @@ line2
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url 'title
+        micromark_with_options(
+            r###"[foo]: /url 'title
 
 with blank line'
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]: /url 'title</p>
 <p>with blank line'</p>
 <p>[foo]</p>
@@ -2402,21 +2993,27 @@ with blank line'
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]:
+        micromark_with_options(
+            r###"[foo]:
 /url
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url">foo</a></p>
 "###,
         r###"Link reference definitions (198)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]:
+        micromark_with_options(
+            r###"[foo]:
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]:</p>
 <p>[foo]</p>
 "###,
@@ -2424,20 +3021,26 @@ with blank line'
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: <>
+        micromark_with_options(
+            r###"[foo]: <>
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="">foo</a></p>
 "###,
         r###"Link reference definitions (200)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: <bar>(baz)
+        micromark_with_options(
+            r###"[foo]: <bar>(baz)
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]: <bar>(baz)</p>
 <p>[foo]</p>
 "###,
@@ -2445,96 +3048,126 @@ with blank line'
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url\bar\*baz "foo\"bar\baz"
+        micromark_with_options(
+            r###"[foo]: /url\bar\*baz "foo\"bar\baz"
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url%5Cbar*baz" title="foo&quot;bar\baz">foo</a></p>
 "###,
         r###"Link reference definitions (202)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 
 [foo]: url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="url">foo</a></p>
 "###,
         r###"Link reference definitions (203)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 
 [foo]: first
 [foo]: second
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="first">foo</a></p>
 "###,
         r###"Link reference definitions (204)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[FOO]: /url
+        micromark_with_options(
+            r###"[FOO]: /url
 
 [Foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url">Foo</a></p>
 "###,
         r###"Link reference definitions (205)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[ΑΓΩ]: /φου
+        micromark_with_options(
+            r###"[ΑΓΩ]: /φου
 
 [αγω]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/%CF%86%CE%BF%CF%85">αγω</a></p>
 "###,
         r###"Link reference definitions (206)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo]: /url
+"###,
+            &danger
+        ),
         r###""###,
         r###"Link reference definitions (207)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[
+        micromark_with_options(
+            r###"[
 foo
 ]: /url
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>bar</p>
 "###,
         r###"Link reference definitions (208)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url "title" ok
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo]: /url "title" ok
+"###,
+            &danger
+        ),
         r###"<p>[foo]: /url &quot;title&quot; ok</p>
 "###,
         r###"Link reference definitions (209)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url
+        micromark_with_options(
+            r###"[foo]: /url
 "title" ok
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>&quot;title&quot; ok</p>
 "###,
         r###"Link reference definitions (210)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"    [foo]: /url "title"
+        micromark_with_options(
+            r###"    [foo]: /url "title"
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>[foo]: /url &quot;title&quot;
 </code></pre>
 <p>[foo]</p>
@@ -2543,12 +3176,15 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"```
+        micromark_with_options(
+            r###"```
 [foo]: /url
 ```
 
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>[foo]: /url
 </code></pre>
 <p>[foo]</p>
@@ -2557,11 +3193,14 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 [bar]: /baz
 
 [bar]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo
 [bar]: /baz</p>
 <p>[bar]</p>
@@ -2570,10 +3209,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"# [Foo]
+        micromark_with_options(
+            r###"# [Foo]
 [foo]: /url
 > bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1><a href="/url">Foo</a></h1>
 <blockquote>
 <p>bar</p>
@@ -2583,11 +3225,14 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url
+        micromark_with_options(
+            r###"[foo]: /url
 bar
 ===
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<h1>bar</h1>
 <p><a href="/url">foo</a></p>
 "###,
@@ -2595,10 +3240,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url
+        micromark_with_options(
+            r###"[foo]: /url
 ===
 [foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>===
 <a href="/url">foo</a></p>
 "###,
@@ -2606,7 +3254,8 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /foo-url "foo"
+        micromark_with_options(
+            r###"[foo]: /foo-url "foo"
 [bar]: /bar-url
   "bar"
 [baz]: /baz-url
@@ -2614,7 +3263,9 @@ bar
 [foo],
 [bar],
 [baz]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/foo-url" title="foo">foo</a>,
 <a href="/bar-url" title="bar">bar</a>,
 <a href="/baz-url">baz</a></p>
@@ -2623,10 +3274,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 
 > [foo]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url">foo</a></p>
 <blockquote>
 </blockquote>
@@ -2635,10 +3289,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"aaa
+        micromark_with_options(
+            r###"aaa
 
 bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa</p>
 <p>bbb</p>
 "###,
@@ -2646,12 +3303,15 @@ bbb
 );
 
     assert_eq!(
-        micromark_with_options(r###"aaa
+        micromark_with_options(
+            r###"aaa
 bbb
 
 ccc
 ddd
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa
 bbb</p>
 <p>ccc
@@ -2661,11 +3321,14 @@ ddd</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"aaa
+        micromark_with_options(
+            r###"aaa
 
 
 bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa</p>
 <p>bbb</p>
 "###,
@@ -2673,9 +3336,12 @@ bbb
 );
 
     assert_eq!(
-        micromark_with_options(r###"  aaa
+        micromark_with_options(
+            r###"  aaa
  bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa
 bbb</p>
 "###,
@@ -2683,10 +3349,13 @@ bbb</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"aaa
+        micromark_with_options(
+            r###"aaa
              bbb
                                        ccc
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa
 bbb
 ccc</p>
@@ -2695,9 +3364,12 @@ ccc</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"   aaa
+        micromark_with_options(
+            r###"   aaa
 bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa
 bbb</p>
 "###,
@@ -2705,9 +3377,12 @@ bbb</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    aaa
+        micromark_with_options(
+            r###"    aaa
 bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>aaa
 </code></pre>
 <p>bbb</p>
@@ -2716,9 +3391,12 @@ bbb
 );
 
     assert_eq!(
-        micromark_with_options(r###"aaa     
+        micromark_with_options(
+            r###"aaa     
 bbb     
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa<br />
 bbb</p>
 "###,
@@ -2726,7 +3404,8 @@ bbb</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"  
+        micromark_with_options(
+            r###"  
 
 aaa
   
@@ -2734,7 +3413,9 @@ aaa
 # aaa
 
   
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>aaa</p>
 <h1>aaa</h1>
 "###,
@@ -2742,10 +3423,13 @@ aaa
 );
 
     assert_eq!(
-        micromark_with_options(r###"> # Foo
+        micromark_with_options(
+            r###"> # Foo
 > bar
 > baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -2756,10 +3440,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"># Foo
+        micromark_with_options(
+            r###"># Foo
 >bar
 > baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -2770,10 +3457,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"   > # Foo
+        micromark_with_options(
+            r###"   > # Foo
    > bar
  > baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -2784,10 +3474,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    > # Foo
+        micromark_with_options(
+            r###"    > # Foo
     > bar
     > baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>&gt; # Foo
 &gt; bar
 &gt; baz
@@ -2797,10 +3490,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> # Foo
+        micromark_with_options(
+            r###"> # Foo
 > bar
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -2811,10 +3507,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> bar
+        micromark_with_options(
+            r###"> bar
 baz
 > foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>bar
 baz
@@ -2825,9 +3524,12 @@ foo</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
 ---
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -2837,9 +3539,12 @@ foo</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> - foo
+        micromark_with_options(
+            r###"> - foo
 - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <ul>
 <li>foo</li>
@@ -2853,9 +3558,12 @@ foo</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###">     foo
+        micromark_with_options(
+            r###">     foo
     bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <pre><code>foo
 </code></pre>
@@ -2867,10 +3575,13 @@ foo</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> ```
+        micromark_with_options(
+            r###"> ```
 foo
 ```
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <pre><code></code></pre>
 </blockquote>
@@ -2881,9 +3592,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
     - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo
 - bar</p>
@@ -2893,8 +3607,11 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###">
-"###, DANGER),
+        micromark_with_options(
+            r###">
+"###,
+            &danger
+        ),
         r###"<blockquote>
 </blockquote>
 "###,
@@ -2902,10 +3619,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###">
+        micromark_with_options(
+            r###">
 >  
 > 
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 </blockquote>
 "###,
@@ -2913,10 +3633,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###">
+        micromark_with_options(
+            r###">
 > foo
 >  
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -2925,10 +3648,13 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
 
 > bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -2940,9 +3666,12 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
 > bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo
 bar</p>
@@ -2952,10 +3681,13 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> foo
+        micromark_with_options(
+            r###"> foo
 >
 > bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>foo</p>
 <p>bar</p>
@@ -2965,9 +3697,12 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo
+        micromark_with_options(
+            r###"foo
 > bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo</p>
 <blockquote>
 <p>bar</p>
@@ -2977,10 +3712,13 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> aaa
+        micromark_with_options(
+            r###"> aaa
 ***
 > bbb
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>aaa</p>
 </blockquote>
@@ -2993,9 +3731,12 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> bar
+        micromark_with_options(
+            r###"> bar
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>bar
 baz</p>
@@ -3005,10 +3746,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> bar
+        micromark_with_options(
+            r###"> bar
 
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>bar</p>
 </blockquote>
@@ -3018,10 +3762,13 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"> bar
+        micromark_with_options(
+            r###"> bar
 >
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <p>bar</p>
 </blockquote>
@@ -3031,9 +3778,12 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"> > > foo
+        micromark_with_options(
+            r###"> > > foo
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <blockquote>
 <blockquote>
@@ -3047,10 +3797,13 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###">>> foo
+        micromark_with_options(
+            r###">>> foo
 > bar
 >>baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <blockquote>
 <blockquote>
@@ -3065,10 +3818,13 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###">     code
+        micromark_with_options(
+            r###">     code
 
 >    not code
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <pre><code>code
 </code></pre>
@@ -3081,13 +3837,16 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"A paragraph
+        micromark_with_options(
+            r###"A paragraph
 with two lines.
 
     indented code
 
 > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>A paragraph
 with two lines.</p>
 <pre><code>indented code
@@ -3100,13 +3859,16 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1.  A paragraph
+        micromark_with_options(
+            r###"1.  A paragraph
     with two lines.
 
         indented code
 
     > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>A paragraph
@@ -3123,10 +3885,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- one
+        micromark_with_options(
+            r###"- one
 
  two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>one</li>
 </ul>
@@ -3136,10 +3901,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- one
+        micromark_with_options(
+            r###"- one
 
   two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>one</p>
@@ -3151,10 +3919,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###" -    one
+        micromark_with_options(
+            r###" -    one
 
      two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>one</li>
 </ul>
@@ -3165,10 +3936,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###" -    one
+        micromark_with_options(
+            r###" -    one
 
       two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>one</p>
@@ -3180,10 +3954,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"   > > 1.  one
+        micromark_with_options(
+            r###"   > > 1.  one
 >>
 >>     two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <blockquote>
 <ol>
@@ -3199,10 +3976,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###">>- one
+        micromark_with_options(
+            r###">>- one
 >>
   >  > two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <blockquote>
 <ul>
@@ -3216,10 +3996,13 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"-one
+        micromark_with_options(
+            r###"-one
 
 2.two
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>-one</p>
 <p>2.two</p>
 "###,
@@ -3227,11 +4010,14 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 
 
   bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -3243,7 +4029,8 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1.  foo
+        micromark_with_options(
+            r###"1.  foo
 
     ```
     bar
@@ -3252,7 +4039,9 @@ with two lines.</p>
     baz
 
     > bam
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>foo</p>
@@ -3269,13 +4058,16 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- Foo
+        micromark_with_options(
+            r###"- Foo
 
       bar
 
 
       baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>Foo</p>
@@ -3291,8 +4083,11 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"123456789. ok
-"###, DANGER),
+        micromark_with_options(
+            r###"123456789. ok
+"###,
+            &danger
+        ),
         r###"<ol start="123456789">
 <li>ok</li>
 </ol>
@@ -3301,16 +4096,22 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"1234567890. not ok
-"###, DANGER),
+        micromark_with_options(
+            r###"1234567890. not ok
+"###,
+            &danger
+        ),
         r###"<p>1234567890. not ok</p>
 "###,
         r###"List items (266)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"0. ok
-"###, DANGER),
+        micromark_with_options(
+            r###"0. ok
+"###,
+            &danger
+        ),
         r###"<ol start="0">
 <li>ok</li>
 </ol>
@@ -3319,8 +4120,11 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"003. ok
-"###, DANGER),
+        micromark_with_options(
+            r###"003. ok
+"###,
+            &danger
+        ),
         r###"<ol start="3">
 <li>ok</li>
 </ol>
@@ -3329,18 +4133,24 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"-1. not ok
-"###, DANGER),
+        micromark_with_options(
+            r###"-1. not ok
+"###,
+            &danger
+        ),
         r###"<p>-1. not ok</p>
 "###,
         r###"List items (269)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 
       bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -3353,10 +4163,13 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"  10.  foo
+        micromark_with_options(
+            r###"  10.  foo
 
            bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol start="10">
 <li>
 <p>foo</p>
@@ -3369,12 +4182,15 @@ baz
 );
 
     assert_eq!(
-        micromark_with_options(r###"    indented code
+        micromark_with_options(
+            r###"    indented code
 
 paragraph
 
     more code
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>indented code
 </code></pre>
 <p>paragraph</p>
@@ -3385,12 +4201,15 @@ paragraph
 );
 
     assert_eq!(
-        micromark_with_options(r###"1.     indented code
+        micromark_with_options(
+            r###"1.     indented code
 
    paragraph
 
        more code
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <pre><code>indented code
@@ -3405,12 +4224,15 @@ paragraph
 );
 
     assert_eq!(
-        micromark_with_options(r###"1.      indented code
+        micromark_with_options(
+            r###"1.      indented code
 
    paragraph
 
        more code
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <pre><code> indented code
@@ -3425,10 +4247,13 @@ paragraph
 );
 
     assert_eq!(
-        micromark_with_options(r###"   foo
+        micromark_with_options(
+            r###"   foo
 
 bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo</p>
 <p>bar</p>
 "###,
@@ -3436,10 +4261,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"-    foo
+        micromark_with_options(
+            r###"-    foo
 
   bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -3449,10 +4277,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"-  foo
+        micromark_with_options(
+            r###"-  foo
 
    bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -3464,7 +4295,8 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"-
+        micromark_with_options(
+            r###"-
   foo
 -
   ```
@@ -3472,7 +4304,9 @@ bar
   ```
 -
       baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 <li>
@@ -3489,9 +4323,12 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"-   
+        micromark_with_options(
+            r###"-   
   foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -3500,10 +4337,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"-
+        micromark_with_options(
+            r###"-
 
   foo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li></li>
 </ul>
@@ -3513,10 +4353,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 -
 - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 <li></li>
@@ -3527,10 +4370,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 -   
 - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 <li></li>
@@ -3541,10 +4387,13 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"1. foo
+        micromark_with_options(
+            r###"1. foo
 2.
 3. bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>foo</li>
 <li></li>
@@ -3555,8 +4404,11 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"*
-"###, DANGER),
+        micromark_with_options(
+            r###"*
+"###,
+            &danger
+        ),
         r###"<ul>
 <li></li>
 </ul>
@@ -3565,12 +4417,15 @@ bar
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo
+        micromark_with_options(
+            r###"foo
 *
 
 foo
 1.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo
 *</p>
 <p>foo
@@ -3580,13 +4435,16 @@ foo
 );
 
     assert_eq!(
-        micromark_with_options(r###" 1.  A paragraph
+        micromark_with_options(
+            r###" 1.  A paragraph
      with two lines.
 
          indented code
 
      > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>A paragraph
@@ -3603,13 +4461,16 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"  1.  A paragraph
+        micromark_with_options(
+            r###"  1.  A paragraph
       with two lines.
 
           indented code
 
       > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>A paragraph
@@ -3626,13 +4487,16 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"   1.  A paragraph
+        micromark_with_options(
+            r###"   1.  A paragraph
        with two lines.
 
            indented code
 
        > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>A paragraph
@@ -3649,13 +4513,16 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"    1.  A paragraph
+        micromark_with_options(
+            r###"    1.  A paragraph
         with two lines.
 
             indented code
 
         > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<pre><code>1.  A paragraph
     with two lines.
 
@@ -3668,13 +4535,16 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"  1.  A paragraph
+        micromark_with_options(
+            r###"  1.  A paragraph
 with two lines.
 
           indented code
 
       > A block quote.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>A paragraph
@@ -3691,9 +4561,12 @@ with two lines.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"  1.  A paragraph
+        micromark_with_options(
+            r###"  1.  A paragraph
     with two lines.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>A paragraph
 with two lines.</li>
@@ -3703,9 +4576,12 @@ with two lines.</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> 1. > Blockquote
+        micromark_with_options(
+            r###"> 1. > Blockquote
 continued here.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <ol>
 <li>
@@ -3721,9 +4597,12 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"> 1. > Blockquote
+        micromark_with_options(
+            r###"> 1. > Blockquote
 > continued here.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<blockquote>
 <ol>
 <li>
@@ -3739,11 +4618,14 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
   - bar
     - baz
       - boo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo
 <ul>
@@ -3764,11 +4646,14 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
  - bar
   - baz
    - boo
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 <li>bar</li>
@@ -3780,9 +4665,12 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"10) foo
+        micromark_with_options(
+            r###"10) foo
     - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol start="10">
 <li>foo
 <ul>
@@ -3795,9 +4683,12 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"10) foo
+        micromark_with_options(
+            r###"10) foo
    - bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol start="10">
 <li>foo</li>
 </ol>
@@ -3809,8 +4700,11 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- - foo
-"###, DANGER),
+        micromark_with_options(
+            r###"- - foo
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <ul>
@@ -3823,8 +4717,11 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1. - 2. foo
-"###, DANGER),
+        micromark_with_options(
+            r###"1. - 2. foo
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <ul>
@@ -3841,11 +4738,14 @@ continued here.</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- # Foo
+        micromark_with_options(
+            r###"- # Foo
 - Bar
   ---
   baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <h1>Foo</h1>
@@ -3859,10 +4759,13 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 - bar
 + baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 <li>bar</li>
@@ -3875,10 +4778,13 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1. foo
+        micromark_with_options(
+            r###"1. foo
 2. bar
 3) baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>foo</li>
 <li>bar</li>
@@ -3891,10 +4797,13 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo
+        micromark_with_options(
+            r###"Foo
 - bar
 - baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>Foo</p>
 <ul>
 <li>bar</li>
@@ -3905,9 +4814,12 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"The number of windows in my house is
+        micromark_with_options(
+            r###"The number of windows in my house is
 14.  The number of doors is 6.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>The number of windows in my house is
 14.  The number of doors is 6.</p>
 "###,
@@ -3915,9 +4827,12 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"The number of windows in my house is
+        micromark_with_options(
+            r###"The number of windows in my house is
 1.  The number of doors is 6.
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>The number of windows in my house is</p>
 <ol>
 <li>The number of doors is 6.</li>
@@ -3927,13 +4842,16 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 
 - bar
 
 
 - baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -3950,13 +4868,16 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
   - bar
     - baz
 
 
       bim
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo
 <ul>
@@ -3976,14 +4897,17 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- foo
+        micromark_with_options(
+            r###"- foo
 - bar
 
 <!-- -->
 
 - baz
 - bim
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>foo</li>
 <li>bar</li>
@@ -3998,7 +4922,8 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"-   foo
+        micromark_with_options(
+            r###"-   foo
 
     notcode
 
@@ -4007,7 +4932,9 @@ baz</li>
 <!-- -->
 
     code
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4025,14 +4952,17 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
  - b
   - c
    - d
   - e
  - f
 - g
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a</li>
 <li>b</li>
@@ -4047,12 +4977,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1. a
+        micromark_with_options(
+            r###"1. a
 
   2. b
 
    3. c
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>a</p>
@@ -4069,12 +5002,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
  - b
   - c
    - d
     - e
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a</li>
 <li>b</li>
@@ -4087,12 +5023,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1. a
+        micromark_with_options(
+            r###"1. a
 
   2. b
 
     3. c
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <p>a</p>
@@ -4108,11 +5047,14 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
 - b
 
 - c
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>a</p>
@@ -4129,11 +5071,14 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"* a
+        micromark_with_options(
+            r###"* a
 *
 
 * c
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>a</p>
@@ -4148,12 +5093,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
 - b
 
   c
 - d
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>a</p>
@@ -4171,12 +5119,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
 - b
 
   [ref]: /url
 - d
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>a</p>
@@ -4193,14 +5144,17 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
 - ```
   b
 
 
   ```
 - c
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a</li>
 <li>
@@ -4216,12 +5170,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
   - b
 
     c
 - d
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a
 <ul>
@@ -4238,11 +5195,14 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"* a
+        micromark_with_options(
+            r###"* a
   > b
   >
 * c
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a
 <blockquote>
@@ -4256,13 +5216,16 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
   > b
   ```
   c
   ```
 - d
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a
 <blockquote>
@@ -4278,8 +5241,11 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
-"###, DANGER),
+        micromark_with_options(
+            r###"- a
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a</li>
 </ul>
@@ -4288,9 +5254,12 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
   - b
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>a
 <ul>
@@ -4303,12 +5272,15 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"1. ```
+        micromark_with_options(
+            r###"1. ```
    foo
    ```
 
    bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ol>
 <li>
 <pre><code>foo
@@ -4321,11 +5293,14 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"* foo
+        micromark_with_options(
+            r###"* foo
   * bar
 
   baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4340,14 +5315,17 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"- a
+        micromark_with_options(
+            r###"- a
   - b
   - c
 
 - d
   - e
   - f
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<ul>
 <li>
 <p>a</p>
@@ -4369,65 +5347,89 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"`hi`lo`
-"###, DANGER),
+        micromark_with_options(
+            r###"`hi`lo`
+"###,
+            &danger
+        ),
         r###"<p><code>hi</code>lo`</p>
 "###,
         r###"Inlines (327)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`foo`
-"###, DANGER),
+        micromark_with_options(
+            r###"`foo`
+"###,
+            &danger
+        ),
         r###"<p><code>foo</code></p>
 "###,
         r###"Code spans (328)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`` foo ` bar ``
-"###, DANGER),
+        micromark_with_options(
+            r###"`` foo ` bar ``
+"###,
+            &danger
+        ),
         r###"<p><code>foo ` bar</code></p>
 "###,
         r###"Code spans (329)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"` `` `
-"###, DANGER),
+        micromark_with_options(
+            r###"` `` `
+"###,
+            &danger
+        ),
         r###"<p><code>``</code></p>
 "###,
         r###"Code spans (330)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`  ``  `
-"###, DANGER),
+        micromark_with_options(
+            r###"`  ``  `
+"###,
+            &danger
+        ),
         r###"<p><code> `` </code></p>
 "###,
         r###"Code spans (331)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"` a`
-"###, DANGER),
+        micromark_with_options(
+            r###"` a`
+"###,
+            &danger
+        ),
         r###"<p><code> a</code></p>
 "###,
         r###"Code spans (332)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"` b `
-"###, DANGER),
+        micromark_with_options(
+            r###"` b `
+"###,
+            &danger
+        ),
         r###"<p><code> b </code></p>
 "###,
         r###"Code spans (333)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"` `
+        micromark_with_options(
+            r###"` `
 `  `
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code> </code>
 <code>  </code></p>
 "###,
@@ -4435,264 +5437,360 @@ baz</li>
 );
 
     assert_eq!(
-        micromark_with_options(r###"``
+        micromark_with_options(
+            r###"``
 foo
 bar  
 baz
 ``
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>foo bar   baz</code></p>
 "###,
         r###"Code spans (335)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"``
+        micromark_with_options(
+            r###"``
 foo 
 ``
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>foo </code></p>
 "###,
         r###"Code spans (336)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`foo   bar 
+        micromark_with_options(
+            r###"`foo   bar 
 baz`
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>foo   bar  baz</code></p>
 "###,
         r###"Code spans (337)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`foo\`bar`
-"###, DANGER),
+        micromark_with_options(
+            r###"`foo\`bar`
+"###,
+            &danger
+        ),
         r###"<p><code>foo\</code>bar`</p>
 "###,
         r###"Code spans (338)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"``foo`bar``
-"###, DANGER),
+        micromark_with_options(
+            r###"``foo`bar``
+"###,
+            &danger
+        ),
         r###"<p><code>foo`bar</code></p>
 "###,
         r###"Code spans (339)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"` foo `` bar `
-"###, DANGER),
+        micromark_with_options(
+            r###"` foo `` bar `
+"###,
+            &danger
+        ),
         r###"<p><code>foo `` bar</code></p>
 "###,
         r###"Code spans (340)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo`*`
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo`*`
+"###,
+            &danger
+        ),
         r###"<p>*foo<code>*</code></p>
 "###,
         r###"Code spans (341)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[not a `link](/foo`)
-"###, DANGER),
+        micromark_with_options(
+            r###"[not a `link](/foo`)
+"###,
+            &danger
+        ),
         r###"<p>[not a <code>link](/foo</code>)</p>
 "###,
         r###"Code spans (342)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`<a href="`">`
-"###, DANGER),
+        micromark_with_options(
+            r###"`<a href="`">`
+"###,
+            &danger
+        ),
         r###"<p><code>&lt;a href=&quot;</code>&quot;&gt;`</p>
 "###,
         r###"Code spans (343)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="`">`
-"###, DANGER),
+        micromark_with_options(
+            r###"<a href="`">`
+"###,
+            &danger
+        ),
         r###"<p><a href="`">`</p>
 "###,
         r###"Code spans (344)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`<http://foo.bar.`baz>`
-"###, DANGER),
+        micromark_with_options(
+            r###"`<http://foo.bar.`baz>`
+"###,
+            &danger
+        ),
         r###"<p><code>&lt;http://foo.bar.</code>baz&gt;`</p>
 "###,
         r###"Code spans (345)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://foo.bar.`baz>`
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://foo.bar.`baz>`
+"###,
+            &danger
+        ),
         r###"<p><a href="http://foo.bar.%60baz">http://foo.bar.`baz</a>`</p>
 "###,
         r###"Code spans (346)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"```foo``
-"###, DANGER),
+        micromark_with_options(
+            r###"```foo``
+"###,
+            &danger
+        ),
         r###"<p>```foo``</p>
 "###,
         r###"Code spans (347)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`foo
-"###, DANGER),
+        micromark_with_options(
+            r###"`foo
+"###,
+            &danger
+        ),
         r###"<p>`foo</p>
 "###,
         r###"Code spans (348)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`foo``bar``
-"###, DANGER),
+        micromark_with_options(
+            r###"`foo``bar``
+"###,
+            &danger
+        ),
         r###"<p>`foo<code>bar</code></p>
 "###,
         r###"Code spans (349)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo bar*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo bar*
+"###,
+            &danger
+        ),
         r###"<p><em>foo bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (350)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"a * foo bar*
-"###, DANGER),
+        micromark_with_options(
+            r###"a * foo bar*
+"###,
+            &danger
+        ),
         r###"<p>a * foo bar*</p>
 "###,
         r###"Emphasis and strong emphasis (351)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"a*"foo"*
-"###, DANGER),
+        micromark_with_options(
+            r###"a*"foo"*
+"###,
+            &danger
+        ),
         r###"<p>a*&quot;foo&quot;*</p>
 "###,
         r###"Emphasis and strong emphasis (352)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"* a *
-"###, DANGER),
+        micromark_with_options(
+            r###"* a *
+"###,
+            &danger
+        ),
         r###"<p>* a *</p>
 "###,
         r###"Emphasis and strong emphasis (353)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo*bar*
-"###, DANGER),
+        micromark_with_options(
+            r###"foo*bar*
+"###,
+            &danger
+        ),
         r###"<p>foo<em>bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (354)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"5*6*78
-"###, DANGER),
+        micromark_with_options(
+            r###"5*6*78
+"###,
+            &danger
+        ),
         r###"<p>5<em>6</em>78</p>
 "###,
         r###"Emphasis and strong emphasis (355)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo bar_
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo bar_
+"###,
+            &danger
+        ),
         r###"<p><em>foo bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (356)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_ foo bar_
-"###, DANGER),
+        micromark_with_options(
+            r###"_ foo bar_
+"###,
+            &danger
+        ),
         r###"<p>_ foo bar_</p>
 "###,
         r###"Emphasis and strong emphasis (357)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"a_"foo"_
-"###, DANGER),
+        micromark_with_options(
+            r###"a_"foo"_
+"###,
+            &danger
+        ),
         r###"<p>a_&quot;foo&quot;_</p>
 "###,
         r###"Emphasis and strong emphasis (358)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo_bar_
-"###, DANGER),
+        micromark_with_options(
+            r###"foo_bar_
+"###,
+            &danger
+        ),
         r###"<p>foo_bar_</p>
 "###,
         r###"Emphasis and strong emphasis (359)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"5_6_78
-"###, DANGER),
+        micromark_with_options(
+            r###"5_6_78
+"###,
+            &danger
+        ),
         r###"<p>5_6_78</p>
 "###,
         r###"Emphasis and strong emphasis (360)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"пристаням_стремятся_
-"###, DANGER),
+        micromark_with_options(
+            r###"пристаням_стремятся_
+"###,
+            &danger
+        ),
         r###"<p>пристаням_стремятся_</p>
 "###,
         r###"Emphasis and strong emphasis (361)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"aa_"bb"_cc
-"###, DANGER),
+        micromark_with_options(
+            r###"aa_"bb"_cc
+"###,
+            &danger
+        ),
         r###"<p>aa_&quot;bb&quot;_cc</p>
 "###,
         r###"Emphasis and strong emphasis (362)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo-_(bar)_
-"###, DANGER),
+        micromark_with_options(
+            r###"foo-_(bar)_
+"###,
+            &danger
+        ),
         r###"<p>foo-<em>(bar)</em></p>
 "###,
         r###"Emphasis and strong emphasis (363)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo*
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo*
+"###,
+            &danger
+        ),
         r###"<p>_foo*</p>
 "###,
         r###"Emphasis and strong emphasis (364)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo bar *
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo bar *
+"###,
+            &danger
+        ),
         r###"<p>*foo bar *</p>
 "###,
         r###"Emphasis and strong emphasis (365)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo bar
+        micromark_with_options(
+            r###"*foo bar
 *
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>*foo bar
 *</p>
 "###,
@@ -4700,137 +5798,188 @@ baz`
 );
 
     assert_eq!(
-        micromark_with_options(r###"*(*foo)
-"###, DANGER),
+        micromark_with_options(
+            r###"*(*foo)
+"###,
+            &danger
+        ),
         r###"<p>*(*foo)</p>
 "###,
         r###"Emphasis and strong emphasis (367)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*(*foo*)*
-"###, DANGER),
+        micromark_with_options(
+            r###"*(*foo*)*
+"###,
+            &danger
+        ),
         r###"<p><em>(<em>foo</em>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (368)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo*bar
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo*bar
+"###,
+            &danger
+        ),
         r###"<p><em>foo</em>bar</p>
 "###,
         r###"Emphasis and strong emphasis (369)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo bar _
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo bar _
+"###,
+            &danger
+        ),
         r###"<p>_foo bar _</p>
 "###,
         r###"Emphasis and strong emphasis (370)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_(_foo)
-"###, DANGER),
+        micromark_with_options(
+            r###"_(_foo)
+"###,
+            &danger
+        ),
         r###"<p>_(_foo)</p>
 "###,
         r###"Emphasis and strong emphasis (371)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_(_foo_)_
-"###, DANGER),
+        micromark_with_options(
+            r###"_(_foo_)_
+"###,
+            &danger
+        ),
         r###"<p><em>(<em>foo</em>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (372)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo_bar
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo_bar
+"###,
+            &danger
+        ),
         r###"<p>_foo_bar</p>
 "###,
         r###"Emphasis and strong emphasis (373)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_пристаням_стремятся
-"###, DANGER),
+        micromark_with_options(
+            r###"_пристаням_стремятся
+"###,
+            &danger
+        ),
         r###"<p>_пристаням_стремятся</p>
 "###,
         r###"Emphasis and strong emphasis (374)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo_bar_baz_
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo_bar_baz_
+"###,
+            &danger
+        ),
         r###"<p><em>foo_bar_baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (375)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_(bar)_.
-"###, DANGER),
+        micromark_with_options(
+            r###"_(bar)_.
+"###,
+            &danger
+        ),
         r###"<p><em>(bar)</em>.</p>
 "###,
         r###"Emphasis and strong emphasis (376)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo bar**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo bar**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (377)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"** foo bar**
-"###, DANGER),
+        micromark_with_options(
+            r###"** foo bar**
+"###,
+            &danger
+        ),
         r###"<p>** foo bar**</p>
 "###,
         r###"Emphasis and strong emphasis (378)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"a**"foo"**
-"###, DANGER),
+        micromark_with_options(
+            r###"a**"foo"**
+"###,
+            &danger
+        ),
         r###"<p>a**&quot;foo&quot;**</p>
 "###,
         r###"Emphasis and strong emphasis (379)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo**bar**
-"###, DANGER),
+        micromark_with_options(
+            r###"foo**bar**
+"###,
+            &danger
+        ),
         r###"<p>foo<strong>bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (380)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo bar__
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo bar__
+"###,
+            &danger
+        ),
         r###"<p><strong>foo bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (381)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__ foo bar__
-"###, DANGER),
+        micromark_with_options(
+            r###"__ foo bar__
+"###,
+            &danger
+        ),
         r###"<p>__ foo bar__</p>
 "###,
         r###"Emphasis and strong emphasis (382)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__
+        micromark_with_options(
+            r###"__
 foo bar__
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>__
 foo bar__</p>
 "###,
@@ -4838,81 +5987,111 @@ foo bar__</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"a__"foo"__
-"###, DANGER),
+        micromark_with_options(
+            r###"a__"foo"__
+"###,
+            &danger
+        ),
         r###"<p>a__&quot;foo&quot;__</p>
 "###,
         r###"Emphasis and strong emphasis (384)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo__bar__
-"###, DANGER),
+        micromark_with_options(
+            r###"foo__bar__
+"###,
+            &danger
+        ),
         r###"<p>foo__bar__</p>
 "###,
         r###"Emphasis and strong emphasis (385)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"5__6__78
-"###, DANGER),
+        micromark_with_options(
+            r###"5__6__78
+"###,
+            &danger
+        ),
         r###"<p>5__6__78</p>
 "###,
         r###"Emphasis and strong emphasis (386)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"пристаням__стремятся__
-"###, DANGER),
+        micromark_with_options(
+            r###"пристаням__стремятся__
+"###,
+            &danger
+        ),
         r###"<p>пристаням__стремятся__</p>
 "###,
         r###"Emphasis and strong emphasis (387)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo, __bar__, baz__
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo, __bar__, baz__
+"###,
+            &danger
+        ),
         r###"<p><strong>foo, <strong>bar</strong>, baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (388)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo-__(bar)__
-"###, DANGER),
+        micromark_with_options(
+            r###"foo-__(bar)__
+"###,
+            &danger
+        ),
         r###"<p>foo-<strong>(bar)</strong></p>
 "###,
         r###"Emphasis and strong emphasis (389)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo bar **
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo bar **
+"###,
+            &danger
+        ),
         r###"<p>**foo bar **</p>
 "###,
         r###"Emphasis and strong emphasis (390)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**(**foo)
-"###, DANGER),
+        micromark_with_options(
+            r###"**(**foo)
+"###,
+            &danger
+        ),
         r###"<p>**(**foo)</p>
 "###,
         r###"Emphasis and strong emphasis (391)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*(**foo**)*
-"###, DANGER),
+        micromark_with_options(
+            r###"*(**foo**)*
+"###,
+            &danger
+        ),
         r###"<p><em>(<strong>foo</strong>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (392)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**Gomphocarpus (*Gomphocarpus physocarpus*, syn.
+        micromark_with_options(
+            r###"**Gomphocarpus (*Gomphocarpus physocarpus*, syn.
 *Asclepias physocarpa*)**
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><strong>Gomphocarpus (<em>Gomphocarpus physocarpus</em>, syn.
 <em>Asclepias physocarpa</em>)</strong></p>
 "###,
@@ -4920,89 +6099,122 @@ foo bar__</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo "*bar*" foo**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo "*bar*" foo**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (394)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo**bar
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo**bar
+"###,
+            &danger
+        ),
         r###"<p><strong>foo</strong>bar</p>
 "###,
         r###"Emphasis and strong emphasis (395)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo bar __
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo bar __
+"###,
+            &danger
+        ),
         r###"<p>__foo bar __</p>
 "###,
         r###"Emphasis and strong emphasis (396)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__(__foo)
-"###, DANGER),
+        micromark_with_options(
+            r###"__(__foo)
+"###,
+            &danger
+        ),
         r###"<p>__(__foo)</p>
 "###,
         r###"Emphasis and strong emphasis (397)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_(__foo__)_
-"###, DANGER),
+        micromark_with_options(
+            r###"_(__foo__)_
+"###,
+            &danger
+        ),
         r###"<p><em>(<strong>foo</strong>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (398)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo__bar
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo__bar
+"###,
+            &danger
+        ),
         r###"<p>__foo__bar</p>
 "###,
         r###"Emphasis and strong emphasis (399)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__пристаням__стремятся
-"###, DANGER),
+        micromark_with_options(
+            r###"__пристаням__стремятся
+"###,
+            &danger
+        ),
         r###"<p>__пристаням__стремятся</p>
 "###,
         r###"Emphasis and strong emphasis (400)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo__bar__baz__
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo__bar__baz__
+"###,
+            &danger
+        ),
         r###"<p><strong>foo__bar__baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (401)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__(bar)__.
-"###, DANGER),
+        micromark_with_options(
+            r###"__(bar)__.
+"###,
+            &danger
+        ),
         r###"<p><strong>(bar)</strong>.</p>
 "###,
         r###"Emphasis and strong emphasis (402)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo [bar](/url)*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo [bar](/url)*
+"###,
+            &danger
+        ),
         r###"<p><em>foo <a href="/url">bar</a></em></p>
 "###,
         r###"Emphasis and strong emphasis (403)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo
+        micromark_with_options(
+            r###"*foo
 bar*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><em>foo
 bar</em></p>
 "###,
@@ -5010,145 +6222,199 @@ bar</em></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo __bar__ baz_
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo __bar__ baz_
+"###,
+            &danger
+        ),
         r###"<p><em>foo <strong>bar</strong> baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (405)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo _bar_ baz_
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo _bar_ baz_
+"###,
+            &danger
+        ),
         r###"<p><em>foo <em>bar</em> baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (406)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo_ bar_
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo_ bar_
+"###,
+            &danger
+        ),
         r###"<p><em><em>foo</em> bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (407)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo *bar**
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo *bar**
+"###,
+            &danger
+        ),
         r###"<p><em>foo <em>bar</em></em></p>
 "###,
         r###"Emphasis and strong emphasis (408)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo **bar** baz*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo **bar** baz*
+"###,
+            &danger
+        ),
         r###"<p><em>foo <strong>bar</strong> baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (409)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo**bar**baz*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo**bar**baz*
+"###,
+            &danger
+        ),
         r###"<p><em>foo<strong>bar</strong>baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (410)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo**bar*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo**bar*
+"###,
+            &danger
+        ),
         r###"<p><em>foo**bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (411)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"***foo** bar*
-"###, DANGER),
+        micromark_with_options(
+            r###"***foo** bar*
+"###,
+            &danger
+        ),
         r###"<p><em><strong>foo</strong> bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (412)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo **bar***
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo **bar***
+"###,
+            &danger
+        ),
         r###"<p><em>foo <strong>bar</strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (413)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo**bar***
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo**bar***
+"###,
+            &danger
+        ),
         r###"<p><em>foo<strong>bar</strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (414)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo***bar***baz
-"###, DANGER),
+        micromark_with_options(
+            r###"foo***bar***baz
+"###,
+            &danger
+        ),
         r###"<p>foo<em><strong>bar</strong></em>baz</p>
 "###,
         r###"Emphasis and strong emphasis (415)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo******bar*********baz
-"###, DANGER),
+        micromark_with_options(
+            r###"foo******bar*********baz
+"###,
+            &danger
+        ),
         r###"<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>
 "###,
         r###"Emphasis and strong emphasis (416)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo **bar *baz* bim** bop*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo **bar *baz* bim** bop*
+"###,
+            &danger
+        ),
         r###"<p><em>foo <strong>bar <em>baz</em> bim</strong> bop</em></p>
 "###,
         r###"Emphasis and strong emphasis (417)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo [*bar*](/url)*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo [*bar*](/url)*
+"###,
+            &danger
+        ),
         r###"<p><em>foo <a href="/url"><em>bar</em></a></em></p>
 "###,
         r###"Emphasis and strong emphasis (418)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"** is not an empty emphasis
-"###, DANGER),
+        micromark_with_options(
+            r###"** is not an empty emphasis
+"###,
+            &danger
+        ),
         r###"<p>** is not an empty emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (419)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**** is not an empty strong emphasis
-"###, DANGER),
+        micromark_with_options(
+            r###"**** is not an empty strong emphasis
+"###,
+            &danger
+        ),
         r###"<p>**** is not an empty strong emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (420)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo [bar](/url)**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo [bar](/url)**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <a href="/url">bar</a></strong></p>
 "###,
         r###"Emphasis and strong emphasis (421)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo
+        micromark_with_options(
+            r###"**foo
 bar**
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><strong>foo
 bar</strong></p>
 "###,
@@ -5156,73 +6422,100 @@ bar</strong></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo _bar_ baz__
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo _bar_ baz__
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <em>bar</em> baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (423)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo __bar__ baz__
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo __bar__ baz__
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <strong>bar</strong> baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (424)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"____foo__ bar__
-"###, DANGER),
+        micromark_with_options(
+            r###"____foo__ bar__
+"###,
+            &danger
+        ),
         r###"<p><strong><strong>foo</strong> bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (425)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo **bar****
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo **bar****
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <strong>bar</strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (426)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo *bar* baz**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo *bar* baz**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <em>bar</em> baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (427)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo*bar*baz**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo*bar*baz**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo<em>bar</em>baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (428)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"***foo* bar**
-"###, DANGER),
+        micromark_with_options(
+            r###"***foo* bar**
+"###,
+            &danger
+        ),
         r###"<p><strong><em>foo</em> bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (429)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo *bar***
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo *bar***
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <em>bar</em></strong></p>
 "###,
         r###"Emphasis and strong emphasis (430)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo *bar **baz**
+        micromark_with_options(
+            r###"**foo *bar **baz**
 bim* bop**
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <em>bar <strong>baz</strong>
 bim</em> bop</strong></p>
 "###,
@@ -5230,465 +6523,639 @@ bim</em> bop</strong></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo [*bar*](/url)**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo [*bar*](/url)**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo <a href="/url"><em>bar</em></a></strong></p>
 "###,
         r###"Emphasis and strong emphasis (432)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__ is not an empty emphasis
-"###, DANGER),
+        micromark_with_options(
+            r###"__ is not an empty emphasis
+"###,
+            &danger
+        ),
         r###"<p>__ is not an empty emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (433)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"____ is not an empty strong emphasis
-"###, DANGER),
+        micromark_with_options(
+            r###"____ is not an empty strong emphasis
+"###,
+            &danger
+        ),
         r###"<p>____ is not an empty strong emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (434)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo ***
-"###, DANGER),
+        micromark_with_options(
+            r###"foo ***
+"###,
+            &danger
+        ),
         r###"<p>foo ***</p>
 "###,
         r###"Emphasis and strong emphasis (435)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo *\**
-"###, DANGER),
+        micromark_with_options(
+            r###"foo *\**
+"###,
+            &danger
+        ),
         r###"<p>foo <em>*</em></p>
 "###,
         r###"Emphasis and strong emphasis (436)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo *_*
-"###, DANGER),
+        micromark_with_options(
+            r###"foo *_*
+"###,
+            &danger
+        ),
         r###"<p>foo <em>_</em></p>
 "###,
         r###"Emphasis and strong emphasis (437)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo *****
-"###, DANGER),
+        micromark_with_options(
+            r###"foo *****
+"###,
+            &danger
+        ),
         r###"<p>foo *****</p>
 "###,
         r###"Emphasis and strong emphasis (438)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo **\***
-"###, DANGER),
+        micromark_with_options(
+            r###"foo **\***
+"###,
+            &danger
+        ),
         r###"<p>foo <strong>*</strong></p>
 "###,
         r###"Emphasis and strong emphasis (439)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo **_**
-"###, DANGER),
+        micromark_with_options(
+            r###"foo **_**
+"###,
+            &danger
+        ),
         r###"<p>foo <strong>_</strong></p>
 "###,
         r###"Emphasis and strong emphasis (440)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo*
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo*
+"###,
+            &danger
+        ),
         r###"<p>*<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (441)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo**
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo**
+"###,
+            &danger
+        ),
         r###"<p><em>foo</em>*</p>
 "###,
         r###"Emphasis and strong emphasis (442)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"***foo**
-"###, DANGER),
+        micromark_with_options(
+            r###"***foo**
+"###,
+            &danger
+        ),
         r###"<p>*<strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (443)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"****foo*
-"###, DANGER),
+        micromark_with_options(
+            r###"****foo*
+"###,
+            &danger
+        ),
         r###"<p>***<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (444)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo***
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo***
+"###,
+            &danger
+        ),
         r###"<p><strong>foo</strong>*</p>
 "###,
         r###"Emphasis and strong emphasis (445)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo****
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo****
+"###,
+            &danger
+        ),
         r###"<p><em>foo</em>***</p>
 "###,
         r###"Emphasis and strong emphasis (446)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo ___
-"###, DANGER),
+        micromark_with_options(
+            r###"foo ___
+"###,
+            &danger
+        ),
         r###"<p>foo ___</p>
 "###,
         r###"Emphasis and strong emphasis (447)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo _\__
-"###, DANGER),
+        micromark_with_options(
+            r###"foo _\__
+"###,
+            &danger
+        ),
         r###"<p>foo <em>_</em></p>
 "###,
         r###"Emphasis and strong emphasis (448)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo _*_
-"###, DANGER),
+        micromark_with_options(
+            r###"foo _*_
+"###,
+            &danger
+        ),
         r###"<p>foo <em>*</em></p>
 "###,
         r###"Emphasis and strong emphasis (449)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo _____
-"###, DANGER),
+        micromark_with_options(
+            r###"foo _____
+"###,
+            &danger
+        ),
         r###"<p>foo _____</p>
 "###,
         r###"Emphasis and strong emphasis (450)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo __\___
-"###, DANGER),
+        micromark_with_options(
+            r###"foo __\___
+"###,
+            &danger
+        ),
         r###"<p>foo <strong>_</strong></p>
 "###,
         r###"Emphasis and strong emphasis (451)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo __*__
-"###, DANGER),
+        micromark_with_options(
+            r###"foo __*__
+"###,
+            &danger
+        ),
         r###"<p>foo <strong>*</strong></p>
 "###,
         r###"Emphasis and strong emphasis (452)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo_
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo_
+"###,
+            &danger
+        ),
         r###"<p>_<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (453)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo__
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo__
+"###,
+            &danger
+        ),
         r###"<p><em>foo</em>_</p>
 "###,
         r###"Emphasis and strong emphasis (454)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"___foo__
-"###, DANGER),
+        micromark_with_options(
+            r###"___foo__
+"###,
+            &danger
+        ),
         r###"<p>_<strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (455)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"____foo_
-"###, DANGER),
+        micromark_with_options(
+            r###"____foo_
+"###,
+            &danger
+        ),
         r###"<p>___<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (456)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo___
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo___
+"###,
+            &danger
+        ),
         r###"<p><strong>foo</strong>_</p>
 "###,
         r###"Emphasis and strong emphasis (457)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo____
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo____
+"###,
+            &danger
+        ),
         r###"<p><em>foo</em>___</p>
 "###,
         r###"Emphasis and strong emphasis (458)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo**
+"###,
+            &danger
+        ),
         r###"<p><strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (459)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*_foo_*
-"###, DANGER),
+        micromark_with_options(
+            r###"*_foo_*
+"###,
+            &danger
+        ),
         r###"<p><em><em>foo</em></em></p>
 "###,
         r###"Emphasis and strong emphasis (460)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__foo__
-"###, DANGER),
+        micromark_with_options(
+            r###"__foo__
+"###,
+            &danger
+        ),
         r###"<p><strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (461)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_*foo*_
-"###, DANGER),
+        micromark_with_options(
+            r###"_*foo*_
+"###,
+            &danger
+        ),
         r###"<p><em><em>foo</em></em></p>
 "###,
         r###"Emphasis and strong emphasis (462)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"****foo****
-"###, DANGER),
+        micromark_with_options(
+            r###"****foo****
+"###,
+            &danger
+        ),
         r###"<p><strong><strong>foo</strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (463)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"____foo____
-"###, DANGER),
+        micromark_with_options(
+            r###"____foo____
+"###,
+            &danger
+        ),
         r###"<p><strong><strong>foo</strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (464)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"******foo******
-"###, DANGER),
+        micromark_with_options(
+            r###"******foo******
+"###,
+            &danger
+        ),
         r###"<p><strong><strong><strong>foo</strong></strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (465)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"***foo***
-"###, DANGER),
+        micromark_with_options(
+            r###"***foo***
+"###,
+            &danger
+        ),
         r###"<p><em><strong>foo</strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (466)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_____foo_____
-"###, DANGER),
+        micromark_with_options(
+            r###"_____foo_____
+"###,
+            &danger
+        ),
         r###"<p><em><strong><strong>foo</strong></strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (467)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo _bar* baz_
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo _bar* baz_
+"###,
+            &danger
+        ),
         r###"<p><em>foo _bar</em> baz_</p>
 "###,
         r###"Emphasis and strong emphasis (468)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo __bar *baz bim__ bam*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo __bar *baz bim__ bam*
+"###,
+            &danger
+        ),
         r###"<p><em>foo <strong>bar *baz bim</strong> bam</em></p>
 "###,
         r###"Emphasis and strong emphasis (469)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**foo **bar baz**
-"###, DANGER),
+        micromark_with_options(
+            r###"**foo **bar baz**
+"###,
+            &danger
+        ),
         r###"<p>**foo <strong>bar baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (470)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo *bar baz*
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo *bar baz*
+"###,
+            &danger
+        ),
         r###"<p>*foo <em>bar baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (471)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*[bar*](/url)
-"###, DANGER),
+        micromark_with_options(
+            r###"*[bar*](/url)
+"###,
+            &danger
+        ),
         r###"<p>*<a href="/url">bar*</a></p>
 "###,
         r###"Emphasis and strong emphasis (472)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_foo [bar_](/url)
-"###, DANGER),
+        micromark_with_options(
+            r###"_foo [bar_](/url)
+"###,
+            &danger
+        ),
         r###"<p>_foo <a href="/url">bar_</a></p>
 "###,
         r###"Emphasis and strong emphasis (473)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*<img src="foo" title="*"/>
-"###, DANGER),
+        micromark_with_options(
+            r###"*<img src="foo" title="*"/>
+"###,
+            &danger
+        ),
         r###"<p>*<img src="foo" title="*"/></p>
 "###,
         r###"Emphasis and strong emphasis (474)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**<a href="**">
-"###, DANGER),
+        micromark_with_options(
+            r###"**<a href="**">
+"###,
+            &danger
+        ),
         r###"<p>**<a href="**"></p>
 "###,
         r###"Emphasis and strong emphasis (475)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__<a href="__">
-"###, DANGER),
+        micromark_with_options(
+            r###"__<a href="__">
+"###,
+            &danger
+        ),
         r###"<p>__<a href="__"></p>
 "###,
         r###"Emphasis and strong emphasis (476)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*a `*`*
-"###, DANGER),
+        micromark_with_options(
+            r###"*a `*`*
+"###,
+            &danger
+        ),
         r###"<p><em>a <code>*</code></em></p>
 "###,
         r###"Emphasis and strong emphasis (477)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"_a `_`_
-"###, DANGER),
+        micromark_with_options(
+            r###"_a `_`_
+"###,
+            &danger
+        ),
         r###"<p><em>a <code>_</code></em></p>
 "###,
         r###"Emphasis and strong emphasis (478)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"**a<http://foo.bar/?q=**>
-"###, DANGER),
+        micromark_with_options(
+            r###"**a<http://foo.bar/?q=**>
+"###,
+            &danger
+        ),
         r###"<p>**a<a href="http://foo.bar/?q=**">http://foo.bar/?q=**</a></p>
 "###,
         r###"Emphasis and strong emphasis (479)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"__a<http://foo.bar/?q=__>
-"###, DANGER),
+        micromark_with_options(
+            r###"__a<http://foo.bar/?q=__>
+"###,
+            &danger
+        ),
         r###"<p>__a<a href="http://foo.bar/?q=__">http://foo.bar/?q=__</a></p>
 "###,
         r###"Emphasis and strong emphasis (480)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/uri "title")
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/uri "title")
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri" title="title">link</a></p>
 "###,
         r###"Links (481)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/uri)
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link</a></p>
 "###,
         r###"Links (482)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[](./target.md)
-"###, DANGER),
+        micromark_with_options(
+            r###"[](./target.md)
+"###,
+            &danger
+        ),
         r###"<p><a href="./target.md"></a></p>
 "###,
         r###"Links (483)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link]()
-"###, DANGER),
+        micromark_with_options(
+            r###"[link]()
+"###,
+            &danger
+        ),
         r###"<p><a href="">link</a></p>
 "###,
         r###"Links (484)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](<>)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](<>)
+"###,
+            &danger
+        ),
         r###"<p><a href="">link</a></p>
 "###,
         r###"Links (485)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[]()
-"###, DANGER),
+        micromark_with_options(
+            r###"[]()
+"###,
+            &danger
+        ),
         r###"<p><a href=""></a></p>
 "###,
         r###"Links (486)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/my uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/my uri)
+"###,
+            &danger
+        ),
         r###"<p>[link](/my uri)</p>
 "###,
         r###"Links (487)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](</my uri>)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](</my uri>)
+"###,
+            &danger
+        ),
         r###"<p><a href="/my%20uri">link</a></p>
 "###,
         r###"Links (488)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo
+        micromark_with_options(
+            r###"[link](foo
 bar)
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[link](foo
 bar)</p>
 "###,
@@ -5696,9 +7163,12 @@ bar)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](<foo
+        micromark_with_options(
+            r###"[link](<foo
 bar>)
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[link](<foo
 bar>)</p>
 "###,
@@ -5706,26 +7176,35 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[a](<b)c>)
-"###, DANGER),
+        micromark_with_options(
+            r###"[a](<b)c>)
+"###,
+            &danger
+        ),
         r###"<p><a href="b)c">a</a></p>
 "###,
         r###"Links (491)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](<foo\>)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](<foo\>)
+"###,
+            &danger
+        ),
         r###"<p>[link](&lt;foo&gt;)</p>
 "###,
         r###"Links (492)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[a](<b)c
+        micromark_with_options(
+            r###"[a](<b)c
 [a](<b)c>
 [a](<b>c)
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[a](&lt;b)c
 [a](&lt;b)c&gt;
 [a](<b>c)</p>
@@ -5734,60 +7213,81 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](\(foo\))
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](\(foo\))
+"###,
+            &danger
+        ),
         r###"<p><a href="(foo)">link</a></p>
 "###,
         r###"Links (494)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo(and(bar)))
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](foo(and(bar)))
+"###,
+            &danger
+        ),
         r###"<p><a href="foo(and(bar))">link</a></p>
 "###,
         r###"Links (495)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo(and(bar))
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](foo(and(bar))
+"###,
+            &danger
+        ),
         r###"<p>[link](foo(and(bar))</p>
 "###,
         r###"Links (496)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo\(and\(bar\))
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](foo\(and\(bar\))
+"###,
+            &danger
+        ),
         r###"<p><a href="foo(and(bar)">link</a></p>
 "###,
         r###"Links (497)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](<foo(and(bar)>)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](<foo(and(bar)>)
+"###,
+            &danger
+        ),
         r###"<p><a href="foo(and(bar)">link</a></p>
 "###,
         r###"Links (498)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo\)\:)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](foo\)\:)
+"###,
+            &danger
+        ),
         r###"<p><a href="foo):">link</a></p>
 "###,
         r###"Links (499)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](#fragment)
+        micromark_with_options(
+            r###"[link](#fragment)
 
 [link](http://example.com#fragment)
 
 [link](http://example.com?foo=3#frag)
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="#fragment">link</a></p>
 <p><a href="http://example.com#fragment">link</a></p>
 <p><a href="http://example.com?foo=3#frag">link</a></p>
@@ -5796,34 +7296,46 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo\bar)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](foo\bar)
+"###,
+            &danger
+        ),
         r###"<p><a href="foo%5Cbar">link</a></p>
 "###,
         r###"Links (501)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](foo%20b&auml;)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](foo%20b&auml;)
+"###,
+            &danger
+        ),
         r###"<p><a href="foo%20b%C3%A4">link</a></p>
 "###,
         r###"Links (502)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link]("title")
-"###, DANGER),
+        micromark_with_options(
+            r###"[link]("title")
+"###,
+            &danger
+        ),
         r###"<p><a href="%22title%22">link</a></p>
 "###,
         r###"Links (503)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/url "title")
+        micromark_with_options(
+            r###"[link](/url "title")
 [link](/url 'title')
 [link](/url (title))
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a></p>
@@ -5832,341 +7344,455 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/url "title \"&quot;")
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/url "title \"&quot;")
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title &quot;&quot;">link</a></p>
 "###,
         r###"Links (505)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/url "title")
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/url "title")
+"###,
+            &danger
+        ),
         r###"<p><a href="/url%C2%A0%22title%22">link</a></p>
 "###,
         r###"Links (506)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/url "title "and" title")
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/url "title "and" title")
+"###,
+            &danger
+        ),
         r###"<p>[link](/url &quot;title &quot;and&quot; title&quot;)</p>
 "###,
         r###"Links (507)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](/url 'title "and" title')
-"###, DANGER),
+        micromark_with_options(
+            r###"[link](/url 'title "and" title')
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title &quot;and&quot; title">link</a></p>
 "###,
         r###"Links (508)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link](   /uri
+        micromark_with_options(
+            r###"[link](   /uri
   "title"  )
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri" title="title">link</a></p>
 "###,
         r###"Links (509)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link] (/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link] (/uri)
+"###,
+            &danger
+        ),
         r###"<p>[link] (/uri)</p>
 "###,
         r###"Links (510)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link [foo [bar]]](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link [foo [bar]]](/uri)
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link [foo [bar]]</a></p>
 "###,
         r###"Links (511)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link] bar](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link] bar](/uri)
+"###,
+            &danger
+        ),
         r###"<p>[link] bar](/uri)</p>
 "###,
         r###"Links (512)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link [bar](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link [bar](/uri)
+"###,
+            &danger
+        ),
         r###"<p>[link <a href="/uri">bar</a></p>
 "###,
         r###"Links (513)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link \[bar](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link \[bar](/uri)
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link [bar</a></p>
 "###,
         r###"Links (514)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link *foo **bar** `#`*](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[link *foo **bar** `#`*](/uri)
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
 "###,
         r###"Links (515)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[![moon](moon.jpg)](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[![moon](moon.jpg)](/uri)
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
 "###,
         r###"Links (516)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo [bar](/uri)](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo [bar](/uri)](/uri)
+"###,
+            &danger
+        ),
         r###"<p>[foo <a href="/uri">bar</a>](/uri)</p>
 "###,
         r###"Links (517)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo *[bar [baz](/uri)](/uri)*](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo *[bar [baz](/uri)](/uri)*](/uri)
+"###,
+            &danger
+        ),
         r###"<p>[foo <em>[bar <a href="/uri">baz</a>](/uri)</em>](/uri)</p>
 "###,
         r###"Links (518)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![[[foo](uri1)](uri2)](uri3)
-"###, DANGER),
+        micromark_with_options(
+            r###"![[[foo](uri1)](uri2)](uri3)
+"###,
+            &danger
+        ),
         r###"<p><img src="uri3" alt="[foo](uri2)" /></p>
 "###,
         r###"Links (519)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*[foo*](/uri)
-"###, DANGER),
+        micromark_with_options(
+            r###"*[foo*](/uri)
+"###,
+            &danger
+        ),
         r###"<p>*<a href="/uri">foo*</a></p>
 "###,
         r###"Links (520)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo *bar](baz*)
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo *bar](baz*)
+"###,
+            &danger
+        ),
         r###"<p><a href="baz*">foo *bar</a></p>
 "###,
         r###"Links (521)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo [bar* baz]
-"###, DANGER),
+        micromark_with_options(
+            r###"*foo [bar* baz]
+"###,
+            &danger
+        ),
         r###"<p><em>foo [bar</em> baz]</p>
 "###,
         r###"Links (522)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo <bar attr="](baz)">
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo <bar attr="](baz)">
+"###,
+            &danger
+        ),
         r###"<p>[foo <bar attr="](baz)"></p>
 "###,
         r###"Links (523)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo`](/uri)`
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo`](/uri)`
+"###,
+            &danger
+        ),
         r###"<p>[foo<code>](/uri)</code></p>
 "###,
         r###"Links (524)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo<http://example.com/?search=](uri)>
-"###, DANGER),
+        micromark_with_options(
+            r###"[foo<http://example.com/?search=](uri)>
+"###,
+            &danger
+        ),
         r###"<p>[foo<a href="http://example.com/?search=%5D(uri)">http://example.com/?search=](uri)</a></p>
 "###,
         r###"Links (525)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][bar]
+        micromark_with_options(
+            r###"[foo][bar]
 
 [bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (526)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link [foo [bar]]][ref]
+        micromark_with_options(
+            r###"[link [foo [bar]]][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link [foo [bar]]</a></p>
 "###,
         r###"Links (527)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link \[bar][ref]
+        micromark_with_options(
+            r###"[link \[bar][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link [bar</a></p>
 "###,
         r###"Links (528)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[link *foo **bar** `#`*][ref]
+        micromark_with_options(
+            r###"[link *foo **bar** `#`*][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
 "###,
         r###"Links (529)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[![moon](moon.jpg)][ref]
+        micromark_with_options(
+            r###"[![moon](moon.jpg)][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
 "###,
         r###"Links (530)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo [bar](/uri)][ref]
+        micromark_with_options(
+            r###"[foo [bar](/uri)][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo <a href="/uri">bar</a>]<a href="/uri">ref</a></p>
 "###,
         r###"Links (531)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo *bar [baz][ref]*][ref]
+        micromark_with_options(
+            r###"[foo *bar [baz][ref]*][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo <em>bar <a href="/uri">baz</a></em>]<a href="/uri">ref</a></p>
 "###,
         r###"Links (532)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"*[foo*][ref]
+        micromark_with_options(
+            r###"*[foo*][ref]
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>*<a href="/uri">foo*</a></p>
 "###,
         r###"Links (533)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo *bar][ref]*
+        micromark_with_options(
+            r###"[foo *bar][ref]*
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">foo *bar</a>*</p>
 "###,
         r###"Links (534)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo <bar attr="][ref]">
+        micromark_with_options(
+            r###"[foo <bar attr="][ref]">
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo <bar attr="][ref]"></p>
 "###,
         r###"Links (535)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo`][ref]`
+        micromark_with_options(
+            r###"[foo`][ref]`
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo<code>][ref]</code></p>
 "###,
         r###"Links (536)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo<http://example.com/?search=][ref]>
+        micromark_with_options(
+            r###"[foo<http://example.com/?search=][ref]>
 
 [ref]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo<a href="http://example.com/?search=%5D%5Bref%5D">http://example.com/?search=][ref]</a></p>
 "###,
         r###"Links (537)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][BaR]
+        micromark_with_options(
+            r###"[foo][BaR]
 
 [bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (538)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[ẞ]
+        micromark_with_options(
+            r###"[ẞ]
 
 [SS]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url">ẞ</a></p>
 "###,
         r###"Links (539)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[Foo
+        micromark_with_options(
+            r###"[Foo
   bar]: /url
 
 [Baz][Foo bar]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url">Baz</a></p>
 "###,
         r###"Links (540)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo] [bar]
+        micromark_with_options(
+            r###"[foo] [bar]
 
 [bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo] <a href="/url" title="title">bar</a></p>
 "###,
         r###"Links (541)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 [bar]
 
 [bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]
 <a href="/url" title="title">bar</a></p>
 "###,
@@ -6174,32 +7800,41 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]: /url1
+        micromark_with_options(
+            r###"[foo]: /url1
 
 [foo]: /url2
 
 [bar][foo]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url1">bar</a></p>
 "###,
         r###"Links (543)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[bar][foo\!]
+        micromark_with_options(
+            r###"[bar][foo\!]
 
 [foo!]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[bar][foo!]</p>
 "###,
         r###"Links (544)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][ref[]
+        micromark_with_options(
+            r###"[foo][ref[]
 
 [ref[]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo][ref[]</p>
 <p>[ref[]: /uri</p>
 "###,
@@ -6207,10 +7842,13 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][ref[bar]]
+        micromark_with_options(
+            r###"[foo][ref[bar]]
 
 [ref[bar]]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo][ref[bar]]</p>
 <p>[ref[bar]]: /uri</p>
 "###,
@@ -6218,10 +7856,13 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[[[foo]]]
+        micromark_with_options(
+            r###"[[[foo]]]
 
 [[[foo]]]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[[[foo]]]</p>
 <p>[[[foo]]]: /url</p>
 "###,
@@ -6229,30 +7870,39 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][ref\[]
+        micromark_with_options(
+            r###"[foo][ref\[]
 
 [ref\[]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">foo</a></p>
 "###,
         r###"Links (548)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[bar\\]: /uri
+        micromark_with_options(
+            r###"[bar\\]: /uri
 
 [bar\\]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/uri">bar\</a></p>
 "###,
         r###"Links (549)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[]
+        micromark_with_options(
+            r###"[]
 
 []: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[]</p>
 <p>[]: /uri</p>
 "###,
@@ -6260,12 +7910,15 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[
+        micromark_with_options(
+            r###"[
  ]
 
 [
  ]: /uri
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[
 ]</p>
 <p>[
@@ -6275,41 +7928,53 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][]
+        micromark_with_options(
+            r###"[foo][]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (552)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[*foo* bar][]
+        micromark_with_options(
+            r###"[*foo* bar][]
 
 [*foo* bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
 "###,
         r###"Links (553)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[Foo][]
+        micromark_with_options(
+            r###"[Foo][]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">Foo</a></p>
 "###,
         r###"Links (554)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo] 
+        micromark_with_options(
+            r###"[foo] 
 []
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">foo</a>
 []</p>
 "###,
@@ -6317,300 +7982,393 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]
+        micromark_with_options(
+            r###"[foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (556)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[*foo* bar]
+        micromark_with_options(
+            r###"[*foo* bar]
 
 [*foo* bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
 "###,
         r###"Links (557)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[[*foo* bar]]
+        micromark_with_options(
+            r###"[[*foo* bar]]
 
 [*foo* bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[<a href="/url" title="title"><em>foo</em> bar</a>]</p>
 "###,
         r###"Links (558)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[[bar [foo]
+        micromark_with_options(
+            r###"[[bar [foo]
 
 [foo]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[[bar <a href="/url">foo</a></p>
 "###,
         r###"Links (559)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[Foo]
+        micromark_with_options(
+            r###"[Foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url" title="title">Foo</a></p>
 "###,
         r###"Links (560)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo] bar
+        micromark_with_options(
+            r###"[foo] bar
 
 [foo]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url">foo</a> bar</p>
 "###,
         r###"Links (561)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"\[foo]
+        micromark_with_options(
+            r###"\[foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]</p>
 "###,
         r###"Links (562)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo*]: /url
+        micromark_with_options(
+            r###"[foo*]: /url
 
 *[foo*]
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>*<a href="/url">foo*</a></p>
 "###,
         r###"Links (563)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][bar]
+        micromark_with_options(
+            r###"[foo][bar]
 
 [foo]: /url1
 [bar]: /url2
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url2">foo</a></p>
 "###,
         r###"Links (564)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][]
+        micromark_with_options(
+            r###"[foo][]
 
 [foo]: /url1
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url1">foo</a></p>
 "###,
         r###"Links (565)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo]()
+        micromark_with_options(
+            r###"[foo]()
 
 [foo]: /url1
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="">foo</a></p>
 "###,
         r###"Links (566)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo](not a link)
+        micromark_with_options(
+            r###"[foo](not a link)
 
 [foo]: /url1
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url1">foo</a>(not a link)</p>
 "###,
         r###"Links (567)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][bar][baz]
+        micromark_with_options(
+            r###"[foo][bar][baz]
 
 [baz]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]<a href="/url">bar</a></p>
 "###,
         r###"Links (568)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][bar][baz]
+        micromark_with_options(
+            r###"[foo][bar][baz]
 
 [baz]: /url1
 [bar]: /url2
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="/url2">foo</a><a href="/url1">baz</a></p>
 "###,
         r###"Links (569)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"[foo][bar][baz]
+        micromark_with_options(
+            r###"[foo][bar][baz]
 
 [baz]: /url1
 [foo]: /url2
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>[foo]<a href="/url1">bar</a></p>
 "###,
         r###"Links (570)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo](/url "title")
-"###, DANGER),
+        micromark_with_options(
+            r###"![foo](/url "title")
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
         r###"Images (571)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo *bar*]
+        micromark_with_options(
+            r###"![foo *bar*]
 
 [foo *bar*]: train.jpg "train & tracks"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
         r###"Images (572)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo ![bar](/url)](/url2)
-"###, DANGER),
+        micromark_with_options(
+            r###"![foo ![bar](/url)](/url2)
+"###,
+            &danger
+        ),
         r###"<p><img src="/url2" alt="foo bar" /></p>
 "###,
         r###"Images (573)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo [bar](/url)](/url2)
-"###, DANGER),
+        micromark_with_options(
+            r###"![foo [bar](/url)](/url2)
+"###,
+            &danger
+        ),
         r###"<p><img src="/url2" alt="foo bar" /></p>
 "###,
         r###"Images (574)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo *bar*][]
+        micromark_with_options(
+            r###"![foo *bar*][]
 
 [foo *bar*]: train.jpg "train & tracks"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
         r###"Images (575)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo *bar*][foobar]
+        micromark_with_options(
+            r###"![foo *bar*][foobar]
 
 [FOOBAR]: train.jpg "train & tracks"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
         r###"Images (576)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo](train.jpg)
-"###, DANGER),
+        micromark_with_options(
+            r###"![foo](train.jpg)
+"###,
+            &danger
+        ),
         r###"<p><img src="train.jpg" alt="foo" /></p>
 "###,
         r###"Images (577)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"My ![foo bar](/path/to/train.jpg  "title"   )
-"###, DANGER),
+        micromark_with_options(
+            r###"My ![foo bar](/path/to/train.jpg  "title"   )
+"###,
+            &danger
+        ),
         r###"<p>My <img src="/path/to/train.jpg" alt="foo bar" title="title" /></p>
 "###,
         r###"Images (578)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo](<url>)
-"###, DANGER),
+        micromark_with_options(
+            r###"![foo](<url>)
+"###,
+            &danger
+        ),
         r###"<p><img src="url" alt="foo" /></p>
 "###,
         r###"Images (579)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![](/url)
-"###, DANGER),
+        micromark_with_options(
+            r###"![](/url)
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="" /></p>
 "###,
         r###"Images (580)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo][bar]
+        micromark_with_options(
+            r###"![foo][bar]
 
 [bar]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo" /></p>
 "###,
         r###"Images (581)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo][bar]
+        micromark_with_options(
+            r###"![foo][bar]
 
 [BAR]: /url
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo" /></p>
 "###,
         r###"Images (582)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo][]
+        micromark_with_options(
+            r###"![foo][]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
         r###"Images (583)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![*foo* bar][]
+        micromark_with_options(
+            r###"![*foo* bar][]
 
 [*foo* bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo bar" title="title" /></p>
 "###,
         r###"Images (584)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![Foo][]
+        micromark_with_options(
+            r###"![Foo][]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="Foo" title="title" /></p>
 "###,
         r###"Images (585)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo] 
+        micromark_with_options(
+            r###"![foo] 
 []
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo" title="title" />
 []</p>
 "###,
@@ -6618,30 +8376,39 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"![foo]
+        micromark_with_options(
+            r###"![foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
         r###"Images (587)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![*foo* bar]
+        micromark_with_options(
+            r###"![*foo* bar]
 
 [*foo* bar]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="foo bar" title="title" /></p>
 "###,
         r###"Images (588)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"![[foo]]
+        micromark_with_options(
+            r###"![[foo]]
 
 [[foo]]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>![[foo]]</p>
 <p>[[foo]]: /url &quot;title&quot;</p>
 "###,
@@ -6649,207 +8416,282 @@ bar>)</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"![Foo]
+        micromark_with_options(
+            r###"![Foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><img src="/url" alt="Foo" title="title" /></p>
 "###,
         r###"Images (590)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"!\[foo]
+        micromark_with_options(
+            r###"!\[foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>![foo]</p>
 "###,
         r###"Images (591)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"\![foo]
+        micromark_with_options(
+            r###"\![foo]
 
 [foo]: /url "title"
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>!<a href="/url" title="title">foo</a></p>
 "###,
         r###"Images (592)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://foo.bar.baz>
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://foo.bar.baz>
+"###,
+            &danger
+        ),
         r###"<p><a href="http://foo.bar.baz">http://foo.bar.baz</a></p>
 "###,
         r###"Autolinks (593)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://foo.bar.baz/test?q=hello&id=22&boolean>
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://foo.bar.baz/test?q=hello&id=22&boolean>
+"###,
+            &danger
+        ),
         r###"<p><a href="http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean">http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>
 "###,
         r###"Autolinks (594)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<irc://foo.bar:2233/baz>
-"###, DANGER),
+        micromark_with_options(
+            r###"<irc://foo.bar:2233/baz>
+"###,
+            &danger
+        ),
         r###"<p><a href="irc://foo.bar:2233/baz">irc://foo.bar:2233/baz</a></p>
 "###,
         r###"Autolinks (595)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<MAILTO:FOO@BAR.BAZ>
-"###, DANGER),
+        micromark_with_options(
+            r###"<MAILTO:FOO@BAR.BAZ>
+"###,
+            &danger
+        ),
         r###"<p><a href="MAILTO:FOO@BAR.BAZ">MAILTO:FOO@BAR.BAZ</a></p>
 "###,
         r###"Autolinks (596)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a+b+c:d>
-"###, DANGER),
+        micromark_with_options(
+            r###"<a+b+c:d>
+"###,
+            &danger
+        ),
         r###"<p><a href="a+b+c:d">a+b+c:d</a></p>
 "###,
         r###"Autolinks (597)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<made-up-scheme://foo,bar>
-"###, DANGER),
+        micromark_with_options(
+            r###"<made-up-scheme://foo,bar>
+"###,
+            &danger
+        ),
         r###"<p><a href="made-up-scheme://foo,bar">made-up-scheme://foo,bar</a></p>
 "###,
         r###"Autolinks (598)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://../>
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://../>
+"###,
+            &danger
+        ),
         r###"<p><a href="http://../">http://../</a></p>
 "###,
         r###"Autolinks (599)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<localhost:5001/foo>
-"###, DANGER),
+        micromark_with_options(
+            r###"<localhost:5001/foo>
+"###,
+            &danger
+        ),
         r###"<p><a href="localhost:5001/foo">localhost:5001/foo</a></p>
 "###,
         r###"Autolinks (600)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://foo.bar/baz bim>
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://foo.bar/baz bim>
+"###,
+            &danger
+        ),
         r###"<p>&lt;http://foo.bar/baz bim&gt;</p>
 "###,
         r###"Autolinks (601)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<http://example.com/\[\>
-"###, DANGER),
+        micromark_with_options(
+            r###"<http://example.com/\[\>
+"###,
+            &danger
+        ),
         r###"<p><a href="http://example.com/%5C%5B%5C">http://example.com/\[\</a></p>
 "###,
         r###"Autolinks (602)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<foo@bar.example.com>
-"###, DANGER),
+        micromark_with_options(
+            r###"<foo@bar.example.com>
+"###,
+            &danger
+        ),
         r###"<p><a href="mailto:foo@bar.example.com">foo@bar.example.com</a></p>
 "###,
         r###"Autolinks (603)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<foo+special@Bar.baz-bar0.com>
-"###, DANGER),
+        micromark_with_options(
+            r###"<foo+special@Bar.baz-bar0.com>
+"###,
+            &danger
+        ),
         r###"<p><a href="mailto:foo+special@Bar.baz-bar0.com">foo+special@Bar.baz-bar0.com</a></p>
 "###,
         r###"Autolinks (604)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<foo\+@bar.example.com>
-"###, DANGER),
+        micromark_with_options(
+            r###"<foo\+@bar.example.com>
+"###,
+            &danger
+        ),
         r###"<p>&lt;foo+@bar.example.com&gt;</p>
 "###,
         r###"Autolinks (605)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<>
-"###, DANGER),
+        micromark_with_options(
+            r###"<>
+"###,
+            &danger
+        ),
         r###"<p>&lt;&gt;</p>
 "###,
         r###"Autolinks (606)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"< http://foo.bar >
-"###, DANGER),
+        micromark_with_options(
+            r###"< http://foo.bar >
+"###,
+            &danger
+        ),
         r###"<p>&lt; http://foo.bar &gt;</p>
 "###,
         r###"Autolinks (607)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<m:abc>
-"###, DANGER),
+        micromark_with_options(
+            r###"<m:abc>
+"###,
+            &danger
+        ),
         r###"<p>&lt;m:abc&gt;</p>
 "###,
         r###"Autolinks (608)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<foo.bar.baz>
-"###, DANGER),
+        micromark_with_options(
+            r###"<foo.bar.baz>
+"###,
+            &danger
+        ),
         r###"<p>&lt;foo.bar.baz&gt;</p>
 "###,
         r###"Autolinks (609)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"http://example.com
-"###, DANGER),
+        micromark_with_options(
+            r###"http://example.com
+"###,
+            &danger
+        ),
         r###"<p>http://example.com</p>
 "###,
         r###"Autolinks (610)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo@bar.example.com
-"###, DANGER),
+        micromark_with_options(
+            r###"foo@bar.example.com
+"###,
+            &danger
+        ),
         r###"<p>foo@bar.example.com</p>
 "###,
         r###"Autolinks (611)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a><bab><c2c>
-"###, DANGER),
+        micromark_with_options(
+            r###"<a><bab><c2c>
+"###,
+            &danger
+        ),
         r###"<p><a><bab><c2c></p>
 "###,
         r###"Raw HTML (612)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a/><b2/>
-"###, DANGER),
+        micromark_with_options(
+            r###"<a/><b2/>
+"###,
+            &danger
+        ),
         r###"<p><a/><b2/></p>
 "###,
         r###"Raw HTML (613)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a  /><b2
+        micromark_with_options(
+            r###"<a  /><b2
 data="foo" >
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a  /><b2
 data="foo" ></p>
 "###,
@@ -6857,9 +8699,12 @@ data="foo" ></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a foo="bar" bam = 'baz <em>"</em>'
+        micromark_with_options(
+            r###"<a foo="bar" bam = 'baz <em>"</em>'
 _boolean zoop:33=zoop:33 />
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a foo="bar" bam = 'baz <em>"</em>'
 _boolean zoop:33=zoop:33 /></p>
 "###,
@@ -6867,43 +8712,58 @@ _boolean zoop:33=zoop:33 /></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo <responsive-image src="foo.jpg" />
-"###, DANGER),
+        micromark_with_options(
+            r###"Foo <responsive-image src="foo.jpg" />
+"###,
+            &danger
+        ),
         r###"<p>Foo <responsive-image src="foo.jpg" /></p>
 "###,
         r###"Raw HTML (616)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<33> <__>
-"###, DANGER),
+        micromark_with_options(
+            r###"<33> <__>
+"###,
+            &danger
+        ),
         r###"<p>&lt;33&gt; &lt;__&gt;</p>
 "###,
         r###"Raw HTML (617)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a h*#ref="hi">
-"###, DANGER),
+        micromark_with_options(
+            r###"<a h*#ref="hi">
+"###,
+            &danger
+        ),
         r###"<p>&lt;a h*#ref=&quot;hi&quot;&gt;</p>
 "###,
         r###"Raw HTML (618)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="hi'> <a href=hi'>
-"###, DANGER),
+        micromark_with_options(
+            r###"<a href="hi'> <a href=hi'>
+"###,
+            &danger
+        ),
         r###"<p>&lt;a href=&quot;hi'&gt; &lt;a href=hi'&gt;</p>
 "###,
         r###"Raw HTML (619)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"< a><
+        micromark_with_options(
+            r###"< a><
 foo><bar/ >
 <foo bar=baz
 bim!bop />
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>&lt; a&gt;&lt;
 foo&gt;&lt;bar/ &gt;
 &lt;foo bar=baz
@@ -6913,33 +8773,45 @@ bim!bop /&gt;</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href='bar'title=title>
-"###, DANGER),
+        micromark_with_options(
+            r###"<a href='bar'title=title>
+"###,
+            &danger
+        ),
         r###"<p>&lt;a href='bar'title=title&gt;</p>
 "###,
         r###"Raw HTML (621)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"</a></foo >
-"###, DANGER),
+        micromark_with_options(
+            r###"</a></foo >
+"###,
+            &danger
+        ),
         r###"<p></a></foo ></p>
 "###,
         r###"Raw HTML (622)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"</a href="foo">
-"###, DANGER),
+        micromark_with_options(
+            r###"</a href="foo">
+"###,
+            &danger
+        ),
         r###"<p>&lt;/a href=&quot;foo&quot;&gt;</p>
 "###,
         r###"Raw HTML (623)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <!-- this is a
+        micromark_with_options(
+            r###"foo <!-- this is a
 comment - with hyphen -->
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo <!-- this is a
 comment - with hyphen --></p>
 "###,
@@ -6947,18 +8819,24 @@ comment - with hyphen --></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <!-- not a comment -- two hyphens -->
-"###, DANGER),
+        micromark_with_options(
+            r###"foo <!-- not a comment -- two hyphens -->
+"###,
+            &danger
+        ),
         r###"<p>foo &lt;!-- not a comment -- two hyphens --&gt;</p>
 "###,
         r###"Raw HTML (625)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <!--> foo -->
+        micromark_with_options(
+            r###"foo <!--> foo -->
 
 foo <!-- foo--->
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo &lt;!--&gt; foo --&gt;</p>
 <p>foo &lt;!-- foo---&gt;</p>
 "###,
@@ -6966,57 +8844,78 @@ foo <!-- foo--->
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <?php echo $a; ?>
-"###, DANGER),
+        micromark_with_options(
+            r###"foo <?php echo $a; ?>
+"###,
+            &danger
+        ),
         r###"<p>foo <?php echo $a; ?></p>
 "###,
         r###"Raw HTML (627)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <!ELEMENT br EMPTY>
-"###, DANGER),
+        micromark_with_options(
+            r###"foo <!ELEMENT br EMPTY>
+"###,
+            &danger
+        ),
         r###"<p>foo <!ELEMENT br EMPTY></p>
 "###,
         r###"Raw HTML (628)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <![CDATA[>&<]]>
-"###, DANGER),
+        micromark_with_options(
+            r###"foo <![CDATA[>&<]]>
+"###,
+            &danger
+        ),
         r###"<p>foo <![CDATA[>&<]]></p>
 "###,
         r###"Raw HTML (629)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <a href="&ouml;">
-"###, DANGER),
+        micromark_with_options(
+            r###"foo <a href="&ouml;">
+"###,
+            &danger
+        ),
         r###"<p>foo <a href="&ouml;"></p>
 "###,
         r###"Raw HTML (630)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo <a href="\*">
-"###, DANGER),
+        micromark_with_options(
+            r###"foo <a href="\*">
+"###,
+            &danger
+        ),
         r###"<p>foo <a href="\*"></p>
 "###,
         r###"Raw HTML (631)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="\"">
-"###, DANGER),
+        micromark_with_options(
+            r###"<a href="\"">
+"###,
+            &danger
+        ),
         r###"<p>&lt;a href=&quot;&quot;&quot;&gt;</p>
 "###,
         r###"Raw HTML (632)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo  
+        micromark_with_options(
+            r###"foo  
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo<br />
 baz</p>
 "###,
@@ -7024,9 +8923,12 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo\
+        micromark_with_options(
+            r###"foo\
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo<br />
 baz</p>
 "###,
@@ -7034,9 +8936,12 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo       
+        micromark_with_options(
+            r###"foo       
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo<br />
 baz</p>
 "###,
@@ -7044,9 +8949,12 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo  
+        micromark_with_options(
+            r###"foo  
      bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo<br />
 bar</p>
 "###,
@@ -7054,9 +8962,12 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo\
+        micromark_with_options(
+            r###"foo\
      bar
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo<br />
 bar</p>
 "###,
@@ -7064,9 +8975,12 @@ bar</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo  
+        micromark_with_options(
+            r###"*foo  
 bar*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><em>foo<br />
 bar</em></p>
 "###,
@@ -7074,9 +8988,12 @@ bar</em></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"*foo\
+        micromark_with_options(
+            r###"*foo\
 bar*
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><em>foo<br />
 bar</em></p>
 "###,
@@ -7084,27 +9001,36 @@ bar</em></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"`code  
+        micromark_with_options(
+            r###"`code  
 span`
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>code   span</code></p>
 "###,
         r###"Hard line breaks (640)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"`code\
+        micromark_with_options(
+            r###"`code\
 span`
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><code>code\ span</code></p>
 "###,
         r###"Hard line breaks (641)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="foo  
+        micromark_with_options(
+            r###"<a href="foo  
 bar">
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="foo  
 bar"></p>
 "###,
@@ -7112,9 +9038,12 @@ bar"></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"<a href="foo\
+        micromark_with_options(
+            r###"<a href="foo\
 bar">
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p><a href="foo\
 bar"></p>
 "###,
@@ -7122,41 +9051,56 @@ bar"></p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo\
-"###, DANGER),
+        micromark_with_options(
+            r###"foo\
+"###,
+            &danger
+        ),
         r###"<p>foo\</p>
 "###,
         r###"Hard line breaks (644)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo  
-"###, DANGER),
+        micromark_with_options(
+            r###"foo  
+"###,
+            &danger
+        ),
         r###"<p>foo</p>
 "###,
         r###"Hard line breaks (645)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"### foo\
-"###, DANGER),
+        micromark_with_options(
+            r###"### foo\
+"###,
+            &danger
+        ),
         r###"<h3>foo\</h3>
 "###,
         r###"Hard line breaks (646)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"### foo  
-"###, DANGER),
+        micromark_with_options(
+            r###"### foo  
+"###,
+            &danger
+        ),
         r###"<h3>foo</h3>
 "###,
         r###"Hard line breaks (647)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo
+        micromark_with_options(
+            r###"foo
 baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo
 baz</p>
 "###,
@@ -7164,9 +9108,12 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"foo 
+        micromark_with_options(
+            r###"foo 
  baz
-"###, DANGER),
+"###,
+            &danger
+        ),
         r###"<p>foo
 baz</p>
 "###,
@@ -7174,24 +9121,33 @@ baz</p>
 );
 
     assert_eq!(
-        micromark_with_options(r###"hello $.;'there
-"###, DANGER),
+        micromark_with_options(
+            r###"hello $.;'there
+"###,
+            &danger
+        ),
         r###"<p>hello $.;'there</p>
 "###,
         r###"Textual content (650)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"Foo χρῆν
-"###, DANGER),
+        micromark_with_options(
+            r###"Foo χρῆν
+"###,
+            &danger
+        ),
         r###"<p>Foo χρῆν</p>
 "###,
         r###"Textual content (651)"###
 );
 
     assert_eq!(
-        micromark_with_options(r###"Multiple     spaces
-"###, DANGER),
+        micromark_with_options(
+            r###"Multiple     spaces
+"###,
+            &danger
+        ),
         r###"<p>Multiple     spaces</p>
 "###,
         r###"Textual content (652)"###

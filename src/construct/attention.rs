@@ -175,7 +175,7 @@ struct Sequence {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('*' | '_') => {
+        Code::Char('*' | '_') if tokenizer.parse_state.constructs.attention => {
             tokenizer.enter(Token::AttentionSequence);
             inside(tokenizer, code, MarkerKind::from_code(code))
         }

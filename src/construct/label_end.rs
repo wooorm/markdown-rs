@@ -184,7 +184,7 @@ struct Info {
 /// > | [a] b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    if Code::Char(']') == code {
+    if Code::Char(']') == code && tokenizer.parse_state.constructs.label_end {
         let mut label_start_index: Option<usize> = None;
         let mut index = tokenizer.label_start_stack.len();
 

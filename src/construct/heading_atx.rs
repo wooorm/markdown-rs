@@ -67,9 +67,18 @@ use crate::util::edit_map::EditMap;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(Token::HeadingAtx);
-    // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+
+    if tokenizer.parse_state.constructs.heading_atx {
+        tokenizer.enter(Token::HeadingAtx);
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// Start of a heading (atx), after whitespace.

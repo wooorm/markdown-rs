@@ -45,8 +45,16 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+    if tokenizer.parse_state.constructs.block_quote {
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// Start of block quote, after whitespace, before `>`.
@@ -73,8 +81,12 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///     ^
 /// ```
 pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), cont_before)(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+    tokenizer.go(space_or_tab_min_max(0, max), cont_before)(tokenizer, code)
 }
 
 /// After whitespace, before `>`.

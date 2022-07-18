@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn image() {
@@ -191,12 +191,20 @@ fn image() {
         "should ignore an empty title"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("![x]()", {extensions: [{disable: {null: ["labelStartImage"]}}]}),
-    //   "<p>!<a href=\"\">x</a></p>",
-    //   "should support turning off label start (image)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "![x]()",
+            &Options {
+                constructs: Constructs {
+                    label_start_image: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>!<a href=\"\">x</a></p>",
+        "should support turning off label start (image)"
+    );
 
     assert_eq!(
         micromark("![](javascript:alert(1))"),
@@ -209,8 +217,7 @@ fn image() {
             "![](javascript:alert(1))",
             &Options {
                 allow_dangerous_protocol: true,
-                allow_dangerous_html: false,
-                default_line_ending: None
+                ..Options::default()
             }
         ),
         "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",

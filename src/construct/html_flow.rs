@@ -204,18 +204,27 @@ struct Info {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(Token::HtmlFlow);
-    // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(
-        space_or_tab_with_options(SpaceOrTabOptions {
-            kind: Token::HtmlFlowData,
-            min: 0,
-            max: TAB_SIZE - 1,
-            connect: false,
-            content_type: None,
-        }),
-        before,
-    )(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+
+    if tokenizer.parse_state.constructs.html_flow {
+        tokenizer.enter(Token::HtmlFlow);
+        tokenizer.go(
+            space_or_tab_with_options(SpaceOrTabOptions {
+                kind: Token::HtmlFlowData,
+                min: 0,
+                max,
+                connect: false,
+                content_type: None,
+            }),
+            before,
+        )(tokenizer, code)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// After optional whitespace, before `<`.

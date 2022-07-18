@@ -115,7 +115,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('<') => {
+        Code::Char('<') if tokenizer.parse_state.constructs.autolink => {
             tokenizer.enter(Token::Autolink);
             tokenizer.enter(Token::AutolinkMarker);
             tokenizer.consume(code);

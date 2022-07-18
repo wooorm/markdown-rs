@@ -189,10 +189,18 @@ struct Info {
 ///   | ~~~
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(Token::CodeFenced);
-    tokenizer.enter(Token::CodeFencedFence);
-    // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before_sequence_open)(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+    if tokenizer.parse_state.constructs.code_fenced {
+        tokenizer.enter(Token::CodeFenced);
+        tokenizer.enter(Token::CodeFencedFence);
+        tokenizer.go(space_or_tab_min_max(0, max), before_sequence_open)(tokenizer, code)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// Inside the opening fence, after an optional prefix, before a sequence.
@@ -445,10 +453,20 @@ fn close_begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResu
 ///     ^
 /// ```
 fn close_start(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
-    tokenizer.enter(Token::CodeFencedFence);
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), |t, c| {
-        close_before(t, c, info)
-    })(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+
+    if tokenizer.parse_state.constructs.code_fenced {
+        tokenizer.enter(Token::CodeFencedFence);
+        tokenizer.go(space_or_tab_min_max(0, max), |t, c| {
+            close_before(t, c, info)
+        })(tokenizer, code)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// In a closing fence, after optional whitespace, before sequence.

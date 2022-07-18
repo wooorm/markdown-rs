@@ -1,11 +1,5 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn character_reference() {
@@ -50,7 +44,13 @@ fn character_reference() {
     );
 
     assert_eq!(
-        micromark_with_options("<a href=\"&ouml;&ouml;.html\">", DANGER),
+        micromark_with_options(
+            "<a href=\"&ouml;&ouml;.html\">",
+            &Options {
+                allow_dangerous_html: true,
+                ..Options::default()
+            }
+        ),
         "<a href=\"&ouml;&ouml;.html\">",
         "should not care about character references in html"
     );
@@ -188,12 +188,18 @@ fn character_reference() {
         "should not support the other characters inside a hexademical"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("&amp;", {
-    //     extensions: [{disable: {null: ["characterReferences"]}}]
-    //   }),
-    //   "<p>&amp;</p>",
-    //   "should support turning off character references"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "&amp;",
+            &Options {
+                constructs: Constructs {
+                    character_reference: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>&amp;amp;</p>",
+        "should support turning off character references"
+    );
 }

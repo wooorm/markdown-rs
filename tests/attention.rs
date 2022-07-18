@@ -1,14 +1,14 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn attention() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     // Rule 1.
     assert_eq!(
         micromark("*foo bar*"),
@@ -764,25 +764,25 @@ fn attention() {
     );
 
     assert_eq!(
-        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", DANGER),
+        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", &danger),
         "<p>*<img src=\"foo\" title=\"*\"/></p>",
         "should not end inside HTML"
     );
 
     assert_eq!(
-        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", DANGER),
+        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", &danger),
         "<p>*<img src=\"foo\" title=\"*\"/></p>",
         "should not end emphasis inside HTML"
     );
 
     assert_eq!(
-        micromark_with_options("**<a href=\"**\">", DANGER),
+        micromark_with_options("**<a href=\"**\">", &danger),
         "<p>**<a href=\"**\"></p>",
         "should not end strong inside HTML (1)"
     );
 
     assert_eq!(
-        micromark_with_options("__<a href=\"__\">", DANGER),
+        micromark_with_options("__<a href=\"__\">", &danger),
         "<p>__<a href=\"__\"></p>",
         "should not end strong inside HTML (2)"
     );
@@ -811,10 +811,18 @@ fn attention() {
         "should not end strong emphasis inside autolinks (2)"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //     micromark("*a*", {extensions: [{disable: {null: ["attention"]}}]}),
-    //     "<p>*a*</p>",
-    //     "should support turning off attention"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "*a*",
+            &Options {
+                constructs: Constructs {
+                    attention: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>*a*</p>",
+        "should support turning off attention"
+    );
 }

@@ -75,8 +75,193 @@ impl LineEnding {
     }
 }
 
+/// Control which constructs are enabled.
+///
+/// Not all constructs can be configured.
+/// Notably, blank lines and paragraphs cannot be turned off.
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Clone, Debug)]
+pub struct Constructs {
+    /// Attention.
+    ///
+    /// ```markdown
+    /// > | a *b* c **d**.
+    ///       ^^^   ^^^^^
+    /// ```
+    pub attention: bool,
+    /// Autolink.
+    ///
+    /// ```markdown
+    /// > | a <https://example.com> b <user@example.org>.
+    ///       ^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^
+    /// ```
+    pub autolink: bool,
+    /// Block quote.
+    ///
+    /// ```markdown
+    /// > | > a
+    ///     ^^^
+    /// ```
+    pub block_quote: bool,
+    /// Character escape.
+    ///
+    /// ```markdown
+    /// > | a \* b
+    ///       ^^
+    /// ```
+    pub character_escape: bool,
+    /// Character reference.
+    ///
+    /// ```markdown
+    /// > | a &amp; b
+    ///       ^^^^^
+    /// ```
+    pub character_reference: bool,
+    /// Code (indented).
+    ///
+    /// ```markdown
+    /// > |     a
+    ///     ^^^^^
+    /// ```
+    pub code_indented: bool,
+    /// Code (fenced).
+    ///
+    /// ```markdown
+    /// > | ~~~js
+    ///     ^^^^^
+    /// > | console.log(1)
+    ///     ^^^^^^^^^^^^^^
+    /// > | ~~~
+    ///     ^^^
+    /// ```
+    pub code_fenced: bool,
+    /// Code (text).
+    ///
+    /// ```markdown
+    /// > | a `b` c
+    ///       ^^^
+    /// ```
+    pub code_text: bool,
+    /// Definition.
+    ///
+    /// ```markdown
+    /// > | [a]: b "c"
+    ///     ^^^^^^^^^^
+    /// ```
+    pub definition: bool,
+    /// Hard break (escape).
+    ///
+    /// ```markdown
+    /// > | a\
+    ///      ^
+    ///   | b
+    /// ```
+    pub hard_break_escape: bool,
+    /// Hard break (trailing).
+    ///
+    /// ```markdown
+    /// > | a␠␠
+    ///      ^^
+    ///   | b
+    /// ```
+    pub hard_break_trailing: bool,
+    /// Heading (atx).
+    ///
+    /// ```markdown
+    /// > | # a
+    ///     ^^^
+    /// ```
+    pub heading_atx: bool,
+    /// Heading (setext).
+    ///
+    /// ```markdown
+    /// > | a
+    ///     ^^
+    /// > | ==
+    ///     ^^
+    /// ```
+    pub heading_setext: bool,
+    /// HTML (flow).
+    ///
+    /// ```markdown
+    /// > | <div>
+    ///     ^^^^^
+    /// ```
+    pub html_flow: bool,
+    /// HTML (text).
+    ///
+    /// ```markdown
+    /// > | a <b> c
+    ///       ^^^
+    /// ```
+    pub html_text: bool,
+    /// Label start (image).
+    ///
+    /// ```markdown
+    /// > | a ![b](c) d
+    ///       ^^
+    /// ```
+    pub label_start_image: bool,
+    /// Label start (link).
+    ///
+    /// ```markdown
+    /// > | a [b](c) d
+    ///       ^
+    /// ```
+    pub label_start_link: bool,
+    /// Label end.
+    ///
+    /// ```markdown
+    /// > | a [b](c) d
+    ///         ^^^^
+    /// ```
+    pub label_end: bool,
+    /// List.
+    ///
+    /// ```markdown
+    /// > | * a
+    ///     ^^^
+    /// ```
+    pub list: bool,
+    /// Thematic break.
+    ///
+    /// ```markdown
+    /// > | ***
+    ///     ^^^
+    /// ```
+    pub thematic_break: bool,
+}
+
+impl Default for Constructs {
+    /// `CommonMark`.
+    fn default() -> Self {
+        Self {
+            attention: true,
+            autolink: true,
+            block_quote: true,
+            character_escape: true,
+            character_reference: true,
+            code_indented: true,
+            code_fenced: true,
+            code_text: true,
+            definition: true,
+            hard_break_escape: true,
+            hard_break_trailing: true,
+            heading_atx: true,
+            heading_setext: true,
+            html_flow: true,
+            html_text: true,
+            label_start_image: true,
+            label_start_link: true,
+            label_end: true,
+            list: true,
+            thematic_break: true,
+        }
+    }
+}
+
 /// Configuration (optional).
-#[derive(Default, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Options {
     /// Whether to allow (dangerous) HTML.
     /// The default is `false`, you can turn it on to `true` for trusted
@@ -99,8 +284,7 @@ pub struct Options {
     ///         "Hi, <i>venus</i>!",
     ///         &Options {
     ///             allow_dangerous_html: true,
-    ///             allow_dangerous_protocol: false,
-    ///             default_line_ending: None,
+    ///             ..Options::default()
     ///         }
     ///     ),
     ///     "<p>Hi, <i>venus</i>!</p>"
@@ -128,9 +312,8 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "<javascript:alert(1)>",
     ///         &Options {
-    ///             allow_dangerous_html: false,
     ///             allow_dangerous_protocol: true,
-    ///             default_line_ending: None,
+    ///             ..Options::default()
     ///         }
     ///     ),
     ///     "<p><a href=\"javascript:alert(1)\">javascript:alert(1)</a></p>"
@@ -166,15 +349,46 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "> a",
     ///         &Options {
-    ///             allow_dangerous_html: false,
-    ///             allow_dangerous_protocol: false,
     ///             default_line_ending: Some(LineEnding::CarriageReturnLineFeed),
+    ///             ..Options::default()
     ///         }
     ///     ),
     ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
     /// );
     /// ```
+    // To do: use `default`? <https://doc.rust-lang.org/std/default/trait.Default.html#enums>
     pub default_line_ending: Option<LineEnding>,
+
+    /// Which constructs to enable and disable.
+    /// The default is to follow `CommonMark`.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    ///
+    /// // micromark follows CommonMark by default:
+    /// assert_eq!(
+    ///     micromark("    indented code?"),
+    ///     "<pre><code>indented code?\n</code></pre>"
+    /// );
+    ///
+    /// // Pass `constructs` to choose what to enable and disable:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "    indented code?",
+    ///         &Options {
+    ///             constructs: Constructs {
+    ///                 code_indented: false,
+    ///                 ..Constructs::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     ),
+    ///     "<p>indented code?</p>"
+    /// );
+    /// ```
+    pub constructs: Constructs,
 }
 
 /// Turn markdown into HTML.
@@ -203,13 +417,13 @@ pub fn micromark(value: &str) -> String {
 /// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
 ///     allow_dangerous_html: true,
 ///     allow_dangerous_protocol: true,
-///     default_line_ending: None,
+///     ..Options::default()
 /// });
 ///
 /// assert_eq!(result, "<div>\n<h1>Hello, world!</h1>\n</div>");
 /// ```
 #[must_use]
 pub fn micromark_with_options(value: &str, options: &Options) -> String {
-    let (events, result) = parse(value);
+    let (events, result) = parse(value, options);
     compile(&events, &result.codes, options)
 }

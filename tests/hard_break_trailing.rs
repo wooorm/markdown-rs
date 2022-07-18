@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn hard_break_trailing() {
@@ -111,10 +111,18 @@ fn hard_break_trailing() {
         "should support a mixed line suffix after a span (3)"
     );
 
-    // // To do: turning things off.
-    // assert_eq!(
-    //   micromark("a  \nb", {extensions: [{disable: {null: ["hardBreakTrailing"]}}]}),
-    //   "<p>a\nb</p>",
-    //   "should support turning off hard break (trailing)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "a  \nb",
+            &Options {
+                constructs: Constructs {
+                    hard_break_trailing: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>a\nb</p>",
+        "should support turning off hard break (trailing)"
+    );
 }

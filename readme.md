@@ -45,7 +45,6 @@ cargo doc --document-private-items
 
 - [ ] (5) There’s a lot of rust-related choosing whether to pass (mutable)
       references or whatever around that should be refactored
-- [ ] (1) Support turning off constructs
 - [ ] (5) Figure out extensions
 
 ### All the things
@@ -59,18 +58,15 @@ cargo doc --document-private-items
 #### Refactor
 
 - [ ] (1) Use `edit_map` in `subtokenize` (needs to support links in edits)
-- [ ] (1) Add list of void tokens, assert that there’s nothing between them
 - [ ] (1) Improve `interrupt`, `concrete`, `lazy` fields somehow?
 
 #### Parse
 
-- [ ] (3) Turn off things (enable every test for these)
 - [ ] (3) Make tokens extendable for extensions?
 
 #### Test
 
 - [ ] (1) Make sure positional info is perfect
-- [ ] (3) Use `commonmark` tests
 - [ ] (3) Share a bunch of tests with `micromark-js`
 
 #### Misc
@@ -209,3 +205,6 @@ important.
 - [x] (3) Add support for lazy lines
 - [x] (5) Containers!
 - [x] (3) Check subtokenizer unraveling is ok
+- [x] (1) Add list of void tokens, check that they’re void
+- [x] (3) Use `commonmark` tests
+- [x] (3) Add support for turning off constructs

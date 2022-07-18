@@ -17,7 +17,7 @@ fn main() {
             &Options {
                 allow_dangerous_html: true,
                 allow_dangerous_protocol: true,
-                default_line_ending: None
+                ..Options::default()
             }
         )
     );

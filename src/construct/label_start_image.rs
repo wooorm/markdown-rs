@@ -40,7 +40,7 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('!') => {
+        Code::Char('!') if tokenizer.parse_state.constructs.label_start_image => {
             tokenizer.enter(Token::LabelImage);
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume(code);

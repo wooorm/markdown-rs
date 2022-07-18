@@ -1,14 +1,13 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: false,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn list() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark(
             "A paragraph\nwith two lines.\n\n    indented code\n\n> A block quote."
@@ -358,13 +357,13 @@ fn list() {
     );
 
     assert_eq!(
-        micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", DANGER),
+        micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", &danger),
         "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<!-- -->\n<ul>\n<li>baz</li>\n<li>bim</li>\n</ul>",
         "should support HTML comments between lists"
     );
 
     assert_eq!(
-        micromark_with_options("-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code", DANGER),
+        micromark_with_options("-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code", &danger),
         "<ul>\n<li>\n<p>foo</p>\n<p>notcode</p>\n</li>\n<li>\n<p>foo</p>\n</li>\n</ul>\n<!-- -->\n<pre><code>code\n</code></pre>",
         "should support HTML comments between lists and indented code"
     );
@@ -553,15 +552,23 @@ fn list() {
     );
 
     assert_eq!(
-        micromark_with_options("* a\n\n<!---->\n\n* b", DANGER),
+        micromark_with_options("* a\n\n<!---->\n\n* b", &danger),
         "<ul>\n<li>a</li>\n</ul>\n<!---->\n<ul>\n<li>b</li>\n</ul>",
         "should support the common list breaking comment method"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //     micromark("- one\n\n two", {extensions: [{disable: {null: ["list"]}}]}),
-    //     "<p>- one</p>\n<p>two</p>",
-    //     "should support turning off lists"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "- one\n\n two",
+            &Options {
+                constructs: Constructs {
+                    list: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>- one</p>\n<p>two</p>",
+        "should support turning off lists"
+    );
 }

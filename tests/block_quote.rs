@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn block_quote() {
@@ -165,12 +165,18 @@ fn block_quote() {
         "should support 5 spaces for indented code, not 4"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //     micromark("> # a\n> b\n> c", {
-    //         extensions: [{disable: {null: ["blockQuote"]}}]
-    //     }),
-    //     "<p>&gt; # a\n&gt; b\n&gt; c</p>",
-    //     "should support turning off block quotes"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "> # a\n> b\n> c",
+            &Options {
+                constructs: Constructs {
+                    block_quote: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>&gt; # a\n&gt; b\n&gt; c</p>",
+        "should support turning off block quotes"
+    );
 }

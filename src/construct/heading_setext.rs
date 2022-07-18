@@ -117,6 +117,11 @@ impl Kind {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
     let paragraph_before = !tokenizer.events.is_empty()
         && tokenizer.events[skip_opt_back(
             &tokenizer.events,
@@ -127,9 +132,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             == Token::Paragraph;
 
     // Require a paragraph before and do not allow on a lazy line.
-    if paragraph_before && !tokenizer.lazy {
-        // To do: allow arbitrary when code (indented) is turned off.
-        tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
+    if paragraph_before && !tokenizer.lazy && tokenizer.parse_state.constructs.heading_setext {
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
         (State::Nok, None)
     }

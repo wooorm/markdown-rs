@@ -44,7 +44,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('\\') => {
+        Code::Char('\\') if tokenizer.parse_state.constructs.character_escape => {
             tokenizer.enter(Token::CharacterEscape);
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume(code);

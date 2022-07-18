@@ -19,6 +19,7 @@ use crate::construct::{
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
 const MARKERS: [Code; 5] = [
+    // To do: build this vec based on whether they are enabled?
     Code::VirtualSpace, // `whitespace`
     Code::Char('\t'),   // `whitespace`
     Code::Char(' '),    // `whitespace`

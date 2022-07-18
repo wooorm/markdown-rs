@@ -58,6 +58,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         Code::None => (State::Ok, None),
         _ => tokenizer.attempt_n(
             vec![
+                // To do: build this vec based on whether they are enabled?
                 Box::new(attention),
                 Box::new(autolink),
                 Box::new(character_escape),

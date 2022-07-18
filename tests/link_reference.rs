@@ -1,14 +1,14 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn link_reference() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("[bar]: /url \"title\"\n\n[foo][bar]"),
         "<p><a href=\"/url\" title=\"title\">foo</a></p>",
@@ -64,7 +64,7 @@ fn link_reference() {
     );
 
     assert_eq!(
-        micromark_with_options("[ref]: /uri\n\n[foo <bar attr=\"][ref]\">", DANGER),
+        micromark_with_options("[ref]: /uri\n\n[foo <bar attr=\"][ref]\">", &danger),
         "<p>[foo <bar attr=\"][ref]\"></p>",
         "should prefer HTML over link references"
     );
@@ -383,17 +383,33 @@ fn link_reference() {
         "should not fail on a missing colon in a definition"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    // micromark("[x]()", {extensions: [{disable: {null: ["labelStartLink"]}}]}),
-    // "<p>[x]()</p>",
-    // "should support turning off label start (link)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "[x]()",
+            &Options {
+                constructs: Constructs {
+                    label_start_link: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>[x]()</p>",
+        "should support turning off label start (link)"
+    );
 
-    // To do: turning things off.
-    // assert_eq!(
-    // micromark("[x]()", {extensions: [{disable: {null: ["labelEnd"]}}]}),
-    // "<p>[x]()</p>",
-    // "should support turning off label end"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "[x]()",
+            &Options {
+                constructs: Constructs {
+                    label_end: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>[x]()</p>",
+        "should support turning off label end"
+    );
 }

@@ -1,14 +1,14 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn character_escape() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark(
         "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~"
@@ -56,7 +56,7 @@ fn character_escape() {
     );
 
     assert_eq!(
-        micromark_with_options("<a href=\"/bar\\/)\">", DANGER),
+        micromark_with_options("<a href=\"/bar\\/)\">", &danger),
         "<a href=\"/bar\\/)\">",
         "should not escape in flow html"
     );
@@ -79,10 +79,18 @@ fn character_escape() {
         "should escape in fenced code info"
     );
 
-    // To do: turning things off
-    // assert_eq!(
-    //     micromark("\\> a", {extensions: [{disable: {null: ["characterEscape"]}}]}),
-    //     "<p>\\&gt; a</p>",
-    //     "should support turning off character escapes"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "\\> a",
+            &Options {
+                constructs: Constructs {
+                    character_escape: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>\\&gt; a</p>",
+        "should support turning off character escapes"
+    );
 }

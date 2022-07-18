@@ -32,8 +32,7 @@ fn default_line_ending() {
             "> a",
             &Options {
                 default_line_ending: Some(LineEnding::CarriageReturn),
-                allow_dangerous_html: false,
-                allow_dangerous_protocol: false
+                ..Options::default()
             }
         ),
         "<blockquote>\r<p>a</p>\r</blockquote>",
@@ -45,8 +44,7 @@ fn default_line_ending() {
             "> a\n",
             &Options {
                 default_line_ending: Some(LineEnding::CarriageReturn),
-                allow_dangerous_html: false,
-                allow_dangerous_protocol: false
+                ..Options::default()
             }
         ),
         // To do: is this a bug in `micromark.js` that it uses `\r` for earlier line endings?

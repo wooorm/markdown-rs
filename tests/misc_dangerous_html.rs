@@ -1,14 +1,14 @@
 extern crate micromark;
 use micromark::{micromark, micromark_with_options, Options};
 
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
-
 #[test]
 fn dangerous_html() {
+    let danger = &Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("<x>"),
         "&lt;x&gt;",
@@ -22,7 +22,7 @@ fn dangerous_html() {
     );
 
     assert_eq!(
-        micromark_with_options("<x>", DANGER),
+        micromark_with_options("<x>", danger),
         "<x>",
         "should be unsafe w/ `allowDangerousHtml`"
     );

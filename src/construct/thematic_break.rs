@@ -135,9 +135,18 @@ struct Info {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    tokenizer.enter(Token::ThematicBreak);
-    // To do: allow arbitrary when code (indented) is turned off.
-    tokenizer.go(space_or_tab_min_max(0, TAB_SIZE - 1), before)(tokenizer, code)
+    let max = if tokenizer.parse_state.constructs.code_indented {
+        TAB_SIZE - 1
+    } else {
+        usize::MAX
+    };
+
+    if tokenizer.parse_state.constructs.thematic_break {
+        tokenizer.enter(Token::ThematicBreak);
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
+    } else {
+        (State::Nok, None)
+    }
 }
 
 /// Start of a thematic break, after whitespace.

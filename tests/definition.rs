@@ -1,14 +1,14 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn definition() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("[foo]: /url \"title\"\n\n[foo]"),
         "<p><a href=\"/url\" title=\"title\">foo</a></p>",
@@ -76,7 +76,7 @@ fn definition() {
     );
 
     assert_eq!(
-        micromark_with_options("[foo]: <bar>(baz)\n\n[foo]", DANGER),
+        micromark_with_options("[foo]: <bar>(baz)\n\n[foo]", &danger),
         "<p>[foo]: <bar>(baz)</p>\n<p>[foo]</p>",
         "should not support definitions w/ no whitespace between destination and title"
     );
@@ -357,7 +357,7 @@ fn definition() {
     );
 
     assert_eq!(
-        micromark_with_options("[a]\n\n[a]: <b<c>", DANGER),
+        micromark_with_options("[a]\n\n[a]: <b<c>", &danger),
         "<p>[a]</p>\n<p>[a]: &lt;b<c></p>",
         "should not support a less than in an enclosed destination"
     );
@@ -428,12 +428,18 @@ fn definition() {
         "should not support definitions w/ text + a closing paren as a raw destination"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("[foo]: /url \"title\"", {
-    //     extensions: [{disable: {null: ["definition"]}}]
-    //   }),
-    //   "<p>[foo]: /url &quot;title&quot;</p>",
-    //   "should support turning off definitions"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "[foo]: /url \"title\"",
+            &Options {
+                constructs: Constructs {
+                    definition: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>[foo]: /url &quot;title&quot;</p>",
+        "should support turning off definitions"
+    );
 }

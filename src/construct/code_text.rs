@@ -99,8 +99,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
     match code {
         Code::Char('`')
-            if tokenizer.previous != Code::Char('`')
-                || (len > 0 && tokenizer.events[len - 1].token_type == Token::CharacterEscape) =>
+            if tokenizer.parse_state.constructs.code_text
+                && (tokenizer.previous != Code::Char('`')
+                    || (len > 0
+                        && tokenizer.events[len - 1].token_type == Token::CharacterEscape)) =>
         {
             tokenizer.enter(Token::CodeText);
             tokenizer.enter(Token::CodeTextSequence);

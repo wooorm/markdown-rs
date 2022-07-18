@@ -1,14 +1,13 @@
 extern crate micromark;
 use micromark::{micromark, micromark_with_options, Options};
 
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
-
 #[test]
 fn tabs_flow() {
+    let danger = &Options {
+        allow_dangerous_html: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("    x"),
         "<pre><code>x\n</code></pre>",
@@ -118,7 +117,7 @@ fn tabs_flow() {
     );
 
     assert_eq!(
-        micromark_with_options("<x\ty\tz\t=\t\"\tx\t\">", DANGER),
+        micromark_with_options("<x\ty\tz\t=\t\"\tx\t\">", danger),
         "<x\ty\tz\t=\t\"\tx\t\">",
         "should support tabs in HTML (if whitespace is allowed)"
     );

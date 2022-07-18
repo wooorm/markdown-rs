@@ -1,14 +1,14 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
-
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: false,
-    default_line_ending: None,
-};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn code_text() {
+    let danger = Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("`foo`"),
         "<p><code>foo</code></p>",
@@ -106,7 +106,7 @@ fn code_text() {
     );
 
     assert_eq!(
-        micromark_with_options("<a href=\"`\">`", DANGER),
+        micromark_with_options("<a href=\"`\">`", &danger),
         "<p><a href=\"`\">`</p>",
         "should have same precedence as HTML (2)"
     );
@@ -154,10 +154,18 @@ fn code_text() {
         "should support an escaped initial grave accent"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("`a`", {extensions: [{disable: {null: ["codeText"]}}]}),
-    //   "<p>`a`</p>",
-    //   "should support turning off code (text)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "`a`",
+            &Options {
+                constructs: Constructs {
+                    code_text: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>`a`</p>",
+        "should support turning off code (text)"
+    );
 }

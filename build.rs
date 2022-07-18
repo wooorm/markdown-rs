@@ -53,7 +53,7 @@ async fn commonmark() {
                 format!("{}\n", parts[1])
             };
 
-            let test = format!("    assert_eq!(\n        micromark_with_options(r###\"{}\"###, DANGER),\n        r###\"{}\"###,\n        r###\"{} ({})\"###\n);", input, output, section, number);
+            let test = format!("    assert_eq!(\n        micromark_with_options(\n            r###\"{}\"###,\n            &danger\n        ),\n        r###\"{}\"###,\n        r###\"{} ({})\"###\n);", input, output, section, number);
 
             cases.push(test);
 
@@ -70,15 +70,15 @@ async fn commonmark() {
 extern crate micromark;
 use micromark::{{micromark_with_options, Options}};
 
-const DANGER: &Options = &Options {{
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-}};
-
 #[rustfmt::skip]
 #[test]
 fn commonmark() {{
+    let danger = Options {{
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    }};
+
 {}
 }}
 ",

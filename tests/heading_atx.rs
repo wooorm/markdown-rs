@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 #[test]
 fn heading_atx() {
     assert_eq!(
@@ -194,10 +194,18 @@ fn heading_atx() {
         "should not support lazyness (2)"
     );
 
-    // To do: turning things off:
-    // assert_eq!(
-    //   micromark("# a", {extensions: [{disable: {null: ["headingAtx"]}}]}),
-    //   "<p># a</p>",
-    //   "should support turning off heading (atx)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "# a",
+            &Options {
+                constructs: Constructs {
+                    heading_atx: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p># a</p>",
+        "should support turning off heading (atx)"
+    );
 }

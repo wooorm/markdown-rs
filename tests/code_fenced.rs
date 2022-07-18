@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::micromark;
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 #[test]
 fn code_fenced() {
@@ -250,10 +250,18 @@ fn code_fenced() {
         "should not support lazyness (3)"
     );
 
-    // To do: turning things off.
-    // assert_eq!(
-    //   micromark("```", {extensions: [{disable: {null: ["codeFenced"]}}]}),
-    //   "<p>```</p>",
-    //   "should support turning off code (fenced)"
-    // );
+    assert_eq!(
+        micromark_with_options(
+            "```",
+            &Options {
+                constructs: Constructs {
+                    code_fenced: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
+            }
+        ),
+        "<p>```</p>",
+        "should support turning off code (fenced)"
+    );
 }

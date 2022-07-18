@@ -39,7 +39,7 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('[') => {
+        Code::Char('[') if tokenizer.parse_state.constructs.label_start_link => {
             let start = tokenizer.events.len();
             tokenizer.enter(Token::LabelLink);
             tokenizer.enter(Token::LabelMarker);

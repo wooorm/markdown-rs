@@ -1,14 +1,14 @@
 extern crate micromark;
 use micromark::{micromark, micromark_with_options, Options};
 
-const DANGER: &Options = &Options {
-    allow_dangerous_html: true,
-    allow_dangerous_protocol: true,
-    default_line_ending: None,
-};
-
 #[test]
 fn line_ending() {
+    let danger = &Options {
+        allow_dangerous_html: true,
+        allow_dangerous_protocol: true,
+        ..Options::default()
+    };
+
     assert_eq!(
         micromark("a\nb"),
         "<p>a\nb</p>",
@@ -106,55 +106,55 @@ fn line_ending() {
     );
 
     assert_eq!(
-        micromark_with_options("<div\n", DANGER),
+        micromark_with_options("<div\n", danger),
         "<div\n",
         "should support a line feed after html"
     );
 
     assert_eq!(
-        micromark_with_options("<div\r", DANGER),
+        micromark_with_options("<div\r", danger),
         "<div\r",
         "should support a carriage return after html"
     );
 
     assert_eq!(
-        micromark_with_options("<div\r\n", DANGER),
+        micromark_with_options("<div\r\n", danger),
         "<div\r\n",
         "should support a carriage return + line feed after html"
     );
 
     assert_eq!(
-        micromark_with_options("<div>\n\nx", DANGER),
+        micromark_with_options("<div>\n\nx", danger),
         "<div>\n<p>x</p>",
         "should support a blank line w/ line feeds after html"
     );
 
     assert_eq!(
-        micromark_with_options("<div>\r\rx", DANGER),
+        micromark_with_options("<div>\r\rx", danger),
         "<div>\r<p>x</p>",
         "should support a blank line w/ carriage returns after html"
     );
 
     assert_eq!(
-        micromark_with_options("<div>\r\n\r\nx", DANGER),
+        micromark_with_options("<div>\r\n\r\nx", danger),
         "<div>\r\n<p>x</p>",
         "should support a blank line w/ carriage return + line feeds after html"
     );
 
     assert_eq!(
-        micromark_with_options("<div>\nx", DANGER),
+        micromark_with_options("<div>\nx", danger),
         "<div>\nx",
         "should support a non-blank line w/ line feed in html"
     );
 
     assert_eq!(
-        micromark_with_options("<div>\rx", DANGER),
+        micromark_with_options("<div>\rx", danger),
         "<div>\rx",
         "should support a non-blank line w/ carriage return in html"
     );
 
     assert_eq!(
-        micromark_with_options("<div>\r\nx", DANGER),
+        micromark_with_options("<div>\r\nx", danger),
         "<div>\r\nx",
         "should support a non-blank line w/ carriage return + line feed in html"
     );

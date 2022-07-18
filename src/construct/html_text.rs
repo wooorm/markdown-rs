@@ -66,7 +66,7 @@ use crate::util::codes::parse;
 ///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    if Code::Char('<') == code {
+    if Code::Char('<') == code && tokenizer.parse_state.constructs.html_text {
         tokenizer.enter(Token::HtmlText);
         tokenizer.enter(Token::HtmlTextData);
         tokenizer.consume(code);

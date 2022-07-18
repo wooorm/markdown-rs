@@ -138,7 +138,7 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::Char('&') => {
+        Code::Char('&') if tokenizer.parse_state.constructs.character_reference => {
             tokenizer.enter(Token::CharacterReference);
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume(code);

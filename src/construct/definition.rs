@@ -120,12 +120,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             == Token::Definition;
 
     // Do not interrupt paragraphs (but do follow definitions).
-    if tokenizer.interrupt && !definition_before {
-        (State::Nok, None)
-    } else {
+    if (!tokenizer.interrupt || definition_before) && tokenizer.parse_state.constructs.definition {
         tokenizer.enter(Token::Definition);
         // Note: arbitrary whitespace allowed even if code (indented) is on.
         tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+    } else {
+        (State::Nok, None)
     }
 }
 
