@@ -167,7 +167,10 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
             tokenizer.consume(code);
             (State::Fn(Box::new(move |t, c| inside(t, c, kind))), None)
         }
-        _ => tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code),
+        _ => {
+            tokenizer.exit(Token::HeadingSetextUnderline);
+            tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code)
+        }
     }
 }
 
@@ -180,7 +183,6 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.exit(Token::HeadingSetextUnderline);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));

@@ -12,7 +12,7 @@
 //! [`check`]: Tokenizer::check
 
 use crate::parser::ParseState;
-use crate::token::Token;
+use crate::token::{Token, VOID_TOKENS};
 use std::collections::HashMap;
 
 /// Embedded content type.
@@ -384,6 +384,15 @@ impl<'a> Tokenizer<'a> {
             current_token != previous.token_type || previous.index != index,
             "expected non-empty token"
         );
+
+        if VOID_TOKENS.iter().any(|d| d == &token_type) {
+            assert!(
+                current_token == previous.token_type,
+                "expected token to be void (`{:?}`), instead of including `{:?}`",
+                current_token,
+                previous.token_type
+            );
+        }
 
         // A bit weird, but if we exit right after a line ending, we *don’t* want to consider
         // potential skips.
