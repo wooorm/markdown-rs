@@ -172,175 +172,6 @@ struct Info {
     media: Media,
 }
 
-/// Resolve media.
-///
-/// This turns correct label start (image, link) and label end into links and
-/// images, or turns them back into data.
-#[allow(clippy::too_many_lines)]
-pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
-    let mut left: Vec<LabelStart> = tokenizer.label_start_list_loose.drain(..).collect();
-    let mut left_2: Vec<LabelStart> = tokenizer.label_start_stack.drain(..).collect();
-    let media: Vec<Media> = tokenizer.media_list.drain(..).collect();
-    left.append(&mut left_2);
-
-    let mut edit_map = EditMap::new();
-    let events = &tokenizer.events;
-
-    // Remove loose label starts.
-    let mut index = 0;
-    while index < left.len() {
-        let label_start = &left[index];
-        let data_enter_index = label_start.start.0;
-        let data_exit_index = label_start.start.1;
-
-        edit_map.add(
-            data_enter_index,
-            data_exit_index - data_enter_index + 1,
-            vec![
-                Event {
-                    event_type: EventType::Enter,
-                    token_type: Token::Data,
-                    point: events[data_enter_index].point.clone(),
-                    index: events[data_enter_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
-                },
-                Event {
-                    event_type: EventType::Exit,
-                    token_type: Token::Data,
-                    point: events[data_exit_index].point.clone(),
-                    index: events[data_exit_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
-                },
-            ],
-        );
-
-        index += 1;
-    }
-
-    // Add grouping events.
-    let mut index = 0;
-    while index < media.len() {
-        let media = &media[index];
-        // LabelLink:Enter or LabelImage:Enter.
-        let group_enter_index = media.start.0;
-        let group_enter_event = &events[group_enter_index];
-        // LabelLink:Exit or LabelImage:Exit.
-        let text_enter_index = media.start.0
-            + (if group_enter_event.token_type == Token::LabelLink {
-                4
-            } else {
-                6
-            });
-        // LabelEnd:Enter.
-        let text_exit_index = media.end.0;
-        // LabelEnd:Exit.
-        let label_exit_index = media.end.0 + 3;
-        // Resource:Exit, etc.
-        let group_end_index = media.end.1;
-
-        // Insert a group enter and label enter.
-        edit_map.add(
-            group_enter_index,
-            0,
-            vec![
-                Event {
-                    event_type: EventType::Enter,
-                    token_type: if group_enter_event.token_type == Token::LabelLink {
-                        Token::Link
-                    } else {
-                        Token::Image
-                    },
-                    point: group_enter_event.point.clone(),
-                    index: group_enter_event.index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
-                },
-                Event {
-                    event_type: EventType::Enter,
-                    token_type: Token::Label,
-                    point: group_enter_event.point.clone(),
-                    index: group_enter_event.index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
-                },
-            ],
-        );
-
-        // Empty events not allowed.
-        if text_enter_index != text_exit_index {
-            // Insert a text enter.
-            edit_map.add(
-                text_enter_index,
-                0,
-                vec![Event {
-                    event_type: EventType::Enter,
-                    token_type: Token::LabelText,
-                    point: events[text_enter_index].point.clone(),
-                    index: events[text_enter_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
-                }],
-            );
-
-            // Insert a text exit.
-            edit_map.add(
-                text_exit_index,
-                0,
-                vec![Event {
-                    event_type: EventType::Exit,
-                    token_type: Token::LabelText,
-                    point: events[text_exit_index].point.clone(),
-                    index: events[text_exit_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
-                }],
-            );
-        }
-
-        // Insert a label exit.
-        edit_map.add(
-            label_exit_index + 1,
-            0,
-            vec![Event {
-                event_type: EventType::Exit,
-                token_type: Token::Label,
-                point: events[label_exit_index].point.clone(),
-                index: events[label_exit_index].index,
-                previous: None,
-                next: None,
-                content_type: None,
-            }],
-        );
-
-        // Insert a group exit.
-        edit_map.add(
-            group_end_index + 1,
-            0,
-            vec![Event {
-                event_type: EventType::Exit,
-                token_type: Token::Link,
-                point: events[group_end_index].point.clone(),
-                index: events[group_end_index].index,
-                previous: None,
-                next: None,
-                content_type: None,
-            }],
-        );
-
-        index += 1;
-    }
-
-    edit_map.consume(&mut tokenizer.events)
-}
-
 /// Start of label end.
 ///
 /// ```markdown
@@ -777,4 +608,173 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
         }
         _ => (State::Nok, None),
     }
+}
+
+/// Resolve media.
+///
+/// This turns correct label start (image, link) and label end into links and
+/// images, or turns them back into data.
+#[allow(clippy::too_many_lines)]
+pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
+    let mut left: Vec<LabelStart> = tokenizer.label_start_list_loose.drain(..).collect();
+    let mut left_2: Vec<LabelStart> = tokenizer.label_start_stack.drain(..).collect();
+    let media: Vec<Media> = tokenizer.media_list.drain(..).collect();
+    left.append(&mut left_2);
+
+    let mut edit_map = EditMap::new();
+    let events = &tokenizer.events;
+
+    // Remove loose label starts.
+    let mut index = 0;
+    while index < left.len() {
+        let label_start = &left[index];
+        let data_enter_index = label_start.start.0;
+        let data_exit_index = label_start.start.1;
+
+        edit_map.add(
+            data_enter_index,
+            data_exit_index - data_enter_index + 1,
+            vec![
+                Event {
+                    event_type: EventType::Enter,
+                    token_type: Token::Data,
+                    point: events[data_enter_index].point.clone(),
+                    index: events[data_enter_index].index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                },
+                Event {
+                    event_type: EventType::Exit,
+                    token_type: Token::Data,
+                    point: events[data_exit_index].point.clone(),
+                    index: events[data_exit_index].index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                },
+            ],
+        );
+
+        index += 1;
+    }
+
+    // Add grouping events.
+    let mut index = 0;
+    while index < media.len() {
+        let media = &media[index];
+        // LabelLink:Enter or LabelImage:Enter.
+        let group_enter_index = media.start.0;
+        let group_enter_event = &events[group_enter_index];
+        // LabelLink:Exit or LabelImage:Exit.
+        let text_enter_index = media.start.0
+            + (if group_enter_event.token_type == Token::LabelLink {
+                4
+            } else {
+                6
+            });
+        // LabelEnd:Enter.
+        let text_exit_index = media.end.0;
+        // LabelEnd:Exit.
+        let label_exit_index = media.end.0 + 3;
+        // Resource:Exit, etc.
+        let group_end_index = media.end.1;
+
+        // Insert a group enter and label enter.
+        edit_map.add(
+            group_enter_index,
+            0,
+            vec![
+                Event {
+                    event_type: EventType::Enter,
+                    token_type: if group_enter_event.token_type == Token::LabelLink {
+                        Token::Link
+                    } else {
+                        Token::Image
+                    },
+                    point: group_enter_event.point.clone(),
+                    index: group_enter_event.index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                },
+                Event {
+                    event_type: EventType::Enter,
+                    token_type: Token::Label,
+                    point: group_enter_event.point.clone(),
+                    index: group_enter_event.index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                },
+            ],
+        );
+
+        // Empty events not allowed.
+        if text_enter_index != text_exit_index {
+            // Insert a text enter.
+            edit_map.add(
+                text_enter_index,
+                0,
+                vec![Event {
+                    event_type: EventType::Enter,
+                    token_type: Token::LabelText,
+                    point: events[text_enter_index].point.clone(),
+                    index: events[text_enter_index].index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                }],
+            );
+
+            // Insert a text exit.
+            edit_map.add(
+                text_exit_index,
+                0,
+                vec![Event {
+                    event_type: EventType::Exit,
+                    token_type: Token::LabelText,
+                    point: events[text_exit_index].point.clone(),
+                    index: events[text_exit_index].index,
+                    previous: None,
+                    next: None,
+                    content_type: None,
+                }],
+            );
+        }
+
+        // Insert a label exit.
+        edit_map.add(
+            label_exit_index + 1,
+            0,
+            vec![Event {
+                event_type: EventType::Exit,
+                token_type: Token::Label,
+                point: events[label_exit_index].point.clone(),
+                index: events[label_exit_index].index,
+                previous: None,
+                next: None,
+                content_type: None,
+            }],
+        );
+
+        // Insert a group exit.
+        edit_map.add(
+            group_end_index + 1,
+            0,
+            vec![Event {
+                event_type: EventType::Exit,
+                token_type: Token::Link,
+                point: events[group_end_index].point.clone(),
+                index: events[group_end_index].index,
+                previous: None,
+                next: None,
+                content_type: None,
+            }],
+        );
+
+        index += 1;
+    }
+
+    edit_map.consume(&mut tokenizer.events)
 }

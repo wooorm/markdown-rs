@@ -197,7 +197,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnR
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);
-            tokenizer.register_resolver("attention".to_string(), Box::new(resolve));
+            tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
             (State::Ok, Some(vec![code]))
         }
     }
@@ -205,7 +205,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnR
 
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
-fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+fn resolve_attention(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let codes = &tokenizer.parse_state.codes;
     let mut edit_map = EditMap::new();
     let mut start = 0;

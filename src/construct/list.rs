@@ -315,7 +315,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
         container.size = prefix;
 
         tokenizer.exit(Token::ListItemPrefix);
-        tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve));
+        tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
         (State::Ok, Some(vec![code]))
     }
 }
@@ -381,7 +381,7 @@ fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
 }
 
 /// Find adjacent list items with the same marker.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut edit_map = EditMap::new();
     let mut index = 0;
     let mut balance = 0;

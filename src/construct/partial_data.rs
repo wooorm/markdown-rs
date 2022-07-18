@@ -42,7 +42,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnRe
             (State::Fn(Box::new(|t, c| at_break(t, c, stop))), None)
         }
         _ if stop.contains(&code) => {
-            tokenizer.register_resolver("data".to_string(), Box::new(resolve));
+            tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
             (State::Ok, Some(vec![code]))
         }
         _ => {
@@ -75,7 +75,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult
 }
 
 /// Merge adjacent data events.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve_data(tokenizer: &mut Tokenizer) -> Vec<Event> {
     let mut edit_map = EditMap::new();
     let len = tokenizer.events.len();
     let mut index = 0;
