@@ -71,7 +71,7 @@ cargo doc --document-private-items
 
 #### Misc
 
-- [ ] (3) `no_std`: remove all `HashSet`s/`HashMap` to use vecs, vecs w/ tuples?
+- [ ] (3) `no_std`: remove all `HashMap` to use vecs, vecs w/ tuples?
 - [ ] (3) Remove splicing and cloning in subtokenizer
 - [ ] (3) Pass more references around
 - [ ] (1) Get markers from constructs (`string`, `text`)

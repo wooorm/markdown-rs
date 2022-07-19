@@ -26,7 +26,6 @@ use crate::util::{
     skip,
     span::{from_exit_event, serialize},
 };
-use std::collections::HashSet;
 
 /// Phases where we can exit containers.
 #[derive(Debug, PartialEq)]
@@ -84,20 +83,24 @@ pub fn document(parse_state: &mut ParseState, point: Point, index: usize) -> Vec
     tokenizer.push(&parse_state.codes, Box::new(start), true);
 
     let mut index = 0;
-    let mut next_definitions: HashSet<String> = HashSet::new();
+    let mut next_definitions = vec![];
 
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
         if event.event_type == EventType::Exit && event.token_type == Token::DefinitionLabelString {
-            next_definitions.insert(normalize_identifier(
+            let id = normalize_identifier(
                 serialize(
                     &parse_state.codes,
                     &from_exit_event(&tokenizer.events, index),
                     false,
                 )
                 .as_str(),
-            ));
+            );
+
+            if !next_definitions.contains(&id) {
+                next_definitions.push(id);
+            }
         }
 
         index += 1;

@@ -4,7 +4,6 @@ use crate::content::document::document;
 use crate::tokenizer::{Code, Event, Point};
 use crate::util::codes::parse as parse_codes;
 use crate::{Constructs, Options};
-use std::collections::HashSet;
 
 /// Information needed, in all content types, when parsing markdown.
 ///
@@ -16,7 +15,7 @@ pub struct ParseState {
     /// List of codes.
     pub codes: Vec<Code>,
     /// Set of defined identifiers.
-    pub definitions: HashSet<String>,
+    pub definitions: Vec<String>,
 }
 
 /// Turn a string of markdown into events.
@@ -26,7 +25,7 @@ pub fn parse(value: &str, options: &Options) -> (Vec<Event>, ParseState) {
     let mut parse_state = ParseState {
         constructs: options.constructs.clone(),
         codes: parse_codes(value),
-        definitions: HashSet::new(),
+        definitions: vec![],
     };
 
     let events = document(
