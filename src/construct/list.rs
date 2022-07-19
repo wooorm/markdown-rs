@@ -432,8 +432,7 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     if previous.0 == current.0 && previous.1 == current.1 && before == current.2 {
                         let previous_mut = &mut lists_wip[list_index];
                         previous_mut.3 = current.3;
-                        let mut remainder = lists_wip.drain((list_index + 1)..).collect::<Vec<_>>();
-                        lists.append(&mut remainder);
+                        lists.append(&mut lists_wip.split_off(list_index + 1));
                         matched = true;
                         break;
                     }
@@ -457,8 +456,7 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
                     }
 
                     if let Some(exit) = exit {
-                        let mut remainder = lists_wip.drain(exit..).collect::<Vec<_>>();
-                        lists.append(&mut remainder);
+                        lists.append(&mut lists_wip.split_off(exit));
                     }
 
                     lists_wip.push(current);
@@ -494,5 +492,5 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events)
+    edit_map.consume(tokenizer.events.split_off(0))
 }

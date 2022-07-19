@@ -730,6 +730,7 @@ fn feed_impl(
     }
 
     // Yield to a higher loop.
+    // To do: do not copy?
     check_statefn_result((state, Some(codes[index..].to_vec())))
 }
 

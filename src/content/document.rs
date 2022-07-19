@@ -352,7 +352,7 @@ fn containers_after(
         .last_mut()
         .unwrap()
         .0
-        .append(&mut tokenizer.events.drain(info.index..).collect::<Vec<_>>());
+        .append(&mut tokenizer.events.split_off(info.index));
 
     tokenizer.lazy = info.continued != info.stack.len();
     tokenizer.interrupt = info.interrupt_before;
@@ -433,12 +433,12 @@ fn exit_containers(
     mut info: DocumentInfo,
     phase: &Phase,
 ) -> DocumentInfo {
-    let mut stack_close = info.stack.drain(info.continued..).collect::<Vec<_>>();
+    let mut stack_close = info.stack.split_off(info.continued);
 
     // So, we’re at the end of a line, but we need to close the *previous* line.
     if *phase != Phase::Eof {
         tokenizer.define_skip_current();
-        let mut current_events = tokenizer.events.drain(info.index..).collect::<Vec<_>>();
+        let mut current_events = tokenizer.events.split_off(info.index);
         let next = info.next;
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
         let result = tokenizer.flush(next);
@@ -537,5 +537,5 @@ fn resolve(tokenizer: &mut Tokenizer, info: &DocumentInfo) -> Vec<Event> {
         add,
     );
 
-    map.consume(&mut tokenizer.events)
+    map.consume(tokenizer.events.split_off(0))
 }

@@ -258,5 +258,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events)
+    edit_map.consume(tokenizer.events.split_off(0))
 }

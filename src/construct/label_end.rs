@@ -154,9 +154,7 @@ use crate::construct::{
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::token::Token;
-use crate::tokenizer::{
-    Code, Event, EventType, LabelStart, Media, State, StateFnResult, Tokenizer,
-};
+use crate::tokenizer::{Code, Event, EventType, Media, State, StateFnResult, Tokenizer};
 use crate::util::{
     edit_map::EditMap,
     normalize_identifier::normalize_identifier,
@@ -325,10 +323,9 @@ fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// ```
 fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     // Remove this one and everything after it.
-    let mut left: Vec<LabelStart> = tokenizer
+    let mut left = tokenizer
         .label_start_stack
-        .drain(info.label_start_index..)
-        .collect();
+        .split_off(info.label_start_index);
     // Remove this one from `left`, as we’ll move it to `media_list`.
     left.remove(0);
     tokenizer.label_start_list_loose.append(&mut left);
@@ -616,9 +613,9 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
 /// images, or turns them back into data.
 #[allow(clippy::too_many_lines)]
 pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
-    let mut left: Vec<LabelStart> = tokenizer.label_start_list_loose.drain(..).collect();
-    let mut left_2: Vec<LabelStart> = tokenizer.label_start_stack.drain(..).collect();
-    let media: Vec<Media> = tokenizer.media_list.drain(..).collect();
+    let mut left = tokenizer.label_start_list_loose.split_off(0);
+    let mut left_2 = tokenizer.label_start_stack.split_off(0);
+    let media = tokenizer.media_list.split_off(0);
     left.append(&mut left_2);
 
     let mut edit_map = EditMap::new();
@@ -776,5 +773,5 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events)
+    edit_map.consume(tokenizer.events.split_off(0))
 }

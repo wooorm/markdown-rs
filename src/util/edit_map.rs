@@ -72,11 +72,9 @@ impl EditMap {
         add_impl(self, index, remove, add, true);
     }
     /// Done, change the events.
-    pub fn consume(&mut self, events: &mut [Event]) -> Vec<Event> {
+    pub fn consume(&mut self, mut events: Vec<Event>) -> Vec<Event> {
         self.map
             .sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-        let mut next_events: Vec<Event> = vec![];
-        let mut start = 0;
 
         assert!(!self.consumed, "cannot consume after consuming");
         self.consumed = true;
@@ -94,28 +92,36 @@ impl EditMap {
             index += 1;
         }
 
-        let mut index = 0;
+        let mut index = self.map.len();
+        let mut vecs: Vec<Vec<Event>> = vec![];
+        let mut capacity = 0;
 
-        while index < self.map.len() {
+        while index > 0 {
+            index -= 1;
             let at = self.map[index].0;
-            let remove = self.map[index].1;
-            let mut add = self.map[index].2.drain(..).collect::<Vec<_>>();
 
-            if start < at {
-                let append = &mut events[start..at].to_vec();
-                shift_links(append, &jumps);
-                next_events.append(append);
-            }
+            let mut keep = events.split_off(at + self.map[index].1);
+            shift_links(&mut keep, &jumps);
+            capacity += keep.len();
+            vecs.push(keep);
 
-            next_events.append(&mut add);
-            start = at + remove;
-            index += 1;
+            let add = self.map[index].2.split_off(0);
+            capacity += add.len();
+            vecs.push(add);
+
+            events.truncate(at);
         }
 
-        if start < events.len() {
-            let append = &mut events[start..].to_vec();
-            shift_links(append, &jumps);
-            next_events.append(append);
+        shift_links(&mut events, &jumps);
+        capacity += events.len();
+        vecs.push(events);
+
+        let mut next_events: Vec<Event> = Vec::with_capacity(capacity);
+        let mut slice = vecs.pop();
+
+        while let Some(mut x) = slice {
+            next_events.append(&mut x);
+            slice = vecs.pop();
         }
 
         next_events

@@ -523,7 +523,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events)
+    edit_map.consume(tokenizer.events.split_off(0))
 }
 
 /// Classify whether a character code represents whitespace, punctuation, or
