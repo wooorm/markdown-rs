@@ -418,19 +418,18 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
                 while list_index > 0 {
                     list_index -= 1;
                     let previous = &lists_wip[list_index];
-                    if previous.0 == current.0
-                        && previous.1 == current.1
-                        && skip::opt(
-                            &tokenizer.events,
-                            previous.3 + 1,
-                            &[
-                                Token::SpaceOrTab,
-                                Token::LineEnding,
-                                Token::BlankLineEnding,
-                                Token::BlockQuotePrefix,
-                            ],
-                        ) == current.2
-                    {
+                    let before = skip::opt(
+                        &tokenizer.events,
+                        previous.3 + 1,
+                        &[
+                            Token::SpaceOrTab,
+                            Token::LineEnding,
+                            Token::BlankLineEnding,
+                            Token::BlockQuotePrefix,
+                        ],
+                    );
+
+                    if previous.0 == current.0 && previous.1 == current.1 && before == current.2 {
                         let previous_mut = &mut lists_wip[list_index];
                         previous_mut.3 = current.3;
                         let mut remainder = lists_wip.drain((list_index + 1)..).collect::<Vec<_>>();
@@ -438,12 +437,30 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
                         matched = true;
                         break;
                     }
-
-                    // To do: move items that could never match anymore over to `lists`,
-                    // This currently keeps on growing and growing!
                 }
 
                 if !matched {
+                    let mut index = lists_wip.len();
+                    let mut exit: Option<usize> = None;
+
+                    while index > 0 {
+                        index -= 1;
+
+                        // If the current (new) item starts after where this
+                        // item on the stack ends, we can remove it from the
+                        // stack.
+                        if current.2 > lists_wip[index].3 {
+                            exit = Some(index);
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if let Some(exit) = exit {
+                        let mut remainder = lists_wip.drain(exit..).collect::<Vec<_>>();
+                        lists.append(&mut remainder);
+                    }
+
                     lists_wip.push(current);
                 }
 
