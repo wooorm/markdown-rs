@@ -9,7 +9,6 @@
 //! through another tokenizer and inject the result.
 
 use crate::tokenizer::Event;
-use std::collections::HashMap;
 
 /// Shift `previous` and `next` links according to `jumps`.
 ///
@@ -53,7 +52,7 @@ pub struct EditMap {
     /// Whether this map was consumed already.
     consumed: bool,
     /// Record of changes.
-    map: HashMap<usize, (usize, Vec<Event>)>,
+    map: Vec<(usize, usize, Vec<Event>)>,
 }
 
 impl EditMap {
@@ -61,7 +60,7 @@ impl EditMap {
     pub fn new() -> EditMap {
         EditMap {
             consumed: false,
-            map: HashMap::new(),
+            map: vec![],
         }
     }
     /// Create an edit: a remove and/or add at a certain place.
@@ -74,44 +73,42 @@ impl EditMap {
     }
     /// Done, change the events.
     pub fn consume(&mut self, events: &mut [Event]) -> Vec<Event> {
-        let mut indices: Vec<&usize> = self.map.keys().collect();
+        self.map
+            .sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
         let mut next_events: Vec<Event> = vec![];
         let mut start = 0;
 
         assert!(!self.consumed, "cannot consume after consuming");
         self.consumed = true;
 
-        indices.sort_unstable();
-
         let mut jumps: Vec<(usize, isize)> = vec![];
-        let mut index_into_indices = 0;
+        let mut index = 0;
         let mut shift = 0;
-        while index_into_indices < indices.len() {
-            let index = *indices[index_into_indices];
-            let edit = self.map.get(&index).unwrap();
+        while index < self.map.len() {
+            let (at, remove, add) = &self.map[index];
 
             #[allow(clippy::pedantic)]
-            let next = shift + (edit.1.len() as isize) - (edit.0 as isize);
+            let next = shift + (add.len() as isize) - (*remove as isize);
             shift = next;
-            jumps.push((index, shift));
-            index_into_indices += 1;
+            jumps.push((*at, shift));
+            index += 1;
         }
 
-        let mut index_into_indices = 0;
+        let mut index = 0;
 
-        while index_into_indices < indices.len() {
-            let index = *indices[index_into_indices];
+        while index < self.map.len() {
+            let at = self.map[index].0;
+            let remove = self.map[index].1;
+            let mut add = self.map[index].2.drain(..).collect::<Vec<_>>();
 
-            if start < index {
-                let append = &mut events[start..index].to_vec();
+            if start < at {
+                let append = &mut events[start..at].to_vec();
                 shift_links(append, &jumps);
                 next_events.append(append);
             }
 
-            let (remove, add) = self.map.get(&index).unwrap();
-
             if !add.is_empty() {
-                let append = &mut add.clone();
+                let append = &mut add;
                 let mut index = 0;
 
                 while index < append.len() {
@@ -124,8 +121,8 @@ impl EditMap {
                 next_events.append(append);
             }
 
-            start = index + remove;
-            index_into_indices += 1;
+            start = at + remove;
+            index += 1;
         }
 
         if start < events.len() {
@@ -139,27 +136,28 @@ impl EditMap {
 }
 
 /// Create an edit.
-fn add_impl(
-    edit_map: &mut EditMap,
-    index: usize,
-    mut remove: usize,
-    mut add: Vec<Event>,
-    before: bool,
-) {
+fn add_impl(edit_map: &mut EditMap, at: usize, remove: usize, mut add: Vec<Event>, before: bool) {
     assert!(!edit_map.consumed, "cannot add after consuming");
+    let mut index = 0;
 
-    if let Some((curr_remove, mut curr_add)) = edit_map.map.remove(&index) {
-        // To do: these might have to be split into several chunks instead
-        // of one, if links in `curr_add` are supported.
-        remove += curr_remove;
+    while index < edit_map.map.len() {
+        if edit_map.map[index].0 == at {
+            edit_map.map[index].1 += remove;
 
-        if before {
-            add.append(&mut curr_add);
-        } else {
-            curr_add.append(&mut add);
-            add = curr_add;
+            // To do: these might have to be split into several chunks instead
+            // of one, if links in `curr_add` are supported.
+            if before {
+                add.append(&mut edit_map.map[index].2);
+                edit_map.map[index].2 = add;
+            } else {
+                edit_map.map[index].2.append(&mut add);
+            }
+
+            return;
         }
+
+        index += 1;
     }
 
-    edit_map.map.insert(index, (remove, add));
+    edit_map.map.push((at, remove, add));
 }

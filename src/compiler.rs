@@ -12,7 +12,6 @@ use crate::util::{
     span::{codes as codes_from_span, from_exit_event, serialize},
 };
 use crate::{LineEnding, Options};
-use std::collections::HashMap;
 
 /// Representation of a link or image, resource or reference.
 /// Reused for temporary definitions as well, in the first pass.
@@ -56,14 +55,6 @@ struct Definition {
     title: Option<String>,
 }
 
-/// Handle an event.
-///
-/// The current event is available at `context.events[context.index]`.
-type Handle = fn(&mut CompileContext);
-
-/// Map of [`Token`][] to [`Handle`][].
-type Map = HashMap<Token, Handle>;
-
 /// Context used to compile markdown.
 #[allow(clippy::struct_excessive_bools)]
 struct CompileContext<'a> {
@@ -80,7 +71,7 @@ struct CompileContext<'a> {
     pub character_reference_kind: Option<CharacterReferenceKind>,
     pub expect_first_item: Option<bool>,
     pub media_stack: Vec<Media>,
-    pub definitions: HashMap<String, Definition>,
+    pub definitions: Vec<(String, Definition)>,
     pub tight_stack: Vec<bool>,
     /// Fields used to influance the current compilation.
     pub slurp_one_line_ending: bool,
@@ -116,7 +107,7 @@ impl<'a> CompileContext<'a> {
             character_reference_kind: None,
             expect_first_item: None,
             media_stack: vec![],
-            definitions: HashMap::new(),
+            definitions: vec![],
             tight_stack: vec![],
             slurp_one_line_ending: false,
             tags: true,
@@ -251,134 +242,16 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         options.default_line_ending.clone()
     };
 
-    let mut enter_map: Map = HashMap::new();
-
-    enter_map.insert(Token::BlockQuote, on_enter_block_quote);
-    enter_map.insert(Token::CodeIndented, on_enter_code_indented);
-    enter_map.insert(Token::CodeFenced, on_enter_code_fenced);
-    enter_map.insert(Token::CodeFencedFenceInfo, on_enter_buffer);
-    enter_map.insert(Token::CodeFencedFenceMeta, on_enter_buffer);
-    enter_map.insert(Token::CodeText, on_enter_code_text);
-    enter_map.insert(Token::Definition, on_enter_definition);
-    enter_map.insert(
-        Token::DefinitionDestinationString,
-        on_enter_definition_destination_string,
-    );
-    enter_map.insert(Token::DefinitionLabelString, on_enter_buffer);
-    enter_map.insert(Token::DefinitionTitleString, on_enter_buffer);
-    enter_map.insert(Token::Emphasis, on_enter_emphasis);
-    enter_map.insert(Token::HeadingAtxText, on_enter_buffer);
-    enter_map.insert(Token::HeadingSetextText, on_enter_buffer);
-    enter_map.insert(Token::HtmlFlow, on_enter_html_flow);
-    enter_map.insert(Token::HtmlText, on_enter_html_text);
-    enter_map.insert(Token::Image, on_enter_image);
-    enter_map.insert(Token::Label, on_enter_buffer);
-    enter_map.insert(Token::Link, on_enter_link);
-    enter_map.insert(Token::ListItemMarker, on_enter_list_item_marker);
-    enter_map.insert(Token::ListOrdered, on_enter_list);
-    enter_map.insert(Token::ListUnordered, on_enter_list);
-    enter_map.insert(Token::Paragraph, on_enter_paragraph);
-    enter_map.insert(Token::ReferenceString, on_enter_buffer);
-    enter_map.insert(Token::Resource, on_enter_resource);
-    enter_map.insert(
-        Token::ResourceDestinationString,
-        on_enter_resource_destination_string,
-    );
-    enter_map.insert(Token::ResourceTitleString, on_enter_buffer);
-    enter_map.insert(Token::Strong, on_enter_strong);
-
-    let mut exit_map: Map = HashMap::new();
-    exit_map.insert(Token::AutolinkEmail, on_exit_autolink_email);
-    exit_map.insert(Token::AutolinkProtocol, on_exit_autolink_protocol);
-    exit_map.insert(Token::BlankLineEnding, on_exit_blank_line_ending);
-    exit_map.insert(Token::BlockQuote, on_exit_block_quote);
-    exit_map.insert(Token::CharacterEscapeValue, on_exit_data);
-    exit_map.insert(
-        Token::CharacterReferenceMarker,
-        on_exit_character_reference_marker,
-    );
-    exit_map.insert(
-        Token::CharacterReferenceMarkerNumeric,
-        on_exit_character_reference_marker_numeric,
-    );
-    exit_map.insert(
-        Token::CharacterReferenceMarkerHexadecimal,
-        on_exit_character_reference_marker_hexadecimal,
-    );
-    exit_map.insert(
-        Token::CharacterReferenceValue,
-        on_exit_character_reference_value,
-    );
-    exit_map.insert(Token::CodeFenced, on_exit_code_flow);
-    exit_map.insert(Token::CodeFencedFence, on_exit_code_fenced_fence);
-    exit_map.insert(Token::CodeFencedFenceInfo, on_exit_code_fenced_fence_info);
-    exit_map.insert(Token::CodeFencedFenceMeta, on_exit_drop);
-    exit_map.insert(Token::CodeFlowChunk, on_exit_code_flow_chunk);
-    exit_map.insert(Token::CodeIndented, on_exit_code_flow);
-    exit_map.insert(Token::CodeText, on_exit_code_text);
-    exit_map.insert(Token::CodeTextData, on_exit_data);
-    exit_map.insert(Token::Data, on_exit_data);
-    exit_map.insert(Token::Definition, on_exit_definition);
-    exit_map.insert(
-        Token::DefinitionDestinationString,
-        on_exit_definition_destination_string,
-    );
-    exit_map.insert(
-        Token::DefinitionLabelString,
-        on_exit_definition_label_string,
-    );
-    exit_map.insert(
-        Token::DefinitionTitleString,
-        on_exit_definition_title_string,
-    );
-    exit_map.insert(Token::Emphasis, on_exit_emphasis);
-    exit_map.insert(Token::HardBreakEscape, on_exit_break);
-    exit_map.insert(Token::HardBreakTrailing, on_exit_break);
-    exit_map.insert(Token::HeadingAtx, on_exit_heading_atx);
-    exit_map.insert(Token::HeadingAtxSequence, on_exit_heading_atx_sequence);
-    exit_map.insert(Token::HeadingAtxText, on_exit_heading_atx_text);
-    exit_map.insert(Token::HeadingSetextText, on_exit_heading_setext_text);
-    exit_map.insert(
-        Token::HeadingSetextUnderline,
-        on_exit_heading_setext_underline,
-    );
-    exit_map.insert(Token::HtmlFlow, on_exit_html);
-    exit_map.insert(Token::HtmlText, on_exit_html);
-    exit_map.insert(Token::HtmlFlowData, on_exit_html_data);
-    exit_map.insert(Token::HtmlTextData, on_exit_html_data);
-    exit_map.insert(Token::Image, on_exit_media);
-    exit_map.insert(Token::Label, on_exit_label);
-    exit_map.insert(Token::LabelText, on_exit_label_text);
-    exit_map.insert(Token::LineEnding, on_exit_line_ending);
-    exit_map.insert(Token::ListOrdered, on_exit_list);
-    exit_map.insert(Token::ListUnordered, on_exit_list);
-    exit_map.insert(Token::ListItem, on_exit_list_item);
-    exit_map.insert(Token::ListItemValue, on_exit_list_item_value);
-    exit_map.insert(Token::Link, on_exit_media);
-    exit_map.insert(Token::Paragraph, on_exit_paragraph);
-    exit_map.insert(Token::ReferenceString, on_exit_reference_string);
-    exit_map.insert(Token::Resource, on_exit_drop);
-    exit_map.insert(
-        Token::ResourceDestinationString,
-        on_exit_resource_destination_string,
-    );
-    exit_map.insert(Token::ResourceTitleString, on_exit_resource_title_string);
-    exit_map.insert(Token::Strong, on_exit_strong);
-    exit_map.insert(Token::ThematicBreak, on_exit_thematic_break);
-
     // Handle one event.
     let handle = |context: &mut CompileContext, index: usize| {
         let event = &events[index];
 
-        let map = if event.event_type == EventType::Enter {
-            &enter_map
-        } else {
-            &exit_map
-        };
+        context.index = index;
 
-        if let Some(func) = map.get(&event.token_type) {
-            context.index = index;
-            func(context);
+        if event.event_type == EventType::Enter {
+            enter(context);
+        } else {
+            exit(context);
         }
     };
 
@@ -442,6 +315,93 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         .get(0)
         .expect("expected 1 final buffer")
         .concat()
+}
+
+/// Handle [`Enter`][EventType::Enter].
+fn enter(context: &mut CompileContext) {
+    match context.events[context.index].token_type {
+        Token::CodeFencedFenceInfo
+        | Token::CodeFencedFenceMeta
+        | Token::DefinitionLabelString
+        | Token::DefinitionTitleString
+        | Token::HeadingAtxText
+        | Token::HeadingSetextText
+        | Token::Label
+        | Token::ReferenceString
+        | Token::ResourceTitleString => on_enter_buffer(context),
+
+        Token::BlockQuote => on_enter_block_quote(context),
+        Token::CodeIndented => on_enter_code_indented(context),
+        Token::CodeFenced => on_enter_code_fenced(context),
+        Token::CodeText => on_enter_code_text(context),
+        Token::Definition => on_enter_definition(context),
+        Token::DefinitionDestinationString => on_enter_definition_destination_string(context),
+        Token::Emphasis => on_enter_emphasis(context),
+        Token::HtmlFlow => on_enter_html_flow(context),
+        Token::HtmlText => on_enter_html_text(context),
+        Token::Image => on_enter_image(context),
+        Token::Link => on_enter_link(context),
+        Token::ListItemMarker => on_enter_list_item_marker(context),
+        Token::ListOrdered | Token::ListUnordered => on_enter_list(context),
+        Token::Paragraph => on_enter_paragraph(context),
+        Token::Resource => on_enter_resource(context),
+        Token::ResourceDestinationString => on_enter_resource_destination_string(context),
+        Token::Strong => on_enter_strong(context),
+        _ => {}
+    }
+}
+
+/// Handle [`Exit`][EventType::Exit].
+fn exit(context: &mut CompileContext) {
+    match context.events[context.index].token_type {
+        Token::CodeFencedFenceMeta | Token::Resource => on_exit_drop(context),
+        Token::CharacterEscapeValue | Token::CodeTextData | Token::Data => on_exit_data(context),
+
+        Token::AutolinkEmail => on_exit_autolink_email(context),
+        Token::AutolinkProtocol => on_exit_autolink_protocol(context),
+        Token::BlankLineEnding => on_exit_blank_line_ending(context),
+        Token::BlockQuote => on_exit_block_quote(context),
+        Token::CharacterReferenceMarker => on_exit_character_reference_marker(context),
+        Token::CharacterReferenceMarkerNumeric => {
+            on_exit_character_reference_marker_numeric(context);
+        }
+        Token::CharacterReferenceMarkerHexadecimal => {
+            on_exit_character_reference_marker_hexadecimal(context);
+        }
+        Token::CharacterReferenceValue => on_exit_character_reference_value(context),
+        Token::CodeFenced | Token::CodeIndented => on_exit_code_flow(context),
+        Token::CodeFencedFence => on_exit_code_fenced_fence(context),
+        Token::CodeFencedFenceInfo => on_exit_code_fenced_fence_info(context),
+        Token::CodeFlowChunk => on_exit_code_flow_chunk(context),
+        Token::CodeText => on_exit_code_text(context),
+        Token::Definition => on_exit_definition(context),
+        Token::DefinitionDestinationString => on_exit_definition_destination_string(context),
+        Token::DefinitionLabelString => on_exit_definition_label_string(context),
+        Token::DefinitionTitleString => on_exit_definition_title_string(context),
+        Token::Emphasis => on_exit_emphasis(context),
+        Token::HardBreakEscape | Token::HardBreakTrailing => on_exit_break(context),
+        Token::HeadingAtx => on_exit_heading_atx(context),
+        Token::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
+        Token::HeadingAtxText => on_exit_heading_atx_text(context),
+        Token::HeadingSetextText => on_exit_heading_setext_text(context),
+        Token::HeadingSetextUnderline => on_exit_heading_setext_underline(context),
+        Token::HtmlFlow | Token::HtmlText => on_exit_html(context),
+        Token::HtmlFlowData | Token::HtmlTextData => on_exit_html_data(context),
+        Token::Image | Token::Link => on_exit_media(context),
+        Token::Label => on_exit_label(context),
+        Token::LabelText => on_exit_label_text(context),
+        Token::LineEnding => on_exit_line_ending(context),
+        Token::ListOrdered | Token::ListUnordered => on_exit_list(context),
+        Token::ListItem => on_exit_list_item(context),
+        Token::ListItemValue => on_exit_list_item_value(context),
+        Token::Paragraph => on_exit_paragraph(context),
+        Token::ReferenceString => on_exit_reference_string(context),
+        Token::ResourceDestinationString => on_exit_resource_destination_string(context),
+        Token::ResourceTitleString => on_exit_resource_title_string(context),
+        Token::Strong => on_exit_strong(context),
+        Token::ThematicBreak => on_exit_thematic_break(context),
+        _ => {}
+    }
 }
 
 /// Handle [`Enter`][EventType::Enter]:`*`.
@@ -866,10 +826,19 @@ fn on_exit_definition(context: &mut CompileContext) {
 
     context.resume();
 
+    let mut index = 0;
+
+    while index < context.definitions.len() {
+        if context.definitions[index].0 == reference_id {
+            return;
+        }
+
+        index += 1;
+    }
+
     context
         .definitions
-        .entry(reference_id)
-        .or_insert(Definition { destination, title });
+        .push((reference_id, Definition { destination, title }));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`DefinitionDestinationString`][Token::DefinitionDestinationString].
@@ -1086,7 +1055,21 @@ fn on_exit_media(context: &mut CompileContext) {
         .or(media.label_id)
         .map(|id| normalize_identifier(&id));
     let label = media.label.unwrap();
-    let definition = id.and_then(|id| context.definitions.get(&id));
+    let mut definition: Option<&Definition> = None;
+
+    if let Some(id) = id {
+        let mut index = 0;
+
+        while index < context.definitions.len() {
+            if context.definitions[index].0 == id {
+                definition = Some(&context.definitions[index].1);
+                break;
+            }
+
+            index += 1;
+        }
+    }
+
     let destination = if media.destination.is_some() {
         &media.destination
     } else {
