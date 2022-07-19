@@ -17,8 +17,6 @@ use crate::token::{Token, VOID_TOKENS};
 /// Embedded content type.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContentType {
-    /// Represents [flow content][crate::content::flow].
-    Flow,
     /// Represents [text content][crate::content::text].
     Text,
     /// Represents [string content][crate::content::string].

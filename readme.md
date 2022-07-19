@@ -57,7 +57,6 @@ cargo doc --document-private-items
 
 #### Refactor
 
-- [ ] (1) Use `edit_map` in `subtokenize` (needs to support links in edits)
 - [ ] (1) Improve `interrupt`, `concrete`, `lazy` fields somehow?
 
 #### Parse
@@ -71,8 +70,7 @@ cargo doc --document-private-items
 
 #### Misc
 
-- [ ] (3) `no_std`: remove all `HashMap` to use vecs, vecs w/ tuples?
-- [ ] (3) Remove splicing and cloning in subtokenizer
+- [ ] (3) `no_std`?
 - [ ] (3) Pass more references around
 - [ ] (1) Get markers from constructs (`string`, `text`)
 - [ ] (3) Read through rust docs to figure out what useful functions there are,
@@ -208,3 +206,6 @@ important.
 - [x] (1) Add list of void tokens, check that they’re void
 - [x] (3) Use `commonmark` tests
 - [x] (3) Add support for turning off constructs
+- [x] (1) Use `edit_map` in `subtokenize`
+- [x] (3) Remove all `HashMap`s
+- [x] (3) Remove splicing and cloning in subtokenizer

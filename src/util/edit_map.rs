@@ -107,20 +107,7 @@ impl EditMap {
                 next_events.append(append);
             }
 
-            if !add.is_empty() {
-                let append = &mut add;
-                let mut index = 0;
-
-                while index < append.len() {
-                    let event = &mut append[index];
-                    assert!(event.previous.is_none(), "to do?");
-                    assert!(event.next.is_none(), "to do?");
-                    index += 1;
-                }
-
-                next_events.append(append);
-            }
-
+            next_events.append(&mut add);
             start = at + remove;
             index += 1;
         }

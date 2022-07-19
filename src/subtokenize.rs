@@ -21,11 +21,10 @@
 //! thus the whole document needs to be parsed up to the level of definitions,
 //! before any level that can include references can be parsed.
 
-use crate::content::{flow::start as flow, string::start as string, text::start as text};
+use crate::content::{string::start as string, text::start as text};
 use crate::parser::ParseState;
 use crate::tokenizer::{ContentType, Event, EventType, State, StateFn, StateFnResult, Tokenizer};
-use crate::util::span;
-use std::collections::HashMap;
+use crate::util::{edit_map::EditMap, span};
 
 /// Create a link between two [`Event`][]s.
 ///
@@ -63,16 +62,9 @@ pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
 ///
 /// Supposed to be called repeatedly, returns `1: true` when done.
 pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Event>, bool) {
-    let mut index = 0;
-    // Map of first chunks to their tokenizer.
-    let mut head_to_tokenizer: HashMap<usize, Tokenizer> = HashMap::new();
-    // Map of chunks to their head and corresponding range of events.
-    let mut link_to_info: HashMap<usize, (usize, usize, usize)> = HashMap::new();
+    let mut edit_map = EditMap::new();
     let mut done = true;
-
-    if events.is_empty() {
-        return (events, true);
-    }
+    let mut index = 0;
 
     while index < events.len() {
         let event = &events[index];
@@ -83,34 +75,28 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
 
             // No need to enter linked events again.
             if event.previous == None {
-                done = false;
                 // Index into `events` pointing to a chunk.
-                let mut index_opt: Option<usize> = Some(index);
+                let mut link_index: Option<usize> = Some(index);
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), event.index, parse_state);
                 // Substate.
                 let mut result: StateFnResult = (
-                    State::Fn(Box::new(if *content_type == ContentType::Flow {
-                        flow
-                    } else if *content_type == ContentType::String {
+                    State::Fn(Box::new(if *content_type == ContentType::String {
                         string
                     } else {
                         text
                     })),
                     None,
                 );
-                // Indices into `codes` of each end of chunk.
-                let mut ends: Vec<usize> = vec![];
 
-                // Loop through chunks to pass them in order to the subtokenizer.
-                while let Some(index_ptr) = index_opt {
-                    let enter = &events[index_ptr];
+                // Loop through links to pass them in order to the subtokenizer.
+                while let Some(index) = link_index {
+                    let enter = &events[index];
                     assert_eq!(enter.event_type, EventType::Enter);
                     let span = span::Span {
                         start_index: enter.index,
-                        end_index: events[index_ptr + 1].index,
+                        end_index: events[index + 1].index,
                     };
-                    ends.push(span.end_index);
 
                     if enter.previous != None {
                         tokenizer.define_skip(&enter.point, enter.index);
@@ -127,32 +113,32 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
                         enter.next == None,
                     );
                     assert!(result.1.is_none(), "expected no remainder");
-                    index_opt = enter.next;
+                    link_index = enter.next;
                 }
 
-                // Now, loop through all subevents (and `ends`), to figure out
-                // which parts belong where.
-                // Current index.
+                // Now, loop through all subevents to figure out which parts
+                // belong where and fix deep links.
                 let mut subindex = 0;
-                // Index into subevents that starts the current slice.
-                let mut last_start = 0;
-                // Counter into `ends`: the linked token we are at.
-                let mut end_index = 0;
-                let mut index_opt: Option<usize> = Some(index);
+                let mut link_index = index;
+                let mut slices = vec![];
+                let mut slice_start = 0;
 
                 while subindex < tokenizer.events.len() {
                     let subevent = &mut tokenizer.events[subindex];
 
                     // Find the first event that starts after the end we’re looking
                     // for.
-                    if subevent.event_type == EventType::Enter && subevent.index >= ends[end_index]
+                    if subevent.event_type == EventType::Enter
+                        && subevent.index >= events[link_index + 1].index
                     {
-                        let link = index_opt.unwrap();
-                        link_to_info.insert(link, (index, last_start, subindex));
+                        slices.push((link_index, slice_start));
+                        slice_start = subindex;
+                        link_index = events[link_index].next.unwrap();
+                    }
 
-                        last_start = subindex;
-                        end_index += 1;
-                        index_opt = events[link].next;
+                    if subevent.content_type.is_some() {
+                        // Need to call `subtokenize` again.
+                        done = false;
                     }
 
                     // If there is a `next` link in the subevents, we have to change
@@ -163,8 +149,7 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
                         // The `index` in `events` where the current link is,
                         // minus 2 events (the enter and exit) for each removed
                         // link.
-                        let shift = index_opt.unwrap() - (end_index * 2);
-
+                        let shift = link_index - (slices.len() * 2);
                         subevent.next = Some(next + shift);
                         let next_ev = &mut tokenizer.events[next];
                         let previous = next_ev.previous.unwrap();
@@ -174,36 +159,24 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
                     subindex += 1;
                 }
 
-                link_to_info.insert(index_opt.unwrap(), (index, last_start, subindex));
-                head_to_tokenizer.insert(index, tokenizer);
+                slices.push((link_index, slice_start));
+
+                // Finally, inject the subevents.
+                let mut index = slices.len();
+
+                while index > 0 {
+                    index -= 1;
+                    edit_map.add(
+                        slices[index].0,
+                        2,
+                        tokenizer.events.split_off(slices[index].1),
+                    );
+                }
             }
         }
 
         index += 1;
     }
 
-    // Now that we fed everything into a tokenizer, and we know which parts
-    // belong where, the final task is to splice the events from each
-    // tokenizer into the current events.
-    // To do: instead of splicing, it might be possible to create a new `events`
-    // from each slice and slices from events?
-    let mut index = events.len() - 1;
-
-    while index > 0 {
-        let slice_opt = link_to_info.get(&index);
-
-        if let Some(slice) = slice_opt {
-            let (head, start, end) = *slice;
-            // If there’s a slice at this index, it must also point to a head,
-            // and that head must have a tokenizer.
-            let tokenizer = head_to_tokenizer.get(&head).unwrap();
-
-            // To do: figure out a way that moves instead of clones?
-            events.splice(index..(index + 2), tokenizer.events[start..end].to_vec());
-        }
-
-        index -= 1;
-    }
-
-    (events, done)
+    (edit_map.consume(&mut events), done)
 }
