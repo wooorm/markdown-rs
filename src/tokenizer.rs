@@ -203,7 +203,7 @@ pub struct Tokenizer<'a> {
     /// List of names associated with attached resolvers.
     resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
-    pub parse_state: &'a ParseState,
+    pub parse_state: &'a ParseState<'a>,
     /// Stack of label (start) that could form images and links.
     ///
     /// Used when tokenizing [text content][crate::content::text].
@@ -235,7 +235,7 @@ pub struct Tokenizer<'a> {
 
 impl<'a> Tokenizer<'a> {
     /// Create a new tokenizer.
-    pub fn new(point: Point, index: usize, parse_state: &'a ParseState) -> Tokenizer {
+    pub fn new(point: Point, index: usize, parse_state: &'a ParseState) -> Tokenizer<'a> {
         Tokenizer {
             previous: Code::None,
             current: Code::None,
@@ -701,7 +701,6 @@ fn feed_impl(
     codes: &[Code],
     start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
 ) -> StateFnResult {
-    let codes = codes;
     let mut state = State::Fn(Box::new(start));
     let mut index = 0;
 
