@@ -270,7 +270,7 @@ pub struct Options {
     ///
     /// ## Examples
     ///
-    /// ```rust
+    /// ```
     /// use micromark::{micromark, micromark_with_options, Options};
     ///
     /// // micromark is safe by default:
@@ -299,7 +299,7 @@ pub struct Options {
     ///
     /// ## Examples
     ///
-    /// ```rust
+    /// ```
     /// use micromark::{micromark, micromark_with_options, Options};
     ///
     /// // micromark is safe by default:
@@ -336,7 +336,7 @@ pub struct Options {
     ///
     /// ## Examples
     ///
-    /// ```rust
+    /// ```
     /// use micromark::{micromark, micromark_with_options, Options, LineEnding};
     ///
     /// // micromark uses `\n` by default:
@@ -364,7 +364,7 @@ pub struct Options {
     ///
     /// ## Examples
     ///
-    /// ```rust
+    /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
     ///
     /// // micromark follows CommonMark by default:
@@ -395,7 +395,7 @@ pub struct Options {
 ///
 /// ## Examples
 ///
-/// ```rust
+/// ```
 /// use micromark::micromark;
 ///
 /// let result = micromark("# Hello, world!");
@@ -411,7 +411,7 @@ pub fn micromark(value: &str) -> String {
 ///
 /// ## Examples
 ///
-/// ```rust
+/// ```
 /// use micromark::{micromark_with_options, Options};
 ///
 /// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
