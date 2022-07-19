@@ -13,7 +13,6 @@
 
 use crate::parser::ParseState;
 use crate::token::{Token, VOID_TOKENS};
-use std::collections::HashMap;
 
 /// Embedded content type.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -175,7 +174,10 @@ struct InternalState {
 /// A tokenizer itself.
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
-    column_start: HashMap<usize, (Point, usize)>,
+    /// Jump between line endings.
+    column_start: Vec<Option<(usize, usize, usize)>>,
+    // First line.
+    line_start: usize,
     /// Track whether a character is expected to be consumed, and whether it’s
     /// actually consumed
     ///
@@ -239,7 +241,9 @@ impl<'a> Tokenizer<'a> {
         Tokenizer {
             previous: Code::None,
             current: Code::None,
-            column_start: HashMap::new(),
+            // To do: reserve size when feeding?
+            column_start: vec![],
+            line_start: point.line,
             index,
             consumed: true,
             drained: false,
@@ -285,24 +289,30 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Define a jump between two places.
-    ///
-    /// This defines how much columns are increased when consuming a line
-    /// ending.
-    pub fn define_skip(&mut self, point: Point, index: usize) {
-        log::debug!("position: define skip: {:?}, {:?}", point, index);
-        self.column_start.insert(point.line, (point, index));
-        self.account_for_potential_skip();
+    pub fn define_skip(&mut self, point: &Point, index: usize) {
+        define_skip_current_impl(self, point.line, (point.column, point.offset, index));
+    }
+
+    /// Define the current place as a jump between two places.
+    pub fn define_skip_current(&mut self) {
+        define_skip_current_impl(
+            self,
+            self.point.line,
+            (self.point.column, self.point.offset, self.index),
+        );
     }
 
     /// Increment the current positional info if we’re right after a line
     /// ending, which has a skip defined.
     fn account_for_potential_skip(&mut self) {
-        if self.point.column == 1 {
-            match self.column_start.get(&self.point.line) {
+        let at = self.point.line - self.line_start;
+
+        if self.point.column == 1 && at < self.column_start.len() {
+            match &self.column_start[at] {
                 None => {}
-                Some((point, index)) => {
-                    self.point.column = point.column;
-                    self.point.offset = point.offset;
+                Some((column, offset, index)) => {
+                    self.point.column = *column;
+                    self.point.offset = *offset;
                     self.index = *index;
                 }
             };
@@ -754,6 +764,24 @@ fn flush_impl(
     }
 
     check_statefn_result((state, None))
+}
+
+/// Define a jump between two places.
+///
+/// This defines how much columns, offsets, and the `index` are increased when
+/// consuming a line ending.
+fn define_skip_current_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize)) {
+    log::debug!("position: define skip: {:?} -> ({:?})", line, info);
+    let at = line - tokenizer.line_start;
+
+    if at + 1 > tokenizer.column_start.len() {
+        tokenizer.column_start.resize(at, None);
+        tokenizer.column_start.push(Some(info));
+    } else {
+        tokenizer.column_start[at] = Some(info);
+    }
+
+    tokenizer.account_for_potential_skip();
 }
 
 /// Check a [`StateFnResult`][], make sure its valid (that there are no bugs),

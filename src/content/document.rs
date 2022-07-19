@@ -356,7 +356,7 @@ fn containers_after(
 
     tokenizer.lazy = info.continued != info.stack.len();
     tokenizer.interrupt = info.interrupt_before;
-    tokenizer.define_skip(tokenizer.point.clone(), tokenizer.index);
+    tokenizer.define_skip_current();
 
     let state = info.next;
     info.next = Box::new(flow);
@@ -437,7 +437,7 @@ fn exit_containers(
 
     // So, we’re at the end of a line, but we need to close the *previous* line.
     if *phase != Phase::Eof {
-        tokenizer.define_skip(tokenizer.point.clone(), tokenizer.index);
+        tokenizer.define_skip_current();
         let mut current_events = tokenizer.events.drain(info.index..).collect::<Vec<_>>();
         let next = info.next;
         info.next = Box::new(flow); // This is weird but Rust needs a function there.

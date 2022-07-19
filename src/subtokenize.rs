@@ -113,7 +113,7 @@ pub fn subtokenize(mut events: Vec<Event>, parse_state: &ParseState) -> (Vec<Eve
                     ends.push(span.end_index);
 
                     if enter.previous != None {
-                        tokenizer.define_skip(enter.point.clone(), enter.index);
+                        tokenizer.define_skip(&enter.point, enter.index);
                     }
 
                     let func: Box<StateFn> = match result.0 {
