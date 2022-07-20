@@ -50,7 +50,7 @@ use crate::construct::{
     thematic_break::start as thematic_break,
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, EventType, State, StateFnResult, Tokenizer};
 use crate::util::{
     edit_map::EditMap,
     skip,
@@ -390,7 +390,7 @@ fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
 }
 
 /// Find adjacent list items with the same marker.
-pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
     let mut edit_map = EditMap::new();
     let mut index = 0;
     let mut balance = 0;
@@ -492,5 +492,5 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(tokenizer.events.split_off(0))
+    edit_map.consume(&mut tokenizer.events);
 }

@@ -612,7 +612,7 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
 /// This turns correct label start (image, link) and label end into links and
 /// images, or turns them back into data.
 #[allow(clippy::too_many_lines)]
-pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve_media(tokenizer: &mut Tokenizer) {
     let mut left = tokenizer.label_start_list_loose.split_off(0);
     let mut left_2 = tokenizer.label_start_stack.split_off(0);
     let media = tokenizer.media_list.split_off(0);
@@ -773,5 +773,5 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(tokenizer.events.split_off(0))
+    edit_map.consume(&mut tokenizer.events);
 }

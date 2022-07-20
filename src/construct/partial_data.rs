@@ -7,7 +7,7 @@
 //! [text]: crate::content::text
 
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, EventType, State, StateFnResult, Tokenizer};
 use crate::util::edit_map::EditMap;
 
 /// At the beginning of data.
@@ -75,7 +75,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult
 }
 
 /// Merge adjacent data events.
-pub fn resolve_data(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve_data(tokenizer: &mut Tokenizer) {
     let mut edit_map = EditMap::new();
     let len = tokenizer.events.len();
     let mut index = 0;
@@ -114,5 +114,5 @@ pub fn resolve_data(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(tokenizer.events.split_off(0))
+    edit_map.consume(&mut tokenizer.events);
 }

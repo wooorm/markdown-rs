@@ -33,7 +33,7 @@
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, Event, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, ContentType, EventType, State, StateFnResult, Tokenizer};
 use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
 
 /// Before a paragraph.
@@ -80,7 +80,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// Merge “`Paragraph`”s, which currently span a single line, into actual
 /// `Paragraph`s that span multiple lines.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut edit_map = EditMap::new();
     let len = tokenizer.events.len();
     let mut index = 0;
@@ -142,5 +142,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(tokenizer.events.split_off(0))
+    edit_map.consume(&mut tokenizer.events);
 }

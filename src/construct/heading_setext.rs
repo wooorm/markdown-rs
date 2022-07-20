@@ -60,7 +60,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, EventType, State, StateFnResult, Tokenizer};
 use crate::util::{edit_map::EditMap, skip::opt_back as skip_opt_back};
 
 /// Kind of underline.
@@ -196,7 +196,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 }
 
 /// Resolve heading (setext).
-pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut edit_map = EditMap::new();
     let mut index = 0;
     let mut paragraph_enter: Option<usize> = None;
@@ -236,5 +236,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(tokenizer.events.split_off(0))
+    edit_map.consume(&mut tokenizer.events);
 }

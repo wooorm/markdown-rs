@@ -61,7 +61,7 @@ pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
 /// Parse linked events.
 ///
 /// Supposed to be called repeatedly, returns `1: true` when done.
-pub fn subtokenize(events: Vec<Event>, parse_state: &ParseState) -> (Vec<Event>, bool) {
+pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
     let mut edit_map = EditMap::new();
     let mut done = true;
     let mut index = 0;
@@ -178,5 +178,7 @@ pub fn subtokenize(events: Vec<Event>, parse_state: &ParseState) -> (Vec<Event>,
         index += 1;
     }
 
-    (edit_map.consume(events), done)
+    edit_map.consume(events);
+
+    done
 }

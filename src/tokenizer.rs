@@ -91,7 +91,7 @@ pub type StateFnResult = (State, Option<Vec<Code>>);
 /// Resolvers are supposed to change the list of events, because parsing is
 /// sometimes messy, and they help expose a cleaner interface of events to
 /// the compiler and other users.
-pub type Resolver = dyn FnOnce(&mut Tokenizer) -> Vec<Event>;
+pub type Resolver = dyn FnOnce(&mut Tokenizer);
 
 /// The result of a state.
 pub enum State {
@@ -166,8 +166,6 @@ struct InternalState {
     /// Current relative and absolute position in the file.
     point: Point,
 }
-
-// #[derive(Debug)]
 
 /// A tokenizer itself.
 #[allow(clippy::struct_excessive_bools)]
@@ -288,12 +286,12 @@ impl<'a> Tokenizer<'a> {
 
     /// Define a jump between two places.
     pub fn define_skip(&mut self, point: &Point, index: usize) {
-        define_skip_current_impl(self, point.line, (point.column, point.offset, index));
+        define_skip_impl(self, point.line, (point.column, point.offset, index));
     }
 
     /// Define the current place as a jump between two places.
     pub fn define_skip_current(&mut self) {
-        define_skip_current_impl(
+        define_skip_impl(
             self,
             self.point.line,
             (self.point.column, self.point.offset, self.index),
@@ -629,7 +627,7 @@ impl<'a> Tokenizer<'a> {
 
             while !self.resolvers.is_empty() {
                 let resolver = self.resolvers.remove(0);
-                self.events = resolver(self);
+                resolver(self);
             }
         }
 
@@ -768,7 +766,7 @@ fn flush_impl(
 ///
 /// This defines how much columns, offsets, and the `index` are increased when
 /// consuming a line ending.
-fn define_skip_current_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize)) {
+fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize)) {
     log::debug!("position: define skip: {:?} -> ({:?})", line, info);
     let at = line - tokenizer.line_start;
 

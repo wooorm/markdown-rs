@@ -205,7 +205,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnR
 
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
-fn resolve_attention(tokenizer: &mut Tokenizer) -> Vec<Event> {
+fn resolve_attention(tokenizer: &mut Tokenizer) {
     let codes = &tokenizer.parse_state.codes;
     let mut edit_map = EditMap::new();
     let mut start = 0;
@@ -523,7 +523,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer) -> Vec<Event> {
         index += 1;
     }
 
-    edit_map.consume(tokenizer.events.split_off(0))
+    edit_map.consume(&mut tokenizer.events);
 }
 
 /// Classify whether a character code represents whitespace, punctuation, or

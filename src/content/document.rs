@@ -106,15 +106,16 @@ pub fn document(parse_state: &mut ParseState, point: Point, index: usize) -> Vec
         index += 1;
     }
 
-    let mut result = (tokenizer.events, false);
+    let mut done = false;
+    let mut events = tokenizer.events;
 
     parse_state.definitions = next_definitions;
 
-    while !result.1 {
-        result = subtokenize(result.0, parse_state);
+    while !done {
+        done = subtokenize(&mut events, parse_state);
     }
 
-    result.0
+    events
 }
 
 /// Before document.
@@ -415,7 +416,7 @@ fn flow_end(
                 info = exit_containers(tokenizer, info, &Phase::Eof);
             }
 
-            tokenizer.events = resolve(tokenizer, &info);
+            resolve(tokenizer, &info);
 
             (State::Ok, Some(vec![code]))
         }
@@ -481,7 +482,7 @@ fn exit_containers(
 }
 
 // Inject the container events.
-fn resolve(tokenizer: &mut Tokenizer, info: &DocumentInfo) -> Vec<Event> {
+fn resolve(tokenizer: &mut Tokenizer, info: &DocumentInfo) {
     let mut map = EditMap::new();
     let mut line_index = 0;
     let mut index = 0;
@@ -537,5 +538,5 @@ fn resolve(tokenizer: &mut Tokenizer, info: &DocumentInfo) -> Vec<Event> {
         add,
     );
 
-    map.consume(tokenizer.events.split_off(0))
+    map.consume(&mut tokenizer.events);
 }
