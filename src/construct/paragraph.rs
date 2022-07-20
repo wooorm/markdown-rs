@@ -80,8 +80,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// Merge “`Paragraph`”s, which currently span a single line, into actual
 /// `Paragraph`s that span multiple lines.
-pub fn resolve(tokenizer: &mut Tokenizer) {
-    let mut edit_map = EditMap::new();
+pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let len = tokenizer.events.len();
     let mut index = 0;
 
@@ -105,10 +104,10 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 && tokenizer.events[enter_next_index].token_type == Token::Paragraph
             {
                 // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
-                edit_map.add(exit_index, 3, vec![]);
+                map.add(exit_index, 3, vec![]);
 
                 // Remove Enter:Paragraph.
-                edit_map.add(enter_next_index, 1, vec![]);
+                map.add(enter_next_index, 1, vec![]);
 
                 // Add Exit:LineEnding position info to Exit:Data.
                 let line_ending_exit = &tokenizer.events[exit_index + 2];
@@ -142,5 +141,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events);
+    // This resolver is needed by setext headings.
+    true
 }

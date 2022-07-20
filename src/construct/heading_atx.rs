@@ -193,8 +193,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 }
 
 /// Resolve heading (atx).
-pub fn resolve(tokenizer: &mut Tokenizer) {
-    let mut edit_map = EditMap::new();
+pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let mut index = 0;
     let mut heading_start: Option<usize> = None;
     let mut data_start: Option<usize> = None;
@@ -210,7 +209,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 // If `start` is some, `end` is too.
                 let end = data_end.unwrap();
 
-                edit_map.add(
+                map.add(
                     start,
                     0,
                     vec![Event {
@@ -225,9 +224,9 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 );
 
                 // Remove everything between the start and the end.
-                edit_map.add(start + 1, end - start - 1, vec![]);
+                map.add(start + 1, end - start - 1, vec![]);
 
-                edit_map.add(
+                map.add(
                     end + 1,
                     0,
                     vec![Event {
@@ -258,5 +257,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events);
+    // This resolver improves events, but is not needed by other resolvers.
+    false
 }

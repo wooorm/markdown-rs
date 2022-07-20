@@ -612,13 +612,12 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
 /// This turns correct label start (image, link) and label end into links and
 /// images, or turns them back into data.
 #[allow(clippy::too_many_lines)]
-pub fn resolve_media(tokenizer: &mut Tokenizer) {
+pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let mut left = tokenizer.label_start_list_loose.split_off(0);
     let mut left_2 = tokenizer.label_start_stack.split_off(0);
     let media = tokenizer.media_list.split_off(0);
     left.append(&mut left_2);
 
-    let mut edit_map = EditMap::new();
     let events = &tokenizer.events;
 
     // Remove loose label starts.
@@ -628,7 +627,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         let data_enter_index = label_start.start.0;
         let data_exit_index = label_start.start.1;
 
-        edit_map.add(
+        map.add(
             data_enter_index,
             data_exit_index - data_enter_index + 1,
             vec![
@@ -678,7 +677,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         let group_end_index = media.end.1;
 
         // Insert a group enter and label enter.
-        edit_map.add(
+        map.add(
             group_enter_index,
             0,
             vec![
@@ -710,7 +709,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         // Empty events not allowed.
         if text_enter_index != text_exit_index {
             // Insert a text enter.
-            edit_map.add(
+            map.add(
                 text_enter_index,
                 0,
                 vec![Event {
@@ -725,7 +724,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
             );
 
             // Insert a text exit.
-            edit_map.add(
+            map.add(
                 text_exit_index,
                 0,
                 vec![Event {
@@ -741,7 +740,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         }
 
         // Insert a label exit.
-        edit_map.add(
+        map.add(
             label_exit_index + 1,
             0,
             vec![Event {
@@ -756,7 +755,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         );
 
         // Insert a group exit.
-        edit_map.add(
+        map.add(
             group_end_index + 1,
             0,
             vec![Event {
@@ -773,5 +772,6 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events);
+    // This resolver is needed to figure out interleaving with attention.
+    true
 }

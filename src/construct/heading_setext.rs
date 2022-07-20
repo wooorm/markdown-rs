@@ -196,8 +196,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 }
 
 /// Resolve heading (setext).
-pub fn resolve(tokenizer: &mut Tokenizer) {
-    let mut edit_map = EditMap::new();
+pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let mut index = 0;
     let mut paragraph_enter: Option<usize> = None;
     let mut paragraph_exit: Option<usize> = None;
@@ -229,12 +228,13 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
             let mut heading_exit = tokenizer.events[index].clone();
             heading_exit.token_type = Token::HeadingSetext;
 
-            edit_map.add(enter, 0, vec![heading_enter]);
-            edit_map.add(index + 1, 0, vec![heading_exit]);
+            map.add(enter, 0, vec![heading_enter]);
+            map.add(index + 1, 0, vec![heading_exit]);
         }
 
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events);
+    // This resolver improves events, but is not needed by other resolvers.
+    false
 }

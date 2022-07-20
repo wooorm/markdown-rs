@@ -75,8 +75,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult
 }
 
 /// Merge adjacent data events.
-pub fn resolve_data(tokenizer: &mut Tokenizer) {
-    let mut edit_map = EditMap::new();
+pub fn resolve_data(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let len = tokenizer.events.len();
     let mut index = 0;
 
@@ -96,7 +95,7 @@ pub fn resolve_data(tokenizer: &mut Tokenizer) {
             }
 
             if exit_far_index > exit_index {
-                edit_map.add(exit_index, exit_far_index - exit_index, vec![]);
+                map.add(exit_index, exit_far_index - exit_index, vec![]);
 
                 // Change positional info.
                 let exit_far = &tokenizer.events[exit_far_index];
@@ -114,5 +113,6 @@ pub fn resolve_data(tokenizer: &mut Tokenizer) {
         index += 1;
     }
 
-    edit_map.consume(&mut tokenizer.events);
+    // This resolver helps, but is not required for other resolvers.
+    false
 }

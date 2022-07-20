@@ -13,6 +13,7 @@
 
 use crate::parser::ParseState;
 use crate::token::{Token, VOID_TOKENS};
+use crate::util::edit_map::EditMap;
 
 /// Embedded content type.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -91,7 +92,7 @@ pub type StateFnResult = (State, Option<Vec<Code>>);
 /// Resolvers are supposed to change the list of events, because parsing is
 /// sometimes messy, and they help expose a cleaner interface of events to
 /// the compiler and other users.
-pub type Resolver = dyn FnOnce(&mut Tokenizer);
+pub type Resolver = dyn FnOnce(&mut Tokenizer, &mut EditMap) -> bool;
 
 /// The result of a state.
 pub enum State {
@@ -624,10 +625,24 @@ impl<'a> Tokenizer<'a> {
             result = flush_impl(self, func);
 
             self.drained = true;
+            let mut map = EditMap::new();
+            let mut consumed = false;
 
             while !self.resolvers.is_empty() {
                 let resolver = self.resolvers.remove(0);
-                resolver(self);
+                let consume = resolver(self, &mut map);
+
+                if consume {
+                    map.consume(&mut self.events);
+                    consumed = true;
+                    map = EditMap::new();
+                } else {
+                    consumed = false;
+                }
+            }
+
+            if !consumed {
+                map.consume(&mut self.events);
             }
         }
 
