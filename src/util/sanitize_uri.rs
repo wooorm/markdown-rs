@@ -32,32 +32,25 @@ use crate::util::encode::encode;
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
-    let value = encode(&normalize_uri(value));
+    let value = encode(normalize_uri(value));
 
     if let Some(protocols) = protocols {
-        let chars: Vec<char> = value.chars().collect();
-        let mut index = 0;
-        let mut colon: Option<usize> = None;
+        let end = value.find(|c| matches!(c, '?' | '#' | '/'));
+        let mut colon = value.find(|c| matches!(c, ':'));
 
-        while index < chars.len() {
-            let char = chars[index];
-
-            match char {
-                ':' => {
-                    colon = Some(index);
-                    break;
+        // If the first colon is after `?`, `#`, or `/`, it’s not a protocol.
+        if let Some(end) = end {
+            if let Some(index) = colon {
+                if index > end {
+                    colon = None;
                 }
-                '?' | '#' | '/' => break,
-                _ => {}
             }
-
-            index += 1;
         }
 
-        // If there is no protocol, or the first colon is after `?`, `#`, or `/`, it’s relative.
-        // It is a protocol, it should be allowed.
+        // If there is no protocol, it’s relative, and fine.
         if let Some(colon) = colon {
-            let protocol = chars[0..colon].iter().collect::<String>().to_lowercase();
+            // If it is a protocol, it should be allowed.
+            let protocol = value[0..colon].to_lowercase();
             if !protocols.contains(&protocol.as_str()) {
                 return "".to_string();
             }
@@ -85,8 +78,9 @@ pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 fn normalize_uri(value: &str) -> String {
-    let chars: Vec<char> = value.chars().collect();
-    let mut result: Vec<String> = vec![];
+    let chars = value.chars().collect::<Vec<_>>();
+    // Note: it’ll grow bigger for each non-ascii or non-safe character.
+    let mut result = String::with_capacity(value.len());
     let mut index = 0;
     let mut start = 0;
     let mut buff = [0; 4];
@@ -104,16 +98,15 @@ fn normalize_uri(value: &str) -> String {
             continue;
         }
 
-        // Note: Rust already takes care of lone astral surrogates.
+        // Note: Rust already takes care of lone surrogates.
         // Non-ascii or not allowed ascii.
         if char >= '\u{0080}'
             || !matches!(char, '!' | '#' | '$' | '&'..=';' | '=' | '?'..='Z' | '_' | 'a'..='z' | '~')
         {
-            result.push(chars[start..index].iter().collect::<String>());
-
+            result.push_str(&chars[start..index].iter().collect::<String>());
             char.encode_utf8(&mut buff);
-            result.push(
-                buff[0..char.len_utf8()]
+            result.push_str(
+                &buff[0..char.len_utf8()]
                     .iter()
                     .map(|&byte| format!("%{:>02X}", byte))
                     .collect::<String>(),
@@ -125,7 +118,7 @@ fn normalize_uri(value: &str) -> String {
         index += 1;
     }
 
-    result.push(chars[start..].iter().collect::<String>());
+    result.push_str(&chars[start..].iter().collect::<String>());
 
-    result.join("")
+    result
 }

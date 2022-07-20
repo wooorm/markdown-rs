@@ -84,7 +84,7 @@ struct CompileContext<'a> {
     pub line_ending_default: LineEnding,
     pub allow_dangerous_html: bool,
     /// Intermediate results.
-    pub buffers: Vec<Vec<String>>,
+    pub buffers: Vec<String>,
     pub index: usize,
 }
 
@@ -125,78 +125,62 @@ impl<'a> CompileContext<'a> {
             },
             line_ending_default: line_ending,
             allow_dangerous_html: options.allow_dangerous_html,
-            buffers: vec![vec![]],
+            buffers: vec![String::new()],
             index: 0,
         }
     }
 
     /// Push a buffer.
     pub fn buffer(&mut self) {
-        self.buffers.push(vec![]);
+        self.buffers.push(String::new());
     }
 
     /// Pop a buffer, returning its value.
     pub fn resume(&mut self) -> String {
-        self.buffers
-            .pop()
-            .expect("Cannot resume w/o buffer")
-            .concat()
+        self.buffers.pop().expect("Cannot resume w/o buffer")
     }
 
-    pub fn push(&mut self, value: String) {
+    pub fn push<'x, S: Into<&'x str>>(&mut self, value: S) {
+        let value = value.into();
         self.buffers
             .last_mut()
             .expect("Cannot push w/o buffer")
-            .push(value);
+            .push_str(value);
         self.last_was_tag = false;
     }
 
-    pub fn tag(&mut self, value: String) {
+    pub fn push_raw<'x, S: Into<&'x str>>(&mut self, value: S) {
+        let value = value.into();
+        if self.ignore_encode {
+            self.push(value);
+        } else {
+            self.push(&*encode(value));
+        }
+    }
+
+    pub fn tag<'x, S: Into<&'x str>>(&mut self, value: S) {
         if self.tags {
-            self.buffers
-                .last_mut()
-                .expect("Cannot push w/o buffer")
-                .push(value);
+            self.push(value.into());
             self.last_was_tag = true;
         }
     }
 
-    /// Get the last chunk of current buffer.
-    pub fn buf_tail_slice(&self) -> Option<&String> {
-        self.buf_tail().last()
-    }
-
     /// Get the current buffer.
-    pub fn buf_tail(&self) -> &Vec<String> {
+    pub fn buf_tail(&self) -> &String {
         self.buffers
             .last()
             .expect("at least one buffer should exist")
     }
 
-    /// Optionally encode.
-    pub fn encode_opt(&self, value: &str) -> String {
-        if self.ignore_encode {
-            value.to_string()
-        } else {
-            encode(value)
-        }
-    }
-
     /// Add a line ending.
     pub fn line_ending(&mut self) {
-        let line_ending = self.line_ending_default.as_str().to_string();
-        // lastWasTag = false
-        self.push(line_ending);
+        let eol = self.line_ending_default.as_str().to_string();
+        self.push(&*eol);
     }
 
     /// Add a line ending if needed (as in, there’s no eol/eof already).
     pub fn line_ending_if_needed(&mut self) {
-        let slice = self.buf_tail_slice();
-        let last_char = if let Some(x) = slice {
-            x.chars().last()
-        } else {
-            None
-        };
+        let last_char = self.buf_tail().chars().last();
         let mut add = true;
 
         if let Some(x) = last_char {
@@ -314,7 +298,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         .buffers
         .get(0)
         .expect("expected 1 final buffer")
-        .concat()
+        .to_string()
 }
 
 /// Handle [`Enter`][EventType::Enter].
@@ -415,14 +399,14 @@ fn on_enter_buffer(context: &mut CompileContext) {
 fn on_enter_block_quote(context: &mut CompileContext) {
     context.tight_stack.push(false);
     context.line_ending_if_needed();
-    context.tag("<blockquote>".to_string());
+    context.tag("<blockquote>");
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeIndented`][Token::CodeIndented].
 fn on_enter_code_indented(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
-    context.tag("<pre><code>".to_string());
+    context.tag("<pre><code>");
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeFenced`][Token::CodeFenced].
@@ -430,14 +414,14 @@ fn on_enter_code_fenced(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
     // Note that no `>` is used, which is added later.
-    context.tag("<pre><code".to_string());
+    context.tag("<pre><code");
     context.code_fenced_fences_count = Some(0);
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeText`][Token::CodeText].
 fn on_enter_code_text(context: &mut CompileContext) {
     context.code_text_inside = true;
-    context.tag("<code>".to_string());
+    context.tag("<code>");
     context.buffer();
 }
 
@@ -462,7 +446,7 @@ fn on_enter_definition_destination_string(context: &mut CompileContext) {
 
 /// Handle [`Enter`][EventType::Enter]:[`Emphasis`][Token::Emphasis].
 fn on_enter_emphasis(context: &mut CompileContext) {
-    context.tag("<em>".to_string());
+    context.tag("<em>");
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`HtmlFlow`][Token::HtmlFlow].
@@ -563,7 +547,7 @@ fn on_enter_list(context: &mut CompileContext) {
     context.tight_stack.push(!loose);
     context.line_ending_if_needed();
     // Note: no `>`.
-    context.tag(format!(
+    context.tag(&*format!(
         "<{}",
         if *token_type == Token::ListOrdered {
             "ol"
@@ -579,11 +563,11 @@ fn on_enter_list_item_marker(context: &mut CompileContext) {
     let expect_first_item = context.expect_first_item.take().unwrap();
 
     if expect_first_item {
-        context.tag(">".to_string());
+        context.tag(">");
     }
 
     context.line_ending_if_needed();
-    context.tag("<li>".to_string());
+    context.tag("<li>");
     context.expect_first_item = Some(false);
     // “Hack” to prevent a line ending from showing up if the item is empty.
     context.last_was_tag = false;
@@ -595,7 +579,7 @@ fn on_enter_paragraph(context: &mut CompileContext) {
 
     if !tight {
         context.line_ending_if_needed();
-        context.tag("<p>".to_string());
+        context.tag("<p>");
     }
 }
 
@@ -616,7 +600,7 @@ fn on_enter_resource_destination_string(context: &mut CompileContext) {
 
 /// Handle [`Enter`][EventType::Enter]:[`Strong`][Token::Strong].
 fn on_enter_strong(context: &mut CompileContext) {
-    context.tag("<strong>".to_string());
+    context.tag("<strong>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkEmail`][Token::AutolinkEmail].
@@ -626,15 +610,15 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    context.tag(format!(
+    context.tag(&*format!(
         "<a href=\"{}\">",
         sanitize_uri(
             format!("mailto:{}", slice.as_str()).as_str(),
             &context.protocol_href
         )
     ));
-    context.push(context.encode_opt(&slice));
-    context.tag("</a>".to_string());
+    context.push_raw(&*slice);
+    context.tag("</a>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkProtocol`][Token::AutolinkProtocol].
@@ -644,17 +628,17 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    context.tag(format!(
+    context.tag(&*format!(
         "<a href=\"{}\">",
         sanitize_uri(slice.as_str(), &context.protocol_href)
     ));
-    context.push(context.encode_opt(&slice));
-    context.tag("</a>".to_string());
+    context.push_raw(&*slice);
+    context.tag("</a>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`HardBreakEscape`][Token::HardBreakEscape],[`HardBreakTrailing`][Token::HardBreakTrailing]}.
 fn on_exit_break(context: &mut CompileContext) {
-    context.tag("<br />".to_string());
+    context.tag("<br />");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`BlankLineEnding`][Token::BlankLineEnding].
@@ -669,7 +653,7 @@ fn on_exit_block_quote(context: &mut CompileContext) {
     context.tight_stack.pop();
     context.line_ending_if_needed();
     context.slurp_one_line_ending = false;
-    context.tag("</blockquote>".to_string());
+    context.tag("</blockquote>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][Token::CharacterReferenceMarker].
@@ -705,17 +689,17 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
         CharacterReferenceKind::Named => decode_named(ref_string),
     };
 
-    context.push(context.encode_opt(&value));
+    context.push_raw(&*value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][Token::CodeFlowChunk].
 fn on_exit_code_flow_chunk(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(true);
-    context.push(context.encode_opt(&serialize(
+    context.push_raw(&*serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
         false,
-    )));
+    ));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeFencedFence`][Token::CodeFencedFence].
@@ -727,7 +711,7 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext) {
     };
 
     if count == 0 {
-        context.tag(">".to_string());
+        context.tag(">");
         context.slurp_one_line_ending = true;
     }
 
@@ -737,7 +721,7 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`CodeFencedFenceInfo`][Token::CodeFencedFenceInfo].
 fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
     let value = context.resume();
-    context.tag(format!(" class=\"language-{}\"", value));
+    context.tag(&*format!(" class=\"language-{}\"", value));
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`CodeFenced`][Token::CodeFenced],[`CodeIndented`][Token::CodeIndented]}.
@@ -764,7 +748,7 @@ fn on_exit_code_flow(context: &mut CompileContext) {
         context.line_ending_if_needed();
     }
 
-    context.tag("</code></pre>".to_string());
+    context.tag("</code></pre>");
 
     if let Some(count) = context.code_fenced_fences_count.take() {
         if count < 2 {
@@ -792,12 +776,12 @@ fn on_exit_code_text(context: &mut CompileContext) {
     }
 
     context.code_text_inside = false;
-    context.push(if trim {
+    context.push(&*if trim {
         result[1..(result.len() - 1)].to_string()
     } else {
         result
     });
-    context.tag("</code>".to_string());
+    context.tag("</code>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:*.
@@ -810,11 +794,11 @@ fn on_exit_drop(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][Token::CodeTextData],[`Data`][Token::Data],[`CharacterEscapeValue`][Token::CharacterEscapeValue]}.
 fn on_exit_data(context: &mut CompileContext) {
     // Just output it.
-    context.push(context.encode_opt(&serialize(
+    context.push_raw(&*serialize(
         context.codes,
         &from_exit_event(context.events, context.index),
         false,
-    )));
+    ));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Definition`][Token::Definition].
@@ -870,7 +854,7 @@ fn on_exit_definition_title_string(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`Strong`][Token::Emphasis].
 fn on_exit_emphasis(context: &mut CompileContext) {
-    context.tag("</em>".to_string());
+    context.tag("</em>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtx`][Token::HeadingAtx].
@@ -880,7 +864,7 @@ fn on_exit_heading_atx(context: &mut CompileContext) {
         .take()
         .expect("`atx_opening_sequence_size` must be set in headings");
 
-    context.tag(format!("</h{}>", rank));
+    context.tag(&*format!("</h{}>", rank));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtxSequence`][Token::HeadingAtxSequence].
@@ -895,14 +879,14 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
         .len();
         context.line_ending_if_needed();
         context.atx_opening_sequence_size = Some(rank);
-        context.tag(format!("<h{}>", rank));
+        context.tag(&*format!("<h{}>", rank));
     }
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtxText`][Token::HeadingAtxText].
 fn on_exit_heading_atx_text(context: &mut CompileContext) {
     let value = context.resume();
-    context.push(value);
+    context.push(&*value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingSetextText`][Token::HeadingSetextText].
@@ -925,9 +909,9 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
     let level: usize = if head == Code::Char('-') { 2 } else { 1 };
 
     context.line_ending_if_needed();
-    context.tag(format!("<h{}>", level));
-    context.push(text);
-    context.tag(format!("</h{}>", level));
+    context.tag(&*format!("<h{}>", level));
+    context.push(&*text);
+    context.tag(&*format!("</h{}>", level));
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlow`][Token::HtmlFlow],[`HtmlText`][Token::HtmlText]}.
@@ -942,7 +926,7 @@ fn on_exit_html_data(context: &mut CompileContext) {
         &from_exit_event(context.events, context.index),
         false,
     );
-    context.push(context.encode_opt(&slice));
+    context.push_raw(&*slice);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Label`][Token::Label].
@@ -965,15 +949,15 @@ fn on_exit_label_text(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
     if context.code_text_inside {
-        context.push(" ".to_string());
+        context.push(" ");
     } else if context.slurp_one_line_ending {
         context.slurp_one_line_ending = false;
     } else {
-        context.push(context.encode_opt(&serialize(
+        context.push_raw(&*serialize(
             context.codes,
             &from_exit_event(context.events, context.index),
             false,
-        )));
+        ));
     }
 }
 
@@ -986,7 +970,7 @@ fn on_exit_list(context: &mut CompileContext) {
     };
     context.tight_stack.pop();
     context.line_ending();
-    context.tag(format!("</{}>", tag_name));
+    context.tag(&*format!("</{}>", tag_name));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ListItem`][Token::ListItem].
@@ -1012,7 +996,7 @@ fn on_exit_list_item(context: &mut CompileContext) {
         context.line_ending_if_needed();
     }
 
-    context.tag("</li>".to_string());
+    context.tag("</li>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ListItemValue`][Token::ListItemValue].
@@ -1028,7 +1012,9 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
         let value = slice.parse::<u32>().ok().unwrap();
 
         if value != 1 {
-            context.tag(format!(" start=\"{}\"", encode(&value.to_string())));
+            context.tag(" start=\"");
+            context.tag(&*value.to_string());
+            context.tag("\"");
         }
     }
 }
@@ -1082,9 +1068,9 @@ fn on_exit_media(context: &mut CompileContext) {
     };
 
     let destination = if let Some(destination) = destination {
-        destination.clone()
+        destination
     } else {
-        "".to_string()
+        ""
     };
 
     let title = if let Some(title) = title {
@@ -1094,20 +1080,20 @@ fn on_exit_media(context: &mut CompileContext) {
     };
 
     if media.image {
-        context.tag(format!(
+        context.tag(&*format!(
             "<img src=\"{}\" alt=\"",
-            sanitize_uri(&destination, &context.protocol_src),
+            sanitize_uri(destination, &context.protocol_src),
         ));
-        context.push(label);
-        context.tag(format!("\"{} />", title));
+        context.push(&*label);
+        context.tag(&*format!("\"{} />", title));
     } else {
-        context.tag(format!(
+        context.tag(&*format!(
             "<a href=\"{}\"{}>",
-            sanitize_uri(&destination, &context.protocol_href),
+            sanitize_uri(destination, &context.protocol_href),
             title,
         ));
-        context.push(label);
-        context.tag("</a>".to_string());
+        context.push(&*label);
+        context.tag("</a>");
     };
 }
 
@@ -1118,7 +1104,7 @@ fn on_exit_paragraph(context: &mut CompileContext) {
     if *tight {
         context.slurp_one_line_ending = true;
     } else {
-        context.tag("</p>".to_string());
+        context.tag("</p>");
     }
 }
 
@@ -1151,11 +1137,11 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`Strong`][Token::Strong].
 fn on_exit_strong(context: &mut CompileContext) {
-    context.tag("</strong>".to_string());
+    context.tag("</strong>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ThematicBreak`][Token::ThematicBreak].
 fn on_exit_thematic_break(context: &mut CompileContext) {
     context.line_ending_if_needed();
-    context.tag("<hr />".to_string());
+    context.tag("<hr />");
 }

@@ -32,7 +32,8 @@
 /// [definition]: crate::construct::definition
 /// [label_end]: crate::construct::label_end
 pub fn normalize_identifier(value: &str) -> String {
-    let mut codes = vec![];
+    // Note: it’ll grow a bit smaller for consecutive whitespace.
+    let mut result = String::with_capacity(value.len());
     let mut at_start = true;
     let mut at_whitespace = true;
 
@@ -44,10 +45,10 @@ pub fn normalize_identifier(value: &str) -> String {
             }
             _ => {
                 if at_whitespace && !at_start {
-                    codes.push(' ');
+                    result.push(' ');
                 }
 
-                codes.push(char);
+                result.push(char);
                 at_start = false;
                 at_whitespace = false;
             }
@@ -66,9 +67,5 @@ pub fn normalize_identifier(value: &str) -> String {
     // to `SS` (U+0053 U+0053).
     // If we’d inverse the steps, for `ẞ`, we’d first uppercase without a
     // change, and then lowercase to `ß`, which would not match `ss`.
-    codes
-        .iter()
-        .collect::<String>()
-        .to_lowercase()
-        .to_uppercase()
+    result.to_lowercase().to_uppercase()
 }

@@ -20,37 +20,31 @@
 /// ## References
 ///
 /// *   [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
-pub fn encode(value: &str) -> String {
-    let mut result: Vec<&str> = vec![];
-    let mut start = 0;
-    let mut index = 0;
+pub fn encode<S: Into<String>>(value: S) -> String {
+    let mut value = value.into();
 
-    for byte in value.bytes() {
-        if let Some(replacement) = match byte {
-            b'&' => Some("&amp;"),
-            b'"' => Some("&quot;"),
-            b'<' => Some("&lt;"),
-            b'>' => Some("&gt;"),
-            _ => None,
-        } {
-            if start != index {
-                result.push(&value[start..index]);
-            }
+    // It’ll grow a bit bigger for each dangerous character.
+    let mut result = String::with_capacity(value.len());
 
-            result.push(replacement);
-            start = index + 1;
-        }
-
-        index += 1;
+    while let Some(indice) = value.find(check) {
+        let after = value.split_off(indice + 1);
+        let dangerous = value.pop().unwrap();
+        result.push_str(&value);
+        result.push_str(match dangerous {
+            '&' => "&amp;",
+            '"' => "&quot;",
+            '<' => "&lt;",
+            '>' => "&gt;",
+            _ => unreachable!("xxx"),
+        });
+        value = after;
     }
 
-    if start == 0 {
-        value.to_string()
-    } else {
-        if start < index {
-            result.push(&value[start..index]);
-        }
+    result.push_str(&value);
 
-        result.join("")
-    }
+    result
+}
+
+fn check(char: char) -> bool {
+    matches!(char, '&' | '"' | '<' | '>')
 }

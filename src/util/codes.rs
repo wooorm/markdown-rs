@@ -5,19 +5,21 @@ use crate::tokenizer::Code;
 
 /// Turn a string into codes.
 pub fn parse(value: &str) -> Vec<Code> {
-    let mut codes: Vec<Code> = vec![];
+    // Note: It’ll grow a bit bigger with each `Code::VirtualSpace`, smaller
+    // with `Code::CarriageReturnLineFeed`.
+    let mut codes: Vec<Code> = Vec::with_capacity(value.len());
     let mut at_start = true;
     let mut at_carriage_return = false;
     let mut column = 1;
 
     for char in value.chars() {
         if at_start {
+            at_start = false;
+
             if char == '\u{feff}' {
                 // Ignore.
                 continue;
             }
-
-            at_start = false;
         }
 
         // Send a CRLF.
@@ -83,34 +85,33 @@ pub fn parse(value: &str) -> Vec<Code> {
 /// Serialize codes, optionally expanding tabs.
 pub fn serialize(codes: &[Code], expand_tabs: bool) -> String {
     let mut at_tab = false;
-    let mut index = 0;
-    let mut value: Vec<char> = vec![];
+    // Note: It’ll grow a bit smaller with each
+    // `Code::Char('\t') | Code::VirtualSpace` if `expand_tabs` is false,
+    // and bigger with `Code::CarriageReturnLineFeed`,
+    let mut value = String::with_capacity(codes.len());
 
-    while index < codes.len() {
-        let code = codes[index];
+    for code in codes {
         let mut at_tab_next = false;
 
         match code {
             Code::CarriageReturnLineFeed => {
-                value.push('\r');
-                value.push('\n');
+                value.push_str("\r\n");
             }
-            Code::Char(char) if char == '\n' || char == '\r' => {
-                value.push(char);
+            Code::Char(char) if *char == '\n' || *char == '\r' => {
+                value.push(*char);
             }
-            Code::Char(char) if char == '\t' => {
+            Code::Char(char) if *char == '\t' => {
                 at_tab_next = true;
-                value.push(if expand_tabs { ' ' } else { char });
+                value.push(if expand_tabs { ' ' } else { *char });
             }
             Code::VirtualSpace => {
                 if !expand_tabs && at_tab {
-                    index += 1;
                     continue;
                 }
                 value.push(' ');
             }
             Code::Char(char) => {
-                value.push(char);
+                value.push(*char);
             }
             Code::None => {
                 unreachable!("unexpected EOF code in codes");
@@ -118,9 +119,7 @@ pub fn serialize(codes: &[Code], expand_tabs: bool) -> String {
         }
 
         at_tab = at_tab_next;
-
-        index += 1;
     }
 
-    value.into_iter().collect()
+    value
 }

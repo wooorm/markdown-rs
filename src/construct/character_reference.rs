@@ -121,7 +121,7 @@ impl Kind {
 #[derive(Debug, Clone)]
 struct Info {
     /// All parsed characters.
-    buffer: Vec<char>,
+    buffer: String,
     /// Kind of character reference.
     kind: Kind,
 }
@@ -162,7 +162,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let info = Info {
-        buffer: vec![],
+        buffer: String::new(),
         kind: Kind::Named,
     };
     if let Code::Char('#') = code {
@@ -216,10 +216,8 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResu
 fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::Char(';') if !info.buffer.is_empty() => {
-            let unknown_named = Kind::Named == info.kind && {
-                let value = info.buffer.iter().collect::<String>();
-                !CHARACTER_REFERENCES.iter().any(|d| d.0 == value)
-            };
+            let unknown_named = Kind::Named == info.kind
+                && !CHARACTER_REFERENCES.iter().any(|d| d.0 == info.buffer);
 
             if unknown_named {
                 (State::Nok, None)
