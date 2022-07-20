@@ -83,7 +83,7 @@ pub fn document(parse_state: &mut ParseState, point: Point, index: usize) -> Vec
     tokenizer.push(&parse_state.codes, Box::new(start), true);
 
     let mut index = 0;
-    let mut next_definitions = vec![];
+    let mut definitions = vec![];
 
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
@@ -98,22 +98,19 @@ pub fn document(parse_state: &mut ParseState, point: Point, index: usize) -> Vec
                 .as_str(),
             );
 
-            if !next_definitions.contains(&id) {
-                next_definitions.push(id);
+            if !definitions.contains(&id) {
+                definitions.push(id);
             }
         }
 
         index += 1;
     }
 
-    let mut done = false;
     let mut events = tokenizer.events;
 
-    parse_state.definitions = next_definitions;
+    parse_state.definitions = definitions;
 
-    while !done {
-        done = subtokenize(&mut events, parse_state);
-    }
+    while !subtokenize(&mut events, parse_state) {}
 
     events
 }
@@ -416,7 +413,7 @@ fn flow_end(
                 info = exit_containers(tokenizer, info, &Phase::Eof);
             }
 
-            resolve(tokenizer, &info);
+            resolve(tokenizer, &mut info);
 
             (State::Ok, Some(vec![code]))
         }
@@ -453,7 +450,7 @@ fn exit_containers(
         tokenizer.events.append(&mut current_events);
     }
 
-    let mut exits: Vec<Event> = vec![];
+    let mut exits = Vec::with_capacity(stack_close.len());
 
     while !stack_close.is_empty() {
         let container = stack_close.pop().unwrap();
@@ -482,61 +479,60 @@ fn exit_containers(
 }
 
 // Inject the container events.
-fn resolve(tokenizer: &mut Tokenizer, info: &DocumentInfo) {
+fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
     let mut map = EditMap::new();
-    let mut line_index = 0;
     let mut index = 0;
-
-    let add = info.inject[line_index].0.clone();
+    let mut inject = info.inject.split_off(0);
+    inject.reverse();
     let mut first_line_ending_in_run: Option<usize> = None;
-    map.add(0, 0, add);
 
-    while index < tokenizer.events.len() {
-        let event = &tokenizer.events[index];
-
-        if event.token_type == Token::LineEnding || event.token_type == Token::BlankLineEnding {
-            if event.event_type == EventType::Enter {
-                first_line_ending_in_run = first_line_ending_in_run.or(Some(index));
-                let mut add = info.inject[line_index].1.clone();
-                let mut index = 0;
-                while index < add.len() {
-                    add[index].point = event.point.clone();
-                    add[index].index = event.index;
-                    index += 1;
-                }
-                if !add.is_empty() {
-                    map.add(first_line_ending_in_run.unwrap(), 0, add);
-                }
-            } else {
-                line_index += 1;
-                let add = info.inject[line_index].0.clone();
-                if !add.is_empty() {
-                    // No longer empty.
-                    first_line_ending_in_run = None;
-                    map.add(index + 1, 0, add);
-                }
-            }
-        } else if event.token_type == Token::SpaceOrTab {
-            // Empty to allow whitespace in blank lines.
-        } else {
+    while let Some((before, mut after)) = inject.pop() {
+        if !before.is_empty() {
             first_line_ending_in_run = None;
+            map.add(index, 0, before);
         }
 
-        index += 1;
-    }
+        while index < tokenizer.events.len() {
+            let event = &tokenizer.events[index];
 
-    let mut add = info.inject[line_index].1.clone();
-    let mut index = 0;
-    while index < add.len() {
-        add[index].point = tokenizer.point.clone();
-        add[index].index = tokenizer.index;
-        index += 1;
+            if event.token_type == Token::LineEnding || event.token_type == Token::BlankLineEnding {
+                if event.event_type == EventType::Enter {
+                    first_line_ending_in_run = first_line_ending_in_run.or(Some(index));
+                } else {
+                    index += 1;
+                    break;
+                }
+            } else if event.token_type == Token::SpaceOrTab {
+                // Empty to allow whitespace in blank lines.
+            } else if first_line_ending_in_run.is_some() {
+                first_line_ending_in_run = None;
+            }
+
+            index += 1;
+        }
+
+        let point_rel = if let Some(index) = first_line_ending_in_run {
+            &tokenizer.events[index].point
+        } else {
+            &tokenizer.point
+        };
+        let index_rel = if let Some(index) = first_line_ending_in_run {
+            tokenizer.events[index].index
+        } else {
+            tokenizer.index
+        };
+
+        let close_index = first_line_ending_in_run.unwrap_or(index);
+
+        let mut subevent_index = 0;
+        while subevent_index < after.len() {
+            after[subevent_index].point = point_rel.clone();
+            after[subevent_index].index = index_rel;
+            subevent_index += 1;
+        }
+
+        map.add(close_index, 0, after);
     }
-    map.add(
-        first_line_ending_in_run.unwrap_or(tokenizer.events.len()),
-        0,
-        add,
-    );
 
     map.consume(&mut tokenizer.events);
 }

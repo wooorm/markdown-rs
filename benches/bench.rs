@@ -21,8 +21,7 @@ fn readme(c: &mut Criterion) {
 //     });
 //     group.finish();
 // }
-
-// one_and_a_half_mb
+// , one_and_a_half_mb
 
 criterion_group!(benches, readme);
 criterion_main!(benches);
