@@ -34,8 +34,8 @@ pub fn parse<'a>(value: &str, options: &'a Options) -> (Vec<Event>, ParseState<'
             line: 1,
             column: 1,
             offset: 0,
+            index: 0,
         },
-        0,
     );
 
     (events, parse_state)

@@ -24,7 +24,7 @@ pub struct Span {
 /// When `micromark` is used, this function never panics.
 pub fn from_exit_event(events: &[Event], index: usize) -> Span {
     let exit = &events[index];
-    let end_index = exit.index;
+    let end_index = exit.point.index;
     let token_type = exit.token_type.clone();
     assert_eq!(
         exit.event_type,
@@ -37,7 +37,7 @@ pub fn from_exit_event(events: &[Event], index: usize) -> Span {
         let enter = &events[enter_index];
         if enter.event_type == EventType::Enter && enter.token_type == token_type {
             return Span {
-                start_index: enter.index,
+                start_index: enter.point.index,
                 end_index,
             };
         }

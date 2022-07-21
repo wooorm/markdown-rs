@@ -317,7 +317,8 @@ fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
             tokenizer.events.len() - 1,
             &[Token::ListItem],
         );
-        let prefix = tokenizer.index - tokenizer.events[start].index + (if blank { 1 } else { 0 });
+        let prefix = tokenizer.point.index - tokenizer.events[start].point.index
+            + (if blank { 1 } else { 0 });
 
         let container = tokenizer.container.as_mut().unwrap();
         container.blank_initial = blank;

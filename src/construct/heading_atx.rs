@@ -216,7 +216,6 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                         event_type: EventType::Enter,
                         token_type: Token::HeadingAtxText,
                         point: tokenizer.events[start].point.clone(),
-                        index: tokenizer.events[start].index,
                         link: None,
                     }],
                 );
@@ -231,7 +230,6 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                         event_type: EventType::Exit,
                         token_type: Token::HeadingAtxText,
                         point: tokenizer.events[end].point.clone(),
-                        index: tokenizer.events[end].index,
                         link: None,
                     }],
                 );

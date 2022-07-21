@@ -75,7 +75,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 // Index into `events` pointing to a chunk.
                 let mut link_index: Option<usize> = Some(index);
                 // Subtokenizer.
-                let mut tokenizer = Tokenizer::new(event.point.clone(), event.index, parse_state);
+                let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
                 let mut result: StateFnResult = (
                     State::Fn(Box::new(if link.content_type == ContentType::String {
@@ -92,12 +92,12 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     let link_curr = enter.link.as_ref().expect("expected link");
                     assert_eq!(enter.event_type, EventType::Enter);
                     let span = span::Span {
-                        start_index: enter.index,
-                        end_index: events[index + 1].index,
+                        start_index: enter.point.index,
+                        end_index: events[index + 1].point.index,
                     };
 
                     if link_curr.previous != None {
-                        tokenizer.define_skip(&enter.point, enter.index);
+                        tokenizer.define_skip(&enter.point);
                     }
 
                     let func: Box<StateFn> = match result.0 {
@@ -127,7 +127,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     // Find the first event that starts after the end we’re looking
                     // for.
                     if subevent.event_type == EventType::Enter
-                        && subevent.index >= events[link_index + 1].index
+                        && subevent.point.index >= events[link_index + 1].point.index
                     {
                         slices.push((link_index, slice_start));
                         slice_start = subindex;

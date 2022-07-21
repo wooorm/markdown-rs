@@ -216,8 +216,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                     id: normalize_identifier(&serialize(
                         &tokenizer.parse_state.codes,
                         &Span {
-                            start_index: tokenizer.events[label_start.start.1].index,
-                            end_index: tokenizer.events[label_end_start - 1].index,
+                            start_index: tokenizer.events[label_start.start.1].point.index,
+                            end_index: tokenizer.events[label_end_start - 1].point.index,
                         },
                         false,
                     )),
@@ -538,9 +538,9 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
         let event = &events[index];
         if event.token_type == Token::ReferenceString {
             if event.event_type == EventType::Exit {
-                end = Some(event.index);
+                end = Some(event.point.index);
             } else {
-                start = Some(event.index);
+                start = Some(event.point.index);
                 break;
             }
         }
@@ -635,14 +635,12 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     event_type: EventType::Enter,
                     token_type: Token::Data,
                     point: events[data_enter_index].point.clone(),
-                    index: events[data_enter_index].index,
                     link: None,
                 },
                 Event {
                     event_type: EventType::Exit,
                     token_type: Token::Data,
                     point: events[data_exit_index].point.clone(),
-                    index: events[data_exit_index].index,
                     link: None,
                 },
             ],
@@ -685,14 +683,12 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                         Token::Image
                     },
                     point: group_enter_event.point.clone(),
-                    index: group_enter_event.index,
                     link: None,
                 },
                 Event {
                     event_type: EventType::Enter,
                     token_type: Token::Label,
                     point: group_enter_event.point.clone(),
-                    index: group_enter_event.index,
                     link: None,
                 },
             ],
@@ -708,7 +704,6 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     event_type: EventType::Enter,
                     token_type: Token::LabelText,
                     point: events[text_enter_index].point.clone(),
-                    index: events[text_enter_index].index,
                     link: None,
                 }],
             );
@@ -721,7 +716,6 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     event_type: EventType::Exit,
                     token_type: Token::LabelText,
                     point: events[text_exit_index].point.clone(),
-                    index: events[text_exit_index].index,
                     link: None,
                 }],
             );
@@ -735,7 +729,6 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 event_type: EventType::Exit,
                 token_type: Token::Label,
                 point: events[label_exit_index].point.clone(),
-                index: events[label_exit_index].index,
                 link: None,
             }],
         );
@@ -748,7 +741,6 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 event_type: EventType::Exit,
                 token_type: Token::Link,
                 point: events[group_end_index].point.clone(),
-                index: events[group_end_index].index,
                 link: None,
             }],
         );

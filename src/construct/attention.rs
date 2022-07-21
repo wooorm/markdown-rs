@@ -153,12 +153,8 @@ struct Sequence {
     event_index: usize,
     /// The (shifted) point where this sequence starts.
     start_point: Point,
-    /// The (shifted) index where this sequence starts.
-    start_index: usize,
     /// The (shifted) point where this sequence end.
     end_point: Point,
-    /// The (shifted) index where this sequence end.
-    end_index: usize,
     /// The number of markers we can still use.
     size: usize,
     /// Whether this sequence can open attention.
@@ -221,14 +217,14 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
             if enter.token_type == Token::AttentionSequence {
                 let end = start + 1;
                 let exit = &tokenizer.events[end];
-                let marker = MarkerKind::from_code(codes[enter.index]);
-                let before = classify_character(if enter.index > 0 {
-                    codes[enter.index - 1]
+                let marker = MarkerKind::from_code(codes[enter.point.index]);
+                let before = classify_character(if enter.point.index > 0 {
+                    codes[enter.point.index - 1]
                 } else {
                     Code::None
                 });
-                let after = classify_character(if exit.index < codes.len() {
-                    codes[exit.index]
+                let after = classify_character(if exit.point.index < codes.len() {
+                    codes[exit.point.index]
                 } else {
                     Code::None
                 });
@@ -245,10 +241,8 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     event_index: start,
                     balance,
                     start_point: enter.point.clone(),
-                    start_index: enter.index,
                     end_point: exit.point.clone(),
-                    end_index: exit.index,
-                    size: exit.index - enter.index,
+                    size: exit.point.index - enter.point.index,
                     open: if marker == MarkerKind::Asterisk {
                         open
                     } else {
@@ -332,18 +326,12 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
 
                     let sequence_close = &mut sequences[close];
                     let close_event_index = sequence_close.event_index;
-                    let seq_close_enter = (
-                        sequence_close.start_point.clone(),
-                        sequence_close.start_index,
-                    );
+                    let seq_close_enter = sequence_close.start_point.clone();
                     sequence_close.size -= take;
                     sequence_close.start_point.column += take;
                     sequence_close.start_point.offset += take;
-                    sequence_close.start_index += take;
-                    let seq_close_exit = (
-                        sequence_close.start_point.clone(),
-                        sequence_close.start_index,
-                    );
+                    sequence_close.start_point.index += take;
+                    let seq_close_exit = sequence_close.start_point.clone();
 
                     // Stay on this closing sequence for the next iteration: it
                     // might close more things.
@@ -359,18 +347,17 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                         // other sequences, and the remainder can be on any side or
                         // somewhere in the middle.
                         let mut enter = &mut tokenizer.events[close_event_index];
-                        enter.point = seq_close_exit.0.clone();
-                        enter.index = seq_close_exit.1;
+                        enter.point = seq_close_exit.clone();
                     }
 
                     let sequence_open = &mut sequences[open];
                     let open_event_index = sequence_open.event_index;
-                    let seq_open_exit = (sequence_open.end_point.clone(), sequence_open.end_index);
+                    let seq_open_exit = sequence_open.end_point.clone();
                     sequence_open.size -= take;
                     sequence_open.end_point.column -= take;
                     sequence_open.end_point.offset -= take;
-                    sequence_open.end_index -= take;
-                    let seq_open_enter = (sequence_open.end_point.clone(), sequence_open.end_index);
+                    sequence_open.end_point.index -= take;
+                    let seq_open_enter = sequence_open.end_point.clone();
 
                     // Remove opening sequence if fully used.
                     if sequence_open.size == 0 {
@@ -381,8 +368,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                         // Shift remaining opening sequence backwards.
                         // See note above for why that happens here.
                         let mut exit = &mut tokenizer.events[open_event_index + 1];
-                        exit.point = seq_open_enter.0.clone();
-                        exit.index = seq_open_enter.1;
+                        exit.point = seq_open_enter.clone();
                     }
 
                     // Opening.
@@ -398,8 +384,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::Strong
                                 },
-                                point: seq_open_enter.0.clone(),
-                                index: seq_open_enter.1,
+                                point: seq_open_enter.clone(),
                                 link: None,
                             },
                             Event {
@@ -409,8 +394,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::StrongSequence
                                 },
-                                point: seq_open_enter.0.clone(),
-                                index: seq_open_enter.1,
+                                point: seq_open_enter.clone(),
                                 link: None,
                             },
                             Event {
@@ -420,8 +404,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::StrongSequence
                                 },
-                                point: seq_open_exit.0.clone(),
-                                index: seq_open_exit.1,
+                                point: seq_open_exit.clone(),
                                 link: None,
                             },
                             Event {
@@ -431,8 +414,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::StrongText
                                 },
-                                point: seq_open_exit.0.clone(),
-                                index: seq_open_exit.1,
+                                point: seq_open_exit.clone(),
                                 link: None,
                             },
                         ],
@@ -449,8 +431,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::StrongText
                                 },
-                                point: seq_close_enter.0.clone(),
-                                index: seq_close_enter.1,
+                                point: seq_close_enter.clone(),
                                 link: None,
                             },
                             Event {
@@ -460,8 +441,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::StrongSequence
                                 },
-                                point: seq_close_enter.0.clone(),
-                                index: seq_close_enter.1,
+                                point: seq_close_enter.clone(),
                                 link: None,
                             },
                             Event {
@@ -471,8 +451,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::StrongSequence
                                 },
-                                point: seq_close_exit.0.clone(),
-                                index: seq_close_exit.1,
+                                point: seq_close_exit.clone(),
                                 link: None,
                             },
                             Event {
@@ -482,8 +461,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                                 } else {
                                     Token::Strong
                                 },
-                                point: seq_close_exit.0.clone(),
-                                index: seq_close_exit.1,
+                                point: seq_close_exit.clone(),
                                 link: None,
                             },
                         ],

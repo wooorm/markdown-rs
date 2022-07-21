@@ -77,8 +77,8 @@ struct DocumentInfo {
 }
 
 /// Turn `codes` as the document content type into events.
-pub fn document(parse_state: &mut ParseState, point: Point, index: usize) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new(point, index, parse_state);
+pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
+    let mut tokenizer = Tokenizer::new(point, parse_state);
 
     tokenizer.push(&parse_state.codes, Box::new(start), true);
 
@@ -464,7 +464,6 @@ fn exit_containers(
             token_type: token_type.clone(),
             // Note: positions are fixed later.
             point: tokenizer.point.clone(),
-            index: tokenizer.index,
             link: None,
         });
     }
@@ -514,18 +513,12 @@ fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
         } else {
             &tokenizer.point
         };
-        let index_rel = if let Some(index) = first_line_ending_in_run {
-            tokenizer.events[index].index
-        } else {
-            tokenizer.index
-        };
 
         let close_index = first_line_ending_in_run.unwrap_or(index);
 
         let mut subevent_index = 0;
         while subevent_index < after.len() {
             after[subevent_index].point = point_rel.clone();
-            after[subevent_index].index = index_rel;
             subevent_index += 1;
         }
 

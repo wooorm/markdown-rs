@@ -112,10 +112,8 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 // Add Exit:LineEnding position info to Exit:Data.
                 let line_ending_exit = &tokenizer.events[exit_index + 2];
                 let line_ending_point = line_ending_exit.point.clone();
-                let line_ending_index = line_ending_exit.index;
                 let data_exit = &mut tokenizer.events[exit_index - 1];
                 data_exit.point = line_ending_point;
-                data_exit.index = line_ending_index;
 
                 // Link Enter:Data on the previous line to Enter:Data on this line.
                 if let Some(link) = &mut tokenizer.events[exit_index - 2].link {

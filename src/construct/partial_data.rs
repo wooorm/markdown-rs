@@ -99,11 +99,7 @@ pub fn resolve_data(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
 
                 // Change positional info.
                 let exit_far = &tokenizer.events[exit_far_index];
-                let point_end = exit_far.point.clone();
-                let index_end = exit_far.index;
-                let exit = &mut tokenizer.events[exit_index];
-                exit.point = point_end;
-                exit.index = index_end;
+                tokenizer.events[exit_index].point = exit_far.point.clone();
                 index = exit_far_index;
 
                 continue;

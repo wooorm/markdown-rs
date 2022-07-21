@@ -55,6 +55,8 @@ pub struct Point {
     pub column: usize,
     /// 0-indexed position in the document.
     pub offset: usize,
+    /// Index into `codes`.
+    pub index: usize,
 }
 
 /// Possible event types.
@@ -80,7 +82,6 @@ pub struct Event {
     pub event_type: EventType,
     pub token_type: Token,
     pub point: Point,
-    pub index: usize,
     pub link: Option<Link>,
 }
 
@@ -168,8 +169,6 @@ struct InternalState {
     previous: Code,
     /// Current code.
     current: Code,
-    /// `index` in codes of the current code.
-    index: usize,
     /// Current relative and absolute position in the file.
     point: Point,
 }
@@ -198,8 +197,6 @@ pub struct Tokenizer<'a> {
     pub previous: Code,
     /// Current character code.
     current: Code,
-    /// `index` in codes of the current code.
-    pub index: usize,
     /// Current relative and absolute place in the file.
     pub point: Point,
     /// List of attached resolvers, which will be called when done feeding,
@@ -240,14 +237,13 @@ pub struct Tokenizer<'a> {
 
 impl<'a> Tokenizer<'a> {
     /// Create a new tokenizer.
-    pub fn new(point: Point, index: usize, parse_state: &'a ParseState) -> Tokenizer<'a> {
+    pub fn new(point: Point, parse_state: &'a ParseState) -> Tokenizer<'a> {
         Tokenizer {
             previous: Code::None,
             current: Code::None,
             // To do: reserve size when feeding?
             column_start: vec![],
             line_start: point.line,
-            index,
             consumed: true,
             drained: false,
             point,
@@ -292,8 +288,8 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Define a jump between two places.
-    pub fn define_skip(&mut self, point: &Point, index: usize) {
-        define_skip_impl(self, point.line, (point.column, point.offset, index));
+    pub fn define_skip(&mut self, point: &Point) {
+        define_skip_impl(self, point.line, (point.column, point.offset, point.index));
     }
 
     /// Define the current place as a jump between two places.
@@ -301,7 +297,7 @@ impl<'a> Tokenizer<'a> {
         define_skip_impl(
             self,
             self.point.line,
-            (self.point.column, self.point.offset, self.index),
+            (self.point.column, self.point.offset, self.point.index),
         );
     }
 
@@ -316,7 +312,7 @@ impl<'a> Tokenizer<'a> {
                 Some((column, offset, index)) => {
                     self.point.column = *column;
                     self.point.offset = *offset;
-                    self.index = *index;
+                    self.point.index = *index;
                 }
             };
         }
@@ -333,7 +329,7 @@ impl<'a> Tokenizer<'a> {
         log::debug!("consume: `{:?}` ({:?})", code, self.point);
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
 
-        self.index += 1;
+        self.point.index += 1;
 
         match code {
             Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -383,7 +379,6 @@ impl<'a> Tokenizer<'a> {
             event_type: EventType::Enter,
             token_type: token_type.clone(),
             point: self.point.clone(),
-            index: self.index,
             link,
         });
         self.stack.push(token_type);
@@ -399,11 +394,10 @@ impl<'a> Tokenizer<'a> {
         );
 
         let previous = self.events.last().expect("cannot close w/o open event");
-        let mut index = self.index;
         let mut point = self.point.clone();
 
         assert!(
-            current_token != previous.token_type || previous.index != index,
+            current_token != previous.token_type || previous.point.index != point.index,
             "expected non-empty token"
         );
 
@@ -429,7 +423,7 @@ impl<'a> Tokenizer<'a> {
                 } else {
                     1
                 };
-            index = previous.index + 1;
+            point.index = previous.point.index + 1;
         }
 
         log::debug!("exit: `{:?}` ({:?})", token_type, point);
@@ -437,7 +431,6 @@ impl<'a> Tokenizer<'a> {
             event_type: EventType::Exit,
             token_type,
             point,
-            index,
             link: None,
         });
     }
@@ -445,7 +438,6 @@ impl<'a> Tokenizer<'a> {
     /// Capture the internal state.
     fn capture(&mut self) -> InternalState {
         InternalState {
-            index: self.index,
             previous: self.previous,
             current: self.current,
             point: self.point.clone(),
@@ -456,7 +448,6 @@ impl<'a> Tokenizer<'a> {
 
     /// Apply the internal state.
     fn free(&mut self, previous: InternalState) {
-        self.index = previous.index;
         self.previous = previous.previous;
         self.current = previous.current;
         self.point = previous.point;
