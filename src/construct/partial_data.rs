@@ -16,11 +16,11 @@ use crate::util::edit_map::EditMap;
 /// > | abc
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> StateFnResult {
     if stop.contains(&code) {
         tokenizer.enter(Token::Data);
         tokenizer.consume(code);
-        (State::Fn(Box::new(|t, c| data(t, c, stop))), None)
+        (State::Fn(Box::new(move |t, c| data(t, c, stop))), None)
     } else {
         at_break(tokenizer, code, stop)
     }
@@ -32,14 +32,14 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnR
 /// > | abc
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(|t, c| at_break(t, c, stop))), None)
+            (State::Fn(Box::new(move |t, c| at_break(t, c, stop))), None)
         }
         _ if stop.contains(&code) => {
             tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
@@ -58,7 +58,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnRe
 /// > | abc
 ///     ^^^
 /// ```
-fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult {
+fn data(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> StateFnResult {
     let done = match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => true,
         _ if stop.contains(&code) => true,
@@ -70,7 +70,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: Vec<Code>) -> StateFnResult
         at_break(tokenizer, code, stop)
     } else {
         tokenizer.consume(code);
-        (State::Fn(Box::new(|t, c| data(t, c, stop))), None)
+        (State::Fn(Box::new(move |t, c| data(t, c, stop))), None)
     }
 }
 

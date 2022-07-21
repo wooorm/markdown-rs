@@ -18,26 +18,16 @@ use crate::construct::{
 };
 use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 
+const MARKERS: [Code; 5] = [
+    Code::VirtualSpace, // `whitespace`
+    Code::Char('\t'),   // `whitespace`
+    Code::Char(' '),    // `hard_break_trailing`, `whitespace`
+    Code::Char('&'),
+    Code::Char('\\'),
+];
+
 /// Before string.
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    let mut markers = vec![
-        Code::VirtualSpace, // `whitespace`
-        Code::Char('\t'),   // `whitespace`
-        Code::Char(' '),    // `hard_break_trailing`, `whitespace`
-    ];
-
-    if tokenizer.parse_state.constructs.character_reference {
-        markers.push(Code::Char('&'));
-    }
-    if tokenizer.parse_state.constructs.character_escape {
-        markers.push(Code::Char('\\'));
-    }
-
-    before_marker(tokenizer, code, markers)
-}
-
-/// Before string.
-fn before_marker(tokenizer: &mut Tokenizer, code: Code, markers: Vec<Code>) -> StateFnResult {
     match code {
         Code::None => (State::Ok, None),
         _ => tokenizer.attempt_n(
@@ -47,15 +37,14 @@ fn before_marker(tokenizer: &mut Tokenizer, code: Code, markers: Vec<Code>) -> S
                 Box::new(whitespace),
             ],
             |ok| {
-                let func = if ok { before_marker } else { before_data };
-                Box::new(move |t, c| func(t, c, markers))
+                let func = if ok { start } else { before_data };
+                Box::new(func)
             },
         )(tokenizer, code),
     }
 }
 
 /// At data.
-fn before_data(tokenizer: &mut Tokenizer, code: Code, markers: Vec<Code>) -> StateFnResult {
-    let copy = markers.clone();
-    tokenizer.go(|t, c| data(t, c, copy), |t, c| before_marker(t, c, markers))(tokenizer, code)
+fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+    tokenizer.go(|t, c| data(t, c, &MARKERS), start)(tokenizer, code)
 }
