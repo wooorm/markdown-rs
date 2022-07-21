@@ -35,9 +35,11 @@ fn shift_links(events: &mut [Event], jumps: &[(usize, usize, usize)]) {
     let mut index = 0;
 
     while index < events.len() {
-        let event = &mut events[index];
-        event.previous = event.previous.map(map);
-        event.next = event.next.map(map);
+        if let Some(link) = &mut events[index].link {
+            link.previous = link.previous.map(map);
+            link.next = link.next.map(map);
+        }
+
         index += 1;
     }
 }

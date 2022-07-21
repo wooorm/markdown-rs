@@ -465,9 +465,7 @@ fn exit_containers(
             // Note: positions are fixed later.
             point: tokenizer.point.clone(),
             index: tokenizer.index,
-            previous: None,
-            next: None,
-            content_type: None,
+            link: None,
         });
     }
 

@@ -636,18 +636,14 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     token_type: Token::Data,
                     point: events[data_enter_index].point.clone(),
                     index: events[data_enter_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
+                    link: None,
                 },
                 Event {
                     event_type: EventType::Exit,
                     token_type: Token::Data,
                     point: events[data_exit_index].point.clone(),
                     index: events[data_exit_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
+                    link: None,
                 },
             ],
         );
@@ -690,18 +686,14 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     },
                     point: group_enter_event.point.clone(),
                     index: group_enter_event.index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
+                    link: None,
                 },
                 Event {
                     event_type: EventType::Enter,
                     token_type: Token::Label,
                     point: group_enter_event.point.clone(),
                     index: group_enter_event.index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
+                    link: None,
                 },
             ],
         );
@@ -717,9 +709,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     token_type: Token::LabelText,
                     point: events[text_enter_index].point.clone(),
                     index: events[text_enter_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
+                    link: None,
                 }],
             );
 
@@ -732,9 +722,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     token_type: Token::LabelText,
                     point: events[text_exit_index].point.clone(),
                     index: events[text_exit_index].index,
-                    previous: None,
-                    next: None,
-                    content_type: None,
+                    link: None,
                 }],
             );
         }
@@ -748,9 +736,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 token_type: Token::Label,
                 point: events[label_exit_index].point.clone(),
                 index: events[label_exit_index].index,
-                previous: None,
-                next: None,
-                content_type: None,
+                link: None,
             }],
         );
 
@@ -763,9 +749,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 token_type: Token::Link,
                 point: events[group_end_index].point.clone(),
                 index: events[group_end_index].index,
-                previous: None,
-                next: None,
-                content_type: None,
+                link: None,
             }],
         );
 

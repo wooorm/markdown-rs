@@ -118,10 +118,12 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 data_exit.index = line_ending_index;
 
                 // Link Enter:Data on the previous line to Enter:Data on this line.
-                let data_enter_prev = &mut tokenizer.events[exit_index - 2];
-                data_enter_prev.next = Some(enter_next_index + 1);
-                let data_enter_next = &mut tokenizer.events[enter_next_index + 1];
-                data_enter_next.previous = Some(exit_index - 2);
+                if let Some(link) = &mut tokenizer.events[exit_index - 2].link {
+                    link.next = Some(enter_next_index + 1);
+                }
+                if let Some(link) = &mut tokenizer.events[enter_next_index + 1].link {
+                    link.previous = Some(exit_index - 2);
+                }
 
                 // Potential next start.
                 exit_index = enter_next_index + 3;

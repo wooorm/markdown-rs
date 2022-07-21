@@ -37,25 +37,22 @@ pub fn link(events: &mut [Event], index: usize) {
 
 /// Link two arbitrary [`Event`][]s together.
 pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
-    let prev = &mut events[pevious];
-    assert!(
-        prev.content_type.is_some(),
-        "expected `content_type` on previous"
-    );
-    assert_eq!(prev.event_type, EventType::Enter);
-    prev.next = Some(next);
-
-    let prev_ref = &events[pevious];
-    let prev_exit_ref = &events[pevious + 1];
-    let curr_ref = &events[next];
-    assert_eq!(prev_exit_ref.event_type, EventType::Exit);
-    assert_eq!(prev_exit_ref.token_type, prev_ref.token_type);
-    assert_eq!(curr_ref.content_type, prev_ref.content_type);
-
-    let curr = &mut events[next];
-    assert_eq!(curr.event_type, EventType::Enter);
-    curr.previous = Some(pevious);
+    assert_eq!(events[pevious].event_type, EventType::Enter);
+    assert_eq!(events[pevious + 1].event_type, EventType::Exit);
+    assert_eq!(events[pevious + 1].token_type, events[pevious].token_type);
+    assert_eq!(events[next].event_type, EventType::Enter);
     // Note: the exit of this event may not exist, so don’t check for that.
+
+    let link_previous = events[pevious]
+        .link
+        .as_mut()
+        .expect("expected `link` on previous");
+    let conten_type_previous = link_previous.content_type;
+    link_previous.next = Some(next);
+    let link_next = events[next].link.as_mut().expect("expected `link` on next");
+    link_next.previous = Some(pevious);
+
+    assert_eq!(conten_type_previous, link_next.content_type);
 }
 
 /// Parse linked events.
@@ -70,18 +67,18 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
         let event = &events[index];
 
         // Find each first opening chunk.
-        if let Some(ref content_type) = event.content_type {
+        if let Some(ref link) = event.link {
             assert_eq!(event.event_type, EventType::Enter);
 
             // No need to enter linked events again.
-            if event.previous == None {
+            if link.previous == None {
                 // Index into `events` pointing to a chunk.
                 let mut link_index: Option<usize> = Some(index);
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), event.index, parse_state);
                 // Substate.
                 let mut result: StateFnResult = (
-                    State::Fn(Box::new(if *content_type == ContentType::String {
+                    State::Fn(Box::new(if link.content_type == ContentType::String {
                         string
                     } else {
                         text
@@ -92,13 +89,14 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {
                     let enter = &events[index];
+                    let link_curr = enter.link.as_ref().expect("expected link");
                     assert_eq!(enter.event_type, EventType::Enter);
                     let span = span::Span {
                         start_index: enter.index,
                         end_index: events[index + 1].index,
                     };
 
-                    if enter.previous != None {
+                    if link_curr.previous != None {
                         tokenizer.define_skip(&enter.point, enter.index);
                     }
 
@@ -110,10 +108,10 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     result = tokenizer.push(
                         span::codes(&parse_state.codes, &span),
                         func,
-                        enter.next == None,
+                        link_curr.next == None,
                     );
                     assert!(result.1.is_none(), "expected no remainder");
-                    link_index = enter.next;
+                    link_index = link_curr.next;
                 }
 
                 // Now, loop through all subevents to figure out which parts
@@ -133,10 +131,10 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     {
                         slices.push((link_index, slice_start));
                         slice_start = subindex;
-                        link_index = events[link_index].next.unwrap();
+                        link_index = events[link_index].link.as_ref().unwrap().next.unwrap();
                     }
 
-                    if subevent.content_type.is_some() {
+                    if subevent.link.is_some() {
                         // Need to call `subtokenize` again.
                         done = false;
                     }
@@ -145,15 +143,18 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     // its index to account for the shifted events.
                     // If it points to a next event, we also change the next event’s
                     // reference back to *this* event.
-                    if let Some(next) = subevent.next {
-                        // The `index` in `events` where the current link is,
-                        // minus 2 events (the enter and exit) for each removed
-                        // link.
-                        let shift = link_index - (slices.len() * 2);
-                        subevent.next = Some(next + shift);
-                        let next_ev = &mut tokenizer.events[next];
-                        let previous = next_ev.previous.unwrap();
-                        next_ev.previous = Some(previous + shift);
+                    if let Some(sublink_curr) = &mut subevent.link {
+                        if let Some(next) = sublink_curr.next {
+                            // The `index` in `events` where the current link is,
+                            // minus 2 events (the enter and exit) for each removed
+                            // link.
+                            let shift = link_index - (slices.len() * 2);
+                            sublink_curr.next = sublink_curr.next.map(|next| next + shift);
+                            let next_ev = &mut tokenizer.events[next];
+                            let sublink_next = next_ev.link.as_mut().unwrap();
+                            sublink_next.previous =
+                                sublink_next.previous.map(|previous| previous + shift);
+                        }
                     }
 
                     subindex += 1;

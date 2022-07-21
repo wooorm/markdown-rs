@@ -66,6 +66,14 @@ pub enum EventType {
     Exit,
 }
 
+/// A link to another event.
+#[derive(Debug, Clone)]
+pub struct Link {
+    pub previous: Option<usize>,
+    pub next: Option<usize>,
+    pub content_type: ContentType,
+}
+
 /// Something semantic happening somewhere.
 #[derive(Debug, Clone)]
 pub struct Event {
@@ -73,9 +81,7 @@ pub struct Event {
     pub token_type: Token,
     pub point: Point,
     pub index: usize,
-    pub previous: Option<usize>,
-    pub next: Option<usize>,
-    pub content_type: Option<ContentType>,
+    pub link: Option<Link>,
 }
 
 /// The essence of the state machine are functions: `StateFn`.
@@ -357,19 +363,28 @@ impl<'a> Tokenizer<'a> {
 
     /// Mark the start of a semantic label.
     pub fn enter(&mut self, token_type: Token) {
-        self.enter_with_content(token_type, None);
+        self.enter_with_link(token_type, None);
     }
 
-    pub fn enter_with_content(&mut self, token_type: Token, content_type: Option<ContentType>) {
+    pub fn enter_with_content(&mut self, token_type: Token, content_type_opt: Option<ContentType>) {
+        self.enter_with_link(
+            token_type,
+            content_type_opt.map(|content_type| Link {
+                content_type,
+                previous: None,
+                next: None,
+            }),
+        );
+    }
+
+    pub fn enter_with_link(&mut self, token_type: Token, link: Option<Link>) {
         log::debug!("enter: `{:?}` ({:?})", token_type, self.point);
         self.events.push(Event {
             event_type: EventType::Enter,
             token_type: token_type.clone(),
             point: self.point.clone(),
             index: self.index,
-            previous: None,
-            next: None,
-            content_type,
+            link,
         });
         self.stack.push(token_type);
     }
@@ -423,9 +438,7 @@ impl<'a> Tokenizer<'a> {
             token_type,
             point,
             index,
-            previous: None,
-            next: None,
-            content_type: None,
+            link: None,
         });
     }
 
