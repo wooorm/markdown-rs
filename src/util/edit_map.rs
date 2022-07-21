@@ -14,33 +14,42 @@ use crate::tokenizer::Event;
 ///
 /// This fixes links in case there are events removed or added between them.
 fn shift_links(events: &mut [Event], jumps: &[(usize, usize, usize)]) {
-    let map = |before| {
-        // To do: this theoretically gets slow, investigate how to improve it.
-        let mut jump_index = 0;
-        let mut remove = 0;
-        let mut add = 0;
+    let mut jump_index = 0;
+    let mut index = 0;
+    let mut add = 0;
+    let mut rm = 0;
 
-        while jump_index < jumps.len() {
-            if jumps[jump_index].0 > before {
-                break;
-            }
+    while index < events.len() {
+        let rm_curr = rm;
 
-            (_, remove, add) = jumps[jump_index];
+        while jump_index < jumps.len() && jumps[jump_index].0 <= index {
+            add = jumps[jump_index].2;
+            rm = jumps[jump_index].1;
             jump_index += 1;
         }
 
-        before + add - remove
-    };
+        // Ignore items that will be removed.
+        if rm > rm_curr {
+            index += rm - rm_curr;
+        } else {
+            if let Some(link) = &events[index].link {
+                if let Some(next) = link.next {
+                    events[next].link.as_mut().unwrap().previous = Some(index + add - rm);
 
-    let mut index = 0;
+                    while jump_index < jumps.len() && jumps[jump_index].0 <= next {
+                        add = jumps[jump_index].2;
+                        rm = jumps[jump_index].1;
+                        jump_index += 1;
+                    }
 
-    while index < events.len() {
-        if let Some(link) = &mut events[index].link {
-            link.previous = link.previous.map(map);
-            link.next = link.next.map(map);
+                    events[index].link.as_mut().unwrap().next = Some(next + add - rm);
+                    index = next;
+                    continue;
+                }
+            }
+
+            index += 1;
         }
-
-        index += 1;
     }
 }
 
@@ -85,25 +94,23 @@ impl EditMap {
         let mut remove_acc = 0;
         while index < self.map.len() {
             let (at, remove, add) = &self.map[index];
-            add_acc += add.len();
             remove_acc += remove;
+            add_acc += add.len();
             jumps.push((*at, remove_acc, add_acc));
             index += 1;
         }
+
+        shift_links(events, &jumps);
 
         let len_before = events.len();
         let mut index = self.map.len();
         let mut vecs: Vec<Vec<Event>> = Vec::with_capacity(index * 2 + 1);
         while index > 0 {
             index -= 1;
-            let (at, remove, _) = self.map[index];
-            let mut keep = events.split_off(at + remove);
-            shift_links(&mut keep, &jumps);
-            vecs.push(keep);
+            vecs.push(events.split_off(self.map[index].0 + self.map[index].1));
             vecs.push(self.map[index].2.split_off(0));
-            events.truncate(at);
+            events.truncate(self.map[index].0);
         }
-        shift_links(events, &jumps);
         vecs.push(events.split_off(0));
 
         events.reserve(len_before + add_acc - remove_acc);

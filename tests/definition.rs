@@ -219,7 +219,13 @@ fn definition() {
     assert_eq!(
         micromark("> [foo]: /url\n\n[foo]"),
         "<blockquote>\n</blockquote>\n<p><a href=\"/url\">foo</a></p>",
-        "should support definitions in block quotes"
+        "should support definitions in block quotes (1)"
+    );
+
+    assert_eq!(
+        micromark("> [a]: <> 'b\n> c'"),
+        "<blockquote>\n</blockquote>",
+        "should support definitions in block quotes (2)"
     );
 
     // Extra
