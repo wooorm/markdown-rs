@@ -173,7 +173,7 @@ struct InternalState {
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
-    column_start: Vec<Option<(usize, usize, usize)>>,
+    column_start: Vec<(usize, usize, usize)>,
     // First line.
     line_start: usize,
     /// Track whether a character is expected to be consumed, and whether it’s
@@ -306,15 +306,11 @@ impl<'a> Tokenizer<'a> {
     fn account_for_potential_skip(&mut self) {
         let at = self.point.line - self.line_start;
 
-        if self.point.column == 1 && at < self.column_start.len() {
-            match &self.column_start[at] {
-                None => {}
-                Some((column, offset, index)) => {
-                    self.point.column = *column;
-                    self.point.offset = *offset;
-                    self.point.index = *index;
-                }
-            };
+        if self.point.column == 1 && at != self.column_start.len() {
+            let (column, offset, index) = &self.column_start[at];
+            self.point.column = *column;
+            self.point.offset = *offset;
+            self.point.index = *index;
         }
     }
 
@@ -340,6 +336,15 @@ impl<'a> Tokenizer<'a> {
                 } else {
                     1
                 };
+
+                if self.point.line - self.line_start + 1 > self.column_start.len() {
+                    self.column_start.push((
+                        self.point.column,
+                        self.point.offset,
+                        self.point.index,
+                    ));
+                }
+
                 self.account_for_potential_skip();
                 log::debug!("position: after eol: `{:?}`", self.point);
             }
@@ -784,11 +789,10 @@ fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize,
     log::debug!("position: define skip: {:?} -> ({:?})", line, info);
     let at = line - tokenizer.line_start;
 
-    if at + 1 > tokenizer.column_start.len() {
-        tokenizer.column_start.resize(at, None);
-        tokenizer.column_start.push(Some(info));
+    if at == tokenizer.column_start.len() {
+        tokenizer.column_start.push(info);
     } else {
-        tokenizer.column_start[at] = Some(info);
+        tokenizer.column_start[at] = info;
     }
 
     tokenizer.account_for_potential_skip();
