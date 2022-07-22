@@ -253,8 +253,9 @@ impl<'a> Tokenizer<'a> {
             concrete: false,
             lazy: false,
             container: None,
-            resolvers: vec![],
-            resolver_ids: vec![],
+            // Assume about 10 resolvers.
+            resolvers: Vec::with_capacity(10),
+            resolver_ids: Vec::with_capacity(10)
         }
     }
 
@@ -479,7 +480,7 @@ impl<'a> Tokenizer<'a> {
                 if matches!(state, State::Ok(_)) {
                     feed_impl(tokenizer, result.1, after)
                 } else {
-                    State::Nok
+                    state
                 }
             },
         )
@@ -491,7 +492,7 @@ impl<'a> Tokenizer<'a> {
     pub fn go_until(
         &mut self,
         state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
-        until: impl FnMut(Code) -> bool + 'static,
+        until: impl Fn(Code) -> bool + 'static,
         done: impl FnOnce(State) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
@@ -620,6 +621,9 @@ impl<'a> Tokenizer<'a> {
     ) -> State {
         assert!(!self.drained, "cannot feed after drain");
 
+        // Let’s assume an event per character.
+        self.events.reserve(codes.len());
+
         let mut result = feed_impl(self, codes, start);
 
         if drain {
@@ -667,7 +671,7 @@ impl<'a> Tokenizer<'a> {
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
-    mut pause: impl FnMut(Code) -> bool + 'static,
+    pause: impl Fn(Code) -> bool + 'static,
     mut codes: Vec<Code>,
     done: impl FnOnce((&[Code], &[Code]), &mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
