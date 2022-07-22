@@ -475,9 +475,9 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
+            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
                 if matches!(state, State::Ok(_)) {
-                    feed_impl(tokenizer, &result.1, after)
+                    feed_impl(tokenizer, result.1, after)
                 } else {
                     State::Nok
                 }
@@ -498,9 +498,9 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             until,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
+            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
                 tokenizer.consumed = true;
-                feed_impl(tokenizer, &result.1, done(state))
+                feed_impl(tokenizer, result.1, done(state))
             },
         )
     }
@@ -525,10 +525,14 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             |_code| false,
             vec![],
-            |mut result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
+            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
-                result.0.append(&mut result.1);
-                feed_impl(tokenizer, &result.0, done(matches!(state, State::Ok(_))))
+                feed_twice_impl(
+                    tokenizer,
+                    result.0,
+                    result.1,
+                    done(matches!(state, State::Ok(_))),
+                )
             },
         )
     }
@@ -555,28 +559,21 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             |_code| false,
             vec![],
-            |mut result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
+            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
                 let ok = matches!(state, State::Ok(_));
 
                 if !ok {
                     tokenizer.free(previous);
                 }
 
-                let codes = if ok {
-                    result.1
-                } else {
-                    result.0.append(&mut result.1);
-                    result.0
-                };
+                log::debug!("attempt: {:?}, at {:?}", ok, tokenizer.point);
 
-                log::debug!(
-                    "attempt: {:?}, codes: {:?}, at {:?}",
-                    ok,
-                    codes,
-                    tokenizer.point
-                );
-
-                feed_impl(tokenizer, &codes, done(ok))
+                feed_twice_impl(
+                    tokenizer,
+                    if ok { &[] } else { result.0 },
+                    result.1,
+                    done(ok),
+                )
             },
         )
     }
@@ -672,7 +669,7 @@ fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
     mut pause: impl FnMut(Code) -> bool + 'static,
     mut codes: Vec<Code>,
-    done: impl FnOnce((Vec<Code>, Vec<Code>), &mut Tokenizer, State) -> State + 'static,
+    done: impl FnOnce((&[Code], &[Code]), &mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
         if !codes.is_empty() && pause(tokenizer.previous) {
@@ -682,7 +679,7 @@ fn attempt_impl(
                 vec![code]
             };
 
-            return done((codes, after), tokenizer, State::Fn(Box::new(state)));
+            return done((&codes, &after), tokenizer, State::Fn(Box::new(state)));
         }
 
         let state = state(tokenizer, code);
@@ -701,9 +698,9 @@ fn attempt_impl(
                     "`back` must be smaller than or equal to `codes.len()`"
                 );
                 let remaining = codes.split_off(codes.len() - back);
-                done((codes, remaining), tokenizer, state)
+                done((&codes, &remaining), tokenizer, state)
             }
-            State::Nok => done((vec![], codes), tokenizer, state),
+            State::Nok => done((&[], &codes), tokenizer, state),
             State::Fn(func) => State::Fn(attempt_impl(func, pause, codes, done)),
         }
     })
@@ -739,6 +736,22 @@ fn feed_impl(
     }
 
     state
+}
+
+/// Feed a list of `codes` into `start`.
+fn feed_twice_impl(
+    tokenizer: &mut Tokenizer,
+    left: &[Code],
+    right: &[Code],
+    start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+) -> State {
+    let res = feed_impl(tokenizer, left, start);
+
+    match res {
+        State::Fn(func) => feed_impl(tokenizer, right, func),
+        State::Ok(back) => State::Ok(back + right.len()),
+        State::Nok => res,
+    }
 }
 
 /// Flush `start`: pass `eof`s to it until done.
