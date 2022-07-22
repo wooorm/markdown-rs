@@ -108,7 +108,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::CodeTextSequence);
             sequence_open(tokenizer, code, 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -123,7 +123,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnR
         tokenizer.consume(code);
         (
             State::Fn(Box::new(move |t, c| sequence_open(t, c, size + 1))),
-            None,
+            0,
         )
     } else {
         tokenizer.exit(Token::CodeTextSequence);
@@ -139,15 +139,12 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnR
 /// ```
 fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResult {
     match code {
-        Code::None => (State::Nok, None),
+        Code::None => (State::Nok, 0),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (
-                State::Fn(Box::new(move |t, c| between(t, c, size_open))),
-                None,
-            )
+            (State::Fn(Box::new(move |t, c| between(t, c, size_open))), 0)
         }
         Code::Char('`') => {
             tokenizer.enter(Token::CodeTextSequence);
@@ -174,7 +171,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> StateFnResul
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| data(t, c, size_open))), None)
+            (State::Fn(Box::new(move |t, c| data(t, c, size_open))), 0)
         }
     }
 }
@@ -198,13 +195,13 @@ fn sequence_close(
                 State::Fn(Box::new(move |t, c| {
                     sequence_close(t, c, size_open, size + 1)
                 })),
-                None,
+                0,
             )
         }
         _ if size_open == size => {
             tokenizer.exit(Token::CodeTextSequence);
             tokenizer.exit(Token::CodeText);
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
         _ => {
             let index = tokenizer.events.len();

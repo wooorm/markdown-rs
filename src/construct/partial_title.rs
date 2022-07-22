@@ -147,9 +147,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
-            (State::Fn(Box::new(|t, c| begin(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| begin(t, c, info))), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -168,7 +168,7 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
             tokenizer.exit(info.options.title);
-            (State::Ok, None)
+            (State::Ok, 0)
         }
         _ => {
             tokenizer.enter(info.options.string.clone());
@@ -189,7 +189,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
             tokenizer.exit(info.options.string.clone());
             begin(tokenizer, code, info)
         }
-        Code::None => (State::Nok, None),
+        Code::None => (State::Nok, 0),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
@@ -233,11 +233,11 @@ fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
         }
         Code::Char('\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| escape(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| escape(t, c, info))), 0)
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| title(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| title(t, c, info))), 0)
         }
     }
 }
@@ -252,7 +252,7 @@ fn escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| title(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| title(t, c, info))), 0)
         }
         _ => title(tokenizer, code, info),
     }

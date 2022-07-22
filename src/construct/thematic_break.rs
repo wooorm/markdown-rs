@@ -145,7 +145,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::ThematicBreak);
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -165,7 +165,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 size: 0,
             },
         ),
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -183,13 +183,13 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
             tokenizer.exit(Token::ThematicBreak);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(Token::ThematicBreakSequence);
             sequence(tokenizer, code, info)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -204,7 +204,7 @@ fn sequence(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| sequence(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| sequence(t, c, info))), 0)
         }
         _ => {
             tokenizer.exit(Token::ThematicBreakSequence);

@@ -77,7 +77,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::HeadingAtx);
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -92,7 +92,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::HeadingAtxSequence);
         sequence_open(tokenizer, code, 0)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -114,14 +114,14 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> StateFnR
                 State::Fn(Box::new(move |tokenizer, code| {
                     sequence_open(tokenizer, code, rank + 1)
                 })),
-                None,
+                0,
             )
         }
         _ if rank > 0 => {
             tokenizer.exit(Token::HeadingAtxSequence);
             tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -138,7 +138,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
@@ -165,7 +165,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if let Code::Char('#') = code {
         tokenizer.consume(code);
-        (State::Fn(Box::new(further_sequence)), None)
+        (State::Fn(Box::new(further_sequence)), 0)
     } else {
         tokenizer.exit(Token::HeadingAtxSequence);
         at_break(tokenizer, code)
@@ -187,7 +187,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(data)), None)
+            (State::Fn(Box::new(data)), 0)
         }
     }
 }

@@ -363,10 +363,10 @@ fn containers_after(
     tokenizer.go_until(
         state,
         |code| matches!(code, Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')),
-        move |(state, remainder)| {
+        move |(state, back)| {
             (
                 State::Fn(Box::new(move |t, c| flow_end(t, c, info, state))),
-                remainder,
+                back,
             )
         },
     )(tokenizer, code)
@@ -415,7 +415,7 @@ fn flow_end(
 
             resolve(tokenizer, &mut info);
 
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
         State::Nok => unreachable!("unexpected `nok` from flow"),
         State::Fn(func) => {
@@ -441,7 +441,7 @@ fn exit_containers(
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
         let result = tokenizer.flush(next);
         assert!(matches!(result.0, State::Ok));
-        assert!(result.1.is_none());
+        assert_eq!(result.1, 0);
 
         if *phase == Phase::Prefix {
             info.index = tokenizer.events.len();

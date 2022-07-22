@@ -52,11 +52,11 @@ fn at_eol(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     ) {
         ok(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
 /// Fine.
 fn ok(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    (State::Ok, Some(vec![code]))
+    (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
 }

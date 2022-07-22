@@ -49,9 +49,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterEscapeMarker);
-            (State::Fn(Box::new(inside)), None)
+            (State::Fn(Box::new(inside)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -68,8 +68,8 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterEscapeValue);
             tokenizer.exit(Token::CharacterEscape);
-            (State::Ok, None)
+            (State::Ok, 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

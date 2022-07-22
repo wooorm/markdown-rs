@@ -125,7 +125,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         // Note: arbitrary whitespace allowed even if code (indented) is on.
         tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -151,7 +151,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             },
             label_after,
         )(tokenizer, code),
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -171,10 +171,10 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 State::Fn(Box::new(
                     tokenizer.attempt_opt(space_or_tab_eol(), destination_before),
                 )),
-                None,
+                0,
             )
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -240,9 +240,9 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(Token::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -301,8 +301,8 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn title_after_after_optional_whitespace(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

@@ -230,11 +230,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelEnd);
 
-            return (State::Fn(Box::new(move |t, c| after(t, c, info))), None);
+            return (State::Fn(Box::new(move |t, c| after(t, c, info))), 0);
         }
     }
 
-    (State::Nok, None)
+    (State::Nok, 0)
 }
 
 /// After `]`.
@@ -346,7 +346,7 @@ fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     info.media.end.1 = tokenizer.events.len() - 1;
     tokenizer.media_list.push(info.media);
     tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-    (State::Ok, Some(vec![code]))
+    (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
 }
 
 /// Done, it’s nothing.
@@ -367,7 +367,7 @@ fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> Stat
         .get_mut(label_start_index)
         .unwrap();
     label_start.balanced = true;
-    (State::Nok, None)
+    (State::Nok, 0)
 }
 
 /// Before a resource, at `(`.
@@ -383,7 +383,7 @@ fn resource(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::ResourceMarker);
-            (State::Fn(Box::new(resource_start)), None)
+            (State::Fn(Box::new(resource_start)), 0)
         }
         _ => unreachable!("expected `(`"),
     }
@@ -489,9 +489,9 @@ fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(Token::ResourceMarker);
             tokenizer.exit(Token::Resource);
-            (State::Ok, None)
+            (State::Ok, 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -559,9 +559,9 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult 
             false,
         )))
     {
-        (State::Ok, Some(vec![code]))
+        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -580,9 +580,9 @@ fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::ReferenceMarker);
-            (State::Fn(Box::new(collapsed_reference_open)), None)
+            (State::Fn(Box::new(collapsed_reference_open)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -601,9 +601,9 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
             tokenizer.consume(code);
             tokenizer.exit(Token::ReferenceMarker);
             tokenizer.exit(Token::Reference);
-            (State::Ok, None)
+            (State::Ok, 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 

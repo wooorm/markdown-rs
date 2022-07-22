@@ -108,7 +108,7 @@ pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
                 kind: Token::SpaceOrTab,
                 min: 1,
                 max: usize::MAX,
-                content_type: info.options.content_type,
+                content_type: info.options.content_type.clone(),
                 connect: info.options.connect,
             }),
             move |ok| {
@@ -135,7 +135,8 @@ pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
 fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') if info.options.max > 0 => {
-            tokenizer.enter_with_content(info.options.kind.clone(), info.options.content_type);
+            tokenizer
+                .enter_with_content(info.options.kind.clone(), info.options.content_type.clone());
 
             if info.options.content_type.is_some() {
                 let index = tokenizer.events.len() - 1;
@@ -144,16 +145,15 @@ fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
 
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| inside(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| inside(t, c, info))), 0)
         }
-        _ => (
+        _ => {
             if info.options.min == 0 {
-                State::Ok
+                (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
             } else {
-                State::Nok
-            },
-            Some(vec![code]),
-        ),
+                (State::Nok, 0)
+            }
+        }
     }
 }
 
@@ -168,18 +168,15 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
         Code::VirtualSpace | Code::Char('\t' | ' ') if info.size < info.options.max => {
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| inside(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| inside(t, c, info))), 0)
         }
         _ => {
             tokenizer.exit(info.options.kind.clone());
-            (
-                if info.size >= info.options.min {
-                    State::Ok
-                } else {
-                    State::Nok
-                },
-                Some(vec![code]),
-            )
+            if info.size >= info.options.min {
+                (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            } else {
+                (State::Nok, 0)
+            }
         }
     }
 }
@@ -194,7 +191,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
 fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            tokenizer.enter_with_content(Token::LineEnding, info.options.content_type);
+            tokenizer.enter_with_content(Token::LineEnding, info.options.content_type.clone());
 
             if info.connect {
                 let index = tokenizer.events.len() - 1;
@@ -205,10 +202,10 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
 
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(|t, c| after_eol(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| after_eol(t, c, info))), 0)
         }
-        _ if info.ok => (State::Ok, Some(vec![code])),
-        _ => (State::Nok, None),
+        _ if info.ok => (State::Ok, if matches!(code, Code::None) { 0 } else { 1 }),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -246,8 +243,8 @@ fn after_more_space_or_tab(_tokenizer: &mut Tokenizer, code: Code) -> StateFnRes
         code,
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
     ) {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
-        (State::Ok, Some(vec![code]))
+        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
     }
 }

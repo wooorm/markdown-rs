@@ -60,8 +60,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

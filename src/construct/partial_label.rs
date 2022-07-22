@@ -110,9 +110,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
             tokenizer.enter(info.options.string.clone());
-            (State::Fn(Box::new(|t, c| at_break(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| at_break(t, c, info))), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -124,16 +124,16 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
     match code {
-        Code::None | Code::Char('[') => (State::Nok, None),
-        Code::Char(']') if !info.data => (State::Nok, None),
-        _ if info.size > LINK_REFERENCE_SIZE_MAX => (State::Nok, None),
+        Code::None | Code::Char('[') => (State::Nok, 0),
+        Code::Char(']') if !info.data => (State::Nok, 0),
+        _ if info.size > LINK_REFERENCE_SIZE_MAX => (State::Nok, 0),
         Code::Char(']') => {
             tokenizer.exit(info.options.string.clone());
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
             tokenizer.exit(info.options.label);
-            (State::Ok, None)
+            (State::Ok, 0)
         }
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
@@ -179,7 +179,7 @@ fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| label(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| label(t, c, info))), 0)
         }
         Code::Char('\\') => {
             tokenizer.consume(code);
@@ -187,7 +187,7 @@ fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
             if !info.data {
                 info.data = true;
             }
-            (State::Fn(Box::new(|t, c| escape(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| escape(t, c, info))), 0)
         }
         Code::Char(_) => {
             tokenizer.consume(code);
@@ -195,7 +195,7 @@ fn label(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
             if !info.data {
                 info.data = true;
             }
-            (State::Fn(Box::new(|t, c| label(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| label(t, c, info))), 0)
         }
     }
 }
@@ -211,7 +211,7 @@ fn escape(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
         Code::Char('[' | '\\' | ']') => {
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| label(t, c, info))), None)
+            (State::Fn(Box::new(|t, c| label(t, c, info))), 0)
         }
         _ => label(tokenizer, code, info),
     }

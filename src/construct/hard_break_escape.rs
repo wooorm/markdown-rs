@@ -57,9 +57,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::HardBreakEscapeMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::HardBreakEscapeMarker);
-            (State::Fn(Box::new(inside)), None)
+            (State::Fn(Box::new(inside)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -74,8 +74,8 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HardBreakEscape);
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

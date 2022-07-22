@@ -148,7 +148,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::ListItem);
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -170,7 +170,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::ListItemValue);
             inside(tokenizer, code, 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -197,16 +197,13 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
         Code::Char(char) if char.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| inside(t, c, size + 1))),
-                None,
-            )
+            (State::Fn(Box::new(move |t, c| inside(t, c, size + 1))), 0)
         }
         Code::Char('.' | ')') if !tokenizer.interrupt || size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer, code)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -222,7 +219,7 @@ fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.enter(Token::ListItemMarker);
     tokenizer.consume(code);
     tokenizer.exit(Token::ListItemMarker);
-    (State::Fn(Box::new(marker_after)), None)
+    (State::Fn(Box::new(marker_after)), 0)
 }
 
 /// After a list item marker.
@@ -278,9 +275,9 @@ fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
-        (State::Ok, Some(vec![code]))
+        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
     }
 }
 
@@ -296,9 +293,9 @@ fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume(code);
             tokenizer.exit(Token::SpaceOrTab);
-            (State::Fn(Box::new(|t, c| after(t, c, false))), None)
+            (State::Fn(Box::new(|t, c| after(t, c, false))), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -310,7 +307,7 @@ fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
     if blank && tokenizer.interrupt {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
         let start = skip::to_back(
             &tokenizer.events,
@@ -326,7 +323,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
 
         tokenizer.exit(Token::ListItemPrefix);
         tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
-        (State::Ok, Some(vec![code]))
+        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
     }
 }
 
@@ -356,7 +353,7 @@ pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     let size = container.size;
 
     if container.blank_initial {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
         // Consume, optionally, at most `size`.
         tokenizer.go(space_or_tab_min_max(0, size), ok)(tokenizer, code)
@@ -382,12 +379,12 @@ pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 
 /// A state fn to yield [`State::Ok`].
 pub fn ok(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    (State::Ok, Some(vec![code]))
+    (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
 }
 
 /// A state fn to yield [`State::Nok`].
 fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
-    (State::Nok, None)
+    (State::Nok, 0)
 }
 
 /// Find adjacent list items with the same marker.

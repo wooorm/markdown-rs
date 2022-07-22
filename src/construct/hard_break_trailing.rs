@@ -57,9 +57,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::HardBreakTrailing);
             tokenizer.enter(Token::HardBreakTrailingSpace);
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| inside(t, c, 1))), None)
+            (State::Fn(Box::new(|t, c| inside(t, c, 1))), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -74,18 +74,15 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
     match code {
         Code::Char(' ') => {
             tokenizer.consume(code);
-            (
-                State::Fn(Box::new(move |t, c| inside(t, c, size + 1))),
-                None,
-            )
+            (State::Fn(Box::new(move |t, c| inside(t, c, size + 1))), 0)
         }
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if size >= HARD_BREAK_PREFIX_SIZE_MIN =>
         {
             tokenizer.exit(Token::HardBreakTrailingSpace);
             tokenizer.exit(Token::HardBreakTrailing);
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

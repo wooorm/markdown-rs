@@ -135,7 +135,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if paragraph_before && !tokenizer.lazy && tokenizer.parse_state.constructs.heading_setext {
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -152,7 +152,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::HeadingSetextUnderline);
             inside(tokenizer, code, Kind::from_char(char))
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -167,7 +167,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
     match code {
         Code::Char(char) if char == kind.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| inside(t, c, kind))), None)
+            (State::Fn(Box::new(move |t, c| inside(t, c, kind))), 0)
         }
         _ => {
             tokenizer.exit(Token::HeadingSetextUnderline);
@@ -189,9 +189,9 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 

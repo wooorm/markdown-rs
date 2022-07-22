@@ -63,7 +63,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     // Do not interrupt paragraphs.
     if tokenizer.interrupt || !tokenizer.parse_state.constructs.code_indented {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
         tokenizer.enter(Token::CodeIndented);
         tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer, code)
@@ -104,7 +104,7 @@ fn content(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(content)), None)
+            (State::Fn(Box::new(content)), 0)
         }
     }
 }
@@ -119,7 +119,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     tokenizer.exit(Token::CodeIndented);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
-    (State::Ok, Some(vec![code]))
+    (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
 }
 
 /// Right at a line ending, trying to parse another indent.
@@ -131,14 +131,14 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn further_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if tokenizer.lazy {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
         match code {
             Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
                 tokenizer.enter(Token::LineEnding);
                 tokenizer.consume(code);
                 tokenizer.exit(Token::LineEnding);
-                (State::Fn(Box::new(further_start)), None)
+                (State::Fn(Box::new(further_start)), 0)
             }
             _ => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
                 Box::new(if ok { further_end } else { further_begin })
@@ -155,7 +155,7 @@ fn further_start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///         ^
 /// ```
 fn further_end(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    (State::Ok, Some(vec![code]))
+    (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
 }
 
 /// At the beginning of a line that is not indented enough.
@@ -179,6 +179,6 @@ fn further_begin(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 fn further_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => further_start(tokenizer, code),
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

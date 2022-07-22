@@ -143,9 +143,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterReferenceMarker);
-            (State::Fn(Box::new(open)), None)
+            (State::Fn(Box::new(open)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -169,7 +169,7 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume(code);
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        (State::Fn(Box::new(|t, c| numeric(t, c, info))), None)
+        (State::Fn(Box::new(|t, c| numeric(t, c, info))), 0)
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         value(tokenizer, code, info)
@@ -192,7 +192,7 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResu
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Hexadecimal;
-        (State::Fn(Box::new(|t, c| value(t, c, info))), None)
+        (State::Fn(Box::new(|t, c| value(t, c, info))), 0)
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Decimal;
@@ -220,25 +220,25 @@ fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
                 && !CHARACTER_REFERENCES.iter().any(|d| d.0 == info.buffer);
 
             if unknown_named {
-                (State::Nok, None)
+                (State::Nok, 0)
             } else {
                 tokenizer.exit(Token::CharacterReferenceValue);
                 tokenizer.enter(Token::CharacterReferenceMarkerSemi);
                 tokenizer.consume(code);
                 tokenizer.exit(Token::CharacterReferenceMarkerSemi);
                 tokenizer.exit(Token::CharacterReference);
-                (State::Ok, None)
+                (State::Ok, 0)
             }
         }
         Code::Char(char) => {
             if info.buffer.len() < info.kind.max() && info.kind.allowed(char) {
                 info.buffer.push(char);
                 tokenizer.consume(code);
-                (State::Fn(Box::new(|t, c| value(t, c, info))), None)
+                (State::Fn(Box::new(|t, c| value(t, c, info))), 0)
             } else {
-                (State::Nok, None)
+                (State::Nok, 0)
             }
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

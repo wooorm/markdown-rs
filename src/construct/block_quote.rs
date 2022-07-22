@@ -53,7 +53,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if tokenizer.parse_state.constructs.block_quote {
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, None)
+        (State::Nok, 0)
     }
 }
 
@@ -103,9 +103,9 @@ fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::BlockQuoteMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::BlockQuoteMarker);
-            (State::Fn(Box::new(cont_after)), None)
+            (State::Fn(Box::new(cont_after)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -124,11 +124,11 @@ fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.consume(code);
             tokenizer.exit(Token::SpaceOrTab);
             tokenizer.exit(Token::BlockQuotePrefix);
-            (State::Ok, None)
+            (State::Ok, 0)
         }
         _ => {
             tokenizer.exit(Token::BlockQuotePrefix);
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
     }
 }

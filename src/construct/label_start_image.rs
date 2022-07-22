@@ -45,9 +45,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::LabelImageMarker);
-            (State::Fn(Box::new(open)), None)
+            (State::Fn(Box::new(open)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -71,8 +71,8 @@ pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 inactive: false,
             });
             tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-            (State::Ok, None)
+            (State::Ok, 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }

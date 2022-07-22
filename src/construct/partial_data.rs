@@ -20,7 +20,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> St
     if stop.contains(&code) {
         tokenizer.enter(Token::Data);
         tokenizer.consume(code);
-        (State::Fn(Box::new(move |t, c| data(t, c, stop))), None)
+        (State::Fn(Box::new(move |t, c| data(t, c, stop))), 0)
     } else {
         at_break(tokenizer, code, stop)
     }
@@ -34,16 +34,16 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> St
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> StateFnResult {
     match code {
-        Code::None => (State::Ok, None),
+        Code::None => (State::Ok, 0),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(move |t, c| at_break(t, c, stop))), None)
+            (State::Fn(Box::new(move |t, c| at_break(t, c, stop))), 0)
         }
         _ if stop.contains(&code) => {
             tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
         _ => {
             tokenizer.enter(Token::Data);
@@ -70,7 +70,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> StateFn
         at_break(tokenizer, code, stop)
     } else {
         tokenizer.consume(code);
-        (State::Fn(Box::new(move |t, c| data(t, c, stop))), None)
+        (State::Fn(Box::new(move |t, c| data(t, c, stop))), 0)
     }
 }
 

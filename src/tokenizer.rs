@@ -16,7 +16,7 @@ use crate::token::{Token, VOID_TOKENS};
 use crate::util::edit_map::EditMap;
 
 /// Embedded content type.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ContentType {
     /// Represents [text content][crate::content::text].
     Text,
@@ -44,7 +44,7 @@ pub enum Code {
 ///
 /// The interface for the location in the document comes from unist `Point`:
 /// <https://github.com/syntax-tree/unist#point>.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Point {
     /// 1-indexed line number.
     pub line: usize,
@@ -92,7 +92,7 @@ pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> StateFnResult;
 
 /// Each [`StateFn`][] yields something back: primarily the state.
 /// In certain cases, it can also yield back up parsed codes that were passed down.
-pub type StateFnResult = (State, Option<Vec<Code>>);
+pub type StateFnResult = (State, usize);
 
 /// Callback that can be registered and is called when the tokenizer is done.
 ///
@@ -479,11 +479,11 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
-                if ok {
-                    feed_impl(tokenizer, &if ok { result.1 } else { result.0 }, after)
+            |result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
+                if matches!(state, State::Ok) {
+                    feed_impl(tokenizer, &result.1, after)
                 } else {
-                    (State::Nok, None)
+                    (State::Nok, 0)
                 }
             },
         )
@@ -502,9 +502,9 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             until,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), _ok, tokenizer: &mut Tokenizer, state| {
+            |result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
                 tokenizer.consumed = true;
-                done(check_statefn_result((state, Some(result.1))))
+                done((state, result.1.len()))
             },
         )
     }
@@ -529,9 +529,10 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
+            |mut result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
-                feed_impl(tokenizer, &result.0, done(ok))
+                result.0.append(&mut result.1);
+                feed_impl(tokenizer, &result.0, done(matches!(state, State::Ok)))
             },
         )
     }
@@ -558,12 +559,19 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             |_code| false,
             vec![],
-            |result: (Vec<Code>, Vec<Code>), ok, tokenizer: &mut Tokenizer, _state| {
+            |mut result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
+                let ok = matches!(state, State::Ok);
+
                 if !ok {
                     tokenizer.free(previous);
                 }
 
-                let codes = if ok { result.1 } else { result.0 };
+                let codes = if ok {
+                    result.1
+                } else {
+                    result.0.append(&mut result.1);
+                    result.0
+                };
 
                 log::debug!(
                     "attempt: {:?}, codes: {:?}, at {:?}",
@@ -571,6 +579,7 @@ impl<'a> Tokenizer<'a> {
                     codes,
                     tokenizer.point
                 );
+
                 feed_impl(tokenizer, &codes, done(ok))
             },
         )
@@ -670,19 +679,19 @@ fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
     mut pause: impl FnMut(Code) -> bool + 'static,
     mut codes: Vec<Code>,
-    done: impl FnOnce((Vec<Code>, Vec<Code>), bool, &mut Tokenizer, State) -> StateFnResult + 'static,
+    done: impl FnOnce((Vec<Code>, Vec<Code>), &mut Tokenizer, State) -> StateFnResult + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
         if !codes.is_empty() && pause(tokenizer.previous) {
-            return done(
-                (codes, vec![code]),
-                false,
-                tokenizer,
-                State::Fn(Box::new(state)),
-            );
+            let after = if matches!(code, Code::None) {
+                vec![]
+            } else {
+                vec![code]
+            };
+            return done((codes, after), tokenizer, State::Fn(Box::new(state)));
         }
 
-        let (next, remainder) = check_statefn_result(state(tokenizer, code));
+        let (next, back) = state(tokenizer, code);
 
         match code {
             Code::None => {}
@@ -691,22 +700,19 @@ fn attempt_impl(
             }
         }
 
-        if let Some(ref list) = remainder {
-            assert!(
-                list.len() <= codes.len(),
-                "`remainder` must be less than or equal to `codes`"
-            );
-        }
+        assert!(
+            back <= codes.len(),
+            "`back` must be smaller than or equal to `codes.len()`"
+        );
 
         match next {
-            State::Ok => {
-                let remaining = if let Some(x) = remainder { x } else { vec![] };
-                check_statefn_result(done((codes, remaining), true, tokenizer, next))
+            State::Ok | State::Nok => {
+                let remaining = codes.split_off(codes.len() - back);
+                done((codes, remaining), tokenizer, next)
             }
-            State::Nok => check_statefn_result(done((codes, vec![]), false, tokenizer, next)),
             State::Fn(func) => {
-                assert!(remainder.is_none(), "expected no remainder");
-                check_statefn_result((State::Fn(attempt_impl(func, pause, codes, done)), None))
+                assert_eq!(back, 0, "expected no remainder");
+                (State::Fn(attempt_impl(func, pause, codes, done)), 0)
             }
         }
     })
@@ -727,27 +733,18 @@ fn feed_impl(
         let code = codes[index];
 
         match state {
-            State::Nok | State::Ok => {
-                break;
-            }
+            State::Ok | State::Nok => break,
             State::Fn(func) => {
-                log::debug!("main: passing: `{:?}`", code);
+                log::debug!("main: passing: `{:?}` ({:?})", code, index);
                 tokenizer.expect(code, false);
-                let (next, remainder) = check_statefn_result(func(tokenizer, code));
+                let (next, back) = func(tokenizer, code);
                 state = next;
-                index = index + 1
-                    - (if let Some(ref x) = remainder {
-                        x.len()
-                    } else {
-                        0
-                    });
+                index = index + 1 - back;
             }
         }
     }
 
-    // Yield to a higher loop.
-    // To do: do not copy?
-    check_statefn_result((state, Some(codes[index..].to_vec())))
+    (state, codes.len() - index)
 }
 
 /// Flush `start`: pass `eof`s to it until done.
@@ -766,8 +763,8 @@ fn flush_impl(
                 let code = Code::None;
                 log::debug!("main: passing eof");
                 tokenizer.expect(code, false);
-                let (next, remainder) = check_statefn_result(func(tokenizer, code));
-                assert!(remainder.is_none(), "expected no remainder");
+                let (next, remainder) = func(tokenizer, code);
+                assert_eq!(remainder, 0, "expected no remainder");
                 state = next;
             }
         }
@@ -778,7 +775,7 @@ fn flush_impl(
         _ => unreachable!("expected final state to be `State::Ok`"),
     }
 
-    check_statefn_result((state, None))
+    (state, 0)
 }
 
 /// Define a jump between two places.
@@ -797,28 +794,4 @@ fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize,
     }
 
     tokenizer.account_for_potential_skip();
-}
-
-/// Check a [`StateFnResult`][], make sure its valid (that there are no bugs),
-/// and clean a final eof passed back in `remainder`.
-fn check_statefn_result(result: StateFnResult) -> StateFnResult {
-    let (state, mut remainder) = result;
-
-    // Remove an eof.
-    // For convencience, feeding back an eof is allowed, but cleaned here.
-    // Most states handle eof and eol in the same branch, and hence pass
-    // all back.
-    // This might not be needed, because if EOF is passed back, we’re at the EOF.
-    // But they’re not supposed to be in codes, so here we remove them.
-    if let Some(ref mut list) = remainder {
-        if Some(&Code::None) == list.last() {
-            list.pop();
-        }
-
-        if list.is_empty() {
-            return (state, None);
-        }
-    }
-
-    (state, remainder)
 }

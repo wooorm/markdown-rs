@@ -41,7 +41,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => (State::Ok, None),
+        Code::None => (State::Ok, 0),
         _ => tokenizer.attempt(blank_line, |ok| {
             Box::new(if ok { blank_line_after } else { initial_before })
         })(tokenizer, code),
@@ -62,7 +62,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => (State::Ok, None),
+        Code::None => (State::Ok, 0),
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(code_indented),
@@ -87,14 +87,14 @@ fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => (State::Ok, None),
+        Code::None => (State::Ok, 0),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::BlankLineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::BlankLineEnding);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            (State::Fn(Box::new(start)), None)
+            (State::Fn(Box::new(start)), 0)
         }
         _ => unreachable!("expected eol/eof"),
     }
@@ -111,12 +111,12 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => (State::Ok, None),
+        Code::None => (State::Ok, 0),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(start)), None)
+            (State::Fn(Box::new(start)), 0)
         }
         _ => unreachable!("expected eol/eof"),
     }

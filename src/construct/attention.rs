@@ -175,7 +175,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::AttentionSequence);
             inside(tokenizer, code, MarkerKind::from_code(code))
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -189,12 +189,12 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnR
     match code {
         Code::Char(char) if char == marker.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| inside(t, c, marker))), None)
+            (State::Fn(Box::new(move |t, c| inside(t, c, marker))), 0)
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);
             tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
-            (State::Ok, Some(vec![code]))
+            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
         }
     }
 }

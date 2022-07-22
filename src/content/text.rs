@@ -47,7 +47,7 @@ const MARKERS: [Code; 12] = [
 /// Before text.
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     match code {
-        Code::None => (State::Ok, None),
+        Code::None => (State::Ok, 0),
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(attention),

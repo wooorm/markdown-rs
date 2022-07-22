@@ -47,12 +47,14 @@ pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
         .link
         .as_mut()
         .expect("expected `link` on previous");
-    let conten_type_previous = link_previous.content_type;
     link_previous.next = Some(next);
     let link_next = events[next].link.as_mut().expect("expected `link` on next");
     link_next.previous = Some(pevious);
 
-    assert_eq!(conten_type_previous, link_next.content_type);
+    assert_eq!(
+        events[pevious].link.as_ref().unwrap().content_type,
+        events[next].link.as_ref().unwrap().content_type
+    );
 }
 
 /// Parse linked events.
@@ -83,7 +85,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     } else {
                         text
                     })),
-                    None,
+                    0,
                 );
 
                 // Loop through links to pass them in order to the subtokenizer.
@@ -110,7 +112,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                         func,
                         link_curr.next == None,
                     );
-                    assert!(result.1.is_none(), "expected no remainder");
+                    assert_eq!(result.1, 0, "expected no remainder");
                     link_index = link_curr.next;
                 }
 

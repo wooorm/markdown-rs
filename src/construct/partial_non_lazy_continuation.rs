@@ -26,9 +26,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(after)), None)
+            (State::Fn(Box::new(after)), 0)
         }
-        _ => (State::Nok, None),
+        _ => (State::Nok, 0),
     }
 }
 
@@ -41,8 +41,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if tokenizer.lazy {
-        (State::Nok, None)
+        (State::Nok, 0)
     } else {
-        (State::Ok, Some(vec![code]))
+        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
     }
 }
