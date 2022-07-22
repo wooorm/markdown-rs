@@ -60,7 +60,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::token::Token;
-use crate::tokenizer::{Code, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, EventType, State, Tokenizer};
 use crate::util::{edit_map::EditMap, skip::opt_back as skip_opt_back};
 
 /// Kind of underline.
@@ -116,7 +116,7 @@ impl Kind {
 /// > | ==
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -135,7 +135,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if paragraph_before && !tokenizer.lazy && tokenizer.parse_state.constructs.heading_setext {
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, 0)
+        State::Nok
     }
 }
 
@@ -146,13 +146,13 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | ==
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char(char) if char == '-' || char == '=' => {
             tokenizer.enter(Token::HeadingSetextUnderline);
             inside(tokenizer, code, Kind::from_char(char))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -163,11 +163,11 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | ==
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> State {
     match code {
         Code::Char(char) if char == kind.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| inside(t, c, kind))), 0)
+            State::Fn(Box::new(move |t, c| inside(t, c, kind)))
         }
         _ => {
             tokenizer.exit(Token::HeadingSetextUnderline);
@@ -183,23 +183,23 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> StateFnResult {
 /// > | ==
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));
-            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
 /// Resolve heading (setext).
 pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let mut index = 0;
-    let mut paragraph_enter: Option<usize> = None;
-    let mut paragraph_exit: Option<usize> = None;
+    let mut paragraph_enter = None;
+    let mut paragraph_exit = None;
 
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];

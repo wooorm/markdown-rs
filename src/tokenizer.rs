@@ -87,12 +87,8 @@ pub struct Event {
 
 /// The essence of the state machine are functions: `StateFn`.
 /// It’s responsible for dealing with that single passed [`Code`][].
-/// It yields a [`StateFnResult`][].
-pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> StateFnResult;
-
-/// Each [`StateFn`][] yields something back: primarily the state.
-/// In certain cases, it can also yield back up parsed codes that were passed down.
-pub type StateFnResult = (State, usize);
+/// It yields a [`State`][].
+pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> State;
 
 /// Callback that can be registered and is called when the tokenizer is done.
 ///
@@ -106,7 +102,7 @@ pub enum State {
     /// There is a future state: a boxed [`StateFn`][] to pass the next code to.
     Fn(Box<StateFn>),
     /// The state is successful.
-    Ok,
+    Ok(usize),
     /// The state is not successful.
     Nok,
 }
@@ -472,18 +468,18 @@ impl<'a> Tokenizer<'a> {
     #[allow(clippy::unused_self)]
     pub fn go(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        after: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        after: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
             state_fn,
             |_code| false,
             vec![],
             |result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
-                if matches!(state, State::Ok) {
+                if matches!(state, State::Ok(_)) {
                     feed_impl(tokenizer, &result.1, after)
                 } else {
-                    (State::Nok, 0)
+                    State::Nok
                 }
             },
         )
@@ -494,9 +490,9 @@ impl<'a> Tokenizer<'a> {
     #[allow(clippy::unused_self)]
     pub fn go_until(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
         until: impl FnMut(Code) -> bool + 'static,
-        done: impl FnOnce(StateFnResult) -> StateFnResult + 'static,
+        done: impl FnOnce(State) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
             state_fn,
@@ -504,7 +500,7 @@ impl<'a> Tokenizer<'a> {
             vec![],
             |result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
                 tokenizer.consumed = true;
-                done((state, result.1.len()))
+                feed_impl(tokenizer, &result.1, done(state))
             },
         )
     }
@@ -520,7 +516,7 @@ impl<'a> Tokenizer<'a> {
     /// captured codes to its future states.
     pub fn check(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
@@ -532,7 +528,7 @@ impl<'a> Tokenizer<'a> {
             |mut result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
                 result.0.append(&mut result.1);
-                feed_impl(tokenizer, &result.0, done(matches!(state, State::Ok)))
+                feed_impl(tokenizer, &result.0, done(matches!(state, State::Ok(_))))
             },
         )
     }
@@ -550,7 +546,7 @@ impl<'a> Tokenizer<'a> {
     /// `done` is called, and all captured codes are fed to its future states.
     pub fn attempt(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
@@ -560,7 +556,7 @@ impl<'a> Tokenizer<'a> {
             |_code| false,
             vec![],
             |mut result: (Vec<Code>, Vec<Code>), tokenizer: &mut Tokenizer, state| {
-                let ok = matches!(state, State::Ok);
+                let ok = matches!(state, State::Ok(_));
 
                 if !ok {
                     tokenizer.free(previous);
@@ -609,8 +605,8 @@ impl<'a> Tokenizer<'a> {
     /// about `ok`.
     pub fn attempt_opt(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-        after: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        after: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
     ) -> Box<StateFn> {
         self.attempt(state_fn, |_ok| Box::new(after))
     }
@@ -622,15 +618,15 @@ impl<'a> Tokenizer<'a> {
     pub fn push(
         &mut self,
         codes: &[Code],
-        start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+        start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
         drain: bool,
-    ) -> StateFnResult {
+    ) -> State {
         assert!(!self.drained, "cannot feed after drain");
 
         let mut result = feed_impl(self, codes, start);
 
         if drain {
-            let func = match result.0 {
+            let func = match result {
                 State::Fn(func) => func,
                 _ => unreachable!("expected next state"),
             };
@@ -663,10 +659,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Flush the tokenizer.
-    pub fn flush(
-        &mut self,
-        start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-    ) -> StateFnResult {
+    pub fn flush(&mut self, start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static) -> State {
         flush_impl(self, start)
     }
 }
@@ -676,10 +669,10 @@ impl<'a> Tokenizer<'a> {
 /// Recurses into itself.
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
-    state: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
+    state: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
     mut pause: impl FnMut(Code) -> bool + 'static,
     mut codes: Vec<Code>,
-    done: impl FnOnce((Vec<Code>, Vec<Code>), &mut Tokenizer, State) -> StateFnResult + 'static,
+    done: impl FnOnce((Vec<Code>, Vec<Code>), &mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
     Box::new(|tokenizer, code| {
         if !codes.is_empty() && pause(tokenizer.previous) {
@@ -688,10 +681,11 @@ fn attempt_impl(
             } else {
                 vec![code]
             };
+
             return done((codes, after), tokenizer, State::Fn(Box::new(state)));
         }
 
-        let (next, back) = state(tokenizer, code);
+        let state = state(tokenizer, code);
 
         match code {
             Code::None => {}
@@ -700,20 +694,17 @@ fn attempt_impl(
             }
         }
 
-        assert!(
-            back <= codes.len(),
-            "`back` must be smaller than or equal to `codes.len()`"
-        );
-
-        match next {
-            State::Ok | State::Nok => {
+        match state {
+            State::Ok(back) => {
+                assert!(
+                    back <= codes.len(),
+                    "`back` must be smaller than or equal to `codes.len()`"
+                );
                 let remaining = codes.split_off(codes.len() - back);
-                done((codes, remaining), tokenizer, next)
+                done((codes, remaining), tokenizer, state)
             }
-            State::Fn(func) => {
-                assert_eq!(back, 0, "expected no remainder");
-                (State::Fn(attempt_impl(func, pause, codes, done)), 0)
-            }
+            State::Nok => done((vec![], codes), tokenizer, state),
+            State::Fn(func) => State::Fn(attempt_impl(func, pause, codes, done)),
         }
     })
 }
@@ -722,8 +713,8 @@ fn attempt_impl(
 fn feed_impl(
     tokenizer: &mut Tokenizer,
     codes: &[Code],
-    start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-) -> StateFnResult {
+    start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+) -> State {
     let mut state = State::Fn(Box::new(start));
     let mut index = 0;
 
@@ -733,49 +724,48 @@ fn feed_impl(
         let code = codes[index];
 
         match state {
-            State::Ok | State::Nok => break,
+            State::Ok(back) => {
+                state = State::Ok((codes.len() - index) + back);
+                break;
+            }
+            State::Nok => break,
             State::Fn(func) => {
                 log::debug!("main: passing: `{:?}` ({:?})", code, index);
                 tokenizer.expect(code, false);
-                let (next, back) = func(tokenizer, code);
-                state = next;
-                index = index + 1 - back;
+                state = func(tokenizer, code);
+                index += 1;
             }
         }
     }
 
-    (state, codes.len() - index)
+    state
 }
 
 /// Flush `start`: pass `eof`s to it until done.
 fn flush_impl(
     tokenizer: &mut Tokenizer,
-    start: impl FnOnce(&mut Tokenizer, Code) -> StateFnResult + 'static,
-) -> StateFnResult {
+    start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+) -> State {
     let mut state = State::Fn(Box::new(start));
     tokenizer.consumed = true;
 
     loop {
-        // Feed EOF.
         match state {
-            State::Ok | State::Nok => break,
+            State::Ok(_) | State::Nok => break,
             State::Fn(func) => {
-                let code = Code::None;
                 log::debug!("main: passing eof");
-                tokenizer.expect(code, false);
-                let (next, remainder) = func(tokenizer, code);
-                assert_eq!(remainder, 0, "expected no remainder");
-                state = next;
+                tokenizer.expect(Code::None, false);
+                state = func(tokenizer, Code::None);
             }
         }
     }
 
     match state {
-        State::Ok => {}
+        State::Ok(back) => assert_eq!(back, 0, "expected final `back` to be `0`"),
         _ => unreachable!("expected final state to be `State::Ok`"),
     }
 
-    (state, 0)
+    state
 }
 
 /// Define a jump between two places.

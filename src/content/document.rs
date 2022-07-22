@@ -17,8 +17,7 @@ use crate::parser::ParseState;
 use crate::subtokenize::subtokenize;
 use crate::token::Token;
 use crate::tokenizer::{
-    Code, Container, ContainerState, Event, EventType, Point, State, StateFn, StateFnResult,
-    Tokenizer,
+    Code, Container, ContainerState, Event, EventType, Point, State, StateFn, Tokenizer,
 };
 use crate::util::edit_map::EditMap;
 use crate::util::{
@@ -122,7 +121,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
 ///     ^
 ///   | > b
 /// ```
-fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     let info = DocumentInfo {
         index: 0,
         continued: 0,
@@ -143,7 +142,7 @@ fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | > b
 ///     ^
 /// ```
-fn line_start(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> StateFnResult {
+fn line_start(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> State {
     info.index = tokenizer.events.len();
     info.inject.push((vec![], vec![]));
     info.continued = 0;
@@ -163,7 +162,7 @@ fn container_existing_before(
     tokenizer: &mut Tokenizer,
     code: Code,
     mut info: DocumentInfo,
-) -> StateFnResult {
+) -> State {
     // If there are more existing containers, check whether the next one continues.
     if info.continued < info.stack.len() {
         let container = info.stack.remove(info.continued);
@@ -198,7 +197,7 @@ fn container_existing_missing(
     tokenizer: &mut Tokenizer,
     code: Code,
     mut info: DocumentInfo,
-) -> StateFnResult {
+) -> State {
     let container = tokenizer.container.take().unwrap();
     info.stack.insert(info.continued, container);
     container_new_before(tokenizer, code, info)
@@ -215,7 +214,7 @@ fn container_existing_after(
     tokenizer: &mut Tokenizer,
     code: Code,
     mut info: DocumentInfo,
-) -> StateFnResult {
+) -> State {
     let container = tokenizer.container.take().unwrap();
     info.stack.insert(info.continued, container);
     info.continued += 1;
@@ -230,11 +229,7 @@ fn container_existing_after(
 /// > | > b
 ///     ^
 /// ```
-fn container_new_before(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    info: DocumentInfo,
-) -> StateFnResult {
+fn container_new_before(tokenizer: &mut Tokenizer, code: Code, info: DocumentInfo) -> State {
     // If we have completely continued, restore the flow’s past `interrupt`
     // status.
     if info.continued == info.stack.len() {
@@ -288,11 +283,7 @@ fn container_new_before(
 /// > | > b
 ///       ^
 /// ```
-fn container_new_after(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    mut info: DocumentInfo,
-) -> StateFnResult {
+fn container_new_after(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> State {
     let container = tokenizer.container.take().unwrap();
 
     // Remove from the event stack.
@@ -340,11 +331,7 @@ fn container_new_after(
 /// > | > b
 ///       ^
 /// ```
-fn containers_after(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    mut info: DocumentInfo,
-) -> StateFnResult {
+fn containers_after(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo) -> State {
     // Store the container events we parsed.
     info.inject
         .last_mut()
@@ -363,12 +350,7 @@ fn containers_after(
     tokenizer.go_until(
         state,
         |code| matches!(code, Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')),
-        move |(state, back)| {
-            (
-                State::Fn(Box::new(move |t, c| flow_end(t, c, info, state))),
-                back,
-            )
-        },
+        move |state| Box::new(move |t, c| flow_end(t, c, info, state)),
     )(tokenizer, code)
 }
 
@@ -379,12 +361,7 @@ fn containers_after(
 /// > | > b
 ///     ^  ^
 /// ```
-fn flow_end(
-    tokenizer: &mut Tokenizer,
-    code: Code,
-    mut info: DocumentInfo,
-    result: State,
-) -> StateFnResult {
+fn flow_end(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo, result: State) -> State {
     let paragraph = !tokenizer.events.is_empty()
         && tokenizer.events[skip::opt_back(
             &tokenizer.events,
@@ -407,15 +384,16 @@ fn flow_end(
     info.interrupt_before = tokenizer.interrupt;
 
     match result {
-        State::Ok => {
+        State::Ok(back) => {
+            assert_eq!(back, 0);
+
             if !info.stack.is_empty() {
                 info.continued = 0;
                 info = exit_containers(tokenizer, info, &Phase::Eof);
             }
 
             resolve(tokenizer, &mut info);
-
-            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            result
         }
         State::Nok => unreachable!("unexpected `nok` from flow"),
         State::Fn(func) => {
@@ -440,8 +418,7 @@ fn exit_containers(
         let next = info.next;
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
         let result = tokenizer.flush(next);
-        assert!(matches!(result.0, State::Ok));
-        assert_eq!(result.1, 0);
+        assert!(matches!(result, State::Ok(0)));
 
         if *phase == Phase::Prefix {
             info.index = tokenizer.events.len();
@@ -481,7 +458,7 @@ fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
     let mut index = 0;
     let mut inject = info.inject.split_off(0);
     inject.reverse();
-    let mut first_line_ending_in_run: Option<usize> = None;
+    let mut first_line_ending_in_run = None;
 
     while let Some((before, mut after)) = inject.pop() {
         if !before.is_empty() {

@@ -33,7 +33,7 @@
 use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::subtokenize::link;
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, Tokenizer};
 
 /// Configuration.
 ///
@@ -135,7 +135,7 @@ struct Info {
 /// > | "a"
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
     match code {
         Code::Char('"' | '\'' | '(') => {
             let info = Info {
@@ -147,9 +147,9 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
-            (State::Fn(Box::new(|t, c| begin(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| begin(t, c, info)))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -161,14 +161,14 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
 /// > | "a"
 ///      ^
 /// ```
-fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
             tokenizer.exit(info.options.title);
-            (State::Ok, 0)
+            State::Ok(0)
         }
         _ => {
             tokenizer.enter(info.options.string.clone());
@@ -183,13 +183,13 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// > | "a"
 ///      ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.exit(info.options.string.clone());
             begin(tokenizer, code, info)
         }
-        Code::None => (State::Nok, 0),
+        Code::None => State::Nok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
@@ -221,7 +221,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnRes
 /// > | "a"
 ///      ^
 /// ```
-fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.exit(Token::Data);
@@ -233,11 +233,11 @@ fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
         }
         Code::Char('\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| escape(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| escape(t, c, info)))
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| title(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| title(t, c, info)))
         }
     }
 }
@@ -248,11 +248,11 @@ fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
 /// > | "a\*b"
 ///      ^
 /// ```
-fn escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     match code {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| title(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| title(t, c, info)))
         }
         _ => title(tokenizer, code, info),
     }

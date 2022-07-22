@@ -201,7 +201,7 @@ impl<'a> CompileContext<'a> {
 #[allow(clippy::too_many_lines)]
 pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     let mut index = 0;
-    let mut line_ending_inferred: Option<LineEnding> = None;
+    let mut line_ending_inferred = None;
 
     // First, we figure out what the used line ending style is.
     // Stop when we find a line ending.
@@ -240,7 +240,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
     };
 
     let mut context = CompileContext::new(events, codes, options, line_ending_default);
-    let mut definition_indices: Vec<(usize, usize)> = vec![];
+    let mut definition_indices = vec![];
     let mut index = 0;
     let mut definition_inside = false;
 
@@ -1041,7 +1041,7 @@ fn on_exit_media(context: &mut CompileContext) {
         .or(media.label_id)
         .map(|id| normalize_identifier(&id));
     let label = media.label.unwrap();
-    let mut definition: Option<&Definition> = None;
+    let mut definition = None;
 
     if let Some(id) = id {
         let mut index = 0;

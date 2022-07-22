@@ -66,7 +66,7 @@ use crate::constant::{
     CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, State, Tokenizer};
 
 /// Kind of a character reference.
 #[derive(Debug, Clone, PartialEq)]
@@ -136,16 +136,16 @@ struct Info {
 /// > | a&#x9;b
 ///      ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('&') if tokenizer.parse_state.constructs.character_reference => {
             tokenizer.enter(Token::CharacterReference);
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterReferenceMarker);
-            (State::Fn(Box::new(open)), 0)
+            State::Fn(Box::new(open))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -160,7 +160,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | a&#x9;b
 ///       ^
 /// ```
-fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn open(tokenizer: &mut Tokenizer, code: Code) -> State {
     let info = Info {
         buffer: String::new(),
         kind: Kind::Named,
@@ -169,7 +169,7 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume(code);
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        (State::Fn(Box::new(|t, c| numeric(t, c, info))), 0)
+        State::Fn(Box::new(|t, c| numeric(t, c, info)))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         value(tokenizer, code, info)
@@ -185,14 +185,14 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | a&#x9;b
 ///        ^
 /// ```
-fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     if let Code::Char('x' | 'X') = code {
         tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.consume(code);
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Hexadecimal;
-        (State::Fn(Box::new(|t, c| value(t, c, info))), 0)
+        State::Fn(Box::new(|t, c| value(t, c, info)))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Decimal;
@@ -213,32 +213,32 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResu
 /// > | a&#x9;b
 ///         ^
 /// ```
-fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     match code {
         Code::Char(';') if !info.buffer.is_empty() => {
             let unknown_named = Kind::Named == info.kind
                 && !CHARACTER_REFERENCES.iter().any(|d| d.0 == info.buffer);
 
             if unknown_named {
-                (State::Nok, 0)
+                State::Nok
             } else {
                 tokenizer.exit(Token::CharacterReferenceValue);
                 tokenizer.enter(Token::CharacterReferenceMarkerSemi);
                 tokenizer.consume(code);
                 tokenizer.exit(Token::CharacterReferenceMarkerSemi);
                 tokenizer.exit(Token::CharacterReference);
-                (State::Ok, 0)
+                State::Ok(0)
             }
         }
         Code::Char(char) => {
             if info.buffer.len() < info.kind.max() && info.kind.allowed(char) {
                 info.buffer.push(char);
                 tokenizer.consume(code);
-                (State::Fn(Box::new(|t, c| value(t, c, info))), 0)
+                State::Fn(Box::new(|t, c| value(t, c, info)))
             } else {
-                (State::Nok, 0)
+                State::Nok
             }
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }

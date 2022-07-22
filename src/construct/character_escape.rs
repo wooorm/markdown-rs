@@ -34,7 +34,7 @@
 //! [hard_break_escape]: crate::construct::hard_break_escape
 
 use crate::token::Token;
-use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, State, Tokenizer};
 
 /// Start of a character escape.
 ///
@@ -42,16 +42,16 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// > | a\*b
 ///      ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('\\') if tokenizer.parse_state.constructs.character_escape => {
             tokenizer.enter(Token::CharacterEscape);
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterEscapeMarker);
-            (State::Fn(Box::new(inside)), 0)
+            State::Fn(Box::new(inside))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -61,15 +61,15 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | a\*b
 ///       ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char(char) if char.is_ascii_punctuation() => {
             tokenizer.enter(Token::CharacterEscapeValue);
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterEscapeValue);
             tokenizer.exit(Token::CharacterEscape);
-            (State::Ok, 0)
+            State::Ok(0)
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }

@@ -33,7 +33,7 @@
 //! [flow]: crate::content::flow
 
 use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, State, Tokenizer};
 
 /// Start of a blank line.
 ///
@@ -45,7 +45,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// > |
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code)
 }
 
@@ -57,11 +57,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > |
 ///     ^
 /// ```
-fn after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after(_tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }

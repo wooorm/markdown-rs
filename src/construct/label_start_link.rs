@@ -29,7 +29,7 @@
 
 use super::label_end::resolve_media;
 use crate::token::Token;
-use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
 
 /// Start of label (link) start.
 ///
@@ -37,7 +37,7 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 /// > | a [b] c
 ///       ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('[') if tokenizer.parse_state.constructs.label_start_link => {
             let start = tokenizer.events.len();
@@ -52,8 +52,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 inactive: false,
             });
             tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-            (State::Ok, 0)
+            State::Ok(0)
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }

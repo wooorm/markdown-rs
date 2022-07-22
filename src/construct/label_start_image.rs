@@ -30,7 +30,7 @@
 
 use super::label_end::resolve_media;
 use crate::token::Token;
-use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
 
 /// Start of label (image) start.
 ///
@@ -38,16 +38,16 @@ use crate::tokenizer::{Code, LabelStart, State, StateFnResult, Tokenizer};
 /// > | a ![b] c
 ///       ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('!') if tokenizer.parse_state.constructs.label_start_image => {
             tokenizer.enter(Token::LabelImage);
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::LabelImageMarker);
-            (State::Fn(Box::new(open)), 0)
+            State::Fn(Box::new(open))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -57,7 +57,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | a ![b] c
 ///        ^
 /// ```
-pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn open(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('[') => {
             tokenizer.enter(Token::LabelMarker);
@@ -71,8 +71,8 @@ pub fn open(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
                 inactive: false,
             });
             tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-            (State::Ok, 0)
+            State::Ok(0)
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }

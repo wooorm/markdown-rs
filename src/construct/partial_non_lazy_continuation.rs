@@ -11,7 +11,7 @@
 //! [html_flow]: crate::construct::html_flow
 
 use crate::token::Token;
-use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, State, Tokenizer};
 
 /// Start of continuation.
 ///
@@ -20,15 +20,15 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 ///            ^
 ///   | b
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(after)), 0)
+            State::Fn(Box::new(after))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -39,10 +39,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | b
 ///     ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
     if tokenizer.lazy {
-        (State::Nok, 0)
+        State::Nok
     } else {
-        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
     }
 }

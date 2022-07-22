@@ -26,14 +26,14 @@ async fn commonmark() {
     let re = Regex::new(r"(?m)(?:^`{32} example\n[\s\S]*?\n`{32}$|^#{1,6} *(.*)$)").unwrap();
     let re_heading_prefix = Regex::new(r"#{1,6} ").unwrap();
     let re_in_out = Regex::new(r"\n\.(?:\n|$)").unwrap();
-    let mut current_heading: Option<String> = None;
+    let mut current_heading = None;
     let mut number = 1;
 
     let value = Regex::new(r"<!-- END TESTS -->[\s\S]*")
         .unwrap()
         .replace(&value, "");
     let value = Regex::new(r"→").unwrap().replace_all(&value, "\t");
-    let mut cases: Vec<String> = vec![];
+    let mut cases = vec![];
 
     for mat in re.find_iter(&value) {
         let mut lines = mat.as_str().lines().collect::<Vec<_>>();

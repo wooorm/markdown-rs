@@ -72,7 +72,7 @@
 //! [sanitize_uri]: crate::util::sanitize_uri
 
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, Tokenizer};
 
 /// Configuration.
 ///
@@ -110,7 +110,7 @@ struct Info {
 /// > | aa
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
     let info = Info {
         balance: 0,
         options,
@@ -123,12 +123,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
-            (State::Fn(Box::new(|t, c| enclosed_before(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| enclosed_before(t, c, info)))
         }
         Code::None | Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char(' ' | ')') => {
-            (State::Nok, 0)
+            State::Nok
         }
-        Code::Char(char) if char.is_ascii_control() => (State::Nok, 0),
+        Code::Char(char) if char.is_ascii_control() => State::Nok,
         Code::Char(_) => {
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.raw.clone());
@@ -145,14 +145,14 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> StateFn
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     if let Code::Char('>') = code {
         tokenizer.enter(info.options.marker.clone());
         tokenizer.consume(code);
         tokenizer.exit(info.options.marker.clone());
         tokenizer.exit(info.options.literal.clone());
         tokenizer.exit(info.options.destination);
-        (State::Ok, 0)
+        State::Ok(0)
     } else {
         tokenizer.enter(info.options.string.clone());
         tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
@@ -166,23 +166,21 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     match code {
         Code::Char('>') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(info.options.string.clone());
             enclosed_before(tokenizer, code, info)
         }
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '<') => {
-            (State::Nok, 0)
-        }
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '<') => State::Nok,
         Code::Char('\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| enclosed_escape(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| enclosed_escape(t, c, info)))
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| enclosed(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| enclosed(t, c, info)))
         }
     }
 }
@@ -193,11 +191,11 @@ fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult 
 /// > | <a\*a>
 ///        ^
 /// ```
-fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     match code {
         Code::Char('<' | '>' | '\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(|t, c| enclosed(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| enclosed(t, c, info)))
         }
         _ => enclosed(tokenizer, code, info),
     }
@@ -209,15 +207,15 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFn
 /// > | aa
 ///     ^
 /// ```
-fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     match code {
         Code::Char('(') => {
             if info.balance >= info.options.limit {
-                (State::Nok, 0)
+                State::Nok
             } else {
                 tokenizer.consume(code);
                 info.balance += 1;
-                (State::Fn(Box::new(move |t, c| raw(t, c, info))), 0)
+                State::Fn(Box::new(move |t, c| raw(t, c, info)))
             }
         }
         Code::Char(')') => {
@@ -226,11 +224,11 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
-                (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+                State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
             } else {
                 tokenizer.consume(code);
                 info.balance -= 1;
-                (State::Fn(Box::new(move |t, c| raw(t, c, info))), 0)
+                State::Fn(Box::new(move |t, c| raw(t, c, info)))
             }
         }
         Code::None
@@ -238,23 +236,23 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
         | Code::VirtualSpace
         | Code::Char('\t' | '\n' | '\r' | ' ') => {
             if info.balance > 0 {
-                (State::Nok, 0)
+                State::Nok
             } else {
                 tokenizer.exit(Token::Data);
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
-                (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+                State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
             }
         }
-        Code::Char(char) if char.is_ascii_control() => (State::Nok, 0),
+        Code::Char(char) if char.is_ascii_control() => State::Nok,
         Code::Char('\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| raw_escape(t, c, info))), 0)
+            State::Fn(Box::new(move |t, c| raw_escape(t, c, info)))
         }
         Code::Char(_) => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| raw(t, c, info))), 0)
+            State::Fn(Box::new(move |t, c| raw(t, c, info)))
         }
     }
 }
@@ -265,11 +263,11 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
 /// > | a\*a
 ///       ^
 /// ```
-fn raw_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> StateFnResult {
+fn raw_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     match code {
         Code::Char('(' | ')' | '\\') => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| raw(t, c, info))), 0)
+            State::Fn(Box::new(move |t, c| raw(t, c, info)))
         }
         _ => raw(tokenizer, code, info),
     }

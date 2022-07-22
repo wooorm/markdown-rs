@@ -23,7 +23,7 @@
 
 use crate::content::{string::start as string, text::start as text};
 use crate::parser::ParseState;
-use crate::tokenizer::{ContentType, Event, EventType, State, StateFn, StateFnResult, Tokenizer};
+use crate::tokenizer::{ContentType, Event, EventType, State, Tokenizer};
 use crate::util::{edit_map::EditMap, span};
 
 /// Create a link between two [`Event`][]s.
@@ -75,18 +75,15 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
             // No need to enter linked events again.
             if link.previous == None {
                 // Index into `events` pointing to a chunk.
-                let mut link_index: Option<usize> = Some(index);
+                let mut link_index = Some(index);
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
-                let mut result: StateFnResult = (
-                    State::Fn(Box::new(if link.content_type == ContentType::String {
-                        string
-                    } else {
-                        text
-                    })),
-                    0,
-                );
+                let mut state = State::Fn(Box::new(if link.content_type == ContentType::String {
+                    string
+                } else {
+                    text
+                }));
 
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {
@@ -102,17 +99,16 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                         tokenizer.define_skip(&enter.point);
                     }
 
-                    let func: Box<StateFn> = match result.0 {
+                    let func = match state {
                         State::Fn(func) => func,
                         _ => unreachable!("cannot be ok/nok"),
                     };
 
-                    result = tokenizer.push(
+                    state = tokenizer.push(
                         span::codes(&parse_state.codes, &span),
                         func,
                         link_curr.next == None,
                     );
-                    assert_eq!(result.1, 0, "expected no remainder");
                     link_index = link_curr.next;
                 }
 

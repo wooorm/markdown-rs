@@ -52,7 +52,7 @@
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, Point, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, Event, EventType, Point, State, Tokenizer};
 use crate::unicode::PUNCTUATION;
 use crate::util::edit_map::EditMap;
 
@@ -169,13 +169,13 @@ struct Sequence {
 /// > | **
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('*' | '_') if tokenizer.parse_state.constructs.attention => {
             tokenizer.enter(Token::AttentionSequence);
             inside(tokenizer, code, MarkerKind::from_code(code))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -185,16 +185,16 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | **
 ///     ^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> State {
     match code {
         Code::Char(char) if char == marker.as_char() => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| inside(t, c, marker))), 0)
+            State::Fn(Box::new(move |t, c| inside(t, c, marker)))
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);
             tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
-            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
         }
     }
 }
@@ -205,7 +205,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
     let codes = &tokenizer.parse_state.codes;
     let mut start = 0;
     let mut balance = 0;
-    let mut sequences: Vec<Sequence> = vec![];
+    let mut sequences = vec![];
 
     // Find sequences of sequences and information about them.
     while start < tokenizer.events.len() {

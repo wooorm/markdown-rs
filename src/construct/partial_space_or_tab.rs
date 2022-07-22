@@ -6,7 +6,7 @@
 
 use crate::subtokenize::link;
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, State, StateFn, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, ContentType, State, StateFn, Tokenizer};
 
 /// Options to parse `space_or_tab`.
 #[derive(Debug)]
@@ -132,7 +132,7 @@ pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
 /// > | a␠␠b
 ///      ^
 /// ```
-fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') if info.options.max > 0 => {
             tokenizer
@@ -145,13 +145,13 @@ fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
 
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| inside(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| inside(t, c, info)))
         }
         _ => {
             if info.options.min == 0 {
-                (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+                State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
             } else {
-                (State::Nok, 0)
+                State::Nok
             }
         }
     }
@@ -163,19 +163,19 @@ fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult
 /// > | a␠␠b
 ///       ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') if info.size < info.options.max => {
             tokenizer.consume(code);
             info.size += 1;
-            (State::Fn(Box::new(|t, c| inside(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| inside(t, c, info)))
         }
         _ => {
             tokenizer.exit(info.options.kind.clone());
             if info.size >= info.options.min {
-                (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+                State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
             } else {
-                (State::Nok, 0)
+                State::Nok
             }
         }
     }
@@ -188,7 +188,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> StateFnResul
 ///      ^
 ///   | b
 /// ```
-fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) -> StateFnResult {
+fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) -> State {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter_with_content(Token::LineEnding, info.options.content_type.clone());
@@ -202,10 +202,10 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
 
             tokenizer.consume(code);
             tokenizer.exit(Token::LineEnding);
-            (State::Fn(Box::new(|t, c| after_eol(t, c, info))), 0)
+            State::Fn(Box::new(|t, c| after_eol(t, c, info)))
         }
-        _ if info.ok => (State::Ok, if matches!(code, Code::None) { 0 } else { 1 }),
-        _ => (State::Nok, 0),
+        _ if info.ok => State::Ok(if matches!(code, Code::None) { 0 } else { 1 }),
+        _ => State::Nok,
     }
 }
 
@@ -217,7 +217,7 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
 ///     ^
 /// ```
 #[allow(clippy::needless_pass_by_value)]
-fn after_eol(tokenizer: &mut Tokenizer, code: Code, info: EolInfo) -> StateFnResult {
+fn after_eol(tokenizer: &mut Tokenizer, code: Code, info: EolInfo) -> State {
     tokenizer.attempt_opt(
         space_or_tab_with_options(Options {
             kind: Token::SpaceOrTab,
@@ -237,14 +237,14 @@ fn after_eol(tokenizer: &mut Tokenizer, code: Code, info: EolInfo) -> StateFnRes
 /// > | b
 ///     ^
 /// ```
-fn after_more_space_or_tab(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn after_more_space_or_tab(_tokenizer: &mut Tokenizer, code: Code) -> State {
     // Blank line not allowed.
     if matches!(
         code,
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
     ) {
-        (State::Nok, 0)
+        State::Nok
     } else {
-        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
     }
 }

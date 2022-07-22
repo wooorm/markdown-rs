@@ -104,7 +104,7 @@ impl EditMap {
 
         let len_before = events.len();
         let mut index = self.map.len();
-        let mut vecs: Vec<Vec<Event>> = Vec::with_capacity(index * 2 + 1);
+        let mut vecs = Vec::with_capacity(index * 2 + 1);
         while index > 0 {
             index -= 1;
             vecs.push(events.split_off(self.map[index].0 + self.map[index].1));

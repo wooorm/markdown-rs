@@ -117,7 +117,7 @@ fn url() {
         "should support an emoji"
     );
 
-    let mut ascii: Vec<char> = vec![];
+    let mut ascii = Vec::with_capacity(129);
     let mut code = 0;
 
     while code < 128 {

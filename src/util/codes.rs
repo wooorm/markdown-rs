@@ -7,7 +7,7 @@ use crate::tokenizer::Code;
 pub fn parse(value: &str) -> Vec<Code> {
     // Note: It’ll grow a bit bigger with each `Code::VirtualSpace`, smaller
     // with `Code::CarriageReturnLineFeed`.
-    let mut codes: Vec<Code> = Vec::with_capacity(value.len());
+    let mut codes = Vec::with_capacity(value.len());
     let mut at_start = true;
     let mut at_carriage_return = false;
     let mut column = 1;

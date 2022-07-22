@@ -27,7 +27,7 @@ use crate::construct::{
     label_start_link::start as label_start_link, partial_data::start as data,
     partial_whitespace::whitespace,
 };
-use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, State, Tokenizer};
 
 const MARKERS: [Code; 12] = [
     Code::VirtualSpace, // `whitespace`
@@ -45,9 +45,9 @@ const MARKERS: [Code; 12] = [
 ];
 
 /// Before text.
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None => (State::Ok, 0),
+        Code::None => State::Ok(0),
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(attention),
@@ -76,6 +76,6 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// ```markdown
 /// |qwe
 /// ```
-fn before_data(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before_data(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.go(|t, c| data(t, c, &MARKERS), start)(tokenizer, code)
 }

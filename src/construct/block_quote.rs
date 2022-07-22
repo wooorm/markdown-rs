@@ -36,7 +36,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::token::Token;
-use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, State, Tokenizer};
 
 /// Start of block quote.
 ///
@@ -44,7 +44,7 @@ use crate::tokenizer::{Code, State, StateFnResult, Tokenizer};
 /// > | > a
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -53,7 +53,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
     if tokenizer.parse_state.constructs.block_quote {
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, 0)
+        State::Nok
     }
 }
 
@@ -63,7 +63,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | > a
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('>') => {
             tokenizer.enter(Token::BlockQuote);
@@ -80,7 +80,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | > b
 ///     ^
 /// ```
-pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -96,16 +96,16 @@ pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | > b
 ///     ^
 /// ```
-fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::Char('>') => {
             tokenizer.enter(Token::BlockQuotePrefix);
             tokenizer.enter(Token::BlockQuoteMarker);
             tokenizer.consume(code);
             tokenizer.exit(Token::BlockQuoteMarker);
-            (State::Fn(Box::new(cont_after)), 0)
+            State::Fn(Box::new(cont_after))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -117,18 +117,18 @@ fn cont_before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | >b
 ///      ^
 /// ```
-fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume(code);
             tokenizer.exit(Token::SpaceOrTab);
             tokenizer.exit(Token::BlockQuotePrefix);
-            (State::Ok, 0)
+            State::Ok(0)
         }
         _ => {
             tokenizer.exit(Token::BlockQuotePrefix);
-            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
         }
     }
 }

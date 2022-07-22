@@ -50,7 +50,7 @@ use crate::construct::{
     thematic_break::start as thematic_break,
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, EventType, State, Tokenizer};
 use crate::util::{
     edit_map::EditMap,
     skip,
@@ -137,7 +137,7 @@ impl Kind {
 /// > | * a
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -148,7 +148,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
         tokenizer.enter(Token::ListItem);
         tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
     } else {
-        (State::Nok, 0)
+        State::Nok
     }
 }
 
@@ -158,7 +158,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | * a
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         // Unordered.
         Code::Char('*' | '+' | '-') => tokenizer.check(thematic_break, |ok| {
@@ -170,7 +170,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.enter(Token::ListItemValue);
             inside(tokenizer, code, 0)
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -182,7 +182,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | * a
 ///     ^
 /// ```
-fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.enter(Token::ListItemPrefix);
     marker(tokenizer, code)
 }
@@ -193,17 +193,17 @@ fn before_unordered(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | 1. a
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> State {
     match code {
         Code::Char(char) if char.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(move |t, c| inside(t, c, size + 1))), 0)
+            State::Fn(Box::new(move |t, c| inside(t, c, size + 1)))
         }
         Code::Char('.' | ')') if !tokenizer.interrupt || size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer, code)
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -215,11 +215,11 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> StateFnResult {
 /// > | 1. b
 ///      ^
 /// ```
-fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.enter(Token::ListItemMarker);
     tokenizer.consume(code);
     tokenizer.exit(Token::ListItemMarker);
-    (State::Fn(Box::new(marker_after)), 0)
+    State::Fn(Box::new(marker_after))
 }
 
 /// After a list item marker.
@@ -230,7 +230,7 @@ fn marker(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | 1. b
 ///       ^
 /// ```
-fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.check(blank_line, move |ok| {
         if ok {
             Box::new(|t, c| after(t, c, true))
@@ -246,7 +246,7 @@ fn marker_after(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | * a
 ///      ^
 /// ```
-fn marker_after_not_blank(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn marker_after_not_blank(tokenizer: &mut Tokenizer, code: Code) -> State {
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
     tokenizer.attempt(whitespace, move |ok| {
         if ok {
@@ -263,7 +263,7 @@ fn marker_after_not_blank(tokenizer: &mut Tokenizer, code: Code) -> StateFnResul
 /// > | * a
 ///      ^
 /// ```
-fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.go(space_or_tab_min_max(1, TAB_SIZE), whitespace_after)(tokenizer, code)
 }
 
@@ -273,11 +273,11 @@ fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | * a
 ///      ^
 /// ```
-fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> State {
     if matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
-        (State::Nok, 0)
+        State::Nok
     } else {
-        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
     }
 }
 
@@ -287,15 +287,15 @@ fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | * a
 ///      ^
 /// ```
-fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume(code);
             tokenizer.exit(Token::SpaceOrTab);
-            (State::Fn(Box::new(|t, c| after(t, c, false))), 0)
+            State::Fn(Box::new(|t, c| after(t, c, false)))
         }
-        _ => (State::Nok, 0),
+        _ => State::Nok,
     }
 }
 
@@ -305,9 +305,9 @@ fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | * a
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
+fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> State {
     if blank && tokenizer.interrupt {
-        (State::Nok, 0)
+        State::Nok
     } else {
         let start = skip::to_back(
             &tokenizer.events,
@@ -323,7 +323,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
 
         tokenizer.exit(Token::ListItemPrefix);
         tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
-        (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
     }
 }
 
@@ -334,7 +334,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> StateFnResult {
 /// > |   b
 ///     ^
 /// ```
-pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> State {
     tokenizer.check(blank_line, |ok| {
         Box::new(if ok { blank_cont } else { not_blank_cont })
     })(tokenizer, code)
@@ -348,12 +348,12 @@ pub fn cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 ///     ^
 ///   |   b
 /// ```
-pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> State {
     let container = tokenizer.container.as_ref().unwrap();
     let size = container.size;
 
     if container.blank_initial {
-        (State::Nok, 0)
+        State::Nok
     } else {
         // Consume, optionally, at most `size`.
         tokenizer.go(space_or_tab_min_max(0, size), ok)(tokenizer, code)
@@ -367,7 +367,7 @@ pub fn blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > |   b
 ///     ^
 /// ```
-pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> State {
     let container = tokenizer.container.as_mut().unwrap();
     let size = container.size;
 
@@ -378,13 +378,13 @@ pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 }
 
 /// A state fn to yield [`State::Ok`].
-pub fn ok(_tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
-    (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+pub fn ok(_tokenizer: &mut Tokenizer, code: Code) -> State {
+    State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
 }
 
 /// A state fn to yield [`State::Nok`].
-fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> StateFnResult {
-    (State::Nok, 0)
+fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
+    State::Nok
 }
 
 /// Find adjacent list items with the same marker.
@@ -437,7 +437,7 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
 
                 if !matched {
                     let mut index = lists_wip.len();
-                    let mut exit: Option<usize> = None;
+                    let mut exit = None;
 
                     while index > 0 {
                         index -= 1;

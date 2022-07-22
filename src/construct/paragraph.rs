@@ -33,7 +33,7 @@
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, EventType, State, StateFnResult, Tokenizer};
+use crate::tokenizer::{Code, ContentType, EventType, State, Tokenizer};
 use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
 
 /// Before a paragraph.
@@ -42,7 +42,7 @@ use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
 /// > | abc
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             unreachable!("unexpected eol/eof")
@@ -61,7 +61,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
 /// > | abc
 ///     ^^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
+fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::Data);
@@ -69,11 +69,11 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> StateFnResult {
             tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));
             // You’d be interrupting.
             tokenizer.interrupt = true;
-            (State::Ok, if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
         }
         _ => {
             tokenizer.consume(code);
-            (State::Fn(Box::new(inside)), 0)
+            State::Fn(Box::new(inside))
         }
     }
 }
