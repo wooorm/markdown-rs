@@ -54,7 +54,6 @@
 use crate::token::Token;
 use crate::tokenizer::{Code, Event, EventType, Point, State, Tokenizer};
 use crate::unicode::PUNCTUATION;
-use crate::util::edit_map::EditMap;
 
 /// Character code kinds.
 #[derive(Debug, PartialEq)]
@@ -201,7 +200,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> State {
 
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
-fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
+fn resolve_attention(tokenizer: &mut Tokenizer) {
     let codes = &tokenizer.parse_state.codes;
     let mut start = 0;
     let mut balance = 0;
@@ -340,7 +339,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     // Remove closing sequence if fully used.
                     if sequence_close.size == 0 {
                         sequences.remove(close);
-                        map.add(close_event_index, 2, vec![]);
+                        tokenizer.map.add(close_event_index, 2, vec![]);
                     } else {
                         // Shift remaining closing sequence forward.
                         // Do it here because a sequence can open and close different
@@ -362,7 +361,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     // Remove opening sequence if fully used.
                     if sequence_open.size == 0 {
                         sequences.remove(open);
-                        map.add(open_event_index, 2, vec![]);
+                        tokenizer.map.add(open_event_index, 2, vec![]);
                         next_index -= 1;
                     } else {
                         // Shift remaining opening sequence backwards.
@@ -372,7 +371,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                     }
 
                     // Opening.
-                    map.add_before(
+                    tokenizer.map.add_before(
                         // Add after the current sequence (it might remain).
                         open_event_index + 2,
                         0,
@@ -420,7 +419,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                         ],
                     );
                     // Closing.
-                    map.add(
+                    tokenizer.map.add(
                         close_event_index,
                         0,
                         vec![
@@ -484,8 +483,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
         index += 1;
     }
 
-    // This resolver is needed.
-    true
+    tokenizer.map.consume(&mut tokenizer.events);
 }
 
 /// Classify whether a character code represents whitespace, punctuation, or

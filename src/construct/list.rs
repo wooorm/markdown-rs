@@ -52,7 +52,6 @@ use crate::construct::{
 use crate::token::Token;
 use crate::tokenizer::{Code, EventType, State, Tokenizer};
 use crate::util::{
-    edit_map::EditMap,
     skip,
     span::{codes as codes_from_span, from_exit_event},
 };
@@ -388,7 +387,7 @@ fn nok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
 }
 
 /// Find adjacent list items with the same marker.
-pub fn resolve_list_item(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
+pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
     let mut index = 0;
     let mut balance = 0;
     let mut lists_wip: Vec<(Kind, usize, usize, usize)> = vec![];
@@ -483,12 +482,9 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
         list_start.token_type = token_type.clone();
         list_end.token_type = token_type;
 
-        map.add(list_item.2, 0, vec![list_start]);
-        map.add(list_item.3 + 1, 0, vec![list_end]);
+        tokenizer.map.add(list_item.2, 0, vec![list_start]);
+        tokenizer.map.add(list_item.3 + 1, 0, vec![list_end]);
 
         index += 1;
     }
-
-    // This resolver improves events, but is not needed by other resolvers.
-    false
 }

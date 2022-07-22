@@ -95,7 +95,7 @@ pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> State;
 /// Resolvers are supposed to change the list of events, because parsing is
 /// sometimes messy, and they help expose a cleaner interface of events to
 /// the compiler and other users.
-pub type Resolver = dyn FnOnce(&mut Tokenizer, &mut EditMap) -> bool;
+pub type Resolver = dyn FnOnce(&mut Tokenizer);
 
 /// The result of a state.
 pub enum State {
@@ -191,6 +191,8 @@ pub struct Tokenizer<'a> {
     pub stack: Vec<Token>,
     /// Previous character code.
     pub previous: Code,
+    /// To do.
+    pub map: EditMap,
     /// Current character code.
     current: Code,
     /// Current relative and absolute place in the file.
@@ -246,6 +248,7 @@ impl<'a> Tokenizer<'a> {
             stack: vec![],
             events: vec![],
             parse_state,
+            map: EditMap::new(),
             label_start_stack: vec![],
             label_start_list_loose: vec![],
             media_list: vec![],
@@ -255,7 +258,7 @@ impl<'a> Tokenizer<'a> {
             container: None,
             // Assume about 10 resolvers.
             resolvers: Vec::with_capacity(10),
-            resolver_ids: Vec::with_capacity(10)
+            resolver_ids: Vec::with_capacity(10),
         }
     }
 
@@ -635,25 +638,13 @@ impl<'a> Tokenizer<'a> {
             result = flush_impl(self, func);
 
             self.drained = true;
-            let mut map = EditMap::new();
-            let mut consumed = false;
 
             while !self.resolvers.is_empty() {
                 let resolver = self.resolvers.remove(0);
-                let consume = resolver(self, &mut map);
-
-                if consume {
-                    map.consume(&mut self.events);
-                    consumed = true;
-                    map = EditMap::new();
-                } else {
-                    consumed = false;
-                }
+                resolver(self);
             }
 
-            if !consumed {
-                map.consume(&mut self.events);
-            }
+            self.map.consume(&mut self.events);
         }
 
         result

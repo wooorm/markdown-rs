@@ -61,7 +61,7 @@ use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::token::Token;
 use crate::tokenizer::{Code, EventType, State, Tokenizer};
-use crate::util::{edit_map::EditMap, skip::opt_back as skip_opt_back};
+use crate::util::skip::opt_back as skip_opt_back;
 
 /// Kind of underline.
 #[derive(Debug, Clone, PartialEq)]
@@ -196,7 +196,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
 }
 
 /// Resolve heading (setext).
-pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut index = 0;
     let mut paragraph_enter = None;
     let mut paragraph_exit = None;
@@ -228,13 +228,10 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
             let mut heading_exit = tokenizer.events[index].clone();
             heading_exit.token_type = Token::HeadingSetext;
 
-            map.add(enter, 0, vec![heading_enter]);
-            map.add(index + 1, 0, vec![heading_exit]);
+            tokenizer.map.add(enter, 0, vec![heading_enter]);
+            tokenizer.map.add(index + 1, 0, vec![heading_exit]);
         }
 
         index += 1;
     }
-
-    // This resolver improves events, but is not needed by other resolvers.
-    false
 }

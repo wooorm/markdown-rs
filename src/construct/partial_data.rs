@@ -8,7 +8,6 @@
 
 use crate::token::Token;
 use crate::tokenizer::{Code, EventType, State, Tokenizer};
-use crate::util::edit_map::EditMap;
 
 /// At the beginning of data.
 ///
@@ -75,7 +74,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> State {
 }
 
 /// Merge adjacent data events.
-pub fn resolve_data(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
+pub fn resolve_data(tokenizer: &mut Tokenizer) {
     let len = tokenizer.events.len();
     let mut index = 0;
 
@@ -95,7 +94,9 @@ pub fn resolve_data(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
             }
 
             if exit_far_index > exit_index {
-                map.add(exit_index, exit_far_index - exit_index, vec![]);
+                tokenizer
+                    .map
+                    .add(exit_index, exit_far_index - exit_index, vec![]);
 
                 // Change positional info.
                 let exit_far = &tokenizer.events[exit_far_index];
@@ -108,7 +109,4 @@ pub fn resolve_data(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
 
         index += 1;
     }
-
-    // This resolver helps, but is not required for other resolvers.
-    false
 }

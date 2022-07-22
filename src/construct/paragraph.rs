@@ -34,7 +34,7 @@
 
 use crate::token::Token;
 use crate::tokenizer::{Code, ContentType, EventType, State, Tokenizer};
-use crate::util::{edit_map::EditMap, skip::opt as skip_opt};
+use crate::util::skip::opt as skip_opt;
 
 /// Before a paragraph.
 ///
@@ -80,7 +80,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
 
 /// Merge “`Paragraph`”s, which currently span a single line, into actual
 /// `Paragraph`s that span multiple lines.
-pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let len = tokenizer.events.len();
     let mut index = 0;
 
@@ -104,10 +104,10 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 && tokenizer.events[enter_next_index].token_type == Token::Paragraph
             {
                 // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
-                map.add(exit_index, 3, vec![]);
+                tokenizer.map.add(exit_index, 3, vec![]);
 
                 // Remove Enter:Paragraph.
-                map.add(enter_next_index, 1, vec![]);
+                tokenizer.map.add(enter_next_index, 1, vec![]);
 
                 // Add Exit:LineEnding position info to Exit:Data.
                 let line_ending_exit = &tokenizer.events[exit_index + 2];
@@ -141,6 +141,5 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
         index += 1;
     }
 
-    // This resolver is needed by setext headings.
-    true
+    tokenizer.map.consume(&mut tokenizer.events);
 }

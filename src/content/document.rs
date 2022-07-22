@@ -19,7 +19,6 @@ use crate::token::Token;
 use crate::tokenizer::{
     Code, Container, ContainerState, Event, EventType, Point, State, StateFn, Tokenizer,
 };
-use crate::util::edit_map::EditMap;
 use crate::util::{
     normalize_identifier::normalize_identifier,
     skip,
@@ -454,7 +453,6 @@ fn exit_containers(
 
 // Inject the container events.
 fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
-    let mut map = EditMap::new();
     let mut index = 0;
     let mut inject = info.inject.split_off(0);
     inject.reverse();
@@ -463,7 +461,7 @@ fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
     while let Some((before, mut after)) = inject.pop() {
         if !before.is_empty() {
             first_line_ending_in_run = None;
-            map.add(index, 0, before);
+            tokenizer.map.add(index, 0, before);
         }
 
         while index < tokenizer.events.len() {
@@ -499,8 +497,8 @@ fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
             subevent_index += 1;
         }
 
-        map.add(close_index, 0, after);
+        tokenizer.map.add(close_index, 0, after);
     }
 
-    map.consume(&mut tokenizer.events);
+    tokenizer.map.consume(&mut tokenizer.events);
 }

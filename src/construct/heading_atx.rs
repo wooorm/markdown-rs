@@ -58,7 +58,6 @@ use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
 use crate::token::Token;
 use crate::tokenizer::{Code, ContentType, Event, EventType, State, Tokenizer};
-use crate::util::edit_map::EditMap;
 
 /// Start of a heading (atx).
 ///
@@ -190,7 +189,7 @@ fn data(tokenizer: &mut Tokenizer, code: Code) -> State {
 }
 
 /// Resolve heading (atx).
-pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut index = 0;
     let mut heading_start: Option<usize> = None;
     let mut data_start: Option<usize> = None;
@@ -206,7 +205,7 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 // If `start` is some, `end` is too.
                 let end = data_end.unwrap();
 
-                map.add(
+                tokenizer.map.add(
                     start,
                     0,
                     vec![Event {
@@ -218,9 +217,9 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
                 );
 
                 // Remove everything between the start and the end.
-                map.add(start + 1, end - start - 1, vec![]);
+                tokenizer.map.add(start + 1, end - start - 1, vec![]);
 
-                map.add(
+                tokenizer.map.add(
                     end + 1,
                     0,
                     vec![Event {
@@ -247,7 +246,4 @@ pub fn resolve(tokenizer: &mut Tokenizer, map: &mut EditMap) -> bool {
 
         index += 1;
     }
-
-    // This resolver improves events, but is not needed by other resolvers.
-    false
 }

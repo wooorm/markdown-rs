@@ -57,8 +57,6 @@ fn shift_links(events: &mut [Event], jumps: &[(usize, usize, usize)]) {
 /// links in check.
 #[derive(Debug)]
 pub struct EditMap {
-    /// Whether this map was consumed already.
-    consumed: bool,
     /// Record of changes.
     map: Vec<(usize, usize, Vec<Event>)>,
 }
@@ -66,10 +64,7 @@ pub struct EditMap {
 impl EditMap {
     /// Create a new edit map.
     pub fn new() -> EditMap {
-        EditMap {
-            consumed: false,
-            map: vec![],
-        }
+        EditMap { map: vec![] }
     }
     /// Create an edit: a remove and/or add at a certain place.
     pub fn add(&mut self, index: usize, remove: usize, add: Vec<Event>) {
@@ -84,8 +79,9 @@ impl EditMap {
         self.map
             .sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
-        assert!(!self.consumed, "cannot consume after consuming");
-        self.consumed = true;
+        if self.map.is_empty() {
+            return;
+        }
 
         // Calculate jumps: where items in the current list move to.
         let mut jumps = Vec::with_capacity(self.map.len());
@@ -118,12 +114,13 @@ impl EditMap {
         while let Some(mut slice) = vecs.pop() {
             events.append(&mut slice);
         }
+
+        self.map.truncate(0);
     }
 }
 
 /// Create an edit.
 fn add_impl(edit_map: &mut EditMap, at: usize, remove: usize, mut add: Vec<Event>, before: bool) {
-    assert!(!edit_map.consumed, "cannot add after consuming");
     let mut index = 0;
 
     if remove == 0 && add.is_empty() {
