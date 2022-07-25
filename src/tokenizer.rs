@@ -173,7 +173,7 @@ struct InternalState {
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
-    column_start: Vec<(usize, usize, usize)>,
+    column_start: Vec<usize>,
     // First line.
     line_start: usize,
     /// Track whether a character is expected to be consumed, and whether it’s
@@ -292,16 +292,12 @@ impl<'a> Tokenizer<'a> {
 
     /// Define a jump between two places.
     pub fn define_skip(&mut self, point: &Point) {
-        define_skip_impl(self, point.line, (point.column, point.offset, point.index));
+        define_skip_impl(self, point.line, point.index);
     }
 
     /// Define the current place as a jump between two places.
     pub fn define_skip_current(&mut self) {
-        define_skip_impl(
-            self,
-            self.point.line,
-            (self.point.column, self.point.offset, self.point.index),
-        );
+        define_skip_impl(self, self.point.line, self.point.index);
     }
 
     /// Increment the current positional info if we’re right after a line
@@ -310,11 +306,7 @@ impl<'a> Tokenizer<'a> {
         let at = self.point.line - self.line_start;
 
         if self.point.column == 1 && at != self.column_start.len() {
-            let (column, offset, index) = &self.column_start[at];
-            self.point.column = *column;
-            self.point.offset = *offset;
-            self.point.index = *index;
-            self.index = *index;
+            self.move_to(self.column_start[at]);
         }
     }
 
@@ -329,42 +321,46 @@ impl<'a> Tokenizer<'a> {
         log::debug!("consume: `{:?}` ({:?})", code, self.point);
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
 
-        self.point.index += 1;
-        self.index += 1;
-
-        match code {
-            Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-                self.point.line += 1;
-                self.point.column = 1;
-                self.point.offset += if code == Code::CarriageReturnLineFeed {
-                    2
-                } else {
-                    1
-                };
-
-                if self.point.line - self.line_start + 1 > self.column_start.len() {
-                    self.column_start.push((
-                        self.point.column,
-                        self.point.offset,
-                        self.point.index,
-                    ));
-                }
-
-                self.account_for_potential_skip();
-                log::debug!("position: after eol: `{:?}`", self.point);
-            }
-            Code::VirtualSpace => {
-                // Empty.
-            }
-            _ => {
-                self.point.column += 1;
-                self.point.offset += 1;
-            }
-        }
+        self.move_to(self.index + 1);
 
         self.previous = code;
         // Mark as consumed.
         self.consumed = true;
+    }
+
+    /// To do.
+    pub fn move_to(&mut self, to: usize) {
+        while self.index < to {
+            let code = &self.parse_state.codes[self.index];
+            self.point.index += 1;
+            self.index += 1;
+
+            match code {
+                Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+                    self.point.line += 1;
+                    self.point.column = 1;
+                    self.point.offset += if *code == Code::CarriageReturnLineFeed {
+                        2
+                    } else {
+                        1
+                    };
+
+                    if self.point.line - self.line_start + 1 > self.column_start.len() {
+                        self.column_start.push(self.point.index);
+                    }
+
+                    self.account_for_potential_skip();
+                    log::debug!("position: after eol: `{:?}`", self.point);
+                }
+                Code::VirtualSpace => {
+                    // Empty.
+                }
+                _ => {
+                    self.point.column += 1;
+                    self.point.offset += 1;
+                }
+            }
+        }
     }
 
     /// Mark the start of a semantic label.
@@ -766,14 +762,14 @@ fn flush_impl(
 ///
 /// This defines how much columns, offsets, and the `index` are increased when
 /// consuming a line ending.
-fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize)) {
-    log::debug!("position: define skip: {:?} -> ({:?})", line, info);
+fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, index: usize) {
+    log::debug!("position: define skip: {:?} -> ({:?})", line, index);
     let at = line - tokenizer.line_start;
 
     if at == tokenizer.column_start.len() {
-        tokenizer.column_start.push(info);
+        tokenizer.column_start.push(index);
     } else {
-        tokenizer.column_start[at] = info;
+        tokenizer.column_start[at] = index;
     }
 
     tokenizer.account_for_potential_skip();
