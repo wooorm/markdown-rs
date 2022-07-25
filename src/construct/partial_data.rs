@@ -15,13 +15,13 @@ use crate::tokenizer::{Code, EventType, State, Tokenizer};
 /// > | abc
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> State {
-    if stop.contains(&code) {
+pub fn start(tokenizer: &mut Tokenizer, stop: &'static [Code]) -> State {
+    if stop.contains(&tokenizer.current) {
         tokenizer.enter(Token::Data);
-        tokenizer.consume(code);
-        State::Fn(Box::new(move |t, c| data(t, c, stop)))
+        tokenizer.consume();
+        State::Fn(Box::new(move |t| data(t, stop)))
     } else {
-        at_break(tokenizer, code, stop)
+        at_break(tokenizer, stop)
     }
 }
 
@@ -31,22 +31,22 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> St
 /// > | abc
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> State {
-    match code {
+fn at_break(tokenizer: &mut Tokenizer, stop: &'static [Code]) -> State {
+    match tokenizer.current {
         Code::None => State::Ok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(move |t, c| at_break(t, c, stop)))
+            State::Fn(Box::new(move |t| at_break(t, stop)))
         }
-        _ if stop.contains(&code) => {
+        _ if stop.contains(&tokenizer.current) => {
             tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
             State::Ok
         }
         _ => {
             tokenizer.enter(Token::Data);
-            data(tokenizer, code, stop)
+            data(tokenizer, stop)
         }
     }
 }
@@ -57,19 +57,19 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> Sta
 /// > | abc
 ///     ^^^
 /// ```
-fn data(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> State {
-    let done = match code {
+fn data(tokenizer: &mut Tokenizer, stop: &'static [Code]) -> State {
+    let done = match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => true,
-        _ if stop.contains(&code) => true,
+        _ if stop.contains(&tokenizer.current) => true,
         _ => false,
     };
 
     if done {
         tokenizer.exit(Token::Data);
-        at_break(tokenizer, code, stop)
+        at_break(tokenizer, stop)
     } else {
-        tokenizer.consume(code);
-        State::Fn(Box::new(move |t, c| data(t, c, stop)))
+        tokenizer.consume();
+        State::Fn(Box::new(move |t| data(t, stop)))
     }
 }
 

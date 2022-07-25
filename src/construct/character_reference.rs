@@ -136,12 +136,12 @@ struct Info {
 /// > | a&#x9;b
 ///      ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('&') if tokenizer.parse_state.constructs.character_reference => {
             tokenizer.enter(Token::CharacterReference);
             tokenizer.enter(Token::CharacterReferenceMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::CharacterReferenceMarker);
             State::Fn(Box::new(open))
         }
@@ -160,19 +160,19 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | a&#x9;b
 ///       ^
 /// ```
-fn open(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn open(tokenizer: &mut Tokenizer) -> State {
     let info = Info {
         buffer: String::new(),
         kind: Kind::Named,
     };
-    if let Code::Char('#') = code {
+    if let Code::Char('#') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
-        tokenizer.consume(code);
+        tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        State::Fn(Box::new(|t, c| numeric(t, c, info)))
+        State::Fn(Box::new(|t| numeric(t, info)))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
-        value(tokenizer, code, info)
+        value(tokenizer, info)
     }
 }
 
@@ -185,18 +185,18 @@ fn open(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | a&#x9;b
 ///        ^
 /// ```
-fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
-    if let Code::Char('x' | 'X') = code {
+fn numeric(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+    if let Code::Char('x' | 'X') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
-        tokenizer.consume(code);
+        tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Hexadecimal;
-        State::Fn(Box::new(|t, c| value(t, c, info)))
+        State::Fn(Box::new(|t| value(t, info)))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         info.kind = Kind::Decimal;
-        value(tokenizer, code, info)
+        value(tokenizer, info)
     }
 }
 
@@ -213,8 +213,8 @@ fn numeric(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
 /// > | a&#x9;b
 ///         ^
 /// ```
-fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
-    match code {
+fn value(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+    match tokenizer.current {
         Code::Char(';') if !info.buffer.is_empty() => {
             let unknown_named = Kind::Named == info.kind
                 && !CHARACTER_REFERENCES.iter().any(|d| d.0 == info.buffer);
@@ -224,7 +224,7 @@ fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
             } else {
                 tokenizer.exit(Token::CharacterReferenceValue);
                 tokenizer.enter(Token::CharacterReferenceMarkerSemi);
-                tokenizer.consume(code);
+                tokenizer.consume();
                 tokenizer.exit(Token::CharacterReferenceMarkerSemi);
                 tokenizer.exit(Token::CharacterReference);
                 State::Ok
@@ -233,8 +233,8 @@ fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
         Code::Char(char) => {
             if info.buffer.len() < info.kind.max() && info.kind.allowed(char) {
                 info.buffer.push(char);
-                tokenizer.consume(code);
-                State::Fn(Box::new(|t, c| value(t, c, info)))
+                tokenizer.consume();
+                State::Fn(Box::new(|t| value(t, info)))
             } else {
                 State::Nok
             }

@@ -110,20 +110,20 @@ struct Info {
 /// > | aa
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
+pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     let info = Info {
         balance: 0,
         options,
     };
 
-    match code {
+    match tokenizer.current {
         Code::Char('<') => {
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.literal.clone());
             tokenizer.enter(info.options.marker.clone());
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(info.options.marker.clone());
-            State::Fn(Box::new(|t, c| enclosed_before(t, c, info)))
+            State::Fn(Box::new(|t| enclosed_before(t, info)))
         }
         Code::None | Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char(' ' | ')') => {
             State::Nok
@@ -134,7 +134,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
             tokenizer.enter(info.options.raw.clone());
             tokenizer.enter(info.options.string.clone());
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            raw(tokenizer, code, info)
+            raw(tokenizer, info)
         }
     }
 }
@@ -145,10 +145,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    if let Code::Char('>') = code {
+fn enclosed_before(tokenizer: &mut Tokenizer, info: Info) -> State {
+    if let Code::Char('>') = tokenizer.current {
         tokenizer.enter(info.options.marker.clone());
-        tokenizer.consume(code);
+        tokenizer.consume();
         tokenizer.exit(info.options.marker.clone());
         tokenizer.exit(info.options.literal.clone());
         tokenizer.exit(info.options.destination);
@@ -156,7 +156,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
     } else {
         tokenizer.enter(info.options.string.clone());
         tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-        enclosed(tokenizer, code, info)
+        enclosed(tokenizer, info)
     }
 }
 
@@ -166,21 +166,21 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn enclosed(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::Char('>') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(info.options.string.clone());
-            enclosed_before(tokenizer, code, info)
+            enclosed_before(tokenizer, info)
         }
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '<') => State::Nok,
         Code::Char('\\') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| enclosed_escape(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| enclosed_escape(t, info)))
         }
         _ => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| enclosed(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| enclosed(t, info)))
         }
     }
 }
@@ -191,13 +191,13 @@ fn enclosed(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | <a\*a>
 ///        ^
 /// ```
-fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn enclosed_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::Char('<' | '>' | '\\') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| enclosed(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| enclosed(t, info)))
         }
-        _ => enclosed(tokenizer, code, info),
+        _ => enclosed(tokenizer, info),
     }
 }
 
@@ -207,15 +207,15 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | aa
 ///     ^
 /// ```
-fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
-    match code {
+fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+    match tokenizer.current {
         Code::Char('(') => {
             if info.balance >= info.options.limit {
                 State::Nok
             } else {
-                tokenizer.consume(code);
+                tokenizer.consume();
                 info.balance += 1;
-                State::Fn(Box::new(move |t, c| raw(t, c, info)))
+                State::Fn(Box::new(move |t| raw(t, info)))
             }
         }
         Code::Char(')') => {
@@ -226,9 +226,9 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 tokenizer.exit(info.options.destination);
                 State::Ok
             } else {
-                tokenizer.consume(code);
+                tokenizer.consume();
                 info.balance -= 1;
-                State::Fn(Box::new(move |t, c| raw(t, c, info)))
+                State::Fn(Box::new(move |t| raw(t, info)))
             }
         }
         Code::None
@@ -247,12 +247,12 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
         }
         Code::Char(char) if char.is_ascii_control() => State::Nok,
         Code::Char('\\') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| raw_escape(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| raw_escape(t, info)))
         }
         Code::Char(_) => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| raw(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| raw(t, info)))
         }
     }
 }
@@ -263,12 +263,12 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
 /// > | a\*a
 ///       ^
 /// ```
-fn raw_escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn raw_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::Char('(' | ')' | '\\') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| raw(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| raw(t, info)))
         }
-        _ => raw(tokenizer, code, info),
+        _ => raw(tokenizer, info),
     }
 }

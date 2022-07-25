@@ -50,12 +50,12 @@ use crate::tokenizer::{Code, State, Tokenizer};
 ///      ^
 ///   | b
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('\\') if tokenizer.parse_state.constructs.hard_break_escape => {
             tokenizer.enter(Token::HardBreakEscape);
             tokenizer.enter(Token::HardBreakEscapeMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::HardBreakEscapeMarker);
             State::Fn(Box::new(inside))
         }
@@ -70,8 +70,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 ///       ^
 ///   | b
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HardBreakEscape);
             State::Ok

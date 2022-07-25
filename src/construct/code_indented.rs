@@ -60,13 +60,13 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// > |     aaa
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs.
     if tokenizer.interrupt || !tokenizer.parse_state.constructs.code_indented {
         State::Nok
     } else {
         tokenizer.enter(Token::CodeIndented);
-        tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer, code)
+        tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer)
     }
 }
 
@@ -76,16 +76,16 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > |     aaa
 ///         ^  ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
-        Code::None => after(tokenizer, code),
+fn at_break(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Code::None => after(tokenizer),
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer
             .attempt(further_start, |ok| {
                 Box::new(if ok { at_break } else { after })
-            })(tokenizer, code),
+            })(tokenizer),
         _ => {
             tokenizer.enter(Token::CodeFlowChunk);
-            content(tokenizer, code)
+            content(tokenizer)
         }
     }
 }
@@ -96,14 +96,14 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > |     aaa
 ///         ^^^^
 /// ```
-fn content(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn content(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::CodeFlowChunk);
-            at_break(tokenizer, code)
+            at_break(tokenizer)
         }
         _ => {
-            tokenizer.consume(code);
+            tokenizer.consume();
             State::Fn(Box::new(content))
         }
     }
@@ -115,7 +115,7 @@ fn content(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > |     aaa
 ///            ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
+fn after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.exit(Token::CodeIndented);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
@@ -129,20 +129,20 @@ fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
 ///            ^
 ///   |     bbb
 /// ```
-fn further_start(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn further_start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.lazy {
         State::Nok
     } else {
-        match code {
+        match tokenizer.current {
             Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
                 tokenizer.enter(Token::LineEnding);
-                tokenizer.consume(code);
+                tokenizer.consume();
                 tokenizer.exit(Token::LineEnding);
                 State::Fn(Box::new(further_start))
             }
             _ => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
                 Box::new(if ok { further_end } else { further_begin })
-            })(tokenizer, code),
+            })(tokenizer),
         }
     }
 }
@@ -154,7 +154,7 @@ fn further_start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > |     bbb
 ///         ^
 /// ```
-fn further_end(_tokenizer: &mut Tokenizer, _code: Code) -> State {
+fn further_end(_tokenizer: &mut Tokenizer) -> State {
     State::Ok
 }
 
@@ -165,8 +165,8 @@ fn further_end(_tokenizer: &mut Tokenizer, _code: Code) -> State {
 /// > |   bbb
 ///     ^
 /// ```
-fn further_begin(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(space_or_tab(), further_after)(tokenizer, code)
+fn further_begin(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab(), further_after)(tokenizer)
 }
 
 /// After whitespace, not indented enough.
@@ -176,9 +176,9 @@ fn further_begin(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > |   bbb
 ///       ^
 /// ```
-fn further_after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => further_start(tokenizer, code),
+fn further_after(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => further_start(tokenizer),
         _ => State::Nok,
     }
 }

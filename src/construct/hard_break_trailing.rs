@@ -51,13 +51,13 @@ use crate::tokenizer::{Code, State, Tokenizer};
 ///      ^
 ///   | b
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char(' ') if tokenizer.parse_state.constructs.hard_break_trailing => {
             tokenizer.enter(Token::HardBreakTrailing);
             tokenizer.enter(Token::HardBreakTrailingSpace);
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| inside(t, c, 1)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| inside(t, 1)))
         }
         _ => State::Nok,
     }
@@ -70,11 +70,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 ///      ^
 ///   | b
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> State {
-    match code {
+fn inside(tokenizer: &mut Tokenizer, size: usize) -> State {
+    match tokenizer.current {
         Code::Char(' ') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| inside(t, c, size + 1)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| inside(t, size + 1)))
         }
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if size >= HARD_BREAK_PREFIX_SIZE_MIN =>

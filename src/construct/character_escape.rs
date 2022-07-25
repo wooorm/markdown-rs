@@ -42,12 +42,12 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// > | a\*b
 ///      ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('\\') if tokenizer.parse_state.constructs.character_escape => {
             tokenizer.enter(Token::CharacterEscape);
             tokenizer.enter(Token::CharacterEscapeMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeMarker);
             State::Fn(Box::new(inside))
         }
@@ -61,11 +61,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | a\*b
 ///       ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char(char) if char.is_ascii_punctuation() => {
             tokenizer.enter(Token::CharacterEscapeValue);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeValue);
             tokenizer.exit(Token::CharacterEscape);
             State::Ok

@@ -38,12 +38,12 @@ use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
 /// > | a ![b] c
 ///       ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('!') if tokenizer.parse_state.constructs.label_start_image => {
             tokenizer.enter(Token::LabelImage);
             tokenizer.enter(Token::LabelImageMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LabelImageMarker);
             State::Fn(Box::new(open))
         }
@@ -57,11 +57,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | a ![b] c
 ///        ^
 /// ```
-pub fn open(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn open(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('[') => {
             tokenizer.enter(Token::LabelMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelImage);
             let end = tokenizer.events.len() - 1;

@@ -116,7 +116,7 @@ impl Kind {
 /// > | ==
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -133,7 +133,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 
     // Require a paragraph before and do not allow on a lazy line.
     if paragraph_before && !tokenizer.lazy && tokenizer.parse_state.constructs.heading_setext {
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
     } else {
         State::Nok
     }
@@ -146,11 +146,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ==
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn before(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == '-' || char == '=' => {
             tokenizer.enter(Token::HeadingSetextUnderline);
-            inside(tokenizer, code, Kind::from_char(char))
+            inside(tokenizer, Kind::from_char(char))
         }
         _ => State::Nok,
     }
@@ -163,15 +163,15 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ==
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> State {
-    match code {
+fn inside(tokenizer: &mut Tokenizer, kind: Kind) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == kind.as_char() => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| inside(t, c, kind)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| inside(t, kind)))
         }
         _ => {
             tokenizer.exit(Token::HeadingSetextUnderline);
-            tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code)
+            tokenizer.attempt_opt(space_or_tab(), after)(tokenizer)
         }
     }
 }
@@ -183,8 +183,8 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, kind: Kind) -> State {
 /// > | ==
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn after(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             // Feel free to interrupt.
             tokenizer.interrupt = false;

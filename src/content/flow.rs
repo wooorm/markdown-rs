@@ -39,12 +39,12 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// |    bravo
 /// |***
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None => State::Ok,
         _ => tokenizer.attempt(blank_line, |ok| {
             Box::new(if ok { blank_line_after } else { initial_before })
-        })(tokenizer, code),
+        })(tokenizer),
     }
 }
 
@@ -60,8 +60,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// |~~~js
 /// |<div>
 /// ```
-fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn initial_before(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
@@ -74,7 +74,7 @@ fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> State {
                 Box::new(definition),
             ],
             |ok| Box::new(if ok { after } else { before_paragraph }),
-        )(tokenizer, code),
+        )(tokenizer),
     }
 }
 
@@ -85,12 +85,12 @@ fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```markdown
 /// ␠␠|
 /// ```
-fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None => State::Ok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::BlankLineEnding);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::BlankLineEnding);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
@@ -109,12 +109,12 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// asd
 /// ~~~|
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn after(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None => State::Ok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
             State::Fn(Box::new(start))
         }
@@ -127,6 +127,6 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```markdown
 /// |asd
 /// ```
-fn before_paragraph(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.go(paragraph, after)(tokenizer, code)
+fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.go(paragraph, after)(tokenizer)
 }

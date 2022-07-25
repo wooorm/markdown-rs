@@ -65,7 +65,7 @@ use crate::tokenizer::{Code, ContentType, Event, EventType, State, Tokenizer};
 /// > | ## aa
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -74,7 +74,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 
     if tokenizer.parse_state.constructs.heading_atx {
         tokenizer.enter(Token::HeadingAtx);
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
     } else {
         State::Nok
     }
@@ -86,10 +86,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ## aa
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
-    if Code::Char('#') == code {
+fn before(tokenizer: &mut Tokenizer) -> State {
+    if Code::Char('#') == tokenizer.current {
         tokenizer.enter(Token::HeadingAtxSequence);
-        sequence_open(tokenizer, code, 0)
+        sequence_open(tokenizer, 0)
     } else {
         State::Nok
     }
@@ -101,21 +101,21 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ## aa
 ///     ^
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> State {
-    match code {
+fn sequence_open(tokenizer: &mut Tokenizer, rank: usize) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') if rank > 0 => {
             tokenizer.exit(Token::HeadingAtxSequence);
-            at_break(tokenizer, code)
+            at_break(tokenizer)
         }
         Code::Char('#') if rank < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |tokenizer, code| {
-                sequence_open(tokenizer, code, rank + 1)
+            tokenizer.consume();
+            State::Fn(Box::new(move |tokenizer| {
+                sequence_open(tokenizer, rank + 1)
             }))
         }
         _ if rank > 0 => {
             tokenizer.exit(Token::HeadingAtxSequence);
-            tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
+            tokenizer.go(space_or_tab(), at_break)(tokenizer)
         }
         _ => State::Nok,
     }
@@ -127,8 +127,8 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, rank: usize) -> State {
 /// > | ## aa
 ///       ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn at_break(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HeadingAtx);
             tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
@@ -137,15 +137,15 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> State {
             State::Ok
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.go(space_or_tab(), at_break)(tokenizer, code)
+            tokenizer.go(space_or_tab(), at_break)(tokenizer)
         }
         Code::Char('#') => {
             tokenizer.enter(Token::HeadingAtxSequence);
-            further_sequence(tokenizer, code)
+            further_sequence(tokenizer)
         }
         Code::Char(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            data(tokenizer, code)
+            data(tokenizer)
         }
     }
 }
@@ -158,13 +158,13 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ## aa ##
 ///           ^
 /// ```
-fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> State {
-    if let Code::Char('#') = code {
-        tokenizer.consume(code);
+fn further_sequence(tokenizer: &mut Tokenizer) -> State {
+    if let Code::Char('#') = tokenizer.current {
+        tokenizer.consume();
         State::Fn(Box::new(further_sequence))
     } else {
         tokenizer.exit(Token::HeadingAtxSequence);
-        at_break(tokenizer, code)
+        at_break(tokenizer)
     }
 }
 
@@ -174,15 +174,15 @@ fn further_sequence(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ## aa
 ///        ^
 /// ```
-fn data(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn data(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\t' | '\n' | '\r' | ' ') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer, code)
+            at_break(tokenizer)
         }
         _ => {
-            tokenizer.consume(code);
+            tokenizer.consume();
             State::Fn(Box::new(data))
         }
     }

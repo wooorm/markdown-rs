@@ -94,10 +94,10 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// > | \`a`
 ///      ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     let len = tokenizer.events.len();
 
-    match code {
+    match tokenizer.current {
         Code::Char('`')
             if tokenizer.parse_state.constructs.code_text
                 && (tokenizer.previous != Code::Char('`')
@@ -106,7 +106,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
         {
             tokenizer.enter(Token::CodeText);
             tokenizer.enter(Token::CodeTextSequence);
-            sequence_open(tokenizer, code, 0)
+            sequence_open(tokenizer, 0)
         }
         _ => State::Nok,
     }
@@ -118,13 +118,13 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | `a`
 ///     ^
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> State {
-    if let Code::Char('`') = code {
-        tokenizer.consume(code);
-        State::Fn(Box::new(move |t, c| sequence_open(t, c, size + 1)))
+fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
+    if let Code::Char('`') = tokenizer.current {
+        tokenizer.consume();
+        State::Fn(Box::new(move |t| sequence_open(t, size + 1)))
     } else {
         tokenizer.exit(Token::CodeTextSequence);
-        between(tokenizer, code, size)
+        between(tokenizer, size)
     }
 }
 
@@ -134,22 +134,22 @@ fn sequence_open(tokenizer: &mut Tokenizer, code: Code, size: usize) -> State {
 /// > | `a`
 ///      ^^
 /// ```
-fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> State {
-    match code {
+fn between(tokenizer: &mut Tokenizer, size_open: usize) -> State {
+    match tokenizer.current {
         Code::None => State::Nok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(move |t, c| between(t, c, size_open)))
+            State::Fn(Box::new(move |t| between(t, size_open)))
         }
         Code::Char('`') => {
             tokenizer.enter(Token::CodeTextSequence);
-            sequence_close(tokenizer, code, size_open, 0)
+            sequence_close(tokenizer, size_open, 0)
         }
         _ => {
             tokenizer.enter(Token::CodeTextData);
-            data(tokenizer, code, size_open)
+            data(tokenizer, size_open)
         }
     }
 }
@@ -160,15 +160,15 @@ fn between(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> State {
 /// > | `a`
 ///      ^
 /// ```
-fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> State {
-    match code {
+fn data(tokenizer: &mut Tokenizer, size_open: usize) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '`') => {
             tokenizer.exit(Token::CodeTextData);
-            between(tokenizer, code, size_open)
+            between(tokenizer, size_open)
         }
         _ => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| data(t, c, size_open)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| data(t, size_open)))
         }
     }
 }
@@ -179,13 +179,11 @@ fn data(tokenizer: &mut Tokenizer, code: Code, size_open: usize) -> State {
 /// > | `a`
 ///       ^
 /// ```
-fn sequence_close(tokenizer: &mut Tokenizer, code: Code, size_open: usize, size: usize) -> State {
-    match code {
+fn sequence_close(tokenizer: &mut Tokenizer, size_open: usize, size: usize) -> State {
+    match tokenizer.current {
         Code::Char('`') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| {
-                sequence_close(t, c, size_open, size + 1)
-            }))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| sequence_close(t, size_open, size + 1)))
         }
         _ if size_open == size => {
             tokenizer.exit(Token::CodeTextSequence);
@@ -198,7 +196,7 @@ fn sequence_close(tokenizer: &mut Tokenizer, code: Code, size_open: usize, size:
             // Change the token type.
             tokenizer.events[index - 1].token_type = Token::CodeTextData;
             tokenizer.events[index].token_type = Token::CodeTextData;
-            between(tokenizer, code, size_open)
+            between(tokenizer, size_open)
         }
     }
 }

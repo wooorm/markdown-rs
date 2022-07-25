@@ -134,7 +134,7 @@ struct Info {
 /// > | ***
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     let max = if tokenizer.parse_state.constructs.code_indented {
         TAB_SIZE - 1
     } else {
@@ -143,7 +143,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 
     if tokenizer.parse_state.constructs.thematic_break {
         tokenizer.enter(Token::ThematicBreak);
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer, code)
+        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
     } else {
         State::Nok
     }
@@ -155,13 +155,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn before(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('*' | '-' | '_') => at_break(
             tokenizer,
-            code,
             Info {
-                kind: Kind::from_code(code),
+                kind: Kind::from_code(tokenizer.current),
                 size: 0,
             },
         ),
@@ -175,8 +174,8 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
             if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN =>
         {
@@ -187,7 +186,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
         }
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(Token::ThematicBreakSequence);
-            sequence(tokenizer, code, info)
+            sequence(tokenizer, info)
         }
         _ => State::Nok,
     }
@@ -199,16 +198,16 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn sequence(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
-    match code {
+fn sequence(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == info.kind.as_char() => {
-            tokenizer.consume(code);
+            tokenizer.consume();
             info.size += 1;
-            State::Fn(Box::new(|t, c| sequence(t, c, info)))
+            State::Fn(Box::new(|t| sequence(t, info)))
         }
         _ => {
             tokenizer.exit(Token::ThematicBreakSequence);
-            tokenizer.attempt_opt(space_or_tab(), |t, c| at_break(t, c, info))(tokenizer, code)
+            tokenizer.attempt_opt(space_or_tab(), |t| at_break(t, info))(tokenizer)
         }
     }
 }

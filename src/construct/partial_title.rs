@@ -135,19 +135,19 @@ struct Info {
 /// > | "a"
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
+    match tokenizer.current {
         Code::Char('"' | '\'' | '(') => {
             let info = Info {
                 connect: false,
-                kind: Kind::from_code(code),
+                kind: Kind::from_code(tokenizer.current),
                 options,
             };
             tokenizer.enter(info.options.title.clone());
             tokenizer.enter(info.options.marker.clone());
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(info.options.marker.clone());
-            State::Fn(Box::new(|t, c| begin(t, c, info)))
+            State::Fn(Box::new(|t| begin(t, info)))
         }
         _ => State::Nok,
     }
@@ -161,18 +161,18 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, options: Options) -> State {
 /// > | "a"
 ///      ^
 /// ```
-fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(info.options.marker.clone());
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(info.options.marker.clone());
             tokenizer.exit(info.options.title);
             State::Ok
         }
         _ => {
             tokenizer.enter(info.options.string.clone());
-            at_break(tokenizer, code, info)
+            at_break(tokenizer, info)
         }
     }
 }
@@ -183,11 +183,11 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | "a"
 ///      ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
-    match code {
+fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.exit(info.options.string.clone());
-            begin(tokenizer, code, info)
+            begin(tokenizer, info)
         }
         Code::None => State::Nok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
@@ -195,11 +195,11 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
             }),
-            |t, c| {
+            |t| {
                 info.connect = true;
-                at_break(t, c, info)
+                at_break(t, info)
             },
-        )(tokenizer, code),
+        )(tokenizer),
         _ => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
 
@@ -210,7 +210,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 info.connect = true;
             }
 
-            title(tokenizer, code, info)
+            title(tokenizer, info)
         }
     }
 }
@@ -221,23 +221,23 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
 /// > | "a"
 ///      ^
 /// ```
-fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer, code, info)
+            at_break(tokenizer, info)
         }
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer, code, info)
+            at_break(tokenizer, info)
         }
         Code::Char('\\') => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| escape(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| escape(t, info)))
         }
         _ => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| title(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| title(t, info)))
         }
     }
 }
@@ -248,12 +248,12 @@ fn title(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | "a\*b"
 ///      ^
 /// ```
-fn escape(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
-    match code {
+fn escape(tokenizer: &mut Tokenizer, info: Info) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == info.kind.as_char() => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(|t, c| title(t, c, info)))
+            tokenizer.consume();
+            State::Fn(Box::new(|t| title(t, info)))
         }
-        _ => title(tokenizer, code, info),
+        _ => title(tokenizer, info),
     }
 }

@@ -180,8 +180,8 @@ struct Info {
 ///       ^
 /// > | [a] b
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    if Code::Char(']') == code && tokenizer.parse_state.constructs.label_end {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    if Code::Char(']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
         let mut label_start_index = None;
         let mut index = tokenizer.label_start_stack.len();
 
@@ -203,7 +203,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 
             // Mark as balanced if the info is inactive.
             if label_start.inactive {
-                return nok(tokenizer, code, label_start_index);
+                return nok(tokenizer, label_start_index);
             }
 
             let label_end_start = tokenizer.events.len();
@@ -225,11 +225,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 
             tokenizer.enter(Token::LabelEnd);
             tokenizer.enter(Token::LabelMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelEnd);
 
-            return State::Fn(Box::new(move |t, c| after(t, c, info)));
+            return State::Fn(Box::new(move |t| after(t, info)));
         }
     }
 
@@ -248,39 +248,39 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a] b
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
+fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
     let defined = tokenizer.parse_state.definitions.contains(&info.media.id);
 
-    match code {
+    match tokenizer.current {
         // Resource (`[asd](fgh)`)?
         Code::Char('(') => tokenizer.attempt(resource, move |is_ok| {
-            Box::new(move |t, c| {
+            Box::new(move |t| {
                 // Also fine if `defined`, as then it’s a valid shortcut.
                 if is_ok || defined {
-                    ok(t, c, info)
+                    ok(t, info)
                 } else {
-                    nok(t, c, info.label_start_index)
+                    nok(t, info.label_start_index)
                 }
             })
-        })(tokenizer, code),
+        })(tokenizer),
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
         Code::Char('[') => tokenizer.attempt(full_reference, move |is_ok| {
-            Box::new(move |t, c| {
+            Box::new(move |t| {
                 if is_ok {
-                    ok(t, c, info)
+                    ok(t, info)
                 } else if defined {
-                    reference_not_full(t, c, info)
+                    reference_not_full(t, info)
                 } else {
-                    nok(t, c, info.label_start_index)
+                    nok(t, info.label_start_index)
                 }
             })
-        })(tokenizer, code),
+        })(tokenizer),
         // Shortcut reference: `[asd]`?
         _ => {
             if defined {
-                ok(tokenizer, code, info)
+                ok(tokenizer, info)
             } else {
-                nok(tokenizer, code, info.label_start_index)
+                nok(tokenizer, info.label_start_index)
             }
         }
     }
@@ -296,16 +296,16 @@ fn after(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
 /// > | [a] b
 ///        ^
 /// ```
-fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
+fn reference_not_full(tokenizer: &mut Tokenizer, info: Info) -> State {
     tokenizer.attempt(collapsed_reference, move |is_ok| {
-        Box::new(move |t, c| {
+        Box::new(move |t| {
             if is_ok {
-                ok(t, c, info)
+                ok(t, info)
             } else {
-                nok(t, c, info.label_start_index)
+                nok(t, info.label_start_index)
             }
         })
-    })(tokenizer, code)
+    })(tokenizer)
 }
 
 /// Done, we found something.
@@ -320,7 +320,7 @@ fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// > | [a] b
 ///        ^
 /// ```
-fn ok(tokenizer: &mut Tokenizer, _code: Code, mut info: Info) -> State {
+fn ok(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     // Remove this one and everything after it.
     let mut left = tokenizer
         .label_start_stack
@@ -360,7 +360,7 @@ fn ok(tokenizer: &mut Tokenizer, _code: Code, mut info: Info) -> State {
 /// > | [a] b
 ///        ^
 /// ```
-fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> State {
+fn nok(tokenizer: &mut Tokenizer, label_start_index: usize) -> State {
     let label_start = tokenizer
         .label_start_stack
         .get_mut(label_start_index)
@@ -375,12 +375,12 @@ fn nok(tokenizer: &mut Tokenizer, _code: Code, label_start_index: usize) -> Stat
 /// > | [a](b) c
 ///        ^
 /// ```
-fn resource(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn resource(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('(') => {
             tokenizer.enter(Token::Resource);
             tokenizer.enter(Token::ResourceMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::ResourceMarker);
             State::Fn(Box::new(resource_start))
         }
@@ -394,8 +394,8 @@ fn resource(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a](b) c
 ///         ^
 /// ```
-fn resource_start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(space_or_tab_eol(), resource_open)(tokenizer, code)
+fn resource_start(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab_eol(), resource_open)(tokenizer)
 }
 
 /// At the start of a resource, after optional whitespace.
@@ -404,14 +404,13 @@ fn resource_start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a](b) c
 ///         ^
 /// ```
-fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
-        Code::Char(')') => resource_end(tokenizer, code),
+fn resource_open(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Code::Char(')') => resource_end(tokenizer),
         _ => tokenizer.go(
-            |t, c| {
+            |t| {
                 destination(
                     t,
-                    c,
                     DestinationOptions {
                         limit: RESOURCE_DESTINATION_BALANCE_MAX,
                         destination: Token::ResourceDestination,
@@ -423,7 +422,7 @@ fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> State {
                 )
             },
             destination_after,
-        )(tokenizer, code),
+        )(tokenizer),
     }
 }
 
@@ -433,10 +432,10 @@ fn resource_open(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a](b) c
 ///          ^
 /// ```
-fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(space_or_tab_eol(), |ok| {
         Box::new(if ok { resource_between } else { resource_end })
-    })(tokenizer, code)
+    })(tokenizer)
 }
 
 /// In a resource, after a destination, after whitespace.
@@ -445,13 +444,12 @@ fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a](b ) c
 ///           ^
 /// ```
-fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn resource_between(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('"' | '\'' | '(') => tokenizer.go(
-            |t, c| {
+            |t| {
                 title(
                     t,
-                    c,
                     TitleOptions {
                         title: Token::ResourceTitle,
                         marker: Token::ResourceTitleMarker,
@@ -460,8 +458,8 @@ fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> State {
                 )
             },
             title_after,
-        )(tokenizer, code),
-        _ => resource_end(tokenizer, code),
+        )(tokenizer),
+        _ => resource_end(tokenizer),
     }
 }
 
@@ -471,8 +469,8 @@ fn resource_between(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a](b "c") d
 ///              ^
 /// ```
-fn title_after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(space_or_tab_eol(), resource_end)(tokenizer, code)
+fn title_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab_eol(), resource_end)(tokenizer)
 }
 
 /// In a resource, at the `)`.
@@ -481,11 +479,11 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a](b) d
 ///          ^
 /// ```
-fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn resource_end(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char(')') => {
             tokenizer.enter(Token::ResourceMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::ResourceMarker);
             tokenizer.exit(Token::Resource);
             State::Ok
@@ -500,13 +498,12 @@ fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a][b] d
 ///        ^
 /// ```
-fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn full_reference(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('[') => tokenizer.go(
-            |t, c| {
+            |t| {
                 label(
                     t,
-                    c,
                     LabelOptions {
                         label: Token::Reference,
                         marker: Token::ReferenceMarker,
@@ -515,7 +512,7 @@ fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> State {
                 )
             },
             full_reference_after,
-        )(tokenizer, code),
+        )(tokenizer),
         _ => unreachable!("expected `[`"),
     }
 }
@@ -526,7 +523,7 @@ fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a][b] d
 ///          ^
 /// ```
-fn full_reference_after(tokenizer: &mut Tokenizer, _code: Code) -> State {
+fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
     let events = &tokenizer.events;
     let mut index = events.len() - 1;
     let mut start: Option<usize> = None;
@@ -572,12 +569,12 @@ fn full_reference_after(tokenizer: &mut Tokenizer, _code: Code) -> State {
 /// > | [a][] d
 ///        ^
 /// ```
-fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn collapsed_reference(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('[') => {
             tokenizer.enter(Token::Reference);
             tokenizer.enter(Token::ReferenceMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::ReferenceMarker);
             State::Fn(Box::new(collapsed_reference_open))
         }
@@ -593,11 +590,11 @@ fn collapsed_reference(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a][] d
 ///         ^
 /// ```
-fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn collapsed_reference_open(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char(']') => {
             tokenizer.enter(Token::ReferenceMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::ReferenceMarker);
             tokenizer.exit(Token::Reference);
             State::Ok

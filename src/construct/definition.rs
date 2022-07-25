@@ -109,7 +109,7 @@ use crate::util::skip::opt_back as skip_opt_back;
 /// > | [a]: b "c"
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     let definition_before = !tokenizer.events.is_empty()
         && tokenizer.events[skip_opt_back(
             &tokenizer.events,
@@ -123,7 +123,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     if (!tokenizer.interrupt || definition_before) && tokenizer.parse_state.constructs.definition {
         tokenizer.enter(Token::Definition);
         // Note: arbitrary whitespace allowed even if code (indented) is on.
-        tokenizer.attempt_opt(space_or_tab(), before)(tokenizer, code)
+        tokenizer.attempt_opt(space_or_tab(), before)(tokenizer)
     } else {
         State::Nok
     }
@@ -135,13 +135,12 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn before(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('[') => tokenizer.go(
-            |t, c| {
+            |t| {
                 label(
                     t,
-                    c,
                     LabelOptions {
                         label: Token::DefinitionLabel,
                         marker: Token::DefinitionLabelMarker,
@@ -150,7 +149,7 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
                 )
             },
             label_after,
-        )(tokenizer, code),
+        )(tokenizer),
         _ => State::Nok,
     }
 }
@@ -161,11 +160,11 @@ fn before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///        ^
 /// ```
-fn label_after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn label_after(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char(':') => {
             tokenizer.enter(Token::DefinitionMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::DefinitionMarker);
             State::Fn(Box::new(
                 tokenizer.attempt_opt(space_or_tab_eol(), destination_before),
@@ -181,12 +180,11 @@ fn label_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///          ^
 /// ```
-fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn destination_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.go(
-        |t, c| {
+        |t| {
             destination(
                 t,
-                c,
                 DestinationOptions {
                     limit: usize::MAX,
                     destination: Token::DefinitionDestination,
@@ -198,7 +196,7 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> State {
             )
         },
         destination_after,
-    )(tokenizer, code)
+    )(tokenizer)
 }
 
 /// After a destination.
@@ -207,8 +205,8 @@ fn destination_before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///           ^
 /// ```
-fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(title_before, after)(tokenizer, code)
+fn destination_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(title_before, after)(tokenizer)
 }
 
 /// After a definition.
@@ -219,8 +217,8 @@ fn destination_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(space_or_tab(), after_whitespace)(tokenizer, code)
+fn after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab(), after_whitespace)(tokenizer)
 }
 
 /// After a definition, after optional whitespace.
@@ -231,8 +229,8 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::Definition);
             // You’d be interrupting.
@@ -251,8 +249,8 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///           ^
 /// ```
-fn title_before(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.go(space_or_tab_eol(), title_before_marker)(tokenizer, code)
+fn title_before(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.go(space_or_tab_eol(), title_before_marker)(tokenizer)
 }
 
 /// Before a title, after a line ending.
@@ -262,12 +260,11 @@ fn title_before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | "c"
 ///     ^
 /// ```
-fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
     tokenizer.go(
-        |t, c| {
+        |t| {
             title(
                 t,
-                c,
                 TitleOptions {
                     title: Token::DefinitionTitle,
                     marker: Token::DefinitionTitleMarker,
@@ -276,7 +273,7 @@ fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> State {
             )
         },
         title_after,
-    )(tokenizer, code)
+    )(tokenizer)
 }
 
 /// After a title.
@@ -285,8 +282,8 @@ fn title_before_marker(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn title_after(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(space_or_tab(), title_after_after_optional_whitespace)(tokenizer, code)
+fn title_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab(), title_after_after_optional_whitespace)(tokenizer)
 }
 
 /// After a title, after optional whitespace.
@@ -295,8 +292,8 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn title_after_after_optional_whitespace(_tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn title_after_after_optional_whitespace(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok,
         _ => State::Nok,
     }

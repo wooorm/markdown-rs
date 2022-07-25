@@ -20,11 +20,11 @@ use crate::tokenizer::{Code, State, Tokenizer};
 ///            ^
 ///   | b
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
             State::Fn(Box::new(after))
         }
@@ -39,7 +39,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | b
 ///     ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
+fn after(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.lazy {
         State::Nok
     } else {

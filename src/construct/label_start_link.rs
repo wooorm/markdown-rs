@@ -37,13 +37,13 @@ use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
 /// > | a [b] c
 ///       ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('[') if tokenizer.parse_state.constructs.label_start_link => {
             let start = tokenizer.events.len();
             tokenizer.enter(Token::LabelLink);
             tokenizer.enter(Token::LabelMarker);
-            tokenizer.consume(code);
+            tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelLink);
             tokenizer.label_start_stack.push(LabelStart {

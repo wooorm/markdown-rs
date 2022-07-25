@@ -27,7 +27,7 @@ use super::partial_space_or_tab::space_or_tab;
 use crate::tokenizer::{Code, State, Tokenizer};
 
 /// Parse initial or final whitespace.
-pub fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> State {
+pub fn whitespace(tokenizer: &mut Tokenizer) -> State {
     tokenizer.go(
         // Nothing if there’s no whitespace.
         space_or_tab(),
@@ -41,22 +41,22 @@ pub fn whitespace(tokenizer: &mut Tokenizer, code: Code) -> State {
             // If there’s whitespace, and we were not at an eol/eof, there must be one here.
             at_eol
         },
-    )(tokenizer, code)
+    )(tokenizer)
 }
 
 /// After whitespace, at an eol/eof.
-fn at_eol(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn at_eol(tokenizer: &mut Tokenizer) -> State {
     if matches!(
-        code,
+        tokenizer.current,
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
     ) {
-        ok(tokenizer, code)
+        ok(tokenizer)
     } else {
         State::Nok
     }
 }
 
 /// Fine.
-fn ok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
+fn ok(_tokenizer: &mut Tokenizer) -> State {
     State::Ok
 }

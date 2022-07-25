@@ -42,15 +42,15 @@ use crate::util::skip::opt as skip_opt;
 /// > | abc
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             unreachable!("unexpected eol/eof")
         }
         _ => {
             tokenizer.enter(Token::Paragraph);
             tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            inside(tokenizer, code)
+            inside(tokenizer)
         }
     }
 }
@@ -61,8 +61,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | abc
 ///     ^^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::Paragraph);
@@ -72,7 +72,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
             State::Ok
         }
         _ => {
-            tokenizer.consume(code);
+            tokenizer.consume();
             State::Fn(Box::new(inside))
         }
     }

@@ -27,8 +27,8 @@ const MARKERS: [Code; 5] = [
 ];
 
 /// Before string.
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
@@ -40,11 +40,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
                 let func = if ok { start } else { before_data };
                 Box::new(func)
             },
-        )(tokenizer, code),
+        )(tokenizer),
     }
 }
 
 /// At data.
-fn before_data(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.go(|t, c| data(t, c, &MARKERS), start)(tokenizer, code)
+fn before_data(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.go(|t| data(t, &MARKERS), start)(tokenizer)
 }

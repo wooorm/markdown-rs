@@ -45,8 +45,8 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// > |
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    tokenizer.attempt_opt(space_or_tab(), after)(tokenizer, code)
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab(), after)(tokenizer)
 }
 
 /// After zero or more spaces or tabs, before a line ending or EOF.
@@ -57,8 +57,8 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > |
 ///     ^
 /// ```
-fn after(_tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+fn after(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok,
         _ => State::Nok,
     }

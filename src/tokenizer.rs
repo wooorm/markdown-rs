@@ -88,7 +88,7 @@ pub struct Event {
 /// The essence of the state machine are functions: `StateFn`.
 /// It’s responsible for dealing with that single passed [`Code`][].
 /// It yields a [`State`][].
-pub type StateFn = dyn FnOnce(&mut Tokenizer, Code) -> State;
+pub type StateFn = dyn FnOnce(&mut Tokenizer) -> State;
 
 /// Callback that can be registered and is called when the tokenizer is done.
 ///
@@ -184,7 +184,7 @@ pub struct Tokenizer<'a> {
     /// Track whether this tokenizer is done.
     drained: bool,
     /// Current character code.
-    current: Code,
+    pub current: Code,
     /// Previous character code.
     pub previous: Code,
     /// Current relative and absolute place in the file.
@@ -282,10 +282,8 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Prepare for a next code to get consumed.
-    pub fn expect(&mut self, code: Code, force: bool) {
-        if !force {
-            assert!(self.consumed, "expected previous character to be consumed");
-        }
+    pub fn expect(&mut self, code: Code) {
+        assert!(self.consumed, "expected previous character to be consumed");
         self.consumed = false;
         self.current = code;
     }
@@ -313,17 +311,13 @@ impl<'a> Tokenizer<'a> {
     /// Consume the current character.
     /// Each [`StateFn`][] is expected to call this to signal that this code is
     /// used, or call a next `StateFn`.
-    pub fn consume(&mut self, code: Code) {
-        assert_eq!(
-            code, self.current,
-            "expected given code to equal expected code"
-        );
-        log::debug!("consume: `{:?}` ({:?})", code, self.point);
+    pub fn consume(&mut self) {
+        log::debug!("consume: `{:?}` ({:?})", self.current, self.point);
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
 
         self.move_to(self.index + 1);
 
-        self.previous = code;
+        self.previous = self.current;
         // Mark as consumed.
         self.consumed = true;
     }
@@ -478,8 +472,8 @@ impl<'a> Tokenizer<'a> {
     #[allow(clippy::unused_self)]
     pub fn go(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
-        after: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
+        after: impl FnOnce(&mut Tokenizer) -> State + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
             state_fn,
@@ -502,7 +496,7 @@ impl<'a> Tokenizer<'a> {
     #[allow(clippy::unused_self)]
     pub fn go_until(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
         until: impl Fn(Code) -> bool + 'static,
         done: impl FnOnce(State) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
@@ -529,7 +523,7 @@ impl<'a> Tokenizer<'a> {
     /// captured codes to its future states.
     pub fn check(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
@@ -560,7 +554,7 @@ impl<'a> Tokenizer<'a> {
     /// `done` is called, and all captured codes are fed to its future states.
     pub fn attempt(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
@@ -599,7 +593,7 @@ impl<'a> Tokenizer<'a> {
                 if ok {
                     done(ok)
                 } else {
-                    Box::new(|t, code| t.attempt_n(state_fns, done)(t, code))
+                    Box::new(|t| t.attempt_n(state_fns, done)(t))
                 }
             })
         }
@@ -609,8 +603,8 @@ impl<'a> Tokenizer<'a> {
     /// about `ok`.
     pub fn attempt_opt(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
-        after: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
+        after: impl FnOnce(&mut Tokenizer) -> State + 'static,
     ) -> Box<StateFn> {
         self.attempt(state_fn, |_ok| Box::new(after))
     }
@@ -623,7 +617,7 @@ impl<'a> Tokenizer<'a> {
         &mut self,
         min: usize,
         max: usize,
-        start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+        start: impl FnOnce(&mut Tokenizer) -> State + 'static,
         drain: bool,
     ) -> State {
         assert!(!self.drained, "cannot feed after drain");
@@ -652,7 +646,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Flush the tokenizer.
-    pub fn flush(&mut self, start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static) -> State {
+    pub fn flush(&mut self, start: impl FnOnce(&mut Tokenizer) -> State + 'static) -> State {
         flush_impl(self, self.index, start)
     }
 }
@@ -662,12 +656,12 @@ impl<'a> Tokenizer<'a> {
 /// Recurses into itself.
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
-    state: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+    state: impl FnOnce(&mut Tokenizer) -> State + 'static,
     pause: Option<Box<dyn Fn(Code) -> bool + 'static>>,
     start: usize,
     done: impl FnOnce((usize, usize), &mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
-    Box::new(move |tokenizer, code| {
+    Box::new(move |tokenizer| {
         if let Some(ref func) = pause {
             if tokenizer.index > start && func(tokenizer.previous) {
                 return done(
@@ -678,7 +672,7 @@ fn attempt_impl(
             }
         }
 
-        let state = state(tokenizer, code);
+        let state = state(tokenizer);
 
         match state {
             State::Ok => {
@@ -700,7 +694,7 @@ fn feed_impl(
     tokenizer: &mut Tokenizer,
     min: usize,
     max: usize,
-    start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+    start: impl FnOnce(&mut Tokenizer) -> State + 'static,
 ) -> State {
     let mut state = State::Fn(Box::new(start));
 
@@ -716,8 +710,8 @@ fn feed_impl(
             }
             State::Fn(func) => {
                 log::debug!("main: passing: `{:?}` ({:?})", code, tokenizer.index);
-                tokenizer.expect(code, false);
-                state = func(tokenizer, code);
+                tokenizer.expect(code);
+                state = func(tokenizer);
             }
         }
     }
@@ -729,7 +723,7 @@ fn feed_impl(
 fn flush_impl(
     tokenizer: &mut Tokenizer,
     max: usize,
-    start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
+    start: impl FnOnce(&mut Tokenizer) -> State + 'static,
 ) -> State {
     let mut state = State::Fn(Box::new(start));
     tokenizer.consumed = true;
@@ -744,8 +738,8 @@ fn flush_impl(
                     Code::None
                 };
                 log::debug!("main: flushing {:?}", code);
-                tokenizer.expect(code, false);
-                state = func(tokenizer, code);
+                tokenizer.expect(code);
+                state = func(tokenizer);
             }
         }
     }

@@ -168,11 +168,11 @@ struct Sequence {
 /// > | **
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
-    match code {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
         Code::Char('*' | '_') if tokenizer.parse_state.constructs.attention => {
             tokenizer.enter(Token::AttentionSequence);
-            inside(tokenizer, code, MarkerKind::from_code(code))
+            inside(tokenizer, MarkerKind::from_code(tokenizer.current))
         }
         _ => State::Nok,
     }
@@ -184,11 +184,11 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | **
 ///     ^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> State {
-    match code {
+fn inside(tokenizer: &mut Tokenizer, marker: MarkerKind) -> State {
+    match tokenizer.current {
         Code::Char(char) if char == marker.as_char() => {
-            tokenizer.consume(code);
-            State::Fn(Box::new(move |t, c| inside(t, c, marker)))
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| inside(t, marker)))
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);
