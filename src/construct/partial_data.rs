@@ -33,7 +33,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> St
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> State {
     match code {
-        Code::None => State::Ok(0),
+        Code::None => State::Ok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);
@@ -42,7 +42,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> Sta
         }
         _ if stop.contains(&code) => {
             tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
-            State::Ok(0)
+            State::Ok
         }
         _ => {
             tokenizer.enter(Token::Data);

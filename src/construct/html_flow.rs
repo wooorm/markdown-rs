@@ -930,7 +930,7 @@ fn continuation_after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     tokenizer.interrupt = false;
     // No longer concrete.
     tokenizer.concrete = false;
-    State::Ok(0)
+    State::Ok
 }
 
 /// Before a line ending, expecting a blank line.

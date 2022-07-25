@@ -58,5 +58,5 @@ fn at_eol(tokenizer: &mut Tokenizer, code: Code) -> State {
 
 /// Fine.
 fn ok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
-    State::Ok(0)
+    State::Ok
 }

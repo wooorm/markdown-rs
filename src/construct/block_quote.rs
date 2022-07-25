@@ -124,11 +124,11 @@ fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.consume(code);
             tokenizer.exit(Token::SpaceOrTab);
             tokenizer.exit(Token::BlockQuotePrefix);
-            State::Ok(0)
+            State::Ok
         }
         _ => {
             tokenizer.exit(Token::BlockQuotePrefix);
-            State::Ok(0)
+            State::Ok
         }
     }
 }

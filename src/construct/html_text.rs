@@ -612,7 +612,7 @@ fn end(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.consume(code);
             tokenizer.exit(Token::HtmlTextData);
             tokenizer.exit(Token::HtmlText);
-            State::Ok(0)
+            State::Ok
         }
         _ => State::Nok,
     }

@@ -133,7 +133,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
             tokenizer.exit(info.options.label);
-            State::Ok(0)
+            State::Ok
         }
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {

@@ -149,7 +149,7 @@ fn start(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
         }
         _ => {
             if info.options.min == 0 {
-                State::Ok(0)
+                State::Ok
             } else {
                 State::Nok
             }
@@ -173,7 +173,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
         _ => {
             tokenizer.exit(info.options.kind.clone());
             if info.size >= info.options.min {
-                State::Ok(0)
+                State::Ok
             } else {
                 State::Nok
             }
@@ -204,7 +204,7 @@ fn after_space_or_tab(tokenizer: &mut Tokenizer, code: Code, mut info: EolInfo) 
             tokenizer.exit(Token::LineEnding);
             State::Fn(Box::new(|t, c| after_eol(t, c, info)))
         }
-        _ if info.ok => State::Ok(0),
+        _ if info.ok => State::Ok,
         _ => State::Nok,
     }
 }
@@ -245,6 +245,6 @@ fn after_more_space_or_tab(_tokenizer: &mut Tokenizer, code: Code) -> State {
     ) {
         State::Nok
     } else {
-        State::Ok(0)
+        State::Ok
     }
 }

@@ -69,7 +69,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));
             // You’d be interrupting.
             tokenizer.interrupt = true;
-            State::Ok(0)
+            State::Ok
         }
         _ => {
             tokenizer.consume(code);

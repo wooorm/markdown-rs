@@ -168,7 +168,7 @@ fn begin(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
             tokenizer.consume(code);
             tokenizer.exit(info.options.marker.clone());
             tokenizer.exit(info.options.title);
-            State::Ok(0)
+            State::Ok
         }
         _ => {
             tokenizer.enter(info.options.string.clone());

@@ -345,7 +345,7 @@ fn ok(tokenizer: &mut Tokenizer, _code: Code, mut info: Info) -> State {
     info.media.end.1 = tokenizer.events.len() - 1;
     tokenizer.media_list.push(info.media);
     tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-    State::Ok(0)
+    State::Ok
 }
 
 /// Done, it’s nothing.
@@ -488,7 +488,7 @@ fn resource_end(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.consume(code);
             tokenizer.exit(Token::ResourceMarker);
             tokenizer.exit(Token::Resource);
-            State::Ok(0)
+            State::Ok
         }
         _ => State::Nok,
     }
@@ -558,7 +558,7 @@ fn full_reference_after(tokenizer: &mut Tokenizer, _code: Code) -> State {
             false,
         )))
     {
-        State::Ok(0)
+        State::Ok
     } else {
         State::Nok
     }
@@ -600,7 +600,7 @@ fn collapsed_reference_open(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.consume(code);
             tokenizer.exit(Token::ReferenceMarker);
             tokenizer.exit(Token::Reference);
-            State::Ok(0)
+            State::Ok
         }
         _ => State::Nok,
     }

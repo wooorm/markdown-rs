@@ -68,7 +68,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.consume(code);
             tokenizer.exit(Token::CharacterEscapeValue);
             tokenizer.exit(Token::CharacterEscape);
-            State::Ok(0)
+            State::Ok
         }
         _ => State::Nok,
     }

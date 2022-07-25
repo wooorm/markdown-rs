@@ -71,7 +71,7 @@ pub fn open(tokenizer: &mut Tokenizer, code: Code) -> State {
                 inactive: false,
             });
             tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-            State::Ok(0)
+            State::Ok
         }
         _ => State::Nok,
     }

@@ -41,7 +41,7 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None => State::Ok(0),
+        Code::None => State::Ok,
         _ => tokenizer.attempt(blank_line, |ok| {
             Box::new(if ok { blank_line_after } else { initial_before })
         })(tokenizer, code),
@@ -62,7 +62,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```
 fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None => State::Ok(0),
+        Code::None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(code_indented),
@@ -87,7 +87,7 @@ fn initial_before(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```
 fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None => State::Ok(0),
+        Code::None => State::Ok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::BlankLineEnding);
             tokenizer.consume(code);
@@ -111,7 +111,7 @@ fn blank_line_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```
 fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None => State::Ok(0),
+        Code::None => State::Ok,
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume(code);

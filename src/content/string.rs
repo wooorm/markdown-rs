@@ -29,7 +29,7 @@ const MARKERS: [Code; 5] = [
 /// Before string.
 pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None => State::Ok(0),
+        Code::None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(character_reference),

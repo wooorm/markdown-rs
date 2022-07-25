@@ -102,7 +102,7 @@ pub enum State {
     /// There is a future state: a boxed [`StateFn`][] to pass the next code to.
     Fn(Box<StateFn>),
     /// The state is successful.
-    Ok(usize),
+    Ok,
     /// The state is not successful.
     Nok,
 }
@@ -490,7 +490,7 @@ impl<'a> Tokenizer<'a> {
             None,
             self.index,
             |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
-                if matches!(state, State::Ok(_)) {
+                if matches!(state, State::Ok) {
                     tokenizer.index = result.1;
                     tokenizer.consumed = true;
                     State::Fn(Box::new(after))
@@ -546,7 +546,7 @@ impl<'a> Tokenizer<'a> {
                 tokenizer.free(previous);
                 tokenizer.index = result.0;
                 tokenizer.consumed = true;
-                State::Fn(done(matches!(state, State::Ok(_))))
+                State::Fn(done(matches!(state, State::Ok)))
             },
         )
     }
@@ -574,7 +574,7 @@ impl<'a> Tokenizer<'a> {
             None,
             self.index,
             |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
-                let ok = matches!(state, State::Ok(_));
+                let ok = matches!(state, State::Ok);
 
                 if !ok {
                     tokenizer.free(previous);
@@ -685,8 +685,8 @@ fn attempt_impl(
         let state = state(tokenizer, code);
 
         match state {
-            State::Ok(back) => {
-                let stop = tokenizer.index - back;
+            State::Ok => {
+                let stop = tokenizer.index;
                 assert!(
                     stop >= start,
                     "`back` must not result in an index smaller than `start`"
@@ -715,7 +715,7 @@ fn feed_impl(
         let code = tokenizer.parse_state.codes[tokenizer.index];
 
         match state {
-            State::Ok(_) | State::Nok => {
+            State::Ok | State::Nok => {
                 break;
             }
             State::Fn(func) => {
@@ -740,7 +740,7 @@ fn flush_impl(
 
     loop {
         match state {
-            State::Ok(_) | State::Nok => break,
+            State::Ok | State::Nok => break,
             State::Fn(func) => {
                 let code = if tokenizer.index < max {
                     tokenizer.parse_state.codes[tokenizer.index]
@@ -755,7 +755,7 @@ fn flush_impl(
     }
 
     match state {
-        State::Ok(back) => assert_eq!(back, 0, "expected final `back` to be `0`"),
+        State::Ok => {}
         _ => unreachable!("expected final state to be `State::Ok`"),
     }
 

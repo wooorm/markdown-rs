@@ -227,7 +227,7 @@ fn value(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 tokenizer.consume(code);
                 tokenizer.exit(Token::CharacterReferenceMarkerSemi);
                 tokenizer.exit(Token::CharacterReference);
-                State::Ok(0)
+                State::Ok
             }
         }
         Code::Char(char) => {

@@ -119,7 +119,7 @@ fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     tokenizer.exit(Token::CodeIndented);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
-    State::Ok(0)
+    State::Ok
 }
 
 /// Right at a line ending, trying to parse another indent.
@@ -155,7 +155,7 @@ fn further_start(tokenizer: &mut Tokenizer, code: Code) -> State {
 ///         ^
 /// ```
 fn further_end(_tokenizer: &mut Tokenizer, _code: Code) -> State {
-    State::Ok(0)
+    State::Ok
 }
 
 /// At the beginning of a line that is not indented enough.

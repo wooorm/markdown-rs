@@ -152,7 +152,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
         tokenizer.exit(info.options.marker.clone());
         tokenizer.exit(info.options.literal.clone());
         tokenizer.exit(info.options.destination);
-        State::Ok(0)
+        State::Ok
     } else {
         tokenizer.enter(info.options.string.clone());
         tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
@@ -224,7 +224,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
-                State::Ok(0)
+                State::Ok
             } else {
                 tokenizer.consume(code);
                 info.balance -= 1;
@@ -242,7 +242,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
-                State::Ok(0)
+                State::Ok
             }
         }
         Code::Char(char) if char.is_ascii_control() => State::Nok,

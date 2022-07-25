@@ -190,7 +190,7 @@ fn sequence_close(tokenizer: &mut Tokenizer, code: Code, size_open: usize, size:
         _ if size_open == size => {
             tokenizer.exit(Token::CodeTextSequence);
             tokenizer.exit(Token::CodeText);
-            State::Ok(0)
+            State::Ok
         }
         _ => {
             let index = tokenizer.events.len();

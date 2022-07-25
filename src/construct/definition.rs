@@ -237,7 +237,7 @@ fn after_whitespace(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.exit(Token::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
-            State::Ok(0)
+            State::Ok
         }
         _ => State::Nok,
     }
@@ -297,7 +297,7 @@ fn title_after(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```
 fn title_after_after_optional_whitespace(_tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok(0),
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok,
         _ => State::Nok,
     }
 }

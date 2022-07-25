@@ -383,9 +383,7 @@ fn flow_end(tokenizer: &mut Tokenizer, code: Code, mut info: DocumentInfo, resul
     info.interrupt_before = tokenizer.interrupt;
 
     match result {
-        State::Ok(back) => {
-            assert_eq!(back, 0);
-
+        State::Ok => {
             if !info.stack.is_empty() {
                 info.continued = 0;
                 info = exit_containers(tokenizer, info, &Phase::Eof);
@@ -417,7 +415,7 @@ fn exit_containers(
         let next = info.next;
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
         let result = tokenizer.flush(next);
-        assert!(matches!(result, State::Ok(0)));
+        assert!(matches!(result, State::Ok));
 
         if *phase == Phase::Prefix {
             info.index = tokenizer.events.len();

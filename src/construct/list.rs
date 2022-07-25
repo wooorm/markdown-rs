@@ -276,7 +276,7 @@ fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> State {
     if matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
         State::Nok
     } else {
-        State::Ok(0)
+        State::Ok
     }
 }
 
@@ -322,7 +322,7 @@ fn after(tokenizer: &mut Tokenizer, _code: Code, blank: bool) -> State {
 
         tokenizer.exit(Token::ListItemPrefix);
         tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
-        State::Ok(0)
+        State::Ok
     }
 }
 
@@ -378,7 +378,7 @@ pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> State {
 
 /// A state fn to yield [`State::Ok`].
 pub fn ok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
-    State::Ok(0)
+    State::Ok
 }
 
 /// A state fn to yield [`State::Nok`].

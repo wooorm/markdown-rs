@@ -306,7 +306,7 @@ fn end(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.consume(code);
             tokenizer.exit(Token::AutolinkMarker);
             tokenizer.exit(Token::Autolink);
-            State::Ok(0)
+            State::Ok
         }
         _ => unreachable!("expected `>`"),
     }

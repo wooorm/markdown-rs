@@ -43,6 +43,6 @@ fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     if tokenizer.lazy {
         State::Nok
     } else {
-        State::Ok(0)
+        State::Ok
     }
 }
