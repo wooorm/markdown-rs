@@ -24,7 +24,7 @@
 use crate::content::{string::start as string, text::start as text};
 use crate::parser::ParseState;
 use crate::tokenizer::{ContentType, Event, EventType, State, Tokenizer};
-use crate::util::{edit_map::EditMap, span};
+use crate::util::edit_map::EditMap;
 
 /// Create a link between two [`Event`][]s.
 ///
@@ -84,20 +84,15 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 } else {
                     text
                 }));
-                let mut size = 0;
 
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {
                     let enter = &events[index];
                     let link_curr = enter.link.as_ref().expect("expected link");
                     assert_eq!(enter.event_type, EventType::Enter);
-                    let span = span::Span {
-                        start_index: enter.point.index,
-                        end_index: events[index + 1].point.index,
-                    };
 
                     if link_curr.previous != None {
-                        tokenizer.define_skip(&enter.point, size);
+                        tokenizer.define_skip(&enter.point);
                     }
 
                     let func = match state {
@@ -106,12 +101,11 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     };
 
                     state = tokenizer.push(
-                        span::codes(&parse_state.codes, &span).to_vec(),
+                        enter.point.index,
+                        events[index + 1].point.index,
                         func,
                         link_curr.next == None,
                     );
-
-                    size += span.end_index - span.start_index;
 
                     link_index = link_curr.next;
                 }

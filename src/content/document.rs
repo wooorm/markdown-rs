@@ -78,7 +78,7 @@ struct DocumentInfo {
 pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, parse_state);
 
-    tokenizer.push(parse_state.codes.clone(), Box::new(start), true);
+    tokenizer.push(0, parse_state.codes.len(), Box::new(start), true);
 
     let mut index = 0;
     let mut definitions = vec![];

@@ -173,7 +173,7 @@ struct InternalState {
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
-    column_start: Vec<(usize, usize, usize, usize)>,
+    column_start: Vec<(usize, usize, usize)>,
     // First line.
     line_start: usize,
     /// Track whether a character is expected to be consumed, and whether it’s
@@ -204,7 +204,7 @@ pub struct Tokenizer<'a> {
     resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
-    codes: Vec<Code>,
+    /// To do.
     pub index: usize,
     /// Stack of label (start) that could form images and links.
     ///
@@ -250,7 +250,6 @@ impl<'a> Tokenizer<'a> {
             stack: vec![],
             events: vec![],
             parse_state,
-            codes: vec![],
             index: 0,
             map: EditMap::new(),
             label_start_stack: vec![],
@@ -292,12 +291,8 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Define a jump between two places.
-    pub fn define_skip(&mut self, point: &Point, index: usize) {
-        define_skip_impl(
-            self,
-            point.line,
-            (point.column, point.offset, point.index, index),
-        );
+    pub fn define_skip(&mut self, point: &Point) {
+        define_skip_impl(self, point.line, (point.column, point.offset, point.index));
     }
 
     /// Define the current place as a jump between two places.
@@ -305,12 +300,7 @@ impl<'a> Tokenizer<'a> {
         define_skip_impl(
             self,
             self.point.line,
-            (
-                self.point.column,
-                self.point.offset,
-                self.point.index,
-                self.index,
-            ),
+            (self.point.column, self.point.offset, self.point.index),
         );
     }
 
@@ -320,11 +310,11 @@ impl<'a> Tokenizer<'a> {
         let at = self.point.line - self.line_start;
 
         if self.point.column == 1 && at != self.column_start.len() {
-            let (column, offset, index_abs, index_rel) = &self.column_start[at];
+            let (column, offset, index) = &self.column_start[at];
             self.point.column = *column;
             self.point.offset = *offset;
-            self.point.index = *index_abs;
-            self.index = *index_rel;
+            self.point.index = *index;
+            self.index = *index;
         }
     }
 
@@ -357,7 +347,6 @@ impl<'a> Tokenizer<'a> {
                         self.point.column,
                         self.point.offset,
                         self.point.index,
-                        self.index,
                     ));
                 }
 
@@ -636,18 +625,14 @@ impl<'a> Tokenizer<'a> {
     /// markdown into the state machine, and normally pauses after feeding.
     pub fn push(
         &mut self,
-        mut codes: Vec<Code>,
+        min: usize,
+        max: usize,
         start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
         drain: bool,
     ) -> State {
         assert!(!self.drained, "cannot feed after drain");
 
-        // Let’s assume an event per character.
-        self.events.reserve(codes.len());
-
-        self.codes.append(&mut codes);
-
-        let mut result = feed_impl(self, start);
+        let mut result = feed_impl(self, min, max, start);
 
         if drain {
             let func = match result {
@@ -655,7 +640,7 @@ impl<'a> Tokenizer<'a> {
                 _ => unreachable!("expected next state"),
             };
 
-            result = flush_impl(self, func);
+            result = flush_impl(self, max, func);
 
             self.drained = true;
 
@@ -672,7 +657,7 @@ impl<'a> Tokenizer<'a> {
 
     /// Flush the tokenizer.
     pub fn flush(&mut self, start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static) -> State {
-        flush_impl(self, start)
+        flush_impl(self, self.index, start)
     }
 }
 
@@ -717,14 +702,17 @@ fn attempt_impl(
 /// Feed a list of `codes` into `start`.
 fn feed_impl(
     tokenizer: &mut Tokenizer,
+    min: usize,
+    max: usize,
     start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
 ) -> State {
     let mut state = State::Fn(Box::new(start));
 
+    tokenizer.index = min;
     tokenizer.consumed = true;
 
-    while tokenizer.index < tokenizer.codes.len() {
-        let code = tokenizer.codes[tokenizer.index];
+    while tokenizer.index < max {
+        let code = tokenizer.parse_state.codes[tokenizer.index];
 
         match state {
             State::Ok(_) | State::Nok => {
@@ -744,10 +732,10 @@ fn feed_impl(
 /// Flush `start`: pass `eof`s to it until done.
 fn flush_impl(
     tokenizer: &mut Tokenizer,
+    max: usize,
     start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
 ) -> State {
     let mut state = State::Fn(Box::new(start));
-    let max = tokenizer.index;
     tokenizer.consumed = true;
 
     loop {
@@ -755,7 +743,7 @@ fn flush_impl(
             State::Ok(_) | State::Nok => break,
             State::Fn(func) => {
                 let code = if tokenizer.index < max {
-                    tokenizer.codes[tokenizer.index]
+                    tokenizer.parse_state.codes[tokenizer.index]
                 } else {
                     Code::None
                 };
@@ -778,7 +766,7 @@ fn flush_impl(
 ///
 /// This defines how much columns, offsets, and the `index` are increased when
 /// consuming a line ending.
-fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize, usize)) {
+fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize)) {
     log::debug!("position: define skip: {:?} -> ({:?})", line, info);
     let at = line - tokenizer.line_start;
 
