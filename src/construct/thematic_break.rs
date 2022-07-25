@@ -183,7 +183,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State {
             tokenizer.exit(Token::ThematicBreak);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         Code::Char(char) if char == info.kind.as_char() => {
             tokenizer.enter(Token::ThematicBreakSequence);

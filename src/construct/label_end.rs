@@ -320,7 +320,7 @@ fn reference_not_full(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// > | [a] b
 ///        ^
 /// ```
-fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
+fn ok(tokenizer: &mut Tokenizer, _code: Code, mut info: Info) -> State {
     // Remove this one and everything after it.
     let mut left = tokenizer
         .label_start_stack
@@ -345,7 +345,7 @@ fn ok(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
     info.media.end.1 = tokenizer.events.len() - 1;
     tokenizer.media_list.push(info.media);
     tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
-    State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+    State::Ok(0)
 }
 
 /// Done, it’s nothing.
@@ -526,7 +526,7 @@ fn full_reference(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | [a][b] d
 ///          ^
 /// ```
-fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn full_reference_after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     let events = &tokenizer.events;
     let mut index = events.len() - 1;
     let mut start: Option<usize> = None;
@@ -558,7 +558,7 @@ fn full_reference_after(tokenizer: &mut Tokenizer, code: Code) -> State {
             false,
         )))
     {
-        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(0)
     } else {
         State::Nok
     }

@@ -128,7 +128,7 @@ fn cont_after(tokenizer: &mut Tokenizer, code: Code) -> State {
         }
         _ => {
             tokenizer.exit(Token::BlockQuotePrefix);
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
     }
 }

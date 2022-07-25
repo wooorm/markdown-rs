@@ -224,7 +224,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
-                State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+                State::Ok(0)
             } else {
                 tokenizer.consume(code);
                 info.balance -= 1;
@@ -242,7 +242,7 @@ fn raw(tokenizer: &mut Tokenizer, code: Code, mut info: Info) -> State {
                 tokenizer.exit(info.options.string.clone());
                 tokenizer.exit(info.options.raw.clone());
                 tokenizer.exit(info.options.destination);
-                State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+                State::Ok(0)
             }
         }
         Code::Char(char) if char.is_ascii_control() => State::Nok,

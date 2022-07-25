@@ -193,7 +193,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, marker: MarkerKind) -> State {
         _ => {
             tokenizer.exit(Token::AttentionSequence);
             tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
     }
 }

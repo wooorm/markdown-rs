@@ -59,9 +59,7 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// ```
 fn after(_tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
-        }
+        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok(0),
         _ => State::Nok,
     }
 }

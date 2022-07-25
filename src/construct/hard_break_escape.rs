@@ -74,7 +74,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::HardBreakEscape);
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         _ => State::Nok,
     }

@@ -173,7 +173,7 @@ struct InternalState {
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
-    column_start: Vec<(usize, usize, usize)>,
+    column_start: Vec<(usize, usize, usize, usize)>,
     // First line.
     line_start: usize,
     /// Track whether a character is expected to be consumed, and whether it’s
@@ -183,20 +183,20 @@ pub struct Tokenizer<'a> {
     consumed: bool,
     /// Track whether this tokenizer is done.
     drained: bool,
+    /// Current character code.
+    current: Code,
+    /// Previous character code.
+    pub previous: Code,
+    /// Current relative and absolute place in the file.
+    pub point: Point,
     /// Semantic labels of one or more codes in `codes`.
     pub events: Vec<Event>,
     /// Hierarchy of semantic labels.
     ///
     /// Tracked to make sure everything’s valid.
     pub stack: Vec<Token>,
-    /// Previous character code.
-    pub previous: Code,
     /// To do.
     pub map: EditMap,
-    /// Current character code.
-    current: Code,
-    /// Current relative and absolute place in the file.
-    pub point: Point,
     /// List of attached resolvers, which will be called when done feeding,
     /// to clean events.
     resolvers: Vec<Box<Resolver>>,
@@ -204,6 +204,8 @@ pub struct Tokenizer<'a> {
     resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
+    codes: Vec<Code>,
+    pub index: usize,
     /// Stack of label (start) that could form images and links.
     ///
     /// Used when tokenizing [text content][crate::content::text].
@@ -216,6 +218,8 @@ pub struct Tokenizer<'a> {
     ///
     /// Used when tokenizing [text content][crate::content::text].
     pub media_list: Vec<Media>,
+    /// Current container state.
+    pub container: Option<ContainerState>,
     /// Whether we would be interrupting something.
     ///
     /// Used when tokenizing [flow content][crate::content::flow].
@@ -229,8 +233,6 @@ pub struct Tokenizer<'a> {
     /// The previous line was a paragraph, and this line’s containers did not
     /// match.
     pub lazy: bool,
-    /// Current container state.
-    pub container: Option<ContainerState>,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -248,14 +250,16 @@ impl<'a> Tokenizer<'a> {
             stack: vec![],
             events: vec![],
             parse_state,
+            codes: vec![],
+            index: 0,
             map: EditMap::new(),
             label_start_stack: vec![],
             label_start_list_loose: vec![],
             media_list: vec![],
+            container: None,
             interrupt: false,
             concrete: false,
             lazy: false,
-            container: None,
             // Assume about 10 resolvers.
             resolvers: Vec::with_capacity(10),
             resolver_ids: Vec::with_capacity(10),
@@ -288,8 +292,12 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Define a jump between two places.
-    pub fn define_skip(&mut self, point: &Point) {
-        define_skip_impl(self, point.line, (point.column, point.offset, point.index));
+    pub fn define_skip(&mut self, point: &Point, index: usize) {
+        define_skip_impl(
+            self,
+            point.line,
+            (point.column, point.offset, point.index, index),
+        );
     }
 
     /// Define the current place as a jump between two places.
@@ -297,7 +305,12 @@ impl<'a> Tokenizer<'a> {
         define_skip_impl(
             self,
             self.point.line,
-            (self.point.column, self.point.offset, self.point.index),
+            (
+                self.point.column,
+                self.point.offset,
+                self.point.index,
+                self.index,
+            ),
         );
     }
 
@@ -307,10 +320,11 @@ impl<'a> Tokenizer<'a> {
         let at = self.point.line - self.line_start;
 
         if self.point.column == 1 && at != self.column_start.len() {
-            let (column, offset, index) = &self.column_start[at];
+            let (column, offset, index_abs, index_rel) = &self.column_start[at];
             self.point.column = *column;
             self.point.offset = *offset;
-            self.point.index = *index;
+            self.point.index = *index_abs;
+            self.index = *index_rel;
         }
     }
 
@@ -326,6 +340,7 @@ impl<'a> Tokenizer<'a> {
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
 
         self.point.index += 1;
+        self.index += 1;
 
         match code {
             Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -342,6 +357,7 @@ impl<'a> Tokenizer<'a> {
                         self.point.column,
                         self.point.offset,
                         self.point.index,
+                        self.index,
                     ));
                 }
 
@@ -482,11 +498,13 @@ impl<'a> Tokenizer<'a> {
     ) -> Box<StateFn> {
         attempt_impl(
             state_fn,
-            |_code| false,
-            vec![],
-            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
+            None,
+            self.index,
+            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
                 if matches!(state, State::Ok(_)) {
-                    feed_impl(tokenizer, result.1, after)
+                    tokenizer.index = result.1;
+                    tokenizer.consumed = true;
+                    State::Fn(Box::new(after))
                 } else {
                     state
                 }
@@ -505,11 +523,12 @@ impl<'a> Tokenizer<'a> {
     ) -> Box<StateFn> {
         attempt_impl(
             state_fn,
-            until,
-            vec![],
-            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
+            Some(Box::new(until)),
+            self.index,
+            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
+                tokenizer.index = result.1;
                 tokenizer.consumed = true;
-                feed_impl(tokenizer, result.1, done(state))
+                State::Fn(done(state))
             },
         )
     }
@@ -532,16 +551,13 @@ impl<'a> Tokenizer<'a> {
 
         attempt_impl(
             state_fn,
-            |_code| false,
-            vec![],
-            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
+            None,
+            self.index,
+            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
-                feed_twice_impl(
-                    tokenizer,
-                    result.0,
-                    result.1,
-                    done(matches!(state, State::Ok(_))),
-                )
+                tokenizer.index = result.0;
+                tokenizer.consumed = true;
+                State::Fn(done(matches!(state, State::Ok(_))))
             },
         )
     }
@@ -566,9 +582,9 @@ impl<'a> Tokenizer<'a> {
 
         attempt_impl(
             state_fn,
-            |_code| false,
-            vec![],
-            |result: (&[Code], &[Code]), tokenizer: &mut Tokenizer, state| {
+            None,
+            self.index,
+            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
                 let ok = matches!(state, State::Ok(_));
 
                 if !ok {
@@ -577,12 +593,9 @@ impl<'a> Tokenizer<'a> {
 
                 log::debug!("attempt: {:?}, at {:?}", ok, tokenizer.point);
 
-                feed_twice_impl(
-                    tokenizer,
-                    if ok { &[] } else { result.0 },
-                    result.1,
-                    done(ok),
-                )
+                tokenizer.index = result.1;
+                tokenizer.consumed = true;
+                State::Fn(done(ok))
             },
         )
     }
@@ -623,7 +636,7 @@ impl<'a> Tokenizer<'a> {
     /// markdown into the state machine, and normally pauses after feeding.
     pub fn push(
         &mut self,
-        codes: &[Code],
+        mut codes: Vec<Code>,
         start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
         drain: bool,
     ) -> State {
@@ -632,7 +645,9 @@ impl<'a> Tokenizer<'a> {
         // Let’s assume an event per character.
         self.events.reserve(codes.len());
 
-        let mut result = feed_impl(self, codes, start);
+        self.codes.append(&mut codes);
+
+        let mut result = feed_impl(self, start);
 
         if drain {
             let func = match result {
@@ -667,41 +682,34 @@ impl<'a> Tokenizer<'a> {
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
-    pause: impl Fn(Code) -> bool + 'static,
-    mut codes: Vec<Code>,
-    done: impl FnOnce((&[Code], &[Code]), &mut Tokenizer, State) -> State + 'static,
+    pause: Option<Box<dyn Fn(Code) -> bool + 'static>>,
+    start: usize,
+    done: impl FnOnce((usize, usize), &mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
-    Box::new(|tokenizer, code| {
-        if !codes.is_empty() && pause(tokenizer.previous) {
-            let after = if matches!(code, Code::None) {
-                vec![]
-            } else {
-                vec![code]
-            };
-
-            return done((&codes, &after), tokenizer, State::Fn(Box::new(state)));
+    Box::new(move |tokenizer, code| {
+        if let Some(ref func) = pause {
+            if tokenizer.index > start && func(tokenizer.previous) {
+                return done(
+                    (start, tokenizer.index),
+                    tokenizer,
+                    State::Fn(Box::new(state)),
+                );
+            }
         }
 
         let state = state(tokenizer, code);
 
-        match code {
-            Code::None => {}
-            _ => {
-                codes.push(code);
-            }
-        }
-
         match state {
             State::Ok(back) => {
+                let stop = tokenizer.index - back;
                 assert!(
-                    back <= codes.len(),
-                    "`back` must be smaller than or equal to `codes.len()`"
+                    stop >= start,
+                    "`back` must not result in an index smaller than `start`"
                 );
-                let remaining = codes.split_off(codes.len() - back);
-                done((&codes, &remaining), tokenizer, state)
+                done((start, stop), tokenizer, state)
             }
-            State::Nok => done((&[], &codes), tokenizer, state),
-            State::Fn(func) => State::Fn(attempt_impl(func, pause, codes, done)),
+            State::Nok => done((start, start), tokenizer, state),
+            State::Fn(func) => State::Fn(attempt_impl(func, pause, start, done)),
         }
     })
 }
@@ -709,49 +717,28 @@ fn attempt_impl(
 /// Feed a list of `codes` into `start`.
 fn feed_impl(
     tokenizer: &mut Tokenizer,
-    codes: &[Code],
     start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
 ) -> State {
     let mut state = State::Fn(Box::new(start));
-    let mut index = 0;
 
     tokenizer.consumed = true;
 
-    while index < codes.len() {
-        let code = codes[index];
+    while tokenizer.index < tokenizer.codes.len() {
+        let code = tokenizer.codes[tokenizer.index];
 
         match state {
-            State::Ok(back) => {
-                state = State::Ok((codes.len() - index) + back);
+            State::Ok(_) | State::Nok => {
                 break;
             }
-            State::Nok => break,
             State::Fn(func) => {
-                log::debug!("main: passing: `{:?}` ({:?})", code, index);
+                log::debug!("main: passing: `{:?}` ({:?})", code, tokenizer.index);
                 tokenizer.expect(code, false);
                 state = func(tokenizer, code);
-                index += 1;
             }
         }
     }
 
     state
-}
-
-/// Feed a list of `codes` into `start`.
-fn feed_twice_impl(
-    tokenizer: &mut Tokenizer,
-    left: &[Code],
-    right: &[Code],
-    start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
-) -> State {
-    let res = feed_impl(tokenizer, left, start);
-
-    match res {
-        State::Fn(func) => feed_impl(tokenizer, right, func),
-        State::Ok(back) => State::Ok(back + right.len()),
-        State::Nok => res,
-    }
 }
 
 /// Flush `start`: pass `eof`s to it until done.
@@ -760,15 +747,21 @@ fn flush_impl(
     start: impl FnOnce(&mut Tokenizer, Code) -> State + 'static,
 ) -> State {
     let mut state = State::Fn(Box::new(start));
+    let max = tokenizer.index;
     tokenizer.consumed = true;
 
     loop {
         match state {
             State::Ok(_) | State::Nok => break,
             State::Fn(func) => {
-                log::debug!("main: passing eof");
-                tokenizer.expect(Code::None, false);
-                state = func(tokenizer, Code::None);
+                let code = if tokenizer.index < max {
+                    tokenizer.codes[tokenizer.index]
+                } else {
+                    Code::None
+                };
+                log::debug!("main: flushing {:?}", code);
+                tokenizer.expect(code, false);
+                state = func(tokenizer, code);
             }
         }
     }
@@ -785,7 +778,7 @@ fn flush_impl(
 ///
 /// This defines how much columns, offsets, and the `index` are increased when
 /// consuming a line ending.
-fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize)) {
+fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize, usize, usize)) {
     log::debug!("position: define skip: {:?} -> ({:?})", line, info);
     let at = line - tokenizer.line_start;
 

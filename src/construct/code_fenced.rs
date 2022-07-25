@@ -506,7 +506,7 @@ fn close_sequence_after(tokenizer: &mut Tokenizer, code: Code) -> State {
     match code {
         Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
             tokenizer.exit(Token::CodeFencedFence);
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         _ => State::Nok,
     }
@@ -589,11 +589,11 @@ fn content_continue(tokenizer: &mut Tokenizer, code: Code, info: Info) -> State 
 /// > | ~~~
 ///        ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     tokenizer.exit(Token::CodeFenced);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
     // No longer concrete.
     tokenizer.concrete = false;
-    State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+    State::Ok(0)
 }

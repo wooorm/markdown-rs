@@ -42,7 +42,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code, stop: &'static [Code]) -> Sta
         }
         _ if stop.contains(&code) => {
             tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         _ => {
             tokenizer.enter(Token::Data);

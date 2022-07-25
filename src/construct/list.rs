@@ -276,7 +276,7 @@ fn whitespace_after(_tokenizer: &mut Tokenizer, code: Code) -> State {
     if matches!(code, Code::VirtualSpace | Code::Char('\t' | ' ')) {
         State::Nok
     } else {
-        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(0)
     }
 }
 
@@ -304,7 +304,7 @@ fn prefix_other(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | * a
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> State {
+fn after(tokenizer: &mut Tokenizer, _code: Code, blank: bool) -> State {
     if blank && tokenizer.interrupt {
         State::Nok
     } else {
@@ -322,7 +322,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code, blank: bool) -> State {
 
         tokenizer.exit(Token::ListItemPrefix);
         tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
-        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(0)
     }
 }
 
@@ -377,8 +377,8 @@ pub fn not_blank_cont(tokenizer: &mut Tokenizer, code: Code) -> State {
 }
 
 /// A state fn to yield [`State::Ok`].
-pub fn ok(_tokenizer: &mut Tokenizer, code: Code) -> State {
-    State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+pub fn ok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
+    State::Ok(0)
 }
 
 /// A state fn to yield [`State::Nok`].

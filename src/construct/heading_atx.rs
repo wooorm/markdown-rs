@@ -134,7 +134,7 @@ fn at_break(tokenizer: &mut Tokenizer, code: Code) -> State {
             tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         Code::VirtualSpace | Code::Char('\t' | ' ') => {
             tokenizer.go(space_or_tab(), at_break)(tokenizer, code)

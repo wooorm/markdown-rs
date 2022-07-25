@@ -81,7 +81,7 @@ fn inside(tokenizer: &mut Tokenizer, code: Code, size: usize) -> State {
         {
             tokenizer.exit(Token::HardBreakTrailingSpace);
             tokenizer.exit(Token::HardBreakTrailing);
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         _ => State::Nok,
     }

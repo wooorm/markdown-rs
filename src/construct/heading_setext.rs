@@ -189,7 +189,7 @@ fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));
-            State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+            State::Ok(0)
         }
         _ => State::Nok,
     }

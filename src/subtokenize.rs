@@ -84,6 +84,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 } else {
                     text
                 }));
+                let mut size = 0;
 
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {
@@ -96,7 +97,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     };
 
                     if link_curr.previous != None {
-                        tokenizer.define_skip(&enter.point);
+                        tokenizer.define_skip(&enter.point, size);
                     }
 
                     let func = match state {
@@ -105,10 +106,13 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     };
 
                     state = tokenizer.push(
-                        span::codes(&parse_state.codes, &span),
+                        span::codes(&parse_state.codes, &span).to_vec(),
                         func,
                         link_curr.next == None,
                     );
+
+                    size += span.end_index - span.start_index;
+
                     link_index = link_curr.next;
                 }
 

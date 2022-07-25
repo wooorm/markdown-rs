@@ -39,10 +39,10 @@ pub fn start(tokenizer: &mut Tokenizer, code: Code) -> State {
 /// > | b
 ///     ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     if tokenizer.lazy {
         State::Nok
     } else {
-        State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+        State::Ok(0)
     }
 }

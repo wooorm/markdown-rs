@@ -924,13 +924,13 @@ fn continuation_close(tokenizer: &mut Tokenizer, code: Code, info: Info) -> Stat
 /// > | <!doctype>
 ///               ^
 /// ```
-fn continuation_after(tokenizer: &mut Tokenizer, code: Code) -> State {
+fn continuation_after(tokenizer: &mut Tokenizer, _code: Code) -> State {
     tokenizer.exit(Token::HtmlFlow);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
     // No longer concrete.
     tokenizer.concrete = false;
-    State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+    State::Ok(0)
 }
 
 /// Before a line ending, expecting a blank line.

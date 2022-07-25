@@ -57,6 +57,6 @@ fn at_eol(tokenizer: &mut Tokenizer, code: Code) -> State {
 }
 
 /// Fine.
-fn ok(_tokenizer: &mut Tokenizer, code: Code) -> State {
-    State::Ok(if matches!(code, Code::None) { 0 } else { 1 })
+fn ok(_tokenizer: &mut Tokenizer, _code: Code) -> State {
+    State::Ok(0)
 }
