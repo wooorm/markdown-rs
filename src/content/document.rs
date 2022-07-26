@@ -78,7 +78,8 @@ struct DocumentInfo {
 pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, parse_state);
 
-    tokenizer.push(0, parse_state.codes.len(), Box::new(start), true);
+    let state = tokenizer.push(0, parse_state.codes.len(), Box::new(start));
+    tokenizer.flush(state, true);
 
     let mut index = 0;
     let mut definitions = vec![];
@@ -400,8 +401,7 @@ fn exit_containers(
         let mut current_events = tokenizer.events.split_off(info.index);
         let next = info.next;
         info.next = Box::new(flow); // This is weird but Rust needs a function there.
-        let result = tokenizer.flush(next);
-        assert!(matches!(result, State::Ok));
+        tokenizer.flush(State::Fn(next), false);
 
         if *phase == Phase::Prefix {
             info.index = tokenizer.events.len();

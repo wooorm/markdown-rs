@@ -182,7 +182,7 @@ pub struct Tokenizer<'a> {
     /// Tracked to make sure everything’s valid.
     consumed: bool,
     /// Track whether this tokenizer is done.
-    drained: bool,
+    resolved: bool,
     /// Current character code.
     pub current: Code,
     /// Previous character code.
@@ -204,8 +204,6 @@ pub struct Tokenizer<'a> {
     resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
-    /// To do.
-    pub index: usize,
     /// Stack of label (start) that could form images and links.
     ///
     /// Used when tokenizing [text content][crate::content::text].
@@ -245,12 +243,11 @@ impl<'a> Tokenizer<'a> {
             column_start: vec![],
             line_start: point.line,
             consumed: true,
-            drained: false,
+            resolved: false,
             point,
             stack: vec![],
             events: vec![],
             parse_state,
-            index: 0,
             map: EditMap::new(),
             label_start_stack: vec![],
             label_start_list_loose: vec![],
@@ -281,13 +278,6 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// Prepare for a next code to get consumed.
-    pub fn expect(&mut self, code: Code) {
-        assert!(self.consumed, "expected previous character to be consumed");
-        self.consumed = false;
-        self.current = code;
-    }
-
     /// Define a jump between two places.
     pub fn define_skip(&mut self, point: &Point) {
         define_skip_impl(self, point.line, point.index);
@@ -308,15 +298,20 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    /// Prepare for a next code to get consumed.
+    pub fn expect(&mut self, code: Code) {
+        assert!(self.consumed, "expected previous character to be consumed");
+        self.consumed = false;
+        self.current = code;
+    }
+
     /// Consume the current character.
     /// Each [`StateFn`][] is expected to call this to signal that this code is
     /// used, or call a next `StateFn`.
     pub fn consume(&mut self) {
         log::debug!("consume: `{:?}` ({:?})", self.current, self.point);
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
-
-        self.move_to(self.index + 1);
-
+        self.move_to(self.point.index + 1);
         self.previous = self.current;
         // Mark as consumed.
         self.consumed = true;
@@ -324,10 +319,9 @@ impl<'a> Tokenizer<'a> {
 
     /// To do.
     pub fn move_to(&mut self, to: usize) {
-        while self.index < to {
-            let code = &self.parse_state.codes[self.index];
+        while self.point.index < to {
+            let code = &self.parse_state.codes[self.point.index];
             self.point.index += 1;
-            self.index += 1;
 
             match code {
                 Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
@@ -478,13 +472,16 @@ impl<'a> Tokenizer<'a> {
         attempt_impl(
             state_fn,
             None,
-            self.index,
-            |end: usize, tokenizer: &mut Tokenizer, state| {
+            self.point.index,
+            |tokenizer: &mut Tokenizer, state| {
                 if matches!(state, State::Ok) {
-                    tokenizer.index = end;
                     tokenizer.consumed = true;
                     State::Fn(Box::new(after))
                 } else {
+                    // Must be `Nok`.
+                    // We don’t capture/free state because it is assumed that
+                    // `go` itself is wrapped in another attempt that does that
+                    // if it can occur.
                     state
                 }
             },
@@ -503,10 +500,12 @@ impl<'a> Tokenizer<'a> {
         attempt_impl(
             state_fn,
             Some(Box::new(until)),
-            self.index,
-            |end: usize, tokenizer: &mut Tokenizer, state| {
-                tokenizer.index = end;
+            self.point.index,
+            |tokenizer: &mut Tokenizer, state| {
                 tokenizer.consumed = true;
+                // We don’t capture/free state because it is assumed that
+                // `go_until` itself is wrapped in another attempt that does
+                // that if it can occur.
                 State::Fn(done(state))
             },
         )
@@ -527,15 +526,13 @@ impl<'a> Tokenizer<'a> {
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
-        let start = self.index;
 
         attempt_impl(
             state_fn,
             None,
-            start,
-            move |_: usize, tokenizer: &mut Tokenizer, state| {
+            self.point.index,
+            |tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
-                tokenizer.index = start;
                 tokenizer.consumed = true;
                 State::Fn(done(matches!(state, State::Ok)))
             },
@@ -563,8 +560,8 @@ impl<'a> Tokenizer<'a> {
         attempt_impl(
             state_fn,
             None,
-            self.index,
-            |end: usize, tokenizer: &mut Tokenizer, state| {
+            self.point.index,
+            |tokenizer: &mut Tokenizer, state| {
                 let ok = matches!(state, State::Ok);
 
                 if !ok {
@@ -573,7 +570,6 @@ impl<'a> Tokenizer<'a> {
 
                 log::debug!("attempt: {:?}, at {:?}", ok, tokenizer.point);
 
-                tokenizer.index = end;
                 tokenizer.consumed = true;
                 State::Fn(done(ok))
             },
@@ -619,21 +615,56 @@ impl<'a> Tokenizer<'a> {
         min: usize,
         max: usize,
         start: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        drain: bool,
     ) -> State {
-        assert!(!self.drained, "cannot feed after drain");
+        assert!(!self.resolved, "cannot feed after drain");
+        assert!(min >= self.point.index, "cannot move backwards");
 
-        let mut result = feed_impl(self, min, max, start);
+        self.move_to(min);
 
-        if drain {
-            let func = match result {
-                State::Fn(func) => func,
-                _ => unreachable!("expected next state"),
-            };
+        let mut state = State::Fn(Box::new(start));
 
-            result = flush_impl(self, max, func);
+        while self.point.index < max {
+            match state {
+                State::Ok | State::Nok => break,
+                State::Fn(func) => {
+                    let code = self.parse_state.codes[self.point.index];
+                    log::debug!("main: passing: `{:?}` ({:?})", code, self.point);
+                    self.expect(code);
+                    state = func(self);
+                }
+            }
+        }
 
-            self.drained = true;
+        state
+    }
+
+    /// Flush the tokenizer.
+    pub fn flush(&mut self, mut state: State, resolve: bool) {
+        let max = self.point.index;
+
+        self.consumed = true;
+
+        loop {
+            match state {
+                State::Ok | State::Nok => break,
+                State::Fn(func) => {
+                    // We sometimes move back when flushing, so then we use those codes.
+                    let code = if self.point.index < max {
+                        self.parse_state.codes[self.point.index]
+                    } else {
+                        Code::None
+                    };
+                    log::debug!("main: flushing {:?}", code);
+                    self.expect(code);
+                    state = func(self);
+                }
+            }
+        }
+
+        assert!(matches!(state, State::Ok), "must be ok");
+
+        if resolve {
+            self.resolved = true;
 
             while !self.resolvers.is_empty() {
                 let resolver = self.resolvers.remove(0);
@@ -642,13 +673,6 @@ impl<'a> Tokenizer<'a> {
 
             self.map.consume(&mut self.events);
         }
-
-        result
-    }
-
-    /// Flush the tokenizer.
-    pub fn flush(&mut self, start: impl FnOnce(&mut Tokenizer) -> State + 'static) -> State {
-        flush_impl(self, self.index, start)
     }
 }
 
@@ -660,98 +684,28 @@ fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer) -> State + 'static,
     pause: Option<Box<dyn Fn(Code) -> bool + 'static>>,
     start: usize,
-    done: impl FnOnce(usize, &mut Tokenizer, State) -> State + 'static,
+    done: impl FnOnce(&mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
     Box::new(move |tokenizer| {
         if let Some(ref func) = pause {
-            if tokenizer.index > start && func(tokenizer.previous) {
-                return done(tokenizer.index, tokenizer, State::Fn(Box::new(state)));
+            if tokenizer.point.index > start && func(tokenizer.previous) {
+                return done(tokenizer, State::Fn(Box::new(state)));
             }
         }
 
         let state = state(tokenizer);
 
         match state {
-            State::Ok => {
-                assert!(
-                    tokenizer.index >= start,
-                    "`end` must not be smaller than `start`"
-                );
-                done(tokenizer.index, tokenizer, state)
-            }
-            State::Nok => done(start, tokenizer, state),
+            State::Ok | State::Nok => done(tokenizer, state),
             State::Fn(func) => State::Fn(attempt_impl(func, pause, start, done)),
         }
     })
 }
 
-/// Feed a list of `codes` into `start`.
-fn feed_impl(
-    tokenizer: &mut Tokenizer,
-    min: usize,
-    max: usize,
-    start: impl FnOnce(&mut Tokenizer) -> State + 'static,
-) -> State {
-    let mut state = State::Fn(Box::new(start));
-
-    tokenizer.index = min;
-    tokenizer.consumed = true;
-
-    while tokenizer.index < max {
-        let code = tokenizer.parse_state.codes[tokenizer.index];
-
-        match state {
-            State::Ok | State::Nok => {
-                break;
-            }
-            State::Fn(func) => {
-                log::debug!("main: passing: `{:?}` ({:?})", code, tokenizer.index);
-                tokenizer.expect(code);
-                state = func(tokenizer);
-            }
-        }
-    }
-
-    state
-}
-
 /// Flush `start`: pass `eof`s to it until done.
-fn flush_impl(
-    tokenizer: &mut Tokenizer,
-    max: usize,
-    start: impl FnOnce(&mut Tokenizer) -> State + 'static,
-) -> State {
-    let mut state = State::Fn(Box::new(start));
-    tokenizer.consumed = true;
-
-    loop {
-        match state {
-            State::Ok | State::Nok => break,
-            State::Fn(func) => {
-                let code = if tokenizer.index < max {
-                    tokenizer.parse_state.codes[tokenizer.index]
-                } else {
-                    Code::None
-                };
-                log::debug!("main: flushing {:?}", code);
-                tokenizer.expect(code);
-                state = func(tokenizer);
-            }
-        }
-    }
-
-    match state {
-        State::Ok => {}
-        _ => unreachable!("expected final state to be `State::Ok`"),
-    }
-
-    state
-}
-
 /// Define a jump between two places.
 ///
-/// This defines how much columns, offsets, and the `index` are increased when
-/// consuming a line ending.
+/// This defines to which future index we move after a line ending.
 fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, index: usize) {
     log::debug!("position: define skip: {:?} -> ({:?})", line, index);
     let at = line - tokenizer.line_start;

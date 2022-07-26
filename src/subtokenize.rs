@@ -100,15 +100,12 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                         _ => unreachable!("cannot be ok/nok"),
                     };
 
-                    state = tokenizer.push(
-                        enter.point.index,
-                        events[index + 1].point.index,
-                        func,
-                        link_curr.next == None,
-                    );
+                    state = tokenizer.push(enter.point.index, events[index + 1].point.index, func);
 
                     link_index = link_curr.next;
                 }
+
+                tokenizer.flush(state, true);
 
                 // Now, loop through all subevents to figure out which parts
                 // belong where and fix deep links.
