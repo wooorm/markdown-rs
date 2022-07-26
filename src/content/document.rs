@@ -251,12 +251,13 @@ fn container_new_before(tokenizer: &mut Tokenizer, info: DocumentInfo) -> State 
                 });
 
                 tokenizer.attempt(list_item, |ok| {
-                    let func = if ok {
-                        container_new_after
-                    } else {
-                        containers_after
-                    };
-                    Box::new(move |t| func(t, info))
+                    Box::new(move |t| {
+                        if ok {
+                            container_new_after(t, info)
+                        } else {
+                            containers_after(t, info)
+                        }
+                    })
                 })(tokenizer)
             })
         }

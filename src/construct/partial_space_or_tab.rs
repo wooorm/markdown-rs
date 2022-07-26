@@ -98,7 +98,7 @@ pub fn space_or_tab_eol() -> Box<StateFn> {
 pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
     Box::new(move |tokenizer| {
         let mut info = EolInfo {
-            connect: false,
+            connect: options.connect,
             ok: false,
             options,
         };

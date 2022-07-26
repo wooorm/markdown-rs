@@ -25,7 +25,6 @@
 //! *   [code (text)][code_text]
 //! *   [definition][]
 //! *   [hard break (escape)][hard_break_escape]
-//! *   [hard break (trailing)][hard_break_trailing]
 //! *   [heading (atx)][heading_atx]
 //! *   [heading (setext)][heading_setext]
 //! *   [html (flow)][html_flow]
@@ -36,6 +35,9 @@
 //! *   [list][]
 //! *   [paragraph][]
 //! *   [thematic break][thematic_break]
+//!
+//! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
+//! > [whitespace][partial_whitespace].
 //!
 //! There are also several routines used in different places:
 //!
@@ -73,7 +75,6 @@ pub mod code_indented;
 pub mod code_text;
 pub mod definition;
 pub mod hard_break_escape;
-pub mod hard_break_trailing;
 pub mod heading_atx;
 pub mod heading_setext;
 pub mod html_flow;

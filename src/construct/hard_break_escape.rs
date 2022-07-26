@@ -27,7 +27,6 @@
 //! ## Tokens
 //!
 //! *   [`HardBreakEscape`][Token::HardBreakEscape]
-//! *   [`HardBreakEscapeMarker`][Token::HardBreakEscapeMarker]
 //!
 //! ## References
 //!
@@ -37,7 +36,7 @@
 //! [text]: crate::content::text
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
-//! [hard_break_trailing]: crate::construct::hard_break_trailing
+//! [hard_break_trailing]: crate::construct::partial_whitespace
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
 use crate::token::Token;
@@ -54,9 +53,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Code::Char('\\') if tokenizer.parse_state.constructs.hard_break_escape => {
             tokenizer.enter(Token::HardBreakEscape);
-            tokenizer.enter(Token::HardBreakEscapeMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::HardBreakEscapeMarker);
             State::Fn(Box::new(inside))
         }
         _ => State::Nok,

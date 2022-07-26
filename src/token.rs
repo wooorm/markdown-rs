@@ -872,25 +872,6 @@ pub enum Token {
     /// *   **Context**:
     ///     [text content][crate::content::text]
     /// *   **Content model**:
-    ///     [`HardBreakEscapeMarker`][Token::HardBreakEscapeMarker]
-    /// *   **Construct**:
-    ///     [`hard_break_escape`][crate::construct::hard_break_escape]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a\␊
-    ///      ^^
-    /// > | b
-    /// ```
-    HardBreakEscape,
-    /// Hard break (escape) marker.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [text content][crate::content::text]
-    /// *   **Content model**:
     ///     void
     /// *   **Construct**:
     ///     [`hard_break_escape`][crate::construct::hard_break_escape]
@@ -902,7 +883,7 @@ pub enum Token {
     ///      ^
     /// > | b
     /// ```
-    HardBreakEscapeMarker,
+    HardBreakEscape,
     /// Whole hard break (trailing).
     ///
     /// ## Info
@@ -910,28 +891,9 @@ pub enum Token {
     /// *   **Context**:
     ///     [text content][crate::content::text]
     /// *   **Content model**:
-    ///     [`HardBreakTrailingSpace`][Token::HardBreakTrailingSpace]
-    /// *   **Construct**:
-    ///     [`hard_break_trailing`][crate::construct::hard_break_trailing]
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | a␠␠␊
-    ///      ^^^
-    /// > | b
-    /// ```
-    HardBreakTrailing,
-    /// Hard break (trailing) spaces.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`HardBreakTrailing`][Token::HardBreakTrailing]
-    /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`hard_break_trailing`][crate::construct::hard_break_trailing]
+    ///     [`whitespace`][crate::construct::partial_whitespace]
     ///
     /// ## Example
     ///
@@ -940,7 +902,7 @@ pub enum Token {
     ///      ^^
     /// > | b
     /// ```
-    HardBreakTrailingSpace,
+    HardBreakTrailing,
     /// Whole heading (atx).
     ///
     /// ## Info
@@ -1884,8 +1846,8 @@ pub const VOID_TOKENS: [Token; 39] = [
     Token::DefinitionMarker,
     Token::DefinitionTitleMarker,
     Token::EmphasisSequence,
-    Token::HardBreakEscapeMarker,
-    Token::HardBreakTrailingSpace,
+    Token::HardBreakEscape,
+    Token::HardBreakTrailing,
     Token::HeadingAtxSequence,
     Token::HeadingSetextUnderline,
     Token::HtmlFlowData,

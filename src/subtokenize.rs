@@ -95,12 +95,14 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                         tokenizer.define_skip(&enter.point);
                     }
 
-                    let func = match state {
-                        State::Fn(func) => func,
-                        _ => unreachable!("cannot be ok/nok"),
-                    };
-
-                    state = tokenizer.push(enter.point.index, events[index + 1].point.index, func);
+                    state = tokenizer.push(
+                        enter.point.index,
+                        events[index + 1].point.index,
+                        match state {
+                            State::Fn(func) => func,
+                            _ => unreachable!("cannot be ok/nok"),
+                        },
+                    );
 
                     link_index = link_curr.next;
                 }

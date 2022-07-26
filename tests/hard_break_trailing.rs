@@ -28,12 +28,6 @@ fn hard_break_trailing() {
     );
 
     assert_eq!(
-        micromark("*foo\\\nbar*"),
-        "<p><em>foo<br />\nbar</em></p>",
-        "should support escape hard breaks in emphasis"
-    );
-
-    assert_eq!(
         micromark("`code  \ntext`"),
         "<p><code>code   text</code></p>",
         "should not support trailing hard breaks in code"

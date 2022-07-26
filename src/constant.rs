@@ -68,9 +68,9 @@ pub const CHARACTER_REFERENCE_NAMED_SIZE_MAX: usize = 31;
 pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 
 /// The number of preceding spaces needed for a [hard break
-/// (trailing)][hard_break_trailing] to form.
+/// (trailing)][whitespace] to form.
 ///
-/// [hard_break_trailing]: crate::construct::hard_break_trailing
+/// [whitespace]: crate::construct::partial_whitespace
 pub const HARD_BREAK_PREFIX_SIZE_MIN: usize = 2;
 
 /// The max number of markers allowed to form a [heading (atx)][heading_atx].

@@ -14,37 +14,33 @@
 
 use crate::construct::{
     character_escape::start as character_escape, character_reference::start as character_reference,
-    partial_data::start as data, partial_whitespace::whitespace,
+    partial_data::start as data, partial_whitespace::create_resolve_whitespace,
 };
 use crate::tokenizer::{Code, State, Tokenizer};
 
-const MARKERS: [Code; 5] = [
-    Code::VirtualSpace, // `whitespace`
-    Code::Char('\t'),   // `whitespace`
-    Code::Char(' '),    // `hard_break_trailing`, `whitespace`
-    Code::Char('&'),
-    Code::Char('\\'),
-];
+const MARKERS: [Code; 2] = [Code::Char('&'), Code::Char('\\')];
+
+/// Start of string.
+pub fn start(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.register_resolver(
+        "whitespace".to_string(),
+        Box::new(create_resolve_whitespace(false, false)),
+    );
+    before(tokenizer)
+}
 
 /// Before string.
-pub fn start(tokenizer: &mut Tokenizer) -> State {
+fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Code::None => State::Ok,
         _ => tokenizer.attempt_n(
-            vec![
-                Box::new(character_reference),
-                Box::new(character_escape),
-                Box::new(whitespace),
-            ],
-            |ok| {
-                let func = if ok { start } else { before_data };
-                Box::new(func)
-            },
+            vec![Box::new(character_reference), Box::new(character_escape)],
+            |ok| Box::new(if ok { before } else { before_data }),
         )(tokenizer),
     }
 }
 
 /// At data.
 fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(|t| data(t, &MARKERS), start)(tokenizer)
+    tokenizer.go(|t| data(t, &MARKERS), before)(tokenizer)
 }

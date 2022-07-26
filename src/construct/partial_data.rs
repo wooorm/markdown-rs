@@ -41,7 +41,7 @@ fn at_break(tokenizer: &mut Tokenizer, stop: &'static [Code]) -> State {
             State::Fn(Box::new(move |t| at_break(t, stop)))
         }
         _ if stop.contains(&tokenizer.current) => {
-            tokenizer.register_resolver("data".to_string(), Box::new(resolve_data));
+            tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
             State::Ok
         }
         _ => {
