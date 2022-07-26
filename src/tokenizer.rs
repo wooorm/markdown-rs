@@ -479,9 +479,9 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             None,
             self.index,
-            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
+            |end: usize, tokenizer: &mut Tokenizer, state| {
                 if matches!(state, State::Ok) {
-                    tokenizer.index = result.1;
+                    tokenizer.index = end;
                     tokenizer.consumed = true;
                     State::Fn(Box::new(after))
                 } else {
@@ -504,8 +504,8 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             Some(Box::new(until)),
             self.index,
-            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
-                tokenizer.index = result.1;
+            |end: usize, tokenizer: &mut Tokenizer, state| {
+                tokenizer.index = end;
                 tokenizer.consumed = true;
                 State::Fn(done(state))
             },
@@ -527,14 +527,15 @@ impl<'a> Tokenizer<'a> {
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         let previous = self.capture();
+        let start = self.index;
 
         attempt_impl(
             state_fn,
             None,
-            self.index,
-            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
+            start,
+            move |_: usize, tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
-                tokenizer.index = result.0;
+                tokenizer.index = start;
                 tokenizer.consumed = true;
                 State::Fn(done(matches!(state, State::Ok)))
             },
@@ -563,7 +564,7 @@ impl<'a> Tokenizer<'a> {
             state_fn,
             None,
             self.index,
-            |result: (usize, usize), tokenizer: &mut Tokenizer, state| {
+            |end: usize, tokenizer: &mut Tokenizer, state| {
                 let ok = matches!(state, State::Ok);
 
                 if !ok {
@@ -572,7 +573,7 @@ impl<'a> Tokenizer<'a> {
 
                 log::debug!("attempt: {:?}, at {:?}", ok, tokenizer.point);
 
-                tokenizer.index = result.1;
+                tokenizer.index = end;
                 tokenizer.consumed = true;
                 State::Fn(done(ok))
             },
@@ -659,16 +660,12 @@ fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer) -> State + 'static,
     pause: Option<Box<dyn Fn(Code) -> bool + 'static>>,
     start: usize,
-    done: impl FnOnce((usize, usize), &mut Tokenizer, State) -> State + 'static,
+    done: impl FnOnce(usize, &mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
     Box::new(move |tokenizer| {
         if let Some(ref func) = pause {
             if tokenizer.index > start && func(tokenizer.previous) {
-                return done(
-                    (start, tokenizer.index),
-                    tokenizer,
-                    State::Fn(Box::new(state)),
-                );
+                return done(tokenizer.index, tokenizer, State::Fn(Box::new(state)));
             }
         }
 
@@ -676,14 +673,13 @@ fn attempt_impl(
 
         match state {
             State::Ok => {
-                let stop = tokenizer.index;
                 assert!(
-                    stop >= start,
-                    "`back` must not result in an index smaller than `start`"
+                    tokenizer.index >= start,
+                    "`end` must not be smaller than `start`"
                 );
-                done((start, stop), tokenizer, state)
+                done(tokenizer.index, tokenizer, state)
             }
-            State::Nok => done((start, start), tokenizer, state),
+            State::Nok => done(start, tokenizer, state),
             State::Fn(func) => State::Fn(attempt_impl(func, pause, start, done)),
         }
     })
