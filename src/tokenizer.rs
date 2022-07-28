@@ -298,7 +298,7 @@ impl<'a> Tokenizer<'a> {
 
     /// Prepare for a next code to get consumed.
     pub fn expect(&mut self, char: Option<char>) {
-        assert!(self.consumed, "expected previous character to be consumed");
+        debug_assert!(self.consumed, "expected previous character to be consumed");
         self.consumed = false;
         self.current = char;
     }
@@ -308,7 +308,7 @@ impl<'a> Tokenizer<'a> {
     /// used, or call a next `StateFn`.
     pub fn consume(&mut self) {
         log::debug!("consume: `{:?}` ({:?})", self.current, self.point);
-        assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
+        debug_assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
 
         self.move_one();
 
@@ -406,7 +406,7 @@ impl<'a> Tokenizer<'a> {
     pub fn exit(&mut self, token_type: Token) {
         let current_token = self.stack.pop().expect("cannot close w/o open tokens");
 
-        assert_eq!(
+        debug_assert_eq!(
             current_token, token_type,
             "expected exit token to match current token"
         );
@@ -414,7 +414,7 @@ impl<'a> Tokenizer<'a> {
         let previous = self.events.last().expect("cannot close w/o open event");
         let mut point = self.point.clone();
 
-        assert!(
+        debug_assert!(
             current_token != previous.token_type
                 || previous.point.index != point.index
                 || previous.point.vs != point.vs,
@@ -422,7 +422,7 @@ impl<'a> Tokenizer<'a> {
         );
 
         if VOID_TOKENS.iter().any(|d| d == &token_type) {
-            assert!(
+            debug_assert!(
                 current_token == previous.token_type,
                 "expected token to be void (`{:?}`), instead of including `{:?}`",
                 current_token,
@@ -471,12 +471,12 @@ impl<'a> Tokenizer<'a> {
         self.previous = previous.previous;
         self.current = previous.current;
         self.point = previous.point;
-        assert!(
+        debug_assert!(
             self.events.len() >= previous.events_len,
             "expected to restore less events than before"
         );
         self.events.truncate(previous.events_len);
-        assert!(
+        debug_assert!(
             self.stack.len() >= previous.stack_len,
             "expected to restore less stack items than before"
         );
@@ -642,8 +642,8 @@ impl<'a> Tokenizer<'a> {
         max: usize,
         start: impl FnOnce(&mut Tokenizer) -> State + 'static,
     ) -> State {
-        assert!(!self.resolved, "cannot feed after drain");
-        assert!(min >= self.point.index, "cannot move backwards");
+        debug_assert!(!self.resolved, "cannot feed after drain");
+        debug_assert!(min >= self.point.index, "cannot move backwards");
 
         // To do: accept `vs`?
         self.move_to((min, 0));
@@ -720,7 +720,7 @@ impl<'a> Tokenizer<'a> {
             }
         }
 
-        assert!(matches!(state, State::Ok), "must be ok");
+        debug_assert!(matches!(state, State::Ok), "must be ok");
 
         if resolve {
             self.resolved = true;

@@ -399,7 +399,6 @@ fn tag_name(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             .serialize()
             .trim()
             .to_lowercase();
-            println!("name: {:?}", name);
 
             if !slash && info.start_tag && HTML_RAW_NAMES.contains(&name.as_str()) {
                 info.kind = Kind::Raw;

@@ -316,7 +316,7 @@ fn container_new_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> Sta
         }
     }
 
-    assert!(found, "expected to find container token to exit");
+    debug_assert!(found, "expected to find container token to exit");
 
     // If we did not continue all existing containers, and there is a new one,
     // close the flow and those containers.

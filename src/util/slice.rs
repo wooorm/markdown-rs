@@ -22,7 +22,7 @@ impl<'a> Position<'a> {
     /// When `micromark` is used, this function never panics.
     pub fn from_exit_event(events: &'a [Event], index: usize) -> Position<'a> {
         let exit = &events[index];
-        assert_eq!(
+        debug_assert_eq!(
             exit.event_type,
             EventType::Exit,
             "expected `from_exit_event` to be called on `exit` event"

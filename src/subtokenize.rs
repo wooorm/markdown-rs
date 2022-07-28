@@ -37,10 +37,10 @@ pub fn link(events: &mut [Event], index: usize) {
 
 /// Link two arbitrary [`Event`][]s together.
 pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
-    assert_eq!(events[pevious].event_type, EventType::Enter);
-    assert_eq!(events[pevious + 1].event_type, EventType::Exit);
-    assert_eq!(events[pevious + 1].token_type, events[pevious].token_type);
-    assert_eq!(events[next].event_type, EventType::Enter);
+    debug_assert_eq!(events[pevious].event_type, EventType::Enter);
+    debug_assert_eq!(events[pevious + 1].event_type, EventType::Exit);
+    debug_assert_eq!(events[pevious + 1].token_type, events[pevious].token_type);
+    debug_assert_eq!(events[next].event_type, EventType::Enter);
     // Note: the exit of this event may not exist, so don’t check for that.
 
     let link_previous = events[pevious]
@@ -51,7 +51,7 @@ pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
     let link_next = events[next].link.as_mut().expect("expected `link` on next");
     link_next.previous = Some(pevious);
 
-    assert_eq!(
+    debug_assert_eq!(
         events[pevious].link.as_ref().unwrap().content_type,
         events[next].link.as_ref().unwrap().content_type
     );
@@ -70,7 +70,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
 
         // Find each first opening chunk.
         if let Some(ref link) = event.link {
-            assert_eq!(event.event_type, EventType::Enter);
+            debug_assert_eq!(event.event_type, EventType::Enter);
 
             // No need to enter linked events again.
             if link.previous == None {
@@ -89,7 +89,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 while let Some(index) = link_index {
                     let enter = &events[index];
                     let link_curr = enter.link.as_ref().expect("expected link");
-                    assert_eq!(enter.event_type, EventType::Enter);
+                    debug_assert_eq!(enter.event_type, EventType::Enter);
 
                     if link_curr.previous != None {
                         tokenizer.define_skip(&enter.point);
