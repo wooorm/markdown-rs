@@ -103,7 +103,7 @@
 
 use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of an autolink.
 ///
@@ -115,7 +115,7 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('<') if tokenizer.parse_state.constructs.autolink => {
+        Some('<') if tokenizer.parse_state.constructs.autolink => {
             tokenizer.enter(Token::Autolink);
             tokenizer.enter(Token::AutolinkMarker);
             tokenizer.consume();
@@ -137,11 +137,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(char) if char.is_ascii_alphabetic() => {
+        Some(char) if char.is_ascii_alphabetic() => {
             tokenizer.consume();
             State::Fn(Box::new(scheme_or_email_atext))
         }
-        Code::Char(char) if is_ascii_atext(char) => email_atext(tokenizer),
+        Some(char) if is_ascii_atext(char) => email_atext(tokenizer),
         _ => State::Nok,
     }
 }
@@ -156,7 +156,7 @@ fn open(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('+' | '-' | '.' | '0'..='9' | 'A'..='Z' | 'a'..='z') => {
+        Some('+' | '-' | '.' | '0'..='9' | 'A'..='Z' | 'a'..='z') => {
             scheme_inside_or_email_atext(tokenizer, 1)
         }
         _ => email_atext(tokenizer),
@@ -173,11 +173,11 @@ fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Code::Char(':') => {
+        Some(':') => {
             tokenizer.consume();
             State::Fn(Box::new(url_inside))
         }
-        Code::Char('+' | '-' | '.' | '0'..='9' | 'A'..='Z' | 'a'..='z')
+        Some('+' | '-' | '.' | '0'..='9' | 'A'..='Z' | 'a'..='z')
             if size < AUTOLINK_SCHEME_SIZE_MAX =>
         {
             tokenizer.consume();
@@ -195,15 +195,13 @@ fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer, size: usize) -> State
 /// ```
 fn url_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('>') => {
+        Some('>') => {
             tokenizer.exit(Token::AutolinkProtocol);
             end(tokenizer)
         }
-        Code::Char(char) if char.is_ascii_control() => State::Nok,
-        Code::None | Code::CarriageReturnLineFeed | Code::VirtualSpace | Code::Char(' ') => {
-            State::Nok
-        }
-        Code::Char(_) => {
+        Some(char) if char.is_ascii_control() => State::Nok,
+        None | Some(' ') => State::Nok,
+        Some(_) => {
             tokenizer.consume();
             State::Fn(Box::new(url_inside))
         }
@@ -218,11 +216,11 @@ fn url_inside(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('@') => {
+        Some('@') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| email_at_sign_or_dot(t, 0)))
         }
-        Code::Char(char) if is_ascii_atext(char) => {
+        Some(char) if is_ascii_atext(char) => {
             tokenizer.consume();
             State::Fn(Box::new(email_atext))
         }
@@ -238,7 +236,7 @@ fn email_atext(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Code::Char(char) if char.is_ascii_alphanumeric() => email_value(tokenizer, size),
+        Some(char) if char.is_ascii_alphanumeric() => email_value(tokenizer, size),
         _ => State::Nok,
     }
 }
@@ -251,11 +249,11 @@ fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// ```
 fn email_label(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Code::Char('.') => {
+        Some('.') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| email_at_sign_or_dot(t, 0)))
         }
-        Code::Char('>') => {
+        Some('>') => {
             let index = tokenizer.events.len();
             tokenizer.exit(Token::AutolinkProtocol);
             // Change the token type.
@@ -277,11 +275,11 @@ fn email_label(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// ```
 fn email_value(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Code::Char('-') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
+        Some('-') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| email_value(t, size + 1)))
         }
-        Code::Char(char) if char.is_ascii_alphanumeric() && size < AUTOLINK_DOMAIN_SIZE_MAX => {
+        Some(char) if char.is_ascii_alphanumeric() && size < AUTOLINK_DOMAIN_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| email_label(t, size + 1)))
         }
@@ -299,7 +297,7 @@ fn email_value(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// ```
 fn end(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('>') => {
+        Some('>') => {
             tokenizer.enter(Token::AutolinkMarker);
             tokenizer.consume();
             tokenizer.exit(Token::AutolinkMarker);

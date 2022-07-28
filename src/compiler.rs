@@ -2,14 +2,14 @@
 use crate::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
 use crate::construct::character_reference::Kind as CharacterReferenceKind;
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType};
+use crate::tokenizer::{Event, EventType};
 use crate::util::normalize_identifier::normalize_identifier;
 use crate::util::{
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
     sanitize_uri::sanitize_uri,
     skip,
-    span::{codes as codes_from_span, from_exit_event, serialize},
+    slice::{Position, Slice},
 };
 use crate::{LineEnding, Options};
 
@@ -60,7 +60,7 @@ struct Definition {
 struct CompileContext<'a> {
     /// Static info.
     pub events: &'a [Event],
-    pub codes: &'a [Code],
+    pub chars: &'a [char],
     /// Fields used by handlers to track the things they need to track to
     /// compile markdown.
     pub atx_opening_sequence_size: Option<usize>,
@@ -76,7 +76,7 @@ struct CompileContext<'a> {
     /// Fields used to influance the current compilation.
     pub slurp_one_line_ending: bool,
     pub tags: bool,
-    pub ignore_encode: bool,
+    pub encode_html: bool,
     pub last_was_tag: bool,
     /// Configuration
     pub protocol_href: Option<Vec<&'static str>>,
@@ -92,13 +92,13 @@ impl<'a> CompileContext<'a> {
     /// Create a new compile context.
     pub fn new(
         events: &'a [Event],
-        codes: &'a [Code],
+        chars: &'a [char],
         options: &Options,
         line_ending: LineEnding,
     ) -> CompileContext<'a> {
         CompileContext {
             events,
-            codes,
+            chars,
             atx_opening_sequence_size: None,
             heading_setext_buffer: None,
             code_flow_seen_data: None,
@@ -111,7 +111,7 @@ impl<'a> CompileContext<'a> {
             tight_stack: vec![],
             slurp_one_line_ending: false,
             tags: true,
-            ignore_encode: false,
+            encode_html: true,
             last_was_tag: false,
             protocol_href: if options.allow_dangerous_protocol {
                 None
@@ -151,16 +151,13 @@ impl<'a> CompileContext<'a> {
 
     pub fn push_raw<'x, S: Into<&'x str>>(&mut self, value: S) {
         let value = value.into();
-        if self.ignore_encode {
-            self.push(value);
-        } else {
-            self.push(&*encode(value));
-        }
+        self.push(&*encode(value, self.encode_html));
     }
 
     pub fn tag<'x, S: Into<&'x str>>(&mut self, value: S) {
         if self.tags {
-            self.push(value.into());
+            let value = value.into();
+            self.push(&*encode(value, false));
             self.last_was_tag = true;
         }
     }
@@ -199,7 +196,7 @@ impl<'a> CompileContext<'a> {
 
 /// Turn events and codes into a string of HTML.
 #[allow(clippy::too_many_lines)]
-pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
+pub fn compile(events: &[Event], chars: &[char], options: &Options) -> String {
     let mut index = 0;
     let mut line_ending_inferred = None;
 
@@ -211,8 +208,9 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         if event.event_type == EventType::Exit
             && (event.token_type == Token::BlankLineEnding || event.token_type == Token::LineEnding)
         {
-            let codes = codes_from_span(codes, &from_exit_event(events, index));
-            line_ending_inferred = Some(LineEnding::from_code(*codes.first().unwrap()));
+            line_ending_inferred = Some(LineEnding::from_str(
+                &Slice::from_position(chars, &Position::from_exit_event(events, index)).serialize(),
+            ));
             break;
         }
 
@@ -239,7 +237,7 @@ pub fn compile(events: &[Event], codes: &[Code], options: &Options) -> String {
         }
     };
 
-    let mut context = CompileContext::new(events, codes, options, line_ending_default);
+    let mut context = CompileContext::new(events, chars, options, line_ending_default);
     let mut definition_indices = vec![];
     let mut index = 0;
     let mut definition_inside = false;
@@ -441,7 +439,7 @@ fn on_enter_definition(context: &mut CompileContext) {
 /// Handle [`Enter`][EventType::Enter]:[`DefinitionDestinationString`][Token::DefinitionDestinationString].
 fn on_enter_definition_destination_string(context: &mut CompileContext) {
     context.buffer();
-    context.ignore_encode = true;
+    context.encode_html = false;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Emphasis`][Token::Emphasis].
@@ -453,14 +451,14 @@ fn on_enter_emphasis(context: &mut CompileContext) {
 fn on_enter_html_flow(context: &mut CompileContext) {
     context.line_ending_if_needed();
     if context.allow_dangerous_html {
-        context.ignore_encode = true;
+        context.encode_html = false;
     }
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`HtmlText`][Token::HtmlText].
 fn on_enter_html_text(context: &mut CompileContext) {
     if context.allow_dangerous_html {
-        context.ignore_encode = true;
+        context.encode_html = false;
     }
 }
 
@@ -595,7 +593,7 @@ fn on_enter_resource_destination_string(context: &mut CompileContext) {
     context.buffer();
     // Ignore encoding the result, as we’ll first percent encode the url and
     // encode manually after.
-    context.ignore_encode = true;
+    context.encode_html = false;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Strong`][Token::Strong].
@@ -605,34 +603,36 @@ fn on_enter_strong(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkEmail`][Token::AutolinkEmail].
 fn on_exit_autolink_email(context: &mut CompileContext) {
-    let slice = serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    );
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     context.tag(&*format!(
         "<a href=\"{}\">",
         sanitize_uri(
-            format!("mailto:{}", slice.as_str()).as_str(),
+            format!("mailto:{}", value.as_str()).as_str(),
             &context.protocol_href
         )
     ));
-    context.push_raw(&*slice);
+    context.push_raw(&*value);
     context.tag("</a>");
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkProtocol`][Token::AutolinkProtocol].
 fn on_exit_autolink_protocol(context: &mut CompileContext) {
-    let slice = serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    );
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     context.tag(&*format!(
         "<a href=\"{}\">",
-        sanitize_uri(slice.as_str(), &context.protocol_href)
+        sanitize_uri(value.as_str(), &context.protocol_href)
     ));
-    context.push_raw(&*slice);
+    context.push_raw(&*value);
     context.tag("</a>");
 }
 
@@ -677,11 +677,12 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
         .character_reference_kind
         .take()
         .expect("expected `character_reference_kind` to be set");
-    let reference = serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    );
+    let reference = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     let ref_string = reference.as_str();
     let value = match kind {
         CharacterReferenceKind::Decimal => decode_numeric(ref_string, 10).to_string(),
@@ -694,12 +695,14 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][Token::CodeFlowChunk].
 fn on_exit_code_flow_chunk(context: &mut CompileContext) {
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     context.code_flow_seen_data = Some(true);
-    context.push_raw(&*serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
+    context.push_raw(&*value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeFencedFence`][Token::CodeFencedFence].
@@ -793,12 +796,14 @@ fn on_exit_drop(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][Token::CodeTextData],[`Data`][Token::Data],[`CharacterEscapeValue`][Token::CharacterEscapeValue]}.
 fn on_exit_data(context: &mut CompileContext) {
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     // Just output it.
-    context.push_raw(&*serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
+    context.push_raw(&*value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Definition`][Token::Definition].
@@ -830,19 +835,21 @@ fn on_exit_definition_destination_string(context: &mut CompileContext) {
     let buf = context.resume();
     let definition = context.media_stack.last_mut().unwrap();
     definition.destination = Some(buf);
-    context.ignore_encode = false;
+    context.encode_html = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`DefinitionLabelString`][Token::DefinitionLabelString].
 fn on_exit_definition_label_string(context: &mut CompileContext) {
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     // Discard label, use the source content instead.
     context.resume();
     let definition = context.media_stack.last_mut().unwrap();
-    definition.reference_id = Some(serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
+    definition.reference_id = Some(value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`DefinitionTitleString`][Token::DefinitionTitleString].
@@ -871,12 +878,11 @@ fn on_exit_heading_atx(context: &mut CompileContext) {
 fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
     // First fence we see.
     if context.atx_opening_sequence_size.is_none() {
-        let rank = serialize(
-            context.codes,
-            &from_exit_event(context.events, context.index),
-            false,
+        let rank = Slice::from_position(
+            context.chars,
+            &Position::from_exit_event(context.events, context.index),
         )
-        .len();
+        .size();
         context.line_ending_if_needed();
         context.atx_opening_sequence_size = Some(rank);
         context.tag(&*format!("<h{}>", rank));
@@ -902,11 +908,12 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
         .heading_setext_buffer
         .take()
         .expect("`atx_opening_sequence_size` must be set in headings");
-    let head = codes_from_span(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-    )[0];
-    let level: usize = if head == Code::Char('-') { 2 } else { 1 };
+    let head = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .head();
+    let level = if head == Some('-') { 2 } else { 1 };
 
     context.line_ending_if_needed();
     context.tag(&*format!("<h{}>", level));
@@ -916,17 +923,18 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlow`][Token::HtmlFlow],[`HtmlText`][Token::HtmlText]}.
 fn on_exit_html(context: &mut CompileContext) {
-    context.ignore_encode = false;
+    context.encode_html = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlowData`][Token::HtmlFlowData],[`HtmlTextData`][Token::HtmlTextData]}.
 fn on_exit_html_data(context: &mut CompileContext) {
-    let slice = serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    );
-    context.push_raw(&*slice);
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
+    context.push_raw(&*value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Label`][Token::Label].
@@ -938,12 +946,14 @@ fn on_exit_label(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`LabelText`][Token::LabelText].
 fn on_exit_label_text(context: &mut CompileContext) {
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     let media = context.media_stack.last_mut().unwrap();
-    media.label_id = Some(serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
+    media.label_id = Some(value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
@@ -953,11 +963,13 @@ fn on_exit_line_ending(context: &mut CompileContext) {
     } else if context.slurp_one_line_ending {
         context.slurp_one_line_ending = false;
     } else {
-        context.push_raw(&*serialize(
-            context.codes,
-            &from_exit_event(context.events, context.index),
-            false,
-        ));
+        let value = Slice::from_position(
+            context.chars,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .serialize();
+
+        context.push_raw(&*value);
     }
 }
 
@@ -1004,12 +1016,12 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
     let expect_first_item = context.expect_first_item.unwrap();
 
     if expect_first_item {
-        let slice = serialize(
-            context.codes,
-            &from_exit_event(context.events, context.index),
-            false,
-        );
-        let value = slice.parse::<u32>().ok().unwrap();
+        let value = Slice::from_position(
+            context.chars,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .serialize();
+        let value = value.parse::<u32>().ok().unwrap();
 
         if value != 1 {
             context.tag(" start=\"");
@@ -1110,14 +1122,16 @@ fn on_exit_paragraph(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`ReferenceString`][Token::ReferenceString].
 fn on_exit_reference_string(context: &mut CompileContext) {
+    let value = Slice::from_position(
+        context.chars,
+        &Position::from_exit_event(context.events, context.index),
+    )
+    .serialize();
+
     // Drop stuff.
     context.resume();
     let media = context.media_stack.last_mut().unwrap();
-    media.reference_id = Some(serialize(
-        context.codes,
-        &from_exit_event(context.events, context.index),
-        false,
-    ));
+    media.reference_id = Some(value);
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ResourceDestinationString`][Token::ResourceDestinationString].
@@ -1125,7 +1139,7 @@ fn on_exit_resource_destination_string(context: &mut CompileContext) {
     let buf = context.resume();
     let media = context.media_stack.last_mut().unwrap();
     media.destination = Some(buf);
-    context.ignore_encode = false;
+    context.encode_html = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ResourceTitleString`][Token::ResourceTitleString].

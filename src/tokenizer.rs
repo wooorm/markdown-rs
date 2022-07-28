@@ -11,6 +11,7 @@
 //! [`attempt`]: Tokenizer::attempt
 //! [`check`]: Tokenizer::check
 
+use crate::constant::TAB_SIZE;
 use crate::parser::ParseState;
 use crate::token::{Token, VOID_TOKENS};
 use crate::util::edit_map::EditMap;
@@ -24,20 +25,11 @@ pub enum ContentType {
     String,
 }
 
-/// Enum representing a character code.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Code {
-    /// End of the input stream (called eof).
-    None,
-    /// Used to make parsing line endings easier as it represents both
-    /// `Code::Char('\r')` and `Code::Char('\n')` combined.
-    CarriageReturnLineFeed,
-    /// the expansion of a tab (`Code::Char('\t')`), depending on where the tab
-    /// ocurred, it’s followed by 0 to 3 (both inclusive) `Code::VirtualSpace`s.
-    VirtualSpace,
-    /// The most frequent variant of this enum is `Code::Char(char)`, which just
-    /// represents a char, but micromark adds meaning to certain other values.
-    Char(char),
+#[derive(Debug, PartialEq)]
+pub enum CharAction {
+    Normal(char),
+    Insert(char),
+    Ignore,
 }
 
 /// A location in the document (`line`/`column`/`offset`).
@@ -54,9 +46,12 @@ pub struct Point {
     /// the same as editors.
     pub column: usize,
     /// 0-indexed position in the document.
-    pub offset: usize,
-    /// Index into `codes`.
+    ///
+    /// Also an `index` into `codes`.
+    // To do: call it `offset`?
     pub index: usize,
+    /// To do.
+    pub vs: usize,
 }
 
 /// Possible event types.
@@ -86,7 +81,7 @@ pub struct Event {
 }
 
 /// The essence of the state machine are functions: `StateFn`.
-/// It’s responsible for dealing with that single passed [`Code`][].
+/// It’s responsible for dealing with the current char.
 /// It yields a [`State`][].
 pub type StateFn = dyn FnOnce(&mut Tokenizer) -> State;
 
@@ -162,9 +157,9 @@ struct InternalState {
     /// Length of the stack. It’s not allowed to decrease the stack in a check or an attempt.
     stack_len: usize,
     /// Previous code.
-    previous: Code,
+    previous: Option<char>,
     /// Current code.
-    current: Code,
+    current: Option<char>,
     /// Current relative and absolute position in the file.
     point: Point,
 }
@@ -173,9 +168,11 @@ struct InternalState {
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
-    column_start: Vec<usize>,
+    column_start: Vec<(usize, usize)>,
     // First line.
-    line_start: usize,
+    first_line: usize,
+    /// To do.
+    line_start: Point,
     /// Track whether a character is expected to be consumed, and whether it’s
     /// actually consumed
     ///
@@ -184,9 +181,9 @@ pub struct Tokenizer<'a> {
     /// Track whether this tokenizer is done.
     resolved: bool,
     /// Current character code.
-    pub current: Code,
+    pub current: Option<char>,
     /// Previous character code.
-    pub previous: Code,
+    pub previous: Option<char>,
     /// Current relative and absolute place in the file.
     pub point: Point,
     /// Semantic labels of one or more codes in `codes`.
@@ -237,11 +234,12 @@ impl<'a> Tokenizer<'a> {
     /// Create a new tokenizer.
     pub fn new(point: Point, parse_state: &'a ParseState) -> Tokenizer<'a> {
         Tokenizer {
-            previous: Code::None,
-            current: Code::None,
+            previous: None,
+            current: None,
             // To do: reserve size when feeding?
             column_start: vec![],
-            line_start: point.line,
+            first_line: point.line,
+            line_start: point.clone(),
             consumed: true,
             resolved: false,
             point,
@@ -280,18 +278,18 @@ impl<'a> Tokenizer<'a> {
 
     /// Define a jump between two places.
     pub fn define_skip(&mut self, point: &Point) {
-        define_skip_impl(self, point.line, point.index);
+        define_skip_impl(self, point.line, (point.index, point.vs));
     }
 
     /// Define the current place as a jump between two places.
     pub fn define_skip_current(&mut self) {
-        define_skip_impl(self, self.point.line, self.point.index);
+        define_skip_impl(self, self.point.line, (self.point.index, self.point.vs));
     }
 
     /// Increment the current positional info if we’re right after a line
     /// ending, which has a skip defined.
     fn account_for_potential_skip(&mut self) {
-        let at = self.point.line - self.line_start;
+        let at = self.point.line - self.first_line;
 
         if self.point.column == 1 && at != self.column_start.len() {
             self.move_to(self.column_start[at]);
@@ -299,10 +297,10 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Prepare for a next code to get consumed.
-    pub fn expect(&mut self, code: Code) {
+    pub fn expect(&mut self, char: Option<char>) {
         assert!(self.consumed, "expected previous character to be consumed");
         self.consumed = false;
-        self.current = code;
+        self.current = char;
     }
 
     /// Consume the current character.
@@ -311,43 +309,57 @@ impl<'a> Tokenizer<'a> {
     pub fn consume(&mut self) {
         log::debug!("consume: `{:?}` ({:?})", self.current, self.point);
         assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
-        self.move_to(self.point.index + 1);
+
+        self.move_one();
+
         self.previous = self.current;
+        // While we’re not at the eof, it is at least better to not have the
+        // same current code as `previous` *and* `current`.
+        self.current = None;
         // Mark as consumed.
         self.consumed = true;
     }
 
-    /// To do.
-    pub fn move_to(&mut self, to: usize) {
-        while self.point.index < to {
-            let code = &self.parse_state.codes[self.point.index];
-            self.point.index += 1;
+    /// Move to the next (virtual) character.
+    pub fn move_one(&mut self) {
+        match char_action(&self.parse_state.chars, &self.point) {
+            CharAction::Ignore => {
+                self.point.index += 1;
+            }
+            CharAction::Insert(char) => {
+                self.previous = Some(char);
+                self.point.column += 1;
+                self.point.vs += 1;
+            }
+            CharAction::Normal(char) => {
+                self.previous = Some(char);
+                self.point.vs = 0;
+                self.point.index += 1;
 
-            match code {
-                Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+                if char == '\n' {
                     self.point.line += 1;
                     self.point.column = 1;
-                    self.point.offset += if *code == Code::CarriageReturnLineFeed {
-                        2
-                    } else {
-                        1
-                    };
 
-                    if self.point.line - self.line_start + 1 > self.column_start.len() {
-                        self.column_start.push(self.point.index);
+                    if self.point.line - self.first_line + 1 > self.column_start.len() {
+                        self.column_start.push((self.point.index, self.point.vs));
                     }
+
+                    self.line_start = self.point.clone();
 
                     self.account_for_potential_skip();
                     log::debug!("position: after eol: `{:?}`", self.point);
-                }
-                Code::VirtualSpace => {
-                    // Empty.
-                }
-                _ => {
+                } else {
                     self.point.column += 1;
-                    self.point.offset += 1;
                 }
             }
+        }
+    }
+
+    /// Move (virtual) characters.
+    pub fn move_to(&mut self, to: (usize, usize)) {
+        let (to_index, to_vs) = to;
+        while self.point.index < to_index || self.point.index == to_index && self.point.vs < to_vs {
+            self.move_one();
         }
     }
 
@@ -368,11 +380,23 @@ impl<'a> Tokenizer<'a> {
     }
 
     pub fn enter_with_link(&mut self, token_type: Token, link: Option<Link>) {
-        log::debug!("enter: `{:?}` ({:?})", token_type, self.point);
+        let mut point = self.point.clone();
+
+        // Move back past ignored chars.
+        while point.index > 0 {
+            point.index -= 1;
+            let action = char_action(&self.parse_state.chars, &point);
+            if !matches!(action, CharAction::Ignore) {
+                point.index += 1;
+                break;
+            }
+        }
+
+        log::debug!("enter: `{:?}` ({:?})", token_type, point);
         self.events.push(Event {
             event_type: EventType::Enter,
             token_type: token_type.clone(),
-            point: self.point.clone(),
+            point,
             link,
         });
         self.stack.push(token_type);
@@ -391,7 +415,9 @@ impl<'a> Tokenizer<'a> {
         let mut point = self.point.clone();
 
         assert!(
-            current_token != previous.token_type || previous.point.index != point.index,
+            current_token != previous.token_type
+                || previous.point.index != point.index
+                || previous.point.vs != point.vs,
             "expected non-empty token"
         );
 
@@ -406,18 +432,18 @@ impl<'a> Tokenizer<'a> {
 
         // A bit weird, but if we exit right after a line ending, we *don’t* want to consider
         // potential skips.
-        if matches!(
-            self.previous,
-            Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')
-        ) {
-            point.column = 1;
-            point.offset = previous.point.offset
-                + if self.previous == Code::CarriageReturnLineFeed {
-                    2
-                } else {
-                    1
-                };
-            point.index = previous.point.index + 1;
+        if matches!(self.previous, Some('\n')) {
+            point = self.line_start.clone();
+        } else {
+            // Move back past ignored chars.
+            while point.index > 0 {
+                point.index -= 1;
+                let action = char_action(&self.parse_state.chars, &point);
+                if !matches!(action, CharAction::Ignore) {
+                    point.index += 1;
+                    break;
+                }
+            }
         }
 
         log::debug!("exit: `{:?}` ({:?})", token_type, point);
@@ -494,7 +520,7 @@ impl<'a> Tokenizer<'a> {
     pub fn go_until(
         &mut self,
         state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        until: impl Fn(Code) -> bool + 'static,
+        until: impl Fn(Option<char>) -> bool + 'static,
         done: impl FnOnce(State) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
@@ -619,19 +645,32 @@ impl<'a> Tokenizer<'a> {
         assert!(!self.resolved, "cannot feed after drain");
         assert!(min >= self.point.index, "cannot move backwards");
 
-        self.move_to(min);
+        // To do: accept `vs`?
+        self.move_to((min, 0));
 
         let mut state = State::Fn(Box::new(start));
 
         while self.point.index < max {
             match state {
                 State::Ok | State::Nok => break,
-                State::Fn(func) => {
-                    let code = self.parse_state.codes[self.point.index];
-                    log::debug!("main: passing: `{:?}` ({:?})", code, self.point);
-                    self.expect(code);
-                    state = func(self);
-                }
+                State::Fn(func) => match char_action(&self.parse_state.chars, &self.point) {
+                    CharAction::Ignore => {
+                        state = State::Fn(Box::new(func));
+                        self.move_one();
+                    }
+                    CharAction::Insert(char) => {
+                        log::debug!("main: passing (fake): `{:?}` ({:?})", char, self.point);
+                        self.expect(Some(char));
+                        state = func(self);
+                        // self.point.column += 1;
+                        // self.point.vs += 1;
+                    }
+                    CharAction::Normal(char) => {
+                        log::debug!("main: passing: `{:?}` ({:?})", char, self.point);
+                        self.expect(Some(char));
+                        state = func(self);
+                    }
+                },
             }
         }
 
@@ -648,15 +687,35 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => break,
                 State::Fn(func) => {
+                    // To do: clean this?
                     // We sometimes move back when flushing, so then we use those codes.
-                    let code = if self.point.index < max {
-                        self.parse_state.codes[self.point.index]
+                    if self.point.index == max {
+                        let char = None;
+                        log::debug!("main: flushing eof: `{:?}` ({:?})", char, self.point);
+                        self.expect(char);
+                        state = func(self);
                     } else {
-                        Code::None
+                        match char_action(&self.parse_state.chars, &self.point) {
+                            CharAction::Ignore => {
+                                state = State::Fn(Box::new(func));
+                                self.move_one();
+                            }
+                            CharAction::Insert(char) => {
+                                log::debug!(
+                                    "main: flushing (fake): `{:?}` ({:?})",
+                                    char,
+                                    self.point
+                                );
+                                self.expect(Some(char));
+                                state = func(self);
+                            }
+                            CharAction::Normal(char) => {
+                                log::debug!("main: flushing: `{:?}` ({:?})", char, self.point);
+                                self.expect(Some(char));
+                                state = func(self);
+                            }
+                        }
                     };
-                    log::debug!("main: flushing {:?}", code);
-                    self.expect(code);
-                    state = func(self);
                 }
             }
         }
@@ -676,13 +735,58 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
+fn char_action(chars: &[char], point: &Point) -> CharAction {
+    if point.index < chars.len() {
+        let char = chars[point.index];
+
+        if char == '\0' {
+            CharAction::Normal(char::REPLACEMENT_CHARACTER)
+        } else if char == '\r' {
+            // CRLF.
+            if point.index < chars.len() - 1 && chars[point.index + 1] == '\n' {
+                CharAction::Ignore
+            }
+            // CR.
+            else {
+                CharAction::Normal('\n')
+            }
+        } else if char == '\t' {
+            let remainder = point.column % TAB_SIZE;
+            let vs = if remainder == 0 {
+                0
+            } else {
+                TAB_SIZE - remainder
+            };
+
+            // On the tab itself, first send it.
+            if point.vs == 0 {
+                if vs == 0 {
+                    CharAction::Normal(char)
+                } else {
+                    CharAction::Insert(char)
+                }
+            } else if vs == 0 {
+                CharAction::Normal(' ')
+            } else {
+                CharAction::Insert(' ')
+            }
+        }
+        // VS?
+        else {
+            CharAction::Normal(char)
+        }
+    } else {
+        unreachable!("out of bounds")
+    }
+}
+
 /// Internal utility to wrap states to also capture codes.
 ///
 /// Recurses into itself.
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer) -> State + 'static,
-    pause: Option<Box<dyn Fn(Code) -> bool + 'static>>,
+    pause: Option<Box<dyn Fn(Option<char>) -> bool + 'static>>,
     start: usize,
     done: impl FnOnce(&mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {
@@ -706,14 +810,14 @@ fn attempt_impl(
 /// Define a jump between two places.
 ///
 /// This defines to which future index we move after a line ending.
-fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, index: usize) {
-    log::debug!("position: define skip: {:?} -> ({:?})", line, index);
-    let at = line - tokenizer.line_start;
+fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize)) {
+    log::debug!("position: define skip: {:?} -> ({:?})", line, info);
+    let at = line - tokenizer.first_line;
 
-    if at == tokenizer.column_start.len() {
-        tokenizer.column_start.push(index);
+    if at >= tokenizer.column_start.len() {
+        tokenizer.column_start.push(info);
     } else {
-        tokenizer.column_start[at] = index;
+        tokenizer.column_start[at] = info;
     }
 
     tokenizer.account_for_potential_skip();

@@ -157,6 +157,17 @@ pub enum Token {
     ///   | b
     /// ```
     BlockQuotePrefix,
+    /// Byte order mark.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     optional first event
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`document`][crate::content::document]
+    ByteOrderMark,
     /// Whole character escape.
     ///
     /// ## Info
@@ -1822,13 +1833,14 @@ pub enum Token {
 }
 
 /// List of void tokens, used to make sure everything is working good.
-pub const VOID_TOKENS: [Token; 39] = [
+pub const VOID_TOKENS: [Token; 40] = [
     Token::AttentionSequence,
     Token::AutolinkEmail,
     Token::AutolinkMarker,
     Token::AutolinkProtocol,
     Token::BlankLineEnding,
     Token::BlockQuoteMarker,
+    Token::ByteOrderMark,
     Token::CharacterEscapeMarker,
     Token::CharacterEscapeValue,
     Token::CharacterReferenceMarker,

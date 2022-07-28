@@ -50,10 +50,10 @@ use crate::construct::{
     thematic_break::start as thematic_break,
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, EventType, State, Tokenizer};
+use crate::tokenizer::{EventType, State, Tokenizer};
 use crate::util::{
     skip,
-    span::{codes as codes_from_span, from_exit_event},
+    slice::{Position, Slice},
 };
 
 /// Type of list.
@@ -117,17 +117,6 @@ impl Kind {
             _ => unreachable!("invalid char"),
         }
     }
-    /// Turn [Code] into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `code` is not `Code::Char('.' | ')' | '*' | '+' | '-')`.
-    fn from_code(code: Code) -> Kind {
-        match code {
-            Code::Char(char) => Kind::from_char(char),
-            _ => unreachable!("invalid code"),
-        }
-    }
 }
 
 /// Start of list item.
@@ -160,11 +149,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
-        Code::Char('*' | '+' | '-') => tokenizer.check(thematic_break, |ok| {
+        Some('*' | '+' | '-') => tokenizer.check(thematic_break, |ok| {
             Box::new(if ok { nok } else { before_unordered })
         })(tokenizer),
         // Ordered.
-        Code::Char(char) if char.is_ascii_digit() && (!tokenizer.interrupt || char == '1') => {
+        Some(char) if char.is_ascii_digit() && (!tokenizer.interrupt || char == '1') => {
             tokenizer.enter(Token::ListItemPrefix);
             tokenizer.enter(Token::ListItemValue);
             inside(tokenizer, 0)
@@ -194,11 +183,11 @@ fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Code::Char(char) if char.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
+        Some(char) if char.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| inside(t, size + 1)))
         }
-        Code::Char('.' | ')') if !tokenizer.interrupt || size < 2 => {
+        Some('.' | ')') if !tokenizer.interrupt || size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer)
         }
@@ -273,10 +262,7 @@ fn whitespace(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
-    if matches!(
-        tokenizer.current,
-        Code::VirtualSpace | Code::Char('\t' | ' ')
-    ) {
+    if matches!(tokenizer.current, Some('\t' | ' ')) {
         State::Nok
     } else {
         State::Ok
@@ -291,7 +277,7 @@ fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn prefix_other(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
+        Some('\t' | ' ') => {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume();
             tokenizer.exit(Token::SpaceOrTab);
@@ -316,8 +302,18 @@ fn after(tokenizer: &mut Tokenizer, blank: bool) -> State {
             tokenizer.events.len() - 1,
             &[Token::ListItem],
         );
-        let prefix = tokenizer.point.index - tokenizer.events[start].point.index
-            + (if blank { 1 } else { 0 });
+        let mut prefix = Slice::from_position(
+            &tokenizer.parse_state.chars,
+            &Position {
+                start: &tokenizer.events[start].point,
+                end: &tokenizer.point,
+            },
+        )
+        .size();
+
+        if blank {
+            prefix += 1;
+        }
 
         let container = tokenizer.container.as_mut().unwrap();
         container.blank_initial = blank;
@@ -403,12 +399,15 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
         if event.token_type == Token::ListItem {
             if event.event_type == EventType::Enter {
                 let end = skip::opt(&tokenizer.events, index, &[Token::ListItem]) - 1;
-                let marker = skip::to(&tokenizer.events, index, &[Token::ListItemMarker]) + 1;
-                let codes = codes_from_span(
-                    &tokenizer.parse_state.codes,
-                    &from_exit_event(&tokenizer.events, marker),
+                let marker = skip::to(&tokenizer.events, index, &[Token::ListItemMarker]);
+                let kind = Kind::from_char(
+                    Slice::from_point(
+                        &tokenizer.parse_state.chars,
+                        &tokenizer.events[marker].point,
+                    )
+                    .head()
+                    .unwrap(),
                 );
-                let kind = Kind::from_code(codes[0]);
                 let current = (kind, balance, index, end);
 
                 let mut list_index = lists_wip.len();

@@ -32,7 +32,7 @@ use crate::util::encode::encode;
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
-    let value = encode(normalize_uri(value));
+    let value = encode(normalize_uri(value), true);
 
     if let Some(protocols) = protocols {
         let end = value.find(|c| matches!(c, '?' | '#' | '/'));

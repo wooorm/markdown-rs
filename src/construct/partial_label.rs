@@ -62,7 +62,7 @@ use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
 use crate::subtokenize::link;
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, State, Tokenizer};
+use crate::tokenizer::{ContentType, State, Tokenizer};
 
 /// Configuration.
 ///
@@ -98,7 +98,7 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     match tokenizer.current {
-        Code::Char('[') => {
+        Some('[') => {
             let info = Info {
                 connect: false,
                 data: false,
@@ -124,10 +124,10 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::Char('[') => State::Nok,
-        Code::Char(']') if !info.data => State::Nok,
+        None | Some('[') => State::Nok,
+        Some(']') if !info.data => State::Nok,
         _ if info.size > LINK_REFERENCE_SIZE_MAX => State::Nok,
-        Code::Char(']') => {
+        Some(']') => {
             tokenizer.exit(info.options.string.clone());
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume();
@@ -135,7 +135,7 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(info.options.label);
             State::Ok
         }
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
+        Some('\n') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
@@ -168,7 +168,7 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '[' | ']') => {
+        None | Some('\n' | '[' | ']') => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
@@ -176,12 +176,12 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
+        Some('\t' | ' ') => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| label(t, info)))
         }
-        Code::Char('\\') => {
+        Some('\\') => {
             tokenizer.consume();
             info.size += 1;
             if !info.data {
@@ -189,7 +189,7 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             }
             State::Fn(Box::new(|t| escape(t, info)))
         }
-        Code::Char(_) => {
+        Some(_) => {
             tokenizer.consume();
             info.size += 1;
             if !info.data {
@@ -208,7 +208,7 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn escape(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Code::Char('[' | '\\' | ']') => {
+        Some('[' | '\\' | ']') => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| label(t, info)))

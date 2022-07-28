@@ -34,7 +34,7 @@
 //! [hard_break_escape]: crate::construct::hard_break_escape
 
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of a character escape.
 ///
@@ -44,7 +44,7 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('\\') if tokenizer.parse_state.constructs.character_escape => {
+        Some('\\') if tokenizer.parse_state.constructs.character_escape => {
             tokenizer.enter(Token::CharacterEscape);
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume();
@@ -63,7 +63,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(char) if char.is_ascii_punctuation() => {
+        Some(char) if char.is_ascii_punctuation() => {
             tokenizer.enter(Token::CharacterEscapeValue);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeValue);

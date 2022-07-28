@@ -36,7 +36,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of block quote.
 ///
@@ -65,7 +65,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('>') => {
+        Some('>') => {
             tokenizer.enter(Token::BlockQuote);
             cont_before(tokenizer)
         }
@@ -98,7 +98,7 @@ pub fn cont(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn cont_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('>') => {
+        Some('>') => {
             tokenizer.enter(Token::BlockQuotePrefix);
             tokenizer.enter(Token::BlockQuoteMarker);
             tokenizer.consume();
@@ -118,17 +118,14 @@ fn cont_before(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn cont_after(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
-            tokenizer.enter(Token::SpaceOrTab);
-            tokenizer.consume();
-            tokenizer.exit(Token::SpaceOrTab);
-            tokenizer.exit(Token::BlockQuotePrefix);
-            State::Ok
-        }
-        _ => {
-            tokenizer.exit(Token::BlockQuotePrefix);
-            State::Ok
-        }
+    if let Some('\t' | ' ') = tokenizer.current {
+        tokenizer.enter(Token::SpaceOrTab);
+        tokenizer.consume();
+        tokenizer.exit(Token::SpaceOrTab);
+        tokenizer.exit(Token::BlockQuotePrefix);
+        State::Ok
+    } else {
+        tokenizer.exit(Token::BlockQuotePrefix);
+        State::Ok
     }
 }

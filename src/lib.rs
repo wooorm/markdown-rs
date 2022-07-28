@@ -17,7 +17,6 @@ mod util;
 
 use crate::compiler::compile;
 use crate::parser::parse;
-use crate::tokenizer::Code;
 
 /// Type of line endings in markdown.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -61,16 +60,16 @@ impl LineEnding {
             LineEnding::LineFeed => "\n",
         }
     }
-    /// Turn a [Code] into a line ending.
+    /// Turn a string into a line ending.
     ///
     /// ## Panics
     ///
     /// Panics if `code` is not `\r\n`, `\r`, or `\n`.
-    fn from_code(code: Code) -> LineEnding {
-        match code {
-            Code::CarriageReturnLineFeed => LineEnding::CarriageReturnLineFeed,
-            Code::Char('\r') => LineEnding::CarriageReturn,
-            Code::Char('\n') => LineEnding::LineFeed,
+    fn from_str(str: &str) -> LineEnding {
+        match str {
+            "\r\n" => LineEnding::CarriageReturnLineFeed,
+            "\r" => LineEnding::CarriageReturn,
+            "\n" => LineEnding::LineFeed,
             _ => unreachable!("invalid code"),
         }
     }
@@ -425,5 +424,5 @@ pub fn micromark(value: &str) -> String {
 #[must_use]
 pub fn micromark_with_options(value: &str, options: &Options) -> String {
     let (events, result) = parse(value, options);
-    compile(&events, &result.codes, options)
+    compile(&events, &result.chars, options)
 }

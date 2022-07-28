@@ -47,8 +47,8 @@
 
 use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, Tokenizer};
-use crate::util::span;
+use crate::tokenizer::{Event, EventType, Tokenizer};
+use crate::util::slice::{Position, Slice};
 
 /// To do.
 pub fn create_resolve_whitespace(hard_break: bool, trim_whole: bool) -> impl Fn(&mut Tokenizer) {
@@ -85,30 +85,26 @@ fn trim_data(
     trim_end: bool,
     hard_break: bool,
 ) {
-    let mut codes = span::codes(
-        &tokenizer.parse_state.codes,
-        &span::from_exit_event(&tokenizer.events, exit_index),
+    let mut slice = Slice::from_position(
+        &tokenizer.parse_state.chars,
+        &Position::from_exit_event(&tokenizer.events, exit_index),
     );
 
     if trim_end {
-        let mut index = codes.len();
-        let mut vs = 0;
-        let mut spaces_only = true;
+        let mut index = slice.chars.len();
+        let vs = slice.after;
+        let mut spaces_only = vs == 0;
         while index > 0 {
-            match codes[index - 1] {
-                Code::Char(' ') => {}
-                Code::Char('\t') => spaces_only = false,
-                Code::VirtualSpace => {
-                    vs += 1;
-                    spaces_only = false;
-                }
+            match slice.chars[index - 1] {
+                ' ' => {}
+                '\t' => spaces_only = false,
                 _ => break,
             }
 
             index -= 1;
         }
 
-        let diff = codes.len() - index;
+        let diff = slice.chars.len() - index;
         let token_type = if spaces_only
             && hard_break
             && exit_index + 1 < tokenizer.events.len()
@@ -127,12 +123,12 @@ fn trim_data(
             return;
         }
 
-        if diff > 0 {
+        if diff > 0 || vs > 0 {
             let exit_point = tokenizer.events[exit_index].point.clone();
             let mut enter_point = exit_point.clone();
             enter_point.index -= diff;
-            enter_point.column -= diff - vs;
-            enter_point.offset -= diff - vs;
+            enter_point.column -= diff;
+            enter_point.vs = 0;
 
             tokenizer.map.add(
                 exit_index + 1,
@@ -154,17 +150,16 @@ fn trim_data(
             );
 
             tokenizer.events[exit_index].point = enter_point;
-            codes = &codes[..index];
+            slice.chars = &slice.chars[..index];
         }
     }
 
     if trim_start {
         let mut index = 0;
-        let mut vs = 0;
-        while index < codes.len() {
-            match codes[index] {
-                Code::Char(' ' | '\t') => {}
-                Code::VirtualSpace => vs += 1,
+        let vs = slice.before;
+        while index < slice.chars.len() {
+            match slice.chars[index] {
+                ' ' | '\t' => {}
                 _ => break,
             }
 
@@ -173,18 +168,18 @@ fn trim_data(
 
         // The whole data is whitespace.
         // We can be very fast: we only change the token types.
-        if index == codes.len() {
+        if index == slice.chars.len() {
             tokenizer.events[exit_index - 1].token_type = Token::SpaceOrTab;
             tokenizer.events[exit_index].token_type = Token::SpaceOrTab;
             return;
         }
 
-        if index > 0 {
+        if index > 0 || vs > 0 {
             let enter_point = tokenizer.events[exit_index - 1].point.clone();
             let mut exit_point = enter_point.clone();
             exit_point.index += index;
-            exit_point.column += index - vs;
-            exit_point.offset += index - vs;
+            exit_point.column += index;
+            exit_point.vs = 0;
 
             tokenizer.map.add(
                 exit_index - 1,

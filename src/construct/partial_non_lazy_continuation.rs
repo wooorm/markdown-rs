@@ -11,7 +11,7 @@
 //! [html_flow]: crate::construct::html_flow
 
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of continuation.
 ///
@@ -22,7 +22,7 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        Some('\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);

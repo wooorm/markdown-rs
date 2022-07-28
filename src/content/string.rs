@@ -16,9 +16,9 @@ use crate::construct::{
     character_escape::start as character_escape, character_reference::start as character_reference,
     partial_data::start as data, partial_whitespace::create_resolve_whitespace,
 };
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
-const MARKERS: [Code; 2] = [Code::Char('&'), Code::Char('\\')];
+const MARKERS: [char; 2] = ['&', '\\'];
 
 /// Start of string.
 pub fn start(tokenizer: &mut Tokenizer) -> State {
@@ -32,7 +32,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// Before string.
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => State::Ok,
+        None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![Box::new(character_reference), Box::new(character_escape)],
             |ok| Box::new(if ok { before } else { before_data }),

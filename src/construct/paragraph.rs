@@ -33,7 +33,7 @@
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, EventType, State, Tokenizer};
+use crate::tokenizer::{ContentType, EventType, State, Tokenizer};
 use crate::util::skip::opt as skip_opt;
 
 /// Before a paragraph.
@@ -44,7 +44,7 @@ use crate::util::skip::opt as skip_opt;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             unreachable!("unexpected eol/eof")
         }
         _ => {
@@ -63,7 +63,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::Paragraph);
             tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));

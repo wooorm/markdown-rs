@@ -30,7 +30,7 @@
 
 use super::label_end::resolve_media;
 use crate::token::Token;
-use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
+use crate::tokenizer::{LabelStart, State, Tokenizer};
 
 /// Start of label (image) start.
 ///
@@ -40,7 +40,7 @@ use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('!') if tokenizer.parse_state.constructs.label_start_image => {
+        Some('!') if tokenizer.parse_state.constructs.label_start_image => {
             tokenizer.enter(Token::LabelImage);
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume();
@@ -59,7 +59,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('[') => {
+        Some('[') => {
             tokenizer.enter(Token::LabelMarker);
             tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);

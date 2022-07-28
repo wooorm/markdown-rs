@@ -232,11 +232,7 @@ pub const SAFE_PROTOCOL_SRC: [&str; 2] = ["http", "https"];
 /// constructs in markdown, most notable the whitespace required to form
 /// [code (indented)][code_indented].
 ///
-/// > 👉 **Note**: each [`Code::VirtualSpace`][vs] and `Code::Char('\t' | ' ')`
-/// > counts.
-///
 /// [code_indented]: crate::construct::code_indented
-/// [vs]: crate::tokenizer::Code::VirtualSpace
 pub const TAB_SIZE: usize = 4;
 
 /// The number of markers needed for a [thematic break][thematic_break] to form.

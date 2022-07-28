@@ -107,8 +107,8 @@ use crate::construct::{
     partial_space_or_tab::{space_or_tab, space_or_tab_min_max},
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, State, Tokenizer};
-use crate::util::span::from_exit_event;
+use crate::tokenizer::{ContentType, State, Tokenizer};
+use crate::util::slice::{Position, Slice};
 
 /// Kind of fences.
 #[derive(Debug, Clone, PartialEq)]
@@ -153,17 +153,6 @@ impl Kind {
             '`' => Kind::GraveAccent,
             '~' => Kind::Tilde,
             _ => unreachable!("invalid char"),
-        }
-    }
-    /// Turn [Code] into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `code` is not ``Code::Char('~' | '`')``.
-    fn from_code(code: Code) -> Kind {
-        match code {
-            Code::Char(char) => Kind::from_char(char),
-            _ => unreachable!("invalid code"),
         }
     }
 }
@@ -217,20 +206,23 @@ fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
 
     if let Some(event) = tail {
         if event.token_type == Token::SpaceOrTab {
-            let span = from_exit_event(&tokenizer.events, tokenizer.events.len() - 1);
-            prefix = span.end_index - span.start_index;
+            prefix = Slice::from_position(
+                &tokenizer.parse_state.chars,
+                &Position::from_exit_event(&tokenizer.events, tokenizer.events.len() - 1),
+            )
+            .size();
         }
     }
 
     match tokenizer.current {
-        Code::Char('`' | '~') => {
+        Some(char) if matches!(char, '`' | '~') => {
             tokenizer.enter(Token::CodeFencedFenceSequence);
             sequence_open(
                 tokenizer,
                 Info {
                     prefix,
                     size: 0,
-                    kind: Kind::from_code(tokenizer.current),
+                    kind: Kind::from_char(char),
                 },
             )
         }
@@ -248,7 +240,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.consume();
             State::Fn(Box::new(|t| {
                 info.size += 1;
@@ -273,7 +265,7 @@ fn sequence_open(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn info_before(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::CodeFencedFence);
             // Do not form containers.
             tokenizer.concrete = true;
@@ -282,7 +274,7 @@ fn info_before(tokenizer: &mut Tokenizer, info: Info) -> State {
         _ => {
             tokenizer.enter(Token::CodeFencedFenceInfo);
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            info_inside(tokenizer, info, vec![])
+            info_inside(tokenizer, info)
         }
     }
 }
@@ -295,9 +287,9 @@ fn info_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn info_inside(tokenizer: &mut Tokenizer, info: Info, mut codes: Vec<Code>) -> State {
+fn info_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::CodeFencedFenceInfo);
             tokenizer.exit(Token::CodeFencedFence);
@@ -305,16 +297,15 @@ fn info_inside(tokenizer: &mut Tokenizer, info: Info, mut codes: Vec<Code>) -> S
             tokenizer.concrete = true;
             at_break(tokenizer, info)
         }
-        Code::VirtualSpace | Code::Char('\t' | ' ') => {
+        Some('\t' | ' ') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::CodeFencedFenceInfo);
             tokenizer.attempt_opt(space_or_tab(), |t| meta_before(t, info))(tokenizer)
         }
-        Code::Char('`') if info.kind == Kind::GraveAccent => State::Nok,
-        Code::Char(_) => {
-            codes.push(tokenizer.current);
+        Some('`') if info.kind == Kind::GraveAccent => State::Nok,
+        Some(_) => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| info_inside(t, info, codes)))
+            State::Fn(Box::new(|t| info_inside(t, info)))
         }
     }
 }
@@ -329,7 +320,7 @@ fn info_inside(tokenizer: &mut Tokenizer, info: Info, mut codes: Vec<Code>) -> S
 /// ```
 fn meta_before(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::CodeFencedFence);
             // Do not form containers.
             tokenizer.concrete = true;
@@ -353,7 +344,7 @@ fn meta_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn meta(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::CodeFencedFenceMeta);
             tokenizer.exit(Token::CodeFencedFence);
@@ -361,7 +352,7 @@ fn meta(tokenizer: &mut Tokenizer, info: Info) -> State {
             tokenizer.concrete = true;
             at_break(tokenizer, info)
         }
-        Code::Char('`') if info.kind == Kind::GraveAccent => State::Nok,
+        Some('`') if info.kind == Kind::GraveAccent => State::Nok,
         _ => {
             tokenizer.consume();
             State::Fn(Box::new(|t| meta(t, info)))
@@ -422,7 +413,7 @@ fn at_non_lazy_break(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn close_begin(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        Some('\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
@@ -461,7 +452,7 @@ fn close_start(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn close_before(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.enter(Token::CodeFencedFenceSequence);
             close_sequence(tokenizer, info, 0)
         }
@@ -479,7 +470,7 @@ fn close_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn close_sequence(tokenizer: &mut Tokenizer, info: Info, size: usize) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| close_sequence(t, info, size + 1)))
         }
@@ -501,7 +492,7 @@ fn close_sequence(tokenizer: &mut Tokenizer, info: Info, size: usize) -> State {
 /// ```
 fn close_sequence_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::CodeFencedFence);
             State::Ok
         }
@@ -547,9 +538,7 @@ fn content_start(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn content_begin(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
-            at_break(tokenizer, info)
-        }
+        None | Some('\n') => at_break(tokenizer, info),
         _ => {
             tokenizer.enter(Token::CodeFlowChunk);
             content_continue(tokenizer, info)
@@ -567,7 +556,7 @@ fn content_begin(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn content_continue(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::CodeFlowChunk);
             at_break(tokenizer, info)
         }

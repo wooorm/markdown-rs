@@ -20,7 +20,8 @@
 /// ## References
 ///
 /// *   [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
-pub fn encode<S: Into<String>>(value: S) -> String {
+pub fn encode<S: Into<String>>(value: S, encode_html: bool) -> String {
+    let check = if encode_html { check_all } else { check_nil };
     let mut value = value.into();
 
     // It’ll grow a bit bigger for each dangerous character.
@@ -31,6 +32,7 @@ pub fn encode<S: Into<String>>(value: S) -> String {
         let dangerous = value.pop().unwrap();
         result.push_str(&value);
         result.push_str(match dangerous {
+            '\0' => "�",
             '&' => "&amp;",
             '"' => "&quot;",
             '<' => "&lt;",
@@ -45,6 +47,10 @@ pub fn encode<S: Into<String>>(value: S) -> String {
     result
 }
 
-fn check(char: char) -> bool {
-    matches!(char, '&' | '"' | '<' | '>')
+fn check_all(char: char) -> bool {
+    matches!(char, '\0' | '&' | '"' | '<' | '>')
+}
+
+fn check_nil(char: char) -> bool {
+    matches!(char, '\0')
 }

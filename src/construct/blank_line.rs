@@ -33,7 +33,7 @@
 //! [flow]: crate::content::flow
 
 use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of a blank line.
 ///
@@ -59,7 +59,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok,
+        None | Some('\n') => State::Ok,
         _ => State::Nok,
     }
 }

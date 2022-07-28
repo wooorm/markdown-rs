@@ -66,7 +66,8 @@ use crate::constant::{
     CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{Point, State, Tokenizer};
+use crate::util::slice::{Position, Slice};
 
 /// Kind of a character reference.
 #[derive(Debug, Clone, PartialEq)]
@@ -120,8 +121,10 @@ impl Kind {
 /// State needed to parse character references.
 #[derive(Debug, Clone)]
 struct Info {
-    /// All parsed characters.
-    buffer: String,
+    /// Place of value start.
+    start: Point,
+    /// Size of value.
+    size: usize,
     /// Kind of character reference.
     kind: Kind,
 }
@@ -138,7 +141,7 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('&') if tokenizer.parse_state.constructs.character_reference => {
+        Some('&') if tokenizer.parse_state.constructs.character_reference => {
             tokenizer.enter(Token::CharacterReference);
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume();
@@ -161,18 +164,21 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 fn open(tokenizer: &mut Tokenizer) -> State {
-    let info = Info {
-        buffer: String::new(),
-        kind: Kind::Named,
-    };
-    if let Code::Char('#') = tokenizer.current {
+    if let Some('#') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        State::Fn(Box::new(|t| numeric(t, info)))
+        State::Fn(Box::new(numeric))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
-        value(tokenizer, info)
+        value(
+            tokenizer,
+            Info {
+                start: tokenizer.point.clone(),
+                size: 0,
+                kind: Kind::Named,
+            },
+        )
     }
 }
 
@@ -185,17 +191,25 @@ fn open(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///        ^
 /// ```
-fn numeric(tokenizer: &mut Tokenizer, mut info: Info) -> State {
-    if let Code::Char('x' | 'X') = tokenizer.current {
+fn numeric(tokenizer: &mut Tokenizer) -> State {
+    if let Some('x' | 'X') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
-        info.kind = Kind::Hexadecimal;
+        let info = Info {
+            start: tokenizer.point.clone(),
+            size: 0,
+            kind: Kind::Hexadecimal,
+        };
         State::Fn(Box::new(|t| value(t, info)))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
-        info.kind = Kind::Decimal;
+        let info = Info {
+            start: tokenizer.point.clone(),
+            size: 0,
+            kind: Kind::Decimal,
+        };
         value(tokenizer, info)
     }
 }
@@ -215,24 +229,32 @@ fn numeric(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn value(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Code::Char(';') if !info.buffer.is_empty() => {
-            let unknown_named = Kind::Named == info.kind
-                && !CHARACTER_REFERENCES.iter().any(|d| d.0 == info.buffer);
+        Some(';') if info.size > 0 => {
+            if Kind::Named == info.kind {
+                let value = Slice::from_position(
+                    &tokenizer.parse_state.chars,
+                    &Position {
+                        start: &info.start,
+                        end: &tokenizer.point,
+                    },
+                )
+                .serialize();
 
-            if unknown_named {
-                State::Nok
-            } else {
-                tokenizer.exit(Token::CharacterReferenceValue);
-                tokenizer.enter(Token::CharacterReferenceMarkerSemi);
-                tokenizer.consume();
-                tokenizer.exit(Token::CharacterReferenceMarkerSemi);
-                tokenizer.exit(Token::CharacterReference);
-                State::Ok
+                if !CHARACTER_REFERENCES.iter().any(|d| d.0 == value) {
+                    return State::Nok;
+                }
             }
+
+            tokenizer.exit(Token::CharacterReferenceValue);
+            tokenizer.enter(Token::CharacterReferenceMarkerSemi);
+            tokenizer.consume();
+            tokenizer.exit(Token::CharacterReferenceMarkerSemi);
+            tokenizer.exit(Token::CharacterReference);
+            State::Ok
         }
-        Code::Char(char) => {
-            if info.buffer.len() < info.kind.max() && info.kind.allowed(char) {
-                info.buffer.push(char);
+        Some(char) => {
+            if info.size < info.kind.max() && info.kind.allowed(char) {
+                info.size += 1;
                 tokenizer.consume();
                 State::Fn(Box::new(|t| value(t, info)))
             } else {

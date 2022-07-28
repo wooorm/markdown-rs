@@ -28,18 +28,18 @@ use crate::construct::{
     label_start_image::start as label_start_image, label_start_link::start as label_start_link,
     partial_data::start as data, partial_whitespace::create_resolve_whitespace,
 };
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
-const MARKERS: [Code; 9] = [
-    Code::Char('!'),  // `label_start_image`
-    Code::Char('&'),  // `character_reference`
-    Code::Char('*'),  // `attention`
-    Code::Char('<'),  // `autolink`, `html_text`
-    Code::Char('['),  // `label_start_link`
-    Code::Char('\\'), // `character_escape`, `hard_break_escape`
-    Code::Char(']'),  // `label_end`
-    Code::Char('_'),  // `attention`
-    Code::Char('`'),  // `code_text`
+const MARKERS: [char; 9] = [
+    '!',  // `label_start_image`
+    '&',  // `character_reference`
+    '*',  // `attention`
+    '<',  // `autolink`, `html_text`
+    '[',  // `label_start_link`
+    '\\', // `character_escape`, `hard_break_escape`
+    ']',  // `label_end`
+    '_',  // `attention`
+    '`',  // `code_text`
 ];
 
 /// Start of text.
@@ -57,7 +57,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// Before text.
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => State::Ok,
+        None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(attention),

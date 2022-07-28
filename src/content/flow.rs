@@ -27,7 +27,7 @@ use crate::construct::{
     thematic_break::start as thematic_break,
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Before flow.
 ///
@@ -41,7 +41,7 @@ use crate::tokenizer::{Code, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => State::Ok,
+        None => State::Ok,
         _ => tokenizer.attempt(blank_line, |ok| {
             Box::new(if ok { blank_line_after } else { initial_before })
         })(tokenizer),
@@ -62,7 +62,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn initial_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => State::Ok,
+        None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
                 Box::new(code_indented),
@@ -87,8 +87,8 @@ fn initial_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => State::Ok,
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None => State::Ok,
+        Some('\n') => {
             tokenizer.enter(Token::BlankLineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::BlankLineEnding);
@@ -111,8 +111,8 @@ fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => State::Ok,
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None => State::Ok,
+        Some('\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);

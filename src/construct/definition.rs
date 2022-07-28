@@ -100,7 +100,7 @@ use crate::construct::{
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 use crate::util::skip::opt_back as skip_opt_back;
 
 /// At the start of a definition.
@@ -137,7 +137,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('[') => tokenizer.go(
+        Some('[') => tokenizer.go(
             |t| {
                 label(
                     t,
@@ -162,7 +162,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn label_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(':') => {
+        Some(':') => {
             tokenizer.enter(Token::DefinitionMarker);
             tokenizer.consume();
             tokenizer.exit(Token::DefinitionMarker);
@@ -231,7 +231,7 @@ fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
@@ -294,7 +294,7 @@ fn title_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn title_after_after_optional_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => State::Ok,
+        None | Some('\n') => State::Ok,
         _ => State::Nok,
     }
 }

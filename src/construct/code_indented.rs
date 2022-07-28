@@ -48,7 +48,7 @@
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::TAB_SIZE;
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of code (indented).
 ///
@@ -78,11 +78,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None => after(tokenizer),
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer
-            .attempt(further_start, |ok| {
-                Box::new(if ok { at_break } else { after })
-            })(tokenizer),
+        None => after(tokenizer),
+        Some('\n') => tokenizer.attempt(further_start, |ok| {
+            Box::new(if ok { at_break } else { after })
+        })(tokenizer),
         _ => {
             tokenizer.enter(Token::CodeFlowChunk);
             content(tokenizer)
@@ -98,7 +97,7 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn content(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::CodeFlowChunk);
             at_break(tokenizer)
         }
@@ -134,7 +133,7 @@ fn further_start(tokenizer: &mut Tokenizer) -> State {
         State::Nok
     } else {
         match tokenizer.current {
-            Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+            Some('\n') => {
                 tokenizer.enter(Token::LineEnding);
                 tokenizer.consume();
                 tokenizer.exit(Token::LineEnding);
@@ -178,7 +177,7 @@ fn further_begin(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn further_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => further_start(tokenizer),
+        Some('\n') => further_start(tokenizer),
         _ => State::Nok,
     }
 }

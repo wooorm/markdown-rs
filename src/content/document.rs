@@ -17,12 +17,12 @@ use crate::parser::ParseState;
 use crate::subtokenize::subtokenize;
 use crate::token::Token;
 use crate::tokenizer::{
-    Code, Container, ContainerState, Event, EventType, Point, State, StateFn, Tokenizer,
+    Container, ContainerState, Event, EventType, Point, State, StateFn, Tokenizer,
 };
 use crate::util::{
     normalize_identifier::normalize_identifier,
     skip,
-    span::{from_exit_event, serialize},
+    slice::{Position, Slice},
 };
 
 /// Phases where we can exit containers.
@@ -78,7 +78,7 @@ struct DocumentInfo {
 pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, parse_state);
 
-    let state = tokenizer.push(0, parse_state.codes.len(), Box::new(start));
+    let state = tokenizer.push(0, parse_state.chars.len(), Box::new(before));
     tokenizer.flush(state, true);
 
     let mut index = 0;
@@ -88,13 +88,14 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
         let event = &tokenizer.events[index];
 
         if event.event_type == EventType::Exit && event.token_type == Token::DefinitionLabelString {
+            // To do: when we operate on u8, we can use a `to_str` here as we
+            // don‘t need virtual spaces.
             let id = normalize_identifier(
-                serialize(
-                    &parse_state.codes,
-                    &from_exit_event(&tokenizer.events, index),
-                    false,
+                &Slice::from_position(
+                    &tokenizer.parse_state.chars,
+                    &Position::from_exit_event(&tokenizer.events, index),
                 )
-                .as_str(),
+                .serialize(),
             );
 
             if !definitions.contains(&id) {
@@ -112,6 +113,26 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     while !subtokenize(&mut events, parse_state) {}
 
     events
+}
+
+/// At the beginning.
+///
+/// Perhaps a BOM?
+///
+/// ```markdown
+/// > | a
+///     ^
+/// ```
+fn before(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some('\u{FEFF}') => {
+            tokenizer.enter(Token::ByteOrderMark);
+            tokenizer.consume();
+            tokenizer.exit(Token::ByteOrderMark);
+            State::Fn(Box::new(start))
+        }
+        _ => start(tokenizer),
+    }
 }
 
 /// Before document.
@@ -337,7 +358,7 @@ fn containers_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State 
     // Parse flow, pausing after eols.
     tokenizer.go_until(
         state,
-        |code| matches!(code, Code::CarriageReturnLineFeed | Code::Char('\n' | '\r')),
+        |code| matches!(code, Some('\n')),
         move |state| Box::new(move |t| flow_end(t, info, state)),
     )(tokenizer)
 }

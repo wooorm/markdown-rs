@@ -69,12 +69,6 @@ fn tabs_flow() {
     );
 
     assert_eq!(
-        micromark("   \t---"),
-        "<pre><code>---\n</code></pre>",
-        "should not support a 3*SP + HT to start a thematic break"
-    );
-
-    assert_eq!(
         micromark("   \t```"),
         "<pre><code>```\n</code></pre>",
         "should not support a 3*SP + HT to start a fenced code"

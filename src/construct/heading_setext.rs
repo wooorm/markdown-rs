@@ -60,7 +60,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::token::Token;
-use crate::tokenizer::{Code, EventType, State, Tokenizer};
+use crate::tokenizer::{EventType, State, Tokenizer};
 use crate::util::skip::opt_back as skip_opt_back;
 
 /// Kind of underline.
@@ -148,7 +148,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == '-' || char == '=' => {
+        Some(char) if matches!(char, '-' | '=') => {
             tokenizer.enter(Token::HeadingSetextUnderline);
             inside(tokenizer, Kind::from_char(char))
         }
@@ -165,7 +165,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, kind: Kind) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == kind.as_char() => {
+        Some(char) if char == kind.as_char() => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| inside(t, kind)))
         }
@@ -185,7 +185,7 @@ fn inside(tokenizer: &mut Tokenizer, kind: Kind) -> State {
 /// ```
 fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));

@@ -1,4 +1,4 @@
-//! Label end is a construct that occurs in the [text][] content type.
+//! Label end is a construct that occurs in the [text][] conten&t type.
 //!
 //! It forms with the following BNF:
 //!
@@ -154,10 +154,11 @@ use crate::construct::{
     partial_title::{start as title, Options as TitleOptions},
 };
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, Media, State, Tokenizer};
+use crate::tokenizer::{Event, EventType, Media, State, Tokenizer};
 use crate::util::{
     normalize_identifier::normalize_identifier,
-    span::{serialize, Span},
+    skip,
+    slice::{Position, Slice},
 };
 
 /// State needed to parse label end.
@@ -181,7 +182,7 @@ struct Info {
 /// > | [a] b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if Code::Char(']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
+    if Some(']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
         let mut label_start_index = None;
         let mut index = tokenizer.label_start_stack.len();
 
@@ -207,19 +208,23 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             }
 
             let label_end_start = tokenizer.events.len();
+
             let info = Info {
                 label_start_index,
                 media: Media {
                     start: label_start.start,
                     end: (label_end_start, label_end_start + 3),
-                    id: normalize_identifier(&serialize(
-                        &tokenizer.parse_state.codes,
-                        &Span {
-                            start_index: tokenizer.events[label_start.start.1].point.index,
-                            end_index: tokenizer.events[label_end_start - 1].point.index,
-                        },
-                        false,
-                    )),
+                    // To do: virtual spaces not needed, create a `to_str`?
+                    id: normalize_identifier(
+                        &Slice::from_position(
+                            &tokenizer.parse_state.chars,
+                            &Position {
+                                start: &tokenizer.events[label_start.start.1].point,
+                                end: &tokenizer.events[label_end_start - 1].point,
+                            },
+                        )
+                        .serialize(),
+                    ),
                 },
             };
 
@@ -253,7 +258,7 @@ fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
-        Code::Char('(') => tokenizer.attempt(resource, move |is_ok| {
+        Some('(') => tokenizer.attempt(resource, move |is_ok| {
             Box::new(move |t| {
                 // Also fine if `defined`, as then it’s a valid shortcut.
                 if is_ok || defined {
@@ -264,7 +269,7 @@ fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
             })
         })(tokenizer),
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
-        Code::Char('[') => tokenizer.attempt(full_reference, move |is_ok| {
+        Some('[') => tokenizer.attempt(full_reference, move |is_ok| {
             Box::new(move |t| {
                 if is_ok {
                     ok(t, info)
@@ -377,7 +382,7 @@ fn nok(tokenizer: &mut Tokenizer, label_start_index: usize) -> State {
 /// ```
 fn resource(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('(') => {
+        Some('(') => {
             tokenizer.enter(Token::Resource);
             tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume();
@@ -406,7 +411,7 @@ fn resource_start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(')') => resource_end(tokenizer),
+        Some(')') => resource_end(tokenizer),
         _ => tokenizer.go(
             |t| {
                 destination(
@@ -446,7 +451,7 @@ fn destination_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('"' | '\'' | '(') => tokenizer.go(
+        Some('"' | '\'' | '(') => tokenizer.go(
             |t| {
                 title(
                     t,
@@ -481,7 +486,7 @@ fn title_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_end(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(')') => {
+        Some(')') => {
             tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume();
             tokenizer.exit(Token::ResourceMarker);
@@ -500,7 +505,7 @@ fn resource_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn full_reference(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('[') => tokenizer.go(
+        Some('[') => tokenizer.go(
             |t| {
                 label(
                     t,
@@ -524,36 +529,23 @@ fn full_reference(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
-    let events = &tokenizer.events;
-    let mut index = events.len() - 1;
-    let mut start: Option<usize> = None;
-    let mut end: Option<usize> = None;
+    let end = skip::to_back(
+        &tokenizer.events,
+        tokenizer.events.len() - 1,
+        &[Token::ReferenceString],
+    );
 
-    while index > 0 {
-        index -= 1;
-        let event = &events[index];
-        if event.token_type == Token::ReferenceString {
-            if event.event_type == EventType::Exit {
-                end = Some(event.point.index);
-            } else {
-                start = Some(event.point.index);
-                break;
-            }
-        }
-    }
+    // To do: virtual spaces not needed, create a `to_str`?
+    let id = Slice::from_position(
+        &tokenizer.parse_state.chars,
+        &Position::from_exit_event(&tokenizer.events, end),
+    )
+    .serialize();
 
     if tokenizer
         .parse_state
         .definitions
-        .contains(&normalize_identifier(&serialize(
-            &tokenizer.parse_state.codes,
-            &Span {
-                // Always found, otherwise we don’t get here.
-                start_index: start.unwrap(),
-                end_index: end.unwrap(),
-            },
-            false,
-        )))
+        .contains(&normalize_identifier(&id))
     {
         State::Ok
     } else {
@@ -571,7 +563,7 @@ fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn collapsed_reference(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('[') => {
+        Some('[') => {
             tokenizer.enter(Token::Reference);
             tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume();
@@ -592,7 +584,7 @@ fn collapsed_reference(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn collapsed_reference_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char(']') => {
+        Some(']') => {
             tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume();
             tokenizer.exit(Token::ReferenceMarker);
@@ -735,7 +727,11 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
             0,
             vec![Event {
                 event_type: EventType::Exit,
-                token_type: Token::Link,
+                token_type: if group_enter_event.token_type == Token::LabelLink {
+                    Token::Link
+                } else {
+                    Token::Image
+                },
                 point: events[group_end_index].point.clone(),
                 link: None,
             }],

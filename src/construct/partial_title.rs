@@ -33,7 +33,7 @@
 use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::subtokenize::link;
 use crate::token::Token;
-use crate::tokenizer::{Code, ContentType, State, Tokenizer};
+use crate::tokenizer::{ContentType, State, Tokenizer};
 
 /// Configuration.
 ///
@@ -103,19 +103,6 @@ impl Kind {
             _ => unreachable!("invalid char"),
         }
     }
-    /// Turn [Code] into a kind.
-    ///
-    /// > 👉 **Note**: an opening paren must be used for `Kind::Paren`.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `code` is not `Code::Char('(' | '"' | '\'')`.
-    fn from_code(code: Code) -> Kind {
-        match code {
-            Code::Char(char) => Kind::from_char(char),
-            _ => unreachable!("invalid code"),
-        }
-    }
 }
 
 /// State needed to parse titles.
@@ -137,10 +124,10 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     match tokenizer.current {
-        Code::Char('"' | '\'' | '(') => {
+        Some(char) if matches!(char, '"' | '\'' | '(') => {
             let info = Info {
                 connect: false,
-                kind: Kind::from_code(tokenizer.current),
+                kind: Kind::from_char(char),
                 options,
             };
             tokenizer.enter(info.options.title.clone());
@@ -163,7 +150,7 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// ```
 fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume();
             tokenizer.exit(info.options.marker.clone());
@@ -185,12 +172,12 @@ fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.exit(info.options.string.clone());
             begin(tokenizer, info)
         }
-        Code::None => State::Nok,
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => tokenizer.go(
+        None => State::Nok,
+        Some('\n') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
@@ -223,15 +210,15 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None | Some('\n') => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        Code::Char('\\') => {
+        Some('\\') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| escape(t, info)))
         }
@@ -250,7 +237,7 @@ fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn escape(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Code::Char(char) if char == info.kind.as_char() => {
+        Some(char) if char == info.kind.as_char() => {
             tokenizer.consume();
             State::Fn(Box::new(|t| title(t, info)))
         }

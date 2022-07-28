@@ -1,19 +1,18 @@
 //! Turn a string of markdown into events.
 
 use crate::content::document::document;
-use crate::tokenizer::{Code, Event, Point};
-use crate::util::codes::parse as parse_codes;
+use crate::tokenizer::{Event, Point};
 use crate::{Constructs, Options};
 
 /// Information needed, in all content types, when parsing markdown.
 ///
 /// Importantly, this contains a set of known definitions.
-/// It also references the input value as [`Code`][]s.
+/// It also references the input value as a `Vec<char>`.
 #[derive(Debug)]
 pub struct ParseState<'a> {
     pub constructs: &'a Constructs,
-    /// List of codes.
-    pub codes: Vec<Code>,
+    /// List of chars.
+    pub chars: Vec<char>,
     /// Set of defined identifiers.
     pub definitions: Vec<String>,
 }
@@ -24,7 +23,8 @@ pub struct ParseState<'a> {
 pub fn parse<'a>(value: &str, options: &'a Options) -> (Vec<Event>, ParseState<'a>) {
     let mut parse_state = ParseState {
         constructs: &options.constructs,
-        codes: parse_codes(value),
+        // To do: change to `u8`s?
+        chars: value.chars().collect::<_>(),
         definitions: vec![],
     };
 
@@ -33,8 +33,8 @@ pub fn parse<'a>(value: &str, options: &'a Options) -> (Vec<Event>, ParseState<'
         Point {
             line: 1,
             column: 1,
-            offset: 0,
             index: 0,
+            vs: 0,
         },
     );
 

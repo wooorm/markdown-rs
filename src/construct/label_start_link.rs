@@ -29,7 +29,7 @@
 
 use super::label_end::resolve_media;
 use crate::token::Token;
-use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
+use crate::tokenizer::{LabelStart, State, Tokenizer};
 
 /// Start of label (link) start.
 ///
@@ -39,7 +39,7 @@ use crate::tokenizer::{Code, LabelStart, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('[') if tokenizer.parse_state.constructs.label_start_link => {
+        Some('[') if tokenizer.parse_state.constructs.label_start_link => {
             let start = tokenizer.events.len();
             tokenizer.enter(Token::LabelLink);
             tokenizer.enter(Token::LabelMarker);

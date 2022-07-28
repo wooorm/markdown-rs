@@ -84,7 +84,7 @@
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::token::Token;
-use crate::tokenizer::{Code, State, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of code (text).
 ///
@@ -98,9 +98,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     let len = tokenizer.events.len();
 
     match tokenizer.current {
-        Code::Char('`')
+        Some('`')
             if tokenizer.parse_state.constructs.code_text
-                && (tokenizer.previous != Code::Char('`')
+                && (tokenizer.previous != Some('`')
                     || (len > 0
                         && tokenizer.events[len - 1].token_type == Token::CharacterEscape)) =>
         {
@@ -119,7 +119,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
-    if let Code::Char('`') = tokenizer.current {
+    if let Some('`') = tokenizer.current {
         tokenizer.consume();
         State::Fn(Box::new(move |t| sequence_open(t, size + 1)))
     } else {
@@ -136,14 +136,14 @@ fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// ```
 fn between(tokenizer: &mut Tokenizer, size_open: usize) -> State {
     match tokenizer.current {
-        Code::None => State::Nok,
-        Code::CarriageReturnLineFeed | Code::Char('\n' | '\r') => {
+        None => State::Nok,
+        Some('\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
             State::Fn(Box::new(move |t| between(t, size_open)))
         }
-        Code::Char('`') => {
+        Some('`') => {
             tokenizer.enter(Token::CodeTextSequence);
             sequence_close(tokenizer, size_open, 0)
         }
@@ -162,7 +162,7 @@ fn between(tokenizer: &mut Tokenizer, size_open: usize) -> State {
 /// ```
 fn data(tokenizer: &mut Tokenizer, size_open: usize) -> State {
     match tokenizer.current {
-        Code::None | Code::CarriageReturnLineFeed | Code::Char('\n' | '\r' | '`') => {
+        None | Some('\n' | '`') => {
             tokenizer.exit(Token::CodeTextData);
             between(tokenizer, size_open)
         }
@@ -181,7 +181,7 @@ fn data(tokenizer: &mut Tokenizer, size_open: usize) -> State {
 /// ```
 fn sequence_close(tokenizer: &mut Tokenizer, size_open: usize, size: usize) -> State {
     match tokenizer.current {
-        Code::Char('`') => {
+        Some('`') => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| sequence_close(t, size_open, size + 1)))
         }

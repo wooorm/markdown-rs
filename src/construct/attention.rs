@@ -52,8 +52,9 @@
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 
 use crate::token::Token;
-use crate::tokenizer::{Code, Event, EventType, Point, State, Tokenizer};
+use crate::tokenizer::{Event, EventType, Point, State, Tokenizer};
 use crate::unicode::PUNCTUATION;
+use crate::util::slice::Slice;
 
 /// Character code kinds.
 #[derive(Debug, PartialEq)]
@@ -128,17 +129,6 @@ impl MarkerKind {
             _ => unreachable!("invalid char"),
         }
     }
-    /// Turn [Code] into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `code` is not `Code::Char('*' | '_')`.
-    fn from_code(code: Code) -> MarkerKind {
-        match code {
-            Code::Char(char) => MarkerKind::from_char(char),
-            _ => unreachable!("invalid code"),
-        }
-    }
 }
 
 /// Attentention sequence that we can take markers from.
@@ -170,9 +160,9 @@ struct Sequence {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Code::Char('*' | '_') if tokenizer.parse_state.constructs.attention => {
+        Some(char) if tokenizer.parse_state.constructs.attention && matches!(char, '*' | '_') => {
             tokenizer.enter(Token::AttentionSequence);
-            inside(tokenizer, MarkerKind::from_code(tokenizer.current))
+            inside(tokenizer, MarkerKind::from_char(char))
         }
         _ => State::Nok,
     }
@@ -185,23 +175,20 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, marker: MarkerKind) -> State {
-    match tokenizer.current {
-        Code::Char(char) if char == marker.as_char() => {
-            tokenizer.consume();
-            State::Fn(Box::new(move |t| inside(t, marker)))
-        }
-        _ => {
-            tokenizer.exit(Token::AttentionSequence);
-            tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
-            State::Ok
-        }
+    if tokenizer.current == Some(marker.as_char()) {
+        tokenizer.consume();
+        State::Fn(Box::new(move |t| inside(t, marker)))
+    } else {
+        tokenizer.exit(Token::AttentionSequence);
+        tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
+        State::Ok
     }
 }
 
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
 fn resolve_attention(tokenizer: &mut Tokenizer) {
-    let codes = &tokenizer.parse_state.codes;
+    let chars = &tokenizer.parse_state.chars;
     let mut start = 0;
     let mut balance = 0;
     let mut sequences = vec![];
@@ -216,17 +203,21 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
             if enter.token_type == Token::AttentionSequence {
                 let end = start + 1;
                 let exit = &tokenizer.events[end];
-                let marker = MarkerKind::from_code(codes[enter.point.index]);
+                let marker =
+                    MarkerKind::from_char(Slice::from_point(chars, &enter.point).head().unwrap());
                 let before = classify_character(if enter.point.index > 0 {
-                    codes[enter.point.index - 1]
+                    Slice::from_point(
+                        chars,
+                        &Point {
+                            index: enter.point.index - 1,
+                            ..enter.point
+                        },
+                    )
+                    .tail()
                 } else {
-                    Code::None
+                    None
                 });
-                let after = classify_character(if exit.point.index < codes.len() {
-                    codes[exit.point.index]
-                } else {
-                    Code::None
-                });
+                let after = classify_character(Slice::from_point(chars, &exit.point).tail());
                 let open = after == GroupKind::Other
                     || (after == GroupKind::Punctuation && before != GroupKind::Other);
                 // To do: GFM strikethrough?
@@ -326,9 +317,9 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
                     let sequence_close = &mut sequences[close];
                     let close_event_index = sequence_close.event_index;
                     let seq_close_enter = sequence_close.start_point.clone();
+                    // No need to worry about `VS`, because sequences are only actual characters.
                     sequence_close.size -= take;
                     sequence_close.start_point.column += take;
-                    sequence_close.start_point.offset += take;
                     sequence_close.start_point.index += take;
                     let seq_close_exit = sequence_close.start_point.clone();
 
@@ -352,9 +343,9 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
                     let sequence_open = &mut sequences[open];
                     let open_event_index = sequence_open.event_index;
                     let seq_open_exit = sequence_open.end_point.clone();
+                    // No need to worry about `VS`, because sequences are only actual characters.
                     sequence_open.size -= take;
                     sequence_open.end_point.column -= take;
-                    sequence_open.end_point.offset -= take;
                     sequence_open.end_point.index -= take;
                     let seq_open_enter = sequence_open.end_point.clone();
 
@@ -492,20 +483,20 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
 /// Used for attention (emphasis, strong), whose sequences can open or close
 /// based on the class of surrounding characters.
 ///
-/// > 👉 **Note** that eof (`Code::None`) is seen as whitespace.
+/// > 👉 **Note** that eof (`None`) is seen as whitespace.
 ///
 /// ## References
 ///
 /// *   [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
-fn classify_character(code: Code) -> GroupKind {
-    match code {
+fn classify_character(char: Option<char>) -> GroupKind {
+    match char {
         // Custom characters.
-        Code::None | Code::CarriageReturnLineFeed | Code::VirtualSpace => GroupKind::Whitespace,
+        None => GroupKind::Whitespace,
         // Unicode whitespace.
-        Code::Char(char) if char.is_whitespace() => GroupKind::Whitespace,
+        Some(char) if char.is_whitespace() => GroupKind::Whitespace,
         // Unicode punctuation.
-        Code::Char(char) if PUNCTUATION.contains(&char) => GroupKind::Punctuation,
+        Some(char) if PUNCTUATION.contains(&char) => GroupKind::Punctuation,
         // Everything else.
-        Code::Char(_) => GroupKind::Other,
+        Some(_) => GroupKind::Other,
     }
 }
