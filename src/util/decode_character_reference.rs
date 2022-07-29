@@ -57,9 +57,9 @@ pub fn decode_named(value: &str) -> String {
 /// ```rust ignore
 /// use micromark::util::decode_character_reference::decode_numeric;
 ///
-/// assert_eq!(decode_numeric("123", 10), '{');
-/// assert_eq!(decode_numeric("9", 16), '\t');
-/// assert_eq!(decode_numeric("0", 10), '�'); // Not allowed.
+/// assert_eq!(decode_numeric("123", 10), "{");
+/// assert_eq!(decode_numeric("9", 16), "\t");
+/// assert_eq!(decode_numeric("0", 10), "�"); // Not allowed.
 /// ```
 ///
 /// ## Panics
@@ -74,27 +74,19 @@ pub fn decode_named(value: &str) -> String {
 ///
 /// *   [`micromark-util-decode-numeric-character-reference` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-decode-numeric-character-reference)
 /// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.30/#entity-and-numeric-character-references)
-pub fn decode_numeric(value: &str, radix: u32) -> char {
-    let code = u32::from_str_radix(value, radix).expect("expected `value` to be an int");
-
-    if
-    // C0 except for HT, LF, FF, CR, space
-    code < 0x09 ||
-    code == 0x0B ||
-    (code > 0x0D && code < 0x20) ||
-    // Control character (DEL) of the basic block and C1 controls.
-    (code > 0x7E && code < 0xA0) ||
-    // Lone high surrogates and low surrogates.
-    (code > 0xd7ff && code < 0xe000) ||
-    // Noncharacters.
-    (code > 0xfdcf && code < 0xfdf0) ||
-    ((code & 0xffff) == 0xffff) ||
-    ((code & 0xffff) == 0xfffe) ||
-    // Out of range
-    code > 0x0010_ffff
-    {
-        char::REPLACEMENT_CHARACTER
-    } else {
-        char::from_u32(code).expect("expected valid `code`")
+pub fn decode_numeric(value: &str, radix: u32) -> String {
+    if let Some(char) = char::from_u32(u32::from_str_radix(value, radix).unwrap()) {
+        if !matches!(char,
+            // C0 except for HT, LF, FF, CR, space
+            '\0'..='\u{08}' | '\u{0B}' | '\u{0E}'..='\u{1F}' |
+            // Control character (DEL) of c0, and C1 controls.
+            '\u{7F}'..='\u{9F}'
+            // Lone surrogates, noncharacters, and out of range are handled by
+            // Rust.
+        ) {
+            return char.to_string();
+        }
     }
+
+    char::REPLACEMENT_CHARACTER.to_string()
 }

@@ -66,15 +66,19 @@ use crate::tokenizer::{ContentType, Event, EventType, State, Tokenizer};
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
-
     if tokenizer.parse_state.constructs.heading_atx {
         tokenizer.enter(Token::HeadingAtx);
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
+        tokenizer.go(
+            space_or_tab_min_max(
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ),
+            before,
+        )(tokenizer)
     } else {
         State::Nok
     }
@@ -101,19 +105,19 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ## aa
 ///     ^
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer, rank: usize) -> State {
+fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        None | Some(b'\n') if rank > 0 => {
+        None | Some(b'\n') if size > 0 => {
             tokenizer.exit(Token::HeadingAtxSequence);
             at_break(tokenizer)
         }
-        Some(b'#') if rank < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
+        Some(b'#') if size < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |tokenizer| {
-                sequence_open(tokenizer, rank + 1)
+                sequence_open(tokenizer, size + 1)
             }))
         }
-        _ if rank > 0 => {
+        _ if size > 0 => {
             tokenizer.exit(Token::HeadingAtxSequence);
             tokenizer.go(space_or_tab(), at_break)(tokenizer)
         }

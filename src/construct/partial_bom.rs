@@ -10,13 +10,12 @@ use crate::tokenizer::{State, Tokenizer};
 ///     ^^^^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(0xEF) => {
-            tokenizer.enter(Token::ByteOrderMark);
-            tokenizer.consume();
-            State::Fn(Box::new(cont))
-        }
-        _ => State::Nok,
+    if tokenizer.current == Some(0xEF) {
+        tokenizer.enter(Token::ByteOrderMark);
+        tokenizer.consume();
+        State::Fn(Box::new(cont))
+    } else {
+        State::Nok
     }
 }
 
@@ -27,12 +26,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///          ^^^^
 /// ```
 fn cont(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(0xBB) => {
-            tokenizer.consume();
-            State::Fn(Box::new(end))
-        }
-        _ => State::Nok,
+    if tokenizer.current == Some(0xBB) {
+        tokenizer.consume();
+        State::Fn(Box::new(end))
+    } else {
+        State::Nok
     }
 }
 
@@ -43,12 +41,11 @@ fn cont(tokenizer: &mut Tokenizer) -> State {
 ///               ^^^^
 /// ```
 fn end(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(0xBF) => {
-            tokenizer.consume();
-            tokenizer.exit(Token::ByteOrderMark);
-            State::Ok
-        }
-        _ => State::Nok,
+    if tokenizer.current == Some(0xBF) {
+        tokenizer.consume();
+        tokenizer.exit(Token::ByteOrderMark);
+        State::Ok
+    } else {
+        State::Nok
     }
 }

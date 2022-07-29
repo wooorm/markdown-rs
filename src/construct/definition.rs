@@ -110,17 +110,18 @@ use crate::util::skip::opt_back as skip_opt_back;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let definition_before = !tokenizer.events.is_empty()
-        && tokenizer.events[skip_opt_back(
-            &tokenizer.events,
-            tokenizer.events.len() - 1,
-            &[Token::LineEnding, Token::SpaceOrTab],
-        )]
-        .token_type
-            == Token::Definition;
-
     // Do not interrupt paragraphs (but do follow definitions).
-    if (!tokenizer.interrupt || definition_before) && tokenizer.parse_state.constructs.definition {
+    let possible = !tokenizer.interrupt
+        || (!tokenizer.events.is_empty()
+            && tokenizer.events[skip_opt_back(
+                &tokenizer.events,
+                tokenizer.events.len() - 1,
+                &[Token::LineEnding, Token::SpaceOrTab],
+            )]
+            .token_type
+                == Token::Definition);
+
+    if possible && tokenizer.parse_state.constructs.definition {
         tokenizer.enter(Token::Definition);
         // Note: arbitrary whitespace allowed even if code (indented) is on.
         tokenizer.attempt_opt(space_or_tab(), before)(tokenizer)

@@ -221,6 +221,12 @@ fn code_fenced() {
     );
 
     assert_eq!(
+        micromark("```a\\&b\0c"),
+        "<pre><code class=\"language-a&amp;b�c\"></code></pre>\n",
+        "should encode dangerous characters in languages"
+    );
+
+    assert_eq!(
       micromark("   ```\naaa\n    ```"),
       "<pre><code>aaa\n ```\n</code></pre>\n",
       "should not support a closing sequence w/ too much indent, regardless of opening sequence (1)"

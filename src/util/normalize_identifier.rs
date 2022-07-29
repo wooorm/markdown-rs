@@ -34,25 +34,34 @@
 pub fn normalize_identifier(value: &str) -> String {
     // Note: it’ll grow a bit smaller for consecutive whitespace.
     let mut result = String::with_capacity(value.len());
-    let mut at_start = true;
-    let mut at_whitespace = true;
+    let bytes = value.as_bytes();
+    let mut in_whitespace = true;
+    let mut index = 0;
+    let mut start = 0;
 
-    // Collapse markdown whitespace and trim it.
-    for char in value.chars() {
-        match char {
-            '\t' | '\n' | '\r' | ' ' => {
-                at_whitespace = true;
-            }
-            _ => {
-                if at_whitespace && !at_start {
-                    result.push(' ');
-                }
-
-                result.push(char);
-                at_start = false;
-                at_whitespace = false;
+    while index < bytes.len() {
+        if matches!(bytes[index], b'\t' | b'\n' | b'\r' | b' ') {
+            // First whitespace we see after non-whitespace.
+            if !in_whitespace {
+                result.push_str(&value[start..index]);
+                in_whitespace = true;
             }
         }
+        // First non-whitespace we see after whitespace.
+        else if in_whitespace {
+            if start != 0 {
+                result.push(' ');
+            }
+
+            start = index;
+            in_whitespace = false;
+        }
+
+        index += 1;
+    }
+
+    if !in_whitespace {
+        result.push_str(&value[start..]);
     }
 
     // Some characters are considered “uppercase”, but if their lowercase

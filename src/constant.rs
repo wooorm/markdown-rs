@@ -165,6 +165,15 @@ pub const HTML_BLOCK_NAMES: [&str; 61] = [
     "ul",
 ];
 
+/// Magic string of CDATA (after `<![`).
+///
+/// Used in the **cdata** production of [HTML (flow)][html_flow] and
+/// [HTML (text)][html_text].
+///
+/// [html_flow]: crate::construct::html_flow
+/// [html_text]: crate::construct::html_text
+pub const HTML_CDATA_PREFIX: [u8; 6] = [b'C', b'D', b'A', b'T', b'A', b'['];
+
 /// List of HTML tag names that form the **raw** production of
 /// [HTML (flow)][html_flow].
 ///

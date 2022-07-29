@@ -20,7 +20,7 @@ pub struct ParseState<'a> {
 /// Turn a string of markdown into events.
 ///
 /// Passes the codes back so the compiler can access the source.
-pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, ParseState<'a>) {
+pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8]) {
     let mut parse_state = ParseState {
         constructs: &options.constructs,
         bytes: value.as_bytes(),
@@ -37,6 +37,5 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, ParseStat
         },
     );
 
-    // To do: return bytes only?
-    (events, parse_state)
+    (events, parse_state.bytes)
 }

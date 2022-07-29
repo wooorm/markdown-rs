@@ -6,7 +6,7 @@
 /// > It is generate from the latest Unicode data.
 ///
 /// Rust does not contain an `is_punctuation` method on `char`, while it does
-/// support [`is_ascii_alphanumeric`](char::is_ascii_punctuation).
+/// support [`is_ascii_alphanumeric`](char::is_ascii_alphanumeric).
 ///
 /// `CommonMark` handles attention (emphasis, strong) markers based on what
 /// comes before or after them.

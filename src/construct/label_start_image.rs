@@ -64,9 +64,8 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelImage);
-            let end = tokenizer.events.len() - 1;
             tokenizer.label_start_stack.push(LabelStart {
-                start: (end - 5, end),
+                start: (tokenizer.events.len() - 6, tokenizer.events.len() - 1),
                 balanced: false,
                 inactive: false,
             });

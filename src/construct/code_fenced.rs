@@ -110,53 +110,6 @@ use crate::token::Token;
 use crate::tokenizer::{ContentType, State, Tokenizer};
 use crate::util::slice::{Position, Slice};
 
-/// Kind of fences.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Kind {
-    /// Grave accent (tick) code.
-    ///
-    /// ## Example
-    ///
-    /// ````markdown
-    /// ```rust
-    /// println!("I <3 🦀");
-    /// ```
-    /// ````
-    GraveAccent,
-    /// Tilde code.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// ~~~rust
-    /// println!("I <3 🦀");
-    /// ~~~
-    /// ```
-    Tilde,
-}
-
-impl Kind {
-    /// Turn the kind into a byte ([u8]).
-    fn as_byte(&self) -> u8 {
-        match self {
-            Kind::GraveAccent => b'`',
-            Kind::Tilde => b'~',
-        }
-    }
-    /// Turn a byte ([u8]) into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `byte` is not `~` or `` ` ``.
-    fn from_byte(byte: u8) -> Kind {
-        match byte {
-            b'`' => Kind::GraveAccent,
-            b'~' => Kind::Tilde,
-            _ => unreachable!("invalid byte"),
-        }
-    }
-}
-
 /// State needed to parse code (fenced).
 #[derive(Debug, Clone)]
 struct Info {
@@ -165,8 +118,8 @@ struct Info {
     /// Number of tabs or spaces of indentation before the opening fence
     /// sequence.
     prefix: usize,
-    /// Kind of fences.
-    kind: Kind,
+    /// Marker of fences (`u8`).
+    marker: u8,
 }
 
 /// Start of fenced code.
@@ -178,15 +131,20 @@ struct Info {
 ///   | ~~~
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
     if tokenizer.parse_state.constructs.code_fenced {
         tokenizer.enter(Token::CodeFenced);
         tokenizer.enter(Token::CodeFencedFence);
-        tokenizer.go(space_or_tab_min_max(0, max), before_sequence_open)(tokenizer)
+        tokenizer.go(
+            space_or_tab_min_max(
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ),
+            before_sequence_open,
+        )(tokenizer)
     } else {
         State::Nok
     }
@@ -210,23 +168,22 @@ fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.parse_state.bytes,
                 &Position::from_exit_event(&tokenizer.events, tokenizer.events.len() - 1),
             )
-            .size();
+            .len();
         }
     }
 
-    match tokenizer.current {
-        Some(byte) if matches!(byte, b'`' | b'~') => {
-            tokenizer.enter(Token::CodeFencedFenceSequence);
-            sequence_open(
-                tokenizer,
-                Info {
-                    prefix,
-                    size: 0,
-                    kind: Kind::from_byte(byte),
-                },
-            )
-        }
-        _ => State::Nok,
+    if let Some(b'`' | b'~') = tokenizer.current {
+        tokenizer.enter(Token::CodeFencedFenceSequence);
+        sequence_open(
+            tokenizer,
+            Info {
+                prefix,
+                size: 0,
+                marker: tokenizer.current.unwrap(),
+            },
+        )
+    } else {
+        State::Nok
     }
 }
 
@@ -240,7 +197,7 @@ fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'`' | b'~') if tokenizer.current.unwrap() == info.marker => {
             tokenizer.consume();
             State::Fn(Box::new(|t| {
                 info.size += 1;
@@ -302,7 +259,7 @@ fn info_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
             tokenizer.exit(Token::CodeFencedFenceInfo);
             tokenizer.attempt_opt(space_or_tab(), |t| meta_before(t, info))(tokenizer)
         }
-        Some(b'`') if info.kind == Kind::GraveAccent => State::Nok,
+        Some(b'`') if info.marker == b'`' => State::Nok,
         Some(_) => {
             tokenizer.consume();
             State::Fn(Box::new(|t| info_inside(t, info)))
@@ -352,7 +309,7 @@ fn meta(tokenizer: &mut Tokenizer, info: Info) -> State {
             tokenizer.concrete = true;
             at_break(tokenizer, info)
         }
-        Some(b'`') if info.kind == Kind::GraveAccent => State::Nok,
+        Some(b'`') if info.marker == b'`' => State::Nok,
         _ => {
             tokenizer.consume();
             State::Fn(Box::new(|t| meta(t, info)))
@@ -432,14 +389,18 @@ fn close_begin(tokenizer: &mut Tokenizer, info: Info) -> State {
 ///     ^
 /// ```
 fn close_start(tokenizer: &mut Tokenizer, info: Info) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
-
     tokenizer.enter(Token::CodeFencedFence);
-    tokenizer.go(space_or_tab_min_max(0, max), |t| close_before(t, info))(tokenizer)
+    tokenizer.go(
+        space_or_tab_min_max(
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        ),
+        |t| close_before(t, info),
+    )(tokenizer)
 }
 
 /// In a closing fence, after optional whitespace, before sequence.
@@ -452,7 +413,7 @@ fn close_start(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn close_before(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'`' | b'~') if tokenizer.current.unwrap() == info.marker => {
             tokenizer.enter(Token::CodeFencedFenceSequence);
             close_sequence(tokenizer, info, 0)
         }
@@ -470,7 +431,7 @@ fn close_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn close_sequence(tokenizer: &mut Tokenizer, info: Info, size: usize) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'`' | b'~') if tokenizer.current.unwrap() == info.marker => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| close_sequence(t, info, size + 1)))
         }

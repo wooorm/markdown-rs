@@ -20,37 +20,33 @@
 /// ## References
 ///
 /// *   [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
-pub fn encode<S: Into<String>>(value: S, encode_html: bool) -> String {
-    let check = if encode_html { check_all } else { check_nil };
-    let mut value = value.into();
-
+pub fn encode(value: &str, encode_html: bool) -> String {
     // It’ll grow a bit bigger for each dangerous character.
     let mut result = String::with_capacity(value.len());
+    let bytes = value.as_bytes();
+    let mut index = 0;
+    let mut start = 0;
 
-    while let Some(indice) = value.find(check) {
-        let after = value.split_off(indice + 1);
-        let dangerous = value.pop().unwrap();
-        result.push_str(&value);
-        result.push_str(match dangerous {
-            '\0' => "�",
-            '&' => "&amp;",
-            '"' => "&quot;",
-            '<' => "&lt;",
-            '>' => "&gt;",
-            _ => unreachable!("xxx"),
-        });
-        value = after;
+    while index < bytes.len() {
+        let byte = bytes[index];
+        if matches!(byte, b'\0') || (encode_html && matches!(byte, b'&' | b'"' | b'<' | b'>')) {
+            result.push_str(&value[start..index]);
+            result.push_str(match byte {
+                b'\0' => "�",
+                b'&' => "&amp;",
+                b'"' => "&quot;",
+                b'<' => "&lt;",
+                b'>' => "&gt;",
+                _ => panic!("impossible"),
+            });
+
+            start = index + 1;
+        }
+
+        index += 1;
     }
 
-    result.push_str(&value);
+    result.push_str(&value[start..]);
 
     result
-}
-
-fn check_all(char: char) -> bool {
-    matches!(char, '\0' | '&' | '"' | '<' | '>')
-}
-
-fn check_nil(char: char) -> bool {
-    matches!(char, '\0')
 }

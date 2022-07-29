@@ -123,39 +123,43 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 ///      ^
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
-    match tokenizer.current {
-        None | Some(b'[') => State::Nok,
-        Some(b']') if !info.data => State::Nok,
-        _ if info.size > LINK_REFERENCE_SIZE_MAX => State::Nok,
-        Some(b']') => {
-            tokenizer.exit(info.options.string.clone());
-            tokenizer.enter(info.options.marker.clone());
-            tokenizer.consume();
-            tokenizer.exit(info.options.marker.clone());
-            tokenizer.exit(info.options.label);
-            State::Ok
-        }
-        Some(b'\n') => tokenizer.go(
-            space_or_tab_eol_with_options(EolOptions {
-                content_type: Some(ContentType::String),
-                connect: info.connect,
-            }),
-            |t| {
-                info.connect = true;
-                at_break(t, info)
-            },
-        )(tokenizer),
-        _ => {
-            tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-
-            if info.connect {
-                let index = tokenizer.events.len() - 1;
-                link(&mut tokenizer.events, index);
-            } else {
-                info.connect = true;
+    if info.size > LINK_REFERENCE_SIZE_MAX
+        || matches!(tokenizer.current, None | Some(b'['))
+        || (matches!(tokenizer.current, Some(b']')) && !info.data)
+    {
+        State::Nok
+    } else {
+        match tokenizer.current {
+            Some(b'\n') => tokenizer.go(
+                space_or_tab_eol_with_options(EolOptions {
+                    content_type: Some(ContentType::String),
+                    connect: info.connect,
+                }),
+                |t| {
+                    info.connect = true;
+                    at_break(t, info)
+                },
+            )(tokenizer),
+            Some(b']') => {
+                tokenizer.exit(info.options.string.clone());
+                tokenizer.enter(info.options.marker.clone());
+                tokenizer.consume();
+                tokenizer.exit(info.options.marker.clone());
+                tokenizer.exit(info.options.label);
+                State::Ok
             }
+            _ => {
+                tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
 
-            label(tokenizer, info)
+                if info.connect {
+                    let index = tokenizer.events.len() - 1;
+                    link(&mut tokenizer.events, index);
+                } else {
+                    info.connect = true;
+                }
+
+                label(tokenizer, info)
+            }
         }
     }
 }
@@ -172,30 +176,19 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        _ if info.size > LINK_REFERENCE_SIZE_MAX => {
-            tokenizer.exit(Token::Data);
-            at_break(tokenizer, info)
-        }
-        Some(b'\t' | b' ') => {
-            tokenizer.consume();
-            info.size += 1;
-            State::Fn(Box::new(|t| label(t, info)))
-        }
-        Some(b'\\') => {
-            tokenizer.consume();
-            info.size += 1;
-            if !info.data {
-                info.data = true;
+        Some(byte) => {
+            if info.size > LINK_REFERENCE_SIZE_MAX {
+                tokenizer.exit(Token::Data);
+                at_break(tokenizer, info)
+            } else {
+                let func = if matches!(byte, b'\\') { escape } else { label };
+                tokenizer.consume();
+                info.size += 1;
+                if !info.data && !matches!(byte, b'\t' | b' ') {
+                    info.data = true;
+                }
+                State::Fn(Box::new(move |t| func(t, info)))
             }
-            State::Fn(Box::new(|t| escape(t, info)))
-        }
-        Some(_) => {
-            tokenizer.consume();
-            info.size += 1;
-            if !info.data {
-                info.data = true;
-            }
-            State::Fn(Box::new(|t| label(t, info)))
         }
     }
 }

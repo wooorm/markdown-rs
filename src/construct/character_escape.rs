@@ -63,7 +63,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(byte) if byte.is_ascii_punctuation() => {
+        // ASCII punctuation.
+        Some(b'!'..=b'/' | b':'..=b'@' | b'['..=b'`' | b'{'..=b'~') => {
             tokenizer.enter(Token::CharacterEscapeValue);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeValue);

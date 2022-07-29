@@ -53,64 +53,11 @@ use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
 use crate::token::Token;
 use crate::tokenizer::{State, Tokenizer};
 
-/// Type of thematic break.
-#[derive(Debug, PartialEq)]
-enum Kind {
-    /// In a thematic break using asterisks (`*`).
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// ***
-    /// ```
-    Asterisk,
-    /// In a thematic break using dashes (`-`).
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// ---
-    /// ```
-    Dash,
-    /// In a thematic break using underscores (`_`).
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// ___
-    /// ```
-    Underscore,
-}
-
-impl Kind {
-    /// Turn the kind into a byte ([u8]).
-    fn as_byte(&self) -> u8 {
-        match self {
-            Kind::Asterisk => b'*',
-            Kind::Dash => b'-',
-            Kind::Underscore => b'_',
-        }
-    }
-    /// Turn a byte ([u8]) into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `byte` is not `*`, `-`, or `_`.
-    fn from_byte(byte: u8) -> Kind {
-        match byte {
-            b'*' => Kind::Asterisk,
-            b'-' => Kind::Dash,
-            b'_' => Kind::Underscore,
-            _ => unreachable!("invalid byte"),
-        }
-    }
-}
-
 /// State needed to parse thematic breaks.
 #[derive(Debug)]
 struct Info {
-    /// Kind of marker.
-    kind: Kind,
+    /// Marker.
+    marker: u8,
     /// Number of markers.
     size: usize,
 }
@@ -122,15 +69,19 @@ struct Info {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
-
     if tokenizer.parse_state.constructs.thematic_break {
         tokenizer.enter(Token::ThematicBreak);
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
+        tokenizer.go(
+            space_or_tab_min_max(
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ),
+            before,
+        )(tokenizer)
     } else {
         State::Nok
     }
@@ -144,10 +95,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(byte) if matches!(byte, b'*' | b'-' | b'_') => at_break(
+        Some(b'*' | b'-' | b'_') => at_break(
             tokenizer,
             Info {
-                kind: Kind::from_byte(byte),
+                marker: tokenizer.current.unwrap(),
                 size: 0,
             },
         ),
@@ -163,13 +114,13 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        None | Some(b'\n' | b'\r') if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
+        None | Some(b'\n') if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
             tokenizer.exit(Token::ThematicBreak);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             State::Ok
         }
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'*' | b'-' | b'_') if tokenizer.current.unwrap() == info.marker => {
             tokenizer.enter(Token::ThematicBreakSequence);
             sequence(tokenizer, info)
         }
@@ -185,7 +136,7 @@ fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn sequence(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'*' | b'-' | b'_') if tokenizer.current.unwrap() == info.marker => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| sequence(t, info)))

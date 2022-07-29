@@ -125,8 +125,8 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
             tokenizer.exit(info.options.marker.clone());
             State::Fn(Box::new(|t| enclosed_before(t, info)))
         }
-        None | Some(b' ' | b')') => State::Nok,
-        Some(byte) if byte != b'\0' && byte.is_ascii_control() => State::Nok,
+        // ASCII control, space, closing paren, but *not* `\0`.
+        None | Some(0x01..=0x1F | b' ' | b')' | 0x7F) => State::Nok,
         Some(_) => {
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.raw.clone());
@@ -166,12 +166,12 @@ fn enclosed_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn enclosed(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
+        None | Some(b'\n' | b'<') => State::Nok,
         Some(b'>') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(info.options.string.clone());
             enclosed_before(tokenizer, info)
         }
-        None | Some(b'\n' | b'<') => State::Nok,
         Some(b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| enclosed_escape(t, info)))
@@ -207,40 +207,25 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(b'(') => {
-            if info.balance >= info.options.limit {
-                State::Nok
-            } else {
-                tokenizer.consume();
-                info.balance += 1;
-                State::Fn(Box::new(move |t| raw(t, info)))
-            }
+        None | Some(b'\t' | b'\n' | b' ' | b')') if info.balance == 0 => {
+            tokenizer.exit(Token::Data);
+            tokenizer.exit(info.options.string.clone());
+            tokenizer.exit(info.options.raw.clone());
+            tokenizer.exit(info.options.destination);
+            State::Ok
         }
+        Some(b'(') if info.balance < info.options.limit => {
+            tokenizer.consume();
+            info.balance += 1;
+            State::Fn(Box::new(move |t| raw(t, info)))
+        }
+        // ASCII control (but *not* `\0`) and space and `(`.
+        None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => State::Nok,
         Some(b')') => {
-            if info.balance == 0 {
-                tokenizer.exit(Token::Data);
-                tokenizer.exit(info.options.string.clone());
-                tokenizer.exit(info.options.raw.clone());
-                tokenizer.exit(info.options.destination);
-                State::Ok
-            } else {
-                tokenizer.consume();
-                info.balance -= 1;
-                State::Fn(Box::new(move |t| raw(t, info)))
-            }
+            tokenizer.consume();
+            info.balance -= 1;
+            State::Fn(Box::new(move |t| raw(t, info)))
         }
-        None | Some(b'\t' | b'\n' | b' ') => {
-            if info.balance > 0 {
-                State::Nok
-            } else {
-                tokenizer.exit(Token::Data);
-                tokenizer.exit(info.options.string.clone());
-                tokenizer.exit(info.options.raw.clone());
-                tokenizer.exit(info.options.destination);
-                State::Ok
-            }
-        }
-        Some(byte) if byte != b'\0' && byte.is_ascii_control() => State::Nok,
         Some(b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| raw_escape(t, info)))

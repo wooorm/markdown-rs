@@ -137,12 +137,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(byte) if byte.is_ascii_alphabetic() => {
+        // ASCII alphabetic.
+        Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(scheme_or_email_atext))
         }
-        Some(byte) if is_ascii_atext(byte) => email_atext(tokenizer),
-        _ => State::Nok,
+        _ => email_atext(tokenizer),
     }
 }
 
@@ -199,8 +199,8 @@ fn url_inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::AutolinkProtocol);
             end(tokenizer)
         }
-        Some(byte) if byte.is_ascii_control() => State::Nok,
-        None | Some(b' ') => State::Nok,
+        // ASCII control or space.
+        None | Some(b'\0'..=0x1F | b' ' | 0x7F) => State::Nok,
         Some(_) => {
             tokenizer.consume();
             State::Fn(Box::new(url_inside))
@@ -220,7 +220,26 @@ fn email_atext(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Fn(Box::new(|t| email_at_sign_or_dot(t, 0)))
         }
-        Some(byte) if is_ascii_atext(byte) => {
+        // ASCII atext.
+        //
+        // atext is an ASCII alphanumeric (see [`is_ascii_alphanumeric`][]), or
+        // a byte in the inclusive ranges U+0023 NUMBER SIGN (`#`) to U+0027
+        // APOSTROPHE (`'`), U+002A ASTERISK (`*`), U+002B PLUS SIGN (`+`),
+        // U+002D DASH (`-`), U+002F SLASH (`/`), U+003D EQUALS TO (`=`),
+        // U+003F QUESTION MARK (`?`), U+005E CARET (`^`) to U+0060 GRAVE
+        // ACCENT (`` ` ``), or U+007B LEFT CURLY BRACE (`{`) to U+007E TILDE
+        // (`~`).
+        //
+        // See:
+        // **\[RFC5322]**:
+        // [Internet Message Format](https://tools.ietf.org/html/rfc5322).
+        // P. Resnick.
+        // IETF.
+        //
+        // [`is_ascii_alphanumeric`]: char::is_ascii_alphanumeric
+        Some(
+            b'#'..=b'\'' | b'*' | b'+' | b'-'..=b'9' | b'=' | b'?' | b'A'..=b'Z' | b'^'..=b'~',
+        ) => {
             tokenizer.consume();
             State::Fn(Box::new(email_atext))
         }
@@ -236,7 +255,8 @@ fn email_atext(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Some(byte) if byte.is_ascii_alphanumeric() => email_value(tokenizer, size),
+        // ASCII alphanumeric.
+        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => email_value(tokenizer, size),
         _ => State::Nok,
     }
 }
@@ -279,7 +299,8 @@ fn email_value(tokenizer: &mut Tokenizer, size: usize) -> State {
             tokenizer.consume();
             State::Fn(Box::new(move |t| email_value(t, size + 1)))
         }
-        Some(byte) if byte.is_ascii_alphanumeric() && size < AUTOLINK_DOMAIN_SIZE_MAX => {
+        // ASCII alphanumeric.
+        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| email_label(t, size + 1)))
         }
@@ -306,24 +327,4 @@ fn end(tokenizer: &mut Tokenizer) -> State {
         }
         _ => unreachable!("expected `>`"),
     }
-}
-
-/// Check whether the character code represents an ASCII atext.
-///
-/// atext is an ASCII alphanumeric (see [`is_ascii_alphanumeric`][]), or a character in
-/// the inclusive ranges U+0023 NUMBER SIGN (`#`) to U+0027 APOSTROPHE (`'`),
-/// U+002A ASTERISK (`*`), U+002B PLUS SIGN (`+`), U+002D DASH (`-`), U+002F
-/// SLASH (`/`), U+003D EQUALS TO (`=`), U+003F QUESTION MARK (`?`), U+005E
-/// CARET (`^`) to U+0060 GRAVE ACCENT (`` ` ``), or U+007B LEFT CURLY BRACE
-/// (`{`) to U+007E TILDE (`~`).
-///
-/// See:
-/// **\[RFC5322]**:
-/// [Internet Message Format](https://tools.ietf.org/html/rfc5322).
-/// P. Resnick.
-/// IETF.
-///
-/// [`is_ascii_alphanumeric`]: char::is_ascii_alphanumeric
-fn is_ascii_atext(byte: u8) -> bool {
-    matches!(byte, b'#'..=b'\'' | b'*' | b'+' | b'-'..=b'9' | b'=' | b'?' | b'A'..=b'Z' | b'^'..=b'~')
 }

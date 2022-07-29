@@ -81,10 +81,9 @@ fn inside(tokenizer: &mut Tokenizer) -> State {
 /// Merge “`Paragraph`”s, which currently span a single line, into actual
 /// `Paragraph`s that span multiple lines.
 pub fn resolve(tokenizer: &mut Tokenizer) {
-    let len = tokenizer.events.len();
     let mut index = 0;
 
-    while index < len {
+    while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
         if event.event_type == EventType::Enter && event.token_type == Token::Paragraph {

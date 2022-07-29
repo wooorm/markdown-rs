@@ -54,11 +54,10 @@
 //! [html_flow]: crate::construct::html_flow
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
+use crate::constant::HTML_CDATA_PREFIX;
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::token::Token;
 use crate::tokenizer::{State, StateFn, Tokenizer};
-
-const CDATA_SEARCH: [u8; 6] = [b'C', b'D', b'A', b'T', b'A', b'['];
 
 /// Start of HTML (text)
 ///
@@ -101,6 +100,7 @@ fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Fn(Box::new(instruction))
         }
+        // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open))
@@ -125,13 +125,14 @@ fn declaration_open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Fn(Box::new(comment_open_inside))
         }
-        Some(b'[') => {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| cdata_open_inside(t, 0)))
-        }
+        // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(declaration))
+        }
+        Some(b'[') => {
+            tokenizer.consume();
+            State::Fn(Box::new(|t| cdata_open_inside(t, 0)))
         }
         _ => State::Nok,
     }
@@ -240,18 +241,17 @@ fn comment_close(tokenizer: &mut Tokenizer) -> State {
 /// > | a <![CDATA[>&<]]> b
 ///          ^^^^^^
 /// ```
-fn cdata_open_inside(tokenizer: &mut Tokenizer, index: usize) -> State {
-    match tokenizer.current {
-        Some(byte) if byte == CDATA_SEARCH[index] => {
-            tokenizer.consume();
+fn cdata_open_inside(tokenizer: &mut Tokenizer, size: usize) -> State {
+    if tokenizer.current == Some(HTML_CDATA_PREFIX[size]) {
+        tokenizer.consume();
 
-            if index + 1 == CDATA_SEARCH.len() {
-                State::Fn(Box::new(cdata))
-            } else {
-                State::Fn(Box::new(move |t| cdata_open_inside(t, index + 1)))
-            }
+        if size + 1 == HTML_CDATA_PREFIX.len() {
+            State::Fn(Box::new(cdata))
+        } else {
+            State::Fn(Box::new(move |t| cdata_open_inside(t, size + 1)))
         }
-        _ => State::Nok,
+    } else {
+        State::Nok
     }
 }
 
@@ -365,6 +365,7 @@ fn instruction_close(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_close_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
+        // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_close))
@@ -381,6 +382,7 @@ fn tag_close_start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
+        // ASCII alphanumerical and `-`.
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_close))
@@ -414,6 +416,7 @@ fn tag_close_between(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
+        // ASCII alphanumerical and `-`.
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open))
@@ -440,6 +443,7 @@ fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Fn(Box::new(end))
         }
+        // ASCII alphabetical and `:` and `_`.
         Some(b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_name))
@@ -456,6 +460,7 @@ fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_open_attribute_name(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
+        // ASCII alphabetical and `-`, `.`, `:`, and `_`.
         Some(b'-' | b'.' | b'0'..=b'9' | b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_name))
@@ -501,9 +506,12 @@ fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_value_before))
         }
-        Some(byte) if byte == b'"' || byte == b'\'' => {
+        Some(b'"' | b'\'') => {
+            let marker = tokenizer.current.unwrap();
             tokenizer.consume();
-            State::Fn(Box::new(move |t| tag_open_attribute_value_quoted(t, byte)))
+            State::Fn(Box::new(move |t| {
+                tag_open_attribute_value_quoted(t, marker)
+            }))
         }
         Some(_) => {
             tokenizer.consume();
@@ -525,7 +533,7 @@ fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer, marker: u8) -> Sta
             tokenizer,
             Box::new(move |t| tag_open_attribute_value_quoted(t, marker)),
         ),
-        Some(byte) if byte == marker => {
+        Some(b'"' | b'\'') if tokenizer.current.unwrap() == marker => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_value_quoted_after))
         }

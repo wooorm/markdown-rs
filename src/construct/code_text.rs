@@ -95,14 +95,13 @@ use crate::tokenizer::{State, Tokenizer};
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let len = tokenizer.events.len();
-
     match tokenizer.current {
         Some(b'`')
             if tokenizer.parse_state.constructs.code_text
                 && (tokenizer.previous != Some(b'`')
-                    || (len > 0
-                        && tokenizer.events[len - 1].token_type == Token::CharacterEscape)) =>
+                    || (!tokenizer.events.is_empty()
+                        && tokenizer.events[tokenizer.events.len() - 1].token_type
+                            == Token::CharacterEscape)) =>
         {
             tokenizer.enter(Token::CodeText);
             tokenizer.enter(Token::CodeTextSequence);

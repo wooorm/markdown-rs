@@ -66,67 +66,18 @@ use crate::constant::{
     CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
 use crate::token::Token;
-use crate::tokenizer::{Point, State, Tokenizer};
-use crate::util::slice::{Position, Slice};
-
-/// Kind of a character reference.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Kind {
-    /// Numeric decimal character reference.
-    ///
-    /// ```markdown
-    /// > | a&#x9;b
-    ///      ^^^^^
-    /// ```
-    Decimal,
-    /// Numeric hexadecimal character reference.
-    ///
-    /// ```markdown
-    /// > | a&#123;b
-    ///      ^^^^^^
-    /// ```
-    Hexadecimal,
-    /// Named character reference.
-    ///
-    /// ```markdown
-    /// > | a&amp;b
-    ///      ^^^^^
-    /// ```
-    Named,
-}
-
-impl Kind {
-    /// Get the maximum size of characters allowed in the value of a character
-    /// reference.
-    fn max(&self) -> usize {
-        match self {
-            Kind::Hexadecimal => CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
-            Kind::Decimal => CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
-            Kind::Named => CHARACTER_REFERENCE_NAMED_SIZE_MAX,
-        }
-    }
-
-    /// Check if a byte ([`u8`]) is allowed.
-    fn allowed(&self, byte: u8) -> bool {
-        let check = match self {
-            Kind::Hexadecimal => u8::is_ascii_hexdigit,
-            Kind::Decimal => u8::is_ascii_digit,
-            Kind::Named => u8::is_ascii_alphanumeric,
-        };
-
-        check(&byte)
-    }
-}
+use crate::tokenizer::{State, Tokenizer};
+use crate::util::slice::Slice;
 
 /// State needed to parse character references.
 #[derive(Debug, Clone)]
 struct Info {
-    /// Place of value start.
-    start: Point,
-    /// Size of value.
-    size: usize,
-    /// Kind of character reference.
-    kind: Kind,
+    /// Index of where value starts.
+    start: usize,
+    /// Marker of character reference.
+    marker: u8,
+    /// Maximum number of characters in the value for this kind.
+    max: usize,
 }
 
 /// Start of a character reference.
@@ -174,9 +125,9 @@ fn open(tokenizer: &mut Tokenizer) -> State {
         value(
             tokenizer,
             Info {
-                start: tokenizer.point.clone(),
-                size: 0,
-                kind: Kind::Named,
+                start: tokenizer.point.index,
+                marker: b'&',
+                max: CHARACTER_REFERENCE_NAMED_SIZE_MAX,
             },
         )
     }
@@ -198,17 +149,17 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
         let info = Info {
-            start: tokenizer.point.clone(),
-            size: 0,
-            kind: Kind::Hexadecimal,
+            start: tokenizer.point.index,
+            marker: b'x',
+            max: CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
         };
         State::Fn(Box::new(|t| value(t, info)))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         let info = Info {
-            start: tokenizer.point.clone(),
-            size: 0,
-            kind: Kind::Decimal,
+            start: tokenizer.point.index,
+            marker: b'#',
+            max: CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
         };
         value(tokenizer, info)
     }
@@ -227,21 +178,22 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///         ^
 /// ```
-fn value(tokenizer: &mut Tokenizer, mut info: Info) -> State {
-    match tokenizer.current {
-        Some(b';') if info.size > 0 => {
-            if Kind::Named == info.kind {
-                // To do: fix slice.
-                let value = Slice::from_position(
-                    tokenizer.parse_state.bytes,
-                    &Position {
-                        start: &info.start,
-                        end: &tokenizer.point,
-                    },
-                )
-                .serialize();
+fn value(tokenizer: &mut Tokenizer, info: Info) -> State {
+    let size = tokenizer.point.index - info.start;
 
-                if !CHARACTER_REFERENCES.iter().any(|d| d.0 == value) {
+    match tokenizer.current {
+        Some(b';') if size > 0 => {
+            // Named.
+            if info.marker == b'&' {
+                // Guaranteed to be valid ASCII bytes.
+                let slice = Slice::from_indices(
+                    tokenizer.parse_state.bytes,
+                    info.start,
+                    tokenizer.point.index,
+                );
+                let name = slice.as_str();
+
+                if !CHARACTER_REFERENCES.iter().any(|d| d.0 == name) {
                     return State::Nok;
                 }
             }
@@ -253,14 +205,22 @@ fn value(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(Token::CharacterReference);
             State::Ok
         }
-        Some(byte) => {
-            if info.size < info.kind.max() && info.kind.allowed(byte) {
-                info.size += 1;
-                tokenizer.consume();
-                State::Fn(Box::new(|t| value(t, info)))
-            } else {
-                State::Nok
-            }
+        // ASCII digit, for named, decimal, and hexadecimal references.
+        Some(b'0'..=b'9') if size < info.max => {
+            tokenizer.consume();
+            State::Fn(Box::new(|t| value(t, info)))
+        }
+        // ASCII hex letters, for named and hexadecimal references.
+        Some(b'A'..=b'F' | b'a'..=b'f')
+            if matches!(info.marker, b'&' | b'x') && size < info.max =>
+        {
+            tokenizer.consume();
+            State::Fn(Box::new(|t| value(t, info)))
+        }
+        // Non-hex ASCII alphabeticals, for named references.
+        Some(b'G'..=b'Z' | b'g'..=b'z') if info.marker == b'&' && size < info.max => {
+            tokenizer.consume();
+            State::Fn(Box::new(|t| value(t, info)))
         }
         _ => State::Nok,
     }

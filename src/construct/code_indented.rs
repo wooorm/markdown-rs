@@ -62,11 +62,11 @@ use crate::tokenizer::{State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs.
-    if tokenizer.interrupt || !tokenizer.parse_state.constructs.code_indented {
-        State::Nok
-    } else {
+    if !tokenizer.interrupt && tokenizer.parse_state.constructs.code_indented {
         tokenizer.enter(Token::CodeIndented);
         tokenizer.go(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), at_break)(tokenizer)
+    } else {
+        State::Nok
     }
 }
 
@@ -129,29 +129,26 @@ fn after(tokenizer: &mut Tokenizer) -> State {
 ///   |     bbb
 /// ```
 fn further_start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.lazy {
-        State::Nok
-    } else {
-        match tokenizer.current {
-            Some(b'\n') => {
-                tokenizer.enter(Token::LineEnding);
-                tokenizer.consume();
-                tokenizer.exit(Token::LineEnding);
-                State::Fn(Box::new(further_start))
-            }
-            _ => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
-                Box::new(if ok { further_end } else { further_begin })
-            })(tokenizer),
+    match tokenizer.current {
+        Some(b'\n') if !tokenizer.lazy => {
+            tokenizer.enter(Token::LineEnding);
+            tokenizer.consume();
+            tokenizer.exit(Token::LineEnding);
+            State::Fn(Box::new(further_start))
         }
+        _ if !tokenizer.lazy => tokenizer.attempt(space_or_tab_min_max(TAB_SIZE, TAB_SIZE), |ok| {
+            Box::new(if ok { further_end } else { further_begin })
+        })(tokenizer),
+        _ => State::Nok,
     }
 }
 
-/// After a proper indent.
+/// At an eol, which is followed by an indented line.
 ///
 /// ```markdown
-///   |     aaa
-/// > |     bbb
-///         ^
+/// >  |     aaa
+///             ^
+///    |     bbb
 /// ```
 fn further_end(_tokenizer: &mut Tokenizer) -> State {
     State::Ok

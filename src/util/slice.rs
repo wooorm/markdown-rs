@@ -2,6 +2,7 @@
 
 use crate::constant::TAB_SIZE;
 use crate::tokenizer::{Event, EventType, Point};
+use std::str;
 
 /// A range between two places.
 #[derive(Debug)]
@@ -78,6 +79,15 @@ impl<'a> Slice<'a> {
         }
     }
 
+    /// To do.
+    pub fn from_index(bytes: &'a [u8], index: usize) -> Slice<'a> {
+        Slice {
+            bytes: &bytes[index..=index],
+            before: 0,
+            after: 0,
+        }
+    }
+
     /// Get the slice belonging to a position.
     pub fn from_position(bytes: &'a [u8], position: &Position) -> Slice<'a> {
         let mut before = position.start.vs;
@@ -107,14 +117,18 @@ impl<'a> Slice<'a> {
     }
 
     /// To do.
-    // To do: rename to `len`?
-    pub fn size(&self) -> usize {
-        self.bytes.len() + self.before + self.after
+    pub fn from_indices(bytes: &'a [u8], start: usize, end: usize) -> Slice<'a> {
+        Slice {
+            bytes: &bytes[start..end],
+            before: 0,
+            after: 0,
+        }
     }
 
-    // To do:
-    // When we have u8s, we could use: <https://doc.rust-lang.org/std/str/fn.from_utf8.html>
-    // to implement an `as_str`.
+    /// To do.
+    pub fn len(&self) -> usize {
+        self.bytes.len() + self.before + self.after
+    }
 
     /// To do.
     pub fn head(&self) -> Option<u8> {
@@ -127,16 +141,20 @@ impl<'a> Slice<'a> {
         }
     }
 
+    // To do:
+    pub fn as_str(&self) -> &str {
+        str::from_utf8(self.bytes).unwrap()
+    }
+
     /// To do.
     pub fn serialize(&self) -> String {
-        let mut string = String::with_capacity(self.size());
+        let mut string = String::with_capacity(self.len());
         let mut index = self.before;
         while index > 0 {
             string.push(' ');
             index -= 1;
         }
-        // To do: invalid UTF8?
-        string.push_str(std::str::from_utf8(self.bytes).unwrap());
+        string.push_str(self.as_str());
         index = self.after;
         while index > 0 {
             string.push(' ');

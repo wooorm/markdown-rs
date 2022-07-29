@@ -48,70 +48,13 @@ pub struct Options {
     pub string: Token,
 }
 
-/// Type of title.
-#[derive(Debug, PartialEq)]
-enum Kind {
-    /// In a parenthesized (`(` and `)`) title.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// (a)
-    /// ```
-    Paren,
-    /// In a double quoted (`"`) title.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// "a"
-    /// ```
-    Double,
-    /// In a single quoted (`'`) title.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// 'a'
-    /// ```
-    Single,
-}
-
-impl Kind {
-    /// Turn the kind into a byte ([u8]).
-    ///
-    /// > 👉 **Note**: a closing paren is used for `Kind::Paren`.
-    fn as_byte(&self) -> u8 {
-        match self {
-            Kind::Paren => b')',
-            Kind::Double => b'"',
-            Kind::Single => b'\'',
-        }
-    }
-    /// Turn a byte ([u8]) into a kind.
-    ///
-    /// > 👉 **Note**: an opening paren must be used for `Kind::Paren`.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `byte` is not `(`, `"`, or `'`.
-    fn from_byte(byte: u8) -> Kind {
-        match byte {
-            b'(' => Kind::Paren,
-            b'"' => Kind::Double,
-            b'\'' => Kind::Single,
-            _ => unreachable!("invalid byte"),
-        }
-    }
-}
-
 /// State needed to parse titles.
 #[derive(Debug)]
 struct Info {
     /// Whether we’ve seen data.
     connect: bool,
-    /// Kind of title.
-    kind: Kind,
+    /// Closing marker.
+    marker: u8,
     /// Configuration.
     options: Options,
 }
@@ -124,10 +67,11 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     match tokenizer.current {
-        Some(byte) if matches!(byte, b'"' | b'\'' | b'(') => {
+        Some(b'"' | b'\'' | b'(') => {
+            let marker = tokenizer.current.unwrap();
             let info = Info {
                 connect: false,
-                kind: Kind::from_byte(byte),
+                marker: if marker == b'(' { b')' } else { marker },
                 options,
             };
             tokenizer.enter(info.options.title.clone());
@@ -150,7 +94,7 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// ```
 fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'"' | b'\'' | b')') if tokenizer.current.unwrap() == info.marker => {
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume();
             tokenizer.exit(info.options.marker.clone());
@@ -172,10 +116,6 @@ fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
-            tokenizer.exit(info.options.string.clone());
-            begin(tokenizer, info)
-        }
         None => State::Nok,
         Some(b'\n') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
@@ -187,7 +127,11 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
                 at_break(t, info)
             },
         )(tokenizer),
-        _ => {
+        Some(b'"' | b'\'' | b')') if tokenizer.current.unwrap() == info.marker => {
+            tokenizer.exit(info.options.string.clone());
+            begin(tokenizer, info)
+        }
+        Some(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
 
             if info.connect {
@@ -210,21 +154,18 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
-            tokenizer.exit(Token::Data);
-            at_break(tokenizer, info)
-        }
         None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        Some(b'\\') => {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| escape(t, info)))
+        Some(b'"' | b'\'' | b')') if tokenizer.current.unwrap() == info.marker => {
+            tokenizer.exit(Token::Data);
+            at_break(tokenizer, info)
         }
-        _ => {
+        Some(byte) => {
+            let func = if matches!(byte, b'\\') { escape } else { title };
             tokenizer.consume();
-            State::Fn(Box::new(|t| title(t, info)))
+            State::Fn(Box::new(move |t| func(t, info)))
         }
     }
 }
@@ -237,7 +178,7 @@ fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn escape(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(byte) if byte == info.kind.as_byte() => {
+        Some(b'"' | b'\'' | b')') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| title(t, info)))
         }

@@ -92,8 +92,7 @@ fn trim_data(
 
     if trim_end {
         let mut index = slice.bytes.len();
-        let vs = slice.after;
-        let mut spaces_only = vs == 0;
+        let mut spaces_only = slice.after == 0;
         while index > 0 {
             match slice.bytes[index - 1] {
                 b' ' => {}
@@ -105,10 +104,10 @@ fn trim_data(
         }
 
         let diff = slice.bytes.len() - index;
-        let token_type = if spaces_only
-            && hard_break
-            && exit_index + 1 < tokenizer.events.len()
+        let token_type = if hard_break
+            && spaces_only
             && diff >= HARD_BREAK_PREFIX_SIZE_MIN
+            && exit_index + 1 < tokenizer.events.len()
         {
             Token::HardBreakTrailing
         } else {
@@ -123,7 +122,7 @@ fn trim_data(
             return;
         }
 
-        if diff > 0 || vs > 0 {
+        if diff > 0 || slice.after > 0 {
             let exit_point = tokenizer.events[exit_index].point.clone();
             let mut enter_point = exit_point.clone();
             enter_point.index -= diff;
@@ -156,14 +155,11 @@ fn trim_data(
 
     if trim_start {
         let mut index = 0;
-        let vs = slice.before;
         while index < slice.bytes.len() {
             match slice.bytes[index] {
-                b' ' | b'\t' => {}
+                b' ' | b'\t' => index += 1,
                 _ => break,
             }
-
-            index += 1;
         }
 
         // The whole data is whitespace.
@@ -174,7 +170,7 @@ fn trim_data(
             return;
         }
 
-        if index > 0 || vs > 0 {
+        if index > 0 || slice.before > 0 {
             let enter_point = tokenizer.events[exit_index - 1].point.clone();
             let mut exit_point = enter_point.clone();
             exit_point.index += index;

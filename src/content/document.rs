@@ -89,14 +89,13 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
         let event = &tokenizer.events[index];
 
         if event.event_type == EventType::Exit && event.token_type == Token::DefinitionLabelString {
-            // To do: when we operate on u8, we can use a `to_str` here as we
-            // don‘t need virtual spaces.
+            // Note: we don‘t care about virtual spaces, so `as_str` is fine.
             let id = normalize_identifier(
-                &Slice::from_position(
+                Slice::from_position(
                     tokenizer.parse_state.bytes,
                     &Position::from_exit_event(&tokenizer.events, index),
                 )
-                .serialize(),
+                .as_str(),
             );
 
             if !definitions.contains(&id) {

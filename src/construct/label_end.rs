@@ -214,16 +214,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 media: Media {
                     start: label_start.start,
                     end: (label_end_start, label_end_start + 3),
-                    // To do: virtual spaces not needed, create a `to_str`?
                     id: normalize_identifier(
-                        &Slice::from_position(
+                        // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
+                        Slice::from_indices(
                             tokenizer.parse_state.bytes,
-                            &Position {
-                                start: &tokenizer.events[label_start.start.1].point,
-                                end: &tokenizer.events[label_end_start - 1].point,
-                            },
+                            tokenizer.events[label_start.start.1].point.index,
+                            tokenizer.events[label_end_start - 1].point.index,
                         )
-                        .serialize(),
+                        .as_str(),
                     ),
                 },
             };
@@ -366,11 +364,11 @@ fn ok(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 ///        ^
 /// ```
 fn nok(tokenizer: &mut Tokenizer, label_start_index: usize) -> State {
-    let label_start = tokenizer
+    tokenizer
         .label_start_stack
         .get_mut(label_start_index)
-        .unwrap();
-    label_start.balanced = true;
+        .unwrap()
+        .balanced = true;
     State::Nok
 }
 
@@ -529,23 +527,24 @@ fn full_reference(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
-    let end = skip::to_back(
-        &tokenizer.events,
-        tokenizer.events.len() - 1,
-        &[Token::ReferenceString],
-    );
-
-    // To do: virtual spaces not needed, create a `to_str`?
-    let id = Slice::from_position(
-        tokenizer.parse_state.bytes,
-        &Position::from_exit_event(&tokenizer.events, end),
-    )
-    .serialize();
-
     if tokenizer
         .parse_state
         .definitions
-        .contains(&normalize_identifier(&id))
+        // We don’t care about virtual spaces, so `as_str` is fine.
+        .contains(&normalize_identifier(
+            Slice::from_position(
+                tokenizer.parse_state.bytes,
+                &Position::from_exit_event(
+                    &tokenizer.events,
+                    skip::to_back(
+                        &tokenizer.events,
+                        tokenizer.events.len() - 1,
+                        &[Token::ReferenceString],
+                    ),
+                ),
+            )
+            .as_str(),
+        ))
     {
         State::Ok
     } else {

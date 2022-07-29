@@ -63,52 +63,6 @@ use crate::token::Token;
 use crate::tokenizer::{EventType, State, Tokenizer};
 use crate::util::skip::opt_back as skip_opt_back;
 
-/// Kind of underline.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Kind {
-    /// Dash (rank 2) heading.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// alpha
-    /// -----
-    /// ```
-    Dash,
-
-    /// Equals to (rank 1) heading.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// alpha
-    /// =====
-    /// ```
-    EqualsTo,
-}
-
-impl Kind {
-    /// Turn the kind into a byte ([u8]).
-    fn as_byte(&self) -> u8 {
-        match self {
-            Kind::Dash => b'-',
-            Kind::EqualsTo => b'=',
-        }
-    }
-    /// Turn a byte ([u8]) into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `byte` is not `-` or `=`.
-    fn from_byte(byte: u8) -> Kind {
-        match byte {
-            b'-' => Kind::Dash,
-            b'=' => Kind::EqualsTo,
-            _ => unreachable!("invalid byte"),
-        }
-    }
-}
-
 /// At a line ending, presumably an underline.
 ///
 /// ```markdown
@@ -117,23 +71,29 @@ impl Kind {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
-    let paragraph_before = !tokenizer.events.is_empty()
-        && tokenizer.events[skip_opt_back(
-            &tokenizer.events,
-            tokenizer.events.len() - 1,
-            &[Token::LineEnding, Token::SpaceOrTab],
-        )]
-        .token_type
-            == Token::Paragraph;
-
-    // Require a paragraph before and do not allow on a lazy line.
-    if paragraph_before && !tokenizer.lazy && tokenizer.parse_state.constructs.heading_setext {
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
+    if tokenizer.parse_state.constructs.heading_setext
+        && !tokenizer.lazy
+        // Require a paragraph before.
+        && (!tokenizer.events.is_empty()
+            && tokenizer.events[skip_opt_back(
+                &tokenizer.events,
+                tokenizer.events.len() - 1,
+                &[Token::LineEnding, Token::SpaceOrTab],
+            )]
+            .token_type
+                == Token::Paragraph)
+    {
+        tokenizer.go(
+            space_or_tab_min_max(
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ),
+            before,
+        )(tokenizer)
     } else {
         State::Nok
     }
@@ -148,9 +108,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(byte) if matches!(byte, b'-' | b'=') => {
+        Some(b'-' | b'=') => {
             tokenizer.enter(Token::HeadingSetextUnderline);
-            inside(tokenizer, Kind::from_byte(byte))
+            inside(tokenizer, tokenizer.current.unwrap())
         }
         _ => State::Nok,
     }
@@ -163,11 +123,11 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ==
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, kind: Kind) -> State {
+fn inside(tokenizer: &mut Tokenizer, marker: u8) -> State {
     match tokenizer.current {
-        Some(byte) if byte == kind.as_byte() => {
+        Some(b'-' | b'=') if tokenizer.current.unwrap() == marker => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| inside(t, kind)))
+            State::Fn(Box::new(move |t| inside(t, marker)))
         }
         _ => {
             tokenizer.exit(Token::HeadingSetextUnderline);

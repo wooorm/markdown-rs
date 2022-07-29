@@ -56,69 +56,6 @@ use crate::util::{
     slice::{Position, Slice},
 };
 
-/// Type of list.
-#[derive(Debug, PartialEq)]
-enum Kind {
-    /// In a dot (`.`) list item.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// 1. a
-    /// ```
-    Dot,
-    /// In a paren (`)`) list item.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// 1) a
-    /// ```
-    Paren,
-    /// In an asterisk (`*`) list item.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// * a
-    /// ```
-    Asterisk,
-    /// In a plus (`+`) list item.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// + a
-    /// ```
-    Plus,
-    /// In a dash (`-`) list item.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// - a
-    /// ```
-    Dash,
-}
-
-impl Kind {
-    /// Turn a byte ([u8]) into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `byte` is not `.`, `)`, `*`, `+`, or `-`.
-    fn from_byte(byte: u8) -> Kind {
-        match byte {
-            b'.' => Kind::Dot,
-            b')' => Kind::Paren,
-            b'*' => Kind::Asterisk,
-            b'+' => Kind::Plus,
-            b'-' => Kind::Dash,
-            _ => unreachable!("invalid byte"),
-        }
-    }
-}
-
 /// Start of list item.
 ///
 /// ```markdown
@@ -126,15 +63,19 @@ impl Kind {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
-
     if tokenizer.parse_state.constructs.list {
         tokenizer.enter(Token::ListItem);
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
+        tokenizer.go(
+            space_or_tab_min_max(
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ),
+            before,
+        )(tokenizer)
     } else {
         State::Nok
     }
@@ -149,15 +90,13 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
-        Some(b'*' | b'+' | b'-') => tokenizer.check(thematic_break, |ok| {
+        Some(b'*' | b'-') => tokenizer.check(thematic_break, |ok| {
             Box::new(if ok { nok } else { before_unordered })
         })(tokenizer),
+        Some(b'+') => before_unordered(tokenizer),
         // Ordered.
-        Some(byte) if byte.is_ascii_digit() && (!tokenizer.interrupt || byte == b'1') => {
-            tokenizer.enter(Token::ListItemPrefix);
-            tokenizer.enter(Token::ListItemValue);
-            inside(tokenizer, 0)
-        }
+        Some(b'0'..=b'9') if !tokenizer.interrupt => before_ordered(tokenizer),
+        Some(b'1') => before_ordered(tokenizer),
         _ => State::Nok,
     }
 }
@@ -175,6 +114,18 @@ fn before_unordered(tokenizer: &mut Tokenizer) -> State {
     marker(tokenizer)
 }
 
+/// Start of an ordered list item.
+///
+/// ```markdown
+/// > | * a
+///     ^
+/// ```
+fn before_ordered(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.enter(Token::ListItemPrefix);
+    tokenizer.enter(Token::ListItemValue);
+    inside(tokenizer, 0)
+}
+
 /// In an ordered list item value.
 ///
 /// ```markdown
@@ -183,13 +134,13 @@ fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Some(byte) if byte.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
-            tokenizer.consume();
-            State::Fn(Box::new(move |t| inside(t, size + 1)))
-        }
         Some(b'.' | b')') if !tokenizer.interrupt || size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer)
+        }
+        Some(b'0'..=b'9') if size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| inside(t, size + 1)))
         }
         _ => State::Nok,
     }
@@ -262,7 +213,7 @@ fn whitespace(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
-    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+    if let Some(b'\t' | b' ') = tokenizer.current {
         State::Nok
     } else {
         State::Ok
@@ -309,7 +260,7 @@ fn after(tokenizer: &mut Tokenizer, blank: bool) -> State {
                 end: &tokenizer.point,
             },
         )
-        .size();
+        .len();
 
         if blank {
             prefix += 1;
@@ -389,8 +340,8 @@ fn nok(_tokenizer: &mut Tokenizer) -> State {
 pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
     let mut index = 0;
     let mut balance = 0;
-    let mut lists_wip: Vec<(Kind, usize, usize, usize)> = vec![];
-    let mut lists: Vec<(Kind, usize, usize, usize)> = vec![];
+    let mut lists_wip: Vec<(u8, usize, usize, usize)> = vec![];
+    let mut lists: Vec<(u8, usize, usize, usize)> = vec![];
 
     // Merge list items.
     while index < tokenizer.events.len() {
@@ -400,12 +351,14 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
             if event.event_type == EventType::Enter {
                 let end = skip::opt(&tokenizer.events, index, &[Token::ListItem]) - 1;
                 let marker = skip::to(&tokenizer.events, index, &[Token::ListItemMarker]);
-                let kind = Kind::from_byte(
-                    Slice::from_point(tokenizer.parse_state.bytes, &tokenizer.events[marker].point)
-                        .head()
-                        .unwrap(),
-                );
-                let current = (kind, balance, index, end);
+                // Guaranteed to be a valid ASCII byte.
+                let marker = Slice::from_index(
+                    tokenizer.parse_state.bytes,
+                    tokenizer.events[marker].point.index,
+                )
+                .head()
+                .unwrap();
+                let current = (marker, balance, index, end);
 
                 let mut list_index = lists_wip.len();
                 let mut matched = false;
@@ -475,7 +428,7 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
         let mut list_start = tokenizer.events[list_item.2].clone();
         let mut list_end = tokenizer.events[list_item.3].clone();
         let token_type = match list_item.0 {
-            Kind::Paren | Kind::Dot => Token::ListOrdered,
+            b'.' | b')' => Token::ListOrdered,
             _ => Token::ListUnordered,
         };
         list_start.token_type = token_type.clone();

@@ -88,54 +88,11 @@ enum GroupKind {
     Other,
 }
 
-/// Type of sequence.
-#[derive(Debug, PartialEq)]
-enum MarkerKind {
-    /// In a run with asterisks.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// *a*
-    /// ```
-    Asterisk,
-    /// In a run with underscores.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// _a_
-    /// ```
-    Underscore,
-}
-
-impl MarkerKind {
-    /// Turn the kind into a byte ([u8]).
-    fn as_byte(&self) -> u8 {
-        match self {
-            MarkerKind::Asterisk => b'*',
-            MarkerKind::Underscore => b'_',
-        }
-    }
-    /// Turn a byte ([u8]) into a kind.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `byte` is not `*` or `_`.
-    fn from_byte(byte: u8) -> MarkerKind {
-        match byte {
-            b'*' => MarkerKind::Asterisk,
-            b'_' => MarkerKind::Underscore,
-            _ => unreachable!("invalid byte"),
-        }
-    }
-}
-
 /// Attentention sequence that we can take markers from.
 #[derive(Debug)]
 struct Sequence {
-    /// Marker used in this sequence.
-    marker: MarkerKind,
+    /// Marker as a byte (`u8`) used in this sequence.
+    marker: u8,
     /// The depth in events where this sequence resides.
     balance: usize,
     /// The index into events where this sequence’s `Enter` currently resides.
@@ -160,9 +117,9 @@ struct Sequence {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(byte) if tokenizer.parse_state.constructs.attention && matches!(byte, b'*' | b'_') => {
+        Some(b'*' | b'_') if tokenizer.parse_state.constructs.attention => {
             tokenizer.enter(Token::AttentionSequence);
-            inside(tokenizer, MarkerKind::from_byte(byte))
+            inside(tokenizer, tokenizer.current.unwrap())
         }
         _ => State::Nok,
     }
@@ -174,14 +131,17 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | **
 ///     ^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, marker: MarkerKind) -> State {
-    if tokenizer.current == Some(marker.as_byte()) {
-        tokenizer.consume();
-        State::Fn(Box::new(move |t| inside(t, marker)))
-    } else {
-        tokenizer.exit(Token::AttentionSequence);
-        tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
-        State::Ok
+fn inside(tokenizer: &mut Tokenizer, marker: u8) -> State {
+    match tokenizer.current {
+        Some(b'*' | b'_') if tokenizer.current.unwrap() == marker => {
+            tokenizer.consume();
+            State::Fn(Box::new(move |t| inside(t, marker)))
+        }
+        _ => {
+            tokenizer.exit(Token::AttentionSequence);
+            tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
+            State::Ok
+        }
     }
 }
 
@@ -219,16 +179,10 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
                     String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end]);
                 let char_after = string_after.chars().next();
 
-                let marker = MarkerKind::from_byte(
-                    Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
-                        .head()
-                        .unwrap(),
-                );
-                let before = classify_character(if enter.point.index > 0 {
-                    char_before
-                } else {
-                    None
-                });
+                let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
+                    .head()
+                    .unwrap();
+                let before = classify_character(char_before);
                 let after = classify_character(char_after);
                 let open = after == GroupKind::Other
                     || (after == GroupKind::Punctuation && before != GroupKind::Other);
@@ -245,12 +199,12 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
                     start_point: enter.point.clone(),
                     end_point: exit.point.clone(),
                     size: exit.point.index - enter.point.index,
-                    open: if marker == MarkerKind::Asterisk {
+                    open: if marker == b'*' {
                         open
                     } else {
                         open && (before != GroupKind::Other || !close)
                     },
-                    close: if marker == MarkerKind::Asterisk {
+                    close: if marker == b'*' {
                         close
                     } else {
                         close && (after != GroupKind::Other || !open)
