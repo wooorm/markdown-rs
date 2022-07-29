@@ -12,7 +12,7 @@ use crate::{Constructs, Options};
 pub struct ParseState<'a> {
     pub constructs: &'a Constructs,
     /// List of chars.
-    pub chars: Vec<char>,
+    pub bytes: &'a [u8],
     /// Set of defined identifiers.
     pub definitions: Vec<String>,
 }
@@ -20,11 +20,10 @@ pub struct ParseState<'a> {
 /// Turn a string of markdown into events.
 ///
 /// Passes the codes back so the compiler can access the source.
-pub fn parse<'a>(value: &str, options: &'a Options) -> (Vec<Event>, ParseState<'a>) {
+pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, ParseState<'a>) {
     let mut parse_state = ParseState {
         constructs: &options.constructs,
-        // To do: change to `u8`s?
-        chars: value.chars().collect::<_>(),
+        bytes: value.as_bytes(),
         definitions: vec![],
     };
 
@@ -38,5 +37,6 @@ pub fn parse<'a>(value: &str, options: &'a Options) -> (Vec<Event>, ParseState<'
         },
     );
 
+    // To do: return bytes only?
     (events, parse_state)
 }

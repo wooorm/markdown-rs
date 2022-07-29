@@ -30,16 +30,16 @@ use crate::construct::{
 };
 use crate::tokenizer::{State, Tokenizer};
 
-const MARKERS: [char; 9] = [
-    '!',  // `label_start_image`
-    '&',  // `character_reference`
-    '*',  // `attention`
-    '<',  // `autolink`, `html_text`
-    '[',  // `label_start_link`
-    '\\', // `character_escape`, `hard_break_escape`
-    ']',  // `label_end`
-    '_',  // `attention`
-    '`',  // `code_text`
+const MARKERS: [u8; 9] = [
+    b'!',  // `label_start_image`
+    b'&',  // `character_reference`
+    b'*',  // `attention`
+    b'<',  // `autolink`, `html_text`
+    b'[',  // `label_start_link`
+    b'\\', // `character_escape`, `hard_break_escape`
+    b']',  // `label_end`
+    b'_',  // `attention`
+    b'`',  // `code_text`
 ];
 
 /// Start of text.

@@ -88,7 +88,7 @@ fn initial_before(tokenizer: &mut Tokenizer) -> State {
 fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
-        Some('\n') => {
+        Some(b'\n') => {
             tokenizer.enter(Token::BlankLineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::BlankLineEnding);
@@ -112,7 +112,7 @@ fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
 fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
-        Some('\n') => {
+        Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);

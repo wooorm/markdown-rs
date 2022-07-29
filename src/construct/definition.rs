@@ -137,7 +137,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('[') => tokenizer.go(
+        Some(b'[') => tokenizer.go(
             |t| {
                 label(
                     t,
@@ -162,7 +162,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn label_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(':') => {
+        Some(b':') => {
             tokenizer.enter(Token::DefinitionMarker);
             tokenizer.consume();
             tokenizer.exit(Token::DefinitionMarker);
@@ -231,7 +231,7 @@ fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             tokenizer.exit(Token::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
@@ -294,7 +294,7 @@ fn title_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn title_after_after_optional_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => State::Ok,
+        None | Some(b'\n') => State::Ok,
         _ => State::Nok,
     }
 }

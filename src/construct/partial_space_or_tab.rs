@@ -11,9 +11,9 @@ use crate::tokenizer::{ContentType, State, StateFn, Tokenizer};
 /// Options to parse `space_or_tab`.
 #[derive(Debug)]
 pub struct Options {
-    /// Minimum allowed characters (inclusive).
+    /// Minimum allowed bytes (inclusive).
     pub min: usize,
-    /// Maximum allowed characters (inclusive).
+    /// Maximum allowed bytes (inclusive).
     pub max: usize,
     /// Token type to use for whitespace events.
     pub kind: Token,
@@ -134,7 +134,7 @@ pub fn space_or_tab_eol_with_options(options: EolOptions) -> Box<StateFn> {
 /// ```
 fn start(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some('\t' | ' ') if info.options.max > 0 => {
+        Some(b'\t' | b' ') if info.options.max > 0 => {
             tokenizer
                 .enter_with_content(info.options.kind.clone(), info.options.content_type.clone());
 
@@ -165,7 +165,7 @@ fn start(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some('\t' | ' ') if info.size < info.options.max => {
+        Some(b'\t' | b' ') if info.size < info.options.max => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| inside(t, info)))
@@ -190,7 +190,7 @@ fn inside(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn after_space_or_tab(tokenizer: &mut Tokenizer, mut info: EolInfo) -> State {
     match tokenizer.current {
-        Some('\n') => {
+        Some(b'\n') => {
             tokenizer.enter_with_content(Token::LineEnding, info.options.content_type.clone());
 
             if info.connect {
@@ -239,7 +239,7 @@ fn after_eol(tokenizer: &mut Tokenizer, info: EolInfo) -> State {
 /// ```
 fn after_more_space_or_tab(tokenizer: &mut Tokenizer) -> State {
     // Blank line not allowed.
-    if matches!(tokenizer.current, None | Some('\n')) {
+    if matches!(tokenizer.current, None | Some(b'\n')) {
         State::Nok
     } else {
         State::Ok

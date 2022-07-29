@@ -27,8 +27,8 @@ pub enum ContentType {
 
 #[derive(Debug, PartialEq)]
 pub enum CharAction {
-    Normal(char),
-    Insert(char),
+    Normal(u8),
+    Insert(u8),
     Ignore,
 }
 
@@ -42,8 +42,8 @@ pub struct Point {
     pub line: usize,
     /// 1-indexed column number.
     /// This is increases up to a tab stop for tabs.
-    /// Some editors count tabs as 1 character, so this position is not always
-    /// the same as editors.
+    /// Some editors count tabs as 1 character, so this position is not the
+    /// same as editors.
     pub column: usize,
     /// 0-indexed position in the document.
     ///
@@ -81,7 +81,7 @@ pub struct Event {
 }
 
 /// The essence of the state machine are functions: `StateFn`.
-/// It’s responsible for dealing with the current char.
+/// It’s responsible for dealing with the current byte.
 /// It yields a [`State`][].
 pub type StateFn = dyn FnOnce(&mut Tokenizer) -> State;
 
@@ -157,9 +157,9 @@ struct InternalState {
     /// Length of the stack. It’s not allowed to decrease the stack in a check or an attempt.
     stack_len: usize,
     /// Previous code.
-    previous: Option<char>,
+    previous: Option<u8>,
     /// Current code.
-    current: Option<char>,
+    current: Option<u8>,
     /// Current relative and absolute position in the file.
     point: Point,
 }
@@ -173,17 +173,17 @@ pub struct Tokenizer<'a> {
     first_line: usize,
     /// To do.
     line_start: Point,
-    /// Track whether a character is expected to be consumed, and whether it’s
-    /// actually consumed
+    /// Track whether the current byte is already consumed (`true`) or expected
+    /// to be consumed (`false`).
     ///
     /// Tracked to make sure everything’s valid.
     consumed: bool,
     /// Track whether this tokenizer is done.
     resolved: bool,
-    /// Current character code.
-    pub current: Option<char>,
-    /// Previous character code.
-    pub previous: Option<char>,
+    /// Current byte.
+    pub current: Option<u8>,
+    /// Previous byte.
+    pub previous: Option<u8>,
     /// Current relative and absolute place in the file.
     pub point: Point,
     /// Semantic labels of one or more codes in `codes`.
@@ -297,13 +297,13 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Prepare for a next code to get consumed.
-    pub fn expect(&mut self, char: Option<char>) {
-        debug_assert!(self.consumed, "expected previous character to be consumed");
+    pub fn expect(&mut self, byte: Option<u8>) {
+        debug_assert!(self.consumed, "expected previous byte to be consumed");
         self.consumed = false;
-        self.current = char;
+        self.current = byte;
     }
 
-    /// Consume the current character.
+    /// Consume the current byte.
     /// Each [`StateFn`][] is expected to call this to signal that this code is
     /// used, or call a next `StateFn`.
     pub fn consume(&mut self) {
@@ -320,23 +320,23 @@ impl<'a> Tokenizer<'a> {
         self.consumed = true;
     }
 
-    /// Move to the next (virtual) character.
+    /// Move to the next (virtual) byte.
     pub fn move_one(&mut self) {
-        match char_action(&self.parse_state.chars, &self.point) {
+        match byte_action(self.parse_state.bytes, &self.point) {
             CharAction::Ignore => {
                 self.point.index += 1;
             }
-            CharAction::Insert(char) => {
-                self.previous = Some(char);
+            CharAction::Insert(byte) => {
+                self.previous = Some(byte);
                 self.point.column += 1;
                 self.point.vs += 1;
             }
-            CharAction::Normal(char) => {
-                self.previous = Some(char);
+            CharAction::Normal(byte) => {
+                self.previous = Some(byte);
                 self.point.vs = 0;
                 self.point.index += 1;
 
-                if char == '\n' {
+                if byte == b'\n' {
                     self.point.line += 1;
                     self.point.column = 1;
 
@@ -355,7 +355,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// Move (virtual) characters.
+    /// Move (virtual) bytes.
     pub fn move_to(&mut self, to: (usize, usize)) {
         let (to_index, to_vs) = to;
         while self.point.index < to_index || self.point.index == to_index && self.point.vs < to_vs {
@@ -382,10 +382,10 @@ impl<'a> Tokenizer<'a> {
     pub fn enter_with_link(&mut self, token_type: Token, link: Option<Link>) {
         let mut point = self.point.clone();
 
-        // Move back past ignored chars.
+        // Move back past ignored bytes.
         while point.index > 0 {
             point.index -= 1;
-            let action = char_action(&self.parse_state.chars, &point);
+            let action = byte_action(self.parse_state.bytes, &point);
             if !matches!(action, CharAction::Ignore) {
                 point.index += 1;
                 break;
@@ -432,13 +432,13 @@ impl<'a> Tokenizer<'a> {
 
         // A bit weird, but if we exit right after a line ending, we *don’t* want to consider
         // potential skips.
-        if matches!(self.previous, Some('\n')) {
+        if matches!(self.previous, Some(b'\n')) {
             point = self.line_start.clone();
         } else {
-            // Move back past ignored chars.
+            // Move back past ignored bytes.
             while point.index > 0 {
                 point.index -= 1;
-                let action = char_action(&self.parse_state.chars, &point);
+                let action = byte_action(self.parse_state.bytes, &point);
                 if !matches!(action, CharAction::Ignore) {
                     point.index += 1;
                     break;
@@ -520,7 +520,7 @@ impl<'a> Tokenizer<'a> {
     pub fn go_until(
         &mut self,
         state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        until: impl Fn(Option<char>) -> bool + 'static,
+        until: impl Fn(Option<u8>) -> bool + 'static,
         done: impl FnOnce(State) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
         attempt_impl(
@@ -653,21 +653,19 @@ impl<'a> Tokenizer<'a> {
         while self.point.index < max {
             match state {
                 State::Ok | State::Nok => break,
-                State::Fn(func) => match char_action(&self.parse_state.chars, &self.point) {
+                State::Fn(func) => match byte_action(self.parse_state.bytes, &self.point) {
                     CharAction::Ignore => {
                         state = State::Fn(Box::new(func));
                         self.move_one();
                     }
-                    CharAction::Insert(char) => {
-                        log::debug!("main: passing (fake): `{:?}` ({:?})", char, self.point);
-                        self.expect(Some(char));
+                    CharAction::Insert(byte) => {
+                        log::debug!("main: passing (fake): `{:?}` ({:?})", byte, self.point);
+                        self.expect(Some(byte));
                         state = func(self);
-                        // self.point.column += 1;
-                        // self.point.vs += 1;
                     }
-                    CharAction::Normal(char) => {
-                        log::debug!("main: passing: `{:?}` ({:?})", char, self.point);
-                        self.expect(Some(char));
+                    CharAction::Normal(byte) => {
+                        log::debug!("main: passing: `{:?}` ({:?})", byte, self.point);
+                        self.expect(Some(byte));
                         state = func(self);
                     }
                 },
@@ -690,28 +688,28 @@ impl<'a> Tokenizer<'a> {
                     // To do: clean this?
                     // We sometimes move back when flushing, so then we use those codes.
                     if self.point.index == max {
-                        let char = None;
-                        log::debug!("main: flushing eof: `{:?}` ({:?})", char, self.point);
-                        self.expect(char);
+                        let byte = None;
+                        log::debug!("main: flushing eof: `{:?}` ({:?})", byte, self.point);
+                        self.expect(byte);
                         state = func(self);
                     } else {
-                        match char_action(&self.parse_state.chars, &self.point) {
+                        match byte_action(self.parse_state.bytes, &self.point) {
                             CharAction::Ignore => {
                                 state = State::Fn(Box::new(func));
                                 self.move_one();
                             }
-                            CharAction::Insert(char) => {
+                            CharAction::Insert(byte) => {
                                 log::debug!(
                                     "main: flushing (fake): `{:?}` ({:?})",
-                                    char,
+                                    byte,
                                     self.point
                                 );
-                                self.expect(Some(char));
+                                self.expect(Some(byte));
                                 state = func(self);
                             }
-                            CharAction::Normal(char) => {
-                                log::debug!("main: flushing: `{:?}` ({:?})", char, self.point);
-                                self.expect(Some(char));
+                            CharAction::Normal(byte) => {
+                                log::debug!("main: flushing: `{:?}` ({:?})", byte, self.point);
+                                self.expect(Some(byte));
                                 state = func(self);
                             }
                         }
@@ -735,22 +733,20 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-fn char_action(chars: &[char], point: &Point) -> CharAction {
-    if point.index < chars.len() {
-        let char = chars[point.index];
+fn byte_action(bytes: &[u8], point: &Point) -> CharAction {
+    if point.index < bytes.len() {
+        let byte = bytes[point.index];
 
-        if char == '\0' {
-            CharAction::Normal(char::REPLACEMENT_CHARACTER)
-        } else if char == '\r' {
+        if byte == b'\r' {
             // CRLF.
-            if point.index < chars.len() - 1 && chars[point.index + 1] == '\n' {
+            if point.index < bytes.len() - 1 && bytes[point.index + 1] == b'\n' {
                 CharAction::Ignore
             }
             // CR.
             else {
-                CharAction::Normal('\n')
+                CharAction::Normal(b'\n')
             }
-        } else if char == '\t' {
+        } else if byte == b'\t' {
             let remainder = point.column % TAB_SIZE;
             let vs = if remainder == 0 {
                 0
@@ -761,19 +757,19 @@ fn char_action(chars: &[char], point: &Point) -> CharAction {
             // On the tab itself, first send it.
             if point.vs == 0 {
                 if vs == 0 {
-                    CharAction::Normal(char)
+                    CharAction::Normal(byte)
                 } else {
-                    CharAction::Insert(char)
+                    CharAction::Insert(byte)
                 }
             } else if vs == 0 {
-                CharAction::Normal(' ')
+                CharAction::Normal(b' ')
             } else {
-                CharAction::Insert(' ')
+                CharAction::Insert(b' ')
             }
         }
         // VS?
         else {
-            CharAction::Normal(char)
+            CharAction::Normal(byte)
         }
     } else {
         unreachable!("out of bounds")
@@ -786,7 +782,7 @@ fn char_action(chars: &[char], point: &Point) -> CharAction {
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     state: impl FnOnce(&mut Tokenizer) -> State + 'static,
-    pause: Option<Box<dyn Fn(Option<char>) -> bool + 'static>>,
+    pause: Option<Box<dyn Fn(Option<u8>) -> bool + 'static>>,
     start: usize,
     done: impl FnOnce(&mut Tokenizer, State) -> State + 'static,
 ) -> Box<StateFn> {

@@ -106,15 +106,15 @@ impl Kind {
         }
     }
 
-    /// Check if a char is allowed.
-    fn allowed(&self, char: char) -> bool {
+    /// Check if a byte ([`u8`]) is allowed.
+    fn allowed(&self, byte: u8) -> bool {
         let check = match self {
-            Kind::Hexadecimal => char::is_ascii_hexdigit,
-            Kind::Decimal => char::is_ascii_digit,
-            Kind::Named => char::is_ascii_alphanumeric,
+            Kind::Hexadecimal => u8::is_ascii_hexdigit,
+            Kind::Decimal => u8::is_ascii_digit,
+            Kind::Named => u8::is_ascii_alphanumeric,
         };
 
-        check(&char)
+        check(&byte)
     }
 }
 
@@ -141,7 +141,7 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('&') if tokenizer.parse_state.constructs.character_reference => {
+        Some(b'&') if tokenizer.parse_state.constructs.character_reference => {
             tokenizer.enter(Token::CharacterReference);
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume();
@@ -164,7 +164,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 fn open(tokenizer: &mut Tokenizer) -> State {
-    if let Some('#') = tokenizer.current {
+    if let Some(b'#') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
@@ -192,7 +192,7 @@ fn open(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 fn numeric(tokenizer: &mut Tokenizer) -> State {
-    if let Some('x' | 'X') = tokenizer.current {
+    if let Some(b'x' | b'X') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
@@ -229,10 +229,11 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn value(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(';') if info.size > 0 => {
+        Some(b';') if info.size > 0 => {
             if Kind::Named == info.kind {
+                // To do: fix slice.
                 let value = Slice::from_position(
-                    &tokenizer.parse_state.chars,
+                    tokenizer.parse_state.bytes,
                     &Position {
                         start: &info.start,
                         end: &tokenizer.point,
@@ -252,8 +253,8 @@ fn value(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(Token::CharacterReference);
             State::Ok
         }
-        Some(char) => {
-            if info.size < info.kind.max() && info.kind.allowed(char) {
+        Some(byte) => {
+            if info.size < info.kind.max() && info.kind.allowed(byte) {
                 info.size += 1;
                 tokenizer.consume();
                 State::Fn(Box::new(|t| value(t, info)))

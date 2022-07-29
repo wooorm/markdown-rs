@@ -102,19 +102,19 @@ enum Kind {
 }
 
 impl Kind {
-    /// Turn a [char] into a kind.
+    /// Turn a byte ([u8]) into a kind.
     ///
     /// ## Panics
     ///
-    /// Panics if `char` is not `.`, `)`, `*`, `+`, or `-`.
-    fn from_char(char: char) -> Kind {
-        match char {
-            '.' => Kind::Dot,
-            ')' => Kind::Paren,
-            '*' => Kind::Asterisk,
-            '+' => Kind::Plus,
-            '-' => Kind::Dash,
-            _ => unreachable!("invalid char"),
+    /// Panics if `byte` is not `.`, `)`, `*`, `+`, or `-`.
+    fn from_byte(byte: u8) -> Kind {
+        match byte {
+            b'.' => Kind::Dot,
+            b')' => Kind::Paren,
+            b'*' => Kind::Asterisk,
+            b'+' => Kind::Plus,
+            b'-' => Kind::Dash,
+            _ => unreachable!("invalid byte"),
         }
     }
 }
@@ -149,11 +149,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
-        Some('*' | '+' | '-') => tokenizer.check(thematic_break, |ok| {
+        Some(b'*' | b'+' | b'-') => tokenizer.check(thematic_break, |ok| {
             Box::new(if ok { nok } else { before_unordered })
         })(tokenizer),
         // Ordered.
-        Some(char) if char.is_ascii_digit() && (!tokenizer.interrupt || char == '1') => {
+        Some(byte) if byte.is_ascii_digit() && (!tokenizer.interrupt || byte == b'1') => {
             tokenizer.enter(Token::ListItemPrefix);
             tokenizer.enter(Token::ListItemValue);
             inside(tokenizer, 0)
@@ -183,11 +183,11 @@ fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Some(char) if char.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
+        Some(byte) if byte.is_ascii_digit() && size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| inside(t, size + 1)))
         }
-        Some('.' | ')') if !tokenizer.interrupt || size < 2 => {
+        Some(b'.' | b')') if !tokenizer.interrupt || size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer)
         }
@@ -262,7 +262,7 @@ fn whitespace(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
-    if matches!(tokenizer.current, Some('\t' | ' ')) {
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
         State::Nok
     } else {
         State::Ok
@@ -277,7 +277,7 @@ fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn prefix_other(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('\t' | ' ') => {
+        Some(b'\t' | b' ') => {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume();
             tokenizer.exit(Token::SpaceOrTab);
@@ -303,7 +303,7 @@ fn after(tokenizer: &mut Tokenizer, blank: bool) -> State {
             &[Token::ListItem],
         );
         let mut prefix = Slice::from_position(
-            &tokenizer.parse_state.chars,
+            tokenizer.parse_state.bytes,
             &Position {
                 start: &tokenizer.events[start].point,
                 end: &tokenizer.point,
@@ -400,13 +400,10 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
             if event.event_type == EventType::Enter {
                 let end = skip::opt(&tokenizer.events, index, &[Token::ListItem]) - 1;
                 let marker = skip::to(&tokenizer.events, index, &[Token::ListItemMarker]);
-                let kind = Kind::from_char(
-                    Slice::from_point(
-                        &tokenizer.parse_state.chars,
-                        &tokenizer.events[marker].point,
-                    )
-                    .head()
-                    .unwrap(),
+                let kind = Kind::from_byte(
+                    Slice::from_point(tokenizer.parse_state.bytes, &tokenizer.events[marker].point)
+                        .head()
+                        .unwrap(),
                 );
                 let current = (kind, balance, index, end);
 

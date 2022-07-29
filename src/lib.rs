@@ -424,5 +424,5 @@ pub fn micromark(value: &str) -> String {
 #[must_use]
 pub fn micromark_with_options(value: &str, options: &Options) -> String {
     let (events, result) = parse(value, options);
-    compile(&events, &result.chars, options)
+    compile(&events, result.bytes, options)
 }

@@ -88,23 +88,23 @@ pub enum Kind {
 }
 
 impl Kind {
-    /// Turn the kind into a [char].
-    fn as_char(&self) -> char {
+    /// Turn the kind into a byte ([u8]).
+    fn as_byte(&self) -> u8 {
         match self {
-            Kind::Dash => '-',
-            Kind::EqualsTo => '=',
+            Kind::Dash => b'-',
+            Kind::EqualsTo => b'=',
         }
     }
-    /// Turn a [char] into a kind.
+    /// Turn a byte ([u8]) into a kind.
     ///
     /// ## Panics
     ///
-    /// Panics if `char` is not `-` or `=`.
-    fn from_char(char: char) -> Kind {
-        match char {
-            '-' => Kind::Dash,
-            '=' => Kind::EqualsTo,
-            _ => unreachable!("invalid char"),
+    /// Panics if `byte` is not `-` or `=`.
+    fn from_byte(byte: u8) -> Kind {
+        match byte {
+            b'-' => Kind::Dash,
+            b'=' => Kind::EqualsTo,
+            _ => unreachable!("invalid byte"),
         }
     }
 }
@@ -148,9 +148,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(char) if matches!(char, '-' | '=') => {
+        Some(byte) if matches!(byte, b'-' | b'=') => {
             tokenizer.enter(Token::HeadingSetextUnderline);
-            inside(tokenizer, Kind::from_char(char))
+            inside(tokenizer, Kind::from_byte(byte))
         }
         _ => State::Nok,
     }
@@ -165,7 +165,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer, kind: Kind) -> State {
     match tokenizer.current {
-        Some(char) if char == kind.as_char() => {
+        Some(byte) if byte == kind.as_byte() => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| inside(t, kind)))
         }
@@ -185,7 +185,7 @@ fn inside(tokenizer: &mut Tokenizer, kind: Kind) -> State {
 /// ```
 fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));

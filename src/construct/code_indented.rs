@@ -79,7 +79,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => after(tokenizer),
-        Some('\n') => tokenizer.attempt(further_start, |ok| {
+        Some(b'\n') => tokenizer.attempt(further_start, |ok| {
             Box::new(if ok { at_break } else { after })
         })(tokenizer),
         _ => {
@@ -97,7 +97,7 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn content(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             tokenizer.exit(Token::CodeFlowChunk);
             at_break(tokenizer)
         }
@@ -133,7 +133,7 @@ fn further_start(tokenizer: &mut Tokenizer) -> State {
         State::Nok
     } else {
         match tokenizer.current {
-            Some('\n') => {
+            Some(b'\n') => {
                 tokenizer.enter(Token::LineEnding);
                 tokenizer.consume();
                 tokenizer.exit(Token::LineEnding);
@@ -177,7 +177,7 @@ fn further_begin(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn further_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('\n') => further_start(tokenizer),
+        Some(b'\n') => further_start(tokenizer),
         _ => State::Nok,
     }
 }

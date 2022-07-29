@@ -65,7 +65,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('>') => {
+        Some(b'>') => {
             tokenizer.enter(Token::BlockQuote);
             cont_before(tokenizer)
         }
@@ -98,7 +98,7 @@ pub fn cont(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn cont_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('>') => {
+        Some(b'>') => {
             tokenizer.enter(Token::BlockQuotePrefix);
             tokenizer.enter(Token::BlockQuoteMarker);
             tokenizer.consume();
@@ -118,7 +118,7 @@ fn cont_before(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn cont_after(tokenizer: &mut Tokenizer) -> State {
-    if let Some('\t' | ' ') = tokenizer.current {
+    if let Some(b'\t' | b' ') = tokenizer.current {
         tokenizer.enter(Token::SpaceOrTab);
         tokenizer.consume();
         tokenizer.exit(Token::SpaceOrTab);

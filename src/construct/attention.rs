@@ -110,23 +110,23 @@ enum MarkerKind {
 }
 
 impl MarkerKind {
-    /// Turn the kind into a [char].
-    fn as_char(&self) -> char {
+    /// Turn the kind into a byte ([u8]).
+    fn as_byte(&self) -> u8 {
         match self {
-            MarkerKind::Asterisk => '*',
-            MarkerKind::Underscore => '_',
+            MarkerKind::Asterisk => b'*',
+            MarkerKind::Underscore => b'_',
         }
     }
-    /// Turn [char] into a kind.
+    /// Turn a byte ([u8]) into a kind.
     ///
     /// ## Panics
     ///
-    /// Panics if `char` is not `*` or `_`.
-    fn from_char(char: char) -> MarkerKind {
-        match char {
-            '*' => MarkerKind::Asterisk,
-            '_' => MarkerKind::Underscore,
-            _ => unreachable!("invalid char"),
+    /// Panics if `byte` is not `*` or `_`.
+    fn from_byte(byte: u8) -> MarkerKind {
+        match byte {
+            b'*' => MarkerKind::Asterisk,
+            b'_' => MarkerKind::Underscore,
+            _ => unreachable!("invalid byte"),
         }
     }
 }
@@ -160,9 +160,9 @@ struct Sequence {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(char) if tokenizer.parse_state.constructs.attention && matches!(char, '*' | '_') => {
+        Some(byte) if tokenizer.parse_state.constructs.attention && matches!(byte, b'*' | b'_') => {
             tokenizer.enter(Token::AttentionSequence);
-            inside(tokenizer, MarkerKind::from_char(char))
+            inside(tokenizer, MarkerKind::from_byte(byte))
         }
         _ => State::Nok,
     }
@@ -175,7 +175,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^^
 /// ```
 fn inside(tokenizer: &mut Tokenizer, marker: MarkerKind) -> State {
-    if tokenizer.current == Some(marker.as_char()) {
+    if tokenizer.current == Some(marker.as_byte()) {
         tokenizer.consume();
         State::Fn(Box::new(move |t| inside(t, marker)))
     } else {
@@ -188,7 +188,6 @@ fn inside(tokenizer: &mut Tokenizer, marker: MarkerKind) -> State {
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
 fn resolve_attention(tokenizer: &mut Tokenizer) {
-    let chars = &tokenizer.parse_state.chars;
     let mut start = 0;
     let mut balance = 0;
     let mut sequences = vec![];
@@ -203,21 +202,34 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
             if enter.token_type == Token::AttentionSequence {
                 let end = start + 1;
                 let exit = &tokenizer.events[end];
-                let marker =
-                    MarkerKind::from_char(Slice::from_point(chars, &enter.point).head().unwrap());
+
+                let before_end = enter.point.index;
+                let before_start = if before_end < 4 { 0 } else { before_end - 4 };
+                let string_before =
+                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[before_start..before_end]);
+                let char_before = string_before.chars().last();
+
+                let after_start = exit.point.index;
+                let after_end = if after_start + 4 > tokenizer.parse_state.bytes.len() {
+                    tokenizer.parse_state.bytes.len()
+                } else {
+                    after_start + 4
+                };
+                let string_after =
+                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end]);
+                let char_after = string_after.chars().next();
+
+                let marker = MarkerKind::from_byte(
+                    Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
+                        .head()
+                        .unwrap(),
+                );
                 let before = classify_character(if enter.point.index > 0 {
-                    Slice::from_point(
-                        chars,
-                        &Point {
-                            index: enter.point.index - 1,
-                            ..enter.point
-                        },
-                    )
-                    .tail()
+                    char_before
                 } else {
                     None
                 });
-                let after = classify_character(Slice::from_point(chars, &exit.point).tail());
+                let after = classify_character(char_after);
                 let open = after == GroupKind::Other
                     || (after == GroupKind::Punctuation && before != GroupKind::Other);
                 // To do: GFM strikethrough?
@@ -490,7 +502,7 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
 /// *   [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
 fn classify_character(char: Option<char>) -> GroupKind {
     match char {
-        // Custom characters.
+        // EOF.
         None => GroupKind::Whitespace,
         // Unicode whitespace.
         Some(char) if char.is_whitespace() => GroupKind::Whitespace,

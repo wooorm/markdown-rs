@@ -182,7 +182,7 @@ struct Info {
 /// > | [a] b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if Some(']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
+    if Some(b']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
         let mut label_start_index = None;
         let mut index = tokenizer.label_start_stack.len();
 
@@ -217,7 +217,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                     // To do: virtual spaces not needed, create a `to_str`?
                     id: normalize_identifier(
                         &Slice::from_position(
-                            &tokenizer.parse_state.chars,
+                            tokenizer.parse_state.bytes,
                             &Position {
                                 start: &tokenizer.events[label_start.start.1].point,
                                 end: &tokenizer.events[label_end_start - 1].point,
@@ -258,7 +258,7 @@ fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
-        Some('(') => tokenizer.attempt(resource, move |is_ok| {
+        Some(b'(') => tokenizer.attempt(resource, move |is_ok| {
             Box::new(move |t| {
                 // Also fine if `defined`, as then it’s a valid shortcut.
                 if is_ok || defined {
@@ -269,7 +269,7 @@ fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
             })
         })(tokenizer),
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
-        Some('[') => tokenizer.attempt(full_reference, move |is_ok| {
+        Some(b'[') => tokenizer.attempt(full_reference, move |is_ok| {
             Box::new(move |t| {
                 if is_ok {
                     ok(t, info)
@@ -382,7 +382,7 @@ fn nok(tokenizer: &mut Tokenizer, label_start_index: usize) -> State {
 /// ```
 fn resource(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('(') => {
+        Some(b'(') => {
             tokenizer.enter(Token::Resource);
             tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume();
@@ -411,7 +411,7 @@ fn resource_start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(')') => resource_end(tokenizer),
+        Some(b')') => resource_end(tokenizer),
         _ => tokenizer.go(
             |t| {
                 destination(
@@ -451,7 +451,7 @@ fn destination_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('"' | '\'' | '(') => tokenizer.go(
+        Some(b'"' | b'\'' | b'(') => tokenizer.go(
             |t| {
                 title(
                     t,
@@ -486,7 +486,7 @@ fn title_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_end(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(')') => {
+        Some(b')') => {
             tokenizer.enter(Token::ResourceMarker);
             tokenizer.consume();
             tokenizer.exit(Token::ResourceMarker);
@@ -505,7 +505,7 @@ fn resource_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn full_reference(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('[') => tokenizer.go(
+        Some(b'[') => tokenizer.go(
             |t| {
                 label(
                     t,
@@ -537,7 +537,7 @@ fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
 
     // To do: virtual spaces not needed, create a `to_str`?
     let id = Slice::from_position(
-        &tokenizer.parse_state.chars,
+        tokenizer.parse_state.bytes,
         &Position::from_exit_event(&tokenizer.events, end),
     )
     .serialize();
@@ -563,7 +563,7 @@ fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn collapsed_reference(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('[') => {
+        Some(b'[') => {
             tokenizer.enter(Token::Reference);
             tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume();
@@ -584,7 +584,7 @@ fn collapsed_reference(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn collapsed_reference_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(']') => {
+        Some(b']') => {
             tokenizer.enter(Token::ReferenceMarker);
             tokenizer.consume();
             tokenizer.exit(Token::ReferenceMarker);

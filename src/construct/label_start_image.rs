@@ -40,7 +40,7 @@ use crate::tokenizer::{LabelStart, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('!') if tokenizer.parse_state.constructs.label_start_image => {
+        Some(b'!') if tokenizer.parse_state.constructs.label_start_image => {
             tokenizer.enter(Token::LabelImage);
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume();
@@ -59,7 +59,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('[') => {
+        Some(b'[') => {
             tokenizer.enter(Token::LabelMarker);
             tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);

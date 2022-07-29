@@ -44,7 +44,7 @@ use crate::tokenizer::{State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('\\') if tokenizer.parse_state.constructs.character_escape => {
+        Some(b'\\') if tokenizer.parse_state.constructs.character_escape => {
             tokenizer.enter(Token::CharacterEscape);
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume();
@@ -63,7 +63,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(char) if char.is_ascii_punctuation() => {
+        Some(byte) if byte.is_ascii_punctuation() => {
             tokenizer.enter(Token::CharacterEscapeValue);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeValue);

@@ -82,9 +82,9 @@ pub struct Options {
 struct Info {
     /// Whether we’ve seen our first `ChunkString`.
     connect: bool,
-    /// Whether there are non-blank characters in the label.
+    /// Whether there are non-blank bytes in the label.
     data: bool,
-    /// Number of characters in the label.
+    /// Number of bytes in the label.
     size: usize,
     /// Configuration.
     options: Options,
@@ -98,7 +98,7 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     match tokenizer.current {
-        Some('[') => {
+        Some(b'[') => {
             let info = Info {
                 connect: false,
                 data: false,
@@ -124,10 +124,10 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        None | Some('[') => State::Nok,
-        Some(']') if !info.data => State::Nok,
+        None | Some(b'[') => State::Nok,
+        Some(b']') if !info.data => State::Nok,
         _ if info.size > LINK_REFERENCE_SIZE_MAX => State::Nok,
-        Some(']') => {
+        Some(b']') => {
             tokenizer.exit(info.options.string.clone());
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume();
@@ -135,7 +135,7 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(info.options.label);
             State::Ok
         }
-        Some('\n') => tokenizer.go(
+        Some(b'\n') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
@@ -168,7 +168,7 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        None | Some('\n' | '[' | ']') => {
+        None | Some(b'\n' | b'[' | b']') => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
@@ -176,12 +176,12 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        Some('\t' | ' ') => {
+        Some(b'\t' | b' ') => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| label(t, info)))
         }
-        Some('\\') => {
+        Some(b'\\') => {
             tokenizer.consume();
             info.size += 1;
             if !info.data {
@@ -208,7 +208,7 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn escape(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some('[' | '\\' | ']') => {
+        Some(b'[' | b'\\' | b']') => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| label(t, info)))

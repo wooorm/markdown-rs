@@ -11,6 +11,7 @@
 use crate::construct::{
     block_quote::{cont as block_quote_cont, start as block_quote},
     list::{cont as list_item_const, start as list_item},
+    partial_bom::start as bom,
 };
 use crate::content::flow::start as flow;
 use crate::parser::ParseState;
@@ -78,7 +79,7 @@ struct DocumentInfo {
 pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, parse_state);
 
-    let state = tokenizer.push(0, parse_state.chars.len(), Box::new(before));
+    let state = tokenizer.push(0, parse_state.bytes.len(), Box::new(before));
     tokenizer.flush(state, true);
 
     let mut index = 0;
@@ -92,7 +93,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
             // don‘t need virtual spaces.
             let id = normalize_identifier(
                 &Slice::from_position(
-                    &tokenizer.parse_state.chars,
+                    tokenizer.parse_state.bytes,
                     &Position::from_exit_event(&tokenizer.events, index),
                 )
                 .serialize(),
@@ -124,15 +125,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
 ///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some('\u{FEFF}') => {
-            tokenizer.enter(Token::ByteOrderMark);
-            tokenizer.consume();
-            tokenizer.exit(Token::ByteOrderMark);
-            State::Fn(Box::new(start))
-        }
-        _ => start(tokenizer),
-    }
+    tokenizer.attempt_opt(bom, start)(tokenizer)
 }
 
 /// Before document.
@@ -358,7 +351,7 @@ fn containers_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State 
     // Parse flow, pausing after eols.
     tokenizer.go_until(
         state,
-        |code| matches!(code, Some('\n')),
+        |code| matches!(code, Some(b'\n')),
         move |state| Box::new(move |t| flow_end(t, info, state)),
     )(tokenizer)
 }

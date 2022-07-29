@@ -51,7 +51,7 @@ use crate::tokenizer::{State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('\\') if tokenizer.parse_state.constructs.hard_break_escape => {
+        Some(b'\\') if tokenizer.parse_state.constructs.hard_break_escape => {
             tokenizer.enter(Token::HardBreakEscape);
             tokenizer.consume();
             State::Fn(Box::new(inside))
@@ -69,7 +69,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some('\n') => {
+        Some(b'\n') => {
             tokenizer.exit(Token::HardBreakEscape);
             State::Ok
         }

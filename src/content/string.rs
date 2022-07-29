@@ -18,7 +18,7 @@ use crate::construct::{
 };
 use crate::tokenizer::{State, Tokenizer};
 
-const MARKERS: [char; 2] = ['&', '\\'];
+const MARKERS: [u8; 2] = [b'&', b'\\'];
 
 /// Start of string.
 pub fn start(tokenizer: &mut Tokenizer) -> State {

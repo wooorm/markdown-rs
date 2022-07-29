@@ -84,6 +84,7 @@ pub mod label_start_image;
 pub mod label_start_link;
 pub mod list;
 pub mod paragraph;
+pub mod partial_bom;
 pub mod partial_data;
 pub mod partial_destination;
 pub mod partial_label;

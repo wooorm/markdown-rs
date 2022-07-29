@@ -87,7 +87,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
-    if Some('#') == tokenizer.current {
+    if Some(b'#') == tokenizer.current {
         tokenizer.enter(Token::HeadingAtxSequence);
         sequence_open(tokenizer, 0)
     } else {
@@ -103,11 +103,11 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn sequence_open(tokenizer: &mut Tokenizer, rank: usize) -> State {
     match tokenizer.current {
-        None | Some('\n') if rank > 0 => {
+        None | Some(b'\n') if rank > 0 => {
             tokenizer.exit(Token::HeadingAtxSequence);
             at_break(tokenizer)
         }
-        Some('#') if rank < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
+        Some(b'#') if rank < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
             tokenizer.consume();
             State::Fn(Box::new(move |tokenizer| {
                 sequence_open(tokenizer, rank + 1)
@@ -129,15 +129,15 @@ fn sequence_open(tokenizer: &mut Tokenizer, rank: usize) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             tokenizer.exit(Token::HeadingAtx);
             tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             State::Ok
         }
-        Some('\t' | ' ') => tokenizer.go(space_or_tab(), at_break)(tokenizer),
-        Some('#') => {
+        Some(b'\t' | b' ') => tokenizer.go(space_or_tab(), at_break)(tokenizer),
+        Some(b'#') => {
             tokenizer.enter(Token::HeadingAtxSequence);
             further_sequence(tokenizer)
         }
@@ -157,7 +157,7 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
 ///           ^
 /// ```
 fn further_sequence(tokenizer: &mut Tokenizer) -> State {
-    if let Some('#') = tokenizer.current {
+    if let Some(b'#') = tokenizer.current {
         tokenizer.consume();
         State::Fn(Box::new(further_sequence))
     } else {
@@ -175,7 +175,7 @@ fn further_sequence(tokenizer: &mut Tokenizer) -> State {
 fn data(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
-        None | Some('\t' | '\n' | ' ') => {
+        None | Some(b'\t' | b'\n' | b' ') => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer)
         }

@@ -117,7 +117,7 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     };
 
     match tokenizer.current {
-        Some('<') => {
+        Some(b'<') => {
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.literal.clone());
             tokenizer.enter(info.options.marker.clone());
@@ -125,8 +125,8 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
             tokenizer.exit(info.options.marker.clone());
             State::Fn(Box::new(|t| enclosed_before(t, info)))
         }
-        None | Some(' ' | ')') => State::Nok,
-        Some(char) if char.is_ascii_control() => State::Nok,
+        None | Some(b' ' | b')') => State::Nok,
+        Some(byte) if byte != b'\0' && byte.is_ascii_control() => State::Nok,
         Some(_) => {
             tokenizer.enter(info.options.destination.clone());
             tokenizer.enter(info.options.raw.clone());
@@ -144,7 +144,7 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 ///      ^
 /// ```
 fn enclosed_before(tokenizer: &mut Tokenizer, info: Info) -> State {
-    if let Some('>') = tokenizer.current {
+    if let Some(b'>') = tokenizer.current {
         tokenizer.enter(info.options.marker.clone());
         tokenizer.consume();
         tokenizer.exit(info.options.marker.clone());
@@ -166,13 +166,13 @@ fn enclosed_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn enclosed(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some('>') => {
+        Some(b'>') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(info.options.string.clone());
             enclosed_before(tokenizer, info)
         }
-        None | Some('\n' | '<') => State::Nok,
-        Some('\\') => {
+        None | Some(b'\n' | b'<') => State::Nok,
+        Some(b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| enclosed_escape(t, info)))
         }
@@ -191,7 +191,7 @@ fn enclosed(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn enclosed_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some('<' | '>' | '\\') => {
+        Some(b'<' | b'>' | b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| enclosed(t, info)))
         }
@@ -207,7 +207,7 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some('(') => {
+        Some(b'(') => {
             if info.balance >= info.options.limit {
                 State::Nok
             } else {
@@ -216,7 +216,7 @@ fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
                 State::Fn(Box::new(move |t| raw(t, info)))
             }
         }
-        Some(')') => {
+        Some(b')') => {
             if info.balance == 0 {
                 tokenizer.exit(Token::Data);
                 tokenizer.exit(info.options.string.clone());
@@ -229,7 +229,7 @@ fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
                 State::Fn(Box::new(move |t| raw(t, info)))
             }
         }
-        None | Some('\t' | '\n' | ' ') => {
+        None | Some(b'\t' | b'\n' | b' ') => {
             if info.balance > 0 {
                 State::Nok
             } else {
@@ -240,8 +240,8 @@ fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
                 State::Ok
             }
         }
-        Some(char) if char.is_ascii_control() => State::Nok,
-        Some('\\') => {
+        Some(byte) if byte != b'\0' && byte.is_ascii_control() => State::Nok,
+        Some(b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| raw_escape(t, info)))
         }
@@ -260,7 +260,7 @@ fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn raw_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some('(' | ')' | '\\') => {
+        Some(b'(' | b')' | b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(move |t| raw(t, info)))
         }

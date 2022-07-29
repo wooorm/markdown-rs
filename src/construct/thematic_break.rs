@@ -83,25 +83,25 @@ enum Kind {
 }
 
 impl Kind {
-    /// Turn the kind into a [char].
-    fn as_char(&self) -> char {
+    /// Turn the kind into a byte ([u8]).
+    fn as_byte(&self) -> u8 {
         match self {
-            Kind::Asterisk => '*',
-            Kind::Dash => '-',
-            Kind::Underscore => '_',
+            Kind::Asterisk => b'*',
+            Kind::Dash => b'-',
+            Kind::Underscore => b'_',
         }
     }
-    /// Turn a [char] into a kind.
+    /// Turn a byte ([u8]) into a kind.
     ///
     /// ## Panics
     ///
-    /// Panics if `char` is not `*`, `-`, or `_`.
-    fn from_char(char: char) -> Kind {
-        match char {
-            '*' => Kind::Asterisk,
-            '-' => Kind::Dash,
-            '_' => Kind::Underscore,
-            _ => unreachable!("invalid char"),
+    /// Panics if `byte` is not `*`, `-`, or `_`.
+    fn from_byte(byte: u8) -> Kind {
+        match byte {
+            b'*' => Kind::Asterisk,
+            b'-' => Kind::Dash,
+            b'_' => Kind::Underscore,
+            _ => unreachable!("invalid byte"),
         }
     }
 }
@@ -144,10 +144,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(char) if matches!(char, '*' | '-' | '_') => at_break(
+        Some(byte) if matches!(byte, b'*' | b'-' | b'_') => at_break(
             tokenizer,
             Info {
-                kind: Kind::from_char(char),
+                kind: Kind::from_byte(byte),
                 size: 0,
             },
         ),
@@ -163,13 +163,13 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        None | Some('\n' | '\r') if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
+        None | Some(b'\n' | b'\r') if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
             tokenizer.exit(Token::ThematicBreak);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             State::Ok
         }
-        Some(char) if char == info.kind.as_char() => {
+        Some(byte) if byte == info.kind.as_byte() => {
             tokenizer.enter(Token::ThematicBreakSequence);
             sequence(tokenizer, info)
         }
@@ -185,7 +185,7 @@ fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn sequence(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(char) if char == info.kind.as_char() => {
+        Some(byte) if byte == info.kind.as_byte() => {
             tokenizer.consume();
             info.size += 1;
             State::Fn(Box::new(|t| sequence(t, info)))

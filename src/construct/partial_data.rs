@@ -15,9 +15,9 @@ use crate::tokenizer::{EventType, State, Tokenizer};
 /// > | abc
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, stop: &'static [char]) -> State {
+pub fn start(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
     match tokenizer.current {
-        Some(char) if stop.contains(&char) => {
+        Some(byte) if stop.contains(&byte) => {
             tokenizer.enter(Token::Data);
             tokenizer.consume();
             State::Fn(Box::new(move |t| data(t, stop)))
@@ -32,16 +32,16 @@ pub fn start(tokenizer: &mut Tokenizer, stop: &'static [char]) -> State {
 /// > | abc
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, stop: &'static [char]) -> State {
+fn at_break(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
     match tokenizer.current {
         None => State::Ok,
-        Some('\n') => {
+        Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
             State::Fn(Box::new(move |t| at_break(t, stop)))
         }
-        Some(char) if stop.contains(&char) => {
+        Some(byte) if stop.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
             State::Ok
         }
@@ -58,10 +58,10 @@ fn at_break(tokenizer: &mut Tokenizer, stop: &'static [char]) -> State {
 /// > | abc
 ///     ^^^
 /// ```
-fn data(tokenizer: &mut Tokenizer, stop: &'static [char]) -> State {
+fn data(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
     let done = match tokenizer.current {
-        None | Some('\n') => true,
-        Some(char) if stop.contains(&char) => true,
+        None | Some(b'\n') => true,
+        Some(byte) if stop.contains(&byte) => true,
         _ => false,
     };
 

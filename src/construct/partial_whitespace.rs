@@ -86,25 +86,25 @@ fn trim_data(
     hard_break: bool,
 ) {
     let mut slice = Slice::from_position(
-        &tokenizer.parse_state.chars,
+        tokenizer.parse_state.bytes,
         &Position::from_exit_event(&tokenizer.events, exit_index),
     );
 
     if trim_end {
-        let mut index = slice.chars.len();
+        let mut index = slice.bytes.len();
         let vs = slice.after;
         let mut spaces_only = vs == 0;
         while index > 0 {
-            match slice.chars[index - 1] {
-                ' ' => {}
-                '\t' => spaces_only = false,
+            match slice.bytes[index - 1] {
+                b' ' => {}
+                b'\t' => spaces_only = false,
                 _ => break,
             }
 
             index -= 1;
         }
 
-        let diff = slice.chars.len() - index;
+        let diff = slice.bytes.len() - index;
         let token_type = if spaces_only
             && hard_break
             && exit_index + 1 < tokenizer.events.len()
@@ -150,16 +150,16 @@ fn trim_data(
             );
 
             tokenizer.events[exit_index].point = enter_point;
-            slice.chars = &slice.chars[..index];
+            slice.bytes = &slice.bytes[..index];
         }
     }
 
     if trim_start {
         let mut index = 0;
         let vs = slice.before;
-        while index < slice.chars.len() {
-            match slice.chars[index] {
-                ' ' | '\t' => {}
+        while index < slice.bytes.len() {
+            match slice.bytes[index] {
+                b' ' | b'\t' => {}
                 _ => break,
             }
 
@@ -168,7 +168,7 @@ fn trim_data(
 
         // The whole data is whitespace.
         // We can be very fast: we only change the token types.
-        if index == slice.chars.len() {
+        if index == slice.bytes.len() {
             tokenizer.events[exit_index - 1].token_type = Token::SpaceOrTab;
             tokenizer.events[exit_index].token_type = Token::SpaceOrTab;
             return;

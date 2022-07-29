@@ -44,7 +44,7 @@ use crate::util::skip::opt as skip_opt;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             unreachable!("unexpected eol/eof")
         }
         _ => {
@@ -63,7 +63,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::Paragraph);
             tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));

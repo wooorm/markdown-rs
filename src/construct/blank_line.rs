@@ -59,7 +59,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some('\n') => State::Ok,
+        None | Some(b'\n') => State::Ok,
         _ => State::Nok,
     }
 }

@@ -60,7 +60,7 @@ struct Definition {
 struct CompileContext<'a> {
     /// Static info.
     pub events: &'a [Event],
-    pub chars: &'a [char],
+    pub bytes: &'a [u8],
     /// Fields used by handlers to track the things they need to track to
     /// compile markdown.
     pub atx_opening_sequence_size: Option<usize>,
@@ -92,13 +92,13 @@ impl<'a> CompileContext<'a> {
     /// Create a new compile context.
     pub fn new(
         events: &'a [Event],
-        chars: &'a [char],
+        bytes: &'a [u8],
         options: &Options,
         line_ending: LineEnding,
     ) -> CompileContext<'a> {
         CompileContext {
             events,
-            chars,
+            bytes,
             atx_opening_sequence_size: None,
             heading_setext_buffer: None,
             code_flow_seen_data: None,
@@ -177,6 +177,7 @@ impl<'a> CompileContext<'a> {
 
     /// Add a line ending if needed (as in, there’s no eol/eof already).
     pub fn line_ending_if_needed(&mut self) {
+        // To do: fix to use bytes.
         let last_char = self.buf_tail().chars().last();
         let mut add = true;
 
@@ -196,7 +197,7 @@ impl<'a> CompileContext<'a> {
 
 /// Turn events and codes into a string of HTML.
 #[allow(clippy::too_many_lines)]
-pub fn compile(events: &[Event], chars: &[char], options: &Options) -> String {
+pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
     let mut index = 0;
     let mut line_ending_inferred = None;
 
@@ -209,7 +210,7 @@ pub fn compile(events: &[Event], chars: &[char], options: &Options) -> String {
             && (event.token_type == Token::BlankLineEnding || event.token_type == Token::LineEnding)
         {
             line_ending_inferred = Some(LineEnding::from_str(
-                &Slice::from_position(chars, &Position::from_exit_event(events, index)).serialize(),
+                &Slice::from_position(bytes, &Position::from_exit_event(events, index)).serialize(),
             ));
             break;
         }
@@ -237,7 +238,7 @@ pub fn compile(events: &[Event], chars: &[char], options: &Options) -> String {
         }
     };
 
-    let mut context = CompileContext::new(events, chars, options, line_ending_default);
+    let mut context = CompileContext::new(events, bytes, options, line_ending_default);
     let mut definition_indices = vec![];
     let mut index = 0;
     let mut definition_inside = false;
@@ -604,7 +605,7 @@ fn on_enter_strong(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkEmail`][Token::AutolinkEmail].
 fn on_exit_autolink_email(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -623,7 +624,7 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`AutolinkProtocol`][Token::AutolinkProtocol].
 fn on_exit_autolink_protocol(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -678,7 +679,7 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
         .take()
         .expect("expected `character_reference_kind` to be set");
     let reference = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -696,7 +697,7 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][Token::CodeFlowChunk].
 fn on_exit_code_flow_chunk(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -765,6 +766,7 @@ fn on_exit_code_flow(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`CodeText`][Token::CodeText].
 fn on_exit_code_text(context: &mut CompileContext) {
     let result = context.resume();
+    // To do: use bytes.
     let mut chars = result.chars();
     let mut trim = false;
 
@@ -797,7 +799,7 @@ fn on_exit_drop(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][Token::CodeTextData],[`Data`][Token::Data],[`CharacterEscapeValue`][Token::CharacterEscapeValue]}.
 fn on_exit_data(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -841,7 +843,7 @@ fn on_exit_definition_destination_string(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`DefinitionLabelString`][Token::DefinitionLabelString].
 fn on_exit_definition_label_string(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -879,7 +881,7 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
     // First fence we see.
     if context.atx_opening_sequence_size.is_none() {
         let rank = Slice::from_position(
-            context.chars,
+            context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         .size();
@@ -909,11 +911,11 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
         .take()
         .expect("`atx_opening_sequence_size` must be set in headings");
     let head = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .head();
-    let level = if head == Some('-') { 2 } else { 1 };
+    let level = if head == Some(b'-') { 2 } else { 1 };
 
     context.line_ending_if_needed();
     context.tag(&*format!("<h{}>", level));
@@ -929,7 +931,7 @@ fn on_exit_html(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlowData`][Token::HtmlFlowData],[`HtmlTextData`][Token::HtmlTextData]}.
 fn on_exit_html_data(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -947,7 +949,7 @@ fn on_exit_label(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`LabelText`][Token::LabelText].
 fn on_exit_label_text(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();
@@ -964,7 +966,7 @@ fn on_exit_line_ending(context: &mut CompileContext) {
         context.slurp_one_line_ending = false;
     } else {
         let value = Slice::from_position(
-            context.chars,
+            context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         .serialize();
@@ -1017,7 +1019,7 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
 
     if expect_first_item {
         let value = Slice::from_position(
-            context.chars,
+            context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         .serialize();
@@ -1037,7 +1039,8 @@ fn on_exit_media(context: &mut CompileContext) {
     let mut index = 0;
 
     // Skip current.
-    while index < (context.media_stack.len() - 1) {
+    let end = context.media_stack.len() - 1;
+    while index < end {
         if context.media_stack[index].image {
             is_in_image = true;
             break;
@@ -1123,7 +1126,7 @@ fn on_exit_paragraph(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`ReferenceString`][Token::ReferenceString].
 fn on_exit_reference_string(context: &mut CompileContext) {
     let value = Slice::from_position(
-        context.chars,
+        context.bytes,
         &Position::from_exit_event(context.events, context.index),
     )
     .serialize();

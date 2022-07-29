@@ -78,29 +78,29 @@ enum Kind {
 }
 
 impl Kind {
-    /// Turn the kind into a [char].
+    /// Turn the kind into a byte ([u8]).
     ///
     /// > 👉 **Note**: a closing paren is used for `Kind::Paren`.
-    fn as_char(&self) -> char {
+    fn as_byte(&self) -> u8 {
         match self {
-            Kind::Paren => ')',
-            Kind::Double => '"',
-            Kind::Single => '\'',
+            Kind::Paren => b')',
+            Kind::Double => b'"',
+            Kind::Single => b'\'',
         }
     }
-    /// Turn a [char] into a kind.
+    /// Turn a byte ([u8]) into a kind.
     ///
     /// > 👉 **Note**: an opening paren must be used for `Kind::Paren`.
     ///
     /// ## Panics
     ///
-    /// Panics if `char` is not `(`, `"`, or `'`.
-    fn from_char(char: char) -> Kind {
-        match char {
-            '(' => Kind::Paren,
-            '"' => Kind::Double,
-            '\'' => Kind::Single,
-            _ => unreachable!("invalid char"),
+    /// Panics if `byte` is not `(`, `"`, or `'`.
+    fn from_byte(byte: u8) -> Kind {
+        match byte {
+            b'(' => Kind::Paren,
+            b'"' => Kind::Double,
+            b'\'' => Kind::Single,
+            _ => unreachable!("invalid byte"),
         }
     }
 }
@@ -124,10 +124,10 @@ struct Info {
 /// ```
 pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
     match tokenizer.current {
-        Some(char) if matches!(char, '"' | '\'' | '(') => {
+        Some(byte) if matches!(byte, b'"' | b'\'' | b'(') => {
             let info = Info {
                 connect: false,
-                kind: Kind::from_char(char),
+                kind: Kind::from_byte(byte),
                 options,
             };
             tokenizer.enter(info.options.title.clone());
@@ -150,7 +150,7 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// ```
 fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(char) if char == info.kind.as_char() => {
+        Some(byte) if byte == info.kind.as_byte() => {
             tokenizer.enter(info.options.marker.clone());
             tokenizer.consume();
             tokenizer.exit(info.options.marker.clone());
@@ -172,12 +172,12 @@ fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
     match tokenizer.current {
-        Some(char) if char == info.kind.as_char() => {
+        Some(byte) if byte == info.kind.as_byte() => {
             tokenizer.exit(info.options.string.clone());
             begin(tokenizer, info)
         }
         None => State::Nok,
-        Some('\n') => tokenizer.go(
+        Some(b'\n') => tokenizer.go(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
                 connect: info.connect,
@@ -210,15 +210,15 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// ```
 fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(char) if char == info.kind.as_char() => {
+        Some(byte) if byte == info.kind.as_byte() => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        None | Some('\n') => {
+        None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
             at_break(tokenizer, info)
         }
-        Some('\\') => {
+        Some(b'\\') => {
             tokenizer.consume();
             State::Fn(Box::new(|t| escape(t, info)))
         }
@@ -237,7 +237,7 @@ fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn escape(tokenizer: &mut Tokenizer, info: Info) -> State {
     match tokenizer.current {
-        Some(char) if char == info.kind.as_char() => {
+        Some(byte) if byte == info.kind.as_byte() => {
             tokenizer.consume();
             State::Fn(Box::new(|t| title(t, info)))
         }
