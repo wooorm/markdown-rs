@@ -179,7 +179,13 @@ fn heading_atx() {
     assert_eq!(
         micromark("## \n#\n### ###"),
         "<h2></h2>\n<h1></h1>\n<h3></h3>",
-        "should support empty atx headings"
+        "should support empty atx headings (1)"
+    );
+
+    assert_eq!(
+        micromark("#\na\n# b"),
+        "<h1></h1>\n<p>a</p>\n<h1>b</h1>",
+        "should support empty atx headings (2)"
     );
 
     assert_eq!(

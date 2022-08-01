@@ -193,7 +193,7 @@ fn data(tokenizer: &mut Tokenizer) -> State {
 /// Resolve heading (atx).
 pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut index = 0;
-    let mut heading_start: Option<usize> = None;
+    let mut heading_inside = false;
     let mut data_start: Option<usize> = None;
     let mut data_end: Option<usize> = None;
 
@@ -202,41 +202,43 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 
         if event.token_type == Token::HeadingAtx {
             if event.event_type == EventType::Enter {
-                heading_start = Some(index);
-            } else if let Some(start) = data_start {
-                // If `start` is some, `end` is too.
-                let end = data_end.unwrap();
+                heading_inside = true;
+            } else {
+                if let Some(start) = data_start {
+                    // If `start` is some, `end` is too.
+                    let end = data_end.unwrap();
 
-                tokenizer.map.add(
-                    start,
-                    0,
-                    vec![Event {
-                        event_type: EventType::Enter,
-                        token_type: Token::HeadingAtxText,
-                        point: tokenizer.events[start].point.clone(),
-                        link: None,
-                    }],
-                );
+                    tokenizer.map.add(
+                        start,
+                        0,
+                        vec![Event {
+                            event_type: EventType::Enter,
+                            token_type: Token::HeadingAtxText,
+                            point: tokenizer.events[start].point.clone(),
+                            link: None,
+                        }],
+                    );
 
-                // Remove everything between the start and the end.
-                tokenizer.map.add(start + 1, end - start - 1, vec![]);
+                    // Remove everything between the start and the end.
+                    tokenizer.map.add(start + 1, end - start - 1, vec![]);
 
-                tokenizer.map.add(
-                    end + 1,
-                    0,
-                    vec![Event {
-                        event_type: EventType::Exit,
-                        token_type: Token::HeadingAtxText,
-                        point: tokenizer.events[end].point.clone(),
-                        link: None,
-                    }],
-                );
+                    tokenizer.map.add(
+                        end + 1,
+                        0,
+                        vec![Event {
+                            event_type: EventType::Exit,
+                            token_type: Token::HeadingAtxText,
+                            point: tokenizer.events[end].point.clone(),
+                            link: None,
+                        }],
+                    );
+                }
 
-                heading_start = None;
+                heading_inside = false;
                 data_start = None;
                 data_end = None;
             }
-        } else if heading_start.is_some() && event.token_type == Token::Data {
+        } else if heading_inside && event.token_type == Token::Data {
             if event.event_type == EventType::Enter {
                 if data_start.is_none() {
                     data_start = Some(index);
