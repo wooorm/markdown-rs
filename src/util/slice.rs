@@ -43,7 +43,11 @@ impl<'a> Position<'a> {
         }
     }
 
-    /// To do.
+    /// Turn a position into indices.
+    ///
+    /// Indices are places in `bytes` where this position starts and ends.
+    ///
+    /// > 👉 **Note**: indices cannot represent virtual spaces.
     pub fn to_indices(&self) -> (usize, usize) {
         (self.start.index, self.end.index)
     }
@@ -60,7 +64,7 @@ pub struct Slice<'a> {
 }
 
 impl<'a> Slice<'a> {
-    /// Get the slice belonging to a position.
+    /// Get the slice belonging to a point.
     pub fn from_point(bytes: &'a [u8], point: &Point) -> Slice<'a> {
         let mut before = point.vs;
         let mut start = point.index;
@@ -84,13 +88,13 @@ impl<'a> Slice<'a> {
         }
     }
 
-    /// To do.
+    /// Create a slice from one index.
+    ///
+    /// Indices are places in `bytes`.
+    ///
+    /// > 👉 **Note**: indices cannot represent virtual spaces.
     pub fn from_index(bytes: &'a [u8], index: usize) -> Slice<'a> {
-        Slice {
-            bytes: &bytes[index..=index],
-            before: 0,
-            after: 0,
-        }
+        Slice::from_indices(bytes, index, index + 1)
     }
 
     /// Get the slice belonging to a position.
@@ -121,7 +125,11 @@ impl<'a> Slice<'a> {
         }
     }
 
-    /// To do.
+    /// Create a slice from two indices.
+    ///
+    /// Indices are places in `bytes`.
+    ///
+    /// > 👉 **Note**: indices cannot represent virtual spaces.
     pub fn from_indices(bytes: &'a [u8], start: usize, end: usize) -> Slice<'a> {
         Slice {
             bytes: &bytes[start..end],
@@ -130,12 +138,13 @@ impl<'a> Slice<'a> {
         }
     }
 
-    /// To do.
+    /// Get the size of this slice, including virtual spaces.
     pub fn len(&self) -> usize {
         self.bytes.len() + self.before + self.after
     }
 
-    /// To do.
+    /// Get the first byte in this slice, representing a virtual space as a
+    /// space.
     pub fn head(&self) -> Option<u8> {
         if self.before > 0 {
             Some(b' ')
@@ -146,12 +155,16 @@ impl<'a> Slice<'a> {
         }
     }
 
-    // To do:
+    /// Turn the slice into a `&str`.
+    ///
+    /// Does not support virtual spaces.
     pub fn as_str(&self) -> &str {
         str::from_utf8(self.bytes).unwrap()
     }
 
-    /// To do.
+    /// Turn the slice into a `String`.
+    ///
+    /// Support virtual spaces.
     pub fn serialize(&self) -> String {
         let mut string = String::with_capacity(self.len());
         let mut index = self.before;

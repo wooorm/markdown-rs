@@ -41,6 +41,7 @@
 //!
 //! There are also several routines used in different places:
 //!
+//! *   [bom][partial_bom]
 //! *   [data][partial_data]
 //! *   [destination][partial_destination]
 //! *   [label][partial_label]

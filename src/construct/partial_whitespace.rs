@@ -47,15 +47,18 @@
 
 use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
 use crate::token::Token;
-use crate::tokenizer::{Event, EventType, Tokenizer};
+use crate::tokenizer::{Event, EventType, Resolver, Tokenizer};
 use crate::util::slice::{Position, Slice};
 
-/// To do.
-pub fn create_resolve_whitespace(hard_break: bool, trim_whole: bool) -> impl Fn(&mut Tokenizer) {
-    move |t| resolve_whitespace(t, hard_break, trim_whole)
+/// Create a resolver to handle trailing whitespace in events.
+///
+/// Performing this as a resolver instead of a tokenizer improves performance
+/// *a lot*.
+pub fn create_resolve_whitespace(hard_break: bool, trim_whole: bool) -> Box<Resolver> {
+    Box::new(move |t| resolve_whitespace(t, hard_break, trim_whole))
 }
 
-/// To do.
+/// Resolve whitespace.
 pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whole: bool) {
     let mut index = 0;
 
@@ -76,8 +79,7 @@ pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whol
     }
 }
 
-/// To do.
-#[allow(clippy::too_many_lines)]
+/// Trim a [`Data`][Token::Data] token.
 fn trim_data(
     tokenizer: &mut Tokenizer,
     exit_index: usize,

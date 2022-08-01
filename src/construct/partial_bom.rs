@@ -1,4 +1,14 @@
-//! To do.
+//! Byte order mark occurs at the start of the document.
+//!
+//! It’s the three bytes 0xEF, 0xBB, and 0xBF.
+//!
+//! ## Tokens
+//!
+//! *   [`ByteOrderMark`][Token::ByteOrderMark]
+//!
+//! ## References
+//!
+//! *   [`micromark/lib/preprocess.js` in `micromark`](https://github.com/micromark/micromark/blob/ed23453/packages/micromark/dev/lib/preprocess.js#L54-L60)
 
 use crate::token::Token;
 use crate::tokenizer::{State, Tokenizer};

@@ -26,7 +26,7 @@ pub enum ContentType {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum CharAction {
+pub enum ByteAction {
     Normal(u8),
     Insert(u8),
     Ignore,
@@ -47,10 +47,9 @@ pub struct Point {
     pub column: usize,
     /// 0-indexed position in the document.
     ///
-    /// Also an `index` into `codes`.
-    // To do: call it `offset`?
+    /// Also an `index` into `bytes`.
     pub index: usize,
-    /// To do.
+    /// Virtual step on the same `index`.
     pub vs: usize,
 }
 
@@ -171,7 +170,7 @@ pub struct Tokenizer<'a> {
     column_start: Vec<(usize, usize)>,
     // First line.
     first_line: usize,
-    /// To do.
+    /// First point after the last line ending.
     line_start: Point,
     /// Track whether the current byte is already consumed (`true`) or expected
     /// to be consumed (`false`).
@@ -192,7 +191,7 @@ pub struct Tokenizer<'a> {
     ///
     /// Tracked to make sure everything’s valid.
     pub stack: Vec<Token>,
-    /// To do.
+    /// Edit map, to batch changes.
     pub map: EditMap,
     /// List of attached resolvers, which will be called when done feeding,
     /// to clean events.
@@ -323,15 +322,15 @@ impl<'a> Tokenizer<'a> {
     /// Move to the next (virtual) byte.
     pub fn move_one(&mut self) {
         match byte_action(self.parse_state.bytes, &self.point) {
-            CharAction::Ignore => {
+            ByteAction::Ignore => {
                 self.point.index += 1;
             }
-            CharAction::Insert(byte) => {
+            ByteAction::Insert(byte) => {
                 self.previous = Some(byte);
                 self.point.column += 1;
                 self.point.vs += 1;
             }
-            CharAction::Normal(byte) => {
+            ByteAction::Normal(byte) => {
                 self.previous = Some(byte);
                 self.point.vs = 0;
                 self.point.index += 1;
@@ -386,7 +385,7 @@ impl<'a> Tokenizer<'a> {
         while point.index > 0 {
             point.index -= 1;
             let action = byte_action(self.parse_state.bytes, &point);
-            if !matches!(action, CharAction::Ignore) {
+            if !matches!(action, ByteAction::Ignore) {
                 point.index += 1;
                 break;
             }
@@ -439,7 +438,7 @@ impl<'a> Tokenizer<'a> {
             while point.index > 0 {
                 point.index -= 1;
                 let action = byte_action(self.parse_state.bytes, &point);
-                if !matches!(action, CharAction::Ignore) {
+                if !matches!(action, ByteAction::Ignore) {
                     point.index += 1;
                     break;
                 }
@@ -636,6 +635,7 @@ impl<'a> Tokenizer<'a> {
     ///
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
+    // Note: if needed: accept `vs`?
     pub fn push(
         &mut self,
         min: usize,
@@ -644,8 +644,6 @@ impl<'a> Tokenizer<'a> {
     ) -> State {
         debug_assert!(!self.resolved, "cannot feed after drain");
         debug_assert!(min >= self.point.index, "cannot move backwards");
-
-        // To do: accept `vs`?
         self.move_to((min, 0));
 
         let mut state = State::Fn(Box::new(start));
@@ -654,16 +652,11 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => break,
                 State::Fn(func) => match byte_action(self.parse_state.bytes, &self.point) {
-                    CharAction::Ignore => {
+                    ByteAction::Ignore => {
                         state = State::Fn(Box::new(func));
                         self.move_one();
                     }
-                    CharAction::Insert(byte) => {
-                        log::debug!("main: passing (fake): `{:?}` ({:?})", byte, self.point);
-                        self.expect(Some(byte));
-                        state = func(self);
-                    }
-                    CharAction::Normal(byte) => {
+                    ByteAction::Insert(byte) | ByteAction::Normal(byte) => {
                         log::debug!("main: passing: `{:?}` ({:?})", byte, self.point);
                         self.expect(Some(byte));
                         state = func(self);
@@ -685,35 +678,30 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => break,
                 State::Fn(func) => {
-                    // To do: clean this?
                     // We sometimes move back when flushing, so then we use those codes.
-                    if self.point.index == max {
-                        let byte = None;
-                        log::debug!("main: flushing eof: `{:?}` ({:?})", byte, self.point);
+                    let action = if self.point.index == max {
+                        None
+                    } else {
+                        Some(byte_action(self.parse_state.bytes, &self.point))
+                    };
+
+                    if let Some(ByteAction::Ignore) = action {
+                        state = State::Fn(Box::new(func));
+                        self.move_one();
+                    } else {
+                        let byte =
+                            if let Some(ByteAction::Insert(byte) | ByteAction::Normal(byte)) =
+                                action
+                            {
+                                Some(byte)
+                            } else {
+                                None
+                            };
+
+                        log::debug!("main: flushing: `{:?}` ({:?})", byte, self.point);
                         self.expect(byte);
                         state = func(self);
-                    } else {
-                        match byte_action(self.parse_state.bytes, &self.point) {
-                            CharAction::Ignore => {
-                                state = State::Fn(Box::new(func));
-                                self.move_one();
-                            }
-                            CharAction::Insert(byte) => {
-                                log::debug!(
-                                    "main: flushing (fake): `{:?}` ({:?})",
-                                    byte,
-                                    self.point
-                                );
-                                self.expect(Some(byte));
-                                state = func(self);
-                            }
-                            CharAction::Normal(byte) => {
-                                log::debug!("main: flushing: `{:?}` ({:?})", byte, self.point);
-                                self.expect(Some(byte));
-                                state = func(self);
-                            }
-                        }
-                    };
+                    }
                 }
             }
         }
@@ -733,18 +721,18 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-fn byte_action(bytes: &[u8], point: &Point) -> CharAction {
+fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
     if point.index < bytes.len() {
         let byte = bytes[point.index];
 
         if byte == b'\r' {
             // CRLF.
             if point.index < bytes.len() - 1 && bytes[point.index + 1] == b'\n' {
-                CharAction::Ignore
+                ByteAction::Ignore
             }
             // CR.
             else {
-                CharAction::Normal(b'\n')
+                ByteAction::Normal(b'\n')
             }
         } else if byte == b'\t' {
             let remainder = point.column % TAB_SIZE;
@@ -757,19 +745,17 @@ fn byte_action(bytes: &[u8], point: &Point) -> CharAction {
             // On the tab itself, first send it.
             if point.vs == 0 {
                 if vs == 0 {
-                    CharAction::Normal(byte)
+                    ByteAction::Normal(byte)
                 } else {
-                    CharAction::Insert(byte)
+                    ByteAction::Insert(byte)
                 }
             } else if vs == 0 {
-                CharAction::Normal(b' ')
+                ByteAction::Normal(b' ')
             } else {
-                CharAction::Insert(b' ')
+                ByteAction::Insert(b' ')
             }
-        }
-        // VS?
-        else {
-            CharAction::Normal(byte)
+        } else {
+            ByteAction::Normal(byte)
         }
     } else {
         unreachable!("out of bounds")
