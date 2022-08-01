@@ -167,6 +167,7 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
 
 /// Inside a character reference value, after the markers (`&#x`, `&#`, or
 /// `&`) that define its kind, but before the `;`.
+///
 /// The character reference kind defines what and how many characters are
 /// allowed.
 ///

@@ -40,9 +40,9 @@ use crate::tokenizer::{State, Tokenizer};
 /// > 👉 **Note**: `␠` represents a space character.
 ///
 /// ```markdown
-/// > | ␠␠
+/// > | ␠␠␊
 ///     ^
-/// > |
+/// > | ␊
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
@@ -52,9 +52,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// After zero or more spaces or tabs, before a line ending or EOF.
 ///
 /// ```markdown
-/// > | ␠␠
+/// > | ␠␠␊
 ///       ^
-/// > |
+/// > | ␊
 ///     ^
 /// ```
 fn after(tokenizer: &mut Tokenizer) -> State {

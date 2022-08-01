@@ -169,7 +169,7 @@ fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
 /// [html_flow]: crate::construct::html_flow
 fn comment_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'>') => State::Nok,
+        Some(b'>') => State::Nok,
         Some(b'-') => {
             tokenizer.consume();
             State::Fn(Box::new(comment_start_dash))
@@ -193,7 +193,7 @@ fn comment_start(tokenizer: &mut Tokenizer) -> State {
 /// [html_flow]: crate::construct::html_flow
 fn comment_start_dash(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'>') => State::Nok,
+        Some(b'>') => State::Nok,
         _ => comment(tokenizer),
     }
 }

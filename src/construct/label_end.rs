@@ -231,7 +231,6 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelEnd);
-
             return State::Fn(Box::new(move |t| after(t, info)));
         }
     }
@@ -278,7 +277,7 @@ fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
                 }
             })
         })(tokenizer),
-        // Shortcut reference: `[asd]`?
+        // Shortcut (`[asd]`) reference?
         _ => {
             if defined {
                 ok(tokenizer, info)

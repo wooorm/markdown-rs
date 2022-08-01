@@ -184,18 +184,19 @@ fn sequence_close(tokenizer: &mut Tokenizer, size_open: usize, size: usize) -> S
             tokenizer.consume();
             State::Fn(Box::new(move |t| sequence_close(t, size_open, size + 1)))
         }
-        _ if size_open == size => {
-            tokenizer.exit(Token::CodeTextSequence);
-            tokenizer.exit(Token::CodeText);
-            State::Ok
-        }
         _ => {
-            let index = tokenizer.events.len();
-            tokenizer.exit(Token::CodeTextSequence);
-            // Change the token type.
-            tokenizer.events[index - 1].token_type = Token::CodeTextData;
-            tokenizer.events[index].token_type = Token::CodeTextData;
-            between(tokenizer, size_open)
+            if size_open == size {
+                tokenizer.exit(Token::CodeTextSequence);
+                tokenizer.exit(Token::CodeText);
+                State::Ok
+            } else {
+                let index = tokenizer.events.len();
+                tokenizer.exit(Token::CodeTextSequence);
+                // More or less accents: mark as data.
+                tokenizer.events[index - 1].token_type = Token::CodeTextData;
+                tokenizer.events[index].token_type = Token::CodeTextData;
+                between(tokenizer, size_open)
+            }
         }
     }
 }

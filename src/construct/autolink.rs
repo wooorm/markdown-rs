@@ -156,6 +156,7 @@ fn open(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
+        // ASCII alphanumeric and `+`, `-`, and `.`.
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             scheme_inside_or_email_atext(tokenizer, 1)
         }
@@ -177,6 +178,7 @@ fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer, size: usize) -> State
             tokenizer.consume();
             State::Fn(Box::new(url_inside))
         }
+        // ASCII alphanumeric and `+`, `-`, and `.`.
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
             if size < AUTOLINK_SCHEME_SIZE_MAX =>
         {
@@ -199,8 +201,8 @@ fn url_inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::AutolinkProtocol);
             end(tokenizer)
         }
-        // ASCII control or space.
-        None | Some(b'\0'..=0x1F | b' ' | 0x7F) => State::Nok,
+        // ASCII control, space, or `<`.
+        None | Some(b'\0'..=0x1F | b' ' | b'<' | 0x7F) => State::Nok,
         Some(_) => {
             tokenizer.consume();
             State::Fn(Box::new(url_inside))
@@ -295,14 +297,15 @@ fn email_label(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// ```
 fn email_value(tokenizer: &mut Tokenizer, size: usize) -> State {
     match tokenizer.current {
-        Some(b'-') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
+        // ASCII alphanumeric or `-`.
+        Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
+            let func = if matches!(tokenizer.current, Some(b'-')) {
+                email_value
+            } else {
+                email_label
+            };
             tokenizer.consume();
-            State::Fn(Box::new(move |t| email_value(t, size + 1)))
-        }
-        // ASCII alphanumeric.
-        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
-            tokenizer.consume();
-            State::Fn(Box::new(move |t| email_label(t, size + 1)))
+            State::Fn(Box::new(move |t| func(t, size + 1)))
         }
         _ => State::Nok,
     }
