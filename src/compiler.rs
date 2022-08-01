@@ -56,6 +56,7 @@ struct Definition {
 
 /// Context used to compile markdown.
 #[allow(clippy::struct_excessive_bools)]
+#[derive(Debug)]
 struct CompileContext<'a> {
     /// Static info.
     pub events: &'a [Event],
@@ -76,7 +77,6 @@ struct CompileContext<'a> {
     pub slurp_one_line_ending: bool,
     pub in_image_alt: bool,
     pub encode_html: bool,
-    pub last_was_tag: bool,
     /// Configuration
     pub protocol_href: Option<Vec<&'static str>>,
     pub protocol_src: Option<Vec<&'static str>>,
@@ -111,7 +111,6 @@ impl<'a> CompileContext<'a> {
             slurp_one_line_ending: false,
             in_image_alt: false,
             encode_html: true,
-            last_was_tag: false,
             protocol_href: if options.allow_dangerous_protocol {
                 None
             } else {
@@ -144,7 +143,6 @@ impl<'a> CompileContext<'a> {
             .last_mut()
             .expect("Cannot push w/o buffer")
             .push_str(value);
-        self.last_was_tag = false;
     }
 
     pub fn push_raw(&mut self, value: &str) {
@@ -388,7 +386,6 @@ fn on_enter_block_quote(context: &mut CompileContext) {
     context.tight_stack.push(false);
     context.line_ending_if_needed();
     context.push("<blockquote>");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeIndented`][Token::CodeIndented].
@@ -396,7 +393,6 @@ fn on_enter_code_indented(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(false);
     context.line_ending_if_needed();
     context.push("<pre><code>");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`CodeFenced`][Token::CodeFenced].
@@ -405,7 +401,6 @@ fn on_enter_code_fenced(context: &mut CompileContext) {
     context.line_ending_if_needed();
     // Note that no `>` is used, which is added later.
     context.push("<pre><code");
-    context.last_was_tag = true;
     context.code_fenced_fences_count = Some(0);
 }
 
@@ -414,7 +409,6 @@ fn on_enter_code_text(context: &mut CompileContext) {
     context.code_text_inside = true;
     if !context.in_image_alt {
         context.push("<code>");
-        context.last_was_tag = true;
     }
     context.buffer();
 }
@@ -442,7 +436,6 @@ fn on_enter_definition_destination_string(context: &mut CompileContext) {
 fn on_enter_emphasis(context: &mut CompileContext) {
     if !context.in_image_alt {
         context.push("<em>");
-        context.last_was_tag = true;
     }
 }
 
@@ -549,7 +542,6 @@ fn on_enter_list(context: &mut CompileContext) {
     } else {
         "<ul"
     });
-    context.last_was_tag = true;
     context.expect_first_item = Some(true);
 }
 
@@ -559,16 +551,12 @@ fn on_enter_list_item_marker(context: &mut CompileContext) {
 
     if expect_first_item {
         context.push(">");
-        context.last_was_tag = true;
     }
 
     context.line_ending_if_needed();
 
     context.push("<li>");
-    context.last_was_tag = true;
     context.expect_first_item = Some(false);
-    // “Hack” to prevent a line ending from showing up if the item is empty.
-    context.last_was_tag = false;
 }
 
 /// Handle [`Enter`][EventType::Enter]:[`Paragraph`][Token::Paragraph].
@@ -578,7 +566,6 @@ fn on_enter_paragraph(context: &mut CompileContext) {
     if !tight {
         context.line_ending_if_needed();
         context.push("<p>");
-        context.last_was_tag = true;
     }
 }
 
@@ -600,7 +587,6 @@ fn on_enter_resource_destination_string(context: &mut CompileContext) {
 fn on_enter_strong(context: &mut CompileContext) {
     if !context.in_image_alt {
         context.push("<strong>");
-        context.last_was_tag = true;
     }
 }
 
@@ -619,14 +605,12 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
             &context.protocol_href,
         ));
         context.push("\">");
-        context.last_was_tag = true;
     }
 
     context.push_raw(value);
 
     if !context.in_image_alt {
         context.push("</a>");
-        context.last_was_tag = true;
     }
 }
 
@@ -642,14 +626,12 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
         context.push("<a href=\"");
         context.push(&sanitize_uri(value, &context.protocol_href));
         context.push("\">");
-        context.last_was_tag = true;
     }
 
     context.push_raw(value);
 
     if !context.in_image_alt {
         context.push("</a>");
-        context.last_was_tag = true;
     }
 }
 
@@ -657,7 +639,6 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
 fn on_exit_break(context: &mut CompileContext) {
     if !context.in_image_alt {
         context.push("<br />");
-        context.last_was_tag = true;
     }
 }
 
@@ -674,7 +655,6 @@ fn on_exit_block_quote(context: &mut CompileContext) {
     context.line_ending_if_needed();
     context.slurp_one_line_ending = false;
     context.push("</blockquote>");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CharacterReferenceMarker`][Token::CharacterReferenceMarker].
@@ -737,7 +717,6 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext) {
 
     if count == 0 {
         context.push(">");
-        context.last_was_tag = true;
         context.slurp_one_line_ending = true;
     }
 
@@ -750,7 +729,6 @@ fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
     context.push(" class=\"language-");
     context.push(&value);
     context.push("\"");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`CodeFenced`][Token::CodeFenced],[`CodeIndented`][Token::CodeIndented]}.
@@ -766,7 +744,13 @@ fn on_exit_code_flow(context: &mut CompileContext) {
     // fenced code and block quote by micromark, but CM wants to treat that
     // ending as part of the code.
     if let Some(count) = context.code_fenced_fences_count {
-        if count == 1 && !context.tight_stack.is_empty() && !context.last_was_tag {
+        // No closing fence.
+        if count == 1
+            // In a container.
+            && !context.tight_stack.is_empty()
+            // Empty (as the closing is right at the opening fence)
+            && context.events[context.index - 1].token_type != Token::CodeFencedFence
+        {
             context.line_ending();
         }
     }
@@ -778,7 +762,6 @@ fn on_exit_code_flow(context: &mut CompileContext) {
     }
 
     context.push("</code></pre>");
-    context.last_was_tag = true;
 
     if let Some(count) = context.code_fenced_fences_count.take() {
         if count < 2 {
@@ -815,7 +798,6 @@ fn on_exit_code_text(context: &mut CompileContext) {
 
     if !context.in_image_alt {
         context.push("</code>");
-        context.last_was_tag = true;
     }
 }
 
@@ -883,7 +865,6 @@ fn on_exit_definition_title_string(context: &mut CompileContext) {
 fn on_exit_emphasis(context: &mut CompileContext) {
     if !context.in_image_alt {
         context.push("</em>");
-        context.last_was_tag = true;
     }
 }
 
@@ -897,7 +878,6 @@ fn on_exit_heading_atx(context: &mut CompileContext) {
     context.push("</h");
     context.push(&rank.to_string());
     context.push(">");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`HeadingAtxSequence`][Token::HeadingAtxSequence].
@@ -914,7 +894,6 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
         context.push("<h");
         context.push(&rank.to_string());
         context.push(">");
-        context.last_was_tag = true;
     }
 }
 
@@ -948,12 +927,10 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
     context.push("<h");
     context.push(rank);
     context.push(">");
-    context.last_was_tag = true;
     context.push(&text);
     context.push("</h");
     context.push(rank);
     context.push(">");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlow`][Token::HtmlFlow],[`HtmlText`][Token::HtmlText]}.
@@ -1018,7 +995,6 @@ fn on_exit_list(context: &mut CompileContext) {
             "</ul>"
         },
     );
-    context.last_was_tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ListItem`][Token::ListItem].
@@ -1045,7 +1021,6 @@ fn on_exit_list_item(context: &mut CompileContext) {
     }
 
     context.push("</li>");
-    context.last_was_tag = true;
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ListItemValue`][Token::ListItemValue].
@@ -1063,7 +1038,6 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
             context.push(" start=\"");
             context.push(&value.to_string());
             context.push("\"");
-            context.last_was_tag = true;
         }
     }
 }
@@ -1164,7 +1138,6 @@ fn on_exit_media(context: &mut CompileContext) {
         }
 
         context.push(">");
-        context.last_was_tag = true;
     }
 
     if !media.image {
@@ -1172,7 +1145,6 @@ fn on_exit_media(context: &mut CompileContext) {
 
         if !in_image_alt {
             context.push("</a>");
-            context.last_was_tag = true;
         }
     }
 }
@@ -1185,7 +1157,6 @@ fn on_exit_paragraph(context: &mut CompileContext) {
         context.slurp_one_line_ending = true;
     } else {
         context.push("</p>");
-        context.last_was_tag = true;
     }
 }
 
@@ -1220,7 +1191,6 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
 fn on_exit_strong(context: &mut CompileContext) {
     if !context.in_image_alt {
         context.push("</strong>");
-        context.last_was_tag = true;
     }
 }
 
@@ -1228,5 +1198,4 @@ fn on_exit_strong(context: &mut CompileContext) {
 fn on_exit_thematic_break(context: &mut CompileContext) {
     context.line_ending_if_needed();
     context.push("<hr />");
-    context.last_was_tag = true;
 }
