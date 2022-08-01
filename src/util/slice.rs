@@ -42,6 +42,11 @@ impl<'a> Position<'a> {
             enter_index -= 1;
         }
     }
+
+    /// To do.
+    pub fn to_indices(&self) -> (usize, usize) {
+        (self.start.index, self.end.index)
+    }
 }
 
 /// Chars belonging to a range.

@@ -11,6 +11,7 @@ use crate::util::{
     slice::{Position, Slice},
 };
 use crate::{LineEnding, Options};
+use std::str;
 
 /// Representation of a link or image, resource or reference.
 /// Reused for temporary definitions as well, in the first pass.
@@ -23,7 +24,7 @@ struct Media {
     /// identifier, meaning that the original source characters are used
     /// instead of interpreting them.
     /// Not interpreted.
-    label_id: Option<String>,
+    label_id: Option<(usize, usize)>,
     /// The text between the brackets (`x` in `![x]()` and `[x]()`), as
     /// interpreted content.
     /// When this is a link, it can contain further text content and thus HTML
@@ -34,7 +35,7 @@ struct Media {
     /// The text between the explicit brackets of the reference (`y` in
     /// `[x][y]`), as content.
     /// Not interpreted.
-    reference_id: Option<String>,
+    reference_id: Option<(usize, usize)>,
     /// The destination (url).
     /// Interpreted string content.
     destination: Option<String>,
@@ -138,22 +139,12 @@ impl<'a> CompileContext<'a> {
         self.buffers.pop().expect("Cannot resume w/o buffer")
     }
 
+    /// Push a str to the last buffer.
     pub fn push(&mut self, value: &str) {
         self.buffers
             .last_mut()
             .expect("Cannot push w/o buffer")
             .push_str(value);
-    }
-
-    pub fn push_raw(&mut self, value: &str) {
-        self.push(&encode(value, self.encode_html));
-    }
-
-    /// Get the current buffer.
-    pub fn buf_tail(&self) -> &String {
-        self.buffers
-            .last()
-            .expect("at least one buffer should exist")
     }
 
     /// Add a line ending.
@@ -164,19 +155,14 @@ impl<'a> CompileContext<'a> {
 
     /// Add a line ending if needed (as in, there’s no eol/eof already).
     pub fn line_ending_if_needed(&mut self) {
-        // To do: fix to use bytes.
-        let last_char = self.buf_tail().chars().last();
-        let mut add = true;
+        let tail = self
+            .buffers
+            .last()
+            .expect("at least one buffer should exist")
+            .as_bytes()
+            .last();
 
-        if let Some(x) = last_char {
-            if x == '\n' || x == '\r' {
-                add = false;
-            }
-        } else {
-            add = false;
-        }
-
-        if add {
+        if !matches!(tail, None | Some(b'\n' | b'\r')) {
             self.line_ending();
         }
     }
@@ -210,19 +196,6 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
         value
     } else {
         options.default_line_ending.clone()
-    };
-
-    // Handle one event.
-    let handle = |context: &mut CompileContext, index: usize| {
-        let event = &events[index];
-
-        context.index = index;
-
-        if event.event_type == EventType::Enter {
-            enter(context);
-        } else {
-            exit(context);
-        }
     };
 
     let mut context = CompileContext::new(events, bytes, options, line_ending_default);
@@ -285,6 +258,17 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
         .get(0)
         .expect("expected 1 final buffer")
         .to_string()
+}
+
+// Handle the event at `index`.
+fn handle(context: &mut CompileContext, index: usize) {
+    context.index = index;
+
+    if context.events[index].event_type == EventType::Enter {
+        enter(context);
+    } else {
+        exit(context);
+    }
 }
 
 /// Handle [`Enter`][EventType::Enter].
@@ -607,7 +591,7 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
         context.push("\">");
     }
 
-    context.push_raw(value);
+    context.push(&encode(value, context.encode_html));
 
     if !context.in_image_alt {
         context.push("</a>");
@@ -628,7 +612,7 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
         context.push("\">");
     }
 
-    context.push_raw(value);
+    context.push(&encode(value, context.encode_html));
 
     if !context.in_image_alt {
         context.push("</a>");
@@ -691,20 +675,21 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
         _ => panic!("impossible"),
     };
 
-    context.push_raw(&value);
+    context.push(&encode(&value, context.encode_html));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeFlowChunk`][Token::CodeFlowChunk].
 fn on_exit_code_flow_chunk(context: &mut CompileContext) {
     context.code_flow_seen_data = Some(true);
-    context.push_raw(
+    context.push(&encode(
         &Slice::from_position(
             context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         // Must serialize to get virtual spaces.
         .serialize(),
-    );
+        context.encode_html,
+    ));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`CodeFencedFence`][Token::CodeFencedFence].
@@ -775,26 +760,29 @@ fn on_exit_code_flow(context: &mut CompileContext) {
 /// Handle [`Exit`][EventType::Exit]:[`CodeText`][Token::CodeText].
 fn on_exit_code_text(context: &mut CompileContext) {
     let result = context.resume();
-    // To do: use bytes.
-    let mut chars = result.chars();
+    let mut bytes = result.as_bytes();
     let mut trim = false;
+    let mut index = 0;
+    let mut end = bytes.len();
 
-    if Some(' ') == chars.next() && Some(' ') == chars.next_back() {
-        let mut next = chars.next();
-        while next != None && !trim {
-            if Some(' ') != next {
+    if end > 2 && bytes[index] == b' ' && bytes[end - 1] == b' ' {
+        index += 1;
+        end -= 1;
+        while index < end && !trim {
+            if bytes[index] != b' ' {
                 trim = true;
+                break;
             }
-            next = chars.next();
+            index += 1;
         }
     }
 
+    if trim {
+        bytes = &bytes[1..end];
+    }
+
     context.code_text_inside = false;
-    context.push(&if trim {
-        result[1..(result.len() - 1)].to_string()
-    } else {
-        result
-    });
+    context.push(str::from_utf8(bytes).unwrap());
 
     if !context.in_image_alt {
         context.push("</code>");
@@ -810,20 +798,23 @@ fn on_exit_drop(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:{[`CodeTextData`][Token::CodeTextData],[`Data`][Token::Data],[`CharacterEscapeValue`][Token::CharacterEscapeValue]}.
 fn on_exit_data(context: &mut CompileContext) {
-    context.push_raw(
+    context.push(&encode(
         Slice::from_position(
             context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         .as_str(),
-    );
+        context.encode_html,
+    ));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Definition`][Token::Definition].
 fn on_exit_definition(context: &mut CompileContext) {
     context.resume();
     let media = context.media_stack.pop().unwrap();
-    let id = normalize_identifier(&media.reference_id.unwrap());
+    let indices = media.reference_id.unwrap();
+    let id =
+        normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str());
 
     context.definitions.push((
         id,
@@ -845,14 +836,8 @@ fn on_exit_definition_destination_string(context: &mut CompileContext) {
 fn on_exit_definition_label_string(context: &mut CompileContext) {
     // Discard label, use the source content instead.
     context.resume();
-    context.media_stack.last_mut().unwrap().reference_id = Some(
-        // To do: lifetimes, reference bytes?
-        Slice::from_position(
-            context.bytes,
-            &Position::from_exit_event(context.events, context.index),
-        )
-        .serialize(),
-    );
+    context.media_stack.last_mut().unwrap().reference_id =
+        Some(Position::from_exit_event(context.events, context.index).to_indices());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`DefinitionTitleString`][Token::DefinitionTitleString].
@@ -940,13 +925,14 @@ fn on_exit_html(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:{[`HtmlFlowData`][Token::HtmlFlowData],[`HtmlTextData`][Token::HtmlTextData]}.
 fn on_exit_html_data(context: &mut CompileContext) {
-    context.push_raw(
+    context.push(&encode(
         Slice::from_position(
             context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         .as_str(),
-    );
+        context.encode_html,
+    ));
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`Label`][Token::Label].
@@ -957,14 +943,8 @@ fn on_exit_label(context: &mut CompileContext) {
 
 /// Handle [`Exit`][EventType::Exit]:[`LabelText`][Token::LabelText].
 fn on_exit_label_text(context: &mut CompileContext) {
-    context.media_stack.last_mut().unwrap().label_id = Some(
-        // To do: lifetimes, reference bytes?
-        Slice::from_position(
-            context.bytes,
-            &Position::from_exit_event(context.events, context.index),
-        )
-        .serialize(),
-    );
+    context.media_stack.last_mut().unwrap().label_id =
+        Some(Position::from_exit_event(context.events, context.index).to_indices());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`LineEnding`][Token::LineEnding].
@@ -974,13 +954,14 @@ fn on_exit_line_ending(context: &mut CompileContext) {
     } else if context.slurp_one_line_ending {
         context.slurp_one_line_ending = false;
     } else {
-        context.push_raw(
+        context.push(&encode(
             Slice::from_position(
                 context.bytes,
                 &Position::from_exit_event(context.events, context.index),
             )
             .as_str(),
-        );
+            context.encode_html,
+        ));
     }
 }
 
@@ -1062,10 +1043,9 @@ fn on_exit_media(context: &mut CompileContext) {
     let media = context.media_stack.pop().unwrap();
     let label = media.label.unwrap();
     let in_image_alt = context.in_image_alt;
-    let id = media
-        .reference_id
-        .or(media.label_id)
-        .map(|id| normalize_identifier(&id));
+    let id = media.reference_id.or(media.label_id).map(|indices| {
+        normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str())
+    });
 
     let definition_index = if media.destination.is_none() {
         id.and_then(|id| {
@@ -1164,14 +1144,9 @@ fn on_exit_paragraph(context: &mut CompileContext) {
 fn on_exit_reference_string(context: &mut CompileContext) {
     // Drop stuff.
     context.resume();
-    // To do: lifetimes, reference bytes.
-    context.media_stack.last_mut().unwrap().reference_id = Some(
-        Slice::from_position(
-            context.bytes,
-            &Position::from_exit_event(context.events, context.index),
-        )
-        .serialize(),
-    );
+
+    context.media_stack.last_mut().unwrap().reference_id =
+        Some(Position::from_exit_event(context.events, context.index).to_indices());
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ResourceDestinationString`][Token::ResourceDestinationString].
