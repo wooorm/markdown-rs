@@ -35,50 +35,22 @@ use crate::subtokenize::link;
 use crate::token::Token;
 use crate::tokenizer::{ContentType, State, Tokenizer};
 
-/// Configuration.
-///
-/// You must pass the token types in that are used.
-#[derive(Debug)]
-pub struct Options {
-    /// Token for the whole title.
-    pub title: Token,
-    /// Token for the marker.
-    pub marker: Token,
-    /// Token for the string inside the quotes.
-    pub string: Token,
-}
-
-/// State needed to parse titles.
-#[derive(Debug)]
-struct Info {
-    /// Whether we’ve seen data.
-    connect: bool,
-    /// Closing marker.
-    marker: u8,
-    /// Configuration.
-    options: Options,
-}
-
 /// Before a title.
 ///
 /// ```markdown
 /// > | "a"
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'"' | b'\'' | b'(') => {
             let marker = tokenizer.current.unwrap();
-            let info = Info {
-                connect: false,
-                marker: if marker == b'(' { b')' } else { marker },
-                options,
-            };
-            tokenizer.enter(info.options.title.clone());
-            tokenizer.enter(info.options.marker.clone());
+            tokenizer.tokenize_state.marker = if marker == b'(' { b')' } else { marker };
+            tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
-            tokenizer.exit(info.options.marker.clone());
-            State::Fn(Box::new(|t| begin(t, info)))
+            tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+            State::Fn(Box::new(begin))
         }
         _ => State::Nok,
     }
@@ -92,18 +64,22 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// > | "a"
 ///      ^
 /// ```
-fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn begin(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'"' | b'\'' | b')') if tokenizer.current.unwrap() == info.marker => {
-            tokenizer.enter(info.options.marker.clone());
+        Some(b'"' | b'\'' | b')')
+            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
+        {
+            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
-            tokenizer.exit(info.options.marker.clone());
-            tokenizer.exit(info.options.title);
+            tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+            tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
+            tokenizer.tokenize_state.marker = 0;
+            tokenizer.tokenize_state.connect = false;
             State::Ok
         }
         _ => {
-            tokenizer.enter(info.options.string.clone());
-            at_break(tokenizer, info)
+            tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
+            at_break(tokenizer)
         }
     }
 }
@@ -114,36 +90,52 @@ fn begin(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | "a"
 ///      ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Nok,
-        Some(b'\n') => tokenizer.go(
+        None => {
+            tokenizer.tokenize_state.marker = 0;
+            tokenizer.tokenize_state.connect = false;
+            State::Nok
+        }
+        Some(b'\n') => tokenizer.attempt(
             space_or_tab_eol_with_options(EolOptions {
                 content_type: Some(ContentType::String),
-                connect: info.connect,
+                connect: tokenizer.tokenize_state.connect,
             }),
-            |t| {
-                info.connect = true;
-                at_break(t, info)
-            },
+            |ok| Box::new(if ok { after_eol } else { at_blank_line }),
         )(tokenizer),
-        Some(b'"' | b'\'' | b')') if tokenizer.current.unwrap() == info.marker => {
-            tokenizer.exit(info.options.string.clone());
-            begin(tokenizer, info)
+        Some(b'"' | b'\'' | b')')
+            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
+        {
+            tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
+            begin(tokenizer)
         }
         Some(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
 
-            if info.connect {
+            if tokenizer.tokenize_state.connect {
                 let index = tokenizer.events.len() - 1;
                 link(&mut tokenizer.events, index);
             } else {
-                info.connect = true;
+                tokenizer.tokenize_state.connect = true;
             }
 
-            title(tokenizer, info)
+            title(tokenizer)
         }
     }
+}
+
+/// To do.
+fn after_eol(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.connect = true;
+    at_break(tokenizer)
+}
+
+/// To do.
+fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.marker = 0;
+    tokenizer.tokenize_state.connect = false;
+    State::Nok
 }
 
 /// In title text.
@@ -152,20 +144,22 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | "a"
 ///      ^
 /// ```
-fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn title(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer, info)
+            at_break(tokenizer)
         }
-        Some(b'"' | b'\'' | b')') if tokenizer.current.unwrap() == info.marker => {
+        Some(b'"' | b'\'' | b')')
+            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
+        {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer, info)
+            at_break(tokenizer)
         }
         Some(byte) => {
             let func = if matches!(byte, b'\\') { escape } else { title };
             tokenizer.consume();
-            State::Fn(Box::new(move |t| func(t, info)))
+            State::Fn(Box::new(func))
         }
     }
 }
@@ -176,12 +170,12 @@ fn title(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | "a\*b"
 ///      ^
 /// ```
-fn escape(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'"' | b'\'' | b')') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| title(t, info)))
+            State::Fn(Box::new(title))
         }
-        _ => title(tokenizer, info),
+        _ => title(tokenizer),
     }
 }

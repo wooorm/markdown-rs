@@ -118,8 +118,9 @@ struct Sequence {
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'_') if tokenizer.parse_state.constructs.attention => {
+            tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.enter(Token::AttentionSequence);
-            inside(tokenizer, tokenizer.current.unwrap())
+            inside(tokenizer)
         }
         _ => State::Nok,
     }
@@ -131,15 +132,16 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | **
 ///     ^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, marker: u8) -> State {
+fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'*' | b'_') if tokenizer.current.unwrap() == marker => {
+        Some(b'*' | b'_') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| inside(t, marker)))
+            State::Fn(Box::new(inside))
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);
             tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
+            tokenizer.tokenize_state.marker = b'\0';
             State::Ok
         }
     }

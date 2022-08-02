@@ -109,8 +109,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') => {
+            tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.enter(Token::HeadingSetextUnderline);
-            inside(tokenizer, tokenizer.current.unwrap())
+            inside(tokenizer)
         }
         _ => State::Nok,
     }
@@ -123,13 +124,14 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ==
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, marker: u8) -> State {
+fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'-' | b'=') if tokenizer.current.unwrap() == marker => {
+        Some(b'-' | b'=') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| inside(t, marker)))
+            State::Fn(Box::new(inside))
         }
         _ => {
+            tokenizer.tokenize_state.marker = 0;
             tokenizer.exit(Token::HeadingSetextUnderline);
             tokenizer.attempt_opt(space_or_tab(), after)(tokenizer)
         }

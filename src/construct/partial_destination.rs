@@ -74,34 +74,6 @@
 use crate::token::Token;
 use crate::tokenizer::{ContentType, State, Tokenizer};
 
-/// Configuration.
-///
-/// You must pass the token types in that are used.
-#[derive(Debug)]
-pub struct Options {
-    /// Token for the whole destination.
-    pub destination: Token,
-    /// Token for a literal (enclosed) destination.
-    pub literal: Token,
-    /// Token for a literal marker.
-    pub marker: Token,
-    /// Token for a raw destination.
-    pub raw: Token,
-    /// Token for a the string.
-    pub string: Token,
-    /// Maximum unbalanced parens.
-    pub limit: usize,
-}
-
-/// State needed to parse destination.
-#[derive(Debug)]
-struct Info {
-    /// Paren balance (used in raw).
-    balance: usize,
-    /// Configuration.
-    options: Options,
-}
-
 /// Before a destination.
 ///
 /// ```markdown
@@ -110,29 +82,24 @@ struct Info {
 /// > | aa
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
-    let info = Info {
-        balance: 0,
-        options,
-    };
-
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'<') => {
-            tokenizer.enter(info.options.destination.clone());
-            tokenizer.enter(info.options.literal.clone());
-            tokenizer.enter(info.options.marker.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
             tokenizer.consume();
-            tokenizer.exit(info.options.marker.clone());
-            State::Fn(Box::new(|t| enclosed_before(t, info)))
+            tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
+            State::Fn(Box::new(enclosed_before))
         }
         // ASCII control, space, closing paren, but *not* `\0`.
         None | Some(0x01..=0x1F | b' ' | b')' | 0x7F) => State::Nok,
         Some(_) => {
-            tokenizer.enter(info.options.destination.clone());
-            tokenizer.enter(info.options.raw.clone());
-            tokenizer.enter(info.options.string.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_4.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            raw(tokenizer, info)
+            raw(tokenizer)
         }
     }
 }
@@ -143,18 +110,18 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed_before(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'>') = tokenizer.current {
-        tokenizer.enter(info.options.marker.clone());
+        tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
         tokenizer.consume();
-        tokenizer.exit(info.options.marker.clone());
-        tokenizer.exit(info.options.literal.clone());
-        tokenizer.exit(info.options.destination);
+        tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
+        tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+        tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
         State::Ok
     } else {
-        tokenizer.enter(info.options.string.clone());
+        tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
         tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-        enclosed(tokenizer, info)
+        enclosed(tokenizer)
     }
 }
 
@@ -164,21 +131,21 @@ fn enclosed_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn enclosed(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'<') => State::Nok,
         Some(b'>') => {
             tokenizer.exit(Token::Data);
-            tokenizer.exit(info.options.string.clone());
-            enclosed_before(tokenizer, info)
+            tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
+            enclosed_before(tokenizer)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| enclosed_escape(t, info)))
+            State::Fn(Box::new(enclosed_escape))
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| enclosed(t, info)))
+            State::Fn(Box::new(enclosed))
         }
     }
 }
@@ -189,13 +156,13 @@ fn enclosed(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <a\*a>
 ///        ^
 /// ```
-fn enclosed_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'<' | b'>' | b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| enclosed(t, info)))
+            State::Fn(Box::new(enclosed))
         }
-        _ => enclosed(tokenizer, info),
+        _ => enclosed(tokenizer),
     }
 }
 
@@ -205,34 +172,38 @@ fn enclosed_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | aa
 ///     ^
 /// ```
-fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn raw(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'\t' | b'\n' | b' ' | b')') if info.balance == 0 => {
+        None | Some(b'\t' | b'\n' | b' ' | b')') if tokenizer.tokenize_state.size == 0 => {
             tokenizer.exit(Token::Data);
-            tokenizer.exit(info.options.string.clone());
-            tokenizer.exit(info.options.raw.clone());
-            tokenizer.exit(info.options.destination);
+            tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
+            tokenizer.exit(tokenizer.tokenize_state.token_4.clone());
+            tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
+            tokenizer.tokenize_state.size = 0;
             State::Ok
         }
-        Some(b'(') if info.balance < info.options.limit => {
+        Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_other => {
             tokenizer.consume();
-            info.balance += 1;
-            State::Fn(Box::new(move |t| raw(t, info)))
+            tokenizer.tokenize_state.size += 1;
+            State::Fn(Box::new(raw))
         }
         // ASCII control (but *not* `\0`) and space and `(`.
-        None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => State::Nok,
+        None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => {
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
         Some(b')') => {
             tokenizer.consume();
-            info.balance -= 1;
-            State::Fn(Box::new(move |t| raw(t, info)))
+            tokenizer.tokenize_state.size -= 1;
+            State::Fn(Box::new(raw))
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| raw_escape(t, info)))
+            State::Fn(Box::new(raw_escape))
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| raw(t, info)))
+            State::Fn(Box::new(raw))
         }
     }
 }
@@ -243,12 +214,12 @@ fn raw(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | a\*a
 ///       ^
 /// ```
-fn raw_escape(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn raw_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'(' | b')' | b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| raw(t, info)))
+            State::Fn(Box::new(raw))
         }
-        _ => raw(tokenizer, info),
+        _ => raw(tokenizer),
     }
 }

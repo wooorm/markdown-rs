@@ -17,9 +17,7 @@ use crate::content::flow::start as flow;
 use crate::parser::ParseState;
 use crate::subtokenize::subtokenize;
 use crate::token::Token;
-use crate::tokenizer::{
-    Container, ContainerState, Event, EventType, Point, State, StateFn, Tokenizer,
-};
+use crate::tokenizer::{Container, ContainerState, Event, EventType, Point, State, Tokenizer};
 use crate::util::{
     normalize_identifier::normalize_identifier,
     skip,
@@ -57,29 +55,11 @@ enum Phase {
     Eof,
 }
 
-/// State needed to parse document.
-struct DocumentInfo {
-    /// Number of containers that have continued.
-    continued: usize,
-    /// Index into `tokenizer.events` we need to track.
-    index: usize,
-    /// Events of containers added back later.
-    inject: Vec<(Vec<Event>, Vec<Event>)>,
-    /// The value of the previous line of flow’s `interrupt`.
-    interrupt_before: bool,
-    /// Whether the previous line of flow was a paragraph.
-    paragraph_before: bool,
-    /// Current containers.
-    stack: Vec<ContainerState>,
-    /// Current flow state function.
-    next: Box<StateFn>,
-}
-
 /// Turn `codes` as the document content type into events.
 pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, parse_state);
 
-    let state = tokenizer.push(0, parse_state.bytes.len(), Box::new(before));
+    let state = tokenizer.push(0, parse_state.bytes.len(), Box::new(start));
     tokenizer.flush(state, true);
 
     let mut index = 0;
@@ -123,28 +103,8 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
 /// > | a
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt_opt(bom, start)(tokenizer)
-}
-
-/// Before document.
-//
-/// ```markdown
-/// > | * a
-///     ^
-///   | > b
-/// ```
 fn start(tokenizer: &mut Tokenizer) -> State {
-    let info = DocumentInfo {
-        index: 0,
-        continued: 0,
-        inject: vec![],
-        next: Box::new(flow),
-        paragraph_before: false,
-        interrupt_before: false,
-        stack: vec![],
-    };
-    line_start(tokenizer, info)
+    tokenizer.attempt_opt(bom, line_start)(tokenizer)
 }
 
 /// Start of a line.
@@ -155,13 +115,16 @@ fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | > b
 ///     ^
 /// ```
-fn line_start(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
-    info.index = tokenizer.events.len();
-    info.inject.push((vec![], vec![]));
-    info.continued = 0;
+fn line_start(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.document_continued = 0;
+    tokenizer.tokenize_state.document_index = tokenizer.events.len();
+    tokenizer
+        .tokenize_state
+        .document_inject
+        .push((vec![], vec![]));
     // Containers would only be interrupting if we’ve continued.
     tokenizer.interrupt = false;
-    container_existing_before(tokenizer, info)
+    container_existing_before(tokenizer)
 }
 
 /// Before existing containers.
@@ -171,27 +134,32 @@ fn line_start(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
 /// > | > b
 ///     ^
 /// ```
-fn container_existing_before(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
+fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
     // If there are more existing containers, check whether the next one continues.
-    if info.continued < info.stack.len() {
-        let container = info.stack.remove(info.continued);
+    if tokenizer.tokenize_state.document_continued
+        < tokenizer.tokenize_state.document_container_stack.len()
+    {
+        let container = tokenizer
+            .tokenize_state
+            .document_container_stack
+            .remove(tokenizer.tokenize_state.document_continued);
         let cont = match container.kind {
             Container::BlockQuote => block_quote_cont,
             Container::ListItem => list_item_const,
         };
 
         tokenizer.container = Some(container);
-        tokenizer.attempt(cont, move |ok| {
-            if ok {
-                Box::new(|t| container_existing_after(t, info))
+        tokenizer.attempt(cont, |ok| {
+            Box::new(if ok {
+                container_existing_after
             } else {
-                Box::new(|t| container_existing_missing(t, info))
-            }
+                container_existing_missing
+            })
         })(tokenizer)
     }
     // Otherwise, check new containers.
     else {
-        container_new_before(tokenizer, info)
+        container_new_before(tokenizer)
     }
 }
 
@@ -202,10 +170,13 @@ fn container_existing_before(tokenizer: &mut Tokenizer, mut info: DocumentInfo) 
 /// > | > b
 ///     ^
 /// ```
-fn container_existing_missing(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
+fn container_existing_missing(tokenizer: &mut Tokenizer) -> State {
     let container = tokenizer.container.take().unwrap();
-    info.stack.insert(info.continued, container);
-    container_new_before(tokenizer, info)
+    tokenizer
+        .tokenize_state
+        .document_container_stack
+        .insert(tokenizer.tokenize_state.document_continued, container);
+    container_new_before(tokenizer)
 }
 
 /// After an existing container.
@@ -215,11 +186,14 @@ fn container_existing_missing(tokenizer: &mut Tokenizer, mut info: DocumentInfo)
 /// > |   b
 ///       ^
 /// ```
-fn container_existing_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
+fn container_existing_after(tokenizer: &mut Tokenizer) -> State {
     let container = tokenizer.container.take().unwrap();
-    info.stack.insert(info.continued, container);
-    info.continued += 1;
-    container_existing_before(tokenizer, info)
+    tokenizer
+        .tokenize_state
+        .document_container_stack
+        .insert(tokenizer.tokenize_state.document_continued, container);
+    tokenizer.tokenize_state.document_continued += 1;
+    container_existing_before(tokenizer)
 }
 
 /// Before a new container.
@@ -230,16 +204,18 @@ fn container_existing_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -
 /// > | > b
 ///     ^
 /// ```
-fn container_new_before(tokenizer: &mut Tokenizer, info: DocumentInfo) -> State {
+fn container_new_before(tokenizer: &mut Tokenizer) -> State {
     // If we have completely continued, restore the flow’s past `interrupt`
     // status.
-    if info.continued == info.stack.len() {
-        tokenizer.interrupt = info.interrupt_before;
+    if tokenizer.tokenize_state.document_continued
+        == tokenizer.tokenize_state.document_container_stack.len()
+    {
+        tokenizer.interrupt = tokenizer.tokenize_state.document_interrupt_before;
 
         // …and if we’re in a concrete construct, new containers can’t “pierce”
         // into them.
         if tokenizer.concrete {
-            return containers_after(tokenizer, info);
+            return containers_after(tokenizer);
         }
     }
 
@@ -251,41 +227,42 @@ fn container_new_before(tokenizer: &mut Tokenizer, info: DocumentInfo) -> State 
         size: 0,
     });
 
-    tokenizer.attempt(block_quote, move |ok| {
-        if ok {
-            Box::new(|t| container_new_after(t, info))
+    tokenizer.attempt(block_quote, |ok| {
+        Box::new(if ok {
+            container_new_after
         } else {
-            Box::new(|tokenizer| {
-                // List item?
-                tokenizer.container = Some(ContainerState {
-                    kind: Container::ListItem,
-                    blank_initial: false,
-                    size: 0,
-                });
+            container_new_before_not_blockquote
+        })
+    })(tokenizer)
+}
 
-                tokenizer.attempt(list_item, |ok| {
-                    Box::new(move |t| {
-                        if ok {
-                            container_new_after(t, info)
-                        } else {
-                            containers_after(t, info)
-                        }
-                    })
-                })(tokenizer)
-            })
-        }
+/// To do.
+fn container_new_before_not_blockquote(tokenizer: &mut Tokenizer) -> State {
+    // List item?
+    tokenizer.container = Some(ContainerState {
+        kind: Container::ListItem,
+        blank_initial: false,
+        size: 0,
+    });
+
+    tokenizer.attempt(list_item, |ok| {
+        Box::new(if ok {
+            container_new_after
+        } else {
+            containers_after
+        })
     })(tokenizer)
 }
 
 /// After a new container.
-//
+///
 /// ```markdown
 /// > | * a
 ///       ^
 /// > | > b
 ///       ^
 /// ```
-fn container_new_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
+fn container_new_after(tokenizer: &mut Tokenizer) -> State {
     let container = tokenizer.container.take().unwrap();
 
     // Remove from the event stack.
@@ -312,16 +289,21 @@ fn container_new_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> Sta
 
     // If we did not continue all existing containers, and there is a new one,
     // close the flow and those containers.
-    if info.continued != info.stack.len() {
-        info = exit_containers(tokenizer, info, &Phase::Prefix);
+    if tokenizer.tokenize_state.document_continued
+        != tokenizer.tokenize_state.document_container_stack.len()
+    {
+        exit_containers(tokenizer, &Phase::Prefix);
     }
 
     // Try another new container.
-    info.stack.push(container);
-    info.continued += 1;
-    info.interrupt_before = false;
+    tokenizer
+        .tokenize_state
+        .document_container_stack
+        .push(container);
+    tokenizer.tokenize_state.document_continued += 1;
+    tokenizer.tokenize_state.document_interrupt_before = false;
     tokenizer.interrupt = false;
-    container_new_before(tokenizer, info)
+    container_new_before(tokenizer)
 }
 
 /// After containers, before flow.
@@ -332,26 +314,36 @@ fn container_new_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> Sta
 /// > | > b
 ///       ^
 /// ```
-fn containers_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State {
+fn containers_after(tokenizer: &mut Tokenizer) -> State {
     // Store the container events we parsed.
-    info.inject
+    tokenizer
+        .tokenize_state
+        .document_inject
         .last_mut()
         .unwrap()
         .0
-        .append(&mut tokenizer.events.split_off(info.index));
+        .append(
+            &mut tokenizer
+                .events
+                .split_off(tokenizer.tokenize_state.document_index),
+        );
 
-    tokenizer.lazy = info.continued != info.stack.len();
-    tokenizer.interrupt = info.interrupt_before;
+    tokenizer.lazy = tokenizer.tokenize_state.document_continued
+        != tokenizer.tokenize_state.document_container_stack.len();
+    tokenizer.interrupt = tokenizer.tokenize_state.document_interrupt_before;
     tokenizer.define_skip_current();
 
-    let state = info.next;
-    info.next = Box::new(flow);
+    let state = tokenizer
+        .tokenize_state
+        .document_next
+        .take()
+        .unwrap_or_else(|| Box::new(flow));
 
     // Parse flow, pausing after eols.
     tokenizer.go_until(
         state,
         |code| matches!(code, Some(b'\n')),
-        move |state| Box::new(move |t| flow_end(t, info, state)),
+        |state| Box::new(|t| flow_end(t, state)),
     )(tokenizer)
 }
 
@@ -362,7 +354,7 @@ fn containers_after(tokenizer: &mut Tokenizer, mut info: DocumentInfo) -> State 
 /// > | > b
 ///     ^  ^
 /// ```
-fn flow_end(tokenizer: &mut Tokenizer, mut info: DocumentInfo, result: State) -> State {
+fn flow_end(tokenizer: &mut Tokenizer, result: State) -> State {
     let paragraph = !tokenizer.events.is_empty()
         && tokenizer.events[skip::opt_back(
             &tokenizer.events,
@@ -372,53 +364,59 @@ fn flow_end(tokenizer: &mut Tokenizer, mut info: DocumentInfo, result: State) ->
         .token_type
             == Token::Paragraph;
 
-    if tokenizer.lazy && info.paragraph_before && paragraph {
-        info.continued = info.stack.len();
+    if tokenizer.lazy && paragraph && tokenizer.tokenize_state.document_paragraph_before {
+        tokenizer.tokenize_state.document_continued =
+            tokenizer.tokenize_state.document_container_stack.len();
     }
 
-    if info.continued != info.stack.len() {
-        info = exit_containers(tokenizer, info, &Phase::After);
+    if tokenizer.tokenize_state.document_continued
+        != tokenizer.tokenize_state.document_container_stack.len()
+    {
+        exit_containers(tokenizer, &Phase::After);
     }
-
-    info.paragraph_before = paragraph;
-    info.interrupt_before = tokenizer.interrupt;
 
     match result {
         State::Ok => {
-            if !info.stack.is_empty() {
-                info.continued = 0;
-                info = exit_containers(tokenizer, info, &Phase::Eof);
+            if !tokenizer.tokenize_state.document_container_stack.is_empty() {
+                tokenizer.tokenize_state.document_continued = 0;
+                exit_containers(tokenizer, &Phase::Eof);
             }
 
-            resolve(tokenizer, &mut info);
-            result
+            resolve(tokenizer);
+            State::Ok
         }
         State::Nok => unreachable!("unexpected `nok` from flow"),
         State::Fn(func) => {
-            info.next = func;
-            line_start(tokenizer, info)
+            tokenizer.tokenize_state.document_paragraph_before = paragraph;
+            tokenizer.tokenize_state.document_interrupt_before = tokenizer.interrupt;
+            tokenizer.tokenize_state.document_next = Some(func);
+            line_start(tokenizer)
         }
     }
 }
 
 /// Close containers (and flow if needed).
-fn exit_containers(
-    tokenizer: &mut Tokenizer,
-    mut info: DocumentInfo,
-    phase: &Phase,
-) -> DocumentInfo {
-    let mut stack_close = info.stack.split_off(info.continued);
+fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
+    let mut stack_close = tokenizer
+        .tokenize_state
+        .document_container_stack
+        .split_off(tokenizer.tokenize_state.document_continued);
 
     // So, we’re at the end of a line, but we need to close the *previous* line.
     if *phase != Phase::Eof {
         tokenizer.define_skip_current();
-        let mut current_events = tokenizer.events.split_off(info.index);
-        let next = info.next;
-        info.next = Box::new(flow); // This is weird but Rust needs a function there.
-        tokenizer.flush(State::Fn(next), false);
+        let mut current_events = tokenizer
+            .events
+            .split_off(tokenizer.tokenize_state.document_index);
+        let state = tokenizer
+            .tokenize_state
+            .document_next
+            .take()
+            .unwrap_or_else(|| Box::new(flow));
+        tokenizer.flush(State::Fn(state), false);
 
         if *phase == Phase::Prefix {
-            info.index = tokenizer.events.len();
+            tokenizer.tokenize_state.document_index = tokenizer.events.len();
         }
 
         tokenizer.events.append(&mut current_events);
@@ -442,17 +440,18 @@ fn exit_containers(
         });
     }
 
-    let index = info.inject.len() - (if *phase == Phase::Eof { 1 } else { 2 });
-    info.inject[index].1.append(&mut exits);
-    info.interrupt_before = false;
-
-    info
+    let index =
+        tokenizer.tokenize_state.document_inject.len() - (if *phase == Phase::Eof { 1 } else { 2 });
+    tokenizer.tokenize_state.document_inject[index]
+        .1
+        .append(&mut exits);
+    tokenizer.tokenize_state.document_interrupt_before = false;
 }
 
 // Inject the container events.
-fn resolve(tokenizer: &mut Tokenizer, info: &mut DocumentInfo) {
+fn resolve(tokenizer: &mut Tokenizer) {
     let mut index = 0;
-    let mut inject = info.inject.split_off(0);
+    let mut inject = tokenizer.tokenize_state.document_inject.split_off(0);
     inject.reverse();
     let mut first_line_ending_in_run = None;
 

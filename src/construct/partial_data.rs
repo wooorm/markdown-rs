@@ -15,14 +15,14 @@ use crate::tokenizer::{EventType, State, Tokenizer};
 /// > | abc
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(byte) if stop.contains(&byte) => {
+        Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
             tokenizer.enter(Token::Data);
             tokenizer.consume();
-            State::Fn(Box::new(move |t| data(t, stop)))
+            State::Fn(Box::new(data))
         }
-        _ => at_break(tokenizer, stop),
+        _ => at_break(tokenizer),
     }
 }
 
@@ -32,22 +32,22 @@ pub fn start(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
 /// > | abc
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
+fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(move |t| at_break(t, stop)))
+            State::Fn(Box::new(at_break))
         }
-        Some(byte) if stop.contains(&byte) => {
+        Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
             State::Ok
         }
         _ => {
             tokenizer.enter(Token::Data);
-            data(tokenizer, stop)
+            data(tokenizer)
         }
     }
 }
@@ -58,19 +58,19 @@ fn at_break(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
 /// > | abc
 ///     ^^^
 /// ```
-fn data(tokenizer: &mut Tokenizer, stop: &'static [u8]) -> State {
+fn data(tokenizer: &mut Tokenizer) -> State {
     let done = match tokenizer.current {
         None | Some(b'\n') => true,
-        Some(byte) if stop.contains(&byte) => true,
+        Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => true,
         _ => false,
     };
 
     if done {
         tokenizer.exit(Token::Data);
-        at_break(tokenizer, stop)
+        at_break(tokenizer)
     } else {
         tokenizer.consume();
-        State::Fn(Box::new(move |t| data(t, stop)))
+        State::Fn(Box::new(data))
     }
 }
 

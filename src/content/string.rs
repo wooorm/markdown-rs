@@ -14,7 +14,7 @@
 
 use crate::construct::{
     character_escape::start as character_escape, character_reference::start as character_reference,
-    partial_data::start as data, partial_whitespace::create_resolve_whitespace,
+    partial_data::start as data, partial_whitespace::resolve_whitespace,
 };
 use crate::tokenizer::{State, Tokenizer};
 
@@ -22,10 +22,8 @@ const MARKERS: [u8; 2] = [b'&', b'\\'];
 
 /// Start of string.
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.register_resolver(
-        "whitespace".to_string(),
-        Box::new(create_resolve_whitespace(false, false)),
-    );
+    tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
+    tokenizer.tokenize_state.stop = &MARKERS;
     before(tokenizer)
 }
 
@@ -42,5 +40,10 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 
 /// At data.
 fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(|t| data(t, &MARKERS), before)(tokenizer)
+    tokenizer.go(data, before)(tokenizer)
+}
+
+/// Resolve whitespace.
+pub fn resolve(tokenizer: &mut Tokenizer) {
+    resolve_whitespace(tokenizer, false, false);
 }

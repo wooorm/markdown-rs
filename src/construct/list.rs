@@ -123,7 +123,7 @@ fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 fn before_ordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemPrefix);
     tokenizer.enter(Token::ListItemValue);
-    inside(tokenizer, 0)
+    inside(tokenizer)
 }
 
 /// In an ordered list item value.
@@ -132,17 +132,21 @@ fn before_ordered(tokenizer: &mut Tokenizer) -> State {
 /// > | 1. a
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'.' | b')') if !tokenizer.interrupt || size < 2 => {
+        Some(b'.' | b')') if !tokenizer.interrupt || tokenizer.tokenize_state.size < 2 => {
             tokenizer.exit(Token::ListItemValue);
             marker(tokenizer)
         }
-        Some(b'0'..=b'9') if size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
+        Some(b'0'..=b'9') if tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
+            tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(Box::new(move |t| inside(t, size + 1)))
+            State::Fn(Box::new(inside))
         }
-        _ => State::Nok,
+        _ => {
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
     }
 }
 
@@ -170,12 +174,9 @@ fn marker(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 fn marker_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(blank_line, move |ok| {
-        if ok {
-            Box::new(|t| after(t, true))
-        } else {
-            Box::new(marker_after_not_blank)
-        }
+    tokenizer.tokenize_state.size = 1;
+    tokenizer.check(blank_line, |ok| {
+        Box::new(if ok { after } else { marker_after_not_blank })
     })(tokenizer)
 }
 
@@ -186,13 +187,11 @@ fn marker_after(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn marker_after_not_blank(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.size = 0;
+
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
-    tokenizer.attempt(whitespace, move |ok| {
-        if ok {
-            Box::new(|t| after(t, false))
-        } else {
-            Box::new(prefix_other)
-        }
+    tokenizer.attempt(whitespace, |ok| {
+        Box::new(if ok { after } else { prefix_other })
     })(tokenizer)
 }
 
@@ -232,7 +231,7 @@ fn prefix_other(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume();
             tokenizer.exit(Token::SpaceOrTab);
-            State::Fn(Box::new(|t| after(t, false)))
+            State::Fn(Box::new(after))
         }
         _ => State::Nok,
     }
@@ -244,7 +243,10 @@ fn prefix_other(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, blank: bool) -> State {
+fn after(tokenizer: &mut Tokenizer) -> State {
+    let blank = tokenizer.tokenize_state.size == 1;
+    tokenizer.tokenize_state.size = 0;
+
     if blank && tokenizer.interrupt {
         State::Nok
     } else {

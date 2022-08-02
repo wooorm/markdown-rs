@@ -148,10 +148,8 @@
 
 use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::{
-    partial_destination::{start as destination, Options as DestinationOptions},
-    partial_label::{start as label, Options as LabelOptions},
-    partial_space_or_tab::space_or_tab_eol,
-    partial_title::{start as title, Options as TitleOptions},
+    partial_destination::start as destination, partial_label::start as label,
+    partial_space_or_tab::space_or_tab_eol, partial_title::start as title,
 };
 use crate::token::Token;
 use crate::tokenizer::{Event, EventType, Media, State, Tokenizer};
@@ -160,15 +158,6 @@ use crate::util::{
     skip,
     slice::{Position, Slice},
 };
-
-/// State needed to parse label end.
-#[derive(Debug)]
-struct Info {
-    /// Index into `label_start_stack` of the corresponding opening.
-    label_start_index: usize,
-    /// The proposed `Media` that this seems to represent.
-    media: Media,
-}
 
 /// Start of label end.
 ///
@@ -202,36 +191,20 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 .get_mut(label_start_index)
                 .unwrap();
 
+            tokenizer.tokenize_state.start = label_start_index;
+            tokenizer.tokenize_state.end = tokenizer.events.len();
+
             // Mark as balanced if the info is inactive.
             if label_start.inactive {
-                return nok(tokenizer, label_start_index);
+                return nok(tokenizer);
             }
-
-            let label_end_start = tokenizer.events.len();
-
-            let info = Info {
-                label_start_index,
-                media: Media {
-                    start: label_start.start,
-                    end: (label_end_start, label_end_start + 3),
-                    id: normalize_identifier(
-                        // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
-                        Slice::from_indices(
-                            tokenizer.parse_state.bytes,
-                            tokenizer.events[label_start.start.1].point.index,
-                            tokenizer.events[label_end_start - 1].point.index,
-                        )
-                        .as_str(),
-                    ),
-                },
-            };
 
             tokenizer.enter(Token::LabelEnd);
             tokenizer.enter(Token::LabelMarker);
             tokenizer.consume();
             tokenizer.exit(Token::LabelMarker);
             tokenizer.exit(Token::LabelEnd);
-            return State::Fn(Box::new(move |t| after(t, info)));
+            return State::Fn(Box::new(after));
         }
     }
 
@@ -250,40 +223,40 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | [a] b
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
-    let defined = tokenizer.parse_state.definitions.contains(&info.media.id);
+fn after(tokenizer: &mut Tokenizer) -> State {
+    let start = &tokenizer.label_start_stack[tokenizer.tokenize_state.start];
+    let defined = tokenizer
+        .parse_state
+        .definitions
+        .contains(&normalize_identifier(
+            // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
+            Slice::from_indices(
+                tokenizer.parse_state.bytes,
+                tokenizer.events[start.start.1].point.index,
+                tokenizer.events[tokenizer.tokenize_state.end].point.index,
+            )
+            .as_str(),
+        ));
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
         Some(b'(') => tokenizer.attempt(resource, move |is_ok| {
-            Box::new(move |t| {
-                // Also fine if `defined`, as then it’s a valid shortcut.
-                if is_ok || defined {
-                    ok(t, info)
-                } else {
-                    nok(t, info.label_start_index)
-                }
-            })
+            Box::new(if is_ok || defined { ok } else { nok })
         })(tokenizer),
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
         Some(b'[') => tokenizer.attempt(full_reference, move |is_ok| {
-            Box::new(move |t| {
-                if is_ok {
-                    ok(t, info)
-                } else if defined {
-                    reference_not_full(t, info)
-                } else {
-                    nok(t, info.label_start_index)
-                }
+            Box::new(if is_ok {
+                ok
+            } else if defined {
+                reference_not_full
+            } else {
+                nok
             })
         })(tokenizer),
         // Shortcut (`[asd]`) reference?
         _ => {
-            if defined {
-                ok(tokenizer, info)
-            } else {
-                nok(tokenizer, info.label_start_index)
-            }
+            let func = if defined { ok } else { nok };
+            func(tokenizer)
         }
     }
 }
@@ -298,15 +271,9 @@ fn after(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | [a] b
 ///        ^
 /// ```
-fn reference_not_full(tokenizer: &mut Tokenizer, info: Info) -> State {
-    tokenizer.attempt(collapsed_reference, move |is_ok| {
-        Box::new(move |t| {
-            if is_ok {
-                ok(t, info)
-            } else {
-                nok(t, info.label_start_index)
-            }
-        })
+fn reference_not_full(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(collapsed_reference, |is_ok| {
+        Box::new(if is_ok { ok } else { nok })
     })(tokenizer)
 }
 
@@ -322,16 +289,15 @@ fn reference_not_full(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | [a] b
 ///        ^
 /// ```
-fn ok(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn ok(tokenizer: &mut Tokenizer) -> State {
+    let label_start_index = tokenizer.tokenize_state.start;
     // Remove this one and everything after it.
-    let mut left = tokenizer
-        .label_start_stack
-        .split_off(info.label_start_index);
+    let mut left = tokenizer.label_start_stack.split_off(label_start_index);
     // Remove this one from `left`, as we’ll move it to `media_list`.
-    left.remove(0);
+    let label_start = left.remove(0);
     tokenizer.label_start_list_loose.append(&mut left);
 
-    let is_link = tokenizer.events[info.media.start.0].token_type == Token::LabelLink;
+    let is_link = tokenizer.events[label_start.start.0].token_type == Token::LabelLink;
 
     if is_link {
         let mut index = 0;
@@ -344,8 +310,12 @@ fn ok(tokenizer: &mut Tokenizer, mut info: Info) -> State {
         }
     }
 
-    info.media.end.1 = tokenizer.events.len() - 1;
-    tokenizer.media_list.push(info.media);
+    tokenizer.media_list.push(Media {
+        start: label_start.start,
+        end: (tokenizer.tokenize_state.end, tokenizer.events.len() - 1),
+    });
+    tokenizer.tokenize_state.start = 0;
+    tokenizer.tokenize_state.end = 0;
     tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
     State::Ok
 }
@@ -362,12 +332,14 @@ fn ok(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | [a] b
 ///        ^
 /// ```
-fn nok(tokenizer: &mut Tokenizer, label_start_index: usize) -> State {
+fn nok(tokenizer: &mut Tokenizer) -> State {
     tokenizer
         .label_start_stack
-        .get_mut(label_start_index)
+        .get_mut(tokenizer.tokenize_state.start)
         .unwrap()
         .balanced = true;
+    tokenizer.tokenize_state.start = 0;
+    tokenizer.tokenize_state.end = 0;
     State::Nok
 }
 
@@ -407,24 +379,23 @@ fn resource_start(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 fn resource_open(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b')') => resource_end(tokenizer),
-        _ => tokenizer.go(
-            |t| {
-                destination(
-                    t,
-                    DestinationOptions {
-                        limit: RESOURCE_DESTINATION_BALANCE_MAX,
-                        destination: Token::ResourceDestination,
-                        literal: Token::ResourceDestinationLiteral,
-                        marker: Token::ResourceDestinationLiteralMarker,
-                        raw: Token::ResourceDestinationRaw,
-                        string: Token::ResourceDestinationString,
-                    },
-                )
-            },
-            destination_after,
-        )(tokenizer),
+    if let Some(b')') = tokenizer.current {
+        resource_end(tokenizer)
+    } else {
+        tokenizer.tokenize_state.token_1 = Token::ResourceDestination;
+        tokenizer.tokenize_state.token_2 = Token::ResourceDestinationLiteral;
+        tokenizer.tokenize_state.token_3 = Token::ResourceDestinationLiteralMarker;
+        tokenizer.tokenize_state.token_4 = Token::ResourceDestinationRaw;
+        tokenizer.tokenize_state.token_5 = Token::ResourceDestinationString;
+        tokenizer.tokenize_state.size_other = RESOURCE_DESTINATION_BALANCE_MAX;
+
+        tokenizer.attempt(destination, |ok| {
+            Box::new(if ok {
+                destination_after
+            } else {
+                destination_missing
+            })
+        })(tokenizer)
     }
 }
 
@@ -435,9 +406,27 @@ fn resource_open(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 fn destination_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = Token::Data;
+    tokenizer.tokenize_state.token_2 = Token::Data;
+    tokenizer.tokenize_state.token_3 = Token::Data;
+    tokenizer.tokenize_state.token_4 = Token::Data;
+    tokenizer.tokenize_state.token_5 = Token::Data;
+    tokenizer.tokenize_state.size_other = 0;
+
     tokenizer.attempt(space_or_tab_eol(), |ok| {
         Box::new(if ok { resource_between } else { resource_end })
     })(tokenizer)
+}
+
+/// Without destination.
+fn destination_missing(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = Token::Data;
+    tokenizer.tokenize_state.token_2 = Token::Data;
+    tokenizer.tokenize_state.token_3 = Token::Data;
+    tokenizer.tokenize_state.token_4 = Token::Data;
+    tokenizer.tokenize_state.token_5 = Token::Data;
+    tokenizer.tokenize_state.size_other = 0;
+    State::Nok
 }
 
 /// In a resource, after a destination, after whitespace.
@@ -448,19 +437,12 @@ fn destination_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn resource_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'"' | b'\'' | b'(') => tokenizer.go(
-            |t| {
-                title(
-                    t,
-                    TitleOptions {
-                        title: Token::ResourceTitle,
-                        marker: Token::ResourceTitleMarker,
-                        string: Token::ResourceTitleString,
-                    },
-                )
-            },
-            title_after,
-        )(tokenizer),
+        Some(b'"' | b'\'' | b'(') => {
+            tokenizer.tokenize_state.token_1 = Token::ResourceTitle;
+            tokenizer.tokenize_state.token_2 = Token::ResourceTitleMarker;
+            tokenizer.tokenize_state.token_3 = Token::ResourceTitleString;
+            tokenizer.go(title, title_after)(tokenizer)
+        }
         _ => resource_end(tokenizer),
     }
 }
@@ -472,6 +454,9 @@ fn resource_between(tokenizer: &mut Tokenizer) -> State {
 ///              ^
 /// ```
 fn title_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = Token::Data;
+    tokenizer.tokenize_state.token_2 = Token::Data;
+    tokenizer.tokenize_state.token_3 = Token::Data;
     tokenizer.attempt_opt(space_or_tab_eol(), resource_end)(tokenizer)
 }
 
@@ -502,19 +487,12 @@ fn resource_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn full_reference(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'[') => tokenizer.go(
-            |t| {
-                label(
-                    t,
-                    LabelOptions {
-                        label: Token::Reference,
-                        marker: Token::ReferenceMarker,
-                        string: Token::ReferenceString,
-                    },
-                )
-            },
-            full_reference_after,
-        )(tokenizer),
+        Some(b'[') => {
+            tokenizer.tokenize_state.token_1 = Token::Reference;
+            tokenizer.tokenize_state.token_2 = Token::ReferenceMarker;
+            tokenizer.tokenize_state.token_3 = Token::ReferenceString;
+            tokenizer.go(label, full_reference_after)(tokenizer)
+        }
         _ => unreachable!("expected `[`"),
     }
 }
@@ -526,6 +504,10 @@ fn full_reference(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 fn full_reference_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = Token::Data;
+    tokenizer.tokenize_state.token_2 = Token::Data;
+    tokenizer.tokenize_state.token_3 = Token::Data;
+
     if tokenizer
         .parse_state
         .definitions

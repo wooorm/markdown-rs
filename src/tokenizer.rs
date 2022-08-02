@@ -121,8 +121,6 @@ pub struct Media {
     pub start: (usize, usize),
     /// Indices of where the media’s label end starts and ends in `events`.
     pub end: (usize, usize),
-    /// Identifier
-    pub id: String,
 }
 
 /// Supported containers.
@@ -163,6 +161,62 @@ struct InternalState {
     point: Point,
 }
 
+/// To do
+#[allow(clippy::struct_excessive_bools)]
+pub struct TokenizeState {
+    /// To do.
+    pub connect: bool,
+    /// To do.
+    pub document_container_stack: Vec<ContainerState>,
+    /// To do.
+    pub document_continued: usize,
+    /// To do.
+    pub document_index: usize,
+    /// To do.
+    pub document_inject: Vec<(Vec<Event>, Vec<Event>)>,
+    /// To do.
+    pub document_interrupt_before: bool,
+    /// To do.
+    pub document_paragraph_before: bool,
+    /// To do.
+    pub document_next: Option<Box<StateFn>>,
+    /// To do.
+    pub marker: u8,
+    /// To do.
+    pub marker_other: u8,
+    /// To do.
+    pub prefix: usize,
+    /// To do.
+    pub return_state: Option<Box<StateFn>>,
+    /// To do.
+    pub seen: bool,
+    /// To do.
+    pub size: usize,
+    /// To do.
+    pub size_other: usize,
+    /// To do.
+    pub start: usize,
+    /// To do.
+    pub end: usize,
+    /// To do.
+    pub stop: &'static [u8],
+    pub space_or_tab_eol_content_type: Option<ContentType>,
+    pub space_or_tab_eol_connect: bool,
+    pub space_or_tab_eol_ok: bool,
+    pub space_or_tab_connect: bool,
+    pub space_or_tab_content_type: Option<ContentType>,
+    pub space_or_tab_min: usize,
+    pub space_or_tab_max: usize,
+    pub space_or_tab_size: usize,
+    pub space_or_tab_token: Token,
+    /// To do.
+    pub token_1: Token,
+    pub token_2: Token,
+    pub token_3: Token,
+    pub token_4: Token,
+    pub token_5: Token,
+}
+
 /// A tokenizer itself.
 #[allow(clippy::struct_excessive_bools)]
 pub struct Tokenizer<'a> {
@@ -179,6 +233,8 @@ pub struct Tokenizer<'a> {
     consumed: bool,
     /// Track whether this tokenizer is done.
     resolved: bool,
+    /// To do.
+    attempt_balance: usize,
     /// Current byte.
     pub current: Option<u8>,
     /// Previous byte.
@@ -200,6 +256,8 @@ pub struct Tokenizer<'a> {
     resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
+    /// To do.
+    pub tokenize_state: TokenizeState,
     /// Stack of label (start) that could form images and links.
     ///
     /// Used when tokenizing [text content][crate::content::text].
@@ -241,10 +299,45 @@ impl<'a> Tokenizer<'a> {
             line_start: point.clone(),
             consumed: true,
             resolved: false,
+            attempt_balance: 0,
             point,
             stack: vec![],
             events: vec![],
             parse_state,
+            tokenize_state: TokenizeState {
+                connect: false,
+                document_container_stack: vec![],
+                document_continued: 0,
+                document_index: 0,
+                document_inject: vec![],
+                document_interrupt_before: false,
+                document_paragraph_before: false,
+                document_next: None,
+                marker: 0,
+                marker_other: 0,
+                prefix: 0,
+                seen: false,
+                size: 0,
+                size_other: 0,
+                start: 0,
+                end: 0,
+                stop: &[],
+                return_state: None,
+                space_or_tab_eol_content_type: None,
+                space_or_tab_eol_connect: false,
+                space_or_tab_eol_ok: false,
+                space_or_tab_connect: false,
+                space_or_tab_content_type: None,
+                space_or_tab_min: 0,
+                space_or_tab_max: 0,
+                space_or_tab_size: 0,
+                space_or_tab_token: Token::SpaceOrTab,
+                token_1: Token::Data,
+                token_2: Token::Data,
+                token_3: Token::Data,
+                token_4: Token::Data,
+                token_5: Token::Data,
+            },
             map: EditMap::new(),
             label_start_stack: vec![],
             label_start_list_loose: vec![],
@@ -494,11 +587,14 @@ impl<'a> Tokenizer<'a> {
         state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
         after: impl FnOnce(&mut Tokenizer) -> State + 'static,
     ) -> Box<StateFn> {
+        self.attempt_balance += 1;
         attempt_impl(
             state_fn,
             None,
             self.point.index,
             |tokenizer: &mut Tokenizer, state| {
+                tokenizer.attempt_balance -= 1;
+
                 if matches!(state, State::Ok) {
                     tokenizer.consumed = true;
                     State::Fn(Box::new(after))
@@ -522,11 +618,13 @@ impl<'a> Tokenizer<'a> {
         until: impl Fn(Option<u8>) -> bool + 'static,
         done: impl FnOnce(State) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
+        self.attempt_balance += 1;
         attempt_impl(
             state_fn,
             Some(Box::new(until)),
             self.point.index,
             |tokenizer: &mut Tokenizer, state| {
+                tokenizer.attempt_balance -= 1;
                 tokenizer.consumed = true;
                 // We don’t capture/free state because it is assumed that
                 // `go_until` itself is wrapped in another attempt that does
@@ -550,6 +648,7 @@ impl<'a> Tokenizer<'a> {
         state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
+        self.attempt_balance += 1;
         let previous = self.capture();
 
         attempt_impl(
@@ -557,6 +656,7 @@ impl<'a> Tokenizer<'a> {
             None,
             self.point.index,
             |tokenizer: &mut Tokenizer, state| {
+                tokenizer.attempt_balance -= 1;
                 tokenizer.free(previous);
                 tokenizer.consumed = true;
                 State::Fn(done(matches!(state, State::Ok)))
@@ -580,6 +680,7 @@ impl<'a> Tokenizer<'a> {
         state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
         done: impl FnOnce(bool) -> Box<StateFn> + 'static,
     ) -> Box<StateFn> {
+        self.attempt_balance += 1;
         let previous = self.capture();
 
         attempt_impl(
@@ -587,6 +688,7 @@ impl<'a> Tokenizer<'a> {
             None,
             self.point.index,
             |tokenizer: &mut Tokenizer, state| {
+                tokenizer.attempt_balance -= 1;
                 let ok = matches!(state, State::Ok);
 
                 if !ok {
@@ -782,7 +884,47 @@ fn attempt_impl(
         let state = state(tokenizer);
 
         match state {
-            State::Ok | State::Nok => done(tokenizer, state),
+            State::Ok | State::Nok => {
+                if tokenizer.attempt_balance == 0 {
+                    debug_assert!(!tokenizer.tokenize_state.connect);
+                    debug_assert_eq!(tokenizer.tokenize_state.document_continued, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.document_index, 0);
+                    debug_assert!(!tokenizer.tokenize_state.document_interrupt_before);
+                    debug_assert!(!tokenizer.tokenize_state.document_paragraph_before);
+                    debug_assert_eq!(tokenizer.tokenize_state.marker, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.marker_other, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.prefix, 0);
+                    debug_assert!(!tokenizer.tokenize_state.seen);
+                    debug_assert_eq!(tokenizer.tokenize_state.size, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.size_other, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.stop.len(), 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.start, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.end, 0);
+                    debug_assert!(tokenizer.tokenize_state.return_state.is_none());
+                    debug_assert!(!tokenizer.tokenize_state.space_or_tab_eol_connect);
+                    debug_assert!(!tokenizer.tokenize_state.space_or_tab_eol_ok);
+                    debug_assert!(tokenizer
+                        .tokenize_state
+                        .space_or_tab_eol_content_type
+                        .is_none());
+                    debug_assert!(!tokenizer.tokenize_state.space_or_tab_connect);
+                    debug_assert!(tokenizer.tokenize_state.space_or_tab_content_type.is_none());
+                    debug_assert_eq!(tokenizer.tokenize_state.space_or_tab_min, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.space_or_tab_max, 0);
+                    debug_assert_eq!(tokenizer.tokenize_state.space_or_tab_size, 0);
+                    debug_assert_eq!(
+                        tokenizer.tokenize_state.space_or_tab_token,
+                        Token::SpaceOrTab
+                    );
+                    debug_assert_eq!(tokenizer.tokenize_state.token_1, Token::Data);
+                    debug_assert_eq!(tokenizer.tokenize_state.token_2, Token::Data);
+                    debug_assert_eq!(tokenizer.tokenize_state.token_3, Token::Data);
+                    debug_assert_eq!(tokenizer.tokenize_state.token_4, Token::Data);
+                    debug_assert_eq!(tokenizer.tokenize_state.token_5, Token::Data);
+                }
+
+                done(tokenizer, state)
+            }
             State::Fn(func) => State::Fn(attempt_impl(func, pause, start, done)),
         }
     })

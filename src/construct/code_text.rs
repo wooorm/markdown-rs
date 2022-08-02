@@ -105,7 +105,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.enter(Token::CodeText);
             tokenizer.enter(Token::CodeTextSequence);
-            sequence_open(tokenizer, 0)
+            sequence_open(tokenizer)
         }
         _ => State::Nok,
     }
@@ -117,13 +117,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | `a`
 ///     ^
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'`') = tokenizer.current {
+        tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Fn(Box::new(move |t| sequence_open(t, size + 1)))
+        State::Fn(Box::new(sequence_open))
     } else {
         tokenizer.exit(Token::CodeTextSequence);
-        between(tokenizer, size)
+        between(tokenizer)
     }
 }
 
@@ -133,22 +134,25 @@ fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// > | `a`
 ///      ^^
 /// ```
-fn between(tokenizer: &mut Tokenizer, size_open: usize) -> State {
+fn between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Nok,
+        None => {
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
         Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(move |t| between(t, size_open)))
+            State::Fn(Box::new(between))
         }
         Some(b'`') => {
             tokenizer.enter(Token::CodeTextSequence);
-            sequence_close(tokenizer, size_open, 0)
+            sequence_close(tokenizer)
         }
         _ => {
             tokenizer.enter(Token::CodeTextData);
-            data(tokenizer, size_open)
+            data(tokenizer)
         }
     }
 }
@@ -159,15 +163,15 @@ fn between(tokenizer: &mut Tokenizer, size_open: usize) -> State {
 /// > | `a`
 ///      ^
 /// ```
-fn data(tokenizer: &mut Tokenizer, size_open: usize) -> State {
+fn data(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'`') => {
             tokenizer.exit(Token::CodeTextData);
-            between(tokenizer, size_open)
+            between(tokenizer)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| data(t, size_open)))
+            State::Fn(Box::new(data))
         }
     }
 }
@@ -178,16 +182,19 @@ fn data(tokenizer: &mut Tokenizer, size_open: usize) -> State {
 /// > | `a`
 ///       ^
 /// ```
-fn sequence_close(tokenizer: &mut Tokenizer, size_open: usize, size: usize) -> State {
+fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`') => {
+            tokenizer.tokenize_state.size_other += 1;
             tokenizer.consume();
-            State::Fn(Box::new(move |t| sequence_close(t, size_open, size + 1)))
+            State::Fn(Box::new(sequence_close))
         }
         _ => {
-            if size_open == size {
+            if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_other {
                 tokenizer.exit(Token::CodeTextSequence);
                 tokenizer.exit(Token::CodeText);
+                tokenizer.tokenize_state.size = 0;
+                tokenizer.tokenize_state.size_other = 0;
                 State::Ok
             } else {
                 let index = tokenizer.events.len();
@@ -195,7 +202,8 @@ fn sequence_close(tokenizer: &mut Tokenizer, size_open: usize, size: usize) -> S
                 // More or less accents: mark as data.
                 tokenizer.events[index - 1].token_type = Token::CodeTextData;
                 tokenizer.events[index].token_type = Token::CodeTextData;
-                between(tokenizer, size_open)
+                tokenizer.tokenize_state.size_other = 0;
+                between(tokenizer)
             }
         }
     }

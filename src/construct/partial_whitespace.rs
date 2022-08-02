@@ -47,16 +47,8 @@
 
 use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
 use crate::token::Token;
-use crate::tokenizer::{Event, EventType, Resolver, Tokenizer};
+use crate::tokenizer::{Event, EventType, Tokenizer};
 use crate::util::slice::{Position, Slice};
-
-/// Create a resolver to handle trailing whitespace in events.
-///
-/// Performing this as a resolver instead of a tokenizer improves performance
-/// *a lot*.
-pub fn create_resolve_whitespace(hard_break: bool, trim_whole: bool) -> Box<Resolver> {
-    Box::new(move |t| resolve_whitespace(t, hard_break, trim_whole))
-}
 
 /// Resolve whitespace.
 pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whole: bool) {

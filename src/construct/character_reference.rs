@@ -69,17 +69,6 @@ use crate::token::Token;
 use crate::tokenizer::{State, Tokenizer};
 use crate::util::slice::Slice;
 
-/// State needed to parse character references.
-#[derive(Debug, Clone)]
-struct Info {
-    /// Index of where value starts.
-    start: usize,
-    /// Marker of character reference.
-    marker: u8,
-    /// Maximum number of characters in the value for this kind.
-    max: usize,
-}
-
 /// Start of a character reference.
 ///
 /// ```markdown
@@ -121,15 +110,9 @@ fn open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
         State::Fn(Box::new(numeric))
     } else {
+        tokenizer.tokenize_state.marker = b'&';
         tokenizer.enter(Token::CharacterReferenceValue);
-        value(
-            tokenizer,
-            Info {
-                start: tokenizer.point.index,
-                marker: b'&',
-                max: CHARACTER_REFERENCE_NAMED_SIZE_MAX,
-            },
-        )
+        value(tokenizer)
     }
 }
 
@@ -148,20 +131,12 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
-        let info = Info {
-            start: tokenizer.point.index,
-            marker: b'x',
-            max: CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
-        };
-        State::Fn(Box::new(|t| value(t, info)))
+        tokenizer.tokenize_state.marker = b'x';
+        State::Fn(Box::new(value))
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
-        let info = Info {
-            start: tokenizer.point.index,
-            marker: b'#',
-            max: CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
-        };
-        value(tokenizer, info)
+        tokenizer.tokenize_state.marker = b'#';
+        value(tokenizer)
     }
 }
 
@@ -179,50 +154,57 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///         ^
 /// ```
-fn value(tokenizer: &mut Tokenizer, info: Info) -> State {
-    let size = tokenizer.point.index - info.start;
+fn value(tokenizer: &mut Tokenizer) -> State {
+    if matches!(tokenizer.current, Some(b';')) && tokenizer.tokenize_state.size > 0 {
+        // Named.
+        if tokenizer.tokenize_state.marker == b'&' {
+            // Guaranteed to be valid ASCII bytes.
+            let slice = Slice::from_indices(
+                tokenizer.parse_state.bytes,
+                tokenizer.point.index - tokenizer.tokenize_state.size,
+                tokenizer.point.index,
+            );
+            let name = slice.as_str();
 
-    match tokenizer.current {
-        Some(b';') if size > 0 => {
-            // Named.
-            if info.marker == b'&' {
-                // Guaranteed to be valid ASCII bytes.
-                let slice = Slice::from_indices(
-                    tokenizer.parse_state.bytes,
-                    info.start,
-                    tokenizer.point.index,
-                );
-                let name = slice.as_str();
-
-                if !CHARACTER_REFERENCES.iter().any(|d| d.0 == name) {
-                    return State::Nok;
-                }
+            if !CHARACTER_REFERENCES.iter().any(|d| d.0 == name) {
+                tokenizer.tokenize_state.marker = 0;
+                tokenizer.tokenize_state.size = 0;
+                return State::Nok;
             }
+        }
 
-            tokenizer.exit(Token::CharacterReferenceValue);
-            tokenizer.enter(Token::CharacterReferenceMarkerSemi);
-            tokenizer.consume();
-            tokenizer.exit(Token::CharacterReferenceMarkerSemi);
-            tokenizer.exit(Token::CharacterReference);
-            State::Ok
-        }
-        // ASCII digit, for named, decimal, and hexadecimal references.
-        Some(b'0'..=b'9') if size < info.max => {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| value(t, info)))
-        }
-        // ASCII hex letters, for named and hexadecimal references.
-        Some(b'A'..=b'F' | b'a'..=b'f')
-            if matches!(info.marker, b'&' | b'x') && size < info.max =>
-        {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| value(t, info)))
-        }
-        // Non-hex ASCII alphabeticals, for named references.
-        Some(b'G'..=b'Z' | b'g'..=b'z') if info.marker == b'&' && size < info.max => {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| value(t, info)))
-        }
-        _ => State::Nok,
+        tokenizer.exit(Token::CharacterReferenceValue);
+        tokenizer.enter(Token::CharacterReferenceMarkerSemi);
+        tokenizer.consume();
+        tokenizer.exit(Token::CharacterReferenceMarkerSemi);
+        tokenizer.exit(Token::CharacterReference);
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.tokenize_state.size = 0;
+        return State::Ok;
     }
+
+    let max = match tokenizer.tokenize_state.marker {
+        b'&' => CHARACTER_REFERENCE_NAMED_SIZE_MAX,
+        b'x' => CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
+        b'#' => CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
+        _ => unreachable!("Unexpected marker `{}`", tokenizer.tokenize_state.marker),
+    };
+    let test = match tokenizer.tokenize_state.marker {
+        b'&' => u8::is_ascii_alphanumeric,
+        b'x' => u8::is_ascii_hexdigit,
+        b'#' => u8::is_ascii_digit,
+        _ => unreachable!("Unexpected marker `{}`", tokenizer.tokenize_state.marker),
+    };
+
+    if let Some(byte) = tokenizer.current {
+        if tokenizer.tokenize_state.size < max && test(&byte) {
+            tokenizer.tokenize_state.size += 1;
+            tokenizer.consume();
+            return State::Fn(Box::new(value));
+        }
+    }
+
+    tokenizer.tokenize_state.marker = 0;
+    tokenizer.tokenize_state.size = 0;
+    State::Nok
 }

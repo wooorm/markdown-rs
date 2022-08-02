@@ -1,4 +1,4 @@
-//! HTML (flow) is a construct that occurs in the [flow][] content type.
+//! HTML (flow) is a construct that occurs in the [flow][] cont&ent type.
 //!
 //! It forms with the following BNF:
 //!
@@ -110,37 +110,20 @@ use crate::token::Token;
 use crate::tokenizer::{State, Tokenizer};
 use crate::util::slice::Slice;
 
-/// Kind of HTML (flow).
-#[derive(Debug, PartialEq)]
-enum Kind {
-    /// Symbol for `<script>` (condition 1).
-    Raw,
-    /// Symbol for `<!---->` (condition 2).
-    Comment,
-    /// Symbol for `<?php?>` (condition 3).
-    Instruction,
-    /// Symbol for `<!doctype>` (condition 4).
-    Declaration,
-    /// Symbol for `<![CDATA[]]>` (condition 5).
-    Cdata,
-    /// Symbol for `<div` (condition 6).
-    Basic,
-    /// Symbol for `<x>` (condition 7).
-    Complete,
-}
-
-/// State needed to parse HTML (flow).
-#[derive(Debug)]
-struct Info {
-    /// Kind of HTML (flow).
-    kind: Kind,
-    /// Whether this is a start tag (`<` not followed by `/`).
-    start_tag: bool,
-    /// Start index of a tag name or cdata prefix.
-    start: usize,
-    /// Current quote, when in a double or single quoted attribute value.
-    quote: u8,
-}
+/// Symbol for `<script>` (condition 1).
+const RAW: u8 = 1;
+/// Symbol for `<!---->` (condition 2).
+const COMMENT: u8 = 2;
+/// Symbol for `<?php?>` (condition 3).
+const INSTRUCTION: u8 = 3;
+/// Symbol for `<!doctype>` (condition 4).
+const DECLARATION: u8 = 4;
+/// Symbol for `<![CDATA[]]>` (condition 5).
+const CDATA: u8 = 5;
+/// Symbol for `<div` (condition 6).
+const BASIC: u8 = 6;
+/// Symbol for `<x>` (condition 7).
+const COMPLETE: u8 = 7;
 
 /// Start of HTML (flow), before optional whitespace.
 ///
@@ -197,39 +180,30 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 fn open(tokenizer: &mut Tokenizer) -> State {
-    let mut info = Info {
-        // Assume basic.
-        kind: Kind::Basic,
-        // Assume closing tag (or no tag).
-        start_tag: false,
-        start: 0,
-        quote: 0,
-    };
-
     match tokenizer.current {
         Some(b'!') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| declaration_open(t, info)))
+            State::Fn(Box::new(declaration_open))
         }
         Some(b'/') => {
             tokenizer.consume();
-            info.start = tokenizer.point.index;
-            State::Fn(Box::new(|t| tag_close_start(t, info)))
+            tokenizer.tokenize_state.seen = true;
+            tokenizer.tokenize_state.start = tokenizer.point.index;
+            State::Fn(Box::new(tag_close_start))
         }
         Some(b'?') => {
-            info.kind = Kind::Instruction;
+            tokenizer.tokenize_state.marker = INSTRUCTION;
             tokenizer.consume();
             // Do not form containers.
             tokenizer.concrete = true;
             // While we’re in an instruction instead of a declaration, we’re on a `?`
             // right now, so we do need to search for `>`, similar to declarations.
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
+            State::Fn(Box::new(continuation_declaration_inside))
         }
         // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
-            info.start_tag = true;
-            info.start = tokenizer.point.index;
-            tag_name(tokenizer, info)
+            tokenizer.tokenize_state.start = tokenizer.point.index;
+            tag_name(tokenizer)
         }
         _ => State::Nok,
     }
@@ -245,25 +219,24 @@ fn open(tokenizer: &mut Tokenizer) -> State {
 /// > | <![CDATA[>&<]]>
 ///       ^
 /// ```
-fn declaration_open(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn declaration_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            info.kind = Kind::Comment;
-            State::Fn(Box::new(|t| comment_open_inside(t, info)))
+            tokenizer.tokenize_state.marker = COMMENT;
+            State::Fn(Box::new(comment_open_inside))
         }
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            info.kind = Kind::Declaration;
+            tokenizer.tokenize_state.marker = DECLARATION;
             // Do not form containers.
             tokenizer.concrete = true;
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
+            State::Fn(Box::new(continuation_declaration_inside))
         }
         Some(b'[') => {
             tokenizer.consume();
-            info.kind = Kind::Cdata;
-            info.start = tokenizer.point.index;
-            State::Fn(Box::new(|t| cdata_open_inside(t, info)))
+            tokenizer.tokenize_state.marker = CDATA;
+            State::Fn(Box::new(cdata_open_inside))
         }
         _ => State::Nok,
     }
@@ -275,15 +248,15 @@ fn declaration_open(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | <!--xxx-->
 ///        ^
 /// ```
-fn comment_open_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
-    match tokenizer.current {
-        Some(b'-') => {
-            tokenizer.consume();
-            // Do not form containers.
-            tokenizer.concrete = true;
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
-        }
-        _ => State::Nok,
+fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
+    if let Some(b'-') = tokenizer.current {
+        tokenizer.consume();
+        // Do not form containers.
+        tokenizer.concrete = true;
+        State::Fn(Box::new(continuation_declaration_inside))
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        State::Nok
     }
 }
 
@@ -293,21 +266,23 @@ fn comment_open_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <![CDATA[>&<]]>
 ///        ^^^^^^
 /// ```
-fn cdata_open_inside(tokenizer: &mut Tokenizer, mut info: Info) -> State {
-    match tokenizer.current {
-        Some(byte) if byte == HTML_CDATA_PREFIX[tokenizer.point.index - info.start] => {
-            tokenizer.consume();
+fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.current == Some(HTML_CDATA_PREFIX[tokenizer.tokenize_state.size]) {
+        tokenizer.tokenize_state.size += 1;
+        tokenizer.consume();
 
-            if tokenizer.point.index - info.start == HTML_CDATA_PREFIX.len() {
-                info.start = 0;
-                // Do not form containers.
-                tokenizer.concrete = true;
-                State::Fn(Box::new(|t| continuation(t, info)))
-            } else {
-                State::Fn(Box::new(|t| cdata_open_inside(t, info)))
-            }
+        if tokenizer.tokenize_state.size == HTML_CDATA_PREFIX.len() {
+            tokenizer.tokenize_state.size = 0;
+            // Do not form containers.
+            tokenizer.concrete = true;
+            State::Fn(Box::new(continuation))
+        } else {
+            State::Fn(Box::new(cdata_open_inside))
         }
-        _ => State::Nok,
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
     }
 }
 
@@ -317,14 +292,14 @@ fn cdata_open_inside(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | </x>
 ///       ^
 /// ```
-fn tag_close_start(tokenizer: &mut Tokenizer, info: Info) -> State {
-    match tokenizer.current {
-        // ASCII alphabetical.
-        Some(b'A'..=b'Z' | b'a'..=b'z') => {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| tag_name(t, info)))
-        }
-        _ => State::Nok,
+fn tag_close_start(tokenizer: &mut Tokenizer) -> State {
+    if let Some(b'A'..=b'Z' | b'a'..=b'z') = tokenizer.current {
+        tokenizer.consume();
+        State::Fn(Box::new(tag_name))
+    } else {
+        tokenizer.tokenize_state.seen = false;
+        tokenizer.tokenize_state.start = 0;
+        State::Nok
     }
 }
 
@@ -336,14 +311,15 @@ fn tag_close_start(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | </ab>
 ///       ^^
 /// ```
-fn tag_name(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn tag_name(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => {
+            let closing_tag = tokenizer.tokenize_state.seen;
             let slash = matches!(tokenizer.current, Some(b'/'));
             // Guaranteed to be valid ASCII bytes.
             let slice = Slice::from_indices(
                 tokenizer.parse_state.bytes,
-                info.start,
+                tokenizer.tokenize_state.start,
                 tokenizer.point.index,
             );
             let name = slice
@@ -351,42 +327,48 @@ fn tag_name(tokenizer: &mut Tokenizer, mut info: Info) -> State {
                 // The line ending case might result in a `\r` that is already accounted for.
                 .trim()
                 .to_ascii_lowercase();
-            info.start = 0;
+            tokenizer.tokenize_state.seen = false;
+            tokenizer.tokenize_state.start = 0;
 
-            if !slash && info.start_tag && HTML_RAW_NAMES.contains(&name.as_str()) {
-                info.kind = Kind::Raw;
+            if !slash && !closing_tag && HTML_RAW_NAMES.contains(&name.as_str()) {
+                tokenizer.tokenize_state.marker = RAW;
                 // Do not form containers.
                 tokenizer.concrete = true;
-                continuation(tokenizer, info)
+                continuation(tokenizer)
             } else if HTML_BLOCK_NAMES.contains(&name.as_str()) {
-                // Basic is assumed, no need to set `kind`.
+                tokenizer.tokenize_state.marker = BASIC;
+
                 if slash {
                     tokenizer.consume();
-                    State::Fn(Box::new(|t| basic_self_closing(t, info)))
+                    State::Fn(Box::new(basic_self_closing))
                 } else {
                     // Do not form containers.
                     tokenizer.concrete = true;
-                    continuation(tokenizer, info)
+                    continuation(tokenizer)
                 }
             } else {
-                info.kind = Kind::Complete;
+                tokenizer.tokenize_state.marker = COMPLETE;
 
                 // Do not support complete HTML when interrupting.
                 if tokenizer.interrupt && !tokenizer.lazy {
+                    tokenizer.tokenize_state.marker = 0;
                     State::Nok
-                } else if info.start_tag {
-                    complete_attribute_name_before(tokenizer, info)
+                } else if closing_tag {
+                    complete_closing_tag_after(tokenizer)
                 } else {
-                    complete_closing_tag_after(tokenizer, info)
+                    complete_attribute_name_before(tokenizer)
                 }
             }
         }
         // ASCII alphanumerical and `-`.
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| tag_name(t, info)))
+            State::Fn(Box::new(tag_name))
         }
-        Some(_) => State::Nok,
+        Some(_) => {
+            tokenizer.tokenize_state.seen = false;
+            State::Nok
+        }
     }
 }
 
@@ -396,15 +378,15 @@ fn tag_name(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | <div/>
 ///          ^
 /// ```
-fn basic_self_closing(tokenizer: &mut Tokenizer, info: Info) -> State {
-    match tokenizer.current {
-        Some(b'>') => {
-            tokenizer.consume();
-            // Do not form containers.
-            tokenizer.concrete = true;
-            State::Fn(Box::new(|t| continuation(t, info)))
-        }
-        _ => State::Nok,
+fn basic_self_closing(tokenizer: &mut Tokenizer) -> State {
+    if let Some(b'>') = tokenizer.current {
+        tokenizer.consume();
+        // Do not form containers.
+        tokenizer.concrete = true;
+        State::Fn(Box::new(continuation))
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        State::Nok
     }
 }
 
@@ -414,13 +396,13 @@ fn basic_self_closing(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <x/>
 ///        ^
 /// ```
-fn complete_closing_tag_after(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_closing_tag_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_closing_tag_after(t, info)))
+            State::Fn(Box::new(complete_closing_tag_after))
         }
-        _ => complete_end(tokenizer, info),
+        _ => complete_end(tokenizer),
     }
 }
 
@@ -443,22 +425,22 @@ fn complete_closing_tag_after(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <a >
 ///        ^
 /// ```
-fn complete_attribute_name_before(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_attribute_name_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_name_before(t, info)))
+            State::Fn(Box::new(complete_attribute_name_before))
         }
         Some(b'/') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_end(t, info)))
+            State::Fn(Box::new(complete_end))
         }
         // ASCII alphanumerical and `:` and `_`.
         Some(b'0'..=b'9' | b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_name(t, info)))
+            State::Fn(Box::new(complete_attribute_name))
         }
-        _ => complete_end(tokenizer, info),
+        _ => complete_end(tokenizer),
     }
 }
 
@@ -472,14 +454,14 @@ fn complete_attribute_name_before(tokenizer: &mut Tokenizer, info: Info) -> Stat
 /// > | <a b>
 ///         ^
 /// ```
-fn complete_attribute_name(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_attribute_name(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII alphanumerical and `-`, `.`, `:`, and `_`.
         Some(b'-' | b'.' | b'0'..=b'9' | b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_name(t, info)))
+            State::Fn(Box::new(complete_attribute_name))
         }
-        _ => complete_attribute_name_after(tokenizer, info),
+        _ => complete_attribute_name_after(tokenizer),
     }
 }
 
@@ -492,17 +474,17 @@ fn complete_attribute_name(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <a b=c>
 ///         ^
 /// ```
-fn complete_attribute_name_after(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_name_after(t, info)))
+            State::Fn(Box::new(complete_attribute_name_after))
         }
         Some(b'=') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_value_before(t, info)))
+            State::Fn(Box::new(complete_attribute_value_before))
         }
-        _ => complete_attribute_name_before(tokenizer, info),
+        _ => complete_attribute_name_before(tokenizer),
     }
 }
 
@@ -515,19 +497,22 @@ fn complete_attribute_name_after(tokenizer: &mut Tokenizer, info: Info) -> State
 /// > | <a b="c">
 ///          ^
 /// ```
-fn complete_attribute_value_before(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn complete_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'<' | b'=' | b'>' | b'`') => State::Nok,
+        None | Some(b'<' | b'=' | b'>' | b'`') => {
+            tokenizer.tokenize_state.marker = 0;
+            State::Nok
+        }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_value_before(t, info)))
+            State::Fn(Box::new(complete_attribute_value_before))
         }
         Some(b'"' | b'\'') => {
-            info.quote = tokenizer.current.unwrap();
+            tokenizer.tokenize_state.marker_other = tokenizer.current.unwrap();
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_value_quoted(t, info)))
+            State::Fn(Box::new(complete_attribute_value_quoted))
         }
-        _ => complete_attribute_value_unquoted(tokenizer, info),
+        _ => complete_attribute_value_unquoted(tokenizer),
     }
 }
 
@@ -539,16 +524,23 @@ fn complete_attribute_value_before(tokenizer: &mut Tokenizer, mut info: Info) ->
 /// > | <a b='c'>
 ///           ^
 /// ```
-fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'\n') => State::Nok,
-        Some(b'"' | b'\'') if tokenizer.current.unwrap() == info.quote => {
+        None | Some(b'\n') => {
+            tokenizer.tokenize_state.marker = 0;
+            tokenizer.tokenize_state.marker_other = 0;
+            State::Nok
+        }
+        Some(b'"' | b'\'')
+            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker_other =>
+        {
+            tokenizer.tokenize_state.marker_other = 0;
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_value_quoted_after(t, info)))
+            State::Fn(Box::new(complete_attribute_value_quoted_after))
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_value_quoted(t, info)))
+            State::Fn(Box::new(complete_attribute_value_quoted))
         }
     }
 }
@@ -559,14 +551,14 @@ fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer, info: Info) -> Sta
 /// > | <a b=c>
 ///          ^
 /// ```
-fn complete_attribute_value_unquoted(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\t' | b'\n' | b' ' | b'"' | b'\'' | b'/' | b'<' | b'=' | b'>' | b'`') => {
-            complete_attribute_name_after(tokenizer, info)
+            complete_attribute_name_after(tokenizer)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_attribute_value_unquoted(t, info)))
+            State::Fn(Box::new(complete_attribute_value_unquoted))
         }
     }
 }
@@ -578,10 +570,12 @@ fn complete_attribute_value_unquoted(tokenizer: &mut Tokenizer, info: Info) -> S
 /// > | <a b="c">
 ///            ^
 /// ```
-fn complete_attribute_value_quoted_after(tokenizer: &mut Tokenizer, info: Info) -> State {
-    match tokenizer.current {
-        Some(b'\t' | b' ' | b'/' | b'>') => complete_attribute_name_before(tokenizer, info),
-        _ => State::Nok,
+fn complete_attribute_value_quoted_after(tokenizer: &mut Tokenizer) -> State {
+    if let Some(b'\t' | b' ' | b'/' | b'>') = tokenizer.current {
+        complete_attribute_name_before(tokenizer)
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        State::Nok
     }
 }
 
@@ -591,13 +585,13 @@ fn complete_attribute_value_quoted_after(tokenizer: &mut Tokenizer, info: Info) 
 /// > | <a b="c">
 ///             ^
 /// ```
-fn complete_end(tokenizer: &mut Tokenizer, info: Info) -> State {
-    match tokenizer.current {
-        Some(b'>') => {
-            tokenizer.consume();
-            State::Fn(Box::new(|t| complete_after(t, info)))
-        }
-        _ => State::Nok,
+fn complete_end(tokenizer: &mut Tokenizer) -> State {
+    if let Some(b'>') = tokenizer.current {
+        tokenizer.consume();
+        State::Fn(Box::new(complete_after))
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        State::Nok
     }
 }
 
@@ -607,18 +601,21 @@ fn complete_end(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <x>
 ///        ^
 /// ```
-fn complete_after(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn complete_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             // Do not form containers.
             tokenizer.concrete = true;
-            continuation(tokenizer, info)
+            continuation(tokenizer)
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| complete_after(t, info)))
+            State::Fn(Box::new(complete_after))
         }
-        Some(_) => State::Nok,
+        Some(_) => {
+            tokenizer.tokenize_state.marker = 0;
+            State::Nok
+        }
     }
 }
 
@@ -628,46 +625,49 @@ fn complete_after(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <!--xxx-->
 ///          ^
 /// ```
-fn continuation(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') if info.kind == Kind::Basic || info.kind == Kind::Complete => {
+        Some(b'\n')
+            if tokenizer.tokenize_state.marker == BASIC
+                || tokenizer.tokenize_state.marker == COMPLETE =>
+        {
             tokenizer.exit(Token::HtmlFlowData);
             tokenizer.check(blank_line_before, |ok| {
-                if ok {
-                    Box::new(continuation_after)
+                Box::new(if ok {
+                    continuation_after
                 } else {
-                    Box::new(move |t| continuation_start(t, info))
-                }
+                    continuation_start
+                })
             })(tokenizer)
         }
         // Note: important that this is after the basic/complete case.
         None | Some(b'\n') => {
             tokenizer.exit(Token::HtmlFlowData);
-            continuation_start(tokenizer, info)
+            continuation_start(tokenizer)
         }
-        Some(b'-') if info.kind == Kind::Comment => {
+        Some(b'-') if tokenizer.tokenize_state.marker == COMMENT => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_comment_inside(t, info)))
+            State::Fn(Box::new(continuation_comment_inside))
         }
-        Some(b'<') if info.kind == Kind::Raw => {
+        Some(b'<') if tokenizer.tokenize_state.marker == RAW => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_raw_tag_open(t, info)))
+            State::Fn(Box::new(continuation_raw_tag_open))
         }
-        Some(b'>') if info.kind == Kind::Declaration => {
+        Some(b'>') if tokenizer.tokenize_state.marker == DECLARATION => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_close(t, info)))
+            State::Fn(Box::new(continuation_close))
         }
-        Some(b'?') if info.kind == Kind::Instruction => {
+        Some(b'?') if tokenizer.tokenize_state.marker == INSTRUCTION => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
+            State::Fn(Box::new(continuation_declaration_inside))
         }
-        Some(b']') if info.kind == Kind::Cdata => {
+        Some(b']') if tokenizer.tokenize_state.marker == CDATA => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_character_data_inside(t, info)))
+            State::Fn(Box::new(continuation_character_data_inside))
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation(t, info)))
+            State::Fn(Box::new(continuation))
         }
     }
 }
@@ -679,13 +679,13 @@ fn continuation(tokenizer: &mut Tokenizer, info: Info) -> State {
 ///        ^
 ///   | asd
 /// ```
-fn continuation_start(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.check(partial_non_lazy_continuation, |ok| {
-        if ok {
-            Box::new(move |t| continuation_start_non_lazy(t, info))
+        Box::new(if ok {
+            continuation_start_non_lazy
         } else {
-            Box::new(continuation_after)
-        }
+            continuation_after
+        })
     })(tokenizer)
 }
 
@@ -696,13 +696,13 @@ fn continuation_start(tokenizer: &mut Tokenizer, info: Info) -> State {
 ///        ^
 ///   | asd
 /// ```
-fn continuation_start_non_lazy(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_start_non_lazy(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(|t| continuation_before(t, info)))
+            State::Fn(Box::new(continuation_before))
         }
         _ => unreachable!("expected eol"),
     }
@@ -715,12 +715,12 @@ fn continuation_start_non_lazy(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | asd
 ///     ^
 /// ```
-fn continuation_before(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'\n') => continuation_start(tokenizer, info),
+        None | Some(b'\n') => continuation_start(tokenizer),
         _ => {
             tokenizer.enter(Token::HtmlFlowData);
-            continuation(tokenizer, info)
+            continuation(tokenizer)
         }
     }
 }
@@ -731,13 +731,13 @@ fn continuation_before(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <!--xxx-->
 ///             ^
 /// ```
-fn continuation_comment_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_comment_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
+            State::Fn(Box::new(continuation_declaration_inside))
         }
-        _ => continuation(tokenizer, info),
+        _ => continuation(tokenizer),
     }
 }
 
@@ -747,14 +747,14 @@ fn continuation_comment_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | <script>console.log(1)</script>
 ///                            ^
 /// ```
-fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn continuation_raw_tag_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'/') => {
             tokenizer.consume();
-            info.start = tokenizer.point.index;
-            State::Fn(Box::new(|t| continuation_raw_end_tag(t, info)))
+            tokenizer.tokenize_state.start = tokenizer.point.index;
+            State::Fn(Box::new(continuation_raw_end_tag))
         }
-        _ => continuation(tokenizer, info),
+        _ => continuation(tokenizer),
     }
 }
 
@@ -764,35 +764,35 @@ fn continuation_raw_tag_open(tokenizer: &mut Tokenizer, mut info: Info) -> State
 /// > | <script>console.log(1)</script>
 ///                             ^^^^^^
 /// ```
-fn continuation_raw_end_tag(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn continuation_raw_end_tag(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             // Guaranteed to be valid ASCII bytes.
             let slice = Slice::from_indices(
                 tokenizer.parse_state.bytes,
-                info.start,
+                tokenizer.tokenize_state.start,
                 tokenizer.point.index,
             );
             let name = slice.as_str().to_ascii_lowercase();
 
-            info.start = 0;
+            tokenizer.tokenize_state.start = 0;
 
             if HTML_RAW_NAMES.contains(&name.as_str()) {
                 tokenizer.consume();
-                State::Fn(Box::new(|t| continuation_close(t, info)))
+                State::Fn(Box::new(continuation_close))
             } else {
-                continuation(tokenizer, info)
+                continuation(tokenizer)
             }
         }
         Some(b'A'..=b'Z' | b'a'..=b'z')
-            if tokenizer.point.index - info.start < HTML_RAW_SIZE_MAX =>
+            if tokenizer.point.index - tokenizer.tokenize_state.start < HTML_RAW_SIZE_MAX =>
         {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_raw_end_tag(t, info)))
+            State::Fn(Box::new(continuation_raw_end_tag))
         }
         _ => {
-            info.start = 0;
-            continuation(tokenizer, info)
+            tokenizer.tokenize_state.start = 0;
+            continuation(tokenizer)
         }
     }
 }
@@ -803,13 +803,13 @@ fn continuation_raw_end_tag(tokenizer: &mut Tokenizer, mut info: Info) -> State 
 /// > | <![CDATA[>&<]]>
 ///                  ^
 /// ```
-fn continuation_character_data_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_character_data_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b']') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
+            State::Fn(Box::new(continuation_declaration_inside))
         }
-        _ => continuation(tokenizer, info),
+        _ => continuation(tokenizer),
     }
 }
 
@@ -827,17 +827,17 @@ fn continuation_character_data_inside(tokenizer: &mut Tokenizer, info: Info) -> 
 /// > | <![CDATA[>&<]]>
 ///                   ^
 /// ```
-fn continuation_declaration_inside(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_declaration_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_close(t, info)))
+            State::Fn(Box::new(continuation_close))
         }
-        Some(b'-') if info.kind == Kind::Comment => {
+        Some(b'-') if tokenizer.tokenize_state.marker == COMMENT => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_declaration_inside(t, info)))
+            State::Fn(Box::new(continuation_declaration_inside))
         }
-        _ => continuation(tokenizer, info),
+        _ => continuation(tokenizer),
     }
 }
 
@@ -847,7 +847,7 @@ fn continuation_declaration_inside(tokenizer: &mut Tokenizer, info: Info) -> Sta
 /// > | <!doctype>
 ///               ^
 /// ```
-fn continuation_close(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn continuation_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::HtmlFlowData);
@@ -855,7 +855,7 @@ fn continuation_close(tokenizer: &mut Tokenizer, info: Info) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| continuation_close(t, info)))
+            State::Fn(Box::new(continuation_close))
         }
     }
 }
@@ -868,6 +868,7 @@ fn continuation_close(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// ```
 fn continuation_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.exit(Token::HtmlFlow);
+    tokenizer.tokenize_state.marker = 0;
     // Feel free to interrupt.
     tokenizer.interrupt = false;
     // No longer concrete.

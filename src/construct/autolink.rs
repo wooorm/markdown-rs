@@ -158,7 +158,9 @@ fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII alphanumeric and `+`, `-`, and `.`.
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
-            scheme_inside_or_email_atext(tokenizer, 1)
+            // Count the previous alphabetical from `open` too.
+            tokenizer.tokenize_state.size = 1;
+            scheme_inside_or_email_atext(tokenizer)
         }
         _ => email_atext(tokenizer),
     }
@@ -172,20 +174,25 @@ fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
 /// > | a<user@example.com>b
 ///        ^
 /// ```
-fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b':') => {
             tokenizer.consume();
+            tokenizer.tokenize_state.size = 0;
             State::Fn(Box::new(url_inside))
         }
         // ASCII alphanumeric and `+`, `-`, and `.`.
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
-            if size < AUTOLINK_SCHEME_SIZE_MAX =>
+            if tokenizer.tokenize_state.size < AUTOLINK_SCHEME_SIZE_MAX =>
         {
+            tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(Box::new(move |t| scheme_inside_or_email_atext(t, size + 1)))
+            State::Fn(Box::new(scheme_inside_or_email_atext))
         }
-        _ => email_atext(tokenizer),
+        _ => {
+            tokenizer.tokenize_state.size = 0;
+            email_atext(tokenizer)
+        }
     }
 }
 
@@ -220,7 +227,7 @@ fn email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'@') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| email_at_sign_or_dot(t, 0)))
+            State::Fn(Box::new(email_at_sign_or_dot))
         }
         // ASCII atext.
         //
@@ -255,10 +262,10 @@ fn email_atext(tokenizer: &mut Tokenizer) -> State {
 /// > | a<user.name@example.com>b
 ///                 ^       ^
 /// ```
-fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn email_at_sign_or_dot(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII alphanumeric.
-        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => email_value(tokenizer, size),
+        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => email_value(tokenizer),
         _ => State::Nok,
     }
 }
@@ -269,13 +276,15 @@ fn email_at_sign_or_dot(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// > | a<user.name@example.com>b
 ///                   ^
 /// ```
-fn email_label(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn email_label(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'.') => {
+            tokenizer.tokenize_state.size = 0;
             tokenizer.consume();
-            State::Fn(Box::new(|t| email_at_sign_or_dot(t, 0)))
+            State::Fn(Box::new(email_at_sign_or_dot))
         }
         Some(b'>') => {
+            tokenizer.tokenize_state.size = 0;
             let index = tokenizer.events.len();
             tokenizer.exit(Token::AutolinkProtocol);
             // Change the token type.
@@ -283,7 +292,7 @@ fn email_label(tokenizer: &mut Tokenizer, size: usize) -> State {
             tokenizer.events[index].token_type = Token::AutolinkEmail;
             end(tokenizer)
         }
-        _ => email_value(tokenizer, size),
+        _ => email_value(tokenizer),
     }
 }
 
@@ -295,19 +304,25 @@ fn email_label(tokenizer: &mut Tokenizer, size: usize) -> State {
 /// > | a<user.name@ex-ample.com>b
 ///                    ^
 /// ```
-fn email_value(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn email_value(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII alphanumeric or `-`.
-        Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') if size < AUTOLINK_DOMAIN_SIZE_MAX => {
+        Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
+            if tokenizer.tokenize_state.size < AUTOLINK_DOMAIN_SIZE_MAX =>
+        {
             let func = if matches!(tokenizer.current, Some(b'-')) {
                 email_value
             } else {
                 email_label
             };
+            tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(Box::new(move |t| func(t, size + 1)))
+            State::Fn(Box::new(func))
         }
-        _ => State::Nok,
+        _ => {
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
     }
 }
 

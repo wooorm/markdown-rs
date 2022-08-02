@@ -57,7 +57,7 @@
 use crate::constant::HTML_CDATA_PREFIX;
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::token::Token;
-use crate::tokenizer::{State, StateFn, Tokenizer};
+use crate::tokenizer::{State, Tokenizer};
 
 /// Start of HTML (text)
 ///
@@ -132,7 +132,7 @@ fn declaration_open(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'[') => {
             tokenizer.consume();
-            State::Fn(Box::new(|t| cdata_open_inside(t, 0)))
+            State::Fn(Box::new(cdata_open_inside))
         }
         _ => State::Nok,
     }
@@ -207,7 +207,10 @@ fn comment_start_dash(tokenizer: &mut Tokenizer) -> State {
 fn comment(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Nok,
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(comment)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(comment));
+            at_line_ending(tokenizer)
+        }
         Some(b'-') => {
             tokenizer.consume();
             State::Fn(Box::new(comment_close))
@@ -241,14 +244,16 @@ fn comment_close(tokenizer: &mut Tokenizer) -> State {
 /// > | a <![CDATA[>&<]]> b
 ///          ^^^^^^
 /// ```
-fn cdata_open_inside(tokenizer: &mut Tokenizer, size: usize) -> State {
-    if tokenizer.current == Some(HTML_CDATA_PREFIX[size]) {
+fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.current == Some(HTML_CDATA_PREFIX[tokenizer.tokenize_state.size]) {
+        tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
 
-        if size + 1 == HTML_CDATA_PREFIX.len() {
+        if tokenizer.tokenize_state.size == HTML_CDATA_PREFIX.len() {
+            tokenizer.tokenize_state.size = 0;
             State::Fn(Box::new(cdata))
         } else {
-            State::Fn(Box::new(move |t| cdata_open_inside(t, size + 1)))
+            State::Fn(Box::new(cdata_open_inside))
         }
     } else {
         State::Nok
@@ -264,7 +269,10 @@ fn cdata_open_inside(tokenizer: &mut Tokenizer, size: usize) -> State {
 fn cdata(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Nok,
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(cdata)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(cdata));
+            at_line_ending(tokenizer)
+        }
         Some(b']') => {
             tokenizer.consume();
             State::Fn(Box::new(cdata_close))
@@ -315,7 +323,10 @@ fn cdata_end(tokenizer: &mut Tokenizer) -> State {
 fn declaration(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'>') => end(tokenizer),
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(declaration)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(declaration));
+            at_line_ending(tokenizer)
+        }
         _ => {
             tokenizer.consume();
             State::Fn(Box::new(declaration))
@@ -332,7 +343,10 @@ fn declaration(tokenizer: &mut Tokenizer) -> State {
 fn instruction(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Nok,
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(instruction)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(instruction));
+            at_line_ending(tokenizer)
+        }
         Some(b'?') => {
             tokenizer.consume();
             State::Fn(Box::new(instruction_close))
@@ -399,7 +413,10 @@ fn tag_close(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_close_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(tag_close_between)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(tag_close_between));
+            at_line_ending(tokenizer)
+        }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_close_between))
@@ -434,7 +451,10 @@ fn tag_open(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(tag_open_between)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(tag_open_between));
+            at_line_ending(tokenizer)
+        }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_between))
@@ -478,7 +498,10 @@ fn tag_open_attribute_name(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(tag_open_attribute_name_after)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(tag_open_attribute_name_after));
+            at_line_ending(tokenizer)
+        }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_name_after))
@@ -501,17 +524,18 @@ fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
 fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'<' | b'=' | b'>' | b'`') => State::Nok,
-        Some(b'\n') => at_line_ending(tokenizer, Box::new(tag_open_attribute_value_before)),
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(tag_open_attribute_value_before));
+            at_line_ending(tokenizer)
+        }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_value_before))
         }
         Some(b'"' | b'\'') => {
-            let marker = tokenizer.current.unwrap();
+            tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.consume();
-            State::Fn(Box::new(move |t| {
-                tag_open_attribute_value_quoted(t, marker)
-            }))
+            State::Fn(Box::new(tag_open_attribute_value_quoted))
         }
         Some(_) => {
             tokenizer.consume();
@@ -526,22 +550,24 @@ fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
 /// > | a <b c="d"> e
 ///             ^
 /// ```
-fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer, marker: u8) -> State {
+fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Nok,
-        Some(b'\n') => at_line_ending(
-            tokenizer,
-            Box::new(move |t| tag_open_attribute_value_quoted(t, marker)),
-        ),
-        Some(b'"' | b'\'') if tokenizer.current.unwrap() == marker => {
+        None => {
+            tokenizer.tokenize_state.marker = 0;
+            State::Nok
+        }
+        Some(b'\n') => {
+            tokenizer.tokenize_state.return_state = Some(Box::new(tag_open_attribute_value_quoted));
+            at_line_ending(tokenizer)
+        }
+        Some(b'"' | b'\'') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
+            tokenizer.tokenize_state.marker = 0;
             tokenizer.consume();
             State::Fn(Box::new(tag_open_attribute_value_quoted_after))
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(move |t| {
-                tag_open_attribute_value_quoted(t, marker)
-            }))
+            State::Fn(Box::new(tag_open_attribute_value_quoted))
         }
     }
 }
@@ -605,14 +631,14 @@ fn end(tokenizer: &mut Tokenizer) -> State {
 ///            ^
 ///   | b-->
 /// ```
-fn at_line_ending(tokenizer: &mut Tokenizer, return_state: Box<StateFn>) -> State {
+fn at_line_ending(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.exit(Token::HtmlTextData);
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(|t| after_line_ending(t, return_state)))
+            State::Fn(Box::new(after_line_ending))
         }
         _ => unreachable!("expected eol"),
     }
@@ -628,10 +654,8 @@ fn at_line_ending(tokenizer: &mut Tokenizer, return_state: Box<StateFn>) -> Stat
 /// > | b-->
 ///     ^
 /// ```
-fn after_line_ending(tokenizer: &mut Tokenizer, return_state: Box<StateFn>) -> State {
-    tokenizer.attempt_opt(space_or_tab(), |t| {
-        after_line_ending_prefix(t, return_state)
-    })(tokenizer)
+fn after_line_ending(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt_opt(space_or_tab(), after_line_ending_prefix)(tokenizer)
 }
 
 /// After a line ending, after indent.
@@ -644,7 +668,8 @@ fn after_line_ending(tokenizer: &mut Tokenizer, return_state: Box<StateFn>) -> S
 /// > | b-->
 ///     ^
 /// ```
-fn after_line_ending_prefix(tokenizer: &mut Tokenizer, return_state: Box<StateFn>) -> State {
+fn after_line_ending_prefix(tokenizer: &mut Tokenizer) -> State {
+    let return_state = tokenizer.tokenize_state.return_state.take().unwrap();
     tokenizer.enter(Token::HtmlTextData);
     return_state(tokenizer)
 }

@@ -13,6 +13,8 @@
 use crate::token::Token;
 use crate::tokenizer::{State, Tokenizer};
 
+const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
+
 /// Before a BOM.
 ///
 /// ```text
@@ -20,42 +22,33 @@ use crate::tokenizer::{State, Tokenizer};
 ///     ^^^^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.current == Some(0xEF) {
+    if tokenizer.current == Some(BOM[0]) {
         tokenizer.enter(Token::ByteOrderMark);
-        tokenizer.consume();
-        State::Fn(Box::new(cont))
+        inside(tokenizer)
     } else {
         State::Nok
     }
 }
 
-/// Second byte in BOM.
+/// Inside the BOM.
 ///
 /// ```text
 /// > | 0xEF 0xBB 0xBF
-///          ^^^^
+///     ^^^^ ^^^^ ^^^^
 /// ```
-fn cont(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.current == Some(0xBB) {
+fn inside(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.current == Some(BOM[tokenizer.tokenize_state.size]) {
+        tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Fn(Box::new(end))
+        if tokenizer.tokenize_state.size == BOM.len() {
+            tokenizer.exit(Token::ByteOrderMark);
+            tokenizer.tokenize_state.size = 0;
+            State::Ok
+        } else {
+            State::Fn(Box::new(inside))
+        }
     } else {
-        State::Nok
-    }
-}
-
-/// Last byte in BOM.
-///
-/// ```text
-/// > | 0xEF 0xBB 0xBF
-///               ^^^^
-/// ```
-fn end(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.current == Some(0xBF) {
-        tokenizer.consume();
-        tokenizer.exit(Token::ByteOrderMark);
-        State::Ok
-    } else {
+        tokenizer.tokenize_state.size = 0;
         State::Nok
     }
 }

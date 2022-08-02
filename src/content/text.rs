@@ -26,7 +26,7 @@ use crate::construct::{
     code_text::start as code_text, hard_break_escape::start as hard_break_escape,
     html_text::start as html_text, label_end::start as label_end,
     label_start_image::start as label_start_image, label_start_link::start as label_start_link,
-    partial_data::start as data, partial_whitespace::create_resolve_whitespace,
+    partial_data::start as data, partial_whitespace::resolve_whitespace,
 };
 use crate::tokenizer::{State, Tokenizer};
 
@@ -44,13 +44,8 @@ const MARKERS: [u8; 9] = [
 
 /// Start of text.
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.register_resolver(
-        "whitespace".to_string(),
-        Box::new(create_resolve_whitespace(
-            tokenizer.parse_state.constructs.hard_break_trailing,
-            true,
-        )),
-    );
+    tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
+    tokenizer.tokenize_state.stop = &MARKERS;
     before(tokenizer)
 }
 
@@ -82,5 +77,14 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 /// |qwe
 /// ```
 fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(|t| data(t, &MARKERS), before)(tokenizer)
+    tokenizer.go(data, before)(tokenizer)
+}
+
+/// Resolve whitespace.
+pub fn resolve(tokenizer: &mut Tokenizer) {
+    resolve_whitespace(
+        tokenizer,
+        tokenizer.parse_state.constructs.hard_break_trailing,
+        true,
+    );
 }

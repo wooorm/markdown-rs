@@ -53,15 +53,6 @@ use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
 use crate::token::Token;
 use crate::tokenizer::{State, Tokenizer};
 
-/// State needed to parse thematic breaks.
-#[derive(Debug)]
-struct Info {
-    /// Marker.
-    marker: u8,
-    /// Number of markers.
-    size: usize,
-}
-
 /// Start of a thematic break.
 ///
 /// ```markdown
@@ -95,13 +86,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'*' | b'-' | b'_') => at_break(
-            tokenizer,
-            Info {
-                marker: tokenizer.current.unwrap(),
-                size: 0,
-            },
-        ),
+        Some(b'*' | b'-' | b'_') => {
+            tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
+            at_break(tokenizer)
+        }
         _ => State::Nok,
     }
 }
@@ -112,19 +100,27 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
+fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'\n') if info.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
+        None | Some(b'\n') if tokenizer.tokenize_state.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
+            tokenizer.tokenize_state.marker = 0;
+            tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::ThematicBreak);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             State::Ok
         }
-        Some(b'*' | b'-' | b'_') if tokenizer.current.unwrap() == info.marker => {
+        Some(b'*' | b'-' | b'_')
+            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
+        {
             tokenizer.enter(Token::ThematicBreakSequence);
-            sequence(tokenizer, info)
+            sequence(tokenizer)
         }
-        _ => State::Nok,
+        _ => {
+            tokenizer.tokenize_state.marker = 0;
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
     }
 }
 
@@ -134,16 +130,18 @@ fn at_break(tokenizer: &mut Tokenizer, info: Info) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn sequence(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn sequence(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'*' | b'-' | b'_') if tokenizer.current.unwrap() == info.marker => {
+        Some(b'*' | b'-' | b'_')
+            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
+        {
             tokenizer.consume();
-            info.size += 1;
-            State::Fn(Box::new(|t| sequence(t, info)))
+            tokenizer.tokenize_state.size += 1;
+            State::Fn(Box::new(sequence))
         }
         _ => {
             tokenizer.exit(Token::ThematicBreakSequence);
-            tokenizer.attempt_opt(space_or_tab(), |t| at_break(t, info))(tokenizer)
+            tokenizer.attempt_opt(space_or_tab(), at_break)(tokenizer)
         }
     }
 }

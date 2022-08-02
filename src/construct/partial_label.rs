@@ -64,53 +64,21 @@ use crate::subtokenize::link;
 use crate::token::Token;
 use crate::tokenizer::{ContentType, State, Tokenizer};
 
-/// Configuration.
-///
-/// You must pass the token types in that are used.
-#[derive(Debug)]
-pub struct Options {
-    /// Token for the whole label.
-    pub label: Token,
-    /// Token for the markers.
-    pub marker: Token,
-    /// Token for the string (inside the markers).
-    pub string: Token,
-}
-
-/// State needed to parse labels.
-#[derive(Debug)]
-struct Info {
-    /// Whether we’ve seen our first `ChunkString`.
-    connect: bool,
-    /// Whether there are non-blank bytes in the label.
-    data: bool,
-    /// Number of bytes in the label.
-    size: usize,
-    /// Configuration.
-    options: Options,
-}
-
 /// Before a label.
 ///
 /// ```markdown
 /// > | [a]
 ///     ^
 /// ```
-pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
-            let info = Info {
-                connect: false,
-                data: false,
-                size: 0,
-                options,
-            };
-            tokenizer.enter(info.options.label.clone());
-            tokenizer.enter(info.options.marker.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
-            tokenizer.exit(info.options.marker.clone());
-            tokenizer.enter(info.options.string.clone());
-            State::Fn(Box::new(|t| at_break(t, info)))
+            tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+            tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
+            State::Fn(Box::new(at_break))
         }
         _ => State::Nok,
     }
@@ -122,46 +90,62 @@ pub fn start(tokenizer: &mut Tokenizer, options: Options) -> State {
 /// > | [a]
 ///      ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
-    if info.size > LINK_REFERENCE_SIZE_MAX
+fn at_break(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.tokenize_state.size > LINK_REFERENCE_SIZE_MAX
         || matches!(tokenizer.current, None | Some(b'['))
-        || (matches!(tokenizer.current, Some(b']')) && !info.data)
+        || (matches!(tokenizer.current, Some(b']')) && !tokenizer.tokenize_state.seen)
     {
+        tokenizer.tokenize_state.connect = false;
+        tokenizer.tokenize_state.seen = false;
+        tokenizer.tokenize_state.size = 0;
         State::Nok
     } else {
         match tokenizer.current {
-            Some(b'\n') => tokenizer.go(
+            Some(b'\n') => tokenizer.attempt(
                 space_or_tab_eol_with_options(EolOptions {
                     content_type: Some(ContentType::String),
-                    connect: info.connect,
+                    connect: tokenizer.tokenize_state.connect,
                 }),
-                |t| {
-                    info.connect = true;
-                    at_break(t, info)
-                },
+                |ok| Box::new(if ok { after_eol } else { at_blank_line }),
             )(tokenizer),
             Some(b']') => {
-                tokenizer.exit(info.options.string.clone());
-                tokenizer.enter(info.options.marker.clone());
+                tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
+                tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
                 tokenizer.consume();
-                tokenizer.exit(info.options.marker.clone());
-                tokenizer.exit(info.options.label);
+                tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+                tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
+                tokenizer.tokenize_state.connect = false;
+                tokenizer.tokenize_state.seen = false;
+                tokenizer.tokenize_state.size = 0;
                 State::Ok
             }
             _ => {
                 tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
 
-                if info.connect {
+                if tokenizer.tokenize_state.connect {
                     let index = tokenizer.events.len() - 1;
                     link(&mut tokenizer.events, index);
                 } else {
-                    info.connect = true;
+                    tokenizer.tokenize_state.connect = true;
                 }
 
-                label(tokenizer, info)
+                label(tokenizer)
             }
         }
     }
+}
+
+/// To do.
+fn after_eol(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.connect = true;
+    at_break(tokenizer)
+}
+
+/// To do.
+fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.marker = 0;
+    tokenizer.tokenize_state.connect = false;
+    State::Nok
 }
 
 /// In a label, in text.
@@ -170,24 +154,24 @@ fn at_break(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | [a]
 ///      ^
 /// ```
-fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn label(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'[' | b']') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer, info)
+            at_break(tokenizer)
         }
         Some(byte) => {
-            if info.size > LINK_REFERENCE_SIZE_MAX {
+            if tokenizer.tokenize_state.size > LINK_REFERENCE_SIZE_MAX {
                 tokenizer.exit(Token::Data);
-                at_break(tokenizer, info)
+                at_break(tokenizer)
             } else {
                 let func = if matches!(byte, b'\\') { escape } else { label };
                 tokenizer.consume();
-                info.size += 1;
-                if !info.data && !matches!(byte, b'\t' | b' ') {
-                    info.data = true;
+                tokenizer.tokenize_state.size += 1;
+                if !tokenizer.tokenize_state.seen && !matches!(byte, b'\t' | b' ') {
+                    tokenizer.tokenize_state.seen = true;
                 }
-                State::Fn(Box::new(move |t| func(t, info)))
+                State::Fn(Box::new(func))
             }
         }
     }
@@ -199,13 +183,13 @@ fn label(tokenizer: &mut Tokenizer, mut info: Info) -> State {
 /// > | [a\*a]
 ///        ^
 /// ```
-fn escape(tokenizer: &mut Tokenizer, mut info: Info) -> State {
+fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[' | b'\\' | b']') => {
             tokenizer.consume();
-            info.size += 1;
-            State::Fn(Box::new(|t| label(t, info)))
+            tokenizer.tokenize_state.size += 1;
+            State::Fn(Box::new(label))
         }
-        _ => label(tokenizer, info),
+        _ => label(tokenizer),
     }
 }

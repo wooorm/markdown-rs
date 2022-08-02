@@ -93,7 +93,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 fn before(tokenizer: &mut Tokenizer) -> State {
     if Some(b'#') == tokenizer.current {
         tokenizer.enter(Token::HeadingAtxSequence);
-        sequence_open(tokenizer, 0)
+        sequence_open(tokenizer)
     } else {
         State::Nok
     }
@@ -105,23 +105,27 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ## aa
 ///     ^
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer, size: usize) -> State {
+fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'\n') if size > 0 => {
+        None | Some(b'\n') if tokenizer.tokenize_state.size > 0 => {
+            tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::HeadingAtxSequence);
             at_break(tokenizer)
         }
-        Some(b'#') if size < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
+        Some(b'#') if tokenizer.tokenize_state.size < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
+            tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(Box::new(move |tokenizer| {
-                sequence_open(tokenizer, size + 1)
-            }))
+            State::Fn(Box::new(sequence_open))
         }
-        _ if size > 0 => {
+        _ if tokenizer.tokenize_state.size > 0 => {
+            tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::HeadingAtxSequence);
             tokenizer.go(space_or_tab(), at_break)(tokenizer)
         }
-        _ => State::Nok,
+        _ => {
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
     }
 }
 
