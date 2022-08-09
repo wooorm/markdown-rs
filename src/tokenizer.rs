@@ -732,7 +732,7 @@ impl StateName {
 }
 
 /// The result of a state.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum State {
     /// There is a future state: a [`StateName`][] to pass the next code to.
     Fn(StateName),
@@ -1254,38 +1254,15 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => {
                     if let Some(attempt) = self.attempts.pop() {
-                        if attempt.kind == AttemptKind::Check || state == State::Nok {
-                            if let Some(state) = attempt.state {
-                                self.free(state);
-                            }
-                        }
-
-                        self.consumed = true;
-                        state = if state == State::Ok {
-                            attempt.ok
-                        } else {
-                            attempt.nok
-                        };
+                        state = attempt_done_impl(self, attempt, state);
                     } else {
                         break;
                     }
                 }
-                State::Fn(state_name) => match byte_action(self.parse_state.bytes, &self.point) {
-                    ByteAction::Ignore => {
-                        state = State::Fn(state_name);
-                        self.move_one();
-                    }
-                    ByteAction::Insert(byte) | ByteAction::Normal(byte) => {
-                        log::debug!(
-                            "main: passing: `{:?}` ({:?}) to {:?}",
-                            byte,
-                            self.point,
-                            state_name
-                        );
-                        self.expect(Some(byte));
-                        state = call_impl(self, state_name);
-                    }
-                },
+                State::Fn(state_name) => {
+                    let action = byte_action(self.parse_state.bytes, &self.point);
+                    state = feed_action_impl(self, &Some(action), state_name);
+                }
             }
         }
 
@@ -1302,52 +1279,22 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => {
                     if let Some(attempt) = self.attempts.pop() {
-                        if attempt.kind == AttemptKind::Check || state == State::Nok {
-                            if let Some(state) = attempt.state {
-                                self.free(state);
-                            }
-                        }
-
-                        self.consumed = true;
-                        state = if state == State::Ok {
-                            attempt.ok
-                        } else {
-                            attempt.nok
-                        };
+                        state = attempt_done_impl(self, attempt, state);
                     } else {
                         break;
                     }
                 }
                 State::Fn(state_name) => {
                     // We sometimes move back when flushing, so then we use those codes.
-                    let action = if self.point.index == max {
-                        None
-                    } else {
-                        Some(byte_action(self.parse_state.bytes, &self.point))
-                    };
-
-                    if let Some(ByteAction::Ignore) = action {
-                        state = State::Fn(state_name);
-                        self.move_one();
-                    } else {
-                        let byte =
-                            if let Some(ByteAction::Insert(byte) | ByteAction::Normal(byte)) =
-                                action
-                            {
-                                Some(byte)
-                            } else {
-                                None
-                            };
-
-                        log::debug!(
-                            "main: flushing: `{:?}` ({:?}) to {:?}",
-                            byte,
-                            self.point,
-                            state_name
-                        );
-                        self.expect(byte);
-                        state = call_impl(self, state_name);
-                    }
+                    state = feed_action_impl(
+                        self,
+                        &if self.point.index == max {
+                            None
+                        } else {
+                            Some(byte_action(self.parse_state.bytes, &self.point))
+                        },
+                        state_name,
+                    );
                 }
             }
         }
@@ -1435,7 +1382,49 @@ fn attempt_impl(
         kind,
         state,
     });
+
     call_impl(tokenizer, state_name)
+}
+
+fn attempt_done_impl(tokenizer: &mut Tokenizer, attempt: Attempt, state: State) -> State {
+    if attempt.kind == AttemptKind::Check || state == State::Nok {
+        if let Some(state) = attempt.state {
+            tokenizer.free(state);
+        }
+    }
+
+    tokenizer.consumed = true;
+    if state == State::Ok {
+        attempt.ok
+    } else {
+        attempt.nok
+    }
+}
+
+fn feed_action_impl(
+    tokenizer: &mut Tokenizer,
+    action: &Option<ByteAction>,
+    state_name: StateName,
+) -> State {
+    if let Some(ByteAction::Ignore) = action {
+        tokenizer.move_one();
+        State::Fn(state_name)
+    } else {
+        let byte = if let Some(ByteAction::Insert(byte) | ByteAction::Normal(byte)) = action {
+            Some(*byte)
+        } else {
+            None
+        };
+
+        log::debug!(
+            "main: flushing: `{:?}` ({:?}) to {:?}",
+            byte,
+            tokenizer.point,
+            state_name
+        );
+        tokenizer.expect(byte);
+        call_impl(tokenizer, state_name)
+    }
 }
 
 #[allow(clippy::too_many_lines)]
