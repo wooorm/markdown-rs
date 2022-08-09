@@ -72,7 +72,13 @@ fn block_quote() {
     assert_eq!(
         micromark("> ```\na\n```"),
         "<blockquote>\n<pre><code></code></pre>\n</blockquote>\n<p>a</p>\n<pre><code></code></pre>\n",
-        "should not support lazy fenced code in block quotes"
+        "should not support lazy fenced code in block quotes (1)"
+    );
+
+    assert_eq!(
+        micromark("> a\n```\nb"),
+        "<blockquote>\n<p>a</p>\n</blockquote>\n<pre><code>b\n</code></pre>\n",
+        "should not support lazy fenced code in block quotes (2)"
     );
 
     assert_eq!(
