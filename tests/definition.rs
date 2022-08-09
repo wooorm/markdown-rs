@@ -228,6 +228,12 @@ fn definition() {
         "should support definitions in block quotes (2)"
     );
 
+    assert_eq!(
+        micromark("> [a]\n\n[a]: b (c\n)"),
+        "<blockquote>\n<p><a href=\"b\" title=\"c\n\">a</a></p>\n</blockquote>\n",
+        "should support definitions in block quotes (3)"
+    );
+
     // Extra
     assert_eq!(
         micromark("[\\[\\+\\]]: example.com\n\nLink: [\\[\\+\\]]."),

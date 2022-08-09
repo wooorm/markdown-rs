@@ -9,17 +9,9 @@ fn line_ending() {
         ..Options::default()
     };
 
-    assert_eq!(
-        micromark("\n"),
-        "",
-        "should support just a line feed"
-    );
+    assert_eq!(micromark("\n"), "", "should support just a line feed");
 
-    assert_eq!(
-        micromark("\r"),
-        "",
-        "should support just a carriage return"
-    );
+    assert_eq!(micromark("\r"), "", "should support just a carriage return");
 
     assert_eq!(
         micromark("\r\n"),
@@ -27,11 +19,7 @@ fn line_ending() {
         "should support just a carriage return + line feed"
     );
 
-    assert_eq!(
-        micromark("\n\n"),
-        "",
-        "should support just two line feeds"
-    );
+    assert_eq!(micromark("\n\n"), "", "should support just two line feeds");
 
     assert_eq!(
         micromark("\r\r"),

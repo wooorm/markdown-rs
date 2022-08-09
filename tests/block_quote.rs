@@ -124,6 +124,18 @@ fn block_quote() {
     );
 
     assert_eq!(
+        micromark("[a]\n\n> [a]: b"),
+        "<p><a href=\"b\">a</a></p>\n<blockquote>\n</blockquote>",
+        "should support a definition in a block quote (1)"
+    );
+
+    assert_eq!(
+        micromark("> [a]: b\n\n[a]"),
+        "<blockquote>\n</blockquote>\n<p><a href=\"b\">a</a></p>",
+        "should support a definition in a block quote (2)"
+    );
+
+    assert_eq!(
         micromark("a\n> b"),
         "<p>a</p>\n<blockquote>\n<p>b</p>\n</blockquote>",
         "should support interrupting paragraphs w/ block quotes"
