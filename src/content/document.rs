@@ -9,7 +9,7 @@
 //! *   [List][crate::construct::list]
 
 use crate::parser::ParseState;
-use crate::subtokenize::subtokenize;
+use crate::subtokenize::{divide_events, subtokenize};
 use crate::token::Token;
 use crate::tokenizer::{
     Container, ContainerState, ContentType, Event, EventType, Link, Point, State, StateName,
@@ -550,101 +550,22 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
 // Inject the container events.
 fn resolve(tokenizer: &mut Tokenizer) {
     let mut child = tokenizer.tokenize_state.child_tokenizer.take().unwrap();
-    child.map.consume(&mut child.events);
     // To do: see if we can do this less.
     tokenizer.map.consume(&mut tokenizer.events);
 
-    let mut link_index = skip::to(&tokenizer.events, 0, &[Token::Data]);
-    // To do: share this code with `subtokenize`.
-    // Now, loop through all subevents to figure out which parts
-    // belong where and fix deep links.
-    let mut subindex = 0;
-    let mut slices = vec![];
-    let mut slice_start = 0;
-    let mut old_prev: Option<usize> = None;
+    divide_events(
+        &mut tokenizer.map,
+        &tokenizer.events,
+        skip::to(&tokenizer.events, 0, &[Token::Data]),
+        &mut child.events,
+    );
 
-    while subindex < child.events.len() {
-        // Find the first event that starts after the end we’re looking
-        // for.
-        if child.events[subindex].event_type == EventType::Enter
-            && child.events[subindex].point.index >= tokenizer.events[link_index + 1].point.index
-        {
-            slices.push((link_index, slice_start));
-            slice_start = subindex;
-            link_index = tokenizer.events[link_index]
-                .link
-                .as_ref()
-                .unwrap()
-                .next
-                .unwrap();
-        }
-
-        // Fix sublinks.
-        if let Some(sublink_curr) = &child.events[subindex].link {
-            if sublink_curr.previous.is_some() {
-                let old_prev = old_prev.unwrap();
-                let prev_event = &mut child.events[old_prev];
-                // The `index` in `events` where the current link is,
-                // minus one to get the previous link,
-                // minus 2 events (the enter and exit) for each removed
-                // link.
-                let new_link = if slices.is_empty() {
-                    old_prev + link_index + 2
-                } else {
-                    old_prev + link_index - (slices.len() - 1) * 2
-                };
-                prev_event.link.as_mut().unwrap().next = Some(new_link);
-            }
-        }
-
-        // If there is a `next` link in the subevents, we have to change
-        // its `previous` index to account for the shifted events.
-        // If it points to a next event, we also change the next event’s
-        // reference back to *this* event.
-        if let Some(sublink_curr) = &child.events[subindex].link {
-            if let Some(next) = sublink_curr.next {
-                let sublink_next = child.events[next].link.as_mut().unwrap();
-
-                old_prev = sublink_next.previous;
-
-                sublink_next.previous = sublink_next
-                    .previous
-                    // The `index` in `events` where the current link is,
-                    // minus 2 events (the enter and exit) for each removed
-                    // link.
-                    .map(|previous| previous + link_index - (slices.len() * 2));
-            }
-        }
-
-        subindex += 1;
-    }
-
-    if !child.events.is_empty() {
-        slices.push((link_index, slice_start));
-    }
-
-    // Finally, inject the subevents.
-    let mut index = slices.len();
-
-    while index > 0 {
-        index -= 1;
-        let start = slices[index].0;
-        tokenizer.map.add(
-            start,
-            if start == tokenizer.events.len() {
-                0
-            } else {
-                2
-            },
-            child.events.split_off(slices[index].1),
-        );
-    }
-    // To do: share the above code with `subtokenize`.
-
-    let mut resolvers = child.resolvers.split_off(0);
-    let mut resolver_ids = child.resolver_ids.split_off(0);
-    tokenizer.resolvers.append(&mut resolvers);
-    tokenizer.resolver_ids.append(&mut resolver_ids);
+    tokenizer
+        .resolvers
+        .append(&mut child.resolvers.split_off(0));
+    tokenizer
+        .resolver_ids
+        .append(&mut child.resolver_ids.split_off(0));
 
     // To do: see if we can do this less.
     tokenizer.map.consume(&mut tokenizer.events);

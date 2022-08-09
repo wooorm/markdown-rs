@@ -108,65 +108,10 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
 
                 tokenizer.flush(state, true);
 
-                // Now, loop through all subevents to figure out which parts
-                // belong where and fix deep links.
-                let mut subindex = 0;
-                let mut link_index = index;
-                let mut slices = vec![];
-                let mut slice_start = 0;
+                divide_events(&mut map, events, index, &mut tokenizer.events);
 
-                while subindex < tokenizer.events.len() {
-                    let subevent = &mut tokenizer.events[subindex];
-
-                    // Find the first event that starts after the end we’re looking
-                    // for.
-                    if subevent.event_type == EventType::Enter
-                        && subevent.point.index >= events[link_index + 1].point.index
-                    {
-                        slices.push((link_index, slice_start));
-                        slice_start = subindex;
-                        link_index = events[link_index].link.as_ref().unwrap().next.unwrap();
-                    }
-
-                    if subevent.link.is_some() {
-                        // Need to call `subtokenize` again.
-                        done = false;
-                    }
-
-                    // If there is a `next` link in the subevents, we have to change
-                    // its index to account for the shifted events.
-                    // If it points to a next event, we also change the next event’s
-                    // reference back to *this* event.
-                    if let Some(sublink_curr) = &mut subevent.link {
-                        if let Some(next) = sublink_curr.next {
-                            // The `index` in `events` where the current link is,
-                            // minus 2 events (the enter and exit) for each removed
-                            // link.
-                            let shift = link_index - (slices.len() * 2);
-                            sublink_curr.next = sublink_curr.next.map(|next| next + shift);
-                            let next_ev = &mut tokenizer.events[next];
-                            let sublink_next = next_ev.link.as_mut().unwrap();
-                            sublink_next.previous =
-                                sublink_next.previous.map(|previous| previous + shift);
-                        }
-                    }
-
-                    subindex += 1;
-                }
-
-                slices.push((link_index, slice_start));
-
-                // Finally, inject the subevents.
-                let mut index = slices.len();
-
-                while index > 0 {
-                    index -= 1;
-                    map.add(
-                        slices[index].0,
-                        2,
-                        tokenizer.events.split_off(slices[index].1),
-                    );
-                }
+                // To do: check `tokenizer.events` if there is a deep content type?
+                done = false;
             }
         }
 
@@ -176,4 +121,89 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
     map.consume(events);
 
     done
+}
+
+/// Parse linked events.
+///
+/// Supposed to be called repeatedly, returns `1: true` when done.
+pub fn divide_events(
+    map: &mut EditMap,
+    events: &[Event],
+    mut link_index: usize,
+    child_events: &mut Vec<Event>,
+) {
+    // Now, loop through all subevents to figure out which parts
+    // belong where and fix deep links.
+    let mut subindex = 0;
+    let mut slices = vec![];
+    let mut slice_start = 0;
+    let mut old_prev: Option<usize> = None;
+
+    while subindex < child_events.len() {
+        // Find the first event that starts after the end we’re looking
+        // for.
+        if child_events[subindex].event_type == EventType::Enter
+            && child_events[subindex].point.index >= events[link_index + 1].point.index
+        {
+            slices.push((link_index, slice_start));
+            slice_start = subindex;
+            link_index = events[link_index].link.as_ref().unwrap().next.unwrap();
+        }
+
+        // Fix sublinks.
+        if let Some(sublink_curr) = &child_events[subindex].link {
+            if sublink_curr.previous.is_some() {
+                let old_prev = old_prev.unwrap();
+                let prev_event = &mut child_events[old_prev];
+                // The `index` in `events` where the current link is,
+                // minus one to get the previous link,
+                // minus 2 events (the enter and exit) for each removed
+                // link.
+                let new_link = if slices.is_empty() {
+                    old_prev + link_index + 2
+                } else {
+                    old_prev + link_index - (slices.len() - 1) * 2
+                };
+                prev_event.link.as_mut().unwrap().next = Some(new_link);
+            }
+        }
+
+        // If there is a `next` link in the subevents, we have to change
+        // its `previous` index to account for the shifted events.
+        // If it points to a next event, we also change the next event’s
+        // reference back to *this* event.
+        if let Some(sublink_curr) = &child_events[subindex].link {
+            if let Some(next) = sublink_curr.next {
+                let sublink_next = child_events[next].link.as_mut().unwrap();
+
+                old_prev = sublink_next.previous;
+
+                sublink_next.previous = sublink_next
+                    .previous
+                    // The `index` in `events` where the current link is,
+                    // minus 2 events (the enter and exit) for each removed
+                    // link.
+                    .map(|previous| previous + link_index - (slices.len() * 2));
+            }
+        }
+
+        subindex += 1;
+    }
+
+    if !child_events.is_empty() {
+        slices.push((link_index, slice_start));
+    }
+
+    // Finally, inject the subevents.
+    let mut index = slices.len();
+
+    while index > 0 {
+        index -= 1;
+        let start = slices[index].0;
+        map.add(
+            start,
+            if start == events.len() { 0 } else { 2 },
+            child_events.split_off(slices[index].1),
+        );
+    }
 }
