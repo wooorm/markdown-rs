@@ -84,7 +84,7 @@
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 /// Start of code (text).
 ///
@@ -117,11 +117,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | `a`
 ///     ^
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer) -> State {
+pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'`') = tokenizer.current {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Fn(Box::new(sequence_open))
+        State::Fn(StateName::CodeTextSequenceOpen)
     } else {
         tokenizer.exit(Token::CodeTextSequence);
         between(tokenizer)
@@ -134,7 +134,7 @@ fn sequence_open(tokenizer: &mut Tokenizer) -> State {
 /// > | `a`
 ///      ^^
 /// ```
-fn between(tokenizer: &mut Tokenizer) -> State {
+pub fn between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
             tokenizer.tokenize_state.size = 0;
@@ -144,7 +144,7 @@ fn between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(between))
+            State::Fn(StateName::CodeTextBetween)
         }
         Some(b'`') => {
             tokenizer.enter(Token::CodeTextSequence);
@@ -163,7 +163,7 @@ fn between(tokenizer: &mut Tokenizer) -> State {
 /// > | `a`
 ///      ^
 /// ```
-fn data(tokenizer: &mut Tokenizer) -> State {
+pub fn data(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'`') => {
             tokenizer.exit(Token::CodeTextData);
@@ -171,7 +171,7 @@ fn data(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(data))
+            State::Fn(StateName::CodeTextData)
         }
     }
 }
@@ -182,12 +182,12 @@ fn data(tokenizer: &mut Tokenizer) -> State {
 /// > | `a`
 ///       ^
 /// ```
-fn sequence_close(tokenizer: &mut Tokenizer) -> State {
+pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`') => {
             tokenizer.tokenize_state.size_other += 1;
             tokenizer.consume();
-            State::Fn(Box::new(sequence_close))
+            State::Fn(StateName::CodeTextSequenceClose)
         }
         _ => {
             if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_other {

@@ -30,7 +30,7 @@
 
 use super::label_end::resolve_media;
 use crate::token::Token;
-use crate::tokenizer::{LabelStart, State, Tokenizer};
+use crate::tokenizer::{LabelStart, State, StateName, Tokenizer};
 
 /// Start of label (image) start.
 ///
@@ -45,7 +45,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume();
             tokenizer.exit(Token::LabelImageMarker);
-            State::Fn(Box::new(open))
+            State::Fn(StateName::LabelStartImageOpen)
         }
         _ => State::Nok,
     }

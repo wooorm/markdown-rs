@@ -66,7 +66,7 @@ use crate::constant::{
     CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 use crate::util::slice::Slice;
 
 /// Start of a character reference.
@@ -86,7 +86,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterReferenceMarker);
-            State::Fn(Box::new(open))
+            State::Fn(StateName::CharacterReferenceOpen)
         }
         _ => State::Nok,
     }
@@ -103,12 +103,13 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///       ^
 /// ```
-fn open(tokenizer: &mut Tokenizer) -> State {
+// StateName::CharacterReferenceOpen
+pub fn open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'#') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        State::Fn(Box::new(numeric))
+        State::Fn(StateName::CharacterReferenceNumeric)
     } else {
         tokenizer.tokenize_state.marker = b'&';
         tokenizer.enter(Token::CharacterReferenceValue);
@@ -125,14 +126,15 @@ fn open(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///        ^
 /// ```
-fn numeric(tokenizer: &mut Tokenizer) -> State {
+// StateName::CharacterReferenceNumeric
+pub fn numeric(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'x' | b'X') = tokenizer.current {
         tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'x';
-        State::Fn(Box::new(value))
+        State::Fn(StateName::CharacterReferenceValue)
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'#';
@@ -154,7 +156,7 @@ fn numeric(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///         ^
 /// ```
-fn value(tokenizer: &mut Tokenizer) -> State {
+pub fn value(tokenizer: &mut Tokenizer) -> State {
     if matches!(tokenizer.current, Some(b';')) && tokenizer.tokenize_state.size > 0 {
         // Named.
         if tokenizer.tokenize_state.marker == b'&' {
@@ -200,7 +202,7 @@ fn value(tokenizer: &mut Tokenizer) -> State {
         if tokenizer.tokenize_state.size < max && test(&byte) {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            return State::Fn(Box::new(value));
+            return State::Fn(StateName::CharacterReferenceValue);
         }
     }
 

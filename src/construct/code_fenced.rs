@@ -102,12 +102,9 @@
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
-use crate::construct::{
-    partial_non_lazy_continuation::start as partial_non_lazy_continuation,
-    partial_space_or_tab::{space_or_tab, space_or_tab_min_max},
-};
+use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::token::Token;
-use crate::tokenizer::{ContentType, State, Tokenizer};
+use crate::tokenizer::{ContentType, State, StateName, Tokenizer};
 use crate::util::slice::{Position, Slice};
 
 /// Start of fenced code.
@@ -122,17 +119,16 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.code_fenced {
         tokenizer.enter(Token::CodeFenced);
         tokenizer.enter(Token::CodeFencedFence);
-        tokenizer.go(
-            space_or_tab_min_max(
-                0,
-                if tokenizer.parse_state.constructs.code_indented {
-                    TAB_SIZE - 1
-                } else {
-                    usize::MAX
-                },
-            ),
-            before_sequence_open,
-        )(tokenizer)
+        let state_name = space_or_tab_min_max(
+            tokenizer,
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        );
+        tokenizer.go(state_name, StateName::CodeFencedBeforeSequenceOpen)
     } else {
         State::Nok
     }
@@ -146,7 +142,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
+pub fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
     let tail = tokenizer.events.last();
     let mut prefix = 0;
 
@@ -178,16 +174,17 @@ fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn sequence_open(tokenizer: &mut Tokenizer) -> State {
+pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`' | b'~') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(Box::new(sequence_open))
+            State::Fn(StateName::CodeFencedSequenceOpen)
         }
         _ if tokenizer.tokenize_state.size >= CODE_FENCED_SEQUENCE_SIZE_MIN => {
             tokenizer.exit(Token::CodeFencedFenceSequence);
-            tokenizer.attempt_opt(space_or_tab(), info_before)(tokenizer)
+            let state_name = space_or_tab(tokenizer);
+            tokenizer.attempt_opt(state_name, StateName::CodeFencedInfoBefore)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
@@ -206,7 +203,7 @@ fn sequence_open(tokenizer: &mut Tokenizer) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn info_before(tokenizer: &mut Tokenizer) -> State {
+pub fn info_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::CodeFencedFence);
@@ -217,7 +214,7 @@ fn info_before(tokenizer: &mut Tokenizer) -> State {
         _ => {
             tokenizer.enter(Token::CodeFencedFenceInfo);
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            info_inside(tokenizer)
+            info(tokenizer)
         }
     }
 }
@@ -230,7 +227,7 @@ fn info_before(tokenizer: &mut Tokenizer) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn info_inside(tokenizer: &mut Tokenizer) -> State {
+pub fn info(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
@@ -243,7 +240,8 @@ fn info_inside(tokenizer: &mut Tokenizer) -> State {
         Some(b'\t' | b' ') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::CodeFencedFenceInfo);
-            tokenizer.attempt_opt(space_or_tab(), meta_before)(tokenizer)
+            let state_name = space_or_tab(tokenizer);
+            tokenizer.attempt_opt(state_name, StateName::CodeFencedMetaBefore)
         }
         Some(b'`') if tokenizer.tokenize_state.marker == b'`' => {
             tokenizer.concrete = false;
@@ -254,7 +252,7 @@ fn info_inside(tokenizer: &mut Tokenizer) -> State {
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(Box::new(info_inside))
+            State::Fn(StateName::CodeFencedInfo)
         }
     }
 }
@@ -267,7 +265,7 @@ fn info_inside(tokenizer: &mut Tokenizer) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn meta_before(tokenizer: &mut Tokenizer) -> State {
+pub fn meta_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::CodeFencedFence);
@@ -291,7 +289,7 @@ fn meta_before(tokenizer: &mut Tokenizer) -> State {
 ///   | console.log(1)
 ///   | ~~~
 /// ```
-fn meta(tokenizer: &mut Tokenizer) -> State {
+pub fn meta(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
@@ -310,7 +308,7 @@ fn meta(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(meta))
+            State::Fn(StateName::CodeFencedMeta)
         }
     }
 }
@@ -324,10 +322,14 @@ fn meta(tokenizer: &mut Tokenizer) -> State {
 ///                   ^
 ///   | ~~~
 /// ```
-fn at_break(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(partial_non_lazy_continuation, |ok| {
-        Box::new(if ok { at_non_lazy_break } else { after })
-    })(tokenizer)
+pub fn at_break(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.check(StateName::NonLazyContinuationStart, |ok| {
+        State::Fn(if ok {
+            StateName::CodeFencedAtNonLazyBreak
+        } else {
+            StateName::CodeFencedAfter
+        })
+    })
 }
 
 /// At an eol/eof in code, before a non-lazy closing fence or content.
@@ -339,10 +341,14 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
 ///                   ^
 ///   | ~~~
 /// ```
-fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(close_begin, |ok| {
-        Box::new(if ok { after } else { content_before })
-    })(tokenizer)
+pub fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(StateName::CodeFencedCloseBefore, |ok| {
+        State::Fn(if ok {
+            StateName::CodeFencedAfter
+        } else {
+            StateName::CodeFencedContentBefore
+        })
+    })
 }
 
 /// Before a closing fence, at the line ending.
@@ -353,13 +359,13 @@ fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
 ///                   ^
 ///   | ~~~
 /// ```
-fn close_begin(tokenizer: &mut Tokenizer) -> State {
+pub fn close_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(close_start))
+            State::Fn(StateName::CodeFencedCloseStart)
         }
         _ => unreachable!("expected eol"),
     }
@@ -373,19 +379,18 @@ fn close_begin(tokenizer: &mut Tokenizer) -> State {
 /// > | ~~~
 ///     ^
 /// ```
-fn close_start(tokenizer: &mut Tokenizer) -> State {
+pub fn close_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::CodeFencedFence);
-    tokenizer.go(
-        space_or_tab_min_max(
-            0,
-            if tokenizer.parse_state.constructs.code_indented {
-                TAB_SIZE - 1
-            } else {
-                usize::MAX
-            },
-        ),
-        close_before,
-    )(tokenizer)
+    let state_name = space_or_tab_min_max(
+        tokenizer,
+        0,
+        if tokenizer.parse_state.constructs.code_indented {
+            TAB_SIZE - 1
+        } else {
+            usize::MAX
+        },
+    );
+    tokenizer.go(state_name, StateName::CodeFencedBeforeSequenceClose)
 }
 
 /// In a closing fence, after optional whitespace, before sequence.
@@ -396,11 +401,11 @@ fn close_start(tokenizer: &mut Tokenizer) -> State {
 /// > | ~~~
 ///     ^
 /// ```
-fn close_before(tokenizer: &mut Tokenizer) -> State {
+pub fn before_sequence_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`' | b'~') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.enter(Token::CodeFencedFenceSequence);
-            close_sequence(tokenizer)
+            sequence_close(tokenizer)
         }
         _ => State::Nok,
     }
@@ -414,19 +419,20 @@ fn close_before(tokenizer: &mut Tokenizer) -> State {
 /// > | ~~~
 ///     ^
 /// ```
-fn close_sequence(tokenizer: &mut Tokenizer) -> State {
+pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`' | b'~') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.tokenize_state.size_other += 1;
             tokenizer.consume();
-            State::Fn(Box::new(close_sequence))
+            State::Fn(StateName::CodeFencedSequenceClose)
         }
         _ if tokenizer.tokenize_state.size_other >= CODE_FENCED_SEQUENCE_SIZE_MIN
             && tokenizer.tokenize_state.size_other >= tokenizer.tokenize_state.size =>
         {
             tokenizer.tokenize_state.size_other = 0;
             tokenizer.exit(Token::CodeFencedFenceSequence);
-            tokenizer.attempt_opt(space_or_tab(), close_sequence_after)(tokenizer)
+            let state_name = space_or_tab(tokenizer);
+            tokenizer.attempt_opt(state_name, StateName::CodeFencedAfterSequenceClose)
         }
         _ => {
             tokenizer.tokenize_state.size_other = 0;
@@ -443,7 +449,7 @@ fn close_sequence(tokenizer: &mut Tokenizer) -> State {
 /// > | ~~~
 ///        ^
 /// ```
-fn close_sequence_after(tokenizer: &mut Tokenizer) -> State {
+pub fn sequence_close_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::CodeFencedFence);
@@ -461,11 +467,11 @@ fn close_sequence_after(tokenizer: &mut Tokenizer) -> State {
 ///                   ^
 ///   | ~~~
 /// ```
-fn content_before(tokenizer: &mut Tokenizer) -> State {
+pub fn content_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::LineEnding);
     tokenizer.consume();
     tokenizer.exit(Token::LineEnding);
-    State::Fn(Box::new(content_start))
+    State::Fn(StateName::CodeFencedContentStart)
 }
 /// Before code content, definitely not before a closing fence.
 ///
@@ -475,11 +481,9 @@ fn content_before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 ///   | ~~~
 /// ```
-fn content_start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(
-        space_or_tab_min_max(0, tokenizer.tokenize_state.prefix),
-        content_begin,
-    )(tokenizer)
+pub fn content_start(tokenizer: &mut Tokenizer) -> State {
+    let state_name = space_or_tab_min_max(tokenizer, 0, tokenizer.tokenize_state.prefix);
+    tokenizer.go(state_name, StateName::CodeFencedBeforeContentChunk)
 }
 
 /// Before code content, after a prefix.
@@ -490,12 +494,12 @@ fn content_start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 ///   | ~~~
 /// ```
-fn content_begin(tokenizer: &mut Tokenizer) -> State {
+pub fn before_content_chunk(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => at_break(tokenizer),
         _ => {
             tokenizer.enter(Token::CodeFlowChunk);
-            content_continue(tokenizer)
+            content_chunk(tokenizer)
         }
     }
 }
@@ -508,7 +512,7 @@ fn content_begin(tokenizer: &mut Tokenizer) -> State {
 ///     ^^^^^^^^^^^^^^
 ///   | ~~~
 /// ```
-fn content_continue(tokenizer: &mut Tokenizer) -> State {
+pub fn content_chunk(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::CodeFlowChunk);
@@ -516,7 +520,7 @@ fn content_continue(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(content_continue))
+            State::Fn(StateName::CodeFencedContentChunk)
         }
     }
 }
@@ -529,7 +533,7 @@ fn content_continue(tokenizer: &mut Tokenizer) -> State {
 /// > | ~~~
 ///        ^
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
+pub fn after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.exit(Token::CodeFenced);
     tokenizer.tokenize_state.marker = 0;
     tokenizer.tokenize_state.prefix = 0;

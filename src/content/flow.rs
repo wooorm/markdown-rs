@@ -19,15 +19,8 @@
 //! *   [HTML (flow)][crate::construct::html_flow]
 //! *   [Thematic break][crate::construct::thematic_break]
 
-use crate::construct::{
-    blank_line::start as blank_line, code_fenced::start as code_fenced,
-    code_indented::start as code_indented, definition::start as definition,
-    heading_atx::start as heading_atx, heading_setext::start as heading_setext,
-    html_flow::start as html_flow, paragraph::start as paragraph,
-    thematic_break::start as thematic_break,
-};
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 /// Before flow.
 ///
@@ -42,9 +35,13 @@ use crate::tokenizer::{State, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
-        _ => tokenizer.attempt(blank_line, |ok| {
-            Box::new(if ok { blank_line_after } else { initial_before })
-        })(tokenizer),
+        _ => tokenizer.attempt(StateName::BlankLineStart, |ok| {
+            State::Fn(if ok {
+                StateName::FlowBlankLineAfter
+            } else {
+                StateName::FlowBefore
+            })
+        }),
     }
 }
 
@@ -60,21 +57,27 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// |~~~js
 /// |<div>
 /// ```
-fn initial_before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
-                Box::new(code_indented),
-                Box::new(code_fenced),
-                Box::new(html_flow),
-                Box::new(heading_atx),
-                Box::new(heading_setext),
-                Box::new(thematic_break),
-                Box::new(definition),
+                StateName::CodeIndentedStart,
+                StateName::CodeFencedStart,
+                StateName::HtmlFlowStart,
+                StateName::HeadingAtxStart,
+                StateName::HeadingSetextStart,
+                StateName::ThematicBreakStart,
+                StateName::DefinitionStart,
             ],
-            |ok| Box::new(if ok { after } else { before_paragraph }),
-        )(tokenizer),
+            |ok| {
+                State::Fn(if ok {
+                    StateName::FlowAfter
+                } else {
+                    StateName::FlowBeforeParagraph
+                })
+            },
+        ),
     }
 }
 
@@ -85,7 +88,7 @@ fn initial_before(tokenizer: &mut Tokenizer) -> State {
 /// ```markdown
 /// ␠␠|
 /// ```
-fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
+pub fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'\n') => {
@@ -94,7 +97,7 @@ fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::BlankLineEnding);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            State::Fn(Box::new(start))
+            State::Fn(StateName::FlowStart)
         }
         _ => unreachable!("expected eol/eof"),
     }
@@ -109,14 +112,14 @@ fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
 /// asd
 /// ~~~|
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
+pub fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(start))
+            State::Fn(StateName::FlowStart)
         }
         _ => unreachable!("expected eol/eof"),
     }
@@ -127,6 +130,6 @@ fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```markdown
 /// |asd
 /// ```
-fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(paragraph, after)(tokenizer)
+pub fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.go(StateName::ParagraphStart, StateName::FlowAfter)
 }

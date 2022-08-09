@@ -12,11 +12,8 @@
 //!
 //! [text]: crate::content::text
 
-use crate::construct::{
-    character_escape::start as character_escape, character_reference::start as character_reference,
-    partial_data::start as data, partial_whitespace::resolve_whitespace,
-};
-use crate::tokenizer::{State, Tokenizer};
+use crate::construct::partial_whitespace::resolve_whitespace;
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 const MARKERS: [u8; 2] = [b'&', b'\\'];
 
@@ -28,19 +25,28 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Before string.
-fn before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         _ => tokenizer.attempt_n(
-            vec![Box::new(character_reference), Box::new(character_escape)],
-            |ok| Box::new(if ok { before } else { before_data }),
-        )(tokenizer),
+            vec![
+                StateName::CharacterReferenceStart,
+                StateName::CharacterEscapeStart,
+            ],
+            |ok| {
+                State::Fn(if ok {
+                    StateName::StringBefore
+                } else {
+                    StateName::StringBeforeData
+                })
+            },
+        ),
     }
 }
 
 /// At data.
-fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(data, before)(tokenizer)
+pub fn before_data(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.go(StateName::DataStart, StateName::StringBefore)
 }
 
 /// Resolve whitespace.

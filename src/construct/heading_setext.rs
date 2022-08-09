@@ -60,7 +60,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::token::Token;
-use crate::tokenizer::{EventType, State, Tokenizer};
+use crate::tokenizer::{EventType, State, StateName, Tokenizer};
 use crate::util::skip::opt_back as skip_opt_back;
 
 /// At a line ending, presumably an underline.
@@ -83,17 +83,17 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             .token_type
                 == Token::Paragraph)
     {
-        tokenizer.go(
-            space_or_tab_min_max(
-                0,
-                if tokenizer.parse_state.constructs.code_indented {
-                    TAB_SIZE - 1
-                } else {
-                    usize::MAX
-                },
-            ),
-            before,
-        )(tokenizer)
+        let state_name = space_or_tab_min_max(
+            tokenizer,
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        );
+
+        tokenizer.go(state_name, StateName::HeadingSetextBefore)
     } else {
         State::Nok
     }
@@ -106,7 +106,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | ==
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
@@ -124,16 +124,17 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ==
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer) -> State {
+pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Fn(Box::new(inside))
+            State::Fn(StateName::HeadingSetextInside)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
             tokenizer.exit(Token::HeadingSetextUnderline);
-            tokenizer.attempt_opt(space_or_tab(), after)(tokenizer)
+            let state_name = space_or_tab(tokenizer);
+            tokenizer.attempt_opt(state_name, StateName::HeadingSetextAfter)
         }
     }
 }
@@ -145,7 +146,7 @@ fn inside(tokenizer: &mut Tokenizer) -> State {
 /// > | ==
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
+pub fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             // Feel free to interrupt.

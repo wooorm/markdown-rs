@@ -40,7 +40,7 @@
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 /// Start of a hard break (escape).
 ///
@@ -54,7 +54,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'\\') if tokenizer.parse_state.constructs.hard_break_escape => {
             tokenizer.enter(Token::HardBreakEscape);
             tokenizer.consume();
-            State::Fn(Box::new(after))
+            State::Fn(StateName::HardBreakEscapeAfter)
         }
         _ => State::Nok,
     }
@@ -67,7 +67,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 ///   | b
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
+pub fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.exit(Token::HardBreakEscape);

@@ -20,15 +20,8 @@
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
 //! > [whitespace][crate::construct::partial_whitespace].
 
-use crate::construct::{
-    attention::start as attention, autolink::start as autolink,
-    character_escape::start as character_escape, character_reference::start as character_reference,
-    code_text::start as code_text, hard_break_escape::start as hard_break_escape,
-    html_text::start as html_text, label_end::start as label_end,
-    label_start_image::start as label_start_image, label_start_link::start as label_start_link,
-    partial_data::start as data, partial_whitespace::resolve_whitespace,
-};
-use crate::tokenizer::{State, Tokenizer};
+use crate::construct::partial_whitespace::resolve_whitespace;
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 const MARKERS: [u8; 9] = [
     b'!',  // `label_start_image`
@@ -55,19 +48,25 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         None => State::Ok,
         _ => tokenizer.attempt_n(
             vec![
-                Box::new(attention),
-                Box::new(autolink),
-                Box::new(character_escape),
-                Box::new(character_reference),
-                Box::new(code_text),
-                Box::new(hard_break_escape),
-                Box::new(html_text),
-                Box::new(label_end),
-                Box::new(label_start_image),
-                Box::new(label_start_link),
+                StateName::AttentionStart,
+                StateName::AutolinkStart,
+                StateName::CharacterEscapeStart,
+                StateName::CharacterReferenceStart,
+                StateName::CodeTextStart,
+                StateName::HardBreakEscapeStart,
+                StateName::HtmlTextStart,
+                StateName::LabelEndStart,
+                StateName::LabelStartImageStart,
+                StateName::LabelStartLinkStart,
             ],
-            |ok| Box::new(if ok { before } else { before_data }),
-        )(tokenizer),
+            |ok| {
+                State::Fn(if ok {
+                    StateName::TextBefore
+                } else {
+                    StateName::TextBeforeData
+                })
+            },
+        ),
     }
 }
 
@@ -76,8 +75,8 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```markdown
 /// |qwe
 /// ```
-fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(data, before)(tokenizer)
+pub fn before_data(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.go(StateName::DataStart, StateName::TextBefore)
 }
 
 /// Resolve whitespace.

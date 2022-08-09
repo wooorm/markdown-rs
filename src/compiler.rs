@@ -482,28 +482,45 @@ fn on_enter_list(context: &mut CompileContext) {
             // Blank line directly in list or directly in list item,
             // but not a blank line after an empty list item.
             if balance < 3 && event.token_type == Token::BlankLineEnding {
-                let at_marker = balance == 2
-                    && events[skip::opt_back(
-                        events,
-                        index - 2,
-                        &[Token::BlankLineEnding, Token::SpaceOrTab],
-                    )]
-                    .token_type
-                        == Token::ListItemPrefix;
-                let at_list_item = balance == 1 && events[index - 2].token_type == Token::ListItem;
-                let at_empty_list_item = if at_list_item {
-                    let before_item = skip::opt_back(events, index - 2, &[Token::ListItem]);
-                    let before_prefix = skip::opt_back(
-                        events,
-                        index - 3,
-                        &[Token::ListItemPrefix, Token::SpaceOrTab],
-                    );
-                    before_item + 1 == before_prefix
-                } else {
-                    false
-                };
+                let mut at_marker = false;
 
-                if !at_marker && !at_list_item && !at_empty_list_item {
+                if balance == 2 {
+                    let mut before = index - 2;
+
+                    if events[before].token_type == Token::SpaceOrTab {
+                        before -= 2;
+                    }
+
+                    if events[before].token_type == Token::ListItemPrefix {
+                        at_marker = true;
+                    }
+                }
+
+                let mut at_empty_list_item = false;
+                let mut at_empty_block_quote = false;
+
+                if balance == 1 {
+                    let mut before = index - 2;
+
+                    if events[before].token_type == Token::SpaceOrTab {
+                        before -= 2;
+                    }
+
+                    if events[before].token_type == Token::ListItem
+                        && events[before - 1].token_type == Token::ListItemPrefix
+                    {
+                        at_empty_list_item = true;
+                    }
+
+                    if events[before].token_type == Token::ListItem
+                        && events[before - 1].token_type == Token::BlockQuote
+                        && events[before - 2].token_type == Token::BlockQuotePrefix
+                    {
+                        at_empty_block_quote = true;
+                    }
+                }
+
+                if !at_marker && !at_empty_list_item && !at_empty_block_quote {
                     loose = true;
                     break;
                 }

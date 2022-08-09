@@ -7,7 +7,7 @@
 //! [text]: crate::content::text
 
 use crate::token::Token;
-use crate::tokenizer::{EventType, State, Tokenizer};
+use crate::tokenizer::{EventType, State, StateName, Tokenizer};
 
 /// At the beginning of data.
 ///
@@ -17,10 +17,11 @@ use crate::tokenizer::{EventType, State, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
+        // Make sure to eat the first `stop`.
         Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
             tokenizer.enter(Token::Data);
             tokenizer.consume();
-            State::Fn(Box::new(data))
+            State::Fn(StateName::DataInside)
         }
         _ => at_break(tokenizer),
     }
@@ -32,14 +33,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | abc
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer) -> State {
+pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'\n') => {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(Box::new(at_break))
+            State::Fn(StateName::DataAtBreak)
         }
         Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
@@ -47,7 +48,7 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(Token::Data);
-            data(tokenizer)
+            inside(tokenizer)
         }
     }
 }
@@ -58,7 +59,7 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// > | abc
 ///     ^^^
 /// ```
-fn data(tokenizer: &mut Tokenizer) -> State {
+pub fn inside(tokenizer: &mut Tokenizer) -> State {
     let done = match tokenizer.current {
         None | Some(b'\n') => true,
         Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => true,
@@ -70,7 +71,7 @@ fn data(tokenizer: &mut Tokenizer) -> State {
         at_break(tokenizer)
     } else {
         tokenizer.consume();
-        State::Fn(Box::new(data))
+        State::Fn(StateName::DataInside)
     }
 }
 

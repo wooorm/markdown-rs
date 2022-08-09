@@ -36,7 +36,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 /// Start of block quote.
 ///
@@ -45,13 +45,17 @@ use crate::tokenizer::{State, Tokenizer};
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
     if tokenizer.parse_state.constructs.block_quote {
-        tokenizer.go(space_or_tab_min_max(0, max), before)(tokenizer)
+        let state_name = space_or_tab_min_max(
+            tokenizer,
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        );
+        tokenizer.go(state_name, StateName::BlockQuoteBefore)
     } else {
         State::Nok
     }
@@ -63,7 +67,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | > a
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             tokenizer.enter(Token::BlockQuote);
@@ -80,13 +84,17 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | > b
 ///     ^
 /// ```
-pub fn cont(tokenizer: &mut Tokenizer) -> State {
-    let max = if tokenizer.parse_state.constructs.code_indented {
-        TAB_SIZE - 1
-    } else {
-        usize::MAX
-    };
-    tokenizer.go(space_or_tab_min_max(0, max), cont_before)(tokenizer)
+pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
+    let state_name = space_or_tab_min_max(
+        tokenizer,
+        0,
+        if tokenizer.parse_state.constructs.code_indented {
+            TAB_SIZE - 1
+        } else {
+            usize::MAX
+        },
+    );
+    tokenizer.go(state_name, StateName::BlockQuoteContBefore)
 }
 
 /// After whitespace, before `>`.
@@ -96,14 +104,14 @@ pub fn cont(tokenizer: &mut Tokenizer) -> State {
 /// > | > b
 ///     ^
 /// ```
-fn cont_before(tokenizer: &mut Tokenizer) -> State {
+pub fn cont_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             tokenizer.enter(Token::BlockQuotePrefix);
             tokenizer.enter(Token::BlockQuoteMarker);
             tokenizer.consume();
             tokenizer.exit(Token::BlockQuoteMarker);
-            State::Fn(Box::new(cont_after))
+            State::Fn(StateName::BlockQuoteContAfter)
         }
         _ => State::Nok,
     }
@@ -117,15 +125,13 @@ fn cont_before(tokenizer: &mut Tokenizer) -> State {
 /// > | >b
 ///      ^
 /// ```
-fn cont_after(tokenizer: &mut Tokenizer) -> State {
+pub fn cont_after(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'\t' | b' ') = tokenizer.current {
         tokenizer.enter(Token::SpaceOrTab);
         tokenizer.consume();
         tokenizer.exit(Token::SpaceOrTab);
-        tokenizer.exit(Token::BlockQuotePrefix);
-        State::Ok
-    } else {
-        tokenizer.exit(Token::BlockQuotePrefix);
-        State::Ok
     }
+
+    tokenizer.exit(Token::BlockQuotePrefix);
+    State::Ok
 }

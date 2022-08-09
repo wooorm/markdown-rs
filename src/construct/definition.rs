@@ -93,14 +93,9 @@
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
-use crate::construct::{
-    partial_destination::start as destination,
-    partial_label::start as label,
-    partial_space_or_tab::{space_or_tab, space_or_tab_eol},
-    partial_title::start as title,
-};
+use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_eol};
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 use crate::util::skip::opt_back as skip_opt_back;
 
 /// At the start of a definition.
@@ -124,7 +119,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     if possible && tokenizer.parse_state.constructs.definition {
         tokenizer.enter(Token::Definition);
         // Note: arbitrary whitespace allowed even if code (indented) is on.
-        tokenizer.attempt_opt(space_or_tab(), before)(tokenizer)
+        let state_name = space_or_tab(tokenizer);
+        tokenizer.attempt_opt(state_name, StateName::DefinitionBefore)
     } else {
         State::Nok
     }
@@ -136,13 +132,13 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
             tokenizer.tokenize_state.token_1 = Token::DefinitionLabel;
             tokenizer.tokenize_state.token_2 = Token::DefinitionLabelMarker;
             tokenizer.tokenize_state.token_3 = Token::DefinitionLabelString;
-            tokenizer.go(label, label_after)(tokenizer)
+            tokenizer.go(StateName::LabelStart, StateName::DefinitionLabelAfter)
         }
         _ => State::Nok,
     }
@@ -154,7 +150,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///        ^
 /// ```
-fn label_after(tokenizer: &mut Tokenizer) -> State {
+pub fn label_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Token::Data;
     tokenizer.tokenize_state.token_2 = Token::Data;
     tokenizer.tokenize_state.token_3 = Token::Data;
@@ -164,12 +160,16 @@ fn label_after(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::DefinitionMarker);
             tokenizer.consume();
             tokenizer.exit(Token::DefinitionMarker);
-            State::Fn(Box::new(
-                tokenizer.attempt_opt(space_or_tab_eol(), destination_before),
-            ))
+            State::Fn(StateName::DefinitionMarkerAfter)
         }
         _ => State::Nok,
     }
+}
+
+/// To do.
+pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
+    let state_name = space_or_tab_eol(tokenizer);
+    tokenizer.attempt_opt(state_name, StateName::DefinitionDestinationBefore)
 }
 
 /// Before a destination.
@@ -178,20 +178,20 @@ fn label_after(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///          ^
 /// ```
-fn destination_before(tokenizer: &mut Tokenizer) -> State {
+pub fn destination_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Token::DefinitionDestination;
     tokenizer.tokenize_state.token_2 = Token::DefinitionDestinationLiteral;
     tokenizer.tokenize_state.token_3 = Token::DefinitionDestinationLiteralMarker;
     tokenizer.tokenize_state.token_4 = Token::DefinitionDestinationRaw;
     tokenizer.tokenize_state.token_5 = Token::DefinitionDestinationString;
     tokenizer.tokenize_state.size_other = usize::MAX;
-    tokenizer.attempt(destination, |ok| {
-        Box::new(if ok {
-            destination_after
+    tokenizer.attempt(StateName::DestinationStart, |ok| {
+        State::Fn(if ok {
+            StateName::DefinitionDestinationAfter
         } else {
-            destination_missing
+            StateName::DefinitionDestinationMissing
         })
-    })(tokenizer)
+    })
 }
 
 /// After a destination.
@@ -200,18 +200,18 @@ fn destination_before(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///           ^
 /// ```
-fn destination_after(tokenizer: &mut Tokenizer) -> State {
+pub fn destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Token::Data;
     tokenizer.tokenize_state.token_2 = Token::Data;
     tokenizer.tokenize_state.token_3 = Token::Data;
     tokenizer.tokenize_state.token_4 = Token::Data;
     tokenizer.tokenize_state.token_5 = Token::Data;
     tokenizer.tokenize_state.size_other = 0;
-    tokenizer.attempt_opt(title_before, after)(tokenizer)
+    tokenizer.attempt_opt(StateName::DefinitionTitleBefore, StateName::DefinitionAfter)
 }
 
 /// Without destination.
-fn destination_missing(tokenizer: &mut Tokenizer) -> State {
+pub fn destination_missing(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Token::Data;
     tokenizer.tokenize_state.token_2 = Token::Data;
     tokenizer.tokenize_state.token_3 = Token::Data;
@@ -229,8 +229,9 @@ fn destination_missing(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt_opt(space_or_tab(), after_whitespace)(tokenizer)
+pub fn after(tokenizer: &mut Tokenizer) -> State {
+    let state_name = space_or_tab(tokenizer);
+    tokenizer.attempt_opt(state_name, StateName::DefinitionAfterWhitespace)
 }
 
 /// After a definition, after optional whitespace.
@@ -241,7 +242,7 @@ fn after(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
+pub fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::Definition);
@@ -261,8 +262,9 @@ fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///           ^
 /// ```
-fn title_before(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(space_or_tab_eol(), title_before_marker)(tokenizer)
+pub fn title_before(tokenizer: &mut Tokenizer) -> State {
+    let state_name = space_or_tab_eol(tokenizer);
+    tokenizer.go(state_name, StateName::DefinitionTitleBeforeMarker)
 }
 
 /// Before a title, after a line ending.
@@ -272,11 +274,11 @@ fn title_before(tokenizer: &mut Tokenizer) -> State {
 /// > | "c"
 ///     ^
 /// ```
-fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
+pub fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Token::DefinitionTitle;
     tokenizer.tokenize_state.token_2 = Token::DefinitionTitleMarker;
     tokenizer.tokenize_state.token_3 = Token::DefinitionTitleString;
-    tokenizer.go(title, title_after)(tokenizer)
+    tokenizer.go(StateName::TitleStart, StateName::DefinitionTitleAfter)
 }
 
 /// After a title.
@@ -285,11 +287,15 @@ fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn title_after(tokenizer: &mut Tokenizer) -> State {
+pub fn title_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Token::Data;
     tokenizer.tokenize_state.token_2 = Token::Data;
     tokenizer.tokenize_state.token_3 = Token::Data;
-    tokenizer.attempt_opt(space_or_tab(), title_after_after_optional_whitespace)(tokenizer)
+    let state_name = space_or_tab(tokenizer);
+    tokenizer.attempt_opt(
+        state_name,
+        StateName::DefinitionTitleAfterOptionalWhitespace,
+    )
 }
 
 /// After a title, after optional whitespace.
@@ -298,7 +304,7 @@ fn title_after(tokenizer: &mut Tokenizer) -> State {
 /// > | [a]: b "c"
 ///               ^
 /// ```
-fn title_after_after_optional_whitespace(tokenizer: &mut Tokenizer) -> State {
+pub fn title_after_optional_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => State::Ok,
         _ => State::Nok,

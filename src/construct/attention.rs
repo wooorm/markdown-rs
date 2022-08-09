@@ -52,7 +52,7 @@
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 
 use crate::token::Token;
-use crate::tokenizer::{Event, EventType, Point, State, Tokenizer};
+use crate::tokenizer::{Event, EventType, Point, State, StateName, Tokenizer};
 use crate::unicode::PUNCTUATION;
 use crate::util::slice::Slice;
 
@@ -132,11 +132,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | **
 ///     ^^
 /// ```
-fn inside(tokenizer: &mut Tokenizer) -> State {
+pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'_') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Fn(Box::new(inside))
+            State::Fn(StateName::AttentionInside)
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);

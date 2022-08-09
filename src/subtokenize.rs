@@ -21,9 +21,8 @@
 //! thus the whole document needs to be parsed up to the level of definitions,
 //! before any level that can include references can be parsed.
 
-use crate::content::{string::start as string, text::start as text};
 use crate::parser::ParseState;
-use crate::tokenizer::{ContentType, Event, EventType, State, Tokenizer};
+use crate::tokenizer::{ContentType, Event, EventType, State, StateName, Tokenizer};
 use crate::util::edit_map::EditMap;
 
 /// Create a link between two [`Event`][]s.
@@ -79,11 +78,11 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
-                let mut state = State::Fn(Box::new(if link.content_type == ContentType::String {
-                    string
+                let mut state = State::Fn(if link.content_type == ContentType::String {
+                    StateName::StringStart
                 } else {
-                    text
-                }));
+                    StateName::TextStart
+                });
 
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {
@@ -92,7 +91,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     debug_assert_eq!(enter.event_type, EventType::Enter);
 
                     if link_curr.previous != None {
-                        tokenizer.define_skip(&enter.point);
+                        tokenizer.define_skip(enter.point.clone());
                     }
 
                     state = tokenizer.push(

@@ -33,7 +33,7 @@
 //! [flow]: crate::content::flow
 
 use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 /// Start of a blank line.
 ///
@@ -46,7 +46,8 @@ use crate::tokenizer::{State, Tokenizer};
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt_opt(space_or_tab(), after)(tokenizer)
+    let state_name = space_or_tab(tokenizer);
+    tokenizer.attempt_opt(state_name, StateName::BlankLineAfter)
 }
 
 /// After zero or more spaces or tabs, before a line ending or EOF.
@@ -57,7 +58,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | ␊
 ///     ^
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
+pub fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => State::Ok,
         _ => State::Nok,

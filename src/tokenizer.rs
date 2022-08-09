@@ -12,6 +12,8 @@
 //! [`check`]: Tokenizer::check
 
 use crate::constant::TAB_SIZE;
+use crate::construct;
+use crate::content;
 use crate::parser::ParseState;
 use crate::token::{Token, VOID_TOKENS};
 use crate::util::edit_map::EditMap;
@@ -19,10 +21,12 @@ use crate::util::edit_map::EditMap;
 /// Embedded content type.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContentType {
-    /// Represents [text content][crate::content::text].
-    Text,
+    /// Represents [flow content][crate::content::flow].
+    Flow,
     /// Represents [string content][crate::content::string].
     String,
+    /// Represents [text content][crate::content::text].
+    Text,
 }
 
 #[derive(Debug, PartialEq)]
@@ -79,10 +83,9 @@ pub struct Event {
     pub link: Option<Link>,
 }
 
-/// The essence of the state machine are functions: `StateFn`.
-/// It’s responsible for dealing with the current byte.
-/// It yields a [`State`][].
-pub type StateFn = dyn FnOnce(&mut Tokenizer) -> State;
+pub struct Attempt {
+    done: Box<dyn FnOnce(&mut Tokenizer, State) -> State + 'static>,
+}
 
 /// Callback that can be registered and is called when the tokenizer is done.
 ///
@@ -91,10 +94,619 @@ pub type StateFn = dyn FnOnce(&mut Tokenizer) -> State;
 /// the compiler and other users.
 pub type Resolver = dyn FnOnce(&mut Tokenizer);
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum StateName {
+    AttentionStart,
+    AttentionInside,
+
+    AutolinkStart,
+    AutolinkOpen,
+    AutolinkSchemeOrEmailAtext,
+    AutolinkSchemeInsideOrEmailAtext,
+    AutolinkUrlInside,
+    AutolinkEmailAtSignOrDot,
+    AutolinkEmailAtext,
+    AutolinkEmailValue,
+    AutolinkEmailLabel,
+
+    BlankLineStart,
+    BlankLineAfter,
+
+    BlockQuoteStart,
+    BlockQuoteBefore,
+    BlockQuoteContStart,
+    BlockQuoteContBefore,
+    BlockQuoteContAfter,
+
+    BomStart,
+    BomInside,
+
+    CharacterEscapeStart,
+    CharacterEscapeInside,
+
+    CharacterReferenceStart,
+    CharacterReferenceOpen,
+    CharacterReferenceNumeric,
+    CharacterReferenceValue,
+
+    CodeFencedStart,
+    CodeFencedBeforeSequenceOpen,
+    CodeFencedSequenceOpen,
+    CodeFencedInfoBefore,
+    CodeFencedInfo,
+    CodeFencedMetaBefore,
+    CodeFencedMeta,
+    CodeFencedAtNonLazyBreak,
+    CodeFencedCloseBefore,
+    CodeFencedCloseStart,
+    CodeFencedBeforeSequenceClose,
+    CodeFencedSequenceClose,
+    CodeFencedAfterSequenceClose,
+    CodeFencedContentBefore,
+    CodeFencedContentStart,
+    CodeFencedBeforeContentChunk,
+    CodeFencedContentChunk,
+    CodeFencedAfter,
+
+    CodeIndentedStart,
+    CodeIndentedAtBreak,
+    CodeIndentedAfter,
+    CodeIndentedFurtherStart,
+    CodeIndentedInside,
+    CodeIndentedFurtherEnd,
+    CodeIndentedFurtherBegin,
+    CodeIndentedFurtherAfter,
+
+    CodeTextStart,
+    CodeTextSequenceOpen,
+    CodeTextBetween,
+    CodeTextData,
+    CodeTextSequenceClose,
+
+    DataStart,
+    DataInside,
+    DataAtBreak,
+
+    DefinitionStart,
+    DefinitionBefore,
+    DefinitionLabelAfter,
+    DefinitionMarkerAfter,
+    DefinitionDestinationBefore,
+    DefinitionDestinationAfter,
+    DefinitionDestinationMissing,
+    DefinitionTitleBefore,
+    DefinitionAfter,
+    DefinitionAfterWhitespace,
+    DefinitionTitleBeforeMarker,
+    DefinitionTitleAfter,
+    DefinitionTitleAfterOptionalWhitespace,
+
+    DestinationStart,
+    DestinationEnclosedBefore,
+    DestinationEnclosed,
+    DestinationEnclosedEscape,
+    DestinationRaw,
+    DestinationRawEscape,
+
+    DocumentStart,
+    DocumentLineStart,
+    // DocumentContainerExistingBefore,
+    DocumentContainerExistingAfter,
+    DocumentContainerExistingMissing,
+    // DocumentContainerNewBefore,
+    DocumentContainerNewBeforeNotBlockQuote,
+    DocumentContainerNewAfter,
+    DocumentContainersAfter,
+    DocumentFlowInside,
+    DocumentFlowEnd,
+
+    FlowStart,
+    FlowBefore,
+    FlowAfter,
+    FlowBlankLineAfter,
+    FlowBeforeParagraph,
+
+    HardBreakEscapeStart,
+    HardBreakEscapeAfter,
+
+    HeadingAtxStart,
+    HeadingAtxBefore,
+    HeadingAtxSequenceOpen,
+    HeadingAtxAtBreak,
+    HeadingAtxSequenceFurther,
+    HeadingAtxData,
+
+    HeadingSetextStart,
+    HeadingSetextBefore,
+    HeadingSetextInside,
+    HeadingSetextAfter,
+
+    HtmlFlowStart,
+    HtmlFlowBefore,
+    HtmlFlowOpen,
+    HtmlFlowDeclarationOpen,
+    HtmlFlowCommentOpenInside,
+    HtmlFlowCdataOpenInside,
+    HtmlFlowTagCloseStart,
+    HtmlFlowTagName,
+    HtmlFlowBasicSelfClosing,
+    HtmlFlowCompleteClosingTagAfter,
+    HtmlFlowCompleteEnd,
+    HtmlFlowCompleteAttributeNameBefore,
+    HtmlFlowCompleteAttributeName,
+    HtmlFlowCompleteAttributeNameAfter,
+    HtmlFlowCompleteAttributeValueBefore,
+    HtmlFlowCompleteAttributeValueQuoted,
+    HtmlFlowCompleteAttributeValueQuotedAfter,
+    HtmlFlowCompleteAttributeValueUnquoted,
+    HtmlFlowCompleteAfter,
+    HtmlFlowBlankLineBefore,
+    HtmlFlowContinuation,
+    HtmlFlowContinuationDeclarationInside,
+    HtmlFlowContinuationAfter,
+    HtmlFlowContinuationStart,
+    HtmlFlowContinuationBefore,
+    HtmlFlowContinuationCommentInside,
+    HtmlFlowContinuationRawTagOpen,
+    HtmlFlowContinuationRawEndTag,
+    HtmlFlowContinuationClose,
+    HtmlFlowContinuationCdataInside,
+    HtmlFlowContinuationStartNonLazy,
+
+    HtmlTextStart,
+    HtmlTextOpen,
+    HtmlTextDeclarationOpen,
+    HtmlTextTagCloseStart,
+    HtmlTextTagClose,
+    HtmlTextTagCloseBetween,
+    HtmlTextTagOpen,
+    HtmlTextTagOpenBetween,
+    HtmlTextTagOpenAttributeName,
+    HtmlTextTagOpenAttributeNameAfter,
+    HtmlTextTagOpenAttributeValueBefore,
+    HtmlTextTagOpenAttributeValueQuoted,
+    HtmlTextTagOpenAttributeValueQuotedAfter,
+    HtmlTextTagOpenAttributeValueUnquoted,
+    HtmlTextCdata,
+    HtmlTextCdataOpenInside,
+    HtmlTextCdataClose,
+    HtmlTextCdataEnd,
+    HtmlTextCommentOpenInside,
+    HtmlTextCommentStart,
+    HtmlTextCommentStartDash,
+    HtmlTextComment,
+    HtmlTextCommentClose,
+    HtmlTextDeclaration,
+    HtmlTextEnd,
+    HtmlTextInstruction,
+    HtmlTextInstructionClose,
+    HtmlTextLineEndingAfter,
+    HtmlTextLineEndingAfterPrefix,
+
+    LabelStart,
+    LabelAtBreak,
+    LabelEolAfter,
+    LabelAtBlankLine,
+    LabelEscape,
+    LabelInside,
+
+    LabelEndStart,
+    LabelEndAfter,
+    LabelEndResourceStart,
+    LabelEndResourceBefore,
+    LabelEndResourceOpen,
+    LabelEndResourceDestinationAfter,
+    LabelEndResourceDestinationMissing,
+    LabelEndResourceBetween,
+    LabelEndResourceTitleAfter,
+    LabelEndResourceEnd,
+    LabelEndOk,
+    LabelEndNok,
+    LabelEndReferenceFull,
+    LabelEndReferenceFullAfter,
+    LabelEndReferenceNotFull,
+    LabelEndReferenceCollapsed,
+    LabelEndReferenceCollapsedOpen,
+
+    LabelStartImageStart,
+    LabelStartImageOpen,
+
+    LabelStartLinkStart,
+
+    ListStart,
+    ListBefore,
+    ListNok,
+    ListBeforeUnordered,
+    ListValue,
+    ListMarkerAfter,
+    ListAfter,
+    ListMarkerAfterFilled,
+    ListWhitespace,
+    ListPrefixOther,
+    ListWhitespaceAfter,
+    ListContStart,
+    ListContBlank,
+    ListContFilled,
+    ListOk,
+
+    NonLazyContinuationStart,
+    NonLazyContinuationAfter,
+
+    ParagraphStart,
+    ParagraphInside,
+
+    SpaceOrTabStart,
+    SpaceOrTabInside,
+
+    SpaceOrTabEolStart,
+    SpaceOrTabEolAfterFirst,
+    SpaceOrTabEolAfterEol,
+    SpaceOrTabEolAtEol,
+    SpaceOrTabEolAfterMore,
+
+    StringStart,
+    StringBefore,
+    StringBeforeData,
+
+    TextStart,
+    TextBefore,
+    TextBeforeData,
+
+    ThematicBreakStart,
+    ThematicBreakBefore,
+    ThematicBreakSequence,
+    ThematicBreakAtBreak,
+
+    TitleStart,
+    TitleBegin,
+    TitleAfterEol,
+    TitleAtBlankLine,
+    TitleEscape,
+    TitleInside,
+}
+
+impl StateName {
+    /// Create a new tokenizer.
+    #[allow(clippy::too_many_lines)]
+    pub fn to_func(self) -> Box<dyn FnOnce(&mut Tokenizer) -> State + 'static> {
+        let func = match self {
+            StateName::AttentionStart => construct::attention::start,
+            StateName::AttentionInside => construct::attention::inside,
+
+            StateName::AutolinkStart => construct::autolink::start,
+            StateName::AutolinkOpen => construct::autolink::open,
+            StateName::AutolinkSchemeOrEmailAtext => construct::autolink::scheme_or_email_atext,
+            StateName::AutolinkSchemeInsideOrEmailAtext => {
+                construct::autolink::scheme_inside_or_email_atext
+            }
+            StateName::AutolinkUrlInside => construct::autolink::url_inside,
+            StateName::AutolinkEmailAtSignOrDot => construct::autolink::email_at_sign_or_dot,
+            StateName::AutolinkEmailAtext => construct::autolink::email_atext,
+            StateName::AutolinkEmailValue => construct::autolink::email_value,
+            StateName::AutolinkEmailLabel => construct::autolink::email_label,
+
+            StateName::BlankLineStart => construct::blank_line::start,
+            StateName::BlankLineAfter => construct::blank_line::after,
+
+            StateName::BlockQuoteStart => construct::block_quote::start,
+            StateName::BlockQuoteBefore => construct::block_quote::before,
+            StateName::BlockQuoteContStart => construct::block_quote::cont_start,
+            StateName::BlockQuoteContBefore => construct::block_quote::cont_before,
+            StateName::BlockQuoteContAfter => construct::block_quote::cont_after,
+
+            StateName::BomStart => construct::partial_bom::start,
+            StateName::BomInside => construct::partial_bom::inside,
+
+            StateName::CharacterEscapeStart => construct::character_escape::start,
+            StateName::CharacterEscapeInside => construct::character_escape::inside,
+
+            StateName::CharacterReferenceStart => construct::character_reference::start,
+            StateName::CharacterReferenceOpen => construct::character_reference::open,
+            StateName::CharacterReferenceNumeric => construct::character_reference::numeric,
+            StateName::CharacterReferenceValue => construct::character_reference::value,
+
+            StateName::CodeFencedStart => construct::code_fenced::start,
+            StateName::CodeFencedBeforeSequenceOpen => construct::code_fenced::before_sequence_open,
+            StateName::CodeFencedSequenceOpen => construct::code_fenced::sequence_open,
+            StateName::CodeFencedInfoBefore => construct::code_fenced::info_before,
+            StateName::CodeFencedInfo => construct::code_fenced::info,
+            StateName::CodeFencedMetaBefore => construct::code_fenced::meta_before,
+            StateName::CodeFencedMeta => construct::code_fenced::meta,
+            StateName::CodeFencedAtNonLazyBreak => construct::code_fenced::at_non_lazy_break,
+            StateName::CodeFencedCloseBefore => construct::code_fenced::close_before,
+            StateName::CodeFencedCloseStart => construct::code_fenced::close_start,
+            StateName::CodeFencedBeforeSequenceClose => {
+                construct::code_fenced::before_sequence_close
+            }
+            StateName::CodeFencedSequenceClose => construct::code_fenced::sequence_close,
+            StateName::CodeFencedAfterSequenceClose => construct::code_fenced::sequence_close_after,
+            StateName::CodeFencedContentBefore => construct::code_fenced::content_before,
+            StateName::CodeFencedContentStart => construct::code_fenced::content_start,
+            StateName::CodeFencedBeforeContentChunk => construct::code_fenced::before_content_chunk,
+            StateName::CodeFencedContentChunk => construct::code_fenced::content_chunk,
+            StateName::CodeFencedAfter => construct::code_fenced::after,
+
+            StateName::CodeIndentedStart => construct::code_indented::start,
+            StateName::CodeIndentedAtBreak => construct::code_indented::at_break,
+            StateName::CodeIndentedAfter => construct::code_indented::after,
+            StateName::CodeIndentedFurtherStart => construct::code_indented::further_start,
+            StateName::CodeIndentedInside => construct::code_indented::inside,
+            StateName::CodeIndentedFurtherEnd => construct::code_indented::further_end,
+            StateName::CodeIndentedFurtherBegin => construct::code_indented::further_begin,
+            StateName::CodeIndentedFurtherAfter => construct::code_indented::further_after,
+
+            StateName::CodeTextStart => construct::code_text::start,
+            StateName::CodeTextSequenceOpen => construct::code_text::sequence_open,
+            StateName::CodeTextBetween => construct::code_text::between,
+            StateName::CodeTextData => construct::code_text::data,
+            StateName::CodeTextSequenceClose => construct::code_text::sequence_close,
+
+            StateName::DataStart => construct::partial_data::start,
+            StateName::DataInside => construct::partial_data::inside,
+            StateName::DataAtBreak => construct::partial_data::at_break,
+
+            StateName::DefinitionStart => construct::definition::start,
+            StateName::DefinitionBefore => construct::definition::before,
+            StateName::DefinitionLabelAfter => construct::definition::label_after,
+            StateName::DefinitionMarkerAfter => construct::definition::marker_after,
+            StateName::DefinitionDestinationBefore => construct::definition::destination_before,
+            StateName::DefinitionDestinationAfter => construct::definition::destination_after,
+            StateName::DefinitionDestinationMissing => construct::definition::destination_missing,
+            StateName::DefinitionTitleBefore => construct::definition::title_before,
+            StateName::DefinitionAfter => construct::definition::after,
+            StateName::DefinitionAfterWhitespace => construct::definition::after_whitespace,
+            StateName::DefinitionTitleBeforeMarker => construct::definition::title_before_marker,
+            StateName::DefinitionTitleAfter => construct::definition::title_after,
+            StateName::DefinitionTitleAfterOptionalWhitespace => {
+                construct::definition::title_after_optional_whitespace
+            }
+
+            StateName::DestinationStart => construct::partial_destination::start,
+            StateName::DestinationEnclosedBefore => construct::partial_destination::enclosed_before,
+            StateName::DestinationEnclosed => construct::partial_destination::enclosed,
+            StateName::DestinationEnclosedEscape => construct::partial_destination::enclosed_escape,
+            StateName::DestinationRaw => construct::partial_destination::raw,
+            StateName::DestinationRawEscape => construct::partial_destination::raw_escape,
+
+            StateName::DocumentStart => content::document::start,
+            StateName::DocumentLineStart => content::document::line_start,
+            // StateName::DocumentContainerExistingBefore => content::document::container_existing_before,
+            StateName::DocumentContainerExistingAfter => {
+                content::document::container_existing_after
+            }
+            StateName::DocumentContainerExistingMissing => {
+                content::document::container_existing_missing
+            }
+            // StateName::DocumentContainerNewBefore => content::document::container_new_before,
+            StateName::DocumentContainerNewBeforeNotBlockQuote => {
+                content::document::container_new_before_not_block_quote
+            }
+            StateName::DocumentContainerNewAfter => content::document::container_new_after,
+            StateName::DocumentContainersAfter => content::document::containers_after,
+            StateName::DocumentFlowEnd => content::document::flow_end,
+            StateName::DocumentFlowInside => content::document::flow_inside,
+
+            StateName::FlowStart => content::flow::start,
+            StateName::FlowBefore => content::flow::before,
+            StateName::FlowAfter => content::flow::after,
+            StateName::FlowBlankLineAfter => content::flow::blank_line_after,
+            StateName::FlowBeforeParagraph => content::flow::before_paragraph,
+
+            StateName::HardBreakEscapeStart => construct::hard_break_escape::start,
+            StateName::HardBreakEscapeAfter => construct::hard_break_escape::after,
+
+            StateName::HeadingAtxStart => construct::heading_atx::start,
+            StateName::HeadingAtxBefore => construct::heading_atx::before,
+            StateName::HeadingAtxSequenceOpen => construct::heading_atx::sequence_open,
+            StateName::HeadingAtxAtBreak => construct::heading_atx::at_break,
+            StateName::HeadingAtxSequenceFurther => construct::heading_atx::sequence_further,
+            StateName::HeadingAtxData => construct::heading_atx::data,
+
+            StateName::HeadingSetextStart => construct::heading_setext::start,
+            StateName::HeadingSetextBefore => construct::heading_setext::before,
+            StateName::HeadingSetextInside => construct::heading_setext::inside,
+            StateName::HeadingSetextAfter => construct::heading_setext::after,
+
+            StateName::HtmlFlowStart => construct::html_flow::start,
+            StateName::HtmlFlowBefore => construct::html_flow::before,
+            StateName::HtmlFlowOpen => construct::html_flow::open,
+            StateName::HtmlFlowDeclarationOpen => construct::html_flow::declaration_open,
+            StateName::HtmlFlowCommentOpenInside => construct::html_flow::comment_open_inside,
+            StateName::HtmlFlowCdataOpenInside => construct::html_flow::cdata_open_inside,
+            StateName::HtmlFlowTagCloseStart => construct::html_flow::tag_close_start,
+            StateName::HtmlFlowTagName => construct::html_flow::tag_name,
+            StateName::HtmlFlowBasicSelfClosing => construct::html_flow::basic_self_closing,
+            StateName::HtmlFlowCompleteClosingTagAfter => {
+                construct::html_flow::complete_closing_tag_after
+            }
+            StateName::HtmlFlowCompleteEnd => construct::html_flow::complete_end,
+            StateName::HtmlFlowCompleteAttributeNameBefore => {
+                construct::html_flow::complete_attribute_name_before
+            }
+            StateName::HtmlFlowCompleteAttributeName => {
+                construct::html_flow::complete_attribute_name
+            }
+            StateName::HtmlFlowCompleteAttributeNameAfter => {
+                construct::html_flow::complete_attribute_name_after
+            }
+            StateName::HtmlFlowCompleteAttributeValueBefore => {
+                construct::html_flow::complete_attribute_value_before
+            }
+            StateName::HtmlFlowCompleteAttributeValueQuoted => {
+                construct::html_flow::complete_attribute_value_quoted
+            }
+            StateName::HtmlFlowCompleteAttributeValueQuotedAfter => {
+                construct::html_flow::complete_attribute_value_quoted_after
+            }
+            StateName::HtmlFlowCompleteAttributeValueUnquoted => {
+                construct::html_flow::complete_attribute_value_unquoted
+            }
+            StateName::HtmlFlowCompleteAfter => construct::html_flow::complete_after,
+            StateName::HtmlFlowBlankLineBefore => construct::html_flow::blank_line_before,
+            StateName::HtmlFlowContinuation => construct::html_flow::continuation,
+            StateName::HtmlFlowContinuationDeclarationInside => {
+                construct::html_flow::continuation_declaration_inside
+            }
+            StateName::HtmlFlowContinuationAfter => construct::html_flow::continuation_after,
+            StateName::HtmlFlowContinuationStart => construct::html_flow::continuation_start,
+            StateName::HtmlFlowContinuationBefore => construct::html_flow::continuation_before,
+            StateName::HtmlFlowContinuationCommentInside => {
+                construct::html_flow::continuation_comment_inside
+            }
+            StateName::HtmlFlowContinuationRawTagOpen => {
+                construct::html_flow::continuation_raw_tag_open
+            }
+            StateName::HtmlFlowContinuationRawEndTag => {
+                construct::html_flow::continuation_raw_end_tag
+            }
+            StateName::HtmlFlowContinuationClose => construct::html_flow::continuation_close,
+            StateName::HtmlFlowContinuationCdataInside => {
+                construct::html_flow::continuation_cdata_inside
+            }
+            StateName::HtmlFlowContinuationStartNonLazy => {
+                construct::html_flow::continuation_start_non_lazy
+            }
+
+            StateName::HtmlTextStart => construct::html_text::start,
+            StateName::HtmlTextOpen => construct::html_text::open,
+            StateName::HtmlTextDeclarationOpen => construct::html_text::declaration_open,
+            StateName::HtmlTextTagCloseStart => construct::html_text::tag_close_start,
+            StateName::HtmlTextTagClose => construct::html_text::tag_close,
+            StateName::HtmlTextTagCloseBetween => construct::html_text::tag_close_between,
+            StateName::HtmlTextTagOpen => construct::html_text::tag_open,
+            StateName::HtmlTextTagOpenBetween => construct::html_text::tag_open_between,
+            StateName::HtmlTextTagOpenAttributeName => {
+                construct::html_text::tag_open_attribute_name
+            }
+            StateName::HtmlTextTagOpenAttributeNameAfter => {
+                construct::html_text::tag_open_attribute_name_after
+            }
+            StateName::HtmlTextTagOpenAttributeValueBefore => {
+                construct::html_text::tag_open_attribute_value_before
+            }
+            StateName::HtmlTextTagOpenAttributeValueQuoted => {
+                construct::html_text::tag_open_attribute_value_quoted
+            }
+            StateName::HtmlTextTagOpenAttributeValueQuotedAfter => {
+                construct::html_text::tag_open_attribute_value_quoted_after
+            }
+            StateName::HtmlTextTagOpenAttributeValueUnquoted => {
+                construct::html_text::tag_open_attribute_value_unquoted
+            }
+            StateName::HtmlTextCdata => construct::html_text::cdata,
+            StateName::HtmlTextCdataOpenInside => construct::html_text::cdata_open_inside,
+            StateName::HtmlTextCdataClose => construct::html_text::cdata_close,
+            StateName::HtmlTextCdataEnd => construct::html_text::cdata_end,
+            StateName::HtmlTextCommentOpenInside => construct::html_text::comment_open_inside,
+            StateName::HtmlTextCommentStart => construct::html_text::comment_start,
+            StateName::HtmlTextCommentStartDash => construct::html_text::comment_start_dash,
+            StateName::HtmlTextComment => construct::html_text::comment,
+            StateName::HtmlTextCommentClose => construct::html_text::comment_close,
+            StateName::HtmlTextDeclaration => construct::html_text::declaration,
+            StateName::HtmlTextEnd => construct::html_text::end,
+            StateName::HtmlTextInstruction => construct::html_text::instruction,
+            StateName::HtmlTextInstructionClose => construct::html_text::instruction_close,
+            StateName::HtmlTextLineEndingAfter => construct::html_text::line_ending_after,
+            StateName::HtmlTextLineEndingAfterPrefix => {
+                construct::html_text::line_ending_after_prefix
+            }
+
+            StateName::LabelStart => construct::partial_label::start,
+            StateName::LabelAtBreak => construct::partial_label::at_break,
+            StateName::LabelEolAfter => construct::partial_label::eol_after,
+            StateName::LabelAtBlankLine => construct::partial_label::at_blank_line,
+            StateName::LabelEscape => construct::partial_label::escape,
+            StateName::LabelInside => construct::partial_label::inside,
+
+            StateName::LabelEndStart => construct::label_end::start,
+            StateName::LabelEndAfter => construct::label_end::after,
+            StateName::LabelEndResourceStart => construct::label_end::resource_start,
+            StateName::LabelEndResourceBefore => construct::label_end::resource_before,
+            StateName::LabelEndResourceOpen => construct::label_end::resource_open,
+            StateName::LabelEndResourceDestinationAfter => {
+                construct::label_end::resource_destination_after
+            }
+            StateName::LabelEndResourceDestinationMissing => {
+                construct::label_end::resource_destination_missing
+            }
+            StateName::LabelEndResourceBetween => construct::label_end::resource_between,
+            StateName::LabelEndResourceTitleAfter => construct::label_end::resource_title_after,
+            StateName::LabelEndResourceEnd => construct::label_end::resource_end,
+            StateName::LabelEndOk => construct::label_end::ok,
+            StateName::LabelEndNok => construct::label_end::nok,
+            StateName::LabelEndReferenceFull => construct::label_end::reference_full,
+            StateName::LabelEndReferenceFullAfter => construct::label_end::reference_full_after,
+            StateName::LabelEndReferenceNotFull => construct::label_end::reference_not_full,
+            StateName::LabelEndReferenceCollapsed => construct::label_end::reference_collapsed,
+            StateName::LabelEndReferenceCollapsedOpen => {
+                construct::label_end::reference_collapsed_open
+            }
+
+            StateName::LabelStartImageStart => construct::label_start_image::start,
+            StateName::LabelStartImageOpen => construct::label_start_image::open,
+            StateName::LabelStartLinkStart => construct::label_start_link::start,
+
+            StateName::ListStart => construct::list::start,
+            StateName::ListBefore => construct::list::before,
+            StateName::ListNok => construct::list::nok,
+            StateName::ListBeforeUnordered => construct::list::before_unordered,
+            StateName::ListValue => construct::list::value,
+            StateName::ListMarkerAfter => construct::list::marker_after,
+            StateName::ListAfter => construct::list::after,
+            StateName::ListMarkerAfterFilled => construct::list::marker_after_filled,
+            StateName::ListWhitespace => construct::list::whitespace,
+            StateName::ListWhitespaceAfter => construct::list::whitespace_after,
+            StateName::ListPrefixOther => construct::list::prefix_other,
+            StateName::ListContStart => construct::list::cont_start,
+            StateName::ListContBlank => construct::list::cont_blank,
+            StateName::ListContFilled => construct::list::cont_filled,
+            StateName::ListOk => construct::list::ok,
+
+            StateName::NonLazyContinuationStart => construct::partial_non_lazy_continuation::start,
+            StateName::NonLazyContinuationAfter => construct::partial_non_lazy_continuation::after,
+
+            StateName::ParagraphStart => construct::paragraph::start,
+            StateName::ParagraphInside => construct::paragraph::inside,
+
+            StateName::SpaceOrTabStart => construct::partial_space_or_tab::start,
+            StateName::SpaceOrTabInside => construct::partial_space_or_tab::inside,
+
+            StateName::SpaceOrTabEolStart => construct::partial_space_or_tab::eol_start,
+            StateName::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab::eol_after_first,
+            StateName::SpaceOrTabEolAfterEol => construct::partial_space_or_tab::eol_after_eol,
+            StateName::SpaceOrTabEolAtEol => construct::partial_space_or_tab::eol_at_eol,
+            StateName::SpaceOrTabEolAfterMore => construct::partial_space_or_tab::eol_after_more,
+
+            StateName::StringStart => content::string::start,
+            StateName::StringBefore => content::string::before,
+            StateName::StringBeforeData => content::string::before_data,
+
+            StateName::TextStart => content::text::start,
+            StateName::TextBefore => content::text::before,
+            StateName::TextBeforeData => content::text::before_data,
+
+            StateName::ThematicBreakStart => construct::thematic_break::start,
+            StateName::ThematicBreakBefore => construct::thematic_break::before,
+            StateName::ThematicBreakSequence => construct::thematic_break::sequence,
+            StateName::ThematicBreakAtBreak => construct::thematic_break::at_break,
+
+            StateName::TitleStart => construct::partial_title::start,
+            StateName::TitleBegin => construct::partial_title::begin,
+            StateName::TitleAfterEol => construct::partial_title::after_eol,
+            StateName::TitleAtBlankLine => construct::partial_title::at_blank_line,
+            StateName::TitleEscape => construct::partial_title::escape,
+            StateName::TitleInside => construct::partial_title::inside,
+        };
+
+        Box::new(func)
+    }
+}
+
 /// The result of a state.
+#[derive(Debug, PartialEq)]
 pub enum State {
-    /// There is a future state: a boxed [`StateFn`][] to pass the next code to.
-    Fn(Box<StateFn>),
+    /// There is a future state: a [`StateName`][] to pass the next code to.
+    Fn(StateName),
     /// The state is successful.
     Ok,
     /// The state is not successful.
@@ -163,7 +775,7 @@ struct InternalState {
 
 /// To do
 #[allow(clippy::struct_excessive_bools)]
-pub struct TokenizeState {
+pub struct TokenizeState<'a> {
     /// To do.
     pub connect: bool,
     /// To do.
@@ -171,15 +783,15 @@ pub struct TokenizeState {
     /// To do.
     pub document_continued: usize,
     /// To do.
-    pub document_index: usize,
-    /// To do.
-    pub document_inject: Vec<(Vec<Event>, Vec<Event>)>,
-    /// To do.
     pub document_interrupt_before: bool,
     /// To do.
     pub document_paragraph_before: bool,
     /// To do.
-    pub document_next: Option<Box<StateFn>>,
+    pub document_data_index: Option<usize>,
+    /// To do.
+    pub document_child_state: Option<State>,
+    /// To do.
+    pub child_tokenizer: Option<Box<Tokenizer<'a>>>,
     /// To do.
     pub marker: u8,
     /// To do.
@@ -187,7 +799,7 @@ pub struct TokenizeState {
     /// To do.
     pub prefix: usize,
     /// To do.
-    pub return_state: Option<Box<StateFn>>,
+    pub return_state: Option<StateName>,
     /// To do.
     pub seen: bool,
     /// To do.
@@ -234,7 +846,7 @@ pub struct Tokenizer<'a> {
     /// Track whether this tokenizer is done.
     resolved: bool,
     /// To do.
-    attempt_balance: usize,
+    attempts: Vec<Attempt>,
     /// Current byte.
     pub current: Option<u8>,
     /// Previous byte.
@@ -251,13 +863,13 @@ pub struct Tokenizer<'a> {
     pub map: EditMap,
     /// List of attached resolvers, which will be called when done feeding,
     /// to clean events.
-    resolvers: Vec<Box<Resolver>>,
+    pub resolvers: Vec<Box<Resolver>>,
     /// List of names associated with attached resolvers.
-    resolver_ids: Vec<String>,
+    pub resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
     /// To do.
-    pub tokenize_state: TokenizeState,
+    pub tokenize_state: TokenizeState<'a>,
     /// Stack of label (start) that could form images and links.
     ///
     /// Used when tokenizing [text content][crate::content::text].
@@ -299,7 +911,7 @@ impl<'a> Tokenizer<'a> {
             line_start: point.clone(),
             consumed: true,
             resolved: false,
-            attempt_balance: 0,
+            attempts: vec![],
             point,
             stack: vec![],
             events: vec![],
@@ -308,11 +920,11 @@ impl<'a> Tokenizer<'a> {
                 connect: false,
                 document_container_stack: vec![],
                 document_continued: 0,
-                document_index: 0,
-                document_inject: vec![],
                 document_interrupt_before: false,
                 document_paragraph_before: false,
-                document_next: None,
+                document_data_index: None,
+                document_child_state: None,
+                child_tokenizer: None,
                 marker: 0,
                 marker_other: 0,
                 prefix: 0,
@@ -369,13 +981,22 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Define a jump between two places.
-    pub fn define_skip(&mut self, point: &Point) {
-        define_skip_impl(self, point.line, (point.index, point.vs));
-    }
+    ///
+    /// This defines to which future index we move after a line ending.
+    pub fn define_skip(&mut self, mut point: Point) {
+        move_point_back(self, &mut point);
 
-    /// Define the current place as a jump between two places.
-    pub fn define_skip_current(&mut self) {
-        define_skip_impl(self, self.point.line, (self.point.index, self.point.vs));
+        let info = (point.index, point.vs);
+        log::debug!("position: define skip: {:?} -> ({:?})", point.line, info);
+        let at = point.line - self.first_line;
+
+        if at >= self.column_start.len() {
+            self.column_start.push(info);
+        } else {
+            self.column_start[at] = info;
+        }
+
+        self.account_for_potential_skip();
     }
 
     /// Increment the current positional info if we’re right after a line
@@ -396,8 +1017,8 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Consume the current byte.
-    /// Each [`StateFn`][] is expected to call this to signal that this code is
-    /// used, or call a next `StateFn`.
+    /// Each state function is expected to call this to signal that this code is
+    /// used, or call a next function.
     pub fn consume(&mut self) {
         log::debug!("consume: `{:?}` ({:?})", self.current, self.point);
         debug_assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
@@ -473,16 +1094,7 @@ impl<'a> Tokenizer<'a> {
 
     pub fn enter_with_link(&mut self, token_type: Token, link: Option<Link>) {
         let mut point = self.point.clone();
-
-        // Move back past ignored bytes.
-        while point.index > 0 {
-            point.index -= 1;
-            let action = byte_action(self.parse_state.bytes, &point);
-            if !matches!(action, ByteAction::Ignore) {
-                point.index += 1;
-                break;
-            }
-        }
+        move_point_back(self, &mut point);
 
         log::debug!("enter: `{:?}` ({:?})", token_type, point);
         self.events.push(Event {
@@ -527,15 +1139,7 @@ impl<'a> Tokenizer<'a> {
         if matches!(self.previous, Some(b'\n')) {
             point = self.line_start.clone();
         } else {
-            // Move back past ignored bytes.
-            while point.index > 0 {
-                point.index -= 1;
-                let action = byte_action(self.parse_state.bytes, &point);
-                if !matches!(action, ByteAction::Ignore) {
-                    point.index += 1;
-                    break;
-                }
-            }
+            move_point_back(self, &mut point);
         }
 
         log::debug!("exit: `{:?}` ({:?})", token_type, point);
@@ -575,29 +1179,20 @@ impl<'a> Tokenizer<'a> {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// Parse with `state_fn` and its future states, switching to `ok` when
+    /// Parse with `state_name` and its future states, switching to `ok` when
     /// successful, and passing [`State::Nok`][] back up if it occurs.
     ///
     /// This function does not capture the current state, in case of
     /// `State::Nok`, as it is assumed that this `go` is itself wrapped in
     /// another `attempt`.
     #[allow(clippy::unused_self)]
-    pub fn go(
-        &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        after: impl FnOnce(&mut Tokenizer) -> State + 'static,
-    ) -> Box<StateFn> {
-        self.attempt_balance += 1;
+    pub fn go(&mut self, state_name: StateName, after: StateName) -> State {
         attempt_impl(
-            state_fn,
-            None,
-            self.point.index,
-            |tokenizer: &mut Tokenizer, state| {
-                tokenizer.attempt_balance -= 1;
-
+            self,
+            state_name,
+            Box::new(move |_tokenizer: &mut Tokenizer, state| {
                 if matches!(state, State::Ok) {
-                    tokenizer.consumed = true;
-                    State::Fn(Box::new(after))
+                    State::Fn(after)
                 } else {
                     // Must be `Nok`.
                     // We don’t capture/free state because it is assumed that
@@ -605,132 +1200,122 @@ impl<'a> Tokenizer<'a> {
                     // if it can occur.
                     state
                 }
-            },
+            }),
         )
     }
 
-    /// Like `go`, but this lets you *hijack* back to some other state after a
-    /// certain code.
-    #[allow(clippy::unused_self)]
-    pub fn go_until(
-        &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        until: impl Fn(Option<u8>) -> bool + 'static,
-        done: impl FnOnce(State) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        self.attempt_balance += 1;
-        attempt_impl(
-            state_fn,
-            Some(Box::new(until)),
-            self.point.index,
-            |tokenizer: &mut Tokenizer, state| {
-                tokenizer.attempt_balance -= 1;
-                tokenizer.consumed = true;
-                // We don’t capture/free state because it is assumed that
-                // `go_until` itself is wrapped in another attempt that does
-                // that if it can occur.
-                State::Fn(done(state))
-            },
-        )
-    }
-
-    /// Parse with `state_fn` and its future states, to check if it result in
+    /// Parse with `state_name` and its future states, to check if it result in
     /// [`State::Ok`][] or [`State::Nok`][], revert on both cases, and then
     /// call `done` with whether it was successful or not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `state_fn` and its
+    /// state that captures all codes and feeds them to `state_name` and its
     /// future states until it yields `State::Ok` or `State::Nok`.
     /// It then applies the captured state, calls `done`, and feeds all
     /// captured codes to its future states.
     pub fn check(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        self.attempt_balance += 1;
+        state_name: StateName,
+        done: impl FnOnce(bool) -> State + 'static,
+    ) -> State {
         let previous = self.capture();
 
         attempt_impl(
-            state_fn,
-            None,
-            self.point.index,
-            |tokenizer: &mut Tokenizer, state| {
-                tokenizer.attempt_balance -= 1;
+            self,
+            state_name,
+            Box::new(|tokenizer: &mut Tokenizer, state| {
                 tokenizer.free(previous);
                 tokenizer.consumed = true;
-                State::Fn(done(matches!(state, State::Ok)))
-            },
+                done(matches!(state, State::Ok))
+            }),
         )
     }
 
-    /// Parse with `state_fn` and its future states, to check if it results in
+    /// Parse with `state_name` and its future states, to check if it results in
     /// [`State::Ok`][] or [`State::Nok`][], revert on the case of
     /// `State::Nok`, and then call `done` with whether it was successful or
     /// not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `state_fn` and its
+    /// state that captures all codes and feeds them to `state_name` and its
     /// future states until it yields `State::Ok`, at which point it calls
     /// `done` and yields its result.
     /// If instead `State::Nok` was yielded, the captured state is applied,
     /// `done` is called, and all captured codes are fed to its future states.
     pub fn attempt(
         &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        self.attempt_balance += 1;
+        state_name: StateName,
+        done: impl FnOnce(bool) -> State + 'static,
+    ) -> State {
         let previous = self.capture();
 
+        log::debug!("attempting: {:?}", state_name);
+        // self.consumed = false;
         attempt_impl(
-            state_fn,
-            None,
-            self.point.index,
-            |tokenizer: &mut Tokenizer, state| {
-                tokenizer.attempt_balance -= 1;
+            self,
+            state_name,
+            Box::new(move |tokenizer: &mut Tokenizer, state| {
                 let ok = matches!(state, State::Ok);
 
                 if !ok {
                     tokenizer.free(previous);
+                    tokenizer.consumed = true;
                 }
 
-                log::debug!("attempt: {:?}, at {:?}", ok, tokenizer.point);
+                log::debug!(
+                    "attempted {:?}: {:?}, at {:?}",
+                    state_name,
+                    ok,
+                    tokenizer.point
+                );
 
-                tokenizer.consumed = true;
-                State::Fn(done(ok))
-            },
+                done(ok)
+            }),
         )
     }
 
     /// Just like [`attempt`][Tokenizer::attempt], but many.
     pub fn attempt_n(
         &mut self,
-        mut state_fns: Vec<Box<StateFn>>,
-        done: impl FnOnce(bool) -> Box<StateFn> + 'static,
-    ) -> Box<StateFn> {
-        if state_fns.is_empty() {
+        mut state_names: Vec<StateName>,
+        done: impl FnOnce(bool) -> State + 'static,
+    ) -> State {
+        if state_names.is_empty() {
             done(false)
         } else {
-            let state_fn = state_fns.remove(0);
-            self.attempt(state_fn, move |ok| {
-                if ok {
-                    done(ok)
-                } else {
-                    Box::new(|t| t.attempt_n(state_fns, done)(t))
-                }
-            })
+            let previous = self.capture();
+            let state_name = state_names.remove(0);
+            self.consumed = false;
+            log::debug!("attempting (n): {:?}", state_name);
+            attempt_impl(
+                self,
+                state_name,
+                Box::new(move |tokenizer: &mut Tokenizer, state| {
+                    let ok = matches!(state, State::Ok);
+
+                    log::debug!(
+                        "attempted (n) {:?}: {:?}, at {:?}",
+                        state_name,
+                        ok,
+                        tokenizer.point
+                    );
+
+                    if ok {
+                        done(true)
+                    } else {
+                        tokenizer.free(previous);
+                        tokenizer.consumed = true;
+                        tokenizer.attempt_n(state_names, done)
+                    }
+                }),
+            )
         }
     }
 
     /// Just like [`attempt`][Tokenizer::attempt], but for when you don’t care
     /// about `ok`.
-    pub fn attempt_opt(
-        &mut self,
-        state_fn: impl FnOnce(&mut Tokenizer) -> State + 'static,
-        after: impl FnOnce(&mut Tokenizer) -> State + 'static,
-    ) -> Box<StateFn> {
-        self.attempt(state_fn, |_ok| Box::new(after))
+    pub fn attempt_opt(&mut self, state_name: StateName, after: StateName) -> State {
+        self.attempt(state_name, move |_ok| State::Fn(after))
     }
 
     /// Feed a list of `codes` into `start`.
@@ -738,30 +1323,40 @@ impl<'a> Tokenizer<'a> {
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
     // Note: if needed: accept `vs`?
-    pub fn push(
-        &mut self,
-        min: usize,
-        max: usize,
-        start: impl FnOnce(&mut Tokenizer) -> State + 'static,
-    ) -> State {
+    pub fn push(&mut self, min: usize, max: usize, state_name: StateName) -> State {
         debug_assert!(!self.resolved, "cannot feed after drain");
-        debug_assert!(min >= self.point.index, "cannot move backwards");
-        self.move_to((min, 0));
+        // debug_assert!(min >= self.point.index, "cannot move backwards");
+        if min > self.point.index {
+            self.move_to((min, 0));
+        }
 
-        let mut state = State::Fn(Box::new(start));
+        let mut state = State::Fn(state_name);
 
         while self.point.index < max {
             match state {
-                State::Ok | State::Nok => break,
-                State::Fn(func) => match byte_action(self.parse_state.bytes, &self.point) {
+                State::Ok | State::Nok => {
+                    if let Some(attempt) = self.attempts.pop() {
+                        let done = attempt.done;
+                        self.consumed = true;
+                        state = done(self, state);
+                    } else {
+                        break;
+                    }
+                }
+                State::Fn(state_name) => match byte_action(self.parse_state.bytes, &self.point) {
                     ByteAction::Ignore => {
-                        state = State::Fn(Box::new(func));
+                        state = State::Fn(state_name);
                         self.move_one();
                     }
                     ByteAction::Insert(byte) | ByteAction::Normal(byte) => {
-                        log::debug!("main: passing: `{:?}` ({:?})", byte, self.point);
+                        log::debug!(
+                            "main: passing: `{:?}` ({:?}) to {:?}",
+                            byte,
+                            self.point,
+                            state_name
+                        );
                         self.expect(Some(byte));
-                        state = func(self);
+                        state = call_impl(self, state_name);
                     }
                 },
             }
@@ -778,8 +1373,16 @@ impl<'a> Tokenizer<'a> {
 
         loop {
             match state {
-                State::Ok | State::Nok => break,
-                State::Fn(func) => {
+                State::Ok | State::Nok => {
+                    if let Some(attempt) = self.attempts.pop() {
+                        let done = attempt.done;
+                        self.consumed = true;
+                        state = done(self, state);
+                    } else {
+                        break;
+                    }
+                }
+                State::Fn(state_name) => {
                     // We sometimes move back when flushing, so then we use those codes.
                     let action = if self.point.index == max {
                         None
@@ -788,7 +1391,7 @@ impl<'a> Tokenizer<'a> {
                     };
 
                     if let Some(ByteAction::Ignore) = action {
-                        state = State::Fn(Box::new(func));
+                        state = State::Fn(state_name);
                         self.move_one();
                     } else {
                         let byte =
@@ -800,14 +1403,20 @@ impl<'a> Tokenizer<'a> {
                                 None
                             };
 
-                        log::debug!("main: flushing: `{:?}` ({:?})", byte, self.point);
+                        log::debug!(
+                            "main: flushing: `{:?}` ({:?}) to {:?}",
+                            byte,
+                            self.point,
+                            state_name
+                        );
                         self.expect(byte);
-                        state = func(self);
+                        state = call_impl(self, state_name);
                     }
                 }
             }
         }
 
+        self.consumed = true;
         debug_assert!(matches!(state, State::Ok), "must be ok");
 
         if resolve {
@@ -869,80 +1478,29 @@ fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
 /// Recurses into itself.
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
-    state: impl FnOnce(&mut Tokenizer) -> State + 'static,
-    pause: Option<Box<dyn Fn(Option<u8>) -> bool + 'static>>,
-    start: usize,
-    done: impl FnOnce(&mut Tokenizer, State) -> State + 'static,
-) -> Box<StateFn> {
-    Box::new(move |tokenizer| {
-        if let Some(ref func) = pause {
-            if tokenizer.point.index > start && func(tokenizer.previous) {
-                return done(tokenizer, State::Fn(Box::new(state)));
-            }
-        }
-
-        let state = state(tokenizer);
-
-        match state {
-            State::Ok | State::Nok => {
-                if tokenizer.attempt_balance == 0 {
-                    debug_assert!(!tokenizer.tokenize_state.connect);
-                    debug_assert_eq!(tokenizer.tokenize_state.document_continued, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.document_index, 0);
-                    debug_assert!(!tokenizer.tokenize_state.document_interrupt_before);
-                    debug_assert!(!tokenizer.tokenize_state.document_paragraph_before);
-                    debug_assert_eq!(tokenizer.tokenize_state.marker, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.marker_other, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.prefix, 0);
-                    debug_assert!(!tokenizer.tokenize_state.seen);
-                    debug_assert_eq!(tokenizer.tokenize_state.size, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.size_other, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.stop.len(), 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.start, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.end, 0);
-                    debug_assert!(tokenizer.tokenize_state.return_state.is_none());
-                    debug_assert!(!tokenizer.tokenize_state.space_or_tab_eol_connect);
-                    debug_assert!(!tokenizer.tokenize_state.space_or_tab_eol_ok);
-                    debug_assert!(tokenizer
-                        .tokenize_state
-                        .space_or_tab_eol_content_type
-                        .is_none());
-                    debug_assert!(!tokenizer.tokenize_state.space_or_tab_connect);
-                    debug_assert!(tokenizer.tokenize_state.space_or_tab_content_type.is_none());
-                    debug_assert_eq!(tokenizer.tokenize_state.space_or_tab_min, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.space_or_tab_max, 0);
-                    debug_assert_eq!(tokenizer.tokenize_state.space_or_tab_size, 0);
-                    debug_assert_eq!(
-                        tokenizer.tokenize_state.space_or_tab_token,
-                        Token::SpaceOrTab
-                    );
-                    debug_assert_eq!(tokenizer.tokenize_state.token_1, Token::Data);
-                    debug_assert_eq!(tokenizer.tokenize_state.token_2, Token::Data);
-                    debug_assert_eq!(tokenizer.tokenize_state.token_3, Token::Data);
-                    debug_assert_eq!(tokenizer.tokenize_state.token_4, Token::Data);
-                    debug_assert_eq!(tokenizer.tokenize_state.token_5, Token::Data);
-                }
-
-                done(tokenizer, state)
-            }
-            State::Fn(func) => State::Fn(attempt_impl(func, pause, start, done)),
-        }
-    })
+    tokenizer: &mut Tokenizer,
+    state_name: StateName,
+    done: Box<impl FnOnce(&mut Tokenizer, State) -> State + 'static>,
+) -> State {
+    tokenizer.attempts.push(Attempt { done });
+    call_impl(tokenizer, state_name)
 }
 
-/// Flush `start`: pass `eof`s to it until done.
-/// Define a jump between two places.
-///
-/// This defines to which future index we move after a line ending.
-fn define_skip_impl(tokenizer: &mut Tokenizer, line: usize, info: (usize, usize)) {
-    log::debug!("position: define skip: {:?} -> ({:?})", line, info);
-    let at = line - tokenizer.first_line;
+#[allow(clippy::too_many_lines)]
+fn call_impl(tokenizer: &mut Tokenizer, state_name: StateName) -> State {
+    let func = state_name.to_func();
 
-    if at >= tokenizer.column_start.len() {
-        tokenizer.column_start.push(info);
-    } else {
-        tokenizer.column_start[at] = info;
+    func(tokenizer)
+}
+
+fn move_point_back(tokenizer: &mut Tokenizer, point: &mut Point) {
+    // Move back past ignored bytes.
+    while point.index > 0 {
+        point.index -= 1;
+        let action = byte_action(tokenizer.parse_state.bytes, point);
+        if !matches!(action, ByteAction::Ignore) {
+            point.index += 1;
+            break;
+        }
     }
-
-    tokenizer.account_for_potential_skip();
 }

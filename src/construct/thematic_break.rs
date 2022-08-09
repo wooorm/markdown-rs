@@ -51,7 +51,7 @@
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
 use crate::token::Token;
-use crate::tokenizer::{State, Tokenizer};
+use crate::tokenizer::{State, StateName, Tokenizer};
 
 /// Start of a thematic break.
 ///
@@ -62,17 +62,17 @@ use crate::tokenizer::{State, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.thematic_break {
         tokenizer.enter(Token::ThematicBreak);
-        tokenizer.go(
-            space_or_tab_min_max(
-                0,
-                if tokenizer.parse_state.constructs.code_indented {
-                    TAB_SIZE - 1
-                } else {
-                    usize::MAX
-                },
-            ),
-            before,
-        )(tokenizer)
+        let state_name = space_or_tab_min_max(
+            tokenizer,
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        );
+
+        tokenizer.go(state_name, StateName::ThematicBreakBefore)
     } else {
         State::Nok
     }
@@ -84,7 +84,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'-' | b'_') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
@@ -100,7 +100,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn at_break(tokenizer: &mut Tokenizer) -> State {
+pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') if tokenizer.tokenize_state.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
             tokenizer.tokenize_state.marker = 0;
@@ -130,18 +130,19 @@ fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// > | ***
 ///     ^
 /// ```
-fn sequence(tokenizer: &mut Tokenizer) -> State {
+pub fn sequence(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'-' | b'_')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Fn(Box::new(sequence))
+            State::Fn(StateName::ThematicBreakSequence)
         }
         _ => {
             tokenizer.exit(Token::ThematicBreakSequence);
-            tokenizer.attempt_opt(space_or_tab(), at_break)(tokenizer)
+            let state_name = space_or_tab(tokenizer);
+            tokenizer.attempt_opt(state_name, StateName::ThematicBreakAtBreak)
         }
     }
 }

@@ -72,7 +72,7 @@
 //! [sanitize_uri]: crate::util::sanitize_uri
 
 use crate::token::Token;
-use crate::tokenizer::{ContentType, State, Tokenizer};
+use crate::tokenizer::{ContentType, State, StateName, Tokenizer};
 
 /// Before a destination.
 ///
@@ -90,7 +90,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Fn(Box::new(enclosed_before))
+            State::Fn(StateName::DestinationEnclosedBefore)
         }
         // ASCII control, space, closing paren, but *not* `\0`.
         None | Some(0x01..=0x1F | b' ' | b')' | 0x7F) => State::Nok,
@@ -110,7 +110,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
+pub fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'>') = tokenizer.current {
         tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
         tokenizer.consume();
@@ -131,7 +131,7 @@ fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
 /// > | <aa>
 ///      ^
 /// ```
-fn enclosed(tokenizer: &mut Tokenizer) -> State {
+pub fn enclosed(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'<') => State::Nok,
         Some(b'>') => {
@@ -141,11 +141,11 @@ fn enclosed(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(enclosed_escape))
+            State::Fn(StateName::DestinationEnclosedEscape)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(Box::new(enclosed))
+            State::Fn(StateName::DestinationEnclosed)
         }
     }
 }
@@ -156,11 +156,11 @@ fn enclosed(tokenizer: &mut Tokenizer) -> State {
 /// > | <a\*a>
 ///        ^
 /// ```
-fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
+pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'<' | b'>' | b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(enclosed))
+            State::Fn(StateName::DestinationEnclosed)
         }
         _ => enclosed(tokenizer),
     }
@@ -172,7 +172,7 @@ fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
 /// > | aa
 ///     ^
 /// ```
-fn raw(tokenizer: &mut Tokenizer) -> State {
+pub fn raw(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\t' | b'\n' | b' ' | b')') if tokenizer.tokenize_state.size == 0 => {
             tokenizer.exit(Token::Data);
@@ -185,7 +185,7 @@ fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_other => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Fn(Box::new(raw))
+            State::Fn(StateName::DestinationRaw)
         }
         // ASCII control (but *not* `\0`) and space and `(`.
         None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => {
@@ -195,15 +195,15 @@ fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b')') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size -= 1;
-            State::Fn(Box::new(raw))
+            State::Fn(StateName::DestinationRaw)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(raw_escape))
+            State::Fn(StateName::DestinationRawEscape)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(Box::new(raw))
+            State::Fn(StateName::DestinationRaw)
         }
     }
 }
@@ -214,11 +214,11 @@ fn raw(tokenizer: &mut Tokenizer) -> State {
 /// > | a\*a
 ///       ^
 /// ```
-fn raw_escape(tokenizer: &mut Tokenizer) -> State {
+pub fn raw_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'(' | b')' | b'\\') => {
             tokenizer.consume();
-            State::Fn(Box::new(raw))
+            State::Fn(StateName::DestinationRaw)
         }
         _ => raw(tokenizer),
     }

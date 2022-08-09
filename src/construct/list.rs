@@ -45,12 +45,9 @@
 //! [commonmark-block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
 
 use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
-use crate::construct::{
-    blank_line::start as blank_line, partial_space_or_tab::space_or_tab_min_max,
-    thematic_break::start as thematic_break,
-};
+use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::token::Token;
-use crate::tokenizer::{EventType, State, Tokenizer};
+use crate::tokenizer::{EventType, State, StateName, Tokenizer};
 use crate::util::{
     skip,
     slice::{Position, Slice},
@@ -65,17 +62,16 @@ use crate::util::{
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.list {
         tokenizer.enter(Token::ListItem);
-        tokenizer.go(
-            space_or_tab_min_max(
-                0,
-                if tokenizer.parse_state.constructs.code_indented {
-                    TAB_SIZE - 1
-                } else {
-                    usize::MAX
-                },
-            ),
-            before,
-        )(tokenizer)
+        let state_name = space_or_tab_min_max(
+            tokenizer,
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        );
+        tokenizer.go(state_name, StateName::ListBefore)
     } else {
         State::Nok
     }
@@ -87,12 +83,16 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///     ^
 /// ```
-fn before(tokenizer: &mut Tokenizer) -> State {
+pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
-        Some(b'*' | b'-') => tokenizer.check(thematic_break, |ok| {
-            Box::new(if ok { nok } else { before_unordered })
-        })(tokenizer),
+        Some(b'*' | b'-') => tokenizer.check(StateName::ThematicBreakStart, |ok| {
+            State::Fn(if ok {
+                StateName::ListNok
+            } else {
+                StateName::ListBeforeUnordered
+            })
+        }),
         Some(b'+') => before_unordered(tokenizer),
         // Ordered.
         Some(b'0'..=b'9') if !tokenizer.interrupt => before_ordered(tokenizer),
@@ -109,7 +109,7 @@ fn before(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///     ^
 /// ```
-fn before_unordered(tokenizer: &mut Tokenizer) -> State {
+pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemPrefix);
     marker(tokenizer)
 }
@@ -120,10 +120,10 @@ fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///     ^
 /// ```
-fn before_ordered(tokenizer: &mut Tokenizer) -> State {
+pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemPrefix);
     tokenizer.enter(Token::ListItemValue);
-    inside(tokenizer)
+    value(tokenizer)
 }
 
 /// In an ordered list item value.
@@ -132,7 +132,7 @@ fn before_ordered(tokenizer: &mut Tokenizer) -> State {
 /// > | 1. a
 ///     ^
 /// ```
-fn inside(tokenizer: &mut Tokenizer) -> State {
+pub fn value(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'.' | b')') if !tokenizer.interrupt || tokenizer.tokenize_state.size < 2 => {
             tokenizer.exit(Token::ListItemValue);
@@ -141,7 +141,7 @@ fn inside(tokenizer: &mut Tokenizer) -> State {
         Some(b'0'..=b'9') if tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(Box::new(inside))
+            State::Fn(StateName::ListValue)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -158,11 +158,11 @@ fn inside(tokenizer: &mut Tokenizer) -> State {
 /// > | 1. b
 ///      ^
 /// ```
-fn marker(tokenizer: &mut Tokenizer) -> State {
+pub fn marker(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemMarker);
     tokenizer.consume();
     tokenizer.exit(Token::ListItemMarker);
-    State::Fn(Box::new(marker_after))
+    State::Fn(StateName::ListMarkerAfter)
 }
 
 /// After a list item marker.
@@ -173,11 +173,15 @@ fn marker(tokenizer: &mut Tokenizer) -> State {
 /// > | 1. b
 ///       ^
 /// ```
-fn marker_after(tokenizer: &mut Tokenizer) -> State {
+pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 1;
-    tokenizer.check(blank_line, |ok| {
-        Box::new(if ok { after } else { marker_after_not_blank })
-    })(tokenizer)
+    tokenizer.check(StateName::BlankLineStart, |ok| {
+        State::Fn(if ok {
+            StateName::ListAfter
+        } else {
+            StateName::ListMarkerAfterFilled
+        })
+    })
 }
 
 /// After a list item marker, not followed by a blank line.
@@ -186,13 +190,17 @@ fn marker_after(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///      ^
 /// ```
-fn marker_after_not_blank(tokenizer: &mut Tokenizer) -> State {
+pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 0;
 
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
-    tokenizer.attempt(whitespace, |ok| {
-        Box::new(if ok { after } else { prefix_other })
-    })(tokenizer)
+    tokenizer.attempt(StateName::ListWhitespace, |ok| {
+        State::Fn(if ok {
+            StateName::ListAfter
+        } else {
+            StateName::ListPrefixOther
+        })
+    })
 }
 
 /// In whitespace after a marker.
@@ -201,8 +209,9 @@ fn marker_after_not_blank(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///      ^
 /// ```
-fn whitespace(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(space_or_tab_min_max(1, TAB_SIZE), whitespace_after)(tokenizer)
+pub fn whitespace(tokenizer: &mut Tokenizer) -> State {
+    let state_name = space_or_tab_min_max(tokenizer, 1, TAB_SIZE);
+    tokenizer.go(state_name, StateName::ListWhitespaceAfter)
 }
 
 /// After acceptable whitespace.
@@ -211,7 +220,7 @@ fn whitespace(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///      ^
 /// ```
-fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
+pub fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'\t' | b' ') = tokenizer.current {
         State::Nok
     } else {
@@ -225,13 +234,13 @@ fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///      ^
 /// ```
-fn prefix_other(tokenizer: &mut Tokenizer) -> State {
+pub fn prefix_other(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume();
             tokenizer.exit(Token::SpaceOrTab);
-            State::Fn(Box::new(after))
+            State::Fn(StateName::ListAfter)
         }
         _ => State::Nok,
     }
@@ -243,7 +252,7 @@ fn prefix_other(tokenizer: &mut Tokenizer) -> State {
 /// > | * a
 ///       ^
 /// ```
-fn after(tokenizer: &mut Tokenizer) -> State {
+pub fn after(tokenizer: &mut Tokenizer) -> State {
     let blank = tokenizer.tokenize_state.size == 1;
     tokenizer.tokenize_state.size = 0;
 
@@ -285,10 +294,14 @@ fn after(tokenizer: &mut Tokenizer) -> State {
 /// > |   b
 ///     ^
 /// ```
-pub fn cont(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(blank_line, |ok| {
-        Box::new(if ok { blank_cont } else { not_blank_cont })
-    })(tokenizer)
+pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.check(StateName::BlankLineStart, |ok| {
+        State::Fn(if ok {
+            StateName::ListContBlank
+        } else {
+            StateName::ListContFilled
+        })
+    })
 }
 
 /// Start of blank list item continuation.
@@ -299,15 +312,16 @@ pub fn cont(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 ///   |   b
 /// ```
-pub fn blank_cont(tokenizer: &mut Tokenizer) -> State {
+pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
     let container = tokenizer.container.as_ref().unwrap();
     let size = container.size;
 
     if container.blank_initial {
         State::Nok
     } else {
+        let state_name = space_or_tab_min_max(tokenizer, 0, size);
         // Consume, optionally, at most `size`.
-        tokenizer.go(space_or_tab_min_max(0, size), ok)(tokenizer)
+        tokenizer.go(state_name, StateName::ListOk)
     }
 }
 
@@ -318,14 +332,15 @@ pub fn blank_cont(tokenizer: &mut Tokenizer) -> State {
 /// > |   b
 ///     ^
 /// ```
-pub fn not_blank_cont(tokenizer: &mut Tokenizer) -> State {
+pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
     let container = tokenizer.container.as_mut().unwrap();
     let size = container.size;
 
     container.blank_initial = false;
 
     // Consume exactly `size`.
-    tokenizer.go(space_or_tab_min_max(size, size), ok)(tokenizer)
+    let state_name = space_or_tab_min_max(tokenizer, size, size);
+    tokenizer.go(state_name, StateName::ListOk)
 }
 
 /// A state fn to yield [`State::Ok`].
@@ -334,16 +349,16 @@ pub fn ok(_tokenizer: &mut Tokenizer) -> State {
 }
 
 /// A state fn to yield [`State::Nok`].
-fn nok(_tokenizer: &mut Tokenizer) -> State {
+pub fn nok(_tokenizer: &mut Tokenizer) -> State {
     State::Nok
 }
 
 /// Find adjacent list items with the same marker.
 pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
-    let mut index = 0;
-    let mut balance = 0;
     let mut lists_wip: Vec<(u8, usize, usize, usize)> = vec![];
     let mut lists: Vec<(u8, usize, usize, usize)> = vec![];
+    let mut index = 0;
+    let mut balance = 0;
 
     // Merge list items.
     while index < tokenizer.events.len() {
