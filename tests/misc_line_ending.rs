@@ -10,6 +10,42 @@ fn line_ending() {
     };
 
     assert_eq!(
+        micromark("\n"),
+        "",
+        "should support just a line feed"
+    );
+
+    assert_eq!(
+        micromark("\r"),
+        "",
+        "should support just a carriage return"
+    );
+
+    assert_eq!(
+        micromark("\r\n"),
+        "",
+        "should support just a carriage return + line feed"
+    );
+
+    assert_eq!(
+        micromark("\n\n"),
+        "",
+        "should support just two line feeds"
+    );
+
+    assert_eq!(
+        micromark("\r\r"),
+        "",
+        "should support just two carriage return"
+    );
+
+    assert_eq!(
+        micromark("\r\n\r\n"),
+        "",
+        "should support just two carriage return + line feeds"
+    );
+
+    assert_eq!(
         micromark("a\nb"),
         "<p>a\nb</p>",
         "should support a line feed for a line ending inside a paragraph"
