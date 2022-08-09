@@ -109,13 +109,11 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                         connect: tokenizer.tokenize_state.connect,
                     },
                 );
-                tokenizer.attempt(state_name, |ok| {
-                    State::Fn(if ok {
-                        StateName::LabelEolAfter
-                    } else {
-                        StateName::LabelAtBlankLine
-                    })
-                })
+                tokenizer.attempt(
+                    state_name,
+                    State::Fn(StateName::LabelEolAfter),
+                    State::Fn(StateName::LabelAtBlankLine),
+                )
             }
             Some(b']') => {
                 tokenizer.exit(tokenizer.tokenize_state.token_3.clone());

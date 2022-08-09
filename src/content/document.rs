@@ -106,7 +106,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         tokenizer.parse_state,
     )));
     tokenizer.tokenize_state.document_child_state = Some(State::Fn(StateName::FlowStart));
-    tokenizer.attempt_opt(StateName::BomStart, StateName::DocumentLineStart)
+    tokenizer.attempt(
+        StateName::BomStart,
+        State::Fn(StateName::DocumentLineStart),
+        State::Fn(StateName::DocumentLineStart),
+    )
 }
 
 /// Start of a line.
@@ -146,13 +150,11 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
         };
 
         tokenizer.container = Some(container);
-        tokenizer.attempt(state_name, |ok| {
-            State::Fn(if ok {
-                StateName::DocumentContainerExistingAfter
-            } else {
-                StateName::DocumentContainerExistingMissing
-            })
-        })
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::DocumentContainerExistingAfter),
+            State::Fn(StateName::DocumentContainerExistingMissing),
+        )
     }
     // Otherwise, check new containers.
     else {
@@ -235,13 +237,11 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
         size: 0,
     });
 
-    tokenizer.attempt(StateName::BlockQuoteStart, |ok| {
-        State::Fn(if ok {
-            StateName::DocumentContainerNewAfter
-        } else {
-            StateName::DocumentContainerNewBeforeNotBlockQuote
-        })
-    })
+    tokenizer.attempt(
+        StateName::BlockQuoteStart,
+        State::Fn(StateName::DocumentContainerNewAfter),
+        State::Fn(StateName::DocumentContainerNewBeforeNotBlockQuote),
+    )
 }
 
 /// To do.
@@ -253,13 +253,11 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
         size: 0,
     });
 
-    tokenizer.attempt(StateName::ListStart, |ok| {
-        State::Fn(if ok {
-            StateName::DocumentContainerNewAfter
-        } else {
-            StateName::DocumentContainersAfter
-        })
-    })
+    tokenizer.attempt(
+        StateName::ListStart,
+        State::Fn(StateName::DocumentContainerNewAfter),
+        State::Fn(StateName::DocumentContainersAfter),
+    )
 }
 
 /// After a new container.

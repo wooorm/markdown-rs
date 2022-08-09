@@ -659,7 +659,11 @@ pub fn line_ending_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
     let state_name = space_or_tab(tokenizer);
-    tokenizer.attempt_opt(state_name, StateName::HtmlTextLineEndingAfterPrefix)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::HtmlTextLineEndingAfterPrefix),
+        State::Fn(StateName::HtmlTextLineEndingAfterPrefix),
+    )
 }
 
 /// After a line ending, after indent.

@@ -93,7 +93,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             },
         );
 
-        tokenizer.go(state_name, StateName::HeadingSetextBefore)
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::HeadingSetextBefore),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -134,7 +138,11 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.marker = 0;
             tokenizer.exit(Token::HeadingSetextUnderline);
             let state_name = space_or_tab(tokenizer);
-            tokenizer.attempt_opt(state_name, StateName::HeadingSetextAfter)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::HeadingSetextAfter),
+                State::Fn(StateName::HeadingSetextAfter),
+            )
         }
     }
 }

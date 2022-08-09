@@ -72,7 +72,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             },
         );
 
-        tokenizer.go(state_name, StateName::ThematicBreakBefore)
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::ThematicBreakBefore),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -142,7 +146,11 @@ pub fn sequence(tokenizer: &mut Tokenizer) -> State {
         _ => {
             tokenizer.exit(Token::ThematicBreakSequence);
             let state_name = space_or_tab(tokenizer);
-            tokenizer.attempt_opt(state_name, StateName::ThematicBreakAtBreak)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::ThematicBreakAtBreak),
+                State::Fn(StateName::ThematicBreakAtBreak),
+            )
         }
     }
 }

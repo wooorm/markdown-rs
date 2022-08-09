@@ -77,7 +77,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.go(state_name, StateName::HeadingAtxBefore)
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::HeadingAtxBefore),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -120,7 +124,11 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::HeadingAtxSequence);
             let state_name = space_or_tab(tokenizer);
-            tokenizer.go(state_name, StateName::HeadingAtxAtBreak)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::HeadingAtxAtBreak),
+                State::Nok,
+            )
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -146,7 +154,11 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             let state_name = space_or_tab(tokenizer);
-            tokenizer.go(state_name, StateName::HeadingAtxAtBreak)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::HeadingAtxAtBreak),
+                State::Nok,
+            )
         }
         Some(b'#') => {
             tokenizer.enter(Token::HeadingAtxSequence);

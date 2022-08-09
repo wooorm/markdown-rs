@@ -47,7 +47,11 @@ use crate::tokenizer::{State, StateName, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     let state_name = space_or_tab(tokenizer);
-    tokenizer.attempt_opt(state_name, StateName::BlankLineAfter)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::BlankLineAfter),
+        State::Fn(StateName::BlankLineAfter),
+    )
 }
 
 /// After zero or more spaces or tabs, before a line ending or EOF.

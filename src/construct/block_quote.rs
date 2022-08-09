@@ -55,7 +55,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.go(state_name, StateName::BlockQuoteBefore)
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::BlockQuoteBefore),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -94,7 +98,11 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
             usize::MAX
         },
     );
-    tokenizer.go(state_name, StateName::BlockQuoteContBefore)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::BlockQuoteContBefore),
+        State::Nok,
+    )
 }
 
 /// After whitespace, before `>`.

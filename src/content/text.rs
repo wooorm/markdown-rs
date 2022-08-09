@@ -46,28 +46,67 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
-        _ => tokenizer.attempt_n(
-            vec![
-                StateName::AttentionStart,
-                StateName::AutolinkStart,
-                StateName::CharacterEscapeStart,
-                StateName::CharacterReferenceStart,
-                StateName::CodeTextStart,
-                StateName::HardBreakEscapeStart,
-                StateName::HtmlTextStart,
-                StateName::LabelEndStart,
-                StateName::LabelStartImageStart,
-                StateName::LabelStartLinkStart,
-            ],
-            |ok| {
-                State::Fn(if ok {
-                    StateName::TextBefore
-                } else {
-                    StateName::TextBeforeData
-                })
-            },
+        Some(b'!') => tokenizer.attempt(
+            StateName::LabelStartImageStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeData),
         ),
+        Some(b'&') => tokenizer.attempt(
+            StateName::CharacterReferenceStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeData),
+        ),
+        Some(b'*' | b'_') => tokenizer.attempt(
+            StateName::AttentionStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeData),
+        ),
+        // `autolink`, `html_text` (order does not matter)
+        Some(b'<') => tokenizer.attempt(
+            StateName::AutolinkStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeHtml),
+        ),
+        Some(b'[') => tokenizer.attempt(
+            StateName::LabelStartLinkStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeData),
+        ),
+        Some(b'\\') => tokenizer.attempt(
+            StateName::CharacterEscapeStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeHardBreakEscape),
+        ),
+        Some(b']') => tokenizer.attempt(
+            StateName::LabelEndStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeData),
+        ),
+        Some(b'`') => tokenizer.attempt(
+            StateName::CodeTextStart,
+            State::Fn(StateName::TextBefore),
+            State::Fn(StateName::TextBeforeData),
+        ),
+        _ => before_data(tokenizer),
     }
+}
+
+/// To do.
+pub fn before_html(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        StateName::HtmlTextStart,
+        State::Fn(StateName::TextBefore),
+        State::Fn(StateName::TextBeforeData),
+    )
+}
+
+/// To do.
+pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        StateName::HardBreakEscapeStart,
+        State::Fn(StateName::TextBefore),
+        State::Fn(StateName::TextBeforeData),
+    )
 }
 
 /// At data.
@@ -76,7 +115,11 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 /// |qwe
 /// ```
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.go(StateName::DataStart, StateName::TextBefore)
+    tokenizer.attempt(
+        StateName::DataStart,
+        State::Fn(StateName::TextBefore),
+        State::Nok,
+    )
 }
 
 /// Resolve whitespace.

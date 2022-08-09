@@ -29,6 +29,7 @@ pub enum ContentType {
     Text,
 }
 
+/// To do.
 #[derive(Debug, PartialEq)]
 pub enum ByteAction {
     Normal(u8),
@@ -83,8 +84,20 @@ pub struct Event {
     pub link: Option<Link>,
 }
 
-pub struct Attempt {
-    done: Box<dyn FnOnce(&mut Tokenizer, State) -> State + 'static>,
+#[derive(Debug, PartialEq)]
+enum AttemptKind {
+    Attempt,
+    Check,
+}
+
+/// To do.
+#[derive(Debug)]
+struct Attempt {
+    /// To do.
+    ok: State,
+    nok: State,
+    kind: AttemptKind,
+    state: Option<InternalState>,
 }
 
 /// Callback that can be registered and is called when the tokenizer is done.
@@ -202,6 +215,12 @@ pub enum StateName {
 
     FlowStart,
     FlowBefore,
+    FlowBeforeCodeFenced,
+    FlowBeforeHtml,
+    FlowBeforeHeadingAtx,
+    FlowBeforeHeadingSetext,
+    FlowBeforeThematicBreak,
+    FlowBeforeDefinition,
     FlowAfter,
     FlowBlankLineAfter,
     FlowBeforeParagraph,
@@ -350,6 +369,8 @@ pub enum StateName {
 
     TextStart,
     TextBefore,
+    TextBeforeHtml,
+    TextBeforeHardBreakEscape,
     TextBeforeData,
 
     ThematicBreakStart,
@@ -488,6 +509,14 @@ impl StateName {
 
             StateName::FlowStart => content::flow::start,
             StateName::FlowBefore => content::flow::before,
+
+            StateName::FlowBeforeCodeFenced => content::flow::before_code_fenced,
+            StateName::FlowBeforeHtml => content::flow::before_html,
+            StateName::FlowBeforeHeadingAtx => content::flow::before_heading_atx,
+            StateName::FlowBeforeHeadingSetext => content::flow::before_heading_setext,
+            StateName::FlowBeforeThematicBreak => content::flow::before_thematic_break,
+            StateName::FlowBeforeDefinition => content::flow::before_definition,
+
             StateName::FlowAfter => content::flow::after,
             StateName::FlowBlankLineAfter => content::flow::blank_line_after,
             StateName::FlowBeforeParagraph => content::flow::before_paragraph,
@@ -683,6 +712,8 @@ impl StateName {
 
             StateName::TextStart => content::text::start,
             StateName::TextBefore => content::text::before,
+            StateName::TextBeforeHtml => content::text::before_html,
+            StateName::TextBeforeHardBreakEscape => content::text::before_hard_break_escape,
             StateName::TextBeforeData => content::text::before_data,
 
             StateName::ThematicBreakStart => construct::thematic_break::start,
@@ -1179,31 +1210,6 @@ impl<'a> Tokenizer<'a> {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// Parse with `state_name` and its future states, switching to `ok` when
-    /// successful, and passing [`State::Nok`][] back up if it occurs.
-    ///
-    /// This function does not capture the current state, in case of
-    /// `State::Nok`, as it is assumed that this `go` is itself wrapped in
-    /// another `attempt`.
-    #[allow(clippy::unused_self)]
-    pub fn go(&mut self, state_name: StateName, after: StateName) -> State {
-        attempt_impl(
-            self,
-            state_name,
-            Box::new(move |_tokenizer: &mut Tokenizer, state| {
-                if matches!(state, State::Ok) {
-                    State::Fn(after)
-                } else {
-                    // Must be `Nok`.
-                    // We don’t capture/free state because it is assumed that
-                    // `go` itself is wrapped in another attempt that does that
-                    // if it can occur.
-                    state
-                }
-            }),
-        )
-    }
-
     /// Parse with `state_name` and its future states, to check if it result in
     /// [`State::Ok`][] or [`State::Nok`][], revert on both cases, and then
     /// call `done` with whether it was successful or not.
@@ -1213,22 +1219,8 @@ impl<'a> Tokenizer<'a> {
     /// future states until it yields `State::Ok` or `State::Nok`.
     /// It then applies the captured state, calls `done`, and feeds all
     /// captured codes to its future states.
-    pub fn check(
-        &mut self,
-        state_name: StateName,
-        done: impl FnOnce(bool) -> State + 'static,
-    ) -> State {
-        let previous = self.capture();
-
-        attempt_impl(
-            self,
-            state_name,
-            Box::new(|tokenizer: &mut Tokenizer, state| {
-                tokenizer.free(previous);
-                tokenizer.consumed = true;
-                done(matches!(state, State::Ok))
-            }),
-        )
+    pub fn check(&mut self, state_name: StateName, ok: State, nok: State) -> State {
+        attempt_impl(self, state_name, ok, nok, AttemptKind::Check)
     }
 
     /// Parse with `state_name` and its future states, to check if it results in
@@ -1242,80 +1234,8 @@ impl<'a> Tokenizer<'a> {
     /// `done` and yields its result.
     /// If instead `State::Nok` was yielded, the captured state is applied,
     /// `done` is called, and all captured codes are fed to its future states.
-    pub fn attempt(
-        &mut self,
-        state_name: StateName,
-        done: impl FnOnce(bool) -> State + 'static,
-    ) -> State {
-        let previous = self.capture();
-
-        log::debug!("attempting: {:?}", state_name);
-        // self.consumed = false;
-        attempt_impl(
-            self,
-            state_name,
-            Box::new(move |tokenizer: &mut Tokenizer, state| {
-                let ok = matches!(state, State::Ok);
-
-                if !ok {
-                    tokenizer.free(previous);
-                    tokenizer.consumed = true;
-                }
-
-                log::debug!(
-                    "attempted {:?}: {:?}, at {:?}",
-                    state_name,
-                    ok,
-                    tokenizer.point
-                );
-
-                done(ok)
-            }),
-        )
-    }
-
-    /// Just like [`attempt`][Tokenizer::attempt], but many.
-    pub fn attempt_n(
-        &mut self,
-        mut state_names: Vec<StateName>,
-        done: impl FnOnce(bool) -> State + 'static,
-    ) -> State {
-        if state_names.is_empty() {
-            done(false)
-        } else {
-            let previous = self.capture();
-            let state_name = state_names.remove(0);
-            self.consumed = false;
-            log::debug!("attempting (n): {:?}", state_name);
-            attempt_impl(
-                self,
-                state_name,
-                Box::new(move |tokenizer: &mut Tokenizer, state| {
-                    let ok = matches!(state, State::Ok);
-
-                    log::debug!(
-                        "attempted (n) {:?}: {:?}, at {:?}",
-                        state_name,
-                        ok,
-                        tokenizer.point
-                    );
-
-                    if ok {
-                        done(true)
-                    } else {
-                        tokenizer.free(previous);
-                        tokenizer.consumed = true;
-                        tokenizer.attempt_n(state_names, done)
-                    }
-                }),
-            )
-        }
-    }
-
-    /// Just like [`attempt`][Tokenizer::attempt], but for when you don’t care
-    /// about `ok`.
-    pub fn attempt_opt(&mut self, state_name: StateName, after: StateName) -> State {
-        self.attempt(state_name, move |_ok| State::Fn(after))
+    pub fn attempt(&mut self, state_name: StateName, ok: State, nok: State) -> State {
+        attempt_impl(self, state_name, ok, nok, AttemptKind::Attempt)
     }
 
     /// Feed a list of `codes` into `start`.
@@ -1336,9 +1256,18 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => {
                     if let Some(attempt) = self.attempts.pop() {
-                        let done = attempt.done;
+                        if attempt.kind == AttemptKind::Check || state == State::Nok {
+                            if let Some(state) = attempt.state {
+                                self.free(state);
+                            }
+                        }
+
                         self.consumed = true;
-                        state = done(self, state);
+                        state = if state == State::Ok {
+                            attempt.ok
+                        } else {
+                            attempt.nok
+                        };
                     } else {
                         break;
                     }
@@ -1375,9 +1304,18 @@ impl<'a> Tokenizer<'a> {
             match state {
                 State::Ok | State::Nok => {
                     if let Some(attempt) = self.attempts.pop() {
-                        let done = attempt.done;
+                        if attempt.kind == AttemptKind::Check || state == State::Nok {
+                            if let Some(state) = attempt.state {
+                                self.free(state);
+                            }
+                        }
+
                         self.consumed = true;
-                        state = done(self, state);
+                        state = if state == State::Ok {
+                            attempt.ok
+                        } else {
+                            attempt.nok
+                        };
                     } else {
                         break;
                     }
@@ -1480,9 +1418,25 @@ fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
 fn attempt_impl(
     tokenizer: &mut Tokenizer,
     state_name: StateName,
-    done: Box<impl FnOnce(&mut Tokenizer, State) -> State + 'static>,
+    ok: State,
+    nok: State,
+    kind: AttemptKind,
 ) -> State {
-    tokenizer.attempts.push(Attempt { done });
+    // Always capture (and restore) when checking.
+    // No need to capture (and restore) when `nok` is `State::Nok`, because the
+    // parent attempt will do it.
+    let state = if kind == AttemptKind::Check || nok != State::Nok {
+        Some(tokenizer.capture())
+    } else {
+        None
+    };
+
+    tokenizer.attempts.push(Attempt {
+        ok,
+        nok,
+        kind,
+        state,
+    });
     call_impl(tokenizer, state_name)
 }
 

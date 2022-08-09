@@ -65,7 +65,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     if !tokenizer.interrupt && tokenizer.parse_state.constructs.code_indented {
         tokenizer.enter(Token::CodeIndented);
         let state_name = space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE);
-        tokenizer.go(state_name, StateName::CodeIndentedAtBreak)
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::CodeIndentedAtBreak),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -80,13 +84,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => after(tokenizer),
-        Some(b'\n') => tokenizer.attempt(StateName::CodeIndentedFurtherStart, |ok| {
-            State::Fn(if ok {
-                StateName::CodeIndentedAtBreak
-            } else {
-                StateName::CodeIndentedAfter
-            })
-        }),
+        Some(b'\n') => tokenizer.attempt(
+            StateName::CodeIndentedFurtherStart,
+            State::Fn(StateName::CodeIndentedAtBreak),
+            State::Fn(StateName::CodeIndentedAfter),
+        ),
         _ => {
             tokenizer.enter(Token::CodeFlowChunk);
             inside(tokenizer)
@@ -143,13 +145,11 @@ pub fn further_start(tokenizer: &mut Tokenizer) -> State {
         }
         _ if !tokenizer.lazy => {
             let state_name = space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE);
-            tokenizer.attempt(state_name, |ok| {
-                State::Fn(if ok {
-                    StateName::CodeIndentedFurtherEnd
-                } else {
-                    StateName::CodeIndentedFurtherBegin
-                })
-            })
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::CodeIndentedFurtherEnd),
+                State::Fn(StateName::CodeIndentedFurtherBegin),
+            )
         }
         _ => State::Nok,
     }
@@ -175,7 +175,11 @@ pub fn further_end(_tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn further_begin(tokenizer: &mut Tokenizer) -> State {
     let state_name = space_or_tab(tokenizer);
-    tokenizer.attempt_opt(state_name, StateName::CodeIndentedFurtherAfter)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::CodeIndentedFurtherAfter),
+        State::Fn(StateName::CodeIndentedFurtherAfter),
+    )
 }
 
 /// After whitespace, not indented enough.

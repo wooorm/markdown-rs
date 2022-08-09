@@ -106,13 +106,11 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 },
             );
 
-            tokenizer.attempt(state_name, |ok| {
-                State::Fn(if ok {
-                    StateName::TitleAfterEol
-                } else {
-                    StateName::TitleAtBlankLine
-                })
-            })
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::TitleAfterEol),
+                State::Fn(StateName::TitleAtBlankLine),
+            )
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>

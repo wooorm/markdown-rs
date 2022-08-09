@@ -71,7 +71,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.go(state_name, StateName::ListBefore)
+        tokenizer.attempt(state_name, State::Fn(StateName::ListBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -86,13 +86,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
-        Some(b'*' | b'-') => tokenizer.check(StateName::ThematicBreakStart, |ok| {
-            State::Fn(if ok {
-                StateName::ListNok
-            } else {
-                StateName::ListBeforeUnordered
-            })
-        }),
+        Some(b'*' | b'-') => tokenizer.check(
+            StateName::ThematicBreakStart,
+            State::Fn(StateName::ListNok),
+            State::Fn(StateName::ListBeforeUnordered),
+        ),
         Some(b'+') => before_unordered(tokenizer),
         // Ordered.
         Some(b'0'..=b'9') if !tokenizer.interrupt => before_ordered(tokenizer),
@@ -175,13 +173,11 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 1;
-    tokenizer.check(StateName::BlankLineStart, |ok| {
-        State::Fn(if ok {
-            StateName::ListAfter
-        } else {
-            StateName::ListMarkerAfterFilled
-        })
-    })
+    tokenizer.check(
+        StateName::BlankLineStart,
+        State::Fn(StateName::ListAfter),
+        State::Fn(StateName::ListMarkerAfterFilled),
+    )
 }
 
 /// After a list item marker, not followed by a blank line.
@@ -194,13 +190,11 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 0;
 
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
-    tokenizer.attempt(StateName::ListWhitespace, |ok| {
-        State::Fn(if ok {
-            StateName::ListAfter
-        } else {
-            StateName::ListPrefixOther
-        })
-    })
+    tokenizer.attempt(
+        StateName::ListWhitespace,
+        State::Fn(StateName::ListAfter),
+        State::Fn(StateName::ListPrefixOther),
+    )
 }
 
 /// In whitespace after a marker.
@@ -211,7 +205,11 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn whitespace(tokenizer: &mut Tokenizer) -> State {
     let state_name = space_or_tab_min_max(tokenizer, 1, TAB_SIZE);
-    tokenizer.go(state_name, StateName::ListWhitespaceAfter)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::ListWhitespaceAfter),
+        State::Nok,
+    )
 }
 
 /// After acceptable whitespace.
@@ -295,13 +293,11 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(StateName::BlankLineStart, |ok| {
-        State::Fn(if ok {
-            StateName::ListContBlank
-        } else {
-            StateName::ListContFilled
-        })
-    })
+    tokenizer.check(
+        StateName::BlankLineStart,
+        State::Fn(StateName::ListContBlank),
+        State::Fn(StateName::ListContFilled),
+    )
 }
 
 /// Start of blank list item continuation.
@@ -321,7 +317,7 @@ pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
     } else {
         let state_name = space_or_tab_min_max(tokenizer, 0, size);
         // Consume, optionally, at most `size`.
-        tokenizer.go(state_name, StateName::ListOk)
+        tokenizer.attempt(state_name, State::Fn(StateName::ListOk), State::Nok)
     }
 }
 
@@ -340,7 +336,7 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
 
     // Consume exactly `size`.
     let state_name = space_or_tab_min_max(tokenizer, size, size);
-    tokenizer.go(state_name, StateName::ListOk)
+    tokenizer.attempt(state_name, State::Fn(StateName::ListOk), State::Nok)
 }
 
 /// A state fn to yield [`State::Ok`].

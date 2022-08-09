@@ -128,7 +128,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.go(state_name, StateName::CodeFencedBeforeSequenceOpen)
+        tokenizer.attempt(
+            state_name,
+            State::Fn(StateName::CodeFencedBeforeSequenceOpen),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -184,7 +188,11 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         _ if tokenizer.tokenize_state.size >= CODE_FENCED_SEQUENCE_SIZE_MIN => {
             tokenizer.exit(Token::CodeFencedFenceSequence);
             let state_name = space_or_tab(tokenizer);
-            tokenizer.attempt_opt(state_name, StateName::CodeFencedInfoBefore)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::CodeFencedInfoBefore),
+                State::Fn(StateName::CodeFencedInfoBefore),
+            )
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
@@ -241,7 +249,11 @@ pub fn info(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::Data);
             tokenizer.exit(Token::CodeFencedFenceInfo);
             let state_name = space_or_tab(tokenizer);
-            tokenizer.attempt_opt(state_name, StateName::CodeFencedMetaBefore)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::CodeFencedMetaBefore),
+                State::Fn(StateName::CodeFencedMetaBefore),
+            )
         }
         Some(b'`') if tokenizer.tokenize_state.marker == b'`' => {
             tokenizer.concrete = false;
@@ -323,13 +335,11 @@ pub fn meta(tokenizer: &mut Tokenizer) -> State {
 ///   | ~~~
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(StateName::NonLazyContinuationStart, |ok| {
-        State::Fn(if ok {
-            StateName::CodeFencedAtNonLazyBreak
-        } else {
-            StateName::CodeFencedAfter
-        })
-    })
+    tokenizer.check(
+        StateName::NonLazyContinuationStart,
+        State::Fn(StateName::CodeFencedAtNonLazyBreak),
+        State::Fn(StateName::CodeFencedAfter),
+    )
 }
 
 /// At an eol/eof in code, before a non-lazy closing fence or content.
@@ -342,13 +352,11 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 ///   | ~~~
 /// ```
 pub fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(StateName::CodeFencedCloseBefore, |ok| {
-        State::Fn(if ok {
-            StateName::CodeFencedAfter
-        } else {
-            StateName::CodeFencedContentBefore
-        })
-    })
+    tokenizer.attempt(
+        StateName::CodeFencedCloseBefore,
+        State::Fn(StateName::CodeFencedAfter),
+        State::Fn(StateName::CodeFencedContentBefore),
+    )
 }
 
 /// Before a closing fence, at the line ending.
@@ -390,7 +398,11 @@ pub fn close_start(tokenizer: &mut Tokenizer) -> State {
             usize::MAX
         },
     );
-    tokenizer.go(state_name, StateName::CodeFencedBeforeSequenceClose)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::CodeFencedBeforeSequenceClose),
+        State::Nok,
+    )
 }
 
 /// In a closing fence, after optional whitespace, before sequence.
@@ -432,7 +444,11 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size_other = 0;
             tokenizer.exit(Token::CodeFencedFenceSequence);
             let state_name = space_or_tab(tokenizer);
-            tokenizer.attempt_opt(state_name, StateName::CodeFencedAfterSequenceClose)
+            tokenizer.attempt(
+                state_name,
+                State::Fn(StateName::CodeFencedAfterSequenceClose),
+                State::Fn(StateName::CodeFencedAfterSequenceClose),
+            )
         }
         _ => {
             tokenizer.tokenize_state.size_other = 0;
@@ -483,7 +499,11 @@ pub fn content_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn content_start(tokenizer: &mut Tokenizer) -> State {
     let state_name = space_or_tab_min_max(tokenizer, 0, tokenizer.tokenize_state.prefix);
-    tokenizer.go(state_name, StateName::CodeFencedBeforeContentChunk)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::CodeFencedBeforeContentChunk),
+        State::Nok,
+    )
 }
 
 /// Before code content, after a prefix.

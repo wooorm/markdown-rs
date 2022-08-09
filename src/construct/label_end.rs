@@ -237,25 +237,28 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
-        Some(b'(') => tokenizer.attempt(StateName::LabelEndResourceStart, move |is_ok| {
-            State::Fn(if is_ok || defined {
+        Some(b'(') => tokenizer.attempt(
+            StateName::LabelEndResourceStart,
+            State::Fn(StateName::LabelEndOk),
+            State::Fn(if defined {
                 StateName::LabelEndOk
             } else {
                 StateName::LabelEndNok
-            })
-        }),
+            }),
+        ),
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
-        Some(b'[') => tokenizer.attempt(StateName::LabelEndReferenceFull, move |is_ok| {
-            State::Fn(if is_ok {
-                StateName::LabelEndOk
-            } else if defined {
+        Some(b'[') => tokenizer.attempt(
+            StateName::LabelEndReferenceFull,
+            State::Fn(StateName::LabelEndOk),
+            State::Fn(if defined {
                 StateName::LabelEndReferenceNotFull
             } else {
                 StateName::LabelEndNok
-            })
-        }),
+            }),
+        ),
         // Shortcut (`[asd]`) reference?
         _ => {
+            // To do: use state names?
             let func = if defined { ok } else { nok };
             func(tokenizer)
         }
@@ -273,13 +276,11 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 pub fn reference_not_full(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(StateName::LabelEndReferenceCollapsed, |is_ok| {
-        State::Fn(if is_ok {
-            StateName::LabelEndOk
-        } else {
-            StateName::LabelEndNok
-        })
-    })
+    tokenizer.attempt(
+        StateName::LabelEndReferenceCollapsed,
+        State::Fn(StateName::LabelEndOk),
+        State::Fn(StateName::LabelEndNok),
+    )
 }
 
 /// Done, we found something.
@@ -375,7 +376,11 @@ pub fn resource_start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
     let state_name = space_or_tab_eol(tokenizer);
-    tokenizer.attempt_opt(state_name, StateName::LabelEndResourceOpen)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::LabelEndResourceOpen),
+        State::Fn(StateName::LabelEndResourceOpen),
+    )
 }
 
 /// At the start of a resource, after optional whitespace.
@@ -395,13 +400,11 @@ pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.token_5 = Token::ResourceDestinationString;
         tokenizer.tokenize_state.size_other = RESOURCE_DESTINATION_BALANCE_MAX;
 
-        tokenizer.attempt(StateName::DestinationStart, |ok| {
-            State::Fn(if ok {
-                StateName::LabelEndResourceDestinationAfter
-            } else {
-                StateName::LabelEndResourceDestinationMissing
-            })
-        })
+        tokenizer.attempt(
+            StateName::DestinationStart,
+            State::Fn(StateName::LabelEndResourceDestinationAfter),
+            State::Fn(StateName::LabelEndResourceDestinationMissing),
+        )
     }
 }
 
@@ -419,14 +422,11 @@ pub fn resource_destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_5 = Token::Data;
     tokenizer.tokenize_state.size_other = 0;
     let state_name = space_or_tab_eol(tokenizer);
-
-    tokenizer.attempt(state_name, |ok| {
-        State::Fn(if ok {
-            StateName::LabelEndResourceBetween
-        } else {
-            StateName::LabelEndResourceEnd
-        })
-    })
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::LabelEndResourceBetween),
+        State::Fn(StateName::LabelEndResourceEnd),
+    )
 }
 
 /// Without destination.
@@ -452,7 +452,11 @@ pub fn resource_between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_1 = Token::ResourceTitle;
             tokenizer.tokenize_state.token_2 = Token::ResourceTitleMarker;
             tokenizer.tokenize_state.token_3 = Token::ResourceTitleString;
-            tokenizer.go(StateName::TitleStart, StateName::LabelEndResourceTitleAfter)
+            tokenizer.attempt(
+                StateName::TitleStart,
+                State::Fn(StateName::LabelEndResourceTitleAfter),
+                State::Nok,
+            )
         }
         _ => resource_end(tokenizer),
     }
@@ -469,7 +473,11 @@ pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_2 = Token::Data;
     tokenizer.tokenize_state.token_3 = Token::Data;
     let state_name = space_or_tab_eol(tokenizer);
-    tokenizer.attempt_opt(state_name, StateName::LabelEndResourceEnd)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::LabelEndResourceEnd),
+        State::Fn(StateName::LabelEndResourceEnd),
+    )
 }
 
 /// In a resource, at the `)`.
@@ -503,7 +511,11 @@ pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_1 = Token::Reference;
             tokenizer.tokenize_state.token_2 = Token::ReferenceMarker;
             tokenizer.tokenize_state.token_3 = Token::ReferenceString;
-            tokenizer.go(StateName::LabelStart, StateName::LabelEndReferenceFullAfter)
+            tokenizer.attempt(
+                StateName::LabelStart,
+                State::Fn(StateName::LabelEndReferenceFullAfter),
+                State::Nok,
+            )
         }
         _ => unreachable!("expected `[`"),
     }

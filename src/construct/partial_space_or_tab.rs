@@ -180,13 +180,11 @@ pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
         },
     );
 
-    tokenizer.attempt(state_name, move |ok| {
-        State::Fn(if ok {
-            StateName::SpaceOrTabEolAfterFirst
-        } else {
-            StateName::SpaceOrTabEolAtEol
-        })
-    })
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::SpaceOrTabEolAfterFirst),
+        State::Fn(StateName::SpaceOrTabEolAtEol),
+    )
 }
 
 pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
@@ -269,7 +267,11 @@ pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
             connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
         },
     );
-    tokenizer.attempt_opt(state_name, StateName::SpaceOrTabEolAfterMore)
+    tokenizer.attempt(
+        state_name,
+        State::Fn(StateName::SpaceOrTabEolAfterMore),
+        State::Fn(StateName::SpaceOrTabEolAfterMore),
+    )
 }
 
 /// `space_or_tab_eol`: after more (optional) `space_or_tab`.
