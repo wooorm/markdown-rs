@@ -34,13 +34,54 @@ use crate::tokenizer::{State, StateName, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Ok,
-        _ => tokenizer.attempt(
-            StateName::BlankLineStart,
-            State::Fn(StateName::FlowBlankLineAfter),
-            State::Fn(StateName::FlowBefore),
+        Some(b'`' | b'~') => tokenizer.attempt(
+            StateName::CodeFencedStart,
+            State::Fn(StateName::FlowAfter),
+            State::Fn(StateName::FlowBeforeParagraph),
+        ),
+        Some(b'<') => tokenizer.attempt(
+            StateName::HtmlFlowStart,
+            State::Fn(StateName::FlowAfter),
+            State::Fn(StateName::FlowBeforeParagraph),
+        ),
+        Some(b'#') => tokenizer.attempt(
+            StateName::HeadingAtxStart,
+            State::Fn(StateName::FlowAfter),
+            State::Fn(StateName::FlowBeforeParagraph),
+        ),
+        // Note: `-` is also used in thematic breaks, so it’s not included here.
+        Some(b'=') => tokenizer.attempt(
+            StateName::HeadingSetextStart,
+            State::Fn(StateName::FlowAfter),
+            State::Fn(StateName::FlowBeforeParagraph),
+        ),
+        Some(b'*' | b'_') => tokenizer.attempt(
+            StateName::ThematicBreakStart,
+            State::Fn(StateName::FlowAfter),
+            State::Fn(StateName::FlowBeforeParagraph),
+        ),
+        Some(b'[') => tokenizer.attempt(
+            StateName::DefinitionStart,
+            State::Fn(StateName::FlowAfter),
+            State::Fn(StateName::FlowBeforeParagraph),
+        ),
+        // Actual parsing: blank line? Indented code? Indented anything?
+        // Also includes `-` which can be a setext heading underline or a thematic break.
+        None | Some(b'\t' | b'\n' | b' ' | b'-') => before_blank_line(tokenizer),
+        Some(_) => tokenizer.attempt(
+            StateName::ParagraphStart,
+            State::Fn(StateName::FlowAfter),
+            State::Nok,
         ),
     }
+}
+
+pub fn before_blank_line(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        StateName::BlankLineStart,
+        State::Fn(StateName::FlowBlankLineAfter),
+        State::Fn(StateName::FlowBeforeCodeIndented),
+    )
 }
 
 /// Before flow (initial).
@@ -55,17 +96,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// |~~~js
 /// |<div>
 /// ```
-pub fn before(tokenizer: &mut Tokenizer) -> State {
-    // match tokenizer.current {
-    //     None => State::Ok,
-    //     _ => {
+pub fn before_code_indented(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::CodeIndentedStart,
         State::Fn(StateName::FlowAfter),
         State::Fn(StateName::FlowBeforeCodeFenced),
     )
-    //     }
-    // }
 }
 
 pub fn before_code_fenced(tokenizer: &mut Tokenizer) -> State {

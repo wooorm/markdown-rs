@@ -66,7 +66,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
         let event = &tokenizer.events[index];
 
         if event.event_type == EventType::Exit && event.token_type == Token::DefinitionLabelString {
-            // Note: we don‘t care about virtual spaces, so `as_str` is fine.
+            // Note: we don’t care about virtual spaces, so `as_str` is fine.
             let id = normalize_identifier(
                 Slice::from_position(
                     tokenizer.parse_state.bytes,

@@ -214,7 +214,7 @@ pub enum StateName {
     DocumentFlowEnd,
 
     FlowStart,
-    FlowBefore,
+    FlowBeforeCodeIndented,
     FlowBeforeCodeFenced,
     FlowBeforeHtml,
     FlowBeforeHeadingAtx,
@@ -508,15 +508,13 @@ impl StateName {
             StateName::DocumentFlowInside => content::document::flow_inside,
 
             StateName::FlowStart => content::flow::start,
-            StateName::FlowBefore => content::flow::before,
-
+            StateName::FlowBeforeCodeIndented => content::flow::before_code_indented,
             StateName::FlowBeforeCodeFenced => content::flow::before_code_fenced,
             StateName::FlowBeforeHtml => content::flow::before_html,
             StateName::FlowBeforeHeadingAtx => content::flow::before_heading_atx,
             StateName::FlowBeforeHeadingSetext => content::flow::before_heading_setext,
             StateName::FlowBeforeThematicBreak => content::flow::before_thematic_break,
             StateName::FlowBeforeDefinition => content::flow::before_definition,
-
             StateName::FlowAfter => content::flow::after,
             StateName::FlowBlankLineAfter => content::flow::blank_line_after,
             StateName::FlowBeforeParagraph => content::flow::before_paragraph,
