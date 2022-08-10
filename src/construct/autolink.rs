@@ -121,7 +121,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(Token::AutolinkMarker);
             tokenizer.enter(Token::AutolinkProtocol);
-            State::Fn(StateName::AutolinkOpen)
+            State::Next(StateName::AutolinkOpen)
         }
         _ => State::Nok,
     }
@@ -140,7 +140,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphabetic.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::AutolinkSchemeOrEmailAtext)
+            State::Next(StateName::AutolinkSchemeOrEmailAtext)
         }
         _ => email_atext(tokenizer),
     }
@@ -179,7 +179,7 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         Some(b':') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size = 0;
-            State::Fn(StateName::AutolinkUrlInside)
+            State::Next(StateName::AutolinkUrlInside)
         }
         // ASCII alphanumeric and `+`, `-`, and `.`.
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
@@ -187,7 +187,7 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(StateName::AutolinkSchemeInsideOrEmailAtext)
+            State::Next(StateName::AutolinkSchemeInsideOrEmailAtext)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -212,7 +212,7 @@ pub fn url_inside(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\0'..=0x1F | b' ' | b'<' | 0x7F) => State::Nok,
         Some(_) => {
             tokenizer.consume();
-            State::Fn(StateName::AutolinkUrlInside)
+            State::Next(StateName::AutolinkUrlInside)
         }
     }
 }
@@ -227,7 +227,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'@') => {
             tokenizer.consume();
-            State::Fn(StateName::AutolinkEmailAtSignOrDot)
+            State::Next(StateName::AutolinkEmailAtSignOrDot)
         }
         // ASCII atext.
         //
@@ -250,7 +250,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
             b'#'..=b'\'' | b'*' | b'+' | b'-'..=b'9' | b'=' | b'?' | b'A'..=b'Z' | b'^'..=b'~',
         ) => {
             tokenizer.consume();
-            State::Fn(StateName::AutolinkEmailAtext)
+            State::Next(StateName::AutolinkEmailAtext)
         }
         _ => State::Nok,
     }
@@ -281,7 +281,7 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
         Some(b'.') => {
             tokenizer.tokenize_state.size = 0;
             tokenizer.consume();
-            State::Fn(StateName::AutolinkEmailAtSignOrDot)
+            State::Next(StateName::AutolinkEmailAtSignOrDot)
         }
         Some(b'>') => {
             tokenizer.tokenize_state.size = 0;
@@ -310,14 +310,14 @@ pub fn email_value(tokenizer: &mut Tokenizer) -> State {
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
             if tokenizer.tokenize_state.size < AUTOLINK_DOMAIN_SIZE_MAX =>
         {
-            let state_name = if matches!(tokenizer.current, Some(b'-')) {
+            let name = if matches!(tokenizer.current, Some(b'-')) {
                 StateName::AutolinkEmailValue
             } else {
                 StateName::AutolinkEmailLabel
             };
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(state_name)
+            State::Next(name)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;

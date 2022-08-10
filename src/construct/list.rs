@@ -62,7 +62,7 @@ use crate::util::{
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.list {
         tokenizer.enter(Token::ListItem);
-        let state_name = space_or_tab_min_max(
+        let name = space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -71,7 +71,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.attempt(state_name, State::Fn(StateName::ListBefore), State::Nok)
+        tokenizer.attempt(name, State::Next(StateName::ListBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -88,8 +88,8 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         // Unordered.
         Some(b'*' | b'-') => tokenizer.check(
             StateName::ThematicBreakStart,
-            State::Fn(StateName::ListNok),
-            State::Fn(StateName::ListBeforeUnordered),
+            State::Next(StateName::ListNok),
+            State::Next(StateName::ListBeforeUnordered),
         ),
         Some(b'+') => before_unordered(tokenizer),
         // Ordered.
@@ -139,7 +139,7 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
         Some(b'0'..=b'9') if tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Fn(StateName::ListValue)
+            State::Next(StateName::ListValue)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -160,7 +160,7 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemMarker);
     tokenizer.consume();
     tokenizer.exit(Token::ListItemMarker);
-    State::Fn(StateName::ListMarkerAfter)
+    State::Next(StateName::ListMarkerAfter)
 }
 
 /// After a list item marker.
@@ -175,8 +175,8 @@ pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 1;
     tokenizer.check(
         StateName::BlankLineStart,
-        State::Fn(StateName::ListAfter),
-        State::Fn(StateName::ListMarkerAfterFilled),
+        State::Next(StateName::ListAfter),
+        State::Next(StateName::ListMarkerAfterFilled),
     )
 }
 
@@ -192,8 +192,8 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
     tokenizer.attempt(
         StateName::ListWhitespace,
-        State::Fn(StateName::ListAfter),
-        State::Fn(StateName::ListPrefixOther),
+        State::Next(StateName::ListAfter),
+        State::Next(StateName::ListPrefixOther),
     )
 }
 
@@ -204,10 +204,10 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 pub fn whitespace(tokenizer: &mut Tokenizer) -> State {
-    let state_name = space_or_tab_min_max(tokenizer, 1, TAB_SIZE);
+    let name = space_or_tab_min_max(tokenizer, 1, TAB_SIZE);
     tokenizer.attempt(
-        state_name,
-        State::Fn(StateName::ListWhitespaceAfter),
+        name,
+        State::Next(StateName::ListWhitespaceAfter),
         State::Nok,
     )
 }
@@ -238,7 +238,7 @@ pub fn prefix_other(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::SpaceOrTab);
             tokenizer.consume();
             tokenizer.exit(Token::SpaceOrTab);
-            State::Fn(StateName::ListAfter)
+            State::Next(StateName::ListAfter)
         }
         _ => State::Nok,
     }
@@ -295,8 +295,8 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.check(
         StateName::BlankLineStart,
-        State::Fn(StateName::ListContBlank),
-        State::Fn(StateName::ListContFilled),
+        State::Next(StateName::ListContBlank),
+        State::Next(StateName::ListContFilled),
     )
 }
 
@@ -315,9 +315,9 @@ pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
     if container.blank_initial {
         State::Nok
     } else {
-        let state_name = space_or_tab_min_max(tokenizer, 0, size);
+        let name = space_or_tab_min_max(tokenizer, 0, size);
         // Consume, optionally, at most `size`.
-        tokenizer.attempt(state_name, State::Fn(StateName::ListOk), State::Nok)
+        tokenizer.attempt(name, State::Next(StateName::ListOk), State::Nok)
     }
 }
 
@@ -335,8 +335,8 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
     container.blank_initial = false;
 
     // Consume exactly `size`.
-    let state_name = space_or_tab_min_max(tokenizer, size, size);
-    tokenizer.attempt(state_name, State::Fn(StateName::ListOk), State::Nok)
+    let name = space_or_tab_min_max(tokenizer, size, size);
+    tokenizer.attempt(name, State::Next(StateName::ListOk), State::Nok)
 }
 
 /// A state fn to yield [`State::Ok`].

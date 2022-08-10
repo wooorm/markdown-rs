@@ -70,7 +70,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         tokenizer.enter(Token::HtmlText);
         tokenizer.enter(Token::HtmlTextData);
         tokenizer.consume();
-        State::Fn(StateName::HtmlTextOpen)
+        State::Next(StateName::HtmlTextOpen)
     } else {
         State::Nok
     }
@@ -90,20 +90,20 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'!') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextDeclarationOpen)
+            State::Next(StateName::HtmlTextDeclarationOpen)
         }
         Some(b'/') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagCloseStart)
+            State::Next(StateName::HtmlTextTagCloseStart)
         }
         Some(b'?') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextInstruction)
+            State::Next(StateName::HtmlTextInstruction)
         }
         // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpen)
+            State::Next(StateName::HtmlTextTagOpen)
         }
         _ => State::Nok,
     }
@@ -123,16 +123,16 @@ pub fn declaration_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCommentOpenInside)
+            State::Next(StateName::HtmlTextCommentOpenInside)
         }
         // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextDeclaration)
+            State::Next(StateName::HtmlTextDeclaration)
         }
         Some(b'[') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCdataOpenInside)
+            State::Next(StateName::HtmlTextCdataOpenInside)
         }
         _ => State::Nok,
     }
@@ -148,7 +148,7 @@ pub fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCommentStart)
+            State::Next(StateName::HtmlTextCommentStart)
         }
         _ => State::Nok,
     }
@@ -172,7 +172,7 @@ pub fn comment_start(tokenizer: &mut Tokenizer) -> State {
         Some(b'>') => State::Nok,
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCommentStartDash)
+            State::Next(StateName::HtmlTextCommentStartDash)
         }
         _ => comment(tokenizer),
     }
@@ -213,11 +213,11 @@ pub fn comment(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCommentClose)
+            State::Next(StateName::HtmlTextCommentClose)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextComment)
+            State::Next(StateName::HtmlTextComment)
         }
     }
 }
@@ -232,7 +232,7 @@ pub fn comment_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextEnd)
+            State::Next(StateName::HtmlTextEnd)
         }
         _ => comment(tokenizer),
     }
@@ -251,9 +251,9 @@ pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
 
         if tokenizer.tokenize_state.size == HTML_CDATA_PREFIX.len() {
             tokenizer.tokenize_state.size = 0;
-            State::Fn(StateName::HtmlTextCdata)
+            State::Next(StateName::HtmlTextCdata)
         } else {
-            State::Fn(StateName::HtmlTextCdataOpenInside)
+            State::Next(StateName::HtmlTextCdataOpenInside)
         }
     } else {
         State::Nok
@@ -275,11 +275,11 @@ pub fn cdata(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b']') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCdataClose)
+            State::Next(StateName::HtmlTextCdataClose)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCdata)
+            State::Next(StateName::HtmlTextCdata)
         }
     }
 }
@@ -294,7 +294,7 @@ pub fn cdata_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b']') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextCdataEnd)
+            State::Next(StateName::HtmlTextCdataEnd)
         }
         _ => cdata(tokenizer),
     }
@@ -329,7 +329,7 @@ pub fn declaration(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextDeclaration)
+            State::Next(StateName::HtmlTextDeclaration)
         }
     }
 }
@@ -349,11 +349,11 @@ pub fn instruction(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'?') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextInstructionClose)
+            State::Next(StateName::HtmlTextInstructionClose)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextInstruction)
+            State::Next(StateName::HtmlTextInstruction)
         }
     }
 }
@@ -382,7 +382,7 @@ pub fn tag_close_start(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagClose)
+            State::Next(StateName::HtmlTextTagClose)
         }
         _ => State::Nok,
     }
@@ -399,7 +399,7 @@ pub fn tag_close(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphanumerical and `-`.
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagClose)
+            State::Next(StateName::HtmlTextTagClose)
         }
         _ => tag_close_between(tokenizer),
     }
@@ -419,7 +419,7 @@ pub fn tag_close_between(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagCloseBetween)
+            State::Next(StateName::HtmlTextTagCloseBetween)
         }
         _ => end(tokenizer),
     }
@@ -436,7 +436,7 @@ pub fn tag_open(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphanumerical and `-`.
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpen)
+            State::Next(StateName::HtmlTextTagOpen)
         }
         Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => tag_open_between(tokenizer),
         _ => State::Nok,
@@ -457,16 +457,16 @@ pub fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenBetween)
+            State::Next(StateName::HtmlTextTagOpenBetween)
         }
         Some(b'/') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextEnd)
+            State::Next(StateName::HtmlTextEnd)
         }
         // ASCII alphabetical and `:` and `_`.
         Some(b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeName)
+            State::Next(StateName::HtmlTextTagOpenAttributeName)
         }
         _ => end(tokenizer),
     }
@@ -483,7 +483,7 @@ pub fn tag_open_attribute_name(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphabetical and `-`, `.`, `:`, and `_`.
         Some(b'-' | b'.' | b'0'..=b'9' | b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeName)
+            State::Next(StateName::HtmlTextTagOpenAttributeName)
         }
         _ => tag_open_attribute_name_after(tokenizer),
     }
@@ -505,11 +505,11 @@ pub fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeNameAfter)
+            State::Next(StateName::HtmlTextTagOpenAttributeNameAfter)
         }
         Some(b'=') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueBefore)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueBefore)
         }
         _ => tag_open_between(tokenizer),
     }
@@ -532,16 +532,16 @@ pub fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueBefore)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueBefore)
         }
         Some(b'"' | b'\'') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueQuoted)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueQuoted)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueUnquoted)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueUnquoted)
         }
     }
 }
@@ -566,11 +566,11 @@ pub fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
         Some(b'"' | b'\'') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.tokenize_state.marker = 0;
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueQuotedAfter)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueQuotedAfter)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueQuoted)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueQuoted)
         }
     }
 }
@@ -587,7 +587,7 @@ pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
         Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => tag_open_between(tokenizer),
         Some(_) => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlTextTagOpenAttributeValueUnquoted)
+            State::Next(StateName::HtmlTextTagOpenAttributeValueUnquoted)
         }
     }
 }
@@ -641,7 +641,7 @@ pub fn line_ending_before(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(StateName::HtmlTextLineEndingAfter)
+            State::Next(StateName::HtmlTextLineEndingAfter)
         }
         _ => unreachable!("expected eol"),
     }
@@ -658,11 +658,11 @@ pub fn line_ending_before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
-    let state_name = space_or_tab(tokenizer);
+    let name = space_or_tab(tokenizer);
     tokenizer.attempt(
-        state_name,
-        State::Fn(StateName::HtmlTextLineEndingAfterPrefix),
-        State::Fn(StateName::HtmlTextLineEndingAfterPrefix),
+        name,
+        State::Next(StateName::HtmlTextLineEndingAfterPrefix),
+        State::Next(StateName::HtmlTextLineEndingAfterPrefix),
     )
 }
 
@@ -677,8 +677,9 @@ pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn line_ending_after_prefix(tokenizer: &mut Tokenizer) -> State {
-    let state_name = tokenizer.tokenize_state.return_state.take().unwrap();
-    let func = state_name.to_func();
+    let name = tokenizer.tokenize_state.return_state.take().unwrap();
+    // To do: should use `State::Retry` when it exists.
+    let func = name.to_func();
     tokenizer.enter(Token::HtmlTextData);
     func(tokenizer)
 }

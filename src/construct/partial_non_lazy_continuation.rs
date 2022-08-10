@@ -26,7 +26,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(StateName::NonLazyContinuationAfter)
+            State::Next(StateName::NonLazyContinuationAfter)
         }
         _ => State::Nok,
     }

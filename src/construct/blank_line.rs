@@ -46,11 +46,11 @@ use crate::tokenizer::{State, StateName, Tokenizer};
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let state_name = space_or_tab(tokenizer);
+    let name = space_or_tab(tokenizer);
     tokenizer.attempt(
-        state_name,
-        State::Fn(StateName::BlankLineAfter),
-        State::Fn(StateName::BlankLineAfter),
+        name,
+        State::Next(StateName::BlankLineAfter),
+        State::Next(StateName::BlankLineAfter),
     )
 }
 

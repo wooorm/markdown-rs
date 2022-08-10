@@ -735,7 +735,7 @@ impl StateName {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum State {
     /// There is a future state: a [`StateName`][] to pass the next code to.
-    Fn(StateName),
+    Next(StateName),
     /// The state is successful.
     Ok,
     /// The state is not successful.
@@ -1208,32 +1208,32 @@ impl<'a> Tokenizer<'a> {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// Parse with `state_name` and its future states, to check if it result in
+    /// Parse with `name` and its future states, to check if it result in
     /// [`State::Ok`][] or [`State::Nok`][], revert on both cases, and then
     /// call `done` with whether it was successful or not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `state_name` and its
+    /// state that captures all codes and feeds them to `name` and its
     /// future states until it yields `State::Ok` or `State::Nok`.
     /// It then applies the captured state, calls `done`, and feeds all
     /// captured codes to its future states.
-    pub fn check(&mut self, state_name: StateName, ok: State, nok: State) -> State {
-        attempt_impl(self, state_name, ok, nok, AttemptKind::Check)
+    pub fn check(&mut self, name: StateName, ok: State, nok: State) -> State {
+        attempt_impl(self, name, ok, nok, AttemptKind::Check)
     }
 
-    /// Parse with `state_name` and its future states, to check if it results in
+    /// Parse with `name` and its future states, to check if it results in
     /// [`State::Ok`][] or [`State::Nok`][], revert on the case of
     /// `State::Nok`, and then call `done` with whether it was successful or
     /// not.
     ///
     /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `state_name` and its
+    /// state that captures all codes and feeds them to `name` and its
     /// future states until it yields `State::Ok`, at which point it calls
     /// `done` and yields its result.
     /// If instead `State::Nok` was yielded, the captured state is applied,
     /// `done` is called, and all captured codes are fed to its future states.
-    pub fn attempt(&mut self, state_name: StateName, ok: State, nok: State) -> State {
-        attempt_impl(self, state_name, ok, nok, AttemptKind::Attempt)
+    pub fn attempt(&mut self, name: StateName, ok: State, nok: State) -> State {
+        attempt_impl(self, name, ok, nok, AttemptKind::Attempt)
     }
 
     /// Feed a list of `codes` into `start`.
@@ -1241,14 +1241,14 @@ impl<'a> Tokenizer<'a> {
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
     // Note: if needed: accept `vs`?
-    pub fn push(&mut self, min: usize, max: usize, state_name: StateName) -> State {
+    pub fn push(&mut self, min: usize, max: usize, name: StateName) -> State {
         debug_assert!(!self.resolved, "cannot feed after drain");
         // debug_assert!(min >= self.point.index, "cannot move backwards");
         if min > self.point.index {
             self.move_to((min, 0));
         }
 
-        let mut state = State::Fn(state_name);
+        let mut state = State::Next(name);
 
         while self.point.index < max {
             match state {
@@ -1259,9 +1259,9 @@ impl<'a> Tokenizer<'a> {
                         break;
                     }
                 }
-                State::Fn(state_name) => {
+                State::Next(name) => {
                     let action = byte_action(self.parse_state.bytes, &self.point);
-                    state = feed_action_impl(self, &Some(action), state_name);
+                    state = feed_action_impl(self, &Some(action), name);
                 }
             }
         }
@@ -1284,7 +1284,7 @@ impl<'a> Tokenizer<'a> {
                         break;
                     }
                 }
-                State::Fn(state_name) => {
+                State::Next(name) => {
                     // We sometimes move back when flushing, so then we use those codes.
                     state = feed_action_impl(
                         self,
@@ -1293,7 +1293,7 @@ impl<'a> Tokenizer<'a> {
                         } else {
                             Some(byte_action(self.parse_state.bytes, &self.point))
                         },
-                        state_name,
+                        name,
                     );
                 }
             }
@@ -1362,7 +1362,7 @@ fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
 /// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
 fn attempt_impl(
     tokenizer: &mut Tokenizer,
-    state_name: StateName,
+    name: StateName,
     ok: State,
     nok: State,
     kind: AttemptKind,
@@ -1383,7 +1383,7 @@ fn attempt_impl(
         state,
     });
 
-    call_impl(tokenizer, state_name)
+    call_impl(tokenizer, name)
 }
 
 fn attempt_done_impl(tokenizer: &mut Tokenizer, attempt: Attempt, state: State) -> State {
@@ -1404,11 +1404,11 @@ fn attempt_done_impl(tokenizer: &mut Tokenizer, attempt: Attempt, state: State) 
 fn feed_action_impl(
     tokenizer: &mut Tokenizer,
     action: &Option<ByteAction>,
-    state_name: StateName,
+    name: StateName,
 ) -> State {
     if let Some(ByteAction::Ignore) = action {
         tokenizer.move_one();
-        State::Fn(state_name)
+        State::Next(name)
     } else {
         let byte = if let Some(ByteAction::Insert(byte) | ByteAction::Normal(byte)) = action {
             Some(*byte)
@@ -1420,16 +1420,16 @@ fn feed_action_impl(
             "main: flushing: `{:?}` ({:?}) to {:?}",
             byte,
             tokenizer.point,
-            state_name
+            name
         );
         tokenizer.expect(byte);
-        call_impl(tokenizer, state_name)
+        call_impl(tokenizer, name)
     }
 }
 
 #[allow(clippy::too_many_lines)]
-fn call_impl(tokenizer: &mut Tokenizer, state_name: StateName) -> State {
-    let func = state_name.to_func();
+fn call_impl(tokenizer: &mut Tokenizer, name: StateName) -> State {
+    let func = name.to_func();
 
     func(tokenizer)
 }

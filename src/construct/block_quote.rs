@@ -46,7 +46,7 @@ use crate::tokenizer::{State, StateName, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.block_quote {
-        let state_name = space_or_tab_min_max(
+        let name = space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -55,11 +55,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.attempt(
-            state_name,
-            State::Fn(StateName::BlockQuoteBefore),
-            State::Nok,
-        )
+        tokenizer.attempt(name, State::Next(StateName::BlockQuoteBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -89,7 +85,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
-    let state_name = space_or_tab_min_max(
+    let name = space_or_tab_min_max(
         tokenizer,
         0,
         if tokenizer.parse_state.constructs.code_indented {
@@ -99,8 +95,8 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
         },
     );
     tokenizer.attempt(
-        state_name,
-        State::Fn(StateName::BlockQuoteContBefore),
+        name,
+        State::Next(StateName::BlockQuoteContBefore),
         State::Nok,
     )
 }
@@ -119,7 +115,7 @@ pub fn cont_before(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::BlockQuoteMarker);
             tokenizer.consume();
             tokenizer.exit(Token::BlockQuoteMarker);
-            State::Fn(StateName::BlockQuoteContAfter)
+            State::Next(StateName::BlockQuoteContAfter)
         }
         _ => State::Nok,
     }

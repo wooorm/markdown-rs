@@ -105,11 +105,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         tokenizer.point.clone(),
         tokenizer.parse_state,
     )));
-    tokenizer.tokenize_state.document_child_state = Some(State::Fn(StateName::FlowStart));
+    tokenizer.tokenize_state.document_child_state = Some(State::Next(StateName::FlowStart));
     tokenizer.attempt(
         StateName::BomStart,
-        State::Fn(StateName::DocumentLineStart),
-        State::Fn(StateName::DocumentLineStart),
+        State::Next(StateName::DocumentLineStart),
+        State::Next(StateName::DocumentLineStart),
     )
 }
 
@@ -144,16 +144,16 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
             .tokenize_state
             .document_container_stack
             .remove(tokenizer.tokenize_state.document_continued);
-        let state_name = match container.kind {
+        let name = match container.kind {
             Container::BlockQuote => StateName::BlockQuoteContStart,
             Container::ListItem => StateName::ListContStart,
         };
 
         tokenizer.container = Some(container);
         tokenizer.attempt(
-            state_name,
-            State::Fn(StateName::DocumentContainerExistingAfter),
-            State::Fn(StateName::DocumentContainerExistingMissing),
+            name,
+            State::Next(StateName::DocumentContainerExistingAfter),
+            State::Next(StateName::DocumentContainerExistingMissing),
         )
     }
     // Otherwise, check new containers.
@@ -239,8 +239,8 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
 
     tokenizer.attempt(
         StateName::BlockQuoteStart,
-        State::Fn(StateName::DocumentContainerNewAfter),
-        State::Fn(StateName::DocumentContainerNewBeforeNotBlockQuote),
+        State::Next(StateName::DocumentContainerNewAfter),
+        State::Next(StateName::DocumentContainerNewBeforeNotBlockQuote),
     )
 }
 
@@ -255,8 +255,8 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
 
     tokenizer.attempt(
         StateName::ListStart,
-        State::Fn(StateName::DocumentContainerNewAfter),
-        State::Fn(StateName::DocumentContainersAfter),
+        State::Next(StateName::DocumentContainerNewAfter),
+        State::Next(StateName::DocumentContainersAfter),
     )
 }
 
@@ -340,11 +340,11 @@ pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
         Some(b'\n') => {
             tokenizer.consume();
             tokenizer.exit(Token::Data);
-            State::Fn(StateName::DocumentFlowEnd)
+            State::Next(StateName::DocumentFlowEnd)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(StateName::DocumentFlowInside)
+            State::Next(StateName::DocumentFlowInside)
         }
     }
 }
@@ -371,10 +371,10 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
             .tokenize_state
             .document_child_state
             .take()
-            .unwrap_or(State::Fn(StateName::FlowStart));
+            .unwrap_or(State::Next(StateName::FlowStart));
 
-        let state_name = match state {
-            State::Fn(state_name) => state_name,
+        let name = match state {
+            State::Next(name) => name,
             _ => unreachable!("expected state name"),
         };
 
@@ -382,10 +382,10 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
             // To do: handle VS?
             // if position.start.vs > 0 {
             // }
-            let state = child.push(position.start.index, position.end.index, state_name);
+            let state = child.push(position.start.index, position.end.index, name);
 
             interrupt = child.interrupt;
-            paragraph = matches!(state, State::Fn(StateName::ParagraphInside))
+            paragraph = matches!(state, State::Next(StateName::ParagraphInside))
                 || (!child.events.is_empty()
                     && child.events[skip::opt_back(
                         &child.events,
@@ -439,7 +439,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
                 .tokenize_state
                 .document_child_state
                 .take()
-                .unwrap_or(State::Fn(StateName::FlowStart));
+                .unwrap_or(State::Next(StateName::FlowStart));
 
             child.flush(state, false);
         }

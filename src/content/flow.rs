@@ -36,41 +36,41 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`' | b'~') => tokenizer.attempt(
             StateName::CodeFencedStart,
-            State::Fn(StateName::FlowAfter),
-            State::Fn(StateName::FlowBeforeParagraph),
+            State::Next(StateName::FlowAfter),
+            State::Next(StateName::FlowBeforeParagraph),
         ),
         Some(b'<') => tokenizer.attempt(
             StateName::HtmlFlowStart,
-            State::Fn(StateName::FlowAfter),
-            State::Fn(StateName::FlowBeforeParagraph),
+            State::Next(StateName::FlowAfter),
+            State::Next(StateName::FlowBeforeParagraph),
         ),
         Some(b'#') => tokenizer.attempt(
             StateName::HeadingAtxStart,
-            State::Fn(StateName::FlowAfter),
-            State::Fn(StateName::FlowBeforeParagraph),
+            State::Next(StateName::FlowAfter),
+            State::Next(StateName::FlowBeforeParagraph),
         ),
         // Note: `-` is also used in thematic breaks, so it’s not included here.
         Some(b'=') => tokenizer.attempt(
             StateName::HeadingSetextStart,
-            State::Fn(StateName::FlowAfter),
-            State::Fn(StateName::FlowBeforeParagraph),
+            State::Next(StateName::FlowAfter),
+            State::Next(StateName::FlowBeforeParagraph),
         ),
         Some(b'*' | b'_') => tokenizer.attempt(
             StateName::ThematicBreakStart,
-            State::Fn(StateName::FlowAfter),
-            State::Fn(StateName::FlowBeforeParagraph),
+            State::Next(StateName::FlowAfter),
+            State::Next(StateName::FlowBeforeParagraph),
         ),
         Some(b'[') => tokenizer.attempt(
             StateName::DefinitionStart,
-            State::Fn(StateName::FlowAfter),
-            State::Fn(StateName::FlowBeforeParagraph),
+            State::Next(StateName::FlowAfter),
+            State::Next(StateName::FlowBeforeParagraph),
         ),
         // Actual parsing: blank line? Indented code? Indented anything?
         // Also includes `-` which can be a setext heading underline or a thematic break.
         None | Some(b'\t' | b'\n' | b' ' | b'-') => before_blank_line(tokenizer),
         Some(_) => tokenizer.attempt(
             StateName::ParagraphStart,
-            State::Fn(StateName::FlowAfter),
+            State::Next(StateName::FlowAfter),
             State::Nok,
         ),
     }
@@ -79,8 +79,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before_blank_line(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::BlankLineStart,
-        State::Fn(StateName::FlowBlankLineAfter),
-        State::Fn(StateName::FlowBeforeCodeIndented),
+        State::Next(StateName::FlowBlankLineAfter),
+        State::Next(StateName::FlowBeforeCodeIndented),
     )
 }
 
@@ -99,56 +99,56 @@ pub fn before_blank_line(tokenizer: &mut Tokenizer) -> State {
 pub fn before_code_indented(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::CodeIndentedStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeCodeFenced),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeCodeFenced),
     )
 }
 
 pub fn before_code_fenced(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::CodeFencedStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeHtml),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeHtml),
     )
 }
 
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::HtmlFlowStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeHeadingAtx),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeHeadingAtx),
     )
 }
 
 pub fn before_heading_atx(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::HeadingAtxStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeHeadingSetext),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeHeadingSetext),
     )
 }
 
 pub fn before_heading_setext(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::HeadingSetextStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeThematicBreak),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeThematicBreak),
     )
 }
 
 pub fn before_thematic_break(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::ThematicBreakStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeDefinition),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeDefinition),
     )
 }
 
 pub fn before_definition(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::DefinitionStart,
-        State::Fn(StateName::FlowAfter),
-        State::Fn(StateName::FlowBeforeParagraph),
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeParagraph),
     )
 }
 
@@ -168,7 +168,7 @@ pub fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::BlankLineEnding);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            State::Fn(StateName::FlowStart)
+            State::Next(StateName::FlowStart)
         }
         _ => unreachable!("expected eol/eof"),
     }
@@ -190,7 +190,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(StateName::FlowStart)
+            State::Next(StateName::FlowStart)
         }
         _ => unreachable!("expected eol/eof"),
     }
@@ -204,7 +204,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 pub fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::ParagraphStart,
-        State::Fn(StateName::FlowAfter),
+        State::Next(StateName::FlowAfter),
         State::Nok,
     )
 }

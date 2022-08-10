@@ -136,7 +136,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'_') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Fn(StateName::AttentionInside)
+            State::Next(StateName::AttentionInside)
         }
         _ => {
             tokenizer.exit(Token::AttentionSequence);

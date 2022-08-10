@@ -45,7 +45,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             State::Ok
         } else {
-            State::Fn(StateName::BomInside)
+            State::Next(StateName::BomInside)
         }
     } else {
         tokenizer.tokenize_state.size = 0;

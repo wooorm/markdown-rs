@@ -21,7 +21,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
             tokenizer.enter(Token::Data);
             tokenizer.consume();
-            State::Fn(StateName::DataInside)
+            State::Next(StateName::DataInside)
         }
         _ => at_break(tokenizer),
     }
@@ -40,7 +40,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(StateName::DataAtBreak)
+            State::Next(StateName::DataAtBreak)
         }
         Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
@@ -71,7 +71,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         at_break(tokenizer)
     } else {
         tokenizer.consume();
-        State::Fn(StateName::DataInside)
+        State::Next(StateName::DataInside)
     }
 }
 

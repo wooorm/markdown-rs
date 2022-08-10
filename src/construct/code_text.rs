@@ -121,7 +121,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'`') = tokenizer.current {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Fn(StateName::CodeTextSequenceOpen)
+        State::Next(StateName::CodeTextSequenceOpen)
     } else {
         tokenizer.exit(Token::CodeTextSequence);
         between(tokenizer)
@@ -144,7 +144,7 @@ pub fn between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(StateName::CodeTextBetween)
+            State::Next(StateName::CodeTextBetween)
         }
         Some(b'`') => {
             tokenizer.enter(Token::CodeTextSequence);
@@ -171,7 +171,7 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::CodeTextData)
+            State::Next(StateName::CodeTextData)
         }
     }
 }
@@ -187,7 +187,7 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
         Some(b'`') => {
             tokenizer.tokenize_state.size_other += 1;
             tokenizer.consume();
-            State::Fn(StateName::CodeTextSequenceClose)
+            State::Next(StateName::CodeTextSequenceClose)
         }
         _ => {
             if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_other {

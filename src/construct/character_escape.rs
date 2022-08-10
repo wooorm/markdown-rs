@@ -49,7 +49,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeMarker);
-            State::Fn(StateName::CharacterEscapeInside)
+            State::Next(StateName::CharacterEscapeInside)
         }
         _ => State::Nok,
     }

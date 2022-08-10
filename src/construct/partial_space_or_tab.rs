@@ -133,7 +133,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.consume();
             tokenizer.tokenize_state.space_or_tab_size += 1;
-            State::Fn(StateName::SpaceOrTabInside)
+            State::Next(StateName::SpaceOrTabInside)
         }
         _ => {
             tokenizer.exit(tokenizer.tokenize_state.space_or_tab_token.clone());
@@ -166,7 +166,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 }
 
 pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
-    let state_name = space_or_tab_with_options(
+    let name = space_or_tab_with_options(
         tokenizer,
         Options {
             kind: Token::SpaceOrTab,
@@ -181,9 +181,9 @@ pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
     );
 
     tokenizer.attempt(
-        state_name,
-        State::Fn(StateName::SpaceOrTabEolAfterFirst),
-        State::Fn(StateName::SpaceOrTabEolAtEol),
+        name,
+        State::Next(StateName::SpaceOrTabEolAfterFirst),
+        State::Next(StateName::SpaceOrTabEolAtEol),
     )
 }
 
@@ -231,7 +231,7 @@ pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
 
         tokenizer.consume();
         tokenizer.exit(Token::LineEnding);
-        State::Fn(StateName::SpaceOrTabEolAfterEol)
+        State::Next(StateName::SpaceOrTabEolAfterEol)
     } else {
         let ok = tokenizer.tokenize_state.space_or_tab_eol_ok;
         tokenizer.tokenize_state.space_or_tab_eol_content_type = None;
@@ -254,7 +254,7 @@ pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
 /// ```
 #[allow(clippy::needless_pass_by_value)]
 pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
-    let state_name = space_or_tab_with_options(
+    let name = space_or_tab_with_options(
         tokenizer,
         Options {
             kind: Token::SpaceOrTab,
@@ -268,9 +268,9 @@ pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
         },
     );
     tokenizer.attempt(
-        state_name,
-        State::Fn(StateName::SpaceOrTabEolAfterMore),
-        State::Fn(StateName::SpaceOrTabEolAfterMore),
+        name,
+        State::Next(StateName::SpaceOrTabEolAfterMore),
+        State::Next(StateName::SpaceOrTabEolAfterMore),
     )
 }
 

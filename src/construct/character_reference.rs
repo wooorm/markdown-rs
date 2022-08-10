@@ -86,7 +86,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::CharacterReferenceMarker);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterReferenceMarker);
-            State::Fn(StateName::CharacterReferenceOpen)
+            State::Next(StateName::CharacterReferenceOpen)
         }
         _ => State::Nok,
     }
@@ -109,7 +109,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
         tokenizer.consume();
         tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        State::Fn(StateName::CharacterReferenceNumeric)
+        State::Next(StateName::CharacterReferenceNumeric)
     } else {
         tokenizer.tokenize_state.marker = b'&';
         tokenizer.enter(Token::CharacterReferenceValue);
@@ -134,7 +134,7 @@ pub fn numeric(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
         tokenizer.enter(Token::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'x';
-        State::Fn(StateName::CharacterReferenceValue)
+        State::Next(StateName::CharacterReferenceValue)
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'#';
@@ -202,7 +202,7 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
         if tokenizer.tokenize_state.size < max && test(&byte) {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            return State::Fn(StateName::CharacterReferenceValue);
+            return State::Next(StateName::CharacterReferenceValue);
         }
     }
 

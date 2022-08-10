@@ -78,7 +78,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
-                let mut state = State::Fn(if link.content_type == ContentType::String {
+                let mut state = State::Next(if link.content_type == ContentType::String {
                     StateName::StringStart
                 } else {
                     StateName::TextStart
@@ -98,7 +98,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                         enter.point.index,
                         events[index + 1].point.index,
                         match state {
-                            State::Fn(func) => func,
+                            State::Next(func) => func,
                             _ => unreachable!("cannot be ok/nok"),
                         },
                     );

@@ -132,7 +132,7 @@ const COMPLETE: u8 = 7;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.html_flow {
         tokenizer.enter(Token::HtmlFlow);
-        let state_name = space_or_tab_with_options(
+        let name = space_or_tab_with_options(
             tokenizer,
             SpaceOrTabOptions {
                 kind: Token::HtmlFlowData,
@@ -147,7 +147,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             },
         );
 
-        tokenizer.attempt(state_name, State::Fn(StateName::HtmlFlowBefore), State::Nok)
+        tokenizer.attempt(name, State::Next(StateName::HtmlFlowBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -163,7 +163,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     if Some(b'<') == tokenizer.current {
         tokenizer.enter(Token::HtmlFlowData);
         tokenizer.consume();
-        State::Fn(StateName::HtmlFlowOpen)
+        State::Next(StateName::HtmlFlowOpen)
     } else {
         State::Nok
     }
@@ -183,13 +183,13 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'!') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowDeclarationOpen)
+            State::Next(StateName::HtmlFlowDeclarationOpen)
         }
         Some(b'/') => {
             tokenizer.consume();
             tokenizer.tokenize_state.seen = true;
             tokenizer.tokenize_state.start = tokenizer.point.index;
-            State::Fn(StateName::HtmlFlowTagCloseStart)
+            State::Next(StateName::HtmlFlowTagCloseStart)
         }
         Some(b'?') => {
             tokenizer.tokenize_state.marker = INSTRUCTION;
@@ -198,7 +198,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.concrete = true;
             // While we’re in an instruction instead of a declaration, we’re on a `?`
             // right now, so we do need to search for `>`, similar to declarations.
-            State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+            State::Next(StateName::HtmlFlowContinuationDeclarationInside)
         }
         // ASCII alphabetical.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
@@ -224,19 +224,19 @@ pub fn declaration_open(tokenizer: &mut Tokenizer) -> State {
         Some(b'-') => {
             tokenizer.consume();
             tokenizer.tokenize_state.marker = COMMENT;
-            State::Fn(StateName::HtmlFlowCommentOpenInside)
+            State::Next(StateName::HtmlFlowCommentOpenInside)
         }
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
             tokenizer.tokenize_state.marker = DECLARATION;
             // Do not form containers.
             tokenizer.concrete = true;
-            State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+            State::Next(StateName::HtmlFlowContinuationDeclarationInside)
         }
         Some(b'[') => {
             tokenizer.consume();
             tokenizer.tokenize_state.marker = CDATA;
-            State::Fn(StateName::HtmlFlowCdataOpenInside)
+            State::Next(StateName::HtmlFlowCdataOpenInside)
         }
         _ => State::Nok,
     }
@@ -253,7 +253,7 @@ pub fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
         tokenizer.consume();
         // Do not form containers.
         tokenizer.concrete = true;
-        State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+        State::Next(StateName::HtmlFlowContinuationDeclarationInside)
     } else {
         tokenizer.tokenize_state.marker = 0;
         State::Nok
@@ -275,9 +275,9 @@ pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             // Do not form containers.
             tokenizer.concrete = true;
-            State::Fn(StateName::HtmlFlowContinuation)
+            State::Next(StateName::HtmlFlowContinuation)
         } else {
-            State::Fn(StateName::HtmlFlowCdataOpenInside)
+            State::Next(StateName::HtmlFlowCdataOpenInside)
         }
     } else {
         tokenizer.tokenize_state.marker = 0;
@@ -295,7 +295,7 @@ pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
 pub fn tag_close_start(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'A'..=b'Z' | b'a'..=b'z') = tokenizer.current {
         tokenizer.consume();
-        State::Fn(StateName::HtmlFlowTagName)
+        State::Next(StateName::HtmlFlowTagName)
     } else {
         tokenizer.tokenize_state.seen = false;
         tokenizer.tokenize_state.start = 0;
@@ -340,7 +340,7 @@ pub fn tag_name(tokenizer: &mut Tokenizer) -> State {
 
                 if slash {
                     tokenizer.consume();
-                    State::Fn(StateName::HtmlFlowBasicSelfClosing)
+                    State::Next(StateName::HtmlFlowBasicSelfClosing)
                 } else {
                     // Do not form containers.
                     tokenizer.concrete = true;
@@ -363,7 +363,7 @@ pub fn tag_name(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphanumerical and `-`.
         Some(b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowTagName)
+            State::Next(StateName::HtmlFlowTagName)
         }
         Some(_) => {
             tokenizer.tokenize_state.seen = false;
@@ -383,7 +383,7 @@ pub fn basic_self_closing(tokenizer: &mut Tokenizer) -> State {
         tokenizer.consume();
         // Do not form containers.
         tokenizer.concrete = true;
-        State::Fn(StateName::HtmlFlowContinuation)
+        State::Next(StateName::HtmlFlowContinuation)
     } else {
         tokenizer.tokenize_state.marker = 0;
         State::Nok
@@ -400,7 +400,7 @@ pub fn complete_closing_tag_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteClosingTagAfter)
+            State::Next(StateName::HtmlFlowCompleteClosingTagAfter)
         }
         _ => complete_end(tokenizer),
     }
@@ -429,16 +429,16 @@ pub fn complete_attribute_name_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeNameBefore)
+            State::Next(StateName::HtmlFlowCompleteAttributeNameBefore)
         }
         Some(b'/') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteEnd)
+            State::Next(StateName::HtmlFlowCompleteEnd)
         }
         // ASCII alphanumerical and `:` and `_`.
         Some(b'0'..=b'9' | b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeName)
+            State::Next(StateName::HtmlFlowCompleteAttributeName)
         }
         _ => complete_end(tokenizer),
     }
@@ -459,7 +459,7 @@ pub fn complete_attribute_name(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphanumerical and `-`, `.`, `:`, and `_`.
         Some(b'-' | b'.' | b'0'..=b'9' | b':' | b'A'..=b'Z' | b'_' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeName)
+            State::Next(StateName::HtmlFlowCompleteAttributeName)
         }
         _ => complete_attribute_name_after(tokenizer),
     }
@@ -478,11 +478,11 @@ pub fn complete_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeNameAfter)
+            State::Next(StateName::HtmlFlowCompleteAttributeNameAfter)
         }
         Some(b'=') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeValueBefore)
+            State::Next(StateName::HtmlFlowCompleteAttributeValueBefore)
         }
         _ => complete_attribute_name_before(tokenizer),
     }
@@ -505,12 +505,12 @@ pub fn complete_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeValueBefore)
+            State::Next(StateName::HtmlFlowCompleteAttributeValueBefore)
         }
         Some(b'"' | b'\'') => {
             tokenizer.tokenize_state.marker_other = tokenizer.current.unwrap();
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeValueQuoted)
+            State::Next(StateName::HtmlFlowCompleteAttributeValueQuoted)
         }
         _ => complete_attribute_value_unquoted(tokenizer),
     }
@@ -536,11 +536,11 @@ pub fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.tokenize_state.marker_other = 0;
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeValueQuotedAfter)
+            State::Next(StateName::HtmlFlowCompleteAttributeValueQuotedAfter)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeValueQuoted)
+            State::Next(StateName::HtmlFlowCompleteAttributeValueQuoted)
         }
     }
 }
@@ -558,7 +558,7 @@ pub fn complete_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAttributeValueUnquoted)
+            State::Next(StateName::HtmlFlowCompleteAttributeValueUnquoted)
         }
     }
 }
@@ -588,7 +588,7 @@ pub fn complete_attribute_value_quoted_after(tokenizer: &mut Tokenizer) -> State
 pub fn complete_end(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'>') = tokenizer.current {
         tokenizer.consume();
-        State::Fn(StateName::HtmlFlowCompleteAfter)
+        State::Next(StateName::HtmlFlowCompleteAfter)
     } else {
         tokenizer.tokenize_state.marker = 0;
         State::Nok
@@ -610,7 +610,7 @@ pub fn complete_after(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowCompleteAfter)
+            State::Next(StateName::HtmlFlowCompleteAfter)
         }
         Some(_) => {
             tokenizer.tokenize_state.marker = 0;
@@ -634,8 +634,8 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::HtmlFlowData);
             tokenizer.check(
                 StateName::HtmlFlowBlankLineBefore,
-                State::Fn(StateName::HtmlFlowContinuationAfter),
-                State::Fn(StateName::HtmlFlowContinuationStart),
+                State::Next(StateName::HtmlFlowContinuationAfter),
+                State::Next(StateName::HtmlFlowContinuationStart),
             )
         }
         // Note: important that this is after the basic/complete case.
@@ -645,27 +645,27 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'-') if tokenizer.tokenize_state.marker == COMMENT => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationCommentInside)
+            State::Next(StateName::HtmlFlowContinuationCommentInside)
         }
         Some(b'<') if tokenizer.tokenize_state.marker == RAW => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationRawTagOpen)
+            State::Next(StateName::HtmlFlowContinuationRawTagOpen)
         }
         Some(b'>') if tokenizer.tokenize_state.marker == DECLARATION => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationClose)
+            State::Next(StateName::HtmlFlowContinuationClose)
         }
         Some(b'?') if tokenizer.tokenize_state.marker == INSTRUCTION => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+            State::Next(StateName::HtmlFlowContinuationDeclarationInside)
         }
         Some(b']') if tokenizer.tokenize_state.marker == CDATA => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationCdataInside)
+            State::Next(StateName::HtmlFlowContinuationCdataInside)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuation)
+            State::Next(StateName::HtmlFlowContinuation)
         }
     }
 }
@@ -680,8 +680,8 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
 pub fn continuation_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.check(
         StateName::NonLazyContinuationStart,
-        State::Fn(StateName::HtmlFlowContinuationStartNonLazy),
-        State::Fn(StateName::HtmlFlowContinuationAfter),
+        State::Next(StateName::HtmlFlowContinuationStartNonLazy),
+        State::Next(StateName::HtmlFlowContinuationAfter),
     )
 }
 
@@ -698,7 +698,7 @@ pub fn continuation_start_non_lazy(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Fn(StateName::HtmlFlowContinuationBefore)
+            State::Next(StateName::HtmlFlowContinuationBefore)
         }
         _ => unreachable!("expected eol"),
     }
@@ -731,7 +731,7 @@ pub fn continuation_comment_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+            State::Next(StateName::HtmlFlowContinuationDeclarationInside)
         }
         _ => continuation(tokenizer),
     }
@@ -748,7 +748,7 @@ pub fn continuation_raw_tag_open(tokenizer: &mut Tokenizer) -> State {
         Some(b'/') => {
             tokenizer.consume();
             tokenizer.tokenize_state.start = tokenizer.point.index;
-            State::Fn(StateName::HtmlFlowContinuationRawEndTag)
+            State::Next(StateName::HtmlFlowContinuationRawEndTag)
         }
         _ => continuation(tokenizer),
     }
@@ -775,7 +775,7 @@ pub fn continuation_raw_end_tag(tokenizer: &mut Tokenizer) -> State {
 
             if HTML_RAW_NAMES.contains(&name.as_str()) {
                 tokenizer.consume();
-                State::Fn(StateName::HtmlFlowContinuationClose)
+                State::Next(StateName::HtmlFlowContinuationClose)
             } else {
                 continuation(tokenizer)
             }
@@ -784,7 +784,7 @@ pub fn continuation_raw_end_tag(tokenizer: &mut Tokenizer) -> State {
             if tokenizer.point.index - tokenizer.tokenize_state.start < HTML_RAW_SIZE_MAX =>
         {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationRawEndTag)
+            State::Next(StateName::HtmlFlowContinuationRawEndTag)
         }
         _ => {
             tokenizer.tokenize_state.start = 0;
@@ -803,7 +803,7 @@ pub fn continuation_cdata_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b']') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+            State::Next(StateName::HtmlFlowContinuationDeclarationInside)
         }
         _ => continuation(tokenizer),
     }
@@ -827,11 +827,11 @@ pub fn continuation_declaration_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationClose)
+            State::Next(StateName::HtmlFlowContinuationClose)
         }
         Some(b'-') if tokenizer.tokenize_state.marker == COMMENT => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationDeclarationInside)
+            State::Next(StateName::HtmlFlowContinuationDeclarationInside)
         }
         _ => continuation(tokenizer),
     }
@@ -851,7 +851,7 @@ pub fn continuation_close(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::HtmlFlowContinuationClose)
+            State::Next(StateName::HtmlFlowContinuationClose)
         }
     }
 }
@@ -883,5 +883,5 @@ pub fn blank_line_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::LineEnding);
     tokenizer.consume();
     tokenizer.exit(Token::LineEnding);
-    State::Fn(StateName::BlankLineStart)
+    State::Next(StateName::BlankLineStart)
 }

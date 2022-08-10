@@ -83,7 +83,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             .token_type
                 == Token::Paragraph)
     {
-        let state_name = space_or_tab_min_max(
+        let name = space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -94,8 +94,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         );
 
         tokenizer.attempt(
-            state_name,
-            State::Fn(StateName::HeadingSetextBefore),
+            name,
+            State::Next(StateName::HeadingSetextBefore),
             State::Nok,
         )
     } else {
@@ -132,16 +132,16 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Fn(StateName::HeadingSetextInside)
+            State::Next(StateName::HeadingSetextInside)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
             tokenizer.exit(Token::HeadingSetextUnderline);
-            let state_name = space_or_tab(tokenizer);
+            let name = space_or_tab(tokenizer);
             tokenizer.attempt(
-                state_name,
-                State::Fn(StateName::HeadingSetextAfter),
-                State::Fn(StateName::HeadingSetextAfter),
+                name,
+                State::Next(StateName::HeadingSetextAfter),
+                State::Next(StateName::HeadingSetextAfter),
             )
         }
     }

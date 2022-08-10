@@ -50,7 +50,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
-            State::Fn(StateName::TitleBegin)
+            State::Next(StateName::TitleBegin)
         }
         _ => State::Nok,
     }
@@ -98,7 +98,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             State::Nok
         }
         Some(b'\n') => {
-            let state_name = space_or_tab_eol_with_options(
+            let name = space_or_tab_eol_with_options(
                 tokenizer,
                 EolOptions {
                     content_type: Some(ContentType::String),
@@ -107,9 +107,9 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             );
 
             tokenizer.attempt(
-                state_name,
-                State::Fn(StateName::TitleAfterEol),
-                State::Fn(StateName::TitleAtBlankLine),
+                name,
+                State::Next(StateName::TitleAfterEol),
+                State::Next(StateName::TitleAtBlankLine),
             )
         }
         Some(b'"' | b'\'' | b')')
@@ -166,7 +166,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         }
         Some(byte) => {
             tokenizer.consume();
-            State::Fn(if matches!(byte, b'\\') {
+            State::Next(if matches!(byte, b'\\') {
                 StateName::TitleEscape
             } else {
                 StateName::TitleInside
@@ -185,7 +185,7 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'"' | b'\'' | b')') => {
             tokenizer.consume();
-            State::Fn(StateName::TitleInside)
+            State::Next(StateName::TitleInside)
         }
         _ => inside(tokenizer),
     }

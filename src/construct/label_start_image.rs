@@ -45,7 +45,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume();
             tokenizer.exit(Token::LabelImageMarker);
-            State::Fn(StateName::LabelStartImageOpen)
+            State::Next(StateName::LabelStartImageOpen)
         }
         _ => State::Nok,
     }

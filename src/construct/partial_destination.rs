@@ -90,7 +90,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Fn(StateName::DestinationEnclosedBefore)
+            State::Next(StateName::DestinationEnclosedBefore)
         }
         // ASCII control, space, closing paren, but *not* `\0`.
         None | Some(0x01..=0x1F | b' ' | b')' | 0x7F) => State::Nok,
@@ -141,11 +141,11 @@ pub fn enclosed(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Fn(StateName::DestinationEnclosedEscape)
+            State::Next(StateName::DestinationEnclosedEscape)
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::DestinationEnclosed)
+            State::Next(StateName::DestinationEnclosed)
         }
     }
 }
@@ -160,7 +160,7 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'<' | b'>' | b'\\') => {
             tokenizer.consume();
-            State::Fn(StateName::DestinationEnclosed)
+            State::Next(StateName::DestinationEnclosed)
         }
         _ => enclosed(tokenizer),
     }
@@ -185,7 +185,7 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_other => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Fn(StateName::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
         // ASCII control (but *not* `\0`) and space and `(`.
         None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => {
@@ -195,15 +195,15 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b')') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size -= 1;
-            State::Fn(StateName::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Fn(StateName::DestinationRawEscape)
+            State::Next(StateName::DestinationRawEscape)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Fn(StateName::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
     }
 }
@@ -218,7 +218,7 @@ pub fn raw_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'(' | b')' | b'\\') => {
             tokenizer.consume();
-            State::Fn(StateName::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
         _ => raw(tokenizer),
     }

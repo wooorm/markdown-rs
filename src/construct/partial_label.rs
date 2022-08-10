@@ -78,7 +78,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            State::Fn(StateName::LabelAtBreak)
+            State::Next(StateName::LabelAtBreak)
         }
         _ => State::Nok,
     }
@@ -102,7 +102,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     } else {
         match tokenizer.current {
             Some(b'\n') => {
-                let state_name = space_or_tab_eol_with_options(
+                let name = space_or_tab_eol_with_options(
                     tokenizer,
                     EolOptions {
                         content_type: Some(ContentType::String),
@@ -110,9 +110,9 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                     },
                 );
                 tokenizer.attempt(
-                    state_name,
-                    State::Fn(StateName::LabelEolAfter),
-                    State::Fn(StateName::LabelAtBlankLine),
+                    name,
+                    State::Next(StateName::LabelEolAfter),
+                    State::Next(StateName::LabelAtBlankLine),
                 )
             }
             Some(b']') => {
@@ -177,7 +177,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
                 if !tokenizer.tokenize_state.seen && !matches!(byte, b'\t' | b' ') {
                     tokenizer.tokenize_state.seen = true;
                 }
-                State::Fn(if matches!(byte, b'\\') {
+                State::Next(if matches!(byte, b'\\') {
                     StateName::LabelEscape
                 } else {
                     StateName::LabelInside
@@ -198,7 +198,7 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
         Some(b'[' | b'\\' | b']') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Fn(StateName::LabelInside)
+            State::Next(StateName::LabelInside)
         }
         _ => inside(tokenizer),
     }

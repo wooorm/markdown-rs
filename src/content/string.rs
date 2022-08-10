@@ -30,13 +30,13 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         None => State::Ok,
         Some(b'&') => tokenizer.attempt(
             StateName::CharacterReferenceStart,
-            State::Fn(StateName::StringBefore),
-            State::Fn(StateName::StringBeforeData),
+            State::Next(StateName::StringBefore),
+            State::Next(StateName::StringBeforeData),
         ),
         Some(b'\\') => tokenizer.attempt(
             StateName::CharacterEscapeStart,
-            State::Fn(StateName::StringBefore),
-            State::Fn(StateName::StringBeforeData),
+            State::Next(StateName::StringBefore),
+            State::Next(StateName::StringBeforeData),
         ),
         _ => before_data(tokenizer),
     }
@@ -46,7 +46,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::DataStart,
-        State::Fn(StateName::StringBefore),
+        State::Next(StateName::StringBefore),
         State::Nok,
     )
 }

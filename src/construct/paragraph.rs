@@ -71,7 +71,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Fn(StateName::ParagraphInside)
+            State::Next(StateName::ParagraphInside)
         }
     }
 }

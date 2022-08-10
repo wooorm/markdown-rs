@@ -54,7 +54,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'\\') if tokenizer.parse_state.constructs.hard_break_escape => {
             tokenizer.enter(Token::HardBreakEscape);
             tokenizer.consume();
-            State::Fn(StateName::HardBreakEscapeAfter)
+            State::Next(StateName::HardBreakEscapeAfter)
         }
         _ => State::Nok,
     }
