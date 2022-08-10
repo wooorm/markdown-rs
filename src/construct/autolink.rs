@@ -142,7 +142,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::AutolinkSchemeOrEmailAtext)
         }
-        _ => email_atext(tokenizer),
+        _ => State::Retry(StateName::AutolinkEmailAtext),
     }
 }
 
@@ -160,9 +160,9 @@ pub fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             // Count the previous alphabetical from `open` too.
             tokenizer.tokenize_state.size = 1;
-            scheme_inside_or_email_atext(tokenizer)
+            State::Retry(StateName::AutolinkSchemeInsideOrEmailAtext)
         }
-        _ => email_atext(tokenizer),
+        _ => State::Retry(StateName::AutolinkEmailAtext),
     }
 }
 
@@ -191,7 +191,7 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
-            email_atext(tokenizer)
+            State::Retry(StateName::AutolinkEmailAtext)
         }
     }
 }
@@ -206,7 +206,11 @@ pub fn url_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             tokenizer.exit(Token::AutolinkProtocol);
-            end(tokenizer)
+            tokenizer.enter(Token::AutolinkMarker);
+            tokenizer.consume();
+            tokenizer.exit(Token::AutolinkMarker);
+            tokenizer.exit(Token::Autolink);
+            State::Ok
         }
         // ASCII control, space, or `<`.
         None | Some(b'\0'..=0x1F | b' ' | b'<' | 0x7F) => State::Nok,
@@ -265,7 +269,9 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
 pub fn email_at_sign_or_dot(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII alphanumeric.
-        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => email_value(tokenizer),
+        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
+            State::Retry(StateName::AutolinkEmailValue)
+        }
         _ => State::Nok,
     }
 }
@@ -290,9 +296,13 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
             // Change the token type.
             tokenizer.events[index - 1].token_type = Token::AutolinkEmail;
             tokenizer.events[index].token_type = Token::AutolinkEmail;
-            end(tokenizer)
+            tokenizer.enter(Token::AutolinkMarker);
+            tokenizer.consume();
+            tokenizer.exit(Token::AutolinkMarker);
+            tokenizer.exit(Token::Autolink);
+            State::Ok
         }
-        _ => email_value(tokenizer),
+        _ => State::Retry(StateName::AutolinkEmailValue),
     }
 }
 
@@ -323,26 +333,5 @@ pub fn email_value(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             State::Nok
         }
-    }
-}
-
-/// At the `>`.
-///
-/// ```markdown
-/// > | a<https://example.com>b
-///                          ^
-/// > | a<user@example.com>b
-///                       ^
-/// ```
-pub fn end(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'>') => {
-            tokenizer.enter(Token::AutolinkMarker);
-            tokenizer.consume();
-            tokenizer.exit(Token::AutolinkMarker);
-            tokenizer.exit(Token::Autolink);
-            State::Ok
-        }
-        _ => unreachable!("expected `>`"),
     }
 }

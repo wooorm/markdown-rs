@@ -120,7 +120,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'*' | b'_') if tokenizer.parse_state.constructs.attention => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.enter(Token::AttentionSequence);
-            inside(tokenizer)
+            State::Retry(StateName::AttentionInside)
         }
         _ => State::Nok,
     }

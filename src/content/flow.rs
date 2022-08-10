@@ -67,7 +67,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         ),
         // Actual parsing: blank line? Indented code? Indented anything?
         // Also includes `-` which can be a setext heading underline or a thematic break.
-        None | Some(b'\t' | b'\n' | b' ' | b'-') => before_blank_line(tokenizer),
+        None | Some(b'\t' | b'\n' | b' ' | b'-') => State::Retry(StateName::FlowBlankLineBefore),
         Some(_) => tokenizer.attempt(
             StateName::ParagraphStart,
             State::Next(StateName::FlowAfter),
@@ -76,7 +76,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-pub fn before_blank_line(tokenizer: &mut Tokenizer) -> State {
+pub fn blank_line_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::BlankLineStart,
         State::Next(StateName::FlowBlankLineAfter),

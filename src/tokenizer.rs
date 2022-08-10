@@ -17,6 +17,7 @@ use crate::content;
 use crate::parser::ParseState;
 use crate::token::{Token, VOID_TOKENS};
 use crate::util::edit_map::EditMap;
+use std::str;
 
 /// Embedded content type.
 #[derive(Debug, Clone, PartialEq)]
@@ -203,10 +204,10 @@ pub enum StateName {
 
     DocumentStart,
     DocumentLineStart,
-    // DocumentContainerExistingBefore,
+    DocumentContainerExistingBefore,
     DocumentContainerExistingAfter,
     DocumentContainerExistingMissing,
-    // DocumentContainerNewBefore,
+    DocumentContainerNewBefore,
     DocumentContainerNewBeforeNotBlockQuote,
     DocumentContainerNewAfter,
     DocumentContainersAfter,
@@ -222,6 +223,7 @@ pub enum StateName {
     FlowBeforeThematicBreak,
     FlowBeforeDefinition,
     FlowAfter,
+    FlowBlankLineBefore,
     FlowBlankLineAfter,
     FlowBeforeParagraph,
 
@@ -299,6 +301,7 @@ pub enum StateName {
     HtmlTextEnd,
     HtmlTextInstruction,
     HtmlTextInstructionClose,
+    HtmlTextLineEndingBefore,
     HtmlTextLineEndingAfter,
     HtmlTextLineEndingAfterPrefix,
 
@@ -335,8 +338,10 @@ pub enum StateName {
     ListStart,
     ListBefore,
     ListNok,
+    ListBeforeOrdered,
     ListBeforeUnordered,
     ListValue,
+    ListMarker,
     ListMarkerAfter,
     ListAfter,
     ListMarkerAfterFilled,
@@ -356,6 +361,7 @@ pub enum StateName {
 
     SpaceOrTabStart,
     SpaceOrTabInside,
+    SpaceOrTabAfter,
 
     SpaceOrTabEolStart,
     SpaceOrTabEolAfterFirst,
@@ -381,6 +387,7 @@ pub enum StateName {
     TitleStart,
     TitleBegin,
     TitleAfterEol,
+    TitleAtBreak,
     TitleAtBlankLine,
     TitleEscape,
     TitleInside,
@@ -491,14 +498,16 @@ impl StateName {
 
             StateName::DocumentStart => content::document::start,
             StateName::DocumentLineStart => content::document::line_start,
-            // StateName::DocumentContainerExistingBefore => content::document::container_existing_before,
+            StateName::DocumentContainerExistingBefore => {
+                content::document::container_existing_before
+            }
             StateName::DocumentContainerExistingAfter => {
                 content::document::container_existing_after
             }
             StateName::DocumentContainerExistingMissing => {
                 content::document::container_existing_missing
             }
-            // StateName::DocumentContainerNewBefore => content::document::container_new_before,
+            StateName::DocumentContainerNewBefore => content::document::container_new_before,
             StateName::DocumentContainerNewBeforeNotBlockQuote => {
                 content::document::container_new_before_not_block_quote
             }
@@ -516,6 +525,7 @@ impl StateName {
             StateName::FlowBeforeThematicBreak => content::flow::before_thematic_break,
             StateName::FlowBeforeDefinition => content::flow::before_definition,
             StateName::FlowAfter => content::flow::after,
+            StateName::FlowBlankLineBefore => content::flow::blank_line_before,
             StateName::FlowBlankLineAfter => content::flow::blank_line_after,
             StateName::FlowBeforeParagraph => content::flow::before_paragraph,
 
@@ -633,6 +643,7 @@ impl StateName {
             StateName::HtmlTextEnd => construct::html_text::end,
             StateName::HtmlTextInstruction => construct::html_text::instruction,
             StateName::HtmlTextInstructionClose => construct::html_text::instruction_close,
+            StateName::HtmlTextLineEndingBefore => construct::html_text::line_ending_before,
             StateName::HtmlTextLineEndingAfter => construct::html_text::line_ending_after,
             StateName::HtmlTextLineEndingAfterPrefix => {
                 construct::html_text::line_ending_after_prefix
@@ -676,8 +687,10 @@ impl StateName {
             StateName::ListStart => construct::list::start,
             StateName::ListBefore => construct::list::before,
             StateName::ListNok => construct::list::nok,
+            StateName::ListBeforeOrdered => construct::list::before_ordered,
             StateName::ListBeforeUnordered => construct::list::before_unordered,
             StateName::ListValue => construct::list::value,
+            StateName::ListMarker => construct::list::marker,
             StateName::ListMarkerAfter => construct::list::marker_after,
             StateName::ListAfter => construct::list::after,
             StateName::ListMarkerAfterFilled => construct::list::marker_after_filled,
@@ -697,6 +710,7 @@ impl StateName {
 
             StateName::SpaceOrTabStart => construct::partial_space_or_tab::start,
             StateName::SpaceOrTabInside => construct::partial_space_or_tab::inside,
+            StateName::SpaceOrTabAfter => construct::partial_space_or_tab::after,
 
             StateName::SpaceOrTabEolStart => construct::partial_space_or_tab::eol_start,
             StateName::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab::eol_after_first,
@@ -722,6 +736,7 @@ impl StateName {
             StateName::TitleStart => construct::partial_title::start,
             StateName::TitleBegin => construct::partial_title::begin,
             StateName::TitleAfterEol => construct::partial_title::after_eol,
+            StateName::TitleAtBreak => construct::partial_title::at_break,
             StateName::TitleAtBlankLine => construct::partial_title::at_blank_line,
             StateName::TitleEscape => construct::partial_title::escape,
             StateName::TitleInside => construct::partial_title::inside,
@@ -734,8 +749,10 @@ impl StateName {
 /// The result of a state.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum State {
-    /// There is a future state: a [`StateName`][] to pass the next code to.
+    /// Move to [`StateName`][] next.
     Next(StateName),
+    /// Retry in [`StateName`][].
+    Retry(StateName),
     /// The state is successful.
     Ok,
     /// The state is not successful.
@@ -1049,7 +1066,6 @@ impl<'a> Tokenizer<'a> {
     /// Each state function is expected to call this to signal that this code is
     /// used, or call a next function.
     pub fn consume(&mut self) {
-        log::debug!("consume: `{:?}` ({:?})", self.current, self.point);
         debug_assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
 
         self.move_one();
@@ -1125,7 +1141,7 @@ impl<'a> Tokenizer<'a> {
         let mut point = self.point.clone();
         move_point_back(self, &mut point);
 
-        log::debug!("enter: `{:?}` ({:?})", token_type, point);
+        log::debug!("enter:   `{:?}`", token_type);
         self.events.push(Event {
             event_type: EventType::Enter,
             token_type: token_type.clone(),
@@ -1171,7 +1187,7 @@ impl<'a> Tokenizer<'a> {
             move_point_back(self, &mut point);
         }
 
-        log::debug!("exit: `{:?}` ({:?})", token_type, point);
+        log::debug!("exit:    `{:?}`", token_type);
         self.events.push(Event {
             event_type: EventType::Exit,
             token_type,
@@ -1263,6 +1279,10 @@ impl<'a> Tokenizer<'a> {
                     let action = byte_action(self.parse_state.bytes, &self.point);
                     state = feed_action_impl(self, &Some(action), name);
                 }
+                State::Retry(name) => {
+                    log::debug!("            retry {:?}", name);
+                    state = call_impl(self, name);
+                }
             }
         }
 
@@ -1295,6 +1315,10 @@ impl<'a> Tokenizer<'a> {
                         },
                         name,
                     );
+                }
+                State::Retry(name) => {
+                    log::debug!("            retry {:?}", name);
+                    state = call_impl(self, name);
                 }
             }
         }
@@ -1417,9 +1441,11 @@ fn feed_action_impl(
         };
 
         log::debug!(
-            "main: flushing: `{:?}` ({:?}) to {:?}",
-            byte,
-            tokenizer.point,
+            "feed:    `{:?}` to {:?}",
+            byte.map_or_else(
+                || "eof".to_string(),
+                |d| str::from_utf8(&[d]).unwrap().to_string()
+            ),
             name
         );
         tokenizer.expect(byte);

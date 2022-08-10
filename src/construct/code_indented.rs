@@ -83,7 +83,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => after(tokenizer),
+        None => State::Retry(StateName::CodeIndentedAfter),
         Some(b'\n') => tokenizer.attempt(
             StateName::CodeIndentedFurtherStart,
             State::Next(StateName::CodeIndentedAtBreak),
@@ -91,7 +91,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         ),
         _ => {
             tokenizer.enter(Token::CodeFlowChunk);
-            inside(tokenizer)
+            State::Retry(StateName::CodeIndentedInside)
         }
     }
 }
@@ -106,7 +106,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::CodeFlowChunk);
-            at_break(tokenizer)
+            State::Retry(StateName::CodeIndentedAtBreak)
         }
         _ => {
             tokenizer.consume();
@@ -191,7 +191,7 @@ pub fn further_begin(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn further_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => further_start(tokenizer),
+        Some(b'\n') => State::Retry(StateName::CodeIndentedFurtherStart),
         _ => State::Nok,
     }
 }

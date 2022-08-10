@@ -136,7 +136,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.tokenize_state.connect = true;
                 }
 
-                inside(tokenizer)
+                State::Retry(StateName::LabelInside)
             }
         }
     }
@@ -145,7 +145,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// To do.
 pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = true;
-    at_break(tokenizer)
+    State::Retry(StateName::LabelAtBreak)
 }
 
 /// To do.
@@ -165,12 +165,12 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'[' | b']') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer)
+            State::Retry(StateName::LabelAtBreak)
         }
         Some(byte) => {
             if tokenizer.tokenize_state.size > LINK_REFERENCE_SIZE_MAX {
                 tokenizer.exit(Token::Data);
-                at_break(tokenizer)
+                State::Retry(StateName::LabelAtBreak)
             } else {
                 tokenizer.consume();
                 tokenizer.tokenize_state.size += 1;
@@ -200,6 +200,6 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size += 1;
             State::Next(StateName::LabelInside)
         }
-        _ => inside(tokenizer),
+        _ => State::Retry(StateName::LabelInside),
     }
 }

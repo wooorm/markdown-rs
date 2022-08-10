@@ -71,9 +71,9 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
             tokenizer.enter(Token::BlockQuote);
-            cont_before(tokenizer)
+            State::Retry(StateName::BlockQuoteContBefore)
         }
-        _ => cont_before(tokenizer),
+        _ => State::Retry(StateName::BlockQuoteContBefore),
     }
 }
 

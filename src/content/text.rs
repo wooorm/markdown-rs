@@ -39,7 +39,7 @@ const MARKERS: [u8; 9] = [
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
     tokenizer.tokenize_state.stop = &MARKERS;
-    before(tokenizer)
+    State::Retry(StateName::TextBefore)
 }
 
 /// Before text.
@@ -87,7 +87,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::TextBefore),
             State::Next(StateName::TextBeforeData),
         ),
-        _ => before_data(tokenizer),
+        _ => State::Retry(StateName::TextBeforeData),
     }
 }
 

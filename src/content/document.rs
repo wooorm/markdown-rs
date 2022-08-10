@@ -125,7 +125,7 @@ pub fn line_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.document_continued = 0;
     // Containers would only be interrupting if we’ve continued.
     tokenizer.interrupt = false;
-    container_existing_before(tokenizer)
+    State::Retry(StateName::DocumentContainerExistingBefore)
 }
 
 /// Before existing containers.
@@ -158,7 +158,7 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
     }
     // Otherwise, check new containers.
     else {
-        container_new_before(tokenizer)
+        State::Retry(StateName::DocumentContainerNewBefore)
     }
 }
 
@@ -175,7 +175,7 @@ pub fn container_existing_missing(tokenizer: &mut Tokenizer) -> State {
         .tokenize_state
         .document_container_stack
         .insert(tokenizer.tokenize_state.document_continued, container);
-    container_new_before(tokenizer)
+    State::Retry(StateName::DocumentContainerNewBefore)
 }
 
 /// After an existing container.
@@ -192,7 +192,7 @@ pub fn container_existing_after(tokenizer: &mut Tokenizer) -> State {
         .document_container_stack
         .insert(tokenizer.tokenize_state.document_continued, container);
     tokenizer.tokenize_state.document_continued += 1;
-    container_existing_before(tokenizer)
+    State::Retry(StateName::DocumentContainerExistingBefore)
 }
 
 /// Before a new container.
@@ -225,7 +225,7 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
             .unwrap()
             .concrete
         {
-            return containers_after(tokenizer);
+            return State::Retry(StateName::DocumentContainersAfter);
         }
     }
 
@@ -287,7 +287,7 @@ pub fn container_new_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.document_continued += 1;
     tokenizer.tokenize_state.document_interrupt_before = false;
     tokenizer.interrupt = false;
-    container_new_before(tokenizer)
+    State::Retry(StateName::DocumentContainerNewBefore)
 }
 
 /// After containers, before flow.
@@ -308,7 +308,7 @@ pub fn containers_after(tokenizer: &mut Tokenizer) -> State {
 
     match tokenizer.current {
         // Note: EOL is part of data.
-        None => flow_end(tokenizer),
+        None => State::Retry(StateName::DocumentFlowEnd),
         Some(_) => {
             let current = tokenizer.events.len();
             let previous = tokenizer.tokenize_state.document_data_index.take();
@@ -324,7 +324,7 @@ pub fn containers_after(tokenizer: &mut Tokenizer) -> State {
                     content_type: ContentType::Flow,
                 }),
             );
-            flow_inside(tokenizer)
+            State::Retry(StateName::DocumentFlowInside)
         }
     }
 }
@@ -334,7 +334,7 @@ pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
             tokenizer.exit(Token::Data);
-            flow_end(tokenizer)
+            State::Retry(StateName::DocumentFlowEnd)
         }
         // Note: EOL is part of data.
         Some(b'\n') => {
@@ -420,7 +420,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
         Some(_) => {
             tokenizer.tokenize_state.document_paragraph_before = paragraph;
             tokenizer.tokenize_state.document_interrupt_before = interrupt;
-            line_start(tokenizer)
+            State::Retry(StateName::DocumentLineStart)
         }
     }
 }

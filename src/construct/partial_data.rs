@@ -23,7 +23,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::DataInside)
         }
-        _ => at_break(tokenizer),
+        _ => State::Retry(StateName::DataAtBreak),
     }
 }
 
@@ -48,7 +48,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(Token::Data);
-            inside(tokenizer)
+            State::Retry(StateName::DataInside)
         }
     }
 }
@@ -68,7 +68,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 
     if done {
         tokenizer.exit(Token::Data);
-        at_break(tokenizer)
+        State::Retry(StateName::DataAtBreak)
     } else {
         tokenizer.consume();
         State::Next(StateName::DataInside)

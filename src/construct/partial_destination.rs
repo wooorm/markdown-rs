@@ -99,7 +99,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_4.clone());
             tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            raw(tokenizer)
+            State::Retry(StateName::DestinationRaw)
         }
     }
 }
@@ -121,7 +121,7 @@ pub fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
     } else {
         tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
         tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-        enclosed(tokenizer)
+        State::Retry(StateName::DestinationEnclosed)
     }
 }
 
@@ -137,7 +137,7 @@ pub fn enclosed(tokenizer: &mut Tokenizer) -> State {
         Some(b'>') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
-            enclosed_before(tokenizer)
+            State::Retry(StateName::DestinationEnclosedBefore)
         }
         Some(b'\\') => {
             tokenizer.consume();
@@ -162,7 +162,7 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::DestinationEnclosed)
         }
-        _ => enclosed(tokenizer),
+        _ => State::Retry(StateName::DestinationEnclosed),
     }
 }
 
@@ -220,6 +220,6 @@ pub fn raw_escape(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::DestinationRaw)
         }
-        _ => raw(tokenizer),
+        _ => State::Retry(StateName::DestinationRaw),
     }
 }

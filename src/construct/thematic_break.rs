@@ -92,7 +92,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'-' | b'_') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
-            at_break(tokenizer)
+            State::Retry(StateName::ThematicBreakAtBreak)
         }
         _ => State::Nok,
     }
@@ -118,7 +118,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.enter(Token::ThematicBreakSequence);
-            sequence(tokenizer)
+            State::Retry(StateName::ThematicBreakSequence)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;

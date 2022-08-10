@@ -79,7 +79,7 @@ pub fn begin(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            at_break(tokenizer)
+            State::Retry(StateName::TitleAtBreak)
         }
     }
 }
@@ -116,7 +116,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            begin(tokenizer)
+            State::Retry(StateName::TitleBegin)
         }
         Some(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
@@ -128,7 +128,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.tokenize_state.connect = true;
             }
 
-            inside(tokenizer)
+            State::Retry(StateName::TitleInside)
         }
     }
 }
@@ -136,7 +136,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// To do.
 pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = true;
-    at_break(tokenizer)
+    State::Retry(StateName::TitleAtBreak)
 }
 
 /// To do.
@@ -156,13 +156,13 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer)
+            State::Retry(StateName::TitleAtBreak)
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer)
+            State::Retry(StateName::TitleAtBreak)
         }
         Some(byte) => {
             tokenizer.consume();
@@ -187,6 +187,6 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::TitleInside)
         }
-        _ => inside(tokenizer),
+        _ => State::Retry(StateName::TitleInside),
     }
 }

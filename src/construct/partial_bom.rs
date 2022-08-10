@@ -24,7 +24,7 @@ const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.current == Some(BOM[0]) {
         tokenizer.enter(Token::ByteOrderMark);
-        inside(tokenizer)
+        State::Retry(StateName::BomInside)
     } else {
         State::Nok
     }

@@ -193,7 +193,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 
             // Mark as balanced if the info is inactive.
             if label_start.inactive {
-                return nok(tokenizer);
+                return State::Retry(StateName::LabelEndNok);
             }
 
             tokenizer.enter(Token::LabelEnd);
@@ -257,11 +257,11 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
             }),
         ),
         // Shortcut (`[asd]`) reference?
-        _ => {
-            // To do: use state names?
-            let func = if defined { ok } else { nok };
-            func(tokenizer)
-        }
+        _ => State::Retry(if defined {
+            StateName::LabelEndOk
+        } else {
+            StateName::LabelEndNok
+        }),
     }
 }
 
@@ -391,7 +391,7 @@ pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b')') = tokenizer.current {
-        resource_end(tokenizer)
+        State::Retry(StateName::LabelEndResourceEnd)
     } else {
         tokenizer.tokenize_state.token_1 = Token::ResourceDestination;
         tokenizer.tokenize_state.token_2 = Token::ResourceDestinationLiteral;
@@ -458,7 +458,7 @@ pub fn resource_between(tokenizer: &mut Tokenizer) -> State {
                 State::Nok,
             )
         }
-        _ => resource_end(tokenizer),
+        _ => State::Retry(StateName::LabelEndResourceEnd),
     }
 }
 

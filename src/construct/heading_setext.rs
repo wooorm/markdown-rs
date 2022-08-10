@@ -115,7 +115,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         Some(b'-' | b'=') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.enter(Token::HeadingSetextUnderline);
-            inside(tokenizer)
+            State::Retry(StateName::HeadingSetextInside)
         }
         _ => State::Nok,
     }

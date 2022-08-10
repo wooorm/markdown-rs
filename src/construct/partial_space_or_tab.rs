@@ -113,9 +113,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.tokenize_state.space_or_tab_connect = true;
             }
 
-            inside(tokenizer)
+            State::Retry(StateName::SpaceOrTabInside)
         }
-        _ => after(tokenizer),
+        _ => State::Retry(StateName::SpaceOrTabAfter),
     }
 }
 
@@ -137,7 +137,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.exit(tokenizer.tokenize_state.space_or_tab_token.clone());
-            after(tokenizer)
+            State::Retry(StateName::SpaceOrTabAfter)
         }
     }
 }
@@ -198,7 +198,7 @@ pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.space_or_tab_eol_connect = true;
     }
 
-    eol_at_eol(tokenizer)
+    State::Retry(StateName::SpaceOrTabEolAtEol)
 }
 
 /// `space_or_tab_eol`: after optionally first `space_or_tab`.

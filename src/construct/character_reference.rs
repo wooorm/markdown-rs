@@ -113,7 +113,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     } else {
         tokenizer.tokenize_state.marker = b'&';
         tokenizer.enter(Token::CharacterReferenceValue);
-        value(tokenizer)
+        State::Retry(StateName::CharacterReferenceValue)
     }
 }
 
@@ -138,7 +138,7 @@ pub fn numeric(tokenizer: &mut Tokenizer) -> State {
     } else {
         tokenizer.enter(Token::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'#';
-        value(tokenizer)
+        State::Retry(StateName::CharacterReferenceValue)
     }
 }
 

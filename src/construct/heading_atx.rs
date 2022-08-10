@@ -92,7 +92,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     if Some(b'#') == tokenizer.current {
         tokenizer.enter(Token::HeadingAtxSequence);
-        sequence_open(tokenizer)
+        State::Retry(StateName::HeadingAtxSequenceOpen)
     } else {
         State::Nok
     }
@@ -109,7 +109,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') if tokenizer.tokenize_state.size > 0 => {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::HeadingAtxSequence);
-            at_break(tokenizer)
+            State::Retry(StateName::HeadingAtxAtBreak)
         }
         Some(b'#') if tokenizer.tokenize_state.size < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
             tokenizer.tokenize_state.size += 1;
@@ -150,11 +150,11 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'#') => {
             tokenizer.enter(Token::HeadingAtxSequence);
-            sequence_further(tokenizer)
+            State::Retry(StateName::HeadingAtxSequenceFurther)
         }
         Some(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            data(tokenizer)
+            State::Retry(StateName::HeadingAtxData)
         }
     }
 }
@@ -173,7 +173,7 @@ pub fn sequence_further(tokenizer: &mut Tokenizer) -> State {
         State::Next(StateName::HeadingAtxSequenceFurther)
     } else {
         tokenizer.exit(Token::HeadingAtxSequence);
-        at_break(tokenizer)
+        State::Retry(StateName::HeadingAtxAtBreak)
     }
 }
 
@@ -188,7 +188,7 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         None | Some(b'\t' | b'\n' | b' ') => {
             tokenizer.exit(Token::Data);
-            at_break(tokenizer)
+            State::Retry(StateName::HeadingAtxAtBreak)
         }
         _ => {
             tokenizer.consume();

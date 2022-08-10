@@ -174,7 +174,7 @@ pub fn comment_start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextCommentStartDash)
         }
-        _ => comment(tokenizer),
+        _ => State::Retry(StateName::HtmlTextComment),
     }
 }
 
@@ -194,7 +194,7 @@ pub fn comment_start(tokenizer: &mut Tokenizer) -> State {
 pub fn comment_start_dash(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => State::Nok,
-        _ => comment(tokenizer),
+        _ => State::Retry(StateName::HtmlTextComment),
     }
 }
 
@@ -209,7 +209,7 @@ pub fn comment(tokenizer: &mut Tokenizer) -> State {
         None => State::Nok,
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state = Some(StateName::HtmlTextComment);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'-') => {
             tokenizer.consume();
@@ -234,7 +234,7 @@ pub fn comment_close(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextEnd)
         }
-        _ => comment(tokenizer),
+        _ => State::Retry(StateName::HtmlTextComment),
     }
 }
 
@@ -271,7 +271,7 @@ pub fn cdata(tokenizer: &mut Tokenizer) -> State {
         None => State::Nok,
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state = Some(StateName::HtmlTextCdata);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b']') => {
             tokenizer.consume();
@@ -296,7 +296,7 @@ pub fn cdata_close(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextCdataEnd)
         }
-        _ => cdata(tokenizer),
+        _ => State::Retry(StateName::HtmlTextCdata),
     }
 }
 
@@ -308,9 +308,9 @@ pub fn cdata_close(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn cdata_end(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'>') => end(tokenizer),
-        Some(b']') => cdata_close(tokenizer),
-        _ => cdata(tokenizer),
+        Some(b'>') => State::Retry(StateName::HtmlTextEnd),
+        Some(b']') => State::Retry(StateName::HtmlTextCdataClose),
+        _ => State::Retry(StateName::HtmlTextCdata),
     }
 }
 
@@ -322,10 +322,10 @@ pub fn cdata_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn declaration(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'>') => end(tokenizer),
+        None | Some(b'>') => State::Retry(StateName::HtmlTextEnd),
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state = Some(StateName::HtmlTextDeclaration);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         _ => {
             tokenizer.consume();
@@ -345,7 +345,7 @@ pub fn instruction(tokenizer: &mut Tokenizer) -> State {
         None => State::Nok,
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state = Some(StateName::HtmlTextInstruction);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'?') => {
             tokenizer.consume();
@@ -366,8 +366,8 @@ pub fn instruction(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn instruction_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'>') => end(tokenizer),
-        _ => instruction(tokenizer),
+        Some(b'>') => State::Retry(StateName::HtmlTextEnd),
+        _ => State::Retry(StateName::HtmlTextInstruction),
     }
 }
 
@@ -401,7 +401,7 @@ pub fn tag_close(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagClose)
         }
-        _ => tag_close_between(tokenizer),
+        _ => State::Retry(StateName::HtmlTextTagCloseBetween),
     }
 }
 
@@ -415,13 +415,13 @@ pub fn tag_close_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state = Some(StateName::HtmlTextTagCloseBetween);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagCloseBetween)
         }
-        _ => end(tokenizer),
+        _ => State::Retry(StateName::HtmlTextEnd),
     }
 }
 
@@ -438,7 +438,7 @@ pub fn tag_open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagOpen)
         }
-        Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => tag_open_between(tokenizer),
+        Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => State::Retry(StateName::HtmlTextTagOpenBetween),
         _ => State::Nok,
     }
 }
@@ -453,7 +453,7 @@ pub fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state = Some(StateName::HtmlTextTagOpenBetween);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
@@ -468,7 +468,7 @@ pub fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagOpenAttributeName)
         }
-        _ => end(tokenizer),
+        _ => State::Retry(StateName::HtmlTextEnd),
     }
 }
 
@@ -485,7 +485,7 @@ pub fn tag_open_attribute_name(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagOpenAttributeName)
         }
-        _ => tag_open_attribute_name_after(tokenizer),
+        _ => State::Retry(StateName::HtmlTextTagOpenAttributeNameAfter),
     }
 }
 
@@ -501,7 +501,7 @@ pub fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state =
                 Some(StateName::HtmlTextTagOpenAttributeNameAfter);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
@@ -511,7 +511,7 @@ pub fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagOpenAttributeValueBefore)
         }
-        _ => tag_open_between(tokenizer),
+        _ => State::Retry(StateName::HtmlTextTagOpenBetween),
     }
 }
 
@@ -528,7 +528,7 @@ pub fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state =
                 Some(StateName::HtmlTextTagOpenAttributeValueBefore);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'\t' | b' ') => {
             tokenizer.consume();
@@ -561,7 +561,7 @@ pub fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
         Some(b'\n') => {
             tokenizer.tokenize_state.return_state =
                 Some(StateName::HtmlTextTagOpenAttributeValueQuoted);
-            line_ending_before(tokenizer)
+            State::Retry(StateName::HtmlTextLineEndingBefore)
         }
         Some(b'"' | b'\'') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.tokenize_state.marker = 0;
@@ -584,7 +584,7 @@ pub fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
 pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'"' | b'\'' | b'<' | b'=' | b'`') => State::Nok,
-        Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => tag_open_between(tokenizer),
+        Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => State::Retry(StateName::HtmlTextTagOpenBetween),
         Some(_) => {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagOpenAttributeValueUnquoted)
@@ -601,7 +601,7 @@ pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn tag_open_attribute_value_quoted_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\t' | b'\n' | b' ' | b'>' | b'/') => tag_open_between(tokenizer),
+        Some(b'\t' | b'\n' | b' ' | b'>' | b'/') => State::Retry(StateName::HtmlTextTagOpenBetween),
         _ => State::Nok,
     }
 }
@@ -677,9 +677,6 @@ pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn line_ending_after_prefix(tokenizer: &mut Tokenizer) -> State {
-    let name = tokenizer.tokenize_state.return_state.take().unwrap();
-    // To do: should use `State::Retry` when it exists.
-    let func = name.to_func();
     tokenizer.enter(Token::HtmlTextData);
-    func(tokenizer)
+    State::Retry(tokenizer.tokenize_state.return_state.take().unwrap())
 }

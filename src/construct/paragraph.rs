@@ -48,7 +48,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         _ => {
             tokenizer.enter(Token::Paragraph);
             tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            inside(tokenizer)
+            State::Retry(StateName::ParagraphInside)
         }
     }
 }

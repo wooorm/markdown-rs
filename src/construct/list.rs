@@ -91,10 +91,10 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::ListNok),
             State::Next(StateName::ListBeforeUnordered),
         ),
-        Some(b'+') => before_unordered(tokenizer),
+        Some(b'+') => State::Retry(StateName::ListBeforeUnordered),
         // Ordered.
-        Some(b'0'..=b'9') if !tokenizer.interrupt => before_ordered(tokenizer),
-        Some(b'1') => before_ordered(tokenizer),
+        Some(b'0'..=b'9') if !tokenizer.interrupt => State::Retry(StateName::ListBeforeOrdered),
+        Some(b'1') => State::Retry(StateName::ListBeforeOrdered),
         _ => State::Nok,
     }
 }
@@ -109,7 +109,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemPrefix);
-    marker(tokenizer)
+    State::Retry(StateName::ListMarker)
 }
 
 /// Start of an ordered list item.
@@ -121,7 +121,7 @@ pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Token::ListItemPrefix);
     tokenizer.enter(Token::ListItemValue);
-    value(tokenizer)
+    State::Retry(StateName::ListValue)
 }
 
 /// In an ordered list item value.
@@ -134,7 +134,7 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'.' | b')') if !tokenizer.interrupt || tokenizer.tokenize_state.size < 2 => {
             tokenizer.exit(Token::ListItemValue);
-            marker(tokenizer)
+            State::Retry(StateName::ListMarker)
         }
         Some(b'0'..=b'9') if tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.tokenize_state.size += 1;
