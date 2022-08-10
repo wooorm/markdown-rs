@@ -203,12 +203,11 @@ pub enum StateName {
     DestinationRawEscape,
 
     DocumentStart,
-    DocumentLineStart,
     DocumentContainerExistingBefore,
     DocumentContainerExistingAfter,
-    DocumentContainerExistingMissing,
     DocumentContainerNewBefore,
     DocumentContainerNewBeforeNotBlockQuote,
+    DocumentContainerNewBeforeNotList,
     DocumentContainerNewAfter,
     DocumentContainersAfter,
     DocumentFlowInside,
@@ -476,8 +475,6 @@ pub struct TokenizeState<'a> {
     /// To do.
     pub document_continued: usize,
     /// To do.
-    pub document_interrupt_before: bool,
-    /// To do.
     pub document_paragraph_before: bool,
     /// To do.
     pub document_data_index: Option<usize>,
@@ -575,8 +572,6 @@ pub struct Tokenizer<'a> {
     ///
     /// Used when tokenizing [text content][crate::content::text].
     pub media_list: Vec<Media>,
-    /// Current container state.
-    pub container: Option<ContainerState>,
     /// Whether we would be interrupting something.
     ///
     /// Used when tokenizing [flow content][crate::content::flow].
@@ -613,7 +608,6 @@ impl<'a> Tokenizer<'a> {
                 connect: false,
                 document_container_stack: vec![],
                 document_continued: 0,
-                document_interrupt_before: false,
                 document_paragraph_before: false,
                 document_data_index: None,
                 document_child_state: None,
@@ -647,7 +641,6 @@ impl<'a> Tokenizer<'a> {
             label_start_stack: vec![],
             label_start_list_loose: vec![],
             media_list: vec![],
-            container: None,
             interrupt: false,
             concrete: false,
             lazy: false,
@@ -1200,15 +1193,14 @@ fn call_impl(tokenizer: &mut Tokenizer, name: StateName) -> State {
         StateName::DestinationRawEscape => construct::partial_destination::raw_escape,
 
         StateName::DocumentStart => content::document::start,
-        StateName::DocumentLineStart => content::document::line_start,
         StateName::DocumentContainerExistingBefore => content::document::container_existing_before,
         StateName::DocumentContainerExistingAfter => content::document::container_existing_after,
-        StateName::DocumentContainerExistingMissing => {
-            content::document::container_existing_missing
-        }
         StateName::DocumentContainerNewBefore => content::document::container_new_before,
         StateName::DocumentContainerNewBeforeNotBlockQuote => {
             content::document::container_new_before_not_block_quote
+        }
+        StateName::DocumentContainerNewBeforeNotList => {
+            content::document::container_new_before_not_list
         }
         StateName::DocumentContainerNewAfter => content::document::container_new_after,
         StateName::DocumentContainersAfter => content::document::containers_after,

@@ -275,7 +275,9 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
             prefix += 1;
         }
 
-        let container = tokenizer.container.as_mut().unwrap();
+        let container = &mut tokenizer.tokenize_state.document_container_stack
+            [tokenizer.tokenize_state.document_continued];
+
         container.blank_initial = blank;
         container.size = prefix;
 
@@ -309,7 +311,8 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
 ///   |   b
 /// ```
 pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
-    let container = tokenizer.container.as_ref().unwrap();
+    let container = &mut tokenizer.tokenize_state.document_container_stack
+        [tokenizer.tokenize_state.document_continued];
     let size = container.size;
 
     if container.blank_initial {
@@ -329,7 +332,8 @@ pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
-    let container = tokenizer.container.as_mut().unwrap();
+    let container = &mut tokenizer.tokenize_state.document_container_stack
+        [tokenizer.tokenize_state.document_continued];
     let size = container.size;
 
     container.blank_initial = false;
