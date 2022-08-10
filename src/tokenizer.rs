@@ -393,359 +393,6 @@ pub enum StateName {
     TitleInside,
 }
 
-impl StateName {
-    /// Create a new tokenizer.
-    #[allow(clippy::too_many_lines)]
-    pub fn to_func(self) -> Box<dyn FnOnce(&mut Tokenizer) -> State + 'static> {
-        let func = match self {
-            StateName::AttentionStart => construct::attention::start,
-            StateName::AttentionInside => construct::attention::inside,
-
-            StateName::AutolinkStart => construct::autolink::start,
-            StateName::AutolinkOpen => construct::autolink::open,
-            StateName::AutolinkSchemeOrEmailAtext => construct::autolink::scheme_or_email_atext,
-            StateName::AutolinkSchemeInsideOrEmailAtext => {
-                construct::autolink::scheme_inside_or_email_atext
-            }
-            StateName::AutolinkUrlInside => construct::autolink::url_inside,
-            StateName::AutolinkEmailAtSignOrDot => construct::autolink::email_at_sign_or_dot,
-            StateName::AutolinkEmailAtext => construct::autolink::email_atext,
-            StateName::AutolinkEmailValue => construct::autolink::email_value,
-            StateName::AutolinkEmailLabel => construct::autolink::email_label,
-
-            StateName::BlankLineStart => construct::blank_line::start,
-            StateName::BlankLineAfter => construct::blank_line::after,
-
-            StateName::BlockQuoteStart => construct::block_quote::start,
-            StateName::BlockQuoteBefore => construct::block_quote::before,
-            StateName::BlockQuoteContStart => construct::block_quote::cont_start,
-            StateName::BlockQuoteContBefore => construct::block_quote::cont_before,
-            StateName::BlockQuoteContAfter => construct::block_quote::cont_after,
-
-            StateName::BomStart => construct::partial_bom::start,
-            StateName::BomInside => construct::partial_bom::inside,
-
-            StateName::CharacterEscapeStart => construct::character_escape::start,
-            StateName::CharacterEscapeInside => construct::character_escape::inside,
-
-            StateName::CharacterReferenceStart => construct::character_reference::start,
-            StateName::CharacterReferenceOpen => construct::character_reference::open,
-            StateName::CharacterReferenceNumeric => construct::character_reference::numeric,
-            StateName::CharacterReferenceValue => construct::character_reference::value,
-
-            StateName::CodeFencedStart => construct::code_fenced::start,
-            StateName::CodeFencedBeforeSequenceOpen => construct::code_fenced::before_sequence_open,
-            StateName::CodeFencedSequenceOpen => construct::code_fenced::sequence_open,
-            StateName::CodeFencedInfoBefore => construct::code_fenced::info_before,
-            StateName::CodeFencedInfo => construct::code_fenced::info,
-            StateName::CodeFencedMetaBefore => construct::code_fenced::meta_before,
-            StateName::CodeFencedMeta => construct::code_fenced::meta,
-            StateName::CodeFencedAtNonLazyBreak => construct::code_fenced::at_non_lazy_break,
-            StateName::CodeFencedCloseBefore => construct::code_fenced::close_before,
-            StateName::CodeFencedCloseStart => construct::code_fenced::close_start,
-            StateName::CodeFencedBeforeSequenceClose => {
-                construct::code_fenced::before_sequence_close
-            }
-            StateName::CodeFencedSequenceClose => construct::code_fenced::sequence_close,
-            StateName::CodeFencedAfterSequenceClose => construct::code_fenced::sequence_close_after,
-            StateName::CodeFencedContentBefore => construct::code_fenced::content_before,
-            StateName::CodeFencedContentStart => construct::code_fenced::content_start,
-            StateName::CodeFencedBeforeContentChunk => construct::code_fenced::before_content_chunk,
-            StateName::CodeFencedContentChunk => construct::code_fenced::content_chunk,
-            StateName::CodeFencedAfter => construct::code_fenced::after,
-
-            StateName::CodeIndentedStart => construct::code_indented::start,
-            StateName::CodeIndentedAtBreak => construct::code_indented::at_break,
-            StateName::CodeIndentedAfter => construct::code_indented::after,
-            StateName::CodeIndentedFurtherStart => construct::code_indented::further_start,
-            StateName::CodeIndentedInside => construct::code_indented::inside,
-            StateName::CodeIndentedFurtherEnd => construct::code_indented::further_end,
-            StateName::CodeIndentedFurtherBegin => construct::code_indented::further_begin,
-            StateName::CodeIndentedFurtherAfter => construct::code_indented::further_after,
-
-            StateName::CodeTextStart => construct::code_text::start,
-            StateName::CodeTextSequenceOpen => construct::code_text::sequence_open,
-            StateName::CodeTextBetween => construct::code_text::between,
-            StateName::CodeTextData => construct::code_text::data,
-            StateName::CodeTextSequenceClose => construct::code_text::sequence_close,
-
-            StateName::DataStart => construct::partial_data::start,
-            StateName::DataInside => construct::partial_data::inside,
-            StateName::DataAtBreak => construct::partial_data::at_break,
-
-            StateName::DefinitionStart => construct::definition::start,
-            StateName::DefinitionBefore => construct::definition::before,
-            StateName::DefinitionLabelAfter => construct::definition::label_after,
-            StateName::DefinitionMarkerAfter => construct::definition::marker_after,
-            StateName::DefinitionDestinationBefore => construct::definition::destination_before,
-            StateName::DefinitionDestinationAfter => construct::definition::destination_after,
-            StateName::DefinitionDestinationMissing => construct::definition::destination_missing,
-            StateName::DefinitionTitleBefore => construct::definition::title_before,
-            StateName::DefinitionAfter => construct::definition::after,
-            StateName::DefinitionAfterWhitespace => construct::definition::after_whitespace,
-            StateName::DefinitionTitleBeforeMarker => construct::definition::title_before_marker,
-            StateName::DefinitionTitleAfter => construct::definition::title_after,
-            StateName::DefinitionTitleAfterOptionalWhitespace => {
-                construct::definition::title_after_optional_whitespace
-            }
-
-            StateName::DestinationStart => construct::partial_destination::start,
-            StateName::DestinationEnclosedBefore => construct::partial_destination::enclosed_before,
-            StateName::DestinationEnclosed => construct::partial_destination::enclosed,
-            StateName::DestinationEnclosedEscape => construct::partial_destination::enclosed_escape,
-            StateName::DestinationRaw => construct::partial_destination::raw,
-            StateName::DestinationRawEscape => construct::partial_destination::raw_escape,
-
-            StateName::DocumentStart => content::document::start,
-            StateName::DocumentLineStart => content::document::line_start,
-            StateName::DocumentContainerExistingBefore => {
-                content::document::container_existing_before
-            }
-            StateName::DocumentContainerExistingAfter => {
-                content::document::container_existing_after
-            }
-            StateName::DocumentContainerExistingMissing => {
-                content::document::container_existing_missing
-            }
-            StateName::DocumentContainerNewBefore => content::document::container_new_before,
-            StateName::DocumentContainerNewBeforeNotBlockQuote => {
-                content::document::container_new_before_not_block_quote
-            }
-            StateName::DocumentContainerNewAfter => content::document::container_new_after,
-            StateName::DocumentContainersAfter => content::document::containers_after,
-            StateName::DocumentFlowEnd => content::document::flow_end,
-            StateName::DocumentFlowInside => content::document::flow_inside,
-
-            StateName::FlowStart => content::flow::start,
-            StateName::FlowBeforeCodeIndented => content::flow::before_code_indented,
-            StateName::FlowBeforeCodeFenced => content::flow::before_code_fenced,
-            StateName::FlowBeforeHtml => content::flow::before_html,
-            StateName::FlowBeforeHeadingAtx => content::flow::before_heading_atx,
-            StateName::FlowBeforeHeadingSetext => content::flow::before_heading_setext,
-            StateName::FlowBeforeThematicBreak => content::flow::before_thematic_break,
-            StateName::FlowBeforeDefinition => content::flow::before_definition,
-            StateName::FlowAfter => content::flow::after,
-            StateName::FlowBlankLineBefore => content::flow::blank_line_before,
-            StateName::FlowBlankLineAfter => content::flow::blank_line_after,
-            StateName::FlowBeforeParagraph => content::flow::before_paragraph,
-
-            StateName::HardBreakEscapeStart => construct::hard_break_escape::start,
-            StateName::HardBreakEscapeAfter => construct::hard_break_escape::after,
-
-            StateName::HeadingAtxStart => construct::heading_atx::start,
-            StateName::HeadingAtxBefore => construct::heading_atx::before,
-            StateName::HeadingAtxSequenceOpen => construct::heading_atx::sequence_open,
-            StateName::HeadingAtxAtBreak => construct::heading_atx::at_break,
-            StateName::HeadingAtxSequenceFurther => construct::heading_atx::sequence_further,
-            StateName::HeadingAtxData => construct::heading_atx::data,
-
-            StateName::HeadingSetextStart => construct::heading_setext::start,
-            StateName::HeadingSetextBefore => construct::heading_setext::before,
-            StateName::HeadingSetextInside => construct::heading_setext::inside,
-            StateName::HeadingSetextAfter => construct::heading_setext::after,
-
-            StateName::HtmlFlowStart => construct::html_flow::start,
-            StateName::HtmlFlowBefore => construct::html_flow::before,
-            StateName::HtmlFlowOpen => construct::html_flow::open,
-            StateName::HtmlFlowDeclarationOpen => construct::html_flow::declaration_open,
-            StateName::HtmlFlowCommentOpenInside => construct::html_flow::comment_open_inside,
-            StateName::HtmlFlowCdataOpenInside => construct::html_flow::cdata_open_inside,
-            StateName::HtmlFlowTagCloseStart => construct::html_flow::tag_close_start,
-            StateName::HtmlFlowTagName => construct::html_flow::tag_name,
-            StateName::HtmlFlowBasicSelfClosing => construct::html_flow::basic_self_closing,
-            StateName::HtmlFlowCompleteClosingTagAfter => {
-                construct::html_flow::complete_closing_tag_after
-            }
-            StateName::HtmlFlowCompleteEnd => construct::html_flow::complete_end,
-            StateName::HtmlFlowCompleteAttributeNameBefore => {
-                construct::html_flow::complete_attribute_name_before
-            }
-            StateName::HtmlFlowCompleteAttributeName => {
-                construct::html_flow::complete_attribute_name
-            }
-            StateName::HtmlFlowCompleteAttributeNameAfter => {
-                construct::html_flow::complete_attribute_name_after
-            }
-            StateName::HtmlFlowCompleteAttributeValueBefore => {
-                construct::html_flow::complete_attribute_value_before
-            }
-            StateName::HtmlFlowCompleteAttributeValueQuoted => {
-                construct::html_flow::complete_attribute_value_quoted
-            }
-            StateName::HtmlFlowCompleteAttributeValueQuotedAfter => {
-                construct::html_flow::complete_attribute_value_quoted_after
-            }
-            StateName::HtmlFlowCompleteAttributeValueUnquoted => {
-                construct::html_flow::complete_attribute_value_unquoted
-            }
-            StateName::HtmlFlowCompleteAfter => construct::html_flow::complete_after,
-            StateName::HtmlFlowBlankLineBefore => construct::html_flow::blank_line_before,
-            StateName::HtmlFlowContinuation => construct::html_flow::continuation,
-            StateName::HtmlFlowContinuationDeclarationInside => {
-                construct::html_flow::continuation_declaration_inside
-            }
-            StateName::HtmlFlowContinuationAfter => construct::html_flow::continuation_after,
-            StateName::HtmlFlowContinuationStart => construct::html_flow::continuation_start,
-            StateName::HtmlFlowContinuationBefore => construct::html_flow::continuation_before,
-            StateName::HtmlFlowContinuationCommentInside => {
-                construct::html_flow::continuation_comment_inside
-            }
-            StateName::HtmlFlowContinuationRawTagOpen => {
-                construct::html_flow::continuation_raw_tag_open
-            }
-            StateName::HtmlFlowContinuationRawEndTag => {
-                construct::html_flow::continuation_raw_end_tag
-            }
-            StateName::HtmlFlowContinuationClose => construct::html_flow::continuation_close,
-            StateName::HtmlFlowContinuationCdataInside => {
-                construct::html_flow::continuation_cdata_inside
-            }
-            StateName::HtmlFlowContinuationStartNonLazy => {
-                construct::html_flow::continuation_start_non_lazy
-            }
-
-            StateName::HtmlTextStart => construct::html_text::start,
-            StateName::HtmlTextOpen => construct::html_text::open,
-            StateName::HtmlTextDeclarationOpen => construct::html_text::declaration_open,
-            StateName::HtmlTextTagCloseStart => construct::html_text::tag_close_start,
-            StateName::HtmlTextTagClose => construct::html_text::tag_close,
-            StateName::HtmlTextTagCloseBetween => construct::html_text::tag_close_between,
-            StateName::HtmlTextTagOpen => construct::html_text::tag_open,
-            StateName::HtmlTextTagOpenBetween => construct::html_text::tag_open_between,
-            StateName::HtmlTextTagOpenAttributeName => {
-                construct::html_text::tag_open_attribute_name
-            }
-            StateName::HtmlTextTagOpenAttributeNameAfter => {
-                construct::html_text::tag_open_attribute_name_after
-            }
-            StateName::HtmlTextTagOpenAttributeValueBefore => {
-                construct::html_text::tag_open_attribute_value_before
-            }
-            StateName::HtmlTextTagOpenAttributeValueQuoted => {
-                construct::html_text::tag_open_attribute_value_quoted
-            }
-            StateName::HtmlTextTagOpenAttributeValueQuotedAfter => {
-                construct::html_text::tag_open_attribute_value_quoted_after
-            }
-            StateName::HtmlTextTagOpenAttributeValueUnquoted => {
-                construct::html_text::tag_open_attribute_value_unquoted
-            }
-            StateName::HtmlTextCdata => construct::html_text::cdata,
-            StateName::HtmlTextCdataOpenInside => construct::html_text::cdata_open_inside,
-            StateName::HtmlTextCdataClose => construct::html_text::cdata_close,
-            StateName::HtmlTextCdataEnd => construct::html_text::cdata_end,
-            StateName::HtmlTextCommentOpenInside => construct::html_text::comment_open_inside,
-            StateName::HtmlTextCommentStart => construct::html_text::comment_start,
-            StateName::HtmlTextCommentStartDash => construct::html_text::comment_start_dash,
-            StateName::HtmlTextComment => construct::html_text::comment,
-            StateName::HtmlTextCommentClose => construct::html_text::comment_close,
-            StateName::HtmlTextDeclaration => construct::html_text::declaration,
-            StateName::HtmlTextEnd => construct::html_text::end,
-            StateName::HtmlTextInstruction => construct::html_text::instruction,
-            StateName::HtmlTextInstructionClose => construct::html_text::instruction_close,
-            StateName::HtmlTextLineEndingBefore => construct::html_text::line_ending_before,
-            StateName::HtmlTextLineEndingAfter => construct::html_text::line_ending_after,
-            StateName::HtmlTextLineEndingAfterPrefix => {
-                construct::html_text::line_ending_after_prefix
-            }
-
-            StateName::LabelStart => construct::partial_label::start,
-            StateName::LabelAtBreak => construct::partial_label::at_break,
-            StateName::LabelEolAfter => construct::partial_label::eol_after,
-            StateName::LabelAtBlankLine => construct::partial_label::at_blank_line,
-            StateName::LabelEscape => construct::partial_label::escape,
-            StateName::LabelInside => construct::partial_label::inside,
-
-            StateName::LabelEndStart => construct::label_end::start,
-            StateName::LabelEndAfter => construct::label_end::after,
-            StateName::LabelEndResourceStart => construct::label_end::resource_start,
-            StateName::LabelEndResourceBefore => construct::label_end::resource_before,
-            StateName::LabelEndResourceOpen => construct::label_end::resource_open,
-            StateName::LabelEndResourceDestinationAfter => {
-                construct::label_end::resource_destination_after
-            }
-            StateName::LabelEndResourceDestinationMissing => {
-                construct::label_end::resource_destination_missing
-            }
-            StateName::LabelEndResourceBetween => construct::label_end::resource_between,
-            StateName::LabelEndResourceTitleAfter => construct::label_end::resource_title_after,
-            StateName::LabelEndResourceEnd => construct::label_end::resource_end,
-            StateName::LabelEndOk => construct::label_end::ok,
-            StateName::LabelEndNok => construct::label_end::nok,
-            StateName::LabelEndReferenceFull => construct::label_end::reference_full,
-            StateName::LabelEndReferenceFullAfter => construct::label_end::reference_full_after,
-            StateName::LabelEndReferenceNotFull => construct::label_end::reference_not_full,
-            StateName::LabelEndReferenceCollapsed => construct::label_end::reference_collapsed,
-            StateName::LabelEndReferenceCollapsedOpen => {
-                construct::label_end::reference_collapsed_open
-            }
-
-            StateName::LabelStartImageStart => construct::label_start_image::start,
-            StateName::LabelStartImageOpen => construct::label_start_image::open,
-            StateName::LabelStartLinkStart => construct::label_start_link::start,
-
-            StateName::ListStart => construct::list::start,
-            StateName::ListBefore => construct::list::before,
-            StateName::ListNok => construct::list::nok,
-            StateName::ListBeforeOrdered => construct::list::before_ordered,
-            StateName::ListBeforeUnordered => construct::list::before_unordered,
-            StateName::ListValue => construct::list::value,
-            StateName::ListMarker => construct::list::marker,
-            StateName::ListMarkerAfter => construct::list::marker_after,
-            StateName::ListAfter => construct::list::after,
-            StateName::ListMarkerAfterFilled => construct::list::marker_after_filled,
-            StateName::ListWhitespace => construct::list::whitespace,
-            StateName::ListWhitespaceAfter => construct::list::whitespace_after,
-            StateName::ListPrefixOther => construct::list::prefix_other,
-            StateName::ListContStart => construct::list::cont_start,
-            StateName::ListContBlank => construct::list::cont_blank,
-            StateName::ListContFilled => construct::list::cont_filled,
-            StateName::ListOk => construct::list::ok,
-
-            StateName::NonLazyContinuationStart => construct::partial_non_lazy_continuation::start,
-            StateName::NonLazyContinuationAfter => construct::partial_non_lazy_continuation::after,
-
-            StateName::ParagraphStart => construct::paragraph::start,
-            StateName::ParagraphInside => construct::paragraph::inside,
-
-            StateName::SpaceOrTabStart => construct::partial_space_or_tab::start,
-            StateName::SpaceOrTabInside => construct::partial_space_or_tab::inside,
-            StateName::SpaceOrTabAfter => construct::partial_space_or_tab::after,
-
-            StateName::SpaceOrTabEolStart => construct::partial_space_or_tab::eol_start,
-            StateName::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab::eol_after_first,
-            StateName::SpaceOrTabEolAfterEol => construct::partial_space_or_tab::eol_after_eol,
-            StateName::SpaceOrTabEolAtEol => construct::partial_space_or_tab::eol_at_eol,
-            StateName::SpaceOrTabEolAfterMore => construct::partial_space_or_tab::eol_after_more,
-
-            StateName::StringStart => content::string::start,
-            StateName::StringBefore => content::string::before,
-            StateName::StringBeforeData => content::string::before_data,
-
-            StateName::TextStart => content::text::start,
-            StateName::TextBefore => content::text::before,
-            StateName::TextBeforeHtml => content::text::before_html,
-            StateName::TextBeforeHardBreakEscape => content::text::before_hard_break_escape,
-            StateName::TextBeforeData => content::text::before_data,
-
-            StateName::ThematicBreakStart => construct::thematic_break::start,
-            StateName::ThematicBreakBefore => construct::thematic_break::before,
-            StateName::ThematicBreakSequence => construct::thematic_break::sequence,
-            StateName::ThematicBreakAtBreak => construct::thematic_break::at_break,
-
-            StateName::TitleStart => construct::partial_title::start,
-            StateName::TitleBegin => construct::partial_title::begin,
-            StateName::TitleAfterEol => construct::partial_title::after_eol,
-            StateName::TitleAtBreak => construct::partial_title::at_break,
-            StateName::TitleAtBlankLine => construct::partial_title::at_blank_line,
-            StateName::TitleEscape => construct::partial_title::escape,
-            StateName::TitleInside => construct::partial_title::inside,
-        };
-
-        Box::new(func)
-    }
-}
-
 /// The result of a state.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum State {
@@ -1455,7 +1102,334 @@ fn feed_action_impl(
 
 #[allow(clippy::too_many_lines)]
 fn call_impl(tokenizer: &mut Tokenizer, name: StateName) -> State {
-    let func = name.to_func();
+    let func = match name {
+        StateName::AttentionStart => construct::attention::start,
+        StateName::AttentionInside => construct::attention::inside,
+
+        StateName::AutolinkStart => construct::autolink::start,
+        StateName::AutolinkOpen => construct::autolink::open,
+        StateName::AutolinkSchemeOrEmailAtext => construct::autolink::scheme_or_email_atext,
+        StateName::AutolinkSchemeInsideOrEmailAtext => {
+            construct::autolink::scheme_inside_or_email_atext
+        }
+        StateName::AutolinkUrlInside => construct::autolink::url_inside,
+        StateName::AutolinkEmailAtSignOrDot => construct::autolink::email_at_sign_or_dot,
+        StateName::AutolinkEmailAtext => construct::autolink::email_atext,
+        StateName::AutolinkEmailValue => construct::autolink::email_value,
+        StateName::AutolinkEmailLabel => construct::autolink::email_label,
+
+        StateName::BlankLineStart => construct::blank_line::start,
+        StateName::BlankLineAfter => construct::blank_line::after,
+
+        StateName::BlockQuoteStart => construct::block_quote::start,
+        StateName::BlockQuoteBefore => construct::block_quote::before,
+        StateName::BlockQuoteContStart => construct::block_quote::cont_start,
+        StateName::BlockQuoteContBefore => construct::block_quote::cont_before,
+        StateName::BlockQuoteContAfter => construct::block_quote::cont_after,
+
+        StateName::BomStart => construct::partial_bom::start,
+        StateName::BomInside => construct::partial_bom::inside,
+
+        StateName::CharacterEscapeStart => construct::character_escape::start,
+        StateName::CharacterEscapeInside => construct::character_escape::inside,
+
+        StateName::CharacterReferenceStart => construct::character_reference::start,
+        StateName::CharacterReferenceOpen => construct::character_reference::open,
+        StateName::CharacterReferenceNumeric => construct::character_reference::numeric,
+        StateName::CharacterReferenceValue => construct::character_reference::value,
+
+        StateName::CodeFencedStart => construct::code_fenced::start,
+        StateName::CodeFencedBeforeSequenceOpen => construct::code_fenced::before_sequence_open,
+        StateName::CodeFencedSequenceOpen => construct::code_fenced::sequence_open,
+        StateName::CodeFencedInfoBefore => construct::code_fenced::info_before,
+        StateName::CodeFencedInfo => construct::code_fenced::info,
+        StateName::CodeFencedMetaBefore => construct::code_fenced::meta_before,
+        StateName::CodeFencedMeta => construct::code_fenced::meta,
+        StateName::CodeFencedAtNonLazyBreak => construct::code_fenced::at_non_lazy_break,
+        StateName::CodeFencedCloseBefore => construct::code_fenced::close_before,
+        StateName::CodeFencedCloseStart => construct::code_fenced::close_start,
+        StateName::CodeFencedBeforeSequenceClose => construct::code_fenced::before_sequence_close,
+        StateName::CodeFencedSequenceClose => construct::code_fenced::sequence_close,
+        StateName::CodeFencedAfterSequenceClose => construct::code_fenced::sequence_close_after,
+        StateName::CodeFencedContentBefore => construct::code_fenced::content_before,
+        StateName::CodeFencedContentStart => construct::code_fenced::content_start,
+        StateName::CodeFencedBeforeContentChunk => construct::code_fenced::before_content_chunk,
+        StateName::CodeFencedContentChunk => construct::code_fenced::content_chunk,
+        StateName::CodeFencedAfter => construct::code_fenced::after,
+
+        StateName::CodeIndentedStart => construct::code_indented::start,
+        StateName::CodeIndentedAtBreak => construct::code_indented::at_break,
+        StateName::CodeIndentedAfter => construct::code_indented::after,
+        StateName::CodeIndentedFurtherStart => construct::code_indented::further_start,
+        StateName::CodeIndentedInside => construct::code_indented::inside,
+        StateName::CodeIndentedFurtherEnd => construct::code_indented::further_end,
+        StateName::CodeIndentedFurtherBegin => construct::code_indented::further_begin,
+        StateName::CodeIndentedFurtherAfter => construct::code_indented::further_after,
+
+        StateName::CodeTextStart => construct::code_text::start,
+        StateName::CodeTextSequenceOpen => construct::code_text::sequence_open,
+        StateName::CodeTextBetween => construct::code_text::between,
+        StateName::CodeTextData => construct::code_text::data,
+        StateName::CodeTextSequenceClose => construct::code_text::sequence_close,
+
+        StateName::DataStart => construct::partial_data::start,
+        StateName::DataInside => construct::partial_data::inside,
+        StateName::DataAtBreak => construct::partial_data::at_break,
+
+        StateName::DefinitionStart => construct::definition::start,
+        StateName::DefinitionBefore => construct::definition::before,
+        StateName::DefinitionLabelAfter => construct::definition::label_after,
+        StateName::DefinitionMarkerAfter => construct::definition::marker_after,
+        StateName::DefinitionDestinationBefore => construct::definition::destination_before,
+        StateName::DefinitionDestinationAfter => construct::definition::destination_after,
+        StateName::DefinitionDestinationMissing => construct::definition::destination_missing,
+        StateName::DefinitionTitleBefore => construct::definition::title_before,
+        StateName::DefinitionAfter => construct::definition::after,
+        StateName::DefinitionAfterWhitespace => construct::definition::after_whitespace,
+        StateName::DefinitionTitleBeforeMarker => construct::definition::title_before_marker,
+        StateName::DefinitionTitleAfter => construct::definition::title_after,
+        StateName::DefinitionTitleAfterOptionalWhitespace => {
+            construct::definition::title_after_optional_whitespace
+        }
+
+        StateName::DestinationStart => construct::partial_destination::start,
+        StateName::DestinationEnclosedBefore => construct::partial_destination::enclosed_before,
+        StateName::DestinationEnclosed => construct::partial_destination::enclosed,
+        StateName::DestinationEnclosedEscape => construct::partial_destination::enclosed_escape,
+        StateName::DestinationRaw => construct::partial_destination::raw,
+        StateName::DestinationRawEscape => construct::partial_destination::raw_escape,
+
+        StateName::DocumentStart => content::document::start,
+        StateName::DocumentLineStart => content::document::line_start,
+        StateName::DocumentContainerExistingBefore => content::document::container_existing_before,
+        StateName::DocumentContainerExistingAfter => content::document::container_existing_after,
+        StateName::DocumentContainerExistingMissing => {
+            content::document::container_existing_missing
+        }
+        StateName::DocumentContainerNewBefore => content::document::container_new_before,
+        StateName::DocumentContainerNewBeforeNotBlockQuote => {
+            content::document::container_new_before_not_block_quote
+        }
+        StateName::DocumentContainerNewAfter => content::document::container_new_after,
+        StateName::DocumentContainersAfter => content::document::containers_after,
+        StateName::DocumentFlowEnd => content::document::flow_end,
+        StateName::DocumentFlowInside => content::document::flow_inside,
+
+        StateName::FlowStart => content::flow::start,
+        StateName::FlowBeforeCodeIndented => content::flow::before_code_indented,
+        StateName::FlowBeforeCodeFenced => content::flow::before_code_fenced,
+        StateName::FlowBeforeHtml => content::flow::before_html,
+        StateName::FlowBeforeHeadingAtx => content::flow::before_heading_atx,
+        StateName::FlowBeforeHeadingSetext => content::flow::before_heading_setext,
+        StateName::FlowBeforeThematicBreak => content::flow::before_thematic_break,
+        StateName::FlowBeforeDefinition => content::flow::before_definition,
+        StateName::FlowAfter => content::flow::after,
+        StateName::FlowBlankLineBefore => content::flow::blank_line_before,
+        StateName::FlowBlankLineAfter => content::flow::blank_line_after,
+        StateName::FlowBeforeParagraph => content::flow::before_paragraph,
+
+        StateName::HardBreakEscapeStart => construct::hard_break_escape::start,
+        StateName::HardBreakEscapeAfter => construct::hard_break_escape::after,
+
+        StateName::HeadingAtxStart => construct::heading_atx::start,
+        StateName::HeadingAtxBefore => construct::heading_atx::before,
+        StateName::HeadingAtxSequenceOpen => construct::heading_atx::sequence_open,
+        StateName::HeadingAtxAtBreak => construct::heading_atx::at_break,
+        StateName::HeadingAtxSequenceFurther => construct::heading_atx::sequence_further,
+        StateName::HeadingAtxData => construct::heading_atx::data,
+
+        StateName::HeadingSetextStart => construct::heading_setext::start,
+        StateName::HeadingSetextBefore => construct::heading_setext::before,
+        StateName::HeadingSetextInside => construct::heading_setext::inside,
+        StateName::HeadingSetextAfter => construct::heading_setext::after,
+
+        StateName::HtmlFlowStart => construct::html_flow::start,
+        StateName::HtmlFlowBefore => construct::html_flow::before,
+        StateName::HtmlFlowOpen => construct::html_flow::open,
+        StateName::HtmlFlowDeclarationOpen => construct::html_flow::declaration_open,
+        StateName::HtmlFlowCommentOpenInside => construct::html_flow::comment_open_inside,
+        StateName::HtmlFlowCdataOpenInside => construct::html_flow::cdata_open_inside,
+        StateName::HtmlFlowTagCloseStart => construct::html_flow::tag_close_start,
+        StateName::HtmlFlowTagName => construct::html_flow::tag_name,
+        StateName::HtmlFlowBasicSelfClosing => construct::html_flow::basic_self_closing,
+        StateName::HtmlFlowCompleteClosingTagAfter => {
+            construct::html_flow::complete_closing_tag_after
+        }
+        StateName::HtmlFlowCompleteEnd => construct::html_flow::complete_end,
+        StateName::HtmlFlowCompleteAttributeNameBefore => {
+            construct::html_flow::complete_attribute_name_before
+        }
+        StateName::HtmlFlowCompleteAttributeName => construct::html_flow::complete_attribute_name,
+        StateName::HtmlFlowCompleteAttributeNameAfter => {
+            construct::html_flow::complete_attribute_name_after
+        }
+        StateName::HtmlFlowCompleteAttributeValueBefore => {
+            construct::html_flow::complete_attribute_value_before
+        }
+        StateName::HtmlFlowCompleteAttributeValueQuoted => {
+            construct::html_flow::complete_attribute_value_quoted
+        }
+        StateName::HtmlFlowCompleteAttributeValueQuotedAfter => {
+            construct::html_flow::complete_attribute_value_quoted_after
+        }
+        StateName::HtmlFlowCompleteAttributeValueUnquoted => {
+            construct::html_flow::complete_attribute_value_unquoted
+        }
+        StateName::HtmlFlowCompleteAfter => construct::html_flow::complete_after,
+        StateName::HtmlFlowBlankLineBefore => construct::html_flow::blank_line_before,
+        StateName::HtmlFlowContinuation => construct::html_flow::continuation,
+        StateName::HtmlFlowContinuationDeclarationInside => {
+            construct::html_flow::continuation_declaration_inside
+        }
+        StateName::HtmlFlowContinuationAfter => construct::html_flow::continuation_after,
+        StateName::HtmlFlowContinuationStart => construct::html_flow::continuation_start,
+        StateName::HtmlFlowContinuationBefore => construct::html_flow::continuation_before,
+        StateName::HtmlFlowContinuationCommentInside => {
+            construct::html_flow::continuation_comment_inside
+        }
+        StateName::HtmlFlowContinuationRawTagOpen => {
+            construct::html_flow::continuation_raw_tag_open
+        }
+        StateName::HtmlFlowContinuationRawEndTag => construct::html_flow::continuation_raw_end_tag,
+        StateName::HtmlFlowContinuationClose => construct::html_flow::continuation_close,
+        StateName::HtmlFlowContinuationCdataInside => {
+            construct::html_flow::continuation_cdata_inside
+        }
+        StateName::HtmlFlowContinuationStartNonLazy => {
+            construct::html_flow::continuation_start_non_lazy
+        }
+
+        StateName::HtmlTextStart => construct::html_text::start,
+        StateName::HtmlTextOpen => construct::html_text::open,
+        StateName::HtmlTextDeclarationOpen => construct::html_text::declaration_open,
+        StateName::HtmlTextTagCloseStart => construct::html_text::tag_close_start,
+        StateName::HtmlTextTagClose => construct::html_text::tag_close,
+        StateName::HtmlTextTagCloseBetween => construct::html_text::tag_close_between,
+        StateName::HtmlTextTagOpen => construct::html_text::tag_open,
+        StateName::HtmlTextTagOpenBetween => construct::html_text::tag_open_between,
+        StateName::HtmlTextTagOpenAttributeName => construct::html_text::tag_open_attribute_name,
+        StateName::HtmlTextTagOpenAttributeNameAfter => {
+            construct::html_text::tag_open_attribute_name_after
+        }
+        StateName::HtmlTextTagOpenAttributeValueBefore => {
+            construct::html_text::tag_open_attribute_value_before
+        }
+        StateName::HtmlTextTagOpenAttributeValueQuoted => {
+            construct::html_text::tag_open_attribute_value_quoted
+        }
+        StateName::HtmlTextTagOpenAttributeValueQuotedAfter => {
+            construct::html_text::tag_open_attribute_value_quoted_after
+        }
+        StateName::HtmlTextTagOpenAttributeValueUnquoted => {
+            construct::html_text::tag_open_attribute_value_unquoted
+        }
+        StateName::HtmlTextCdata => construct::html_text::cdata,
+        StateName::HtmlTextCdataOpenInside => construct::html_text::cdata_open_inside,
+        StateName::HtmlTextCdataClose => construct::html_text::cdata_close,
+        StateName::HtmlTextCdataEnd => construct::html_text::cdata_end,
+        StateName::HtmlTextCommentOpenInside => construct::html_text::comment_open_inside,
+        StateName::HtmlTextCommentStart => construct::html_text::comment_start,
+        StateName::HtmlTextCommentStartDash => construct::html_text::comment_start_dash,
+        StateName::HtmlTextComment => construct::html_text::comment,
+        StateName::HtmlTextCommentClose => construct::html_text::comment_close,
+        StateName::HtmlTextDeclaration => construct::html_text::declaration,
+        StateName::HtmlTextEnd => construct::html_text::end,
+        StateName::HtmlTextInstruction => construct::html_text::instruction,
+        StateName::HtmlTextInstructionClose => construct::html_text::instruction_close,
+        StateName::HtmlTextLineEndingBefore => construct::html_text::line_ending_before,
+        StateName::HtmlTextLineEndingAfter => construct::html_text::line_ending_after,
+        StateName::HtmlTextLineEndingAfterPrefix => construct::html_text::line_ending_after_prefix,
+
+        StateName::LabelStart => construct::partial_label::start,
+        StateName::LabelAtBreak => construct::partial_label::at_break,
+        StateName::LabelEolAfter => construct::partial_label::eol_after,
+        StateName::LabelAtBlankLine => construct::partial_label::at_blank_line,
+        StateName::LabelEscape => construct::partial_label::escape,
+        StateName::LabelInside => construct::partial_label::inside,
+
+        StateName::LabelEndStart => construct::label_end::start,
+        StateName::LabelEndAfter => construct::label_end::after,
+        StateName::LabelEndResourceStart => construct::label_end::resource_start,
+        StateName::LabelEndResourceBefore => construct::label_end::resource_before,
+        StateName::LabelEndResourceOpen => construct::label_end::resource_open,
+        StateName::LabelEndResourceDestinationAfter => {
+            construct::label_end::resource_destination_after
+        }
+        StateName::LabelEndResourceDestinationMissing => {
+            construct::label_end::resource_destination_missing
+        }
+        StateName::LabelEndResourceBetween => construct::label_end::resource_between,
+        StateName::LabelEndResourceTitleAfter => construct::label_end::resource_title_after,
+        StateName::LabelEndResourceEnd => construct::label_end::resource_end,
+        StateName::LabelEndOk => construct::label_end::ok,
+        StateName::LabelEndNok => construct::label_end::nok,
+        StateName::LabelEndReferenceFull => construct::label_end::reference_full,
+        StateName::LabelEndReferenceFullAfter => construct::label_end::reference_full_after,
+        StateName::LabelEndReferenceNotFull => construct::label_end::reference_not_full,
+        StateName::LabelEndReferenceCollapsed => construct::label_end::reference_collapsed,
+        StateName::LabelEndReferenceCollapsedOpen => construct::label_end::reference_collapsed_open,
+
+        StateName::LabelStartImageStart => construct::label_start_image::start,
+        StateName::LabelStartImageOpen => construct::label_start_image::open,
+        StateName::LabelStartLinkStart => construct::label_start_link::start,
+
+        StateName::ListStart => construct::list::start,
+        StateName::ListBefore => construct::list::before,
+        StateName::ListNok => construct::list::nok,
+        StateName::ListBeforeOrdered => construct::list::before_ordered,
+        StateName::ListBeforeUnordered => construct::list::before_unordered,
+        StateName::ListValue => construct::list::value,
+        StateName::ListMarker => construct::list::marker,
+        StateName::ListMarkerAfter => construct::list::marker_after,
+        StateName::ListAfter => construct::list::after,
+        StateName::ListMarkerAfterFilled => construct::list::marker_after_filled,
+        StateName::ListWhitespace => construct::list::whitespace,
+        StateName::ListWhitespaceAfter => construct::list::whitespace_after,
+        StateName::ListPrefixOther => construct::list::prefix_other,
+        StateName::ListContStart => construct::list::cont_start,
+        StateName::ListContBlank => construct::list::cont_blank,
+        StateName::ListContFilled => construct::list::cont_filled,
+        StateName::ListOk => construct::list::ok,
+
+        StateName::NonLazyContinuationStart => construct::partial_non_lazy_continuation::start,
+        StateName::NonLazyContinuationAfter => construct::partial_non_lazy_continuation::after,
+
+        StateName::ParagraphStart => construct::paragraph::start,
+        StateName::ParagraphInside => construct::paragraph::inside,
+
+        StateName::SpaceOrTabStart => construct::partial_space_or_tab::start,
+        StateName::SpaceOrTabInside => construct::partial_space_or_tab::inside,
+        StateName::SpaceOrTabAfter => construct::partial_space_or_tab::after,
+
+        StateName::SpaceOrTabEolStart => construct::partial_space_or_tab::eol_start,
+        StateName::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab::eol_after_first,
+        StateName::SpaceOrTabEolAfterEol => construct::partial_space_or_tab::eol_after_eol,
+        StateName::SpaceOrTabEolAtEol => construct::partial_space_or_tab::eol_at_eol,
+        StateName::SpaceOrTabEolAfterMore => construct::partial_space_or_tab::eol_after_more,
+
+        StateName::StringStart => content::string::start,
+        StateName::StringBefore => content::string::before,
+        StateName::StringBeforeData => content::string::before_data,
+
+        StateName::TextStart => content::text::start,
+        StateName::TextBefore => content::text::before,
+        StateName::TextBeforeHtml => content::text::before_html,
+        StateName::TextBeforeHardBreakEscape => content::text::before_hard_break_escape,
+        StateName::TextBeforeData => content::text::before_data,
+
+        StateName::ThematicBreakStart => construct::thematic_break::start,
+        StateName::ThematicBreakBefore => construct::thematic_break::before,
+        StateName::ThematicBreakSequence => construct::thematic_break::sequence,
+        StateName::ThematicBreakAtBreak => construct::thematic_break::at_break,
+
+        StateName::TitleStart => construct::partial_title::start,
+        StateName::TitleBegin => construct::partial_title::begin,
+        StateName::TitleAfterEol => construct::partial_title::after_eol,
+        StateName::TitleAtBreak => construct::partial_title::at_break,
+        StateName::TitleAtBlankLine => construct::partial_title::at_blank_line,
+        StateName::TitleEscape => construct::partial_title::escape,
+        StateName::TitleInside => construct::partial_title::inside,
+    };
 
     func(tokenizer)
 }
