@@ -2,3 +2,31 @@ micromark.js: unquoted: is `completeAttributeValueUnquoted`s case for `completeA
 micromark.js: `]` case in cdata_end does not need to consume, it can defer to `cdata_close`, which should save 1 line
 micromark.js: should `tagOpenAttributeValueUnquoted` also support a slash?
 micromark.js: `atLineEnding` in html (text) should always eat arbitrary whitespace? code (indented) has no effect on html (text)?
+
+```rs
+// ---------------------
+// Useful helper:
+
+let mut index = 0;
+let mut balance = 0;
+println!("before: {:?}", events.len());
+while index < events.len() {
+    let event = &events[index];
+    if event.event_type == EventType::Exit {
+        balance -= 1;
+    }
+    let prefix = String::from_utf8(vec![b' '; balance * 2]).unwrap();
+    println!(
+        "ev:  {}{:?}:{:?} ({:?}): {:?}",
+        prefix,
+        event.kind,
+        event.name,
+        index,
+        event.link,
+   );
+    if event.event_type == EventType::Enter {
+        balance += 1;
+    }
+    index += 1;
+}
+```
