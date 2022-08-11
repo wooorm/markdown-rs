@@ -28,8 +28,9 @@
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use super::label_end::resolve_media;
+use crate::state::State;
 use crate::token::Token;
-use crate::tokenizer::{LabelStart, State, Tokenizer};
+use crate::tokenizer::{LabelStart, Tokenizer};
 
 /// Start of label (link) start.
 ///

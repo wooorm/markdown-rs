@@ -31,9 +31,10 @@
 //! [label_end]: crate::construct::label_end
 
 use crate::construct::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
+use crate::state::{Name, State};
 use crate::subtokenize::link;
 use crate::token::Token;
-use crate::tokenizer::{ContentType, State, StateName, Tokenizer};
+use crate::tokenizer::{ContentType, Tokenizer};
 
 /// Before a title.
 ///
@@ -50,7 +51,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
-            State::Next(StateName::TitleBegin)
+            State::Next(Name::TitleBegin)
         }
         _ => State::Nok,
     }
@@ -79,7 +80,7 @@ pub fn begin(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            State::Retry(StateName::TitleAtBreak)
+            State::Retry(Name::TitleAtBreak)
         }
     }
 }
@@ -108,15 +109,15 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 
             tokenizer.attempt(
                 name,
-                State::Next(StateName::TitleAfterEol),
-                State::Next(StateName::TitleAtBlankLine),
+                State::Next(Name::TitleAfterEol),
+                State::Next(Name::TitleAtBlankLine),
             )
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Retry(StateName::TitleBegin)
+            State::Retry(Name::TitleBegin)
         }
         Some(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
@@ -128,7 +129,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.tokenize_state.connect = true;
             }
 
-            State::Retry(StateName::TitleInside)
+            State::Retry(Name::TitleInside)
         }
     }
 }
@@ -142,7 +143,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = true;
-    State::Retry(StateName::TitleAtBreak)
+    State::Retry(Name::TitleAtBreak)
 }
 
 /// In a title, at a blank line.
@@ -169,20 +170,20 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Token::Data);
-            State::Retry(StateName::TitleAtBreak)
+            State::Retry(Name::TitleAtBreak)
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.exit(Token::Data);
-            State::Retry(StateName::TitleAtBreak)
+            State::Retry(Name::TitleAtBreak)
         }
         Some(byte) => {
             tokenizer.consume();
             State::Next(if matches!(byte, b'\\') {
-                StateName::TitleEscape
+                Name::TitleEscape
             } else {
-                StateName::TitleInside
+                Name::TitleInside
             })
         }
     }
@@ -198,8 +199,8 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'"' | b'\'' | b')') => {
             tokenizer.consume();
-            State::Next(StateName::TitleInside)
+            State::Next(Name::TitleInside)
         }
-        _ => State::Retry(StateName::TitleInside),
+        _ => State::Retry(Name::TitleInside),
     }
 }

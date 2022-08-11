@@ -29,8 +29,9 @@
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use super::label_end::resolve_media;
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{LabelStart, State, StateName, Tokenizer};
+use crate::tokenizer::{LabelStart, Tokenizer};
 
 /// Start of label (image) start.
 ///
@@ -45,7 +46,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LabelImageMarker);
             tokenizer.consume();
             tokenizer.exit(Token::LabelImageMarker);
-            State::Next(StateName::LabelStartImageOpen)
+            State::Next(Name::LabelStartImageOpen)
         }
         _ => State::Nok,
     }

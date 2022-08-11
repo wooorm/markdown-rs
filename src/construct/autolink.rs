@@ -102,8 +102,9 @@
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Start of an autolink.
 ///
@@ -121,7 +122,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(Token::AutolinkMarker);
             tokenizer.enter(Token::AutolinkProtocol);
-            State::Next(StateName::AutolinkOpen)
+            State::Next(Name::AutolinkOpen)
         }
         _ => State::Nok,
     }
@@ -140,9 +141,9 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
         // ASCII alphabetic.
         Some(b'A'..=b'Z' | b'a'..=b'z') => {
             tokenizer.consume();
-            State::Next(StateName::AutolinkSchemeOrEmailAtext)
+            State::Next(Name::AutolinkSchemeOrEmailAtext)
         }
-        _ => State::Retry(StateName::AutolinkEmailAtext),
+        _ => State::Retry(Name::AutolinkEmailAtext),
     }
 }
 
@@ -160,9 +161,9 @@ pub fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
             // Count the previous alphabetical from `open` too.
             tokenizer.tokenize_state.size = 1;
-            State::Retry(StateName::AutolinkSchemeInsideOrEmailAtext)
+            State::Retry(Name::AutolinkSchemeInsideOrEmailAtext)
         }
-        _ => State::Retry(StateName::AutolinkEmailAtext),
+        _ => State::Retry(Name::AutolinkEmailAtext),
     }
 }
 
@@ -179,7 +180,7 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         Some(b':') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size = 0;
-            State::Next(StateName::AutolinkUrlInside)
+            State::Next(Name::AutolinkUrlInside)
         }
         // ASCII alphanumeric and `+`, `-`, and `.`.
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
@@ -187,11 +188,11 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Next(StateName::AutolinkSchemeInsideOrEmailAtext)
+            State::Next(Name::AutolinkSchemeInsideOrEmailAtext)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
-            State::Retry(StateName::AutolinkEmailAtext)
+            State::Retry(Name::AutolinkEmailAtext)
         }
     }
 }
@@ -216,7 +217,7 @@ pub fn url_inside(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\0'..=0x1F | b' ' | b'<' | 0x7F) => State::Nok,
         Some(_) => {
             tokenizer.consume();
-            State::Next(StateName::AutolinkUrlInside)
+            State::Next(Name::AutolinkUrlInside)
         }
     }
 }
@@ -231,7 +232,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'@') => {
             tokenizer.consume();
-            State::Next(StateName::AutolinkEmailAtSignOrDot)
+            State::Next(Name::AutolinkEmailAtSignOrDot)
         }
         // ASCII atext.
         //
@@ -254,7 +255,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
             b'#'..=b'\'' | b'*' | b'+' | b'-'..=b'9' | b'=' | b'?' | b'A'..=b'Z' | b'^'..=b'~',
         ) => {
             tokenizer.consume();
-            State::Next(StateName::AutolinkEmailAtext)
+            State::Next(Name::AutolinkEmailAtext)
         }
         _ => State::Nok,
     }
@@ -269,9 +270,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
 pub fn email_at_sign_or_dot(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII alphanumeric.
-        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => {
-            State::Retry(StateName::AutolinkEmailValue)
-        }
+        Some(b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') => State::Retry(Name::AutolinkEmailValue),
         _ => State::Nok,
     }
 }
@@ -287,7 +286,7 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
         Some(b'.') => {
             tokenizer.tokenize_state.size = 0;
             tokenizer.consume();
-            State::Next(StateName::AutolinkEmailAtSignOrDot)
+            State::Next(Name::AutolinkEmailAtSignOrDot)
         }
         Some(b'>') => {
             tokenizer.tokenize_state.size = 0;
@@ -302,7 +301,7 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::Autolink);
             State::Ok
         }
-        _ => State::Retry(StateName::AutolinkEmailValue),
+        _ => State::Retry(Name::AutolinkEmailValue),
     }
 }
 
@@ -321,9 +320,9 @@ pub fn email_value(tokenizer: &mut Tokenizer) -> State {
             if tokenizer.tokenize_state.size < AUTOLINK_DOMAIN_SIZE_MAX =>
         {
             let name = if matches!(tokenizer.current, Some(b'-')) {
-                StateName::AutolinkEmailValue
+                Name::AutolinkEmailValue
             } else {
-                StateName::AutolinkEmailLabel
+                Name::AutolinkEmailLabel
             };
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();

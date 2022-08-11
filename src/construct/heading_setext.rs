@@ -59,8 +59,9 @@
 
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{EventType, State, StateName, Tokenizer};
+use crate::tokenizer::{EventType, Tokenizer};
 use crate::util::skip::opt_back as skip_opt_back;
 
 /// At a line ending, presumably an underline.
@@ -93,11 +94,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             },
         );
 
-        tokenizer.attempt(
-            name,
-            State::Next(StateName::HeadingSetextBefore),
-            State::Nok,
-        )
+        tokenizer.attempt(name, State::Next(Name::HeadingSetextBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -115,7 +112,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         Some(b'-' | b'=') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
             tokenizer.enter(Token::HeadingSetextUnderline);
-            State::Retry(StateName::HeadingSetextInside)
+            State::Retry(Name::HeadingSetextInside)
         }
         _ => State::Nok,
     }
@@ -132,7 +129,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Next(StateName::HeadingSetextInside)
+            State::Next(Name::HeadingSetextInside)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
@@ -140,8 +137,8 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             let name = space_or_tab(tokenizer);
             tokenizer.attempt(
                 name,
-                State::Next(StateName::HeadingSetextAfter),
-                State::Next(StateName::HeadingSetextAfter),
+                State::Next(Name::HeadingSetextAfter),
+                State::Next(Name::HeadingSetextAfter),
             )
         }
     }

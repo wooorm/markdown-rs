@@ -71,8 +71,9 @@
 //! [label_end]: crate::construct::label_end
 //! [sanitize_uri]: crate::util::sanitize_uri
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{ContentType, State, StateName, Tokenizer};
+use crate::tokenizer::{ContentType, Tokenizer};
 
 /// Before a destination.
 ///
@@ -90,7 +91,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Next(StateName::DestinationEnclosedBefore)
+            State::Next(Name::DestinationEnclosedBefore)
         }
         // ASCII control, space, closing paren, but *not* `\0`.
         None | Some(0x01..=0x1F | b' ' | b')' | 0x7F) => State::Nok,
@@ -99,7 +100,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_4.clone());
             tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
             tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            State::Retry(StateName::DestinationRaw)
+            State::Retry(Name::DestinationRaw)
         }
     }
 }
@@ -121,7 +122,7 @@ pub fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
     } else {
         tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
         tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-        State::Retry(StateName::DestinationEnclosed)
+        State::Retry(Name::DestinationEnclosed)
     }
 }
 
@@ -137,15 +138,15 @@ pub fn enclosed(tokenizer: &mut Tokenizer) -> State {
         Some(b'>') => {
             tokenizer.exit(Token::Data);
             tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
-            State::Retry(StateName::DestinationEnclosedBefore)
+            State::Retry(Name::DestinationEnclosedBefore)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Next(StateName::DestinationEnclosedEscape)
+            State::Next(Name::DestinationEnclosedEscape)
         }
         _ => {
             tokenizer.consume();
-            State::Next(StateName::DestinationEnclosed)
+            State::Next(Name::DestinationEnclosed)
         }
     }
 }
@@ -160,9 +161,9 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'<' | b'>' | b'\\') => {
             tokenizer.consume();
-            State::Next(StateName::DestinationEnclosed)
+            State::Next(Name::DestinationEnclosed)
         }
-        _ => State::Retry(StateName::DestinationEnclosed),
+        _ => State::Retry(Name::DestinationEnclosed),
     }
 }
 
@@ -185,7 +186,7 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_b => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Next(StateName::DestinationRaw)
+            State::Next(Name::DestinationRaw)
         }
         // ASCII control (but *not* `\0`) and space and `(`.
         None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => {
@@ -195,15 +196,15 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b')') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size -= 1;
-            State::Next(StateName::DestinationRaw)
+            State::Next(Name::DestinationRaw)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Next(StateName::DestinationRawEscape)
+            State::Next(Name::DestinationRawEscape)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Next(StateName::DestinationRaw)
+            State::Next(Name::DestinationRaw)
         }
     }
 }
@@ -218,8 +219,8 @@ pub fn raw_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'(' | b')' | b'\\') => {
             tokenizer.consume();
-            State::Next(StateName::DestinationRaw)
+            State::Next(Name::DestinationRaw)
         }
-        _ => State::Retry(StateName::DestinationRaw),
+        _ => State::Retry(Name::DestinationRaw),
     }
 }

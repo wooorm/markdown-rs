@@ -54,10 +54,11 @@
 //! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
-use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
+use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{ContentType, Event, EventType, State, StateName, Tokenizer};
+use crate::tokenizer::{ContentType, Event, EventType, Tokenizer};
 
 /// Start of a heading (atx).
 ///
@@ -77,7 +78,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.attempt(name, State::Next(StateName::HeadingAtxBefore), State::Nok)
+        tokenizer.attempt(name, State::Next(Name::HeadingAtxBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -92,7 +93,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     if Some(b'#') == tokenizer.current {
         tokenizer.enter(Token::HeadingAtxSequence);
-        State::Retry(StateName::HeadingAtxSequenceOpen)
+        State::Retry(Name::HeadingAtxSequenceOpen)
     } else {
         State::Nok
     }
@@ -109,18 +110,18 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') if tokenizer.tokenize_state.size > 0 => {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::HeadingAtxSequence);
-            State::Retry(StateName::HeadingAtxAtBreak)
+            State::Retry(Name::HeadingAtxAtBreak)
         }
         Some(b'#') if tokenizer.tokenize_state.size < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Next(StateName::HeadingAtxSequenceOpen)
+            State::Next(Name::HeadingAtxSequenceOpen)
         }
         _ if tokenizer.tokenize_state.size > 0 => {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Token::HeadingAtxSequence);
             let name = space_or_tab(tokenizer);
-            tokenizer.attempt(name, State::Next(StateName::HeadingAtxAtBreak), State::Nok)
+            tokenizer.attempt(name, State::Next(Name::HeadingAtxAtBreak), State::Nok)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -146,15 +147,15 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
         Some(b'\t' | b' ') => {
             let name = space_or_tab(tokenizer);
-            tokenizer.attempt(name, State::Next(StateName::HeadingAtxAtBreak), State::Nok)
+            tokenizer.attempt(name, State::Next(Name::HeadingAtxAtBreak), State::Nok)
         }
         Some(b'#') => {
             tokenizer.enter(Token::HeadingAtxSequence);
-            State::Retry(StateName::HeadingAtxSequenceFurther)
+            State::Retry(Name::HeadingAtxSequenceFurther)
         }
         Some(_) => {
             tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            State::Retry(StateName::HeadingAtxData)
+            State::Retry(Name::HeadingAtxData)
         }
     }
 }
@@ -170,10 +171,10 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 pub fn sequence_further(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'#') = tokenizer.current {
         tokenizer.consume();
-        State::Next(StateName::HeadingAtxSequenceFurther)
+        State::Next(Name::HeadingAtxSequenceFurther)
     } else {
         tokenizer.exit(Token::HeadingAtxSequence);
-        State::Retry(StateName::HeadingAtxAtBreak)
+        State::Retry(Name::HeadingAtxAtBreak)
     }
 }
 
@@ -188,11 +189,11 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
         // Note: `#` for closing sequence must be preceded by whitespace, otherwise it’s just text.
         None | Some(b'\t' | b'\n' | b' ') => {
             tokenizer.exit(Token::Data);
-            State::Retry(StateName::HeadingAtxAtBreak)
+            State::Retry(Name::HeadingAtxAtBreak)
         }
         _ => {
             tokenizer.consume();
-            State::Next(StateName::HeadingAtxData)
+            State::Next(Name::HeadingAtxData)
         }
     }
 }

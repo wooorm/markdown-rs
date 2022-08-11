@@ -32,8 +32,9 @@
 //! [code_text]: crate::construct::code_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{ContentType, EventType, State, StateName, Tokenizer};
+use crate::tokenizer::{ContentType, EventType, Tokenizer};
 use crate::util::skip::opt as skip_opt;
 
 /// Before a paragraph.
@@ -48,7 +49,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         _ => {
             tokenizer.enter(Token::Paragraph);
             tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            State::Retry(StateName::ParagraphInside)
+            State::Retry(Name::ParagraphInside)
         }
     }
 }
@@ -71,7 +72,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Next(StateName::ParagraphInside)
+            State::Next(Name::ParagraphInside)
         }
     }
 }

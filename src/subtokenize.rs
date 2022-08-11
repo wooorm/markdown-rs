@@ -22,7 +22,8 @@
 //! before any level that can include references can be parsed.
 
 use crate::parser::ParseState;
-use crate::tokenizer::{ContentType, Event, EventType, State, StateName, Tokenizer};
+use crate::state::{Name, State};
+use crate::tokenizer::{ContentType, Event, EventType, Tokenizer};
 use crate::util::edit_map::EditMap;
 
 /// Create a link between two [`Event`][]s.
@@ -79,9 +80,9 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
                 let mut state = State::Next(if link.content_type == ContentType::String {
-                    StateName::StringStart
+                    Name::StringStart
                 } else {
-                    StateName::TextStart
+                    Name::TextStart
                 });
 
                 // Loop through links to pass them in order to the subtokenizer.

@@ -21,7 +21,8 @@
 //! > [whitespace][crate::construct::partial_whitespace].
 
 use crate::construct::partial_whitespace::resolve_whitespace;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::state::{Name, State};
+use crate::tokenizer::Tokenizer;
 
 const MARKERS: [u8; 9] = [
     b'!',  // `label_start_image`
@@ -39,7 +40,7 @@ const MARKERS: [u8; 9] = [
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
     tokenizer.tokenize_state.markers = &MARKERS;
-    State::Retry(StateName::TextBefore)
+    State::Retry(Name::TextBefore)
 }
 
 /// Before text.
@@ -47,75 +48,71 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'!') => tokenizer.attempt(
-            StateName::LabelStartImageStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeData),
+            Name::LabelStartImageStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeData),
         ),
         Some(b'&') => tokenizer.attempt(
-            StateName::CharacterReferenceStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeData),
+            Name::CharacterReferenceStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeData),
         ),
         Some(b'*' | b'_') => tokenizer.attempt(
-            StateName::AttentionStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeData),
+            Name::AttentionStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeData),
         ),
         // `autolink`, `html_text` (order does not matter)
         Some(b'<') => tokenizer.attempt(
-            StateName::AutolinkStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeHtml),
+            Name::AutolinkStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeHtml),
         ),
         Some(b'[') => tokenizer.attempt(
-            StateName::LabelStartLinkStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeData),
+            Name::LabelStartLinkStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeData),
         ),
         Some(b'\\') => tokenizer.attempt(
-            StateName::CharacterEscapeStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeHardBreakEscape),
+            Name::CharacterEscapeStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeHardBreakEscape),
         ),
         Some(b']') => tokenizer.attempt(
-            StateName::LabelEndStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeData),
+            Name::LabelEndStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeData),
         ),
         Some(b'`') => tokenizer.attempt(
-            StateName::CodeTextStart,
-            State::Next(StateName::TextBefore),
-            State::Next(StateName::TextBeforeData),
+            Name::CodeTextStart,
+            State::Next(Name::TextBefore),
+            State::Next(Name::TextBeforeData),
         ),
-        _ => State::Retry(StateName::TextBeforeData),
+        _ => State::Retry(Name::TextBeforeData),
     }
 }
 
 /// At `<`, which wasn’t an autolink: before HTML?
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
-        StateName::HtmlTextStart,
-        State::Next(StateName::TextBefore),
-        State::Next(StateName::TextBeforeData),
+        Name::HtmlTextStart,
+        State::Next(Name::TextBefore),
+        State::Next(Name::TextBeforeData),
     )
 }
 
 /// At `\`, which wasn’t a character escape: before a hard break?
 pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
-        StateName::HardBreakEscapeStart,
-        State::Next(StateName::TextBefore),
-        State::Next(StateName::TextBeforeData),
+        Name::HardBreakEscapeStart,
+        State::Next(Name::TextBefore),
+        State::Next(Name::TextBeforeData),
     )
 }
 
 /// At data.
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        StateName::DataStart,
-        State::Next(StateName::TextBefore),
-        State::Nok,
-    )
+    tokenizer.attempt(Name::DataStart, State::Next(Name::TextBefore), State::Nok)
 }
 
 /// Resolve whitespace.

@@ -33,8 +33,9 @@
 //! [character_reference]: crate::construct::character_reference
 //! [hard_break_escape]: crate::construct::hard_break_escape
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Start of a character escape.
 ///
@@ -49,7 +50,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::CharacterEscapeMarker);
             tokenizer.consume();
             tokenizer.exit(Token::CharacterEscapeMarker);
-            State::Next(StateName::CharacterEscapeInside)
+            State::Next(Name::CharacterEscapeInside)
         }
         _ => State::Nok,
     }
@@ -61,7 +62,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | a\*b
 ///       ^
 /// ```
-// StateName::CharacterEscapeInside
+// Name::CharacterEscapeInside
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII punctuation.

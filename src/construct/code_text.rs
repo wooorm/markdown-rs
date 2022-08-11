@@ -83,8 +83,9 @@
 //! [code_fenced]: crate::construct::code_fenced
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Start of code (text).
 ///
@@ -105,7 +106,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.enter(Token::CodeText);
             tokenizer.enter(Token::CodeTextSequence);
-            State::Retry(StateName::CodeTextSequenceOpen)
+            State::Retry(Name::CodeTextSequenceOpen)
         }
         _ => State::Nok,
     }
@@ -121,10 +122,10 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'`') = tokenizer.current {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Next(StateName::CodeTextSequenceOpen)
+        State::Next(Name::CodeTextSequenceOpen)
     } else {
         tokenizer.exit(Token::CodeTextSequence);
-        State::Retry(StateName::CodeTextBetween)
+        State::Retry(Name::CodeTextBetween)
     }
 }
 
@@ -144,15 +145,15 @@ pub fn between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Next(StateName::CodeTextBetween)
+            State::Next(Name::CodeTextBetween)
         }
         Some(b'`') => {
             tokenizer.enter(Token::CodeTextSequence);
-            State::Retry(StateName::CodeTextSequenceClose)
+            State::Retry(Name::CodeTextSequenceClose)
         }
         _ => {
             tokenizer.enter(Token::CodeTextData);
-            State::Retry(StateName::CodeTextData)
+            State::Retry(Name::CodeTextData)
         }
     }
 }
@@ -167,11 +168,11 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'`') => {
             tokenizer.exit(Token::CodeTextData);
-            State::Retry(StateName::CodeTextBetween)
+            State::Retry(Name::CodeTextBetween)
         }
         _ => {
             tokenizer.consume();
-            State::Next(StateName::CodeTextData)
+            State::Next(Name::CodeTextData)
         }
     }
 }
@@ -187,7 +188,7 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
         Some(b'`') => {
             tokenizer.tokenize_state.size_b += 1;
             tokenizer.consume();
-            State::Next(StateName::CodeTextSequenceClose)
+            State::Next(Name::CodeTextSequenceClose)
         }
         _ => {
             if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_b {
@@ -203,7 +204,7 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.events[index - 1].token_type = Token::CodeTextData;
                 tokenizer.events[index].token_type = Token::CodeTextData;
                 tokenizer.tokenize_state.size_b = 0;
-                State::Retry(StateName::CodeTextBetween)
+                State::Retry(Name::CodeTextBetween)
             }
         }
     }

@@ -13,7 +13,8 @@
 //! [text]: crate::content::text
 
 use crate::construct::partial_whitespace::resolve_whitespace;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::state::{Name, State};
+use crate::tokenizer::Tokenizer;
 
 const MARKERS: [u8; 2] = [b'&', b'\\'];
 
@@ -21,7 +22,7 @@ const MARKERS: [u8; 2] = [b'&', b'\\'];
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
     tokenizer.tokenize_state.markers = &MARKERS;
-    State::Retry(StateName::StringBefore)
+    State::Retry(Name::StringBefore)
 }
 
 /// Before string.
@@ -29,26 +30,22 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'&') => tokenizer.attempt(
-            StateName::CharacterReferenceStart,
-            State::Next(StateName::StringBefore),
-            State::Next(StateName::StringBeforeData),
+            Name::CharacterReferenceStart,
+            State::Next(Name::StringBefore),
+            State::Next(Name::StringBeforeData),
         ),
         Some(b'\\') => tokenizer.attempt(
-            StateName::CharacterEscapeStart,
-            State::Next(StateName::StringBefore),
-            State::Next(StateName::StringBeforeData),
+            Name::CharacterEscapeStart,
+            State::Next(Name::StringBefore),
+            State::Next(Name::StringBeforeData),
         ),
-        _ => State::Retry(StateName::StringBeforeData),
+        _ => State::Retry(Name::StringBeforeData),
     }
 }
 
 /// At data.
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        StateName::DataStart,
-        State::Next(StateName::StringBefore),
-        State::Nok,
-    )
+    tokenizer.attempt(Name::DataStart, State::Next(Name::StringBefore), State::Nok)
 }
 
 /// Resolve whitespace.

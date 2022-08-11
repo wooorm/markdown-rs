@@ -39,8 +39,9 @@
 //! [hard_break_trailing]: crate::construct::partial_whitespace
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Start of a hard break (escape).
 ///
@@ -54,7 +55,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'\\') if tokenizer.parse_state.constructs.hard_break_escape => {
             tokenizer.enter(Token::HardBreakEscape);
             tokenizer.consume();
-            State::Next(StateName::HardBreakEscapeAfter)
+            State::Next(Name::HardBreakEscapeAfter)
         }
         _ => State::Nok,
     }

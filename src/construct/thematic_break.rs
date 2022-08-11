@@ -50,8 +50,9 @@
 
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::{TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN};
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Start of a thematic break.
 ///
@@ -72,11 +73,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             },
         );
 
-        tokenizer.attempt(
-            name,
-            State::Next(StateName::ThematicBreakBefore),
-            State::Nok,
-        )
+        tokenizer.attempt(name, State::Next(Name::ThematicBreakBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -92,7 +89,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'-' | b'_') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
-            State::Retry(StateName::ThematicBreakAtBreak)
+            State::Retry(Name::ThematicBreakAtBreak)
         }
         _ => State::Nok,
     }
@@ -118,7 +115,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.enter(Token::ThematicBreakSequence);
-            State::Retry(StateName::ThematicBreakSequence)
+            State::Retry(Name::ThematicBreakSequence)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
@@ -141,15 +138,15 @@ pub fn sequence(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Next(StateName::ThematicBreakSequence)
+            State::Next(Name::ThematicBreakSequence)
         }
         _ => {
             tokenizer.exit(Token::ThematicBreakSequence);
             let name = space_or_tab(tokenizer);
             tokenizer.attempt(
                 name,
-                State::Next(StateName::ThematicBreakAtBreak),
-                State::Next(StateName::ThematicBreakAtBreak),
+                State::Next(Name::ThematicBreakAtBreak),
+                State::Next(Name::ThematicBreakAtBreak),
             )
         }
     }

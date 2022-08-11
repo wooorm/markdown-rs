@@ -10,8 +10,9 @@
 //!
 //! *   [`micromark/lib/preprocess.js` in `micromark`](https://github.com/micromark/micromark/blob/ed23453/packages/micromark/dev/lib/preprocess.js#L54-L60)
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
@@ -24,7 +25,7 @@ const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.current == Some(BOM[0]) {
         tokenizer.enter(Token::ByteOrderMark);
-        State::Retry(StateName::BomInside)
+        State::Retry(Name::BomInside)
     } else {
         State::Nok
     }
@@ -45,7 +46,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             State::Ok
         } else {
-            State::Next(StateName::BomInside)
+            State::Next(Name::BomInside)
         }
     } else {
         tokenizer.tokenize_state.size = 0;

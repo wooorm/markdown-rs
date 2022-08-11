@@ -10,8 +10,9 @@
 //! [code_indented]: crate::construct::code_indented
 //! [html_flow]: crate::construct::html_flow
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{State, StateName, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Start of continuation.
 ///
@@ -26,7 +27,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Next(StateName::NonLazyContinuationAfter)
+            State::Next(Name::NonLazyContinuationAfter)
         }
         _ => State::Nok,
     }

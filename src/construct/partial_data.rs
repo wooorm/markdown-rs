@@ -6,8 +6,9 @@
 //! [string]: crate::content::string
 //! [text]: crate::content::text
 
+use crate::state::{Name, State};
 use crate::token::Token;
-use crate::tokenizer::{EventType, State, StateName, Tokenizer};
+use crate::tokenizer::{EventType, Tokenizer};
 
 /// At the beginning of data.
 ///
@@ -21,9 +22,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
             tokenizer.enter(Token::Data);
             tokenizer.consume();
-            State::Next(StateName::DataInside)
+            State::Next(Name::DataInside)
         }
-        _ => State::Retry(StateName::DataAtBreak),
+        _ => State::Retry(Name::DataAtBreak),
     }
 }
 
@@ -40,7 +41,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Token::LineEnding);
             tokenizer.consume();
             tokenizer.exit(Token::LineEnding);
-            State::Next(StateName::DataAtBreak)
+            State::Next(Name::DataAtBreak)
         }
         Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
@@ -48,7 +49,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(Token::Data);
-            State::Retry(StateName::DataInside)
+            State::Retry(Name::DataInside)
         }
     }
 }
@@ -68,10 +69,10 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 
     if done {
         tokenizer.exit(Token::Data);
-        State::Retry(StateName::DataAtBreak)
+        State::Retry(Name::DataAtBreak)
     } else {
         tokenizer.consume();
-        State::Next(StateName::DataInside)
+        State::Next(Name::DataInside)
     }
 }
 
