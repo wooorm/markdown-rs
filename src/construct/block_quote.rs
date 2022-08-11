@@ -19,10 +19,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`BlockQuote`][Token::BlockQuote]
-//! *   [`BlockQuoteMarker`][Token::BlockQuoteMarker]
-//! *   [`BlockQuotePrefix`][Token::BlockQuotePrefix]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`BlockQuote`][Name::BlockQuote]
+//! *   [`BlockQuoteMarker`][Name::BlockQuoteMarker]
+//! *   [`BlockQuotePrefix`][Name::BlockQuotePrefix]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!

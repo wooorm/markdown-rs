@@ -4,7 +4,7 @@
 //!
 //! ## Tokens
 //!
-//! *   [`ByteOrderMark`][Token::ByteOrderMark]
+//! *   [`ByteOrderMark`][Name::ByteOrderMark]
 //!
 //! ## References
 //!

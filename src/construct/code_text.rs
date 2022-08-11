@@ -67,10 +67,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeText`][Token::CodeText]
-//! *   [`CodeTextData`][Token::CodeTextData]
-//! *   [`CodeTextSequence`][Token::CodeTextSequence]
-//! *   [`LineEnding`][Token::LineEnding]
+//! *   [`CodeText`][Name::CodeText]
+//! *   [`CodeTextData`][Name::CodeTextData]
+//! *   [`CodeTextSequence`][Name::CodeTextSequence]
+//! *   [`LineEnding`][Name::LineEnding]
 //!
 //! ## References
 //!

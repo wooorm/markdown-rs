@@ -84,10 +84,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Autolink`][Token::Autolink]
-//! *   [`AutolinkEmail`][Token::AutolinkEmail]
-//! *   [`AutolinkMarker`][Token::AutolinkMarker]
-//! *   [`AutolinkProtocol`][Token::AutolinkProtocol]
+//! *   [`Autolink`][Name::Autolink]
+//! *   [`AutolinkEmail`][Name::AutolinkEmail]
+//! *   [`AutolinkMarker`][Name::AutolinkMarker]
+//! *   [`AutolinkProtocol`][Name::AutolinkProtocol]
 //!
 //! ## References
 //!

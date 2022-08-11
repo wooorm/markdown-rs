@@ -19,7 +19,7 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Paragraph`][Token::Paragraph]
+//! *   [`Paragraph`][Name::Paragraph]
 //!
 //! ## References
 //!

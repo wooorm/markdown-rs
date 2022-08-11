@@ -37,10 +37,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HeadingAtx`][Token::HeadingAtx]
-//! *   [`HeadingAtxSequence`][Token::HeadingAtxSequence]
-//! *   [`HeadingAtxText`][Token::HeadingAtxText]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`HeadingAtx`][Name::HeadingAtx]
+//! *   [`HeadingAtxSequence`][Name::HeadingAtxSequence]
+//! *   [`HeadingAtxText`][Name::HeadingAtxText]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!

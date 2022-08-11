@@ -42,12 +42,12 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CharacterReference`][Token::CharacterReference]
-//! *   [`CharacterReferenceMarker`][Token::CharacterReferenceMarker]
-//! *   [`CharacterReferenceMarkerHexadecimal`][Token::CharacterReferenceMarkerHexadecimal]
-//! *   [`CharacterReferenceMarkerNumeric`][Token::CharacterReferenceMarkerNumeric]
-//! *   [`CharacterReferenceMarkerSemi`][Token::CharacterReferenceMarkerSemi]
-//! *   [`CharacterReferenceValue`][Token::CharacterReferenceValue]
+//! *   [`CharacterReference`][Name::CharacterReference]
+//! *   [`CharacterReferenceMarker`][Name::CharacterReferenceMarker]
+//! *   [`CharacterReferenceMarkerHexadecimal`][Name::CharacterReferenceMarkerHexadecimal]
+//! *   [`CharacterReferenceMarkerNumeric`][Name::CharacterReferenceMarkerNumeric]
+//! *   [`CharacterReferenceMarkerSemi`][Name::CharacterReferenceMarkerSemi]
+//! *   [`CharacterReferenceValue`][Name::CharacterReferenceValue]
 //!
 //! ## References
 //!

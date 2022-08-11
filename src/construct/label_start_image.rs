@@ -15,9 +15,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LabelImage`][Token::LabelImage]
-//! *   [`LabelImageMarker`][Token::LabelImageMarker]
-//! *   [`LabelMarker`][Token::LabelMarker]
+//! *   [`LabelImage`][Name::LabelImage]
+//! *   [`LabelImageMarker`][Name::LabelImageMarker]
+//! *   [`LabelMarker`][Name::LabelMarker]
 //!
 //! ## References
 //!

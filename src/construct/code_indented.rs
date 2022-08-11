@@ -28,10 +28,10 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeIndented`][Token::CodeIndented]
-//! *   [`CodeFlowChunk`][Token::CodeFlowChunk]
-//! *   [`LineEnding`][Token::LineEnding]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`CodeIndented`][Name::CodeIndented]
+//! *   [`CodeFlowChunk`][Name::CodeFlowChunk]
+//! *   [`LineEnding`][Name::LineEnding]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!

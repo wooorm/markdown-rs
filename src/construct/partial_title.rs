@@ -30,7 +30,7 @@
 //! [character_reference]: crate::construct::character_reference
 //! [label_end]: crate::construct::label_end
 
-use crate::construct::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
+use crate::construct::partial_space_or_tab_eol::{space_or_tab_eol_with_options, Options};
 use crate::event::{Content, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
@@ -101,7 +101,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         Some(b'\n') => {
             let name = space_or_tab_eol_with_options(
                 tokenizer,
-                EolOptions {
+                Options {
                     content_type: Some(Content::String),
                     connect: tokenizer.tokenize_state.connect,
                 },

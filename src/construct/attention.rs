@@ -32,14 +32,14 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Emphasis`][Token::Emphasis]
-//! *   [`EmphasisSequence`][Token::EmphasisSequence]
-//! *   [`EmphasisText`][Token::EmphasisText]
-//! *   [`Strong`][Token::Strong]
-//! *   [`StrongSequence`][Token::StrongSequence]
-//! *   [`StrongText`][Token::StrongText]
+//! *   [`Emphasis`][Name::Emphasis]
+//! *   [`EmphasisSequence`][Name::EmphasisSequence]
+//! *   [`EmphasisText`][Name::EmphasisText]
+//! *   [`Strong`][Name::Strong]
+//! *   [`StrongSequence`][Name::StrongSequence]
+//! *   [`StrongText`][Name::StrongText]
 //!
-//! > 👉 **Note**: while parsing, [`AttentionSequence`][Token::AttentionSequence]
+//! > 👉 **Note**: while parsing, [`AttentionSequence`][Name::AttentionSequence]
 //! > is used, which is later compiled away.
 //!
 //! ## References

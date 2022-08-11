@@ -588,11 +588,11 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::SpaceOrTabInside => construct::partial_space_or_tab::inside,
         Name::SpaceOrTabAfter => construct::partial_space_or_tab::after,
 
-        Name::SpaceOrTabEolStart => construct::partial_space_or_tab::eol_start,
-        Name::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab::eol_after_first,
-        Name::SpaceOrTabEolAfterEol => construct::partial_space_or_tab::eol_after_eol,
-        Name::SpaceOrTabEolAtEol => construct::partial_space_or_tab::eol_at_eol,
-        Name::SpaceOrTabEolAfterMore => construct::partial_space_or_tab::eol_after_more,
+        Name::SpaceOrTabEolStart => construct::partial_space_or_tab_eol::eol_start,
+        Name::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab_eol::eol_after_first,
+        Name::SpaceOrTabEolAfterEol => construct::partial_space_or_tab_eol::eol_after_eol,
+        Name::SpaceOrTabEolAtEol => construct::partial_space_or_tab_eol::eol_at_eol,
+        Name::SpaceOrTabEolAfterMore => construct::partial_space_or_tab_eol::eol_after_more,
 
         Name::StringStart => content::string::start,
         Name::StringBefore => content::string::before,

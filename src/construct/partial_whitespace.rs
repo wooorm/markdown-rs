@@ -30,8 +30,8 @@
 //! removed, making hard break (trailing) hard to use.
 //! ## Tokens
 //!
-//! *   [`HardBreakTrailing`][Token::HardBreakTrailing]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`HardBreakTrailing`][Name::HardBreakTrailing]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -71,7 +71,7 @@ pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whol
     }
 }
 
-/// Trim a [`Data`][Token::Data] token.
+/// Trim a [`Data`][Name::Data] token.
 fn trim_data(
     tokenizer: &mut Tokenizer,
     exit_index: usize,

@@ -77,14 +77,14 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeFenced`][Token::CodeFenced]
-//! *   [`CodeFencedFence`][Token::CodeFencedFence]
-//! *   [`CodeFencedFenceInfo`][Token::CodeFencedFenceInfo]
-//! *   [`CodeFencedFenceMeta`][Token::CodeFencedFenceMeta]
-//! *   [`CodeFencedFenceSequence`][Token::CodeFencedFenceSequence]
-//! *   [`CodeFlowChunk`][Token::CodeFlowChunk]
-//! *   [`LineEnding`][Token::LineEnding]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`CodeFenced`][Name::CodeFenced]
+//! *   [`CodeFencedFence`][Name::CodeFencedFence]
+//! *   [`CodeFencedFenceInfo`][Name::CodeFencedFenceInfo]
+//! *   [`CodeFencedFenceMeta`][Name::CodeFencedFenceMeta]
+//! *   [`CodeFencedFenceSequence`][Name::CodeFencedFenceSequence]
+//! *   [`CodeFlowChunk`][Name::CodeFlowChunk]
+//! *   [`LineEnding`][Name::LineEnding]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!

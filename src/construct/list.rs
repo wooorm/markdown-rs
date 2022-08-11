@@ -25,12 +25,12 @@
 //!
 //! ## Tokens
 //!
-//! *   [`ListItem`][Token::ListItem]
-//! *   [`ListItemMarker`][Token::ListItemMarker]
-//! *   [`ListItemPrefix`][Token::ListItemPrefix]
-//! *   [`ListItemValue`][Token::ListItemValue]
-//! *   [`ListOrdered`][Token::ListOrdered]
-//! *   [`ListUnordered`][Token::ListUnordered]
+//! *   [`ListItem`][Name::ListItem]
+//! *   [`ListItemMarker`][Name::ListItemMarker]
+//! *   [`ListItemPrefix`][Name::ListItemPrefix]
+//! *   [`ListItemValue`][Name::ListItemValue]
+//! *   [`ListOrdered`][Name::ListOrdered]
+//! *   [`ListUnordered`][Name::ListUnordered]
 //!
 //! ## References
 //!

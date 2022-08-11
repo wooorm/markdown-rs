@@ -40,9 +40,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HeadingSetext`][Token::HeadingSetext]
-//! *   [`HeadingSetextText`][Token::HeadingSetextText]
-//! *   [`HeadingSetextUnderline`][Token::HeadingSetextUnderline]
+//! *   [`HeadingSetext`][Name::HeadingSetext]
+//! *   [`HeadingSetextText`][Name::HeadingSetextText]
+//! *   [`HeadingSetextUnderline`][Name::HeadingSetextUnderline]
 //!
 //! ## References
 //!

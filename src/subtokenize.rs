@@ -6,9 +6,9 @@
 //! `previous` and `next` links.
 //! These links:
 //!
-//! *   …must occur on [`Enter`][EventType::Enter] events only
+//! *   …must occur on [`Enter`][Kind::Enter] events only
 //! *   …must occur on void events (they are followed by their corresponding
-//!     [`Exit`][EventType::Exit] event)
+//!     [`Exit`][Kind::Exit] event)
 //! *   …must have `content_type` field to define the kind of subcontent
 //!
 //! Links will then be passed through a tokenizer for the corresponding content

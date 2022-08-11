@@ -82,9 +82,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HtmlFlow`][Token::HtmlFlow]
-//! *   [`HtmlFlowData`][Token::HtmlFlowData]
-//! *   [`LineEnding`][Token::LineEnding]
+//! *   [`HtmlFlow`][Name::HtmlFlow]
+//! *   [`HtmlFlowData`][Name::HtmlFlowData]
+//! *   [`LineEnding`][Name::LineEnding]
 //!
 //! ## References
 //!

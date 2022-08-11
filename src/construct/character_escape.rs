@@ -19,9 +19,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CharacterEscape`][Token::CharacterEscape]
-//! *   [`CharacterEscapeMarker`][Token::CharacterEscapeMarker]
-//! *   [`CharacterEscapeValue`][Token::CharacterEscapeValue]
+//! *   [`CharacterEscape`][Name::CharacterEscape]
+//! *   [`CharacterEscapeMarker`][Name::CharacterEscapeMarker]
+//! *   [`CharacterEscapeValue`][Name::CharacterEscapeValue]
 //!
 //! ## References
 //!

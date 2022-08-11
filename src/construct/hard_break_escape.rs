@@ -26,7 +26,7 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HardBreakEscape`][Token::HardBreakEscape]
+//! *   [`HardBreakEscape`][Name::HardBreakEscape]
 //!
 //! ## References
 //!

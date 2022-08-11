@@ -102,28 +102,28 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Data`][Token::Data]
-//! *   [`Image`][Token::Image]
-//! *   [`Label`][Token::Label]
-//! *   [`LabelEnd`][Token::LabelEnd]
-//! *   [`LabelMarker`][Token::LabelMarker]
-//! *   [`LabelText`][Token::LabelText]
-//! *   [`LineEnding`][Token::LineEnding]
-//! *   [`Link`][Token::Link]
-//! *   [`Reference`][Token::Reference]
-//! *   [`ReferenceMarker`][Token::ReferenceMarker]
-//! *   [`ReferenceString`][Token::ReferenceString]
-//! *   [`Resource`][Token::Resource]
-//! *   [`ResourceDestination`][Token::ResourceDestination]
-//! *   [`ResourceDestinationLiteral`][Token::ResourceDestinationLiteral]
-//! *   [`ResourceDestinationLiteralMarker`][Token::ResourceDestinationLiteralMarker]
-//! *   [`ResourceDestinationRaw`][Token::ResourceDestinationRaw]
-//! *   [`ResourceDestinationString`][Token::ResourceDestinationString]
-//! *   [`ResourceMarker`][Token::ResourceMarker]
-//! *   [`ResourceTitle`][Token::ResourceTitle]
-//! *   [`ResourceTitleMarker`][Token::ResourceTitleMarker]
-//! *   [`ResourceTitleString`][Token::ResourceTitleString]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`Data`][Name::Data]
+//! *   [`Image`][Name::Image]
+//! *   [`Label`][Name::Label]
+//! *   [`LabelEnd`][Name::LabelEnd]
+//! *   [`LabelMarker`][Name::LabelMarker]
+//! *   [`LabelText`][Name::LabelText]
+//! *   [`LineEnding`][Name::LineEnding]
+//! *   [`Link`][Name::Link]
+//! *   [`Reference`][Name::Reference]
+//! *   [`ReferenceMarker`][Name::ReferenceMarker]
+//! *   [`ReferenceString`][Name::ReferenceString]
+//! *   [`Resource`][Name::Resource]
+//! *   [`ResourceDestination`][Name::ResourceDestination]
+//! *   [`ResourceDestinationLiteral`][Name::ResourceDestinationLiteral]
+//! *   [`ResourceDestinationLiteralMarker`][Name::ResourceDestinationLiteralMarker]
+//! *   [`ResourceDestinationRaw`][Name::ResourceDestinationRaw]
+//! *   [`ResourceDestinationString`][Name::ResourceDestinationString]
+//! *   [`ResourceMarker`][Name::ResourceMarker]
+//! *   [`ResourceTitle`][Name::ResourceTitle]
+//! *   [`ResourceTitleMarker`][Name::ResourceTitleMarker]
+//! *   [`ResourceTitleString`][Name::ResourceTitleString]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -147,7 +147,7 @@
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
-use crate::construct::partial_space_or_tab::space_or_tab_eol;
+use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::{Event, Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};

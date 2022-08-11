@@ -35,8 +35,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`ThematicBreak`][Token::ThematicBreak]
-//! *   [`ThematicBreakSequence`][Token::ThematicBreakSequence]
+//! *   [`ThematicBreak`][Name::ThematicBreak]
+//! *   [`ThematicBreakSequence`][Name::ThematicBreakSequence]
 //!
 //! ## References
 //!

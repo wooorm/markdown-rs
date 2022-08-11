@@ -42,8 +42,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HtmlText`][Token::HtmlText]
-//! *   [`HtmlTextData`][Token::HtmlTextData]
+//! *   [`HtmlText`][Name::HtmlText]
+//! *   [`HtmlTextData`][Name::HtmlTextData]
 //!
 //! ## References
 //!

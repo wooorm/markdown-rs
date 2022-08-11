@@ -59,21 +59,21 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Definition`][Token::Definition]
-//! *   [`DefinitionDestination`][Token::DefinitionDestination]
-//! *   [`DefinitionDestinationLiteral`][Token::DefinitionDestinationLiteral]
-//! *   [`DefinitionDestinationLiteralMarker`][Token::DefinitionDestinationLiteralMarker]
-//! *   [`DefinitionDestinationRaw`][Token::DefinitionDestinationRaw]
-//! *   [`DefinitionDestinationString`][Token::DefinitionDestinationString]
-//! *   [`DefinitionLabel`][Token::DefinitionLabel]
-//! *   [`DefinitionLabelMarker`][Token::DefinitionLabelMarker]
-//! *   [`DefinitionLabelString`][Token::DefinitionLabelString]
-//! *   [`DefinitionMarker`][Token::DefinitionMarker]
-//! *   [`DefinitionTitle`][Token::DefinitionTitle]
-//! *   [`DefinitionTitleMarker`][Token::DefinitionTitleMarker]
-//! *   [`DefinitionTitleString`][Token::DefinitionTitleString]
-//! *   [`LineEnding`][Token::LineEnding]
-//! *   [`SpaceOrTab`][Token::SpaceOrTab]
+//! *   [`Definition`][Name::Definition]
+//! *   [`DefinitionDestination`][Name::DefinitionDestination]
+//! *   [`DefinitionDestinationLiteral`][Name::DefinitionDestinationLiteral]
+//! *   [`DefinitionDestinationLiteralMarker`][Name::DefinitionDestinationLiteralMarker]
+//! *   [`DefinitionDestinationRaw`][Name::DefinitionDestinationRaw]
+//! *   [`DefinitionDestinationString`][Name::DefinitionDestinationString]
+//! *   [`DefinitionLabel`][Name::DefinitionLabel]
+//! *   [`DefinitionLabelMarker`][Name::DefinitionLabelMarker]
+//! *   [`DefinitionLabelString`][Name::DefinitionLabelString]
+//! *   [`DefinitionMarker`][Name::DefinitionMarker]
+//! *   [`DefinitionTitle`][Name::DefinitionTitle]
+//! *   [`DefinitionTitleMarker`][Name::DefinitionTitleMarker]
+//! *   [`DefinitionTitleString`][Name::DefinitionTitleString]
+//! *   [`LineEnding`][Name::LineEnding]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
@@ -93,7 +93,8 @@
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
-use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_eol};
+use crate::construct::partial_space_or_tab::space_or_tab;
+use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
