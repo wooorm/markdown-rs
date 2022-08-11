@@ -13,6 +13,7 @@
 //! [text]: crate::content::text
 
 use crate::construct::partial_whitespace::resolve_whitespace;
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
@@ -20,7 +21,7 @@ const MARKERS: [u8; 2] = [b'&', b'\\'];
 
 /// Start of string.
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
+    tokenizer.register_resolver(ResolveName::String);
     tokenizer.tokenize_state.markers = &MARKERS;
     State::Retry(StateName::StringBefore)
 }

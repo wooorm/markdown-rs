@@ -52,6 +52,7 @@
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 
 use crate::event::{Event, Kind, Name, Point};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::unicode::PUNCTUATION;
@@ -141,7 +142,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.exit(Name::AttentionSequence);
-            tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
+            tokenizer.register_resolver(ResolveName::Attention);
             tokenizer.tokenize_state.marker = b'\0';
             State::Ok
         }
@@ -150,7 +151,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 
 /// Resolve attention sequences.
 #[allow(clippy::too_many_lines)]
-fn resolve_attention(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut start = 0;
     let mut balance = 0;
     let mut sequences = vec![];

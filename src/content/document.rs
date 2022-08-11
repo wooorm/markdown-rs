@@ -531,7 +531,4 @@ fn resolve(tokenizer: &mut Tokenizer) {
     tokenizer
         .resolvers
         .append(&mut child.resolvers.split_off(0));
-    tokenizer
-        .resolver_ids
-        .append(&mut child.resolver_ids.split_off(0));
 }

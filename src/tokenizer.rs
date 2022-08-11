@@ -14,41 +14,9 @@
 use crate::constant::TAB_SIZE;
 use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
 use crate::parser::ParseState;
+use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, Name as StateName, State};
 use crate::util::edit_map::EditMap;
-
-/// How to handle a byte.
-#[derive(Debug, PartialEq)]
-pub enum ByteAction {
-    /// This is a normal byte.
-    ///
-    /// Includes replaced bytes.
-    Normal(u8),
-    /// This is a new byte.
-    Insert(u8),
-    /// This byte must be ignored.
-    Ignore,
-}
-
-/// Callback that can be registered and is called when the tokenizer is done.
-///
-/// Resolvers are supposed to change the list of events, because parsing is
-/// sometimes messy, and they help expose a cleaner interface of events to
-/// the compiler and other users.
-pub type Resolver = dyn FnOnce(&mut Tokenizer);
-
-/// Loose label starts we found.
-#[derive(Debug)]
-pub struct LabelStart {
-    /// Indices of where the label starts and ends in `events`.
-    pub start: (usize, usize),
-    /// A boolean used internally to figure out if a label start link can’t be
-    /// used (because links in links are incorrect).
-    pub inactive: bool,
-    /// A boolean used internally to figure out if a label is balanced: they’re
-    /// not media, it’s just balanced braces.
-    pub balanced: bool,
-}
 
 /// Media we found.
 #[derive(Debug)]
@@ -78,6 +46,32 @@ pub struct ContainerState {
     pub blank_initial: bool,
     /// The size of the initial construct.
     pub size: usize,
+}
+
+/// How to handle a byte.
+#[derive(Debug, PartialEq)]
+enum ByteAction {
+    /// This is a normal byte.
+    ///
+    /// Includes replaced bytes.
+    Normal(u8),
+    /// This is a new byte.
+    Insert(u8),
+    /// This byte must be ignored.
+    Ignore,
+}
+
+/// Loose label starts we found.
+#[derive(Debug)]
+pub struct LabelStart {
+    /// Indices of where the label starts and ends in `events`.
+    pub start: (usize, usize),
+    /// A boolean used internally to figure out if a label start link can’t be
+    /// used (because links in links are incorrect).
+    pub inactive: bool,
+    /// A boolean used internally to figure out if a label is balanced: they’re
+    /// not media, it’s just balanced braces.
+    pub balanced: bool,
 }
 
 /// Different kinds of attempts.
@@ -129,6 +123,7 @@ struct Progress {
 
 /// A lot of shared fields used to tokenize things.
 #[allow(clippy::struct_excessive_bools)]
+#[derive(Debug)]
 pub struct TokenizeState<'a> {
     // Couple complex fields used to tokenize the document.
     /// Tokenizer, used to tokenize flow in document.
@@ -205,6 +200,7 @@ pub struct TokenizeState<'a> {
 
 /// A tokenizer itself.
 #[allow(clippy::struct_excessive_bools)]
+#[derive(Debug)]
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
     column_start: Vec<(usize, usize)>,
@@ -217,8 +213,6 @@ pub struct Tokenizer<'a> {
     ///
     /// Tracked to make sure everything’s valid.
     consumed: bool,
-    /// Track whether this tokenizer is done.
-    resolved: bool,
     /// Stack of how to handle attempts.
     attempts: Vec<Attempt>,
     /// Current byte.
@@ -235,11 +229,8 @@ pub struct Tokenizer<'a> {
     pub stack: Vec<Name>,
     /// Edit map, to batch changes.
     pub map: EditMap,
-    /// List of attached resolvers, which will be called when done feeding,
-    /// to clean events.
-    pub resolvers: Vec<Box<Resolver>>,
-    /// List of names associated with attached resolvers.
-    pub resolver_ids: Vec<String>,
+    /// List of resolvers.
+    pub resolvers: Vec<ResolveName>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
     /// A lot of shared fields used to tokenize things.
@@ -270,7 +261,6 @@ impl<'a> Tokenizer<'a> {
             first_line: point.line,
             line_start: point.clone(),
             consumed: true,
-            resolved: false,
             attempts: vec![],
             point,
             stack: vec![],
@@ -317,23 +307,20 @@ impl<'a> Tokenizer<'a> {
             concrete: false,
             lazy: false,
             resolvers: vec![],
-            resolver_ids: vec![],
         }
     }
 
     /// Register a resolver.
-    pub fn register_resolver(&mut self, id: String, resolver: Box<Resolver>) {
-        if !self.resolver_ids.contains(&id) {
-            self.resolver_ids.push(id);
-            self.resolvers.push(resolver);
+    pub fn register_resolver(&mut self, name: ResolveName) {
+        if !self.resolvers.contains(&name) {
+            self.resolvers.push(name);
         }
     }
 
     /// Register a resolver, before others.
-    pub fn register_resolver_before(&mut self, id: String, resolver: Box<Resolver>) {
-        if !self.resolver_ids.contains(&id) {
-            self.resolver_ids.push(id);
-            self.resolvers.insert(0, resolver);
+    pub fn register_resolver_before(&mut self, name: ResolveName) {
+        if !self.resolvers.contains(&name) {
+            self.resolvers.insert(0, name);
         }
     }
 
@@ -587,11 +574,11 @@ impl<'a> Tokenizer<'a> {
         push_impl(self, to, to, state, true);
 
         if resolve {
-            self.resolved = true;
-
-            while !self.resolvers.is_empty() {
-                let resolver = self.resolvers.remove(0);
-                resolver(self);
+            let resolvers = self.resolvers.split_off(0);
+            let mut index = 0;
+            while index < resolvers.len() {
+                call_resolve(self, resolvers[index]);
+                index += 1;
             }
 
             self.map.consume(&mut self.events);
@@ -619,7 +606,6 @@ fn push_impl(
     mut state: State,
     flush: bool,
 ) -> State {
-    debug_assert!(!tokenizer.resolved, "cannot feed after drain");
     debug_assert!(
         from.0 > tokenizer.point.index
             || (from.0 == tokenizer.point.index && from.1 >= tokenizer.point.vs),

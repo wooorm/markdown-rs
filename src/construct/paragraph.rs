@@ -33,6 +33,7 @@
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
 use crate::event::{Content, Kind, Name};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt as skip_opt;
@@ -65,7 +66,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') => {
             tokenizer.exit(Name::Data);
             tokenizer.exit(Name::Paragraph);
-            tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));
+            tokenizer.register_resolver_before(ResolveName::Paragraph);
             // You’d be interrupting.
             tokenizer.interrupt = true;
             State::Ok

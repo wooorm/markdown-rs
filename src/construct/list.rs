@@ -47,6 +47,7 @@
 use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::{Kind, Name};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
@@ -283,7 +284,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         container.size = prefix;
 
         tokenizer.exit(Name::ListItemPrefix);
-        tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
+        tokenizer.register_resolver_before(ResolveName::List);
         State::Ok
     }
 }
@@ -355,7 +356,7 @@ pub fn nok(_tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Find adjacent list items with the same marker.
-pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut lists_wip: Vec<(u8, usize, usize, usize)> = vec![];
     let mut lists: Vec<(u8, usize, usize, usize)> = vec![];
     let mut index = 0;

@@ -10,6 +10,7 @@ mod construct;
 mod content;
 mod event;
 mod parser;
+mod resolve;
 mod state;
 mod subtokenize;
 mod tokenizer;

@@ -57,6 +57,7 @@
 use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::{Content, Event, Kind, Name};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
@@ -140,7 +141,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Name::HeadingAtx);
-            tokenizer.register_resolver("heading_atx".to_string(), Box::new(resolve));
+            tokenizer.register_resolver(ResolveName::HeadingAtx);
             // Feel free to interrupt.
             tokenizer.interrupt = false;
             State::Ok

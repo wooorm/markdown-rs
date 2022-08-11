@@ -27,8 +27,8 @@
 //! [label_end]: crate::construct::label_end
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
-use super::label_end::resolve_media;
 use crate::event::Name;
+use crate::resolve::Name as ResolveName;
 use crate::state::State;
 use crate::tokenizer::{LabelStart, Tokenizer};
 
@@ -52,7 +52,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 balanced: false,
                 inactive: false,
             });
-            tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
+            tokenizer.register_resolver_before(ResolveName::Label);
             State::Ok
         }
         _ => State::Nok,

@@ -60,6 +60,7 @@
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::{Kind, Name};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt_back as skip_opt_back;
@@ -160,7 +161,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') => {
             // Feel free to interrupt.
             tokenizer.interrupt = false;
-            tokenizer.register_resolver("heading_setext".to_string(), Box::new(resolve));
+            tokenizer.register_resolver(ResolveName::HeadingSetext);
             State::Ok
         }
         _ => State::Nok,

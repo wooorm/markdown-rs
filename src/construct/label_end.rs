@@ -149,9 +149,9 @@
 use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::partial_space_or_tab::space_or_tab_eol;
 use crate::event::{Event, Kind, Name};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::{Media, Tokenizer};
-
 use crate::util::{
     normalize_identifier::normalize_identifier,
     skip,
@@ -331,7 +331,7 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
     });
     tokenizer.tokenize_state.start = 0;
     tokenizer.tokenize_state.end = 0;
-    tokenizer.register_resolver_before("media".to_string(), Box::new(resolve_media));
+    tokenizer.register_resolver_before(ResolveName::Label);
     State::Ok
 }
 
@@ -614,7 +614,7 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
 /// This turns correct label start (image, link) and label end into links and
 /// images, or turns them back into data.
 #[allow(clippy::too_many_lines)]
-pub fn resolve_media(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut left = tokenizer.tokenize_state.label_start_list_loose.split_off(0);
     let mut left_2 = tokenizer.tokenize_state.label_start_stack.split_off(0);
     let media = tokenizer.tokenize_state.media_list.split_off(0);

@@ -7,6 +7,7 @@
 //! [text]: crate::content::text
 
 use crate::event::{Kind, Name};
+use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
@@ -44,7 +45,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::DataAtBreak)
         }
         Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
-            tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
+            tokenizer.register_resolver_before(ResolveName::Data);
             State::Ok
         }
         _ => {
@@ -77,7 +78,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Merge adjacent data events.
-pub fn resolve_data(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) {
     let len = tokenizer.events.len();
     let mut index = 0;
 
