@@ -275,4 +275,12 @@ fn tabs_virtual_spaces() {
         "<pre><code> x\n</code></pre>\n",
         "should strip 3 spaces from an initial tab in fenced code if the opening fence is indented as such"
     );
+
+    assert_eq!(
+        micromark("-\ta\n\n\tb"),
+        "<ul>\n<li>\n<p>a</p>\n<p>\tb</p>\n</li>\n</ul>",
+        // To do: CM.js does not output the tab before `b`. See if that makes sense?
+        // "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
+        "should support a part of a tab as a container, and the rest of a tab as flow"
+    );
 }

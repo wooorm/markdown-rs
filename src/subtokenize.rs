@@ -94,9 +94,11 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                         tokenizer.define_skip(enter.point.clone());
                     }
 
+                    let end = &events[index + 1].point;
+
                     state = tokenizer.push(
-                        enter.point.index,
-                        events[index + 1].point.index,
+                        (enter.point.index, enter.point.vs),
+                        (end.index, end.vs),
                         match state {
                             State::Next(func) => func,
                             _ => unreachable!("cannot be ok/nok"),
@@ -140,11 +142,12 @@ pub fn divide_events(
     let mut old_prev: Option<usize> = None;
 
     while subindex < child_events.len() {
+        let current = &child_events[subindex].point;
+        let end = &events[link_index + 1].point;
+
         // Find the first event that starts after the end we’re looking
         // for.
-        if child_events[subindex].event_type == EventType::Enter
-            && child_events[subindex].point.index >= events[link_index + 1].point.index
-        {
+        if current.index > end.index || (current.index == end.index && current.vs > end.vs) {
             slices.push((link_index, slice_start));
             slice_start = subindex;
             link_index = events[link_index].link.as_ref().unwrap().next.unwrap();

@@ -17,7 +17,6 @@ use crate::content;
 use crate::parser::ParseState;
 use crate::token::{Token, VOID_TOKENS};
 use crate::util::edit_map::EditMap;
-use std::str;
 
 /// Embedded content type.
 #[derive(Debug, Clone, PartialEq)]
@@ -473,6 +472,8 @@ pub struct TokenizeState<'a> {
     /// To do.
     pub document_container_stack: Vec<ContainerState>,
     /// To do.
+    pub document_exits: Vec<Option<Vec<Event>>>,
+    /// To do.
     pub document_continued: usize,
     /// To do.
     pub document_paragraph_before: bool,
@@ -607,6 +608,7 @@ impl<'a> Tokenizer<'a> {
             tokenize_state: TokenizeState {
                 connect: false,
                 document_container_stack: vec![],
+                document_exits: vec![],
                 document_continued: 0,
                 document_paragraph_before: false,
                 document_data_index: None,
@@ -897,16 +899,18 @@ impl<'a> Tokenizer<'a> {
     /// This is set up to support repeatedly calling `feed`, and thus streaming
     /// markdown into the state machine, and normally pauses after feeding.
     // Note: if needed: accept `vs`?
-    pub fn push(&mut self, min: usize, max: usize, name: StateName) -> State {
+    pub fn push(&mut self, min: (usize, usize), max: (usize, usize), name: StateName) -> State {
         debug_assert!(!self.resolved, "cannot feed after drain");
+
         // debug_assert!(min >= self.point.index, "cannot move backwards");
-        if min > self.point.index {
-            self.move_to((min, 0));
+
+        if min.0 > self.point.index || (min.0 == self.point.index && min.1 > self.point.vs) {
+            self.move_to(min);
         }
 
         let mut state = State::Next(name);
 
-        while self.point.index < max {
+        while self.point.index < max.0 || (self.point.index == max.0 && self.point.vs < max.1) {
             match state {
                 State::Ok | State::Nok => {
                     if let Some(attempt) = self.attempts.pop() {
@@ -1080,14 +1084,7 @@ fn feed_action_impl(
             None
         };
 
-        log::debug!(
-            "feed:    `{:?}` to {:?}",
-            byte.map_or_else(
-                || "eof".to_string(),
-                |d| str::from_utf8(&[d]).unwrap().to_string()
-            ),
-            name
-        );
+        log::debug!("feed:    `{:?}` to {:?}", byte, name);
         tokenizer.expect(byte);
         call_impl(tokenizer, name)
     }
