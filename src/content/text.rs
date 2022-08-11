@@ -38,7 +38,7 @@ const MARKERS: [u8; 9] = [
 /// Start of text.
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
-    tokenizer.tokenize_state.stop = &MARKERS;
+    tokenizer.tokenize_state.markers = &MARKERS;
     State::Retry(StateName::TextBefore)
 }
 
@@ -91,7 +91,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// To do.
+/// At `<`, which wasn’t an autolink: before HTML?
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::HtmlTextStart,
@@ -100,7 +100,7 @@ pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     )
 }
 
-/// To do.
+/// At `\`, which wasn’t a character escape: before a hard break?
 pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::HardBreakEscapeStart,
@@ -110,10 +110,6 @@ pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// At data.
-///
-/// ```markdown
-/// |qwe
-/// ```
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         StateName::DataStart,

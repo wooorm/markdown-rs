@@ -99,10 +99,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     state = tokenizer.push(
                         (enter.point.index, enter.point.vs),
                         (end.index, end.vs),
-                        match state {
-                            State::Next(func) => func,
-                            _ => unreachable!("cannot be ok/nok"),
-                        },
+                        state,
                     );
 
                     link_index = link_curr.next;
@@ -112,7 +109,6 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
 
                 divide_events(&mut map, events, index, &mut tokenizer.events);
 
-                // To do: check `tokenizer.events` if there is a deep content type?
                 done = false;
             }
         }

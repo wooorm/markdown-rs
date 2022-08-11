@@ -185,16 +185,16 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
 pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`') => {
-            tokenizer.tokenize_state.size_other += 1;
+            tokenizer.tokenize_state.size_b += 1;
             tokenizer.consume();
             State::Next(StateName::CodeTextSequenceClose)
         }
         _ => {
-            if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_other {
+            if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_b {
                 tokenizer.exit(Token::CodeTextSequence);
                 tokenizer.exit(Token::CodeText);
                 tokenizer.tokenize_state.size = 0;
-                tokenizer.tokenize_state.size_other = 0;
+                tokenizer.tokenize_state.size_b = 0;
                 State::Ok
             } else {
                 let index = tokenizer.events.len();
@@ -202,7 +202,7 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
                 // More or less accents: mark as data.
                 tokenizer.events[index - 1].token_type = Token::CodeTextData;
                 tokenizer.events[index].token_type = Token::CodeTextData;
-                tokenizer.tokenize_state.size_other = 0;
+                tokenizer.tokenize_state.size_b = 0;
                 State::Retry(StateName::CodeTextBetween)
             }
         }

@@ -29,11 +29,16 @@ pub enum ContentType {
     Text,
 }
 
-/// To do.
+/// How to handle a byte.
 #[derive(Debug, PartialEq)]
 pub enum ByteAction {
+    /// This is a normal byte.
+    ///
+    /// Includes replaced bytes.
     Normal(u8),
+    /// This is a new byte.
     Insert(u8),
+    /// This byte must be ignored.
     Ignore,
 }
 
@@ -84,22 +89,6 @@ pub struct Event {
     pub link: Option<Link>,
 }
 
-#[derive(Debug, PartialEq)]
-enum AttemptKind {
-    Attempt,
-    Check,
-}
-
-/// To do.
-#[derive(Debug)]
-struct Attempt {
-    /// To do.
-    ok: State,
-    nok: State,
-    kind: AttemptKind,
-    state: Option<InternalState>,
-}
-
 /// Callback that can be registered and is called when the tokenizer is done.
 ///
 /// Resolvers are supposed to change the list of events, because parsing is
@@ -107,6 +96,7 @@ struct Attempt {
 /// the compiler and other users.
 pub type Resolver = dyn FnOnce(&mut Tokenizer);
 
+/// Names of functions to move to.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StateName {
     AttentionStart,
@@ -447,62 +437,73 @@ pub struct ContainerState {
     pub size: usize,
 }
 
+/// Different kinds of attempts.
+#[derive(Debug, PartialEq)]
+enum AttemptKind {
+    /// Discard what was tokenizer when unsuccessful.
+    Attempt,
+    /// Discard always.
+    Check,
+}
+
+/// How to handle [`State::Ok`][] or [`State::Nok`][].
+#[derive(Debug)]
+struct Attempt {
+    /// Where to go to when successful.
+    ok: State,
+    /// Where to go to when unsuccessful.
+    nok: State,
+    /// Kind of attempt.
+    kind: AttemptKind,
+    /// If needed, the progress to revert to.
+    ///
+    /// It is not needed to discard an [`AttemptKind::Attempt`] that has a
+    /// `nok` of [`State::Nok`][], because that means it is used in *another*
+    /// attempt, which will receive that `Nok`, and has to handle it.
+    progress: Option<Progress>,
+}
+
 /// The internal state of a tokenizer, not to be confused with states from the
 /// state machine, this instead is all the information about where we currently
 /// are and what’s going on.
 #[derive(Debug, Clone)]
-struct InternalState {
-    /// Length of `events`. We only add to events, so reverting will just pop stuff off.
+struct Progress {
+    /// Length of `events`.
+    ///
+    /// It’s not allowed to remove events, so reverting will just pop stuff off.
     events_len: usize,
-    /// Length of the stack. It’s not allowed to decrease the stack in a check or an attempt.
+    /// Length of the stack.
+    ///
+    /// It’s not allowed to decrease the stack in an attempt.
     stack_len: usize,
     /// Previous code.
     previous: Option<u8>,
     /// Current code.
     current: Option<u8>,
-    /// Current relative and absolute position in the file.
+    /// Current place in the file.
     point: Point,
 }
 
-/// To do
+/// A lot of shared fields used to tokenize things.
 #[allow(clippy::struct_excessive_bools)]
 pub struct TokenizeState<'a> {
-    /// To do.
-    pub connect: bool,
-    /// To do.
-    pub document_container_stack: Vec<ContainerState>,
-    /// To do.
-    pub document_exits: Vec<Option<Vec<Event>>>,
-    /// To do.
-    pub document_continued: usize,
-    /// To do.
-    pub document_paragraph_before: bool,
-    /// To do.
-    pub document_data_index: Option<usize>,
-    /// To do.
+    // Couple complex fields used to tokenize the document.
+    /// Tokenizer, used to tokenize flow in document.
+    pub document_child: Option<Box<Tokenizer<'a>>>,
+    /// State, used to tokenize containers.
     pub document_child_state: Option<State>,
-    /// To do.
-    pub child_tokenizer: Option<Box<Tokenizer<'a>>>,
-    /// To do.
-    pub marker: u8,
-    /// To do.
-    pub marker_other: u8,
-    /// To do.
-    pub prefix: usize,
-    /// To do.
-    pub return_state: Option<StateName>,
-    /// To do.
-    pub seen: bool,
-    /// To do.
-    pub size: usize,
-    /// To do.
-    pub size_other: usize,
-    /// To do.
-    pub start: usize,
-    /// To do.
-    pub end: usize,
-    /// To do.
-    pub stop: &'static [u8],
+    /// Stack of currently active containers.
+    pub document_container_stack: Vec<ContainerState>,
+    /// How many active containers continued.
+    pub document_continued: usize,
+    /// Index of last `data`.
+    pub document_data_index: Option<usize>,
+    /// Container exits by line number.
+    pub document_exits: Vec<Option<Vec<Event>>>,
+    /// Whether the previous flow was a paragraph.
+    pub document_paragraph_before: bool,
+
+    // Couple of very frequent settings for parsing whitespace.
     pub space_or_tab_eol_content_type: Option<ContentType>,
     pub space_or_tab_eol_connect: bool,
     pub space_or_tab_eol_ok: bool,
@@ -512,11 +513,50 @@ pub struct TokenizeState<'a> {
     pub space_or_tab_max: usize,
     pub space_or_tab_size: usize,
     pub space_or_tab_token: Token,
-    /// To do.
+
+    // Couple of media related fields.
+    /// Stack of label (start) that could form images and links.
+    ///
+    /// Used when tokenizing [text content][crate::content::text].
+    pub label_start_stack: Vec<LabelStart>,
+    /// Stack of label (start) that cannot form images and links.
+    ///
+    /// Used when tokenizing [text content][crate::content::text].
+    pub label_start_list_loose: Vec<LabelStart>,
+    /// Stack of images and links.
+    ///
+    /// Used when tokenizing [text content][crate::content::text].
+    pub media_list: Vec<Media>,
+
+    /// Whether to connect tokens.
+    pub connect: bool,
+    /// Marker.
+    pub marker: u8,
+    /// Secondary marker.
+    pub marker_b: u8,
+    /// Several markers.
+    pub markers: &'static [u8],
+    /// Whether something was seen.
+    pub seen: bool,
+    /// Size.
+    pub size: usize,
+    /// Secondary size.
+    pub size_b: usize,
+    /// Tertiary size.
+    pub size_c: usize,
+    /// Index.
+    pub start: usize,
+    /// Index.
+    pub end: usize,
+    /// Slot for a token type.
     pub token_1: Token,
+    /// Slot for a token type.
     pub token_2: Token,
+    /// Slot for a token type.
     pub token_3: Token,
+    /// Slot for a token type.
     pub token_4: Token,
+    /// Slot for a token type.
     pub token_5: Token,
 }
 
@@ -525,9 +565,9 @@ pub struct TokenizeState<'a> {
 pub struct Tokenizer<'a> {
     /// Jump between line endings.
     column_start: Vec<(usize, usize)>,
-    // First line.
+    // First line where this tokenizer starts.
     first_line: usize,
-    /// First point after the last line ending.
+    /// Current point after the last line ending (excluding jump).
     line_start: Point,
     /// Track whether the current byte is already consumed (`true`) or expected
     /// to be consumed (`false`).
@@ -536,7 +576,7 @@ pub struct Tokenizer<'a> {
     consumed: bool,
     /// Track whether this tokenizer is done.
     resolved: bool,
-    /// To do.
+    /// Stack of how to handle attempts.
     attempts: Vec<Attempt>,
     /// Current byte.
     pub current: Option<u8>,
@@ -544,7 +584,7 @@ pub struct Tokenizer<'a> {
     pub previous: Option<u8>,
     /// Current relative and absolute place in the file.
     pub point: Point,
-    /// Semantic labels of one or more codes in `codes`.
+    /// Semantic labels.
     pub events: Vec<Event>,
     /// Hierarchy of semantic labels.
     ///
@@ -559,20 +599,8 @@ pub struct Tokenizer<'a> {
     pub resolver_ids: Vec<String>,
     /// Shared parsing state across tokenizers.
     pub parse_state: &'a ParseState<'a>,
-    /// To do.
+    /// A lot of shared fields used to tokenize things.
     pub tokenize_state: TokenizeState<'a>,
-    /// Stack of label (start) that could form images and links.
-    ///
-    /// Used when tokenizing [text content][crate::content::text].
-    pub label_start_stack: Vec<LabelStart>,
-    /// Stack of label (start) that cannot form images and links.
-    ///
-    /// Used when tokenizing [text content][crate::content::text].
-    pub label_start_list_loose: Vec<LabelStart>,
-    /// Stack of images and links.
-    ///
-    /// Used when tokenizing [text content][crate::content::text].
-    pub media_list: Vec<Media>,
     /// Whether we would be interrupting something.
     ///
     /// Used when tokenizing [flow content][crate::content::flow].
@@ -613,17 +641,19 @@ impl<'a> Tokenizer<'a> {
                 document_paragraph_before: false,
                 document_data_index: None,
                 document_child_state: None,
-                child_tokenizer: None,
+                document_child: None,
                 marker: 0,
-                marker_other: 0,
-                prefix: 0,
+                marker_b: 0,
+                markers: &[],
                 seen: false,
                 size: 0,
-                size_other: 0,
+                size_b: 0,
+                size_c: 0,
                 start: 0,
                 end: 0,
-                stop: &[],
-                return_state: None,
+                label_start_stack: vec![],
+                label_start_list_loose: vec![],
+                media_list: vec![],
                 space_or_tab_eol_content_type: None,
                 space_or_tab_eol_connect: false,
                 space_or_tab_eol_ok: false,
@@ -640,15 +670,11 @@ impl<'a> Tokenizer<'a> {
                 token_5: Token::Data,
             },
             map: EditMap::new(),
-            label_start_stack: vec![],
-            label_start_list_loose: vec![],
-            media_list: vec![],
             interrupt: false,
             concrete: false,
             lazy: false,
-            // Assume about 10 resolvers.
-            resolvers: Vec::with_capacity(10),
-            resolver_ids: Vec::with_capacity(10),
+            resolvers: vec![],
+            resolver_ids: vec![],
         }
     }
 
@@ -698,7 +724,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Prepare for a next code to get consumed.
-    pub fn expect(&mut self, byte: Option<u8>) {
+    fn expect(&mut self, byte: Option<u8>) {
         debug_assert!(self.consumed, "expected previous byte to be consumed");
         self.consumed = false;
         self.current = byte;
@@ -721,7 +747,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Move to the next (virtual) byte.
-    pub fn move_one(&mut self) {
+    fn move_one(&mut self) {
         match byte_action(self.parse_state.bytes, &self.point) {
             ByteAction::Ignore => {
                 self.point.index += 1;
@@ -756,7 +782,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Move (virtual) bytes.
-    pub fn move_to(&mut self, to: (usize, usize)) {
+    fn move_to(&mut self, to: (usize, usize)) {
         let (to_index, to_vs) = to;
         while self.point.index < to_index || self.point.index == to_index && self.point.vs < to_vs {
             self.move_one();
@@ -838,9 +864,9 @@ impl<'a> Tokenizer<'a> {
         });
     }
 
-    /// Capture the internal state.
-    fn capture(&mut self) -> InternalState {
-        InternalState {
+    /// Capture the tokenizer progress.
+    fn capture(&mut self) -> Progress {
+        Progress {
             previous: self.previous,
             current: self.current,
             point: self.point.clone(),
@@ -849,8 +875,8 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// Apply the internal state.
-    fn free(&mut self, previous: InternalState) {
+    /// Apply tokenizer progress.
+    fn free(&mut self, previous: Progress) {
         self.previous = previous.previous;
         self.current = previous.current;
         self.point = previous.point;
@@ -866,109 +892,56 @@ impl<'a> Tokenizer<'a> {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// Parse with `name` and its future states, to check if it result in
-    /// [`State::Ok`][] or [`State::Nok`][], revert on both cases, and then
-    /// call `done` with whether it was successful or not.
-    ///
-    /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `name` and its
-    /// future states until it yields `State::Ok` or `State::Nok`.
-    /// It then applies the captured state, calls `done`, and feeds all
-    /// captured codes to its future states.
+    /// Parse with `name` and its future states, to see if that results in
+    /// [`State::Ok`][] or [`State::Nok`][], then revert in both cases.
     pub fn check(&mut self, name: StateName, ok: State, nok: State) -> State {
-        attempt_impl(self, name, ok, nok, AttemptKind::Check)
+        // Always capture (and restore) when checking.
+        // No need to capture (and restore) when `nok` is `State::Nok`, because the
+        // parent attempt will do it.
+        let progress = Some(self.capture());
+
+        self.attempts.push(Attempt {
+            kind: AttemptKind::Check,
+            progress,
+            ok,
+            nok,
+        });
+
+        call_impl(self, name)
     }
 
-    /// Parse with `name` and its future states, to check if it results in
-    /// [`State::Ok`][] or [`State::Nok`][], revert on the case of
-    /// `State::Nok`, and then call `done` with whether it was successful or
-    /// not.
-    ///
-    /// This captures the current state of the tokenizer, returns a wrapped
-    /// state that captures all codes and feeds them to `name` and its
-    /// future states until it yields `State::Ok`, at which point it calls
-    /// `done` and yields its result.
-    /// If instead `State::Nok` was yielded, the captured state is applied,
-    /// `done` is called, and all captured codes are fed to its future states.
+    /// Parse with `name` and its future states, to see if that results in
+    /// [`State::Ok`][] or [`State::Nok`][], revert in the case of
+    /// `State::Nok`.
     pub fn attempt(&mut self, name: StateName, ok: State, nok: State) -> State {
-        attempt_impl(self, name, ok, nok, AttemptKind::Attempt)
+        // Always capture (and restore) when checking.
+        // No need to capture (and restore) when `nok` is `State::Nok`, because the
+        // parent attempt will do it.
+        let progress = if nok == State::Nok {
+            None
+        } else {
+            Some(self.capture())
+        };
+
+        self.attempts.push(Attempt {
+            kind: AttemptKind::Attempt,
+            progress,
+            ok,
+            nok,
+        });
+
+        call_impl(self, name)
     }
 
-    /// Feed a list of `codes` into `start`.
-    ///
-    /// This is set up to support repeatedly calling `feed`, and thus streaming
-    /// markdown into the state machine, and normally pauses after feeding.
-    // Note: if needed: accept `vs`?
-    pub fn push(&mut self, min: (usize, usize), max: (usize, usize), name: StateName) -> State {
-        debug_assert!(!self.resolved, "cannot feed after drain");
-
-        // debug_assert!(min >= self.point.index, "cannot move backwards");
-
-        if min.0 > self.point.index || (min.0 == self.point.index && min.1 > self.point.vs) {
-            self.move_to(min);
-        }
-
-        let mut state = State::Next(name);
-
-        while self.point.index < max.0 || (self.point.index == max.0 && self.point.vs < max.1) {
-            match state {
-                State::Ok | State::Nok => {
-                    if let Some(attempt) = self.attempts.pop() {
-                        state = attempt_done_impl(self, attempt, state);
-                    } else {
-                        break;
-                    }
-                }
-                State::Next(name) => {
-                    let action = byte_action(self.parse_state.bytes, &self.point);
-                    state = feed_action_impl(self, &Some(action), name);
-                }
-                State::Retry(name) => {
-                    log::debug!("            retry {:?}", name);
-                    state = call_impl(self, name);
-                }
-            }
-        }
-
-        state
+    /// Tokenize.
+    pub fn push(&mut self, from: (usize, usize), to: (usize, usize), state: State) -> State {
+        push_impl(self, from, to, state, false)
     }
 
-    /// Flush the tokenizer.
-    pub fn flush(&mut self, mut state: State, resolve: bool) {
-        let max = self.point.index;
-
-        self.consumed = true;
-
-        loop {
-            match state {
-                State::Ok | State::Nok => {
-                    if let Some(attempt) = self.attempts.pop() {
-                        state = attempt_done_impl(self, attempt, state);
-                    } else {
-                        break;
-                    }
-                }
-                State::Next(name) => {
-                    // We sometimes move back when flushing, so then we use those codes.
-                    state = feed_action_impl(
-                        self,
-                        &if self.point.index == max {
-                            None
-                        } else {
-                            Some(byte_action(self.parse_state.bytes, &self.point))
-                        },
-                        name,
-                    );
-                }
-                State::Retry(name) => {
-                    log::debug!("            retry {:?}", name);
-                    state = call_impl(self, name);
-                }
-            }
-        }
-
-        self.consumed = true;
-        debug_assert!(matches!(state, State::Ok), "must be ok");
+    /// Flush.
+    pub fn flush(&mut self, state: State, resolve: bool) {
+        let to = (self.point.index, self.point.vs);
+        push_impl(self, to, to, state, true);
 
         if resolve {
             self.resolved = true;
@@ -983,6 +956,104 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
+/// Move back past ignored bytes.
+fn move_point_back(tokenizer: &mut Tokenizer, point: &mut Point) {
+    while point.index > 0 {
+        point.index -= 1;
+        let action = byte_action(tokenizer.parse_state.bytes, point);
+        if !matches!(action, ByteAction::Ignore) {
+            point.index += 1;
+            break;
+        }
+    }
+}
+
+/// Run the tokenizer.
+fn push_impl(
+    tokenizer: &mut Tokenizer,
+    from: (usize, usize),
+    to: (usize, usize),
+    mut state: State,
+    flush: bool,
+) -> State {
+    debug_assert!(!tokenizer.resolved, "cannot feed after drain");
+    debug_assert!(
+        from.0 > tokenizer.point.index
+            || (from.0 == tokenizer.point.index && from.1 >= tokenizer.point.vs),
+        "cannot move backwards"
+    );
+
+    tokenizer.move_to(from);
+
+    loop {
+        match state {
+            State::Ok | State::Nok => {
+                if let Some(attempt) = tokenizer.attempts.pop() {
+                    if attempt.kind == AttemptKind::Check || state == State::Nok {
+                        if let Some(progress) = attempt.progress {
+                            tokenizer.free(progress);
+                        }
+                    }
+
+                    tokenizer.consumed = true;
+
+                    let next = if state == State::Ok {
+                        attempt.ok
+                    } else {
+                        attempt.nok
+                    };
+
+                    log::debug!("attempt: `{:?}` -> `{:?}`", state, next);
+                    state = next;
+                } else {
+                    break;
+                }
+            }
+            State::Next(name) => {
+                let action = if tokenizer.point.index < to.0
+                    || (tokenizer.point.index == to.0 && tokenizer.point.vs < to.1)
+                {
+                    Some(byte_action(tokenizer.parse_state.bytes, &tokenizer.point))
+                } else if flush {
+                    None
+                } else {
+                    break;
+                };
+
+                if let Some(ByteAction::Ignore) = action {
+                    tokenizer.move_one();
+                } else {
+                    let byte =
+                        if let Some(ByteAction::Insert(byte) | ByteAction::Normal(byte)) = action {
+                            Some(byte)
+                        } else {
+                            None
+                        };
+
+                    log::debug!("feed:    `{:?}` to {:?}", byte, name);
+                    tokenizer.expect(byte);
+                    state = call_impl(tokenizer, name);
+                };
+            }
+            State::Retry(name) => {
+                log::debug!("retry:   {:?}", name);
+                state = call_impl(tokenizer, name);
+            }
+        }
+    }
+
+    tokenizer.consumed = true;
+
+    if flush {
+        debug_assert!(matches!(state, State::Ok), "must be ok");
+    } else {
+        debug_assert!(matches!(state, State::Next(_)), "must have a next state");
+    }
+
+    state
+}
+
+/// Figure out how to handle a byte.
 fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
     if point.index < bytes.len() {
         let byte = bytes[point.index];
@@ -1024,73 +1095,8 @@ fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
     }
 }
 
-/// Internal utility to wrap states to also capture codes.
-///
-/// Recurses into itself.
-/// Used in [`Tokenizer::attempt`][Tokenizer::attempt] and  [`Tokenizer::check`][Tokenizer::check].
-fn attempt_impl(
-    tokenizer: &mut Tokenizer,
-    name: StateName,
-    ok: State,
-    nok: State,
-    kind: AttemptKind,
-) -> State {
-    // Always capture (and restore) when checking.
-    // No need to capture (and restore) when `nok` is `State::Nok`, because the
-    // parent attempt will do it.
-    let state = if kind == AttemptKind::Check || nok != State::Nok {
-        Some(tokenizer.capture())
-    } else {
-        None
-    };
-
-    tokenizer.attempts.push(Attempt {
-        ok,
-        nok,
-        kind,
-        state,
-    });
-
-    call_impl(tokenizer, name)
-}
-
-fn attempt_done_impl(tokenizer: &mut Tokenizer, attempt: Attempt, state: State) -> State {
-    if attempt.kind == AttemptKind::Check || state == State::Nok {
-        if let Some(state) = attempt.state {
-            tokenizer.free(state);
-        }
-    }
-
-    tokenizer.consumed = true;
-    if state == State::Ok {
-        attempt.ok
-    } else {
-        attempt.nok
-    }
-}
-
-fn feed_action_impl(
-    tokenizer: &mut Tokenizer,
-    action: &Option<ByteAction>,
-    name: StateName,
-) -> State {
-    if let Some(ByteAction::Ignore) = action {
-        tokenizer.move_one();
-        State::Next(name)
-    } else {
-        let byte = if let Some(ByteAction::Insert(byte) | ByteAction::Normal(byte)) = action {
-            Some(*byte)
-        } else {
-            None
-        };
-
-        log::debug!("feed:    `{:?}` to {:?}", byte, name);
-        tokenizer.expect(byte);
-        call_impl(tokenizer, name)
-    }
-}
-
 #[allow(clippy::too_many_lines)]
+/// Call the corresponding function for a state name.
 fn call_impl(tokenizer: &mut Tokenizer, name: StateName) -> State {
     let func = match name {
         StateName::AttentionStart => construct::attention::start,
@@ -1421,16 +1427,4 @@ fn call_impl(tokenizer: &mut Tokenizer, name: StateName) -> State {
     };
 
     func(tokenizer)
-}
-
-fn move_point_back(tokenizer: &mut Tokenizer, point: &mut Point) {
-    // Move back past ignored bytes.
-    while point.index > 0 {
-        point.index -= 1;
-        let action = byte_action(tokenizer.parse_state.bytes, point);
-        if !matches!(action, ByteAction::Ignore) {
-            point.index += 1;
-            break;
-        }
-    }
 }

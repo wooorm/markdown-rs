@@ -59,7 +59,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let state = tokenizer.push(
         (0, 0),
         (parse_state.bytes.len(), 0),
-        StateName::DocumentStart,
+        State::Next(StateName::DocumentStart),
     );
     tokenizer.flush(state, true);
 
@@ -105,7 +105,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.child_tokenizer = Some(Box::new(Tokenizer::new(
+    tokenizer.tokenize_state.document_child = Some(Box::new(Tokenizer::new(
         tokenizer.point.clone(),
         tokenizer.parse_state,
     )));
@@ -173,7 +173,7 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.tokenize_state.document_continued
         == tokenizer.tokenize_state.document_container_stack.len()
     {
-        let child = tokenizer.tokenize_state.child_tokenizer.as_ref().unwrap();
+        let child = tokenizer.tokenize_state.document_child.as_ref().unwrap();
 
         tokenizer.interrupt = child.interrupt;
 
@@ -209,7 +209,12 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
     )
 }
 
-/// To do.
+/// Maybe before a new container, but not a block quote.
+//
+/// ```markdown
+/// > | * a
+///     ^
+/// ```
 pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State {
     // List item?
     // We replace the empty block quote container for this new list one.
@@ -227,7 +232,12 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
     )
 }
 
-/// To do.
+/// Maybe before a new container, but not a list.
+//
+/// ```markdown
+/// > | a
+///     ^
+/// ```
 pub fn container_new_before_not_list(tokenizer: &mut Tokenizer) -> State {
     // It wasn’t a new block quote or a list.
     // Swap the new container (in the middle) with the existing one (at the end).
@@ -283,7 +293,7 @@ pub fn container_new_after(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn containers_after(tokenizer: &mut Tokenizer) -> State {
-    let child = tokenizer.tokenize_state.child_tokenizer.as_mut().unwrap();
+    let child = tokenizer.tokenize_state.document_child.as_mut().unwrap();
 
     child.lazy = tokenizer.tokenize_state.document_continued
         != tokenizer.tokenize_state.document_container_stack.len();
@@ -312,7 +322,12 @@ pub fn containers_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// To do.
+/// In flow.
+//
+/// ```markdown
+/// > | * ab
+///       ^
+/// ```
 pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
@@ -340,23 +355,18 @@ pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
 ///     ^  ^
 /// ```
 pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
-    let child = tokenizer.tokenize_state.child_tokenizer.as_mut().unwrap();
+    let child = tokenizer.tokenize_state.document_child.as_mut().unwrap();
     let state = tokenizer
         .tokenize_state
         .document_child_state
         .unwrap_or(State::Next(StateName::FlowStart));
-
-    let name = match state {
-        State::Next(name) => name,
-        _ => unreachable!("expected state name"),
-    };
 
     tokenizer.tokenize_state.document_exits.push(None);
 
     let state = child.push(
         (child.point.index, child.point.vs),
         (tokenizer.point.index, tokenizer.point.vs),
-        name,
+        state,
     );
 
     let paragraph = matches!(state, State::Next(StateName::ParagraphInside))
@@ -403,7 +413,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
         .document_container_stack
         .split_off(tokenizer.tokenize_state.document_continued);
 
-    let child = tokenizer.tokenize_state.child_tokenizer.as_mut().unwrap();
+    let child = tokenizer.tokenize_state.document_child.as_mut().unwrap();
 
     // Flush if needed.
     if *phase != Phase::After {
@@ -463,7 +473,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
 
 // Inject everything together.
 fn resolve(tokenizer: &mut Tokenizer) {
-    let child = tokenizer.tokenize_state.child_tokenizer.as_mut().unwrap();
+    let child = tokenizer.tokenize_state.document_child.as_mut().unwrap();
 
     // First, add the container exits into `child`.
     let mut child_index = 0;

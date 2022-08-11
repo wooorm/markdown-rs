@@ -182,7 +182,7 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             State::Ok
         }
-        Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_other => {
+        Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_b => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
             State::Next(StateName::DestinationRaw)

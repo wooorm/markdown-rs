@@ -17,8 +17,8 @@ use crate::tokenizer::{EventType, State, StateName, Tokenizer};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        // Make sure to eat the first `stop`.
-        Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
+        // Make sure to eat the first `markers`.
+        Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
             tokenizer.enter(Token::Data);
             tokenizer.consume();
             State::Next(StateName::DataInside)
@@ -42,7 +42,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Token::LineEnding);
             State::Next(StateName::DataAtBreak)
         }
-        Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => {
+        Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
             State::Ok
         }
@@ -62,7 +62,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     let done = match tokenizer.current {
         None | Some(b'\n') => true,
-        Some(byte) if tokenizer.tokenize_state.stop.contains(&byte) => true,
+        Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => true,
         _ => false,
     };
 

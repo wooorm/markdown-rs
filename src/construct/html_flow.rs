@@ -508,7 +508,7 @@ pub fn complete_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::HtmlFlowCompleteAttributeValueBefore)
         }
         Some(b'"' | b'\'') => {
-            tokenizer.tokenize_state.marker_other = tokenizer.current.unwrap();
+            tokenizer.tokenize_state.marker_b = tokenizer.current.unwrap();
             tokenizer.consume();
             State::Next(StateName::HtmlFlowCompleteAttributeValueQuoted)
         }
@@ -528,13 +528,11 @@ pub fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.tokenize_state.marker = 0;
-            tokenizer.tokenize_state.marker_other = 0;
+            tokenizer.tokenize_state.marker_b = 0;
             State::Nok
         }
-        Some(b'"' | b'\'')
-            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker_other =>
-        {
-            tokenizer.tokenize_state.marker_other = 0;
+        Some(b'"' | b'\'') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker_b => {
+            tokenizer.tokenize_state.marker_b = 0;
             tokenizer.consume();
             State::Next(StateName::HtmlFlowCompleteAttributeValueQuotedAfter)
         }

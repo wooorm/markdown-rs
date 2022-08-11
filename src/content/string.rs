@@ -20,7 +20,7 @@ const MARKERS: [u8; 2] = [b'&', b'\\'];
 /// Start of string.
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver("whitespace".to_string(), Box::new(resolve));
-    tokenizer.tokenize_state.stop = &MARKERS;
+    tokenizer.tokenize_state.markers = &MARKERS;
     State::Retry(StateName::StringBefore)
 }
 

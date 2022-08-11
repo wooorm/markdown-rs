@@ -170,12 +170,12 @@ use crate::util::{
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if Some(b']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
         let mut label_start_index = None;
-        let mut index = tokenizer.label_start_stack.len();
+        let mut index = tokenizer.tokenize_state.label_start_stack.len();
 
         while index > 0 {
             index -= 1;
 
-            if !tokenizer.label_start_stack[index].balanced {
+            if !tokenizer.tokenize_state.label_start_stack[index].balanced {
                 label_start_index = Some(index);
                 break;
             }
@@ -184,6 +184,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         // If there is an okay opening:
         if let Some(label_start_index) = label_start_index {
             let label_start = tokenizer
+                .tokenize_state
                 .label_start_stack
                 .get_mut(label_start_index)
                 .unwrap();
@@ -221,7 +222,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
-    let start = &tokenizer.label_start_stack[tokenizer.tokenize_state.start];
+    let start = &tokenizer.tokenize_state.label_start_stack[tokenizer.tokenize_state.start];
     let defined = tokenizer
         .parse_state
         .definitions
@@ -298,17 +299,23 @@ pub fn reference_not_full(tokenizer: &mut Tokenizer) -> State {
 pub fn ok(tokenizer: &mut Tokenizer) -> State {
     let label_start_index = tokenizer.tokenize_state.start;
     // Remove this one and everything after it.
-    let mut left = tokenizer.label_start_stack.split_off(label_start_index);
+    let mut left = tokenizer
+        .tokenize_state
+        .label_start_stack
+        .split_off(label_start_index);
     // Remove this one from `left`, as we’ll move it to `media_list`.
     let label_start = left.remove(0);
-    tokenizer.label_start_list_loose.append(&mut left);
+    tokenizer
+        .tokenize_state
+        .label_start_list_loose
+        .append(&mut left);
 
     let is_link = tokenizer.events[label_start.start.0].token_type == Token::LabelLink;
 
     if is_link {
         let mut index = 0;
-        while index < tokenizer.label_start_stack.len() {
-            let label_start = &mut tokenizer.label_start_stack[index];
+        while index < tokenizer.tokenize_state.label_start_stack.len() {
+            let label_start = &mut tokenizer.tokenize_state.label_start_stack[index];
             if tokenizer.events[label_start.start.0].token_type == Token::LabelLink {
                 label_start.inactive = true;
             }
@@ -316,7 +323,7 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
         }
     }
 
-    tokenizer.media_list.push(Media {
+    tokenizer.tokenize_state.media_list.push(Media {
         start: label_start.start,
         end: (tokenizer.tokenize_state.end, tokenizer.events.len() - 1),
     });
@@ -340,6 +347,7 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn nok(tokenizer: &mut Tokenizer) -> State {
     tokenizer
+        .tokenize_state
         .label_start_stack
         .get_mut(tokenizer.tokenize_state.start)
         .unwrap()
@@ -398,7 +406,7 @@ pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.token_3 = Token::ResourceDestinationLiteralMarker;
         tokenizer.tokenize_state.token_4 = Token::ResourceDestinationRaw;
         tokenizer.tokenize_state.token_5 = Token::ResourceDestinationString;
-        tokenizer.tokenize_state.size_other = RESOURCE_DESTINATION_BALANCE_MAX;
+        tokenizer.tokenize_state.size_b = RESOURCE_DESTINATION_BALANCE_MAX;
 
         tokenizer.attempt(
             StateName::DestinationStart,
@@ -420,7 +428,7 @@ pub fn resource_destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_3 = Token::Data;
     tokenizer.tokenize_state.token_4 = Token::Data;
     tokenizer.tokenize_state.token_5 = Token::Data;
-    tokenizer.tokenize_state.size_other = 0;
+    tokenizer.tokenize_state.size_b = 0;
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
         name,
@@ -436,7 +444,7 @@ pub fn resource_destination_missing(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_3 = Token::Data;
     tokenizer.tokenize_state.token_4 = Token::Data;
     tokenizer.tokenize_state.token_5 = Token::Data;
-    tokenizer.tokenize_state.size_other = 0;
+    tokenizer.tokenize_state.size_b = 0;
     State::Nok
 }
 
@@ -605,9 +613,9 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
 /// images, or turns them back into data.
 #[allow(clippy::too_many_lines)]
 pub fn resolve_media(tokenizer: &mut Tokenizer) {
-    let mut left = tokenizer.label_start_list_loose.split_off(0);
-    let mut left_2 = tokenizer.label_start_stack.split_off(0);
-    let media = tokenizer.media_list.split_off(0);
+    let mut left = tokenizer.tokenize_state.label_start_list_loose.split_off(0);
+    let mut left_2 = tokenizer.tokenize_state.label_start_stack.split_off(0);
+    let media = tokenizer.tokenize_state.media_list.split_off(0);
     left.append(&mut left_2);
 
     let events = &tokenizer.events;

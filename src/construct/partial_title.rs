@@ -133,13 +133,26 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// To do.
+/// In a title, after whitespace.
+///
+/// ```markdown
+///   | "a␊
+/// > | b"
+///     ^
+/// ```
 pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = true;
     State::Retry(StateName::TitleAtBreak)
 }
 
-/// To do.
+/// In a title, at a blank line.
+///
+/// ```markdown
+///   | "a␊
+/// > | ␊
+///     ^
+///   | b"
+/// ```
 pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.marker = 0;
     tokenizer.tokenize_state.connect = false;

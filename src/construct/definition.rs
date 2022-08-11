@@ -174,7 +174,12 @@ pub fn label_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// To do.
+/// After the marker.
+///
+/// ```markdown
+/// > | [a]: b "c"
+///         ^
+/// ```
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
@@ -196,7 +201,7 @@ pub fn destination_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_3 = Token::DefinitionDestinationLiteralMarker;
     tokenizer.tokenize_state.token_4 = Token::DefinitionDestinationRaw;
     tokenizer.tokenize_state.token_5 = Token::DefinitionDestinationString;
-    tokenizer.tokenize_state.size_other = usize::MAX;
+    tokenizer.tokenize_state.size_b = usize::MAX;
     tokenizer.attempt(
         StateName::DestinationStart,
         State::Next(StateName::DefinitionDestinationAfter),
@@ -216,7 +221,7 @@ pub fn destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_3 = Token::Data;
     tokenizer.tokenize_state.token_4 = Token::Data;
     tokenizer.tokenize_state.token_5 = Token::Data;
-    tokenizer.tokenize_state.size_other = 0;
+    tokenizer.tokenize_state.size_b = 0;
     tokenizer.attempt(
         StateName::DefinitionTitleBefore,
         State::Next(StateName::DefinitionAfter),
@@ -231,7 +236,7 @@ pub fn destination_missing(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_3 = Token::Data;
     tokenizer.tokenize_state.token_4 = Token::Data;
     tokenizer.tokenize_state.token_5 = Token::Data;
-    tokenizer.tokenize_state.size_other = 0;
+    tokenizer.tokenize_state.size_b = 0;
     State::Nok
 }
 
