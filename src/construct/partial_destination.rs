@@ -71,9 +71,9 @@
 //! [label_end]: crate::construct::label_end
 //! [sanitize_uri]: crate::util::sanitize_uri
 
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{ContentType, Tokenizer};
+use crate::event::{Content, Name};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 
 /// Before a destination.
 ///
@@ -91,7 +91,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Next(Name::DestinationEnclosedBefore)
+            State::Next(StateName::DestinationEnclosedBefore)
         }
         // ASCII control, space, closing paren, but *not* `\0`.
         None | Some(0x01..=0x1F | b' ' | b')' | 0x7F) => State::Nok,
@@ -99,8 +99,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
             tokenizer.enter(tokenizer.tokenize_state.token_4.clone());
             tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
-            tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-            State::Retry(Name::DestinationRaw)
+            tokenizer.enter_with_content(Name::Data, Some(Content::String));
+            State::Retry(StateName::DestinationRaw)
         }
     }
 }
@@ -121,8 +121,8 @@ pub fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
         State::Ok
     } else {
         tokenizer.enter(tokenizer.tokenize_state.token_5.clone());
-        tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
-        State::Retry(Name::DestinationEnclosed)
+        tokenizer.enter_with_content(Name::Data, Some(Content::String));
+        State::Retry(StateName::DestinationEnclosed)
     }
 }
 
@@ -136,17 +136,17 @@ pub fn enclosed(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'<') => State::Nok,
         Some(b'>') => {
-            tokenizer.exit(Token::Data);
+            tokenizer.exit(Name::Data);
             tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
-            State::Retry(Name::DestinationEnclosedBefore)
+            State::Retry(StateName::DestinationEnclosedBefore)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Next(Name::DestinationEnclosedEscape)
+            State::Next(StateName::DestinationEnclosedEscape)
         }
         _ => {
             tokenizer.consume();
-            State::Next(Name::DestinationEnclosed)
+            State::Next(StateName::DestinationEnclosed)
         }
     }
 }
@@ -161,9 +161,9 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'<' | b'>' | b'\\') => {
             tokenizer.consume();
-            State::Next(Name::DestinationEnclosed)
+            State::Next(StateName::DestinationEnclosed)
         }
-        _ => State::Retry(Name::DestinationEnclosed),
+        _ => State::Retry(StateName::DestinationEnclosed),
     }
 }
 
@@ -176,7 +176,7 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
 pub fn raw(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\t' | b'\n' | b' ' | b')') if tokenizer.tokenize_state.size == 0 => {
-            tokenizer.exit(Token::Data);
+            tokenizer.exit(Name::Data);
             tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
             tokenizer.exit(tokenizer.tokenize_state.token_4.clone());
             tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
@@ -186,7 +186,7 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_b => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Next(Name::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
         // ASCII control (but *not* `\0`) and space and `(`.
         None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => {
@@ -196,15 +196,15 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
         Some(b')') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size -= 1;
-            State::Next(Name::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
         Some(b'\\') => {
             tokenizer.consume();
-            State::Next(Name::DestinationRawEscape)
+            State::Next(StateName::DestinationRawEscape)
         }
         Some(_) => {
             tokenizer.consume();
-            State::Next(Name::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
     }
 }
@@ -219,8 +219,8 @@ pub fn raw_escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'(' | b')' | b'\\') => {
             tokenizer.consume();
-            State::Next(Name::DestinationRaw)
+            State::Next(StateName::DestinationRaw)
         }
-        _ => State::Retry(Name::DestinationRaw),
+        _ => State::Retry(StateName::DestinationRaw),
     }
 }

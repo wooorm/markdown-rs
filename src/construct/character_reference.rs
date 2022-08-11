@@ -65,8 +65,8 @@ use crate::constant::{
     CHARACTER_REFERENCES, CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
     CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::slice::Slice;
 
@@ -83,11 +83,11 @@ use crate::util::slice::Slice;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'&') if tokenizer.parse_state.constructs.character_reference => {
-            tokenizer.enter(Token::CharacterReference);
-            tokenizer.enter(Token::CharacterReferenceMarker);
+            tokenizer.enter(Name::CharacterReference);
+            tokenizer.enter(Name::CharacterReferenceMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::CharacterReferenceMarker);
-            State::Next(Name::CharacterReferenceOpen)
+            tokenizer.exit(Name::CharacterReferenceMarker);
+            State::Next(StateName::CharacterReferenceOpen)
         }
         _ => State::Nok,
     }
@@ -104,17 +104,16 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///       ^
 /// ```
-// Name::CharacterReferenceOpen
 pub fn open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'#') = tokenizer.current {
-        tokenizer.enter(Token::CharacterReferenceMarkerNumeric);
+        tokenizer.enter(Name::CharacterReferenceMarkerNumeric);
         tokenizer.consume();
-        tokenizer.exit(Token::CharacterReferenceMarkerNumeric);
-        State::Next(Name::CharacterReferenceNumeric)
+        tokenizer.exit(Name::CharacterReferenceMarkerNumeric);
+        State::Next(StateName::CharacterReferenceNumeric)
     } else {
         tokenizer.tokenize_state.marker = b'&';
-        tokenizer.enter(Token::CharacterReferenceValue);
-        State::Retry(Name::CharacterReferenceValue)
+        tokenizer.enter(Name::CharacterReferenceValue);
+        State::Retry(StateName::CharacterReferenceValue)
     }
 }
 
@@ -127,19 +126,18 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
 /// > | a&#x9;b
 ///        ^
 /// ```
-// Name::CharacterReferenceNumeric
 pub fn numeric(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'x' | b'X') = tokenizer.current {
-        tokenizer.enter(Token::CharacterReferenceMarkerHexadecimal);
+        tokenizer.enter(Name::CharacterReferenceMarkerHexadecimal);
         tokenizer.consume();
-        tokenizer.exit(Token::CharacterReferenceMarkerHexadecimal);
-        tokenizer.enter(Token::CharacterReferenceValue);
+        tokenizer.exit(Name::CharacterReferenceMarkerHexadecimal);
+        tokenizer.enter(Name::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'x';
-        State::Next(Name::CharacterReferenceValue)
+        State::Next(StateName::CharacterReferenceValue)
     } else {
-        tokenizer.enter(Token::CharacterReferenceValue);
+        tokenizer.enter(Name::CharacterReferenceValue);
         tokenizer.tokenize_state.marker = b'#';
-        State::Retry(Name::CharacterReferenceValue)
+        State::Retry(StateName::CharacterReferenceValue)
     }
 }
 
@@ -176,11 +174,11 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
             }
         }
 
-        tokenizer.exit(Token::CharacterReferenceValue);
-        tokenizer.enter(Token::CharacterReferenceMarkerSemi);
+        tokenizer.exit(Name::CharacterReferenceValue);
+        tokenizer.enter(Name::CharacterReferenceMarkerSemi);
         tokenizer.consume();
-        tokenizer.exit(Token::CharacterReferenceMarkerSemi);
-        tokenizer.exit(Token::CharacterReference);
+        tokenizer.exit(Name::CharacterReferenceMarkerSemi);
+        tokenizer.exit(Name::CharacterReference);
         tokenizer.tokenize_state.marker = 0;
         tokenizer.tokenize_state.size = 0;
         return State::Ok;
@@ -203,7 +201,7 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
         if tokenizer.tokenize_state.size < max && test(&byte) {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            return State::Next(Name::CharacterReferenceValue);
+            return State::Next(StateName::CharacterReferenceValue);
         }
     }
 

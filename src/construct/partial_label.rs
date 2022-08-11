@@ -58,12 +58,12 @@
 //! [code_text]: crate::construct::code_text
 //! [link_reference_size_max]: crate::constant::LINK_REFERENCE_SIZE_MAX
 
-use super::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
-use crate::state::{Name, State};
+use crate::construct::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
+use crate::event::{Content, Name};
+use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
-use crate::token::Token;
-use crate::tokenizer::{ContentType, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Before a label.
 ///
@@ -79,7 +79,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            State::Next(Name::LabelAtBreak)
+            State::Next(StateName::LabelAtBreak)
         }
         _ => State::Nok,
     }
@@ -106,14 +106,14 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 let name = space_or_tab_eol_with_options(
                     tokenizer,
                     EolOptions {
-                        content_type: Some(ContentType::String),
+                        content_type: Some(Content::String),
                         connect: tokenizer.tokenize_state.connect,
                     },
                 );
                 tokenizer.attempt(
                     name,
-                    State::Next(Name::LabelEolAfter),
-                    State::Next(Name::LabelAtBlankLine),
+                    State::Next(StateName::LabelEolAfter),
+                    State::Next(StateName::LabelAtBlankLine),
                 )
             }
             Some(b']') => {
@@ -128,7 +128,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 State::Ok
             }
             _ => {
-                tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
+                tokenizer.enter_with_content(Name::Data, Some(Content::String));
 
                 if tokenizer.tokenize_state.connect {
                     let index = tokenizer.events.len() - 1;
@@ -137,7 +137,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.tokenize_state.connect = true;
                 }
 
-                State::Retry(Name::LabelInside)
+                State::Retry(StateName::LabelInside)
             }
         }
     }
@@ -152,7 +152,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = true;
-    State::Retry(Name::LabelAtBreak)
+    State::Retry(StateName::LabelAtBreak)
 }
 
 /// In a label, at a blank line.
@@ -178,13 +178,13 @@ pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'[' | b']') => {
-            tokenizer.exit(Token::Data);
-            State::Retry(Name::LabelAtBreak)
+            tokenizer.exit(Name::Data);
+            State::Retry(StateName::LabelAtBreak)
         }
         Some(byte) => {
             if tokenizer.tokenize_state.size > LINK_REFERENCE_SIZE_MAX {
-                tokenizer.exit(Token::Data);
-                State::Retry(Name::LabelAtBreak)
+                tokenizer.exit(Name::Data);
+                State::Retry(StateName::LabelAtBreak)
             } else {
                 tokenizer.consume();
                 tokenizer.tokenize_state.size += 1;
@@ -192,9 +192,9 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.tokenize_state.seen = true;
                 }
                 State::Next(if matches!(byte, b'\\') {
-                    Name::LabelEscape
+                    StateName::LabelEscape
                 } else {
-                    Name::LabelInside
+                    StateName::LabelInside
                 })
             }
         }
@@ -212,8 +212,8 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
         Some(b'[' | b'\\' | b']') => {
             tokenizer.consume();
             tokenizer.tokenize_state.size += 1;
-            State::Next(Name::LabelInside)
+            State::Next(StateName::LabelInside)
         }
-        _ => State::Retry(Name::LabelInside),
+        _ => State::Retry(StateName::LabelInside),
     }
 }

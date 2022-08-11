@@ -8,7 +8,7 @@
 //! And, in other cases, it’s needed to parse subcontent: pass some events
 //! through another tokenizer and inject the result.
 
-use crate::tokenizer::Event;
+use crate::event::Event;
 
 /// Shift `previous` and `next` links according to `jumps`.
 ///

@@ -46,8 +46,8 @@
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
 use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
-use crate::token::Token;
-use crate::tokenizer::{Event, EventType, Tokenizer};
+use crate::event::{Event, Kind, Name};
+use crate::tokenizer::Tokenizer;
 use crate::util::slice::{Position, Slice};
 
 /// Resolve whitespace.
@@ -57,12 +57,12 @@ pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whol
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
-        if event.event_type == EventType::Exit && event.token_type == Token::Data {
+        if event.kind == Kind::Exit && event.name == Name::Data {
             let trim_start = (trim_whole && index == 1)
-                || (index > 1 && tokenizer.events[index - 2].token_type == Token::LineEnding);
+                || (index > 1 && tokenizer.events[index - 2].name == Name::LineEnding);
             let trim_end = (trim_whole && index == tokenizer.events.len() - 1)
                 || (index + 1 < tokenizer.events.len()
-                    && tokenizer.events[index + 1].token_type == Token::LineEnding);
+                    && tokenizer.events[index + 1].name == Name::LineEnding);
 
             trim_data(tokenizer, index, trim_start, trim_end, hard_break);
         }
@@ -98,21 +98,21 @@ fn trim_data(
         }
 
         let diff = slice.bytes.len() - index;
-        let token_type = if hard_break
+        let name = if hard_break
             && spaces_only
             && diff >= HARD_BREAK_PREFIX_SIZE_MIN
             && exit_index + 1 < tokenizer.events.len()
         {
-            Token::HardBreakTrailing
+            Name::HardBreakTrailing
         } else {
-            Token::SpaceOrTab
+            Name::SpaceOrTab
         };
 
         // The whole data is whitespace.
         // We can be very fast: we only change the token types.
         if index == 0 {
-            tokenizer.events[exit_index - 1].token_type = token_type.clone();
-            tokenizer.events[exit_index].token_type = token_type;
+            tokenizer.events[exit_index - 1].name = name.clone();
+            tokenizer.events[exit_index].name = name;
             return;
         }
 
@@ -128,14 +128,14 @@ fn trim_data(
                 0,
                 vec![
                     Event {
-                        event_type: EventType::Enter,
-                        token_type: token_type.clone(),
+                        kind: Kind::Enter,
+                        name: name.clone(),
                         point: enter_point.clone(),
                         link: None,
                     },
                     Event {
-                        event_type: EventType::Exit,
-                        token_type,
+                        kind: Kind::Exit,
+                        name,
                         point: exit_point,
                         link: None,
                     },
@@ -159,8 +159,8 @@ fn trim_data(
         // The whole data is whitespace.
         // We can be very fast: we only change the token types.
         if index == slice.bytes.len() {
-            tokenizer.events[exit_index - 1].token_type = Token::SpaceOrTab;
-            tokenizer.events[exit_index].token_type = Token::SpaceOrTab;
+            tokenizer.events[exit_index - 1].name = Name::SpaceOrTab;
+            tokenizer.events[exit_index].name = Name::SpaceOrTab;
             return;
         }
 
@@ -176,14 +176,14 @@ fn trim_data(
                 0,
                 vec![
                     Event {
-                        event_type: EventType::Enter,
-                        token_type: Token::SpaceOrTab,
+                        kind: Kind::Enter,
+                        name: Name::SpaceOrTab,
                         point: enter_point,
                         link: None,
                     },
                     Event {
-                        event_type: EventType::Exit,
-                        token_type: Token::SpaceOrTab,
+                        kind: Kind::Exit,
+                        name: Name::SpaceOrTab,
                         point: exit_point.clone(),
                         link: None,
                     },

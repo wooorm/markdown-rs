@@ -1,7 +1,7 @@
 //! Utilities to deal with characters.
 
 use crate::constant::TAB_SIZE;
-use crate::tokenizer::{Event, EventType, Point};
+use crate::event::{Event, Kind, Point};
 use std::str;
 
 /// A range between two places.
@@ -24,15 +24,15 @@ impl<'a> Position<'a> {
     pub fn from_exit_event(events: &'a [Event], index: usize) -> Position<'a> {
         let exit = &events[index];
         debug_assert_eq!(
-            exit.event_type,
-            EventType::Exit,
+            exit.kind,
+            Kind::Exit,
             "expected `from_exit_event` to be called on `exit` event"
         );
         let mut enter_index = index - 1;
 
         loop {
             let enter = &events[enter_index];
-            if enter.event_type == EventType::Enter && enter.token_type == exit.token_type {
+            if enter.kind == Kind::Enter && enter.name == exit.name {
                 return Position {
                     start: &enter.point,
                     end: &exit.point,

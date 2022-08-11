@@ -33,8 +33,8 @@
 //! [character_reference]: crate::construct::character_reference
 //! [hard_break_escape]: crate::construct::hard_break_escape
 
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Start of a character escape.
@@ -46,11 +46,11 @@ use crate::tokenizer::Tokenizer;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\\') if tokenizer.parse_state.constructs.character_escape => {
-            tokenizer.enter(Token::CharacterEscape);
-            tokenizer.enter(Token::CharacterEscapeMarker);
+            tokenizer.enter(Name::CharacterEscape);
+            tokenizer.enter(Name::CharacterEscapeMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::CharacterEscapeMarker);
-            State::Next(Name::CharacterEscapeInside)
+            tokenizer.exit(Name::CharacterEscapeMarker);
+            State::Next(StateName::CharacterEscapeInside)
         }
         _ => State::Nok,
     }
@@ -62,15 +62,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// > | a\*b
 ///       ^
 /// ```
-// Name::CharacterEscapeInside
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // ASCII punctuation.
         Some(b'!'..=b'/' | b':'..=b'@' | b'['..=b'`' | b'{'..=b'~') => {
-            tokenizer.enter(Token::CharacterEscapeValue);
+            tokenizer.enter(Name::CharacterEscapeValue);
             tokenizer.consume();
-            tokenizer.exit(Token::CharacterEscapeValue);
-            tokenizer.exit(Token::CharacterEscape);
+            tokenizer.exit(Name::CharacterEscapeValue);
+            tokenizer.exit(Name::CharacterEscape);
             State::Ok
         }
         _ => State::Nok,

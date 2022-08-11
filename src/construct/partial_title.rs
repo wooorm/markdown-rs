@@ -31,10 +31,10 @@
 //! [label_end]: crate::construct::label_end
 
 use crate::construct::partial_space_or_tab::{space_or_tab_eol_with_options, EolOptions};
-use crate::state::{Name, State};
+use crate::event::{Content, Name};
+use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
-use crate::token::Token;
-use crate::tokenizer::{ContentType, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Before a title.
 ///
@@ -51,7 +51,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
-            State::Next(Name::TitleBegin)
+            State::Next(StateName::TitleBegin)
         }
         _ => State::Nok,
     }
@@ -80,7 +80,7 @@ pub fn begin(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            State::Retry(Name::TitleAtBreak)
+            State::Retry(StateName::TitleAtBreak)
         }
     }
 }
@@ -102,25 +102,25 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             let name = space_or_tab_eol_with_options(
                 tokenizer,
                 EolOptions {
-                    content_type: Some(ContentType::String),
+                    content_type: Some(Content::String),
                     connect: tokenizer.tokenize_state.connect,
                 },
             );
 
             tokenizer.attempt(
                 name,
-                State::Next(Name::TitleAfterEol),
-                State::Next(Name::TitleAtBlankLine),
+                State::Next(StateName::TitleAfterEol),
+                State::Next(StateName::TitleAtBlankLine),
             )
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
             tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Retry(Name::TitleBegin)
+            State::Retry(StateName::TitleBegin)
         }
         Some(_) => {
-            tokenizer.enter_with_content(Token::Data, Some(ContentType::String));
+            tokenizer.enter_with_content(Name::Data, Some(Content::String));
 
             if tokenizer.tokenize_state.connect {
                 let index = tokenizer.events.len() - 1;
@@ -129,7 +129,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.tokenize_state.connect = true;
             }
 
-            State::Retry(Name::TitleInside)
+            State::Retry(StateName::TitleInside)
         }
     }
 }
@@ -143,7 +143,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = true;
-    State::Retry(Name::TitleAtBreak)
+    State::Retry(StateName::TitleAtBreak)
 }
 
 /// In a title, at a blank line.
@@ -169,21 +169,21 @@ pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
-            tokenizer.exit(Token::Data);
-            State::Retry(Name::TitleAtBreak)
+            tokenizer.exit(Name::Data);
+            State::Retry(StateName::TitleAtBreak)
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
         {
-            tokenizer.exit(Token::Data);
-            State::Retry(Name::TitleAtBreak)
+            tokenizer.exit(Name::Data);
+            State::Retry(StateName::TitleAtBreak)
         }
         Some(byte) => {
             tokenizer.consume();
             State::Next(if matches!(byte, b'\\') {
-                Name::TitleEscape
+                StateName::TitleEscape
             } else {
-                Name::TitleInside
+                StateName::TitleInside
             })
         }
     }
@@ -199,8 +199,8 @@ pub fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'"' | b'\'' | b')') => {
             tokenizer.consume();
-            State::Next(Name::TitleInside)
+            State::Next(StateName::TitleInside)
         }
-        _ => State::Retry(Name::TitleInside),
+        _ => State::Retry(StateName::TitleInside),
     }
 }

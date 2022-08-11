@@ -1,6 +1,6 @@
 //! The tokenizer glues states from the state machine together.
 //!
-//! It facilitates everything needed to turn codes into tokens and events with
+//! It facilitates everything needed to turn codes into tokens and  with
 //! a state machine.
 //! It also enables logic needed for parsing markdown, such as an [`attempt`][]
 //! to parse something, which can succeed or, when unsuccessful, revert the
@@ -12,21 +12,10 @@
 //! [`check`]: Tokenizer::check
 
 use crate::constant::TAB_SIZE;
+use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
 use crate::parser::ParseState;
-use crate::state::{call, Name, State};
-use crate::token::{Token, VOID_TOKENS};
+use crate::state::{call, Name as StateName, State};
 use crate::util::edit_map::EditMap;
-
-/// Embedded content type.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ContentType {
-    /// Represents [flow content][crate::content::flow].
-    Flow,
-    /// Represents [string content][crate::content::string].
-    String,
-    /// Represents [text content][crate::content::text].
-    Text,
-}
 
 /// How to handle a byte.
 #[derive(Debug, PartialEq)]
@@ -39,53 +28,6 @@ pub enum ByteAction {
     Insert(u8),
     /// This byte must be ignored.
     Ignore,
-}
-
-/// A location in the document (`line`/`column`/`offset`).
-///
-/// The interface for the location in the document comes from unist `Point`:
-/// <https://github.com/syntax-tree/unist#point>.
-#[derive(Debug, Clone)]
-pub struct Point {
-    /// 1-indexed line number.
-    pub line: usize,
-    /// 1-indexed column number.
-    /// This is increases up to a tab stop for tabs.
-    /// Some editors count tabs as 1 character, so this position is not the
-    /// same as editors.
-    pub column: usize,
-    /// 0-indexed position in the document.
-    ///
-    /// Also an `index` into `bytes`.
-    pub index: usize,
-    /// Virtual step on the same `index`.
-    pub vs: usize,
-}
-
-/// Possible event types.
-#[derive(Debug, PartialEq, Clone)]
-pub enum EventType {
-    /// The start of something.
-    Enter,
-    /// The end of something.
-    Exit,
-}
-
-/// A link to another event.
-#[derive(Debug, Clone)]
-pub struct Link {
-    pub previous: Option<usize>,
-    pub next: Option<usize>,
-    pub content_type: ContentType,
-}
-
-/// Something semantic happening somewhere.
-#[derive(Debug, Clone)]
-pub struct Event {
-    pub event_type: EventType,
-    pub token_type: Token,
-    pub point: Point,
-    pub link: Option<Link>,
 }
 
 /// Callback that can be registered and is called when the tokenizer is done.
@@ -205,15 +147,15 @@ pub struct TokenizeState<'a> {
     pub document_paragraph_before: bool,
 
     // Couple of very frequent settings for parsing whitespace.
-    pub space_or_tab_eol_content_type: Option<ContentType>,
+    pub space_or_tab_eol_content_type: Option<Content>,
     pub space_or_tab_eol_connect: bool,
     pub space_or_tab_eol_ok: bool,
     pub space_or_tab_connect: bool,
-    pub space_or_tab_content_type: Option<ContentType>,
+    pub space_or_tab_content_type: Option<Content>,
     pub space_or_tab_min: usize,
     pub space_or_tab_max: usize,
     pub space_or_tab_size: usize,
-    pub space_or_tab_token: Token,
+    pub space_or_tab_token: Name,
 
     // Couple of media related fields.
     /// Stack of label (start) that could form images and links.
@@ -250,15 +192,15 @@ pub struct TokenizeState<'a> {
     /// Index.
     pub end: usize,
     /// Slot for a token type.
-    pub token_1: Token,
+    pub token_1: Name,
     /// Slot for a token type.
-    pub token_2: Token,
+    pub token_2: Name,
     /// Slot for a token type.
-    pub token_3: Token,
+    pub token_3: Name,
     /// Slot for a token type.
-    pub token_4: Token,
+    pub token_4: Name,
     /// Slot for a token type.
-    pub token_5: Token,
+    pub token_5: Name,
 }
 
 /// A tokenizer itself.
@@ -290,7 +232,7 @@ pub struct Tokenizer<'a> {
     /// Hierarchy of semantic labels.
     ///
     /// Tracked to make sure everything’s valid.
-    pub stack: Vec<Token>,
+    pub stack: Vec<Name>,
     /// Edit map, to batch changes.
     pub map: EditMap,
     /// List of attached resolvers, which will be called when done feeding,
@@ -363,12 +305,12 @@ impl<'a> Tokenizer<'a> {
                 space_or_tab_min: 0,
                 space_or_tab_max: 0,
                 space_or_tab_size: 0,
-                space_or_tab_token: Token::SpaceOrTab,
-                token_1: Token::Data,
-                token_2: Token::Data,
-                token_3: Token::Data,
-                token_4: Token::Data,
-                token_5: Token::Data,
+                space_or_tab_token: Name::SpaceOrTab,
+                token_1: Name::Data,
+                token_2: Name::Data,
+                token_3: Name::Data,
+                token_4: Name::Data,
+                token_5: Name::Data,
             },
             map: EditMap::new(),
             interrupt: false,
@@ -491,13 +433,13 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Mark the start of a semantic label.
-    pub fn enter(&mut self, token_type: Token) {
-        self.enter_with_link(token_type, None);
+    pub fn enter(&mut self, name: Name) {
+        self.enter_with_link(name, None);
     }
 
-    pub fn enter_with_content(&mut self, token_type: Token, content_type_opt: Option<ContentType>) {
+    pub fn enter_with_content(&mut self, name: Name, content_type_opt: Option<Content>) {
         self.enter_with_link(
-            token_type,
+            name,
             content_type_opt.map(|content_type| Link {
                 content_type,
                 previous: None,
@@ -506,26 +448,26 @@ impl<'a> Tokenizer<'a> {
         );
     }
 
-    pub fn enter_with_link(&mut self, token_type: Token, link: Option<Link>) {
+    pub fn enter_with_link(&mut self, name: Name, link: Option<Link>) {
         let mut point = self.point.clone();
         move_point_back(self, &mut point);
 
-        log::debug!("enter:   `{:?}`", token_type);
+        log::debug!("enter:   `{:?}`", name);
         self.events.push(Event {
-            event_type: EventType::Enter,
-            token_type: token_type.clone(),
+            kind: Kind::Enter,
+            name: name.clone(),
             point,
             link,
         });
-        self.stack.push(token_type);
+        self.stack.push(name);
     }
 
     /// Mark the end of a semantic label.
-    pub fn exit(&mut self, token_type: Token) {
+    pub fn exit(&mut self, name: Name) {
         let current_token = self.stack.pop().expect("cannot close w/o open tokens");
 
         debug_assert_eq!(
-            current_token, token_type,
+            current_token, name,
             "expected exit token to match current token"
         );
 
@@ -533,18 +475,18 @@ impl<'a> Tokenizer<'a> {
         let mut point = self.point.clone();
 
         debug_assert!(
-            current_token != previous.token_type
+            current_token != previous.name
                 || previous.point.index != point.index
                 || previous.point.vs != point.vs,
             "expected non-empty token"
         );
 
-        if VOID_TOKENS.iter().any(|d| d == &token_type) {
+        if VOID_EVENTS.iter().any(|d| d == &name) {
             debug_assert!(
-                current_token == previous.token_type,
+                current_token == previous.name,
                 "expected token to be void (`{:?}`), instead of including `{:?}`",
                 current_token,
-                previous.token_type
+                previous.name
             );
         }
 
@@ -556,10 +498,10 @@ impl<'a> Tokenizer<'a> {
             move_point_back(self, &mut point);
         }
 
-        log::debug!("exit:    `{:?}`", token_type);
+        log::debug!("exit:    `{:?}`", name);
         self.events.push(Event {
-            event_type: EventType::Exit,
-            token_type,
+            kind: Kind::Exit,
+            name,
             point,
             link: None,
         });
@@ -595,7 +537,7 @@ impl<'a> Tokenizer<'a> {
 
     /// Parse with `name` and its future states, to see if that results in
     /// [`State::Ok`][] or [`State::Nok`][], then revert in both cases.
-    pub fn check(&mut self, name: Name, ok: State, nok: State) -> State {
+    pub fn check(&mut self, name: StateName, ok: State, nok: State) -> State {
         // Always capture (and restore) when checking.
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.
@@ -614,7 +556,7 @@ impl<'a> Tokenizer<'a> {
     /// Parse with `name` and its future states, to see if that results in
     /// [`State::Ok`][] or [`State::Nok`][], revert in the case of
     /// `State::Nok`.
-    pub fn attempt(&mut self, name: Name, ok: State, nok: State) -> State {
+    pub fn attempt(&mut self, name: StateName, ok: State, nok: State) -> State {
         // Always capture (and restore) when checking.
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.

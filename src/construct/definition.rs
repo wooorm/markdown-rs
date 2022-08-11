@@ -94,8 +94,8 @@
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_eol};
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt_back as skip_opt_back;
 
@@ -112,19 +112,19 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             && tokenizer.events[skip_opt_back(
                 &tokenizer.events,
                 tokenizer.events.len() - 1,
-                &[Token::LineEnding, Token::SpaceOrTab],
+                &[Name::LineEnding, Name::SpaceOrTab],
             )]
-            .token_type
-                == Token::Definition);
+            .name
+                == Name::Definition);
 
     if possible && tokenizer.parse_state.constructs.definition {
-        tokenizer.enter(Token::Definition);
+        tokenizer.enter(Name::Definition);
         // Note: arbitrary whitespace allowed even if code (indented) is on.
         let name = space_or_tab(tokenizer);
         tokenizer.attempt(
             name,
-            State::Next(Name::DefinitionBefore),
-            State::Next(Name::DefinitionBefore),
+            State::Next(StateName::DefinitionBefore),
+            State::Next(StateName::DefinitionBefore),
         )
     } else {
         State::Nok
@@ -140,12 +140,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
-            tokenizer.tokenize_state.token_1 = Token::DefinitionLabel;
-            tokenizer.tokenize_state.token_2 = Token::DefinitionLabelMarker;
-            tokenizer.tokenize_state.token_3 = Token::DefinitionLabelString;
+            tokenizer.tokenize_state.token_1 = Name::DefinitionLabel;
+            tokenizer.tokenize_state.token_2 = Name::DefinitionLabelMarker;
+            tokenizer.tokenize_state.token_3 = Name::DefinitionLabelString;
             tokenizer.attempt(
-                Name::LabelStart,
-                State::Next(Name::DefinitionLabelAfter),
+                StateName::LabelStart,
+                State::Next(StateName::DefinitionLabelAfter),
                 State::Nok,
             )
         }
@@ -160,16 +160,16 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 pub fn label_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
 
     match tokenizer.current {
         Some(b':') => {
-            tokenizer.enter(Token::DefinitionMarker);
+            tokenizer.enter(Name::DefinitionMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::DefinitionMarker);
-            State::Next(Name::DefinitionMarkerAfter)
+            tokenizer.exit(Name::DefinitionMarker);
+            State::Next(StateName::DefinitionMarkerAfter)
         }
         _ => State::Nok,
     }
@@ -185,8 +185,8 @@ pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::DefinitionDestinationBefore),
-        State::Next(Name::DefinitionDestinationBefore),
+        State::Next(StateName::DefinitionDestinationBefore),
+        State::Next(StateName::DefinitionDestinationBefore),
     )
 }
 
@@ -197,16 +197,16 @@ pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 pub fn destination_before(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::DefinitionDestination;
-    tokenizer.tokenize_state.token_2 = Token::DefinitionDestinationLiteral;
-    tokenizer.tokenize_state.token_3 = Token::DefinitionDestinationLiteralMarker;
-    tokenizer.tokenize_state.token_4 = Token::DefinitionDestinationRaw;
-    tokenizer.tokenize_state.token_5 = Token::DefinitionDestinationString;
+    tokenizer.tokenize_state.token_1 = Name::DefinitionDestination;
+    tokenizer.tokenize_state.token_2 = Name::DefinitionDestinationLiteral;
+    tokenizer.tokenize_state.token_3 = Name::DefinitionDestinationLiteralMarker;
+    tokenizer.tokenize_state.token_4 = Name::DefinitionDestinationRaw;
+    tokenizer.tokenize_state.token_5 = Name::DefinitionDestinationString;
     tokenizer.tokenize_state.size_b = usize::MAX;
     tokenizer.attempt(
-        Name::DestinationStart,
-        State::Next(Name::DefinitionDestinationAfter),
-        State::Next(Name::DefinitionDestinationMissing),
+        StateName::DestinationStart,
+        State::Next(StateName::DefinitionDestinationAfter),
+        State::Next(StateName::DefinitionDestinationMissing),
     )
 }
 
@@ -217,26 +217,26 @@ pub fn destination_before(tokenizer: &mut Tokenizer) -> State {
 ///           ^
 /// ```
 pub fn destination_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
-    tokenizer.tokenize_state.token_4 = Token::Data;
-    tokenizer.tokenize_state.token_5 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
+    tokenizer.tokenize_state.token_4 = Name::Data;
+    tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
     tokenizer.attempt(
-        Name::DefinitionTitleBefore,
-        State::Next(Name::DefinitionAfter),
-        State::Next(Name::DefinitionAfter),
+        StateName::DefinitionTitleBefore,
+        State::Next(StateName::DefinitionAfter),
+        State::Next(StateName::DefinitionAfter),
     )
 }
 
 /// Without destination.
 pub fn destination_missing(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
-    tokenizer.tokenize_state.token_4 = Token::Data;
-    tokenizer.tokenize_state.token_5 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
+    tokenizer.tokenize_state.token_4 = Name::Data;
+    tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
     State::Nok
 }
@@ -253,8 +253,8 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::DefinitionAfterWhitespace),
-        State::Next(Name::DefinitionAfterWhitespace),
+        State::Next(StateName::DefinitionAfterWhitespace),
+        State::Next(StateName::DefinitionAfterWhitespace),
     )
 }
 
@@ -269,7 +269,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 pub fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
-            tokenizer.exit(Token::Definition);
+            tokenizer.exit(Name::Definition);
             // You’d be interrupting.
             tokenizer.interrupt = true;
             State::Ok
@@ -290,7 +290,7 @@ pub fn title_before(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::DefinitionTitleBeforeMarker),
+        State::Next(StateName::DefinitionTitleBeforeMarker),
         State::Nok,
     )
 }
@@ -303,12 +303,12 @@ pub fn title_before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::DefinitionTitle;
-    tokenizer.tokenize_state.token_2 = Token::DefinitionTitleMarker;
-    tokenizer.tokenize_state.token_3 = Token::DefinitionTitleString;
+    tokenizer.tokenize_state.token_1 = Name::DefinitionTitle;
+    tokenizer.tokenize_state.token_2 = Name::DefinitionTitleMarker;
+    tokenizer.tokenize_state.token_3 = Name::DefinitionTitleString;
     tokenizer.attempt(
-        Name::TitleStart,
-        State::Next(Name::DefinitionTitleAfter),
+        StateName::TitleStart,
+        State::Next(StateName::DefinitionTitleAfter),
         State::Nok,
     )
 }
@@ -320,14 +320,14 @@ pub fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
 ///               ^
 /// ```
 pub fn title_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
     let name = space_or_tab(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::DefinitionTitleAfterOptionalWhitespace),
-        State::Next(Name::DefinitionTitleAfterOptionalWhitespace),
+        State::Next(StateName::DefinitionTitleAfterOptionalWhitespace),
+        State::Next(StateName::DefinitionTitleAfterOptionalWhitespace),
     )
 }
 

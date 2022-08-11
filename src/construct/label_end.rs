@@ -148,9 +148,10 @@
 
 use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::partial_space_or_tab::space_or_tab_eol;
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{Event, EventType, Media, Tokenizer};
+use crate::event::{Event, Kind, Name};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::{Media, Tokenizer};
+
 use crate::util::{
     normalize_identifier::normalize_identifier,
     skip,
@@ -195,15 +196,15 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 
             // Mark as balanced if the info is inactive.
             if label_start.inactive {
-                return State::Retry(Name::LabelEndNok);
+                return State::Retry(StateName::LabelEndNok);
             }
 
-            tokenizer.enter(Token::LabelEnd);
-            tokenizer.enter(Token::LabelMarker);
+            tokenizer.enter(Name::LabelEnd);
+            tokenizer.enter(Name::LabelMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::LabelMarker);
-            tokenizer.exit(Token::LabelEnd);
-            return State::Next(Name::LabelEndAfter);
+            tokenizer.exit(Name::LabelMarker);
+            tokenizer.exit(Name::LabelEnd);
+            return State::Next(StateName::LabelEndAfter);
         }
     }
 
@@ -240,29 +241,29 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
         Some(b'(') => tokenizer.attempt(
-            Name::LabelEndResourceStart,
-            State::Next(Name::LabelEndOk),
+            StateName::LabelEndResourceStart,
+            State::Next(StateName::LabelEndOk),
             State::Next(if defined {
-                Name::LabelEndOk
+                StateName::LabelEndOk
             } else {
-                Name::LabelEndNok
+                StateName::LabelEndNok
             }),
         ),
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
         Some(b'[') => tokenizer.attempt(
-            Name::LabelEndReferenceFull,
-            State::Next(Name::LabelEndOk),
+            StateName::LabelEndReferenceFull,
+            State::Next(StateName::LabelEndOk),
             State::Next(if defined {
-                Name::LabelEndReferenceNotFull
+                StateName::LabelEndReferenceNotFull
             } else {
-                Name::LabelEndNok
+                StateName::LabelEndNok
             }),
         ),
         // Shortcut (`[asd]`) reference?
         _ => State::Retry(if defined {
-            Name::LabelEndOk
+            StateName::LabelEndOk
         } else {
-            Name::LabelEndNok
+            StateName::LabelEndNok
         }),
     }
 }
@@ -279,9 +280,9 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn reference_not_full(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
-        Name::LabelEndReferenceCollapsed,
-        State::Next(Name::LabelEndOk),
-        State::Next(Name::LabelEndNok),
+        StateName::LabelEndReferenceCollapsed,
+        State::Next(StateName::LabelEndOk),
+        State::Next(StateName::LabelEndNok),
     )
 }
 
@@ -311,13 +312,13 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
         .label_start_list_loose
         .append(&mut left);
 
-    let is_link = tokenizer.events[label_start.start.0].token_type == Token::LabelLink;
+    let is_link = tokenizer.events[label_start.start.0].name == Name::LabelLink;
 
     if is_link {
         let mut index = 0;
         while index < tokenizer.tokenize_state.label_start_stack.len() {
             let label_start = &mut tokenizer.tokenize_state.label_start_stack[index];
-            if tokenizer.events[label_start.start.0].token_type == Token::LabelLink {
+            if tokenizer.events[label_start.start.0].name == Name::LabelLink {
                 label_start.inactive = true;
             }
             index += 1;
@@ -367,11 +368,11 @@ pub fn nok(tokenizer: &mut Tokenizer) -> State {
 pub fn resource_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'(') => {
-            tokenizer.enter(Token::Resource);
-            tokenizer.enter(Token::ResourceMarker);
+            tokenizer.enter(Name::Resource);
+            tokenizer.enter(Name::ResourceMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::ResourceMarker);
-            State::Next(Name::LabelEndResourceBefore)
+            tokenizer.exit(Name::ResourceMarker);
+            State::Next(StateName::LabelEndResourceBefore)
         }
         _ => unreachable!("expected `(`"),
     }
@@ -387,8 +388,8 @@ pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::LabelEndResourceOpen),
-        State::Next(Name::LabelEndResourceOpen),
+        State::Next(StateName::LabelEndResourceOpen),
+        State::Next(StateName::LabelEndResourceOpen),
     )
 }
 
@@ -400,19 +401,19 @@ pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b')') = tokenizer.current {
-        State::Retry(Name::LabelEndResourceEnd)
+        State::Retry(StateName::LabelEndResourceEnd)
     } else {
-        tokenizer.tokenize_state.token_1 = Token::ResourceDestination;
-        tokenizer.tokenize_state.token_2 = Token::ResourceDestinationLiteral;
-        tokenizer.tokenize_state.token_3 = Token::ResourceDestinationLiteralMarker;
-        tokenizer.tokenize_state.token_4 = Token::ResourceDestinationRaw;
-        tokenizer.tokenize_state.token_5 = Token::ResourceDestinationString;
+        tokenizer.tokenize_state.token_1 = Name::ResourceDestination;
+        tokenizer.tokenize_state.token_2 = Name::ResourceDestinationLiteral;
+        tokenizer.tokenize_state.token_3 = Name::ResourceDestinationLiteralMarker;
+        tokenizer.tokenize_state.token_4 = Name::ResourceDestinationRaw;
+        tokenizer.tokenize_state.token_5 = Name::ResourceDestinationString;
         tokenizer.tokenize_state.size_b = RESOURCE_DESTINATION_BALANCE_MAX;
 
         tokenizer.attempt(
-            Name::DestinationStart,
-            State::Next(Name::LabelEndResourceDestinationAfter),
-            State::Next(Name::LabelEndResourceDestinationMissing),
+            StateName::DestinationStart,
+            State::Next(StateName::LabelEndResourceDestinationAfter),
+            State::Next(StateName::LabelEndResourceDestinationMissing),
         )
     }
 }
@@ -424,27 +425,27 @@ pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 pub fn resource_destination_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
-    tokenizer.tokenize_state.token_4 = Token::Data;
-    tokenizer.tokenize_state.token_5 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
+    tokenizer.tokenize_state.token_4 = Name::Data;
+    tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::LabelEndResourceBetween),
-        State::Next(Name::LabelEndResourceEnd),
+        State::Next(StateName::LabelEndResourceBetween),
+        State::Next(StateName::LabelEndResourceEnd),
     )
 }
 
 /// Without destination.
 pub fn resource_destination_missing(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
-    tokenizer.tokenize_state.token_4 = Token::Data;
-    tokenizer.tokenize_state.token_5 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
+    tokenizer.tokenize_state.token_4 = Name::Data;
+    tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
     State::Nok
 }
@@ -458,16 +459,16 @@ pub fn resource_destination_missing(tokenizer: &mut Tokenizer) -> State {
 pub fn resource_between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'"' | b'\'' | b'(') => {
-            tokenizer.tokenize_state.token_1 = Token::ResourceTitle;
-            tokenizer.tokenize_state.token_2 = Token::ResourceTitleMarker;
-            tokenizer.tokenize_state.token_3 = Token::ResourceTitleString;
+            tokenizer.tokenize_state.token_1 = Name::ResourceTitle;
+            tokenizer.tokenize_state.token_2 = Name::ResourceTitleMarker;
+            tokenizer.tokenize_state.token_3 = Name::ResourceTitleString;
             tokenizer.attempt(
-                Name::TitleStart,
-                State::Next(Name::LabelEndResourceTitleAfter),
+                StateName::TitleStart,
+                State::Next(StateName::LabelEndResourceTitleAfter),
                 State::Nok,
             )
         }
-        _ => State::Retry(Name::LabelEndResourceEnd),
+        _ => State::Retry(StateName::LabelEndResourceEnd),
     }
 }
 
@@ -478,14 +479,14 @@ pub fn resource_between(tokenizer: &mut Tokenizer) -> State {
 ///              ^
 /// ```
 pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
     let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::LabelEndResourceEnd),
-        State::Next(Name::LabelEndResourceEnd),
+        State::Next(StateName::LabelEndResourceEnd),
+        State::Next(StateName::LabelEndResourceEnd),
     )
 }
 
@@ -498,10 +499,10 @@ pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
 pub fn resource_end(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b')') => {
-            tokenizer.enter(Token::ResourceMarker);
+            tokenizer.enter(Name::ResourceMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::ResourceMarker);
-            tokenizer.exit(Token::Resource);
+            tokenizer.exit(Name::ResourceMarker);
+            tokenizer.exit(Name::Resource);
             State::Ok
         }
         _ => State::Nok,
@@ -517,12 +518,12 @@ pub fn resource_end(tokenizer: &mut Tokenizer) -> State {
 pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
-            tokenizer.tokenize_state.token_1 = Token::Reference;
-            tokenizer.tokenize_state.token_2 = Token::ReferenceMarker;
-            tokenizer.tokenize_state.token_3 = Token::ReferenceString;
+            tokenizer.tokenize_state.token_1 = Name::Reference;
+            tokenizer.tokenize_state.token_2 = Name::ReferenceMarker;
+            tokenizer.tokenize_state.token_3 = Name::ReferenceString;
             tokenizer.attempt(
-                Name::LabelStart,
-                State::Next(Name::LabelEndReferenceFullAfter),
+                StateName::LabelStart,
+                State::Next(StateName::LabelEndReferenceFullAfter),
                 State::Nok,
             )
         }
@@ -537,9 +538,9 @@ pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
 ///          ^
 /// ```
 pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Token::Data;
-    tokenizer.tokenize_state.token_2 = Token::Data;
-    tokenizer.tokenize_state.token_3 = Token::Data;
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
 
     if tokenizer
         .parse_state
@@ -553,7 +554,7 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
                     skip::to_back(
                         &tokenizer.events,
                         tokenizer.events.len() - 1,
-                        &[Token::ReferenceString],
+                        &[Name::ReferenceString],
                     ),
                 ),
             )
@@ -577,11 +578,11 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
 pub fn reference_collapsed(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
-            tokenizer.enter(Token::Reference);
-            tokenizer.enter(Token::ReferenceMarker);
+            tokenizer.enter(Name::Reference);
+            tokenizer.enter(Name::ReferenceMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::ReferenceMarker);
-            State::Next(Name::LabelEndReferenceCollapsedOpen)
+            tokenizer.exit(Name::ReferenceMarker);
+            State::Next(StateName::LabelEndReferenceCollapsedOpen)
         }
         _ => State::Nok,
     }
@@ -598,10 +599,10 @@ pub fn reference_collapsed(tokenizer: &mut Tokenizer) -> State {
 pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b']') => {
-            tokenizer.enter(Token::ReferenceMarker);
+            tokenizer.enter(Name::ReferenceMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::ReferenceMarker);
-            tokenizer.exit(Token::Reference);
+            tokenizer.exit(Name::ReferenceMarker);
+            tokenizer.exit(Name::Reference);
             State::Ok
         }
         _ => State::Nok,
@@ -633,14 +634,14 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
             data_exit_index - data_enter_index + 1,
             vec![
                 Event {
-                    event_type: EventType::Enter,
-                    token_type: Token::Data,
+                    kind: Kind::Enter,
+                    name: Name::Data,
                     point: events[data_enter_index].point.clone(),
                     link: None,
                 },
                 Event {
-                    event_type: EventType::Exit,
-                    token_type: Token::Data,
+                    kind: Kind::Exit,
+                    name: Name::Data,
                     point: events[data_exit_index].point.clone(),
                     link: None,
                 },
@@ -659,7 +660,7 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
         let group_enter_event = &events[group_enter_index];
         // LabelLink:Exit or LabelImage:Exit.
         let text_enter_index = media.start.0
-            + (if group_enter_event.token_type == Token::LabelLink {
+            + (if group_enter_event.name == Name::LabelLink {
                 4
             } else {
                 6
@@ -677,18 +678,18 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
             0,
             vec![
                 Event {
-                    event_type: EventType::Enter,
-                    token_type: if group_enter_event.token_type == Token::LabelLink {
-                        Token::Link
+                    kind: Kind::Enter,
+                    name: if group_enter_event.name == Name::LabelLink {
+                        Name::Link
                     } else {
-                        Token::Image
+                        Name::Image
                     },
                     point: group_enter_event.point.clone(),
                     link: None,
                 },
                 Event {
-                    event_type: EventType::Enter,
-                    token_type: Token::Label,
+                    kind: Kind::Enter,
+                    name: Name::Label,
                     point: group_enter_event.point.clone(),
                     link: None,
                 },
@@ -702,8 +703,8 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
                 text_enter_index,
                 0,
                 vec![Event {
-                    event_type: EventType::Enter,
-                    token_type: Token::LabelText,
+                    kind: Kind::Enter,
+                    name: Name::LabelText,
                     point: events[text_enter_index].point.clone(),
                     link: None,
                 }],
@@ -714,8 +715,8 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
                 text_exit_index,
                 0,
                 vec![Event {
-                    event_type: EventType::Exit,
-                    token_type: Token::LabelText,
+                    kind: Kind::Exit,
+                    name: Name::LabelText,
                     point: events[text_exit_index].point.clone(),
                     link: None,
                 }],
@@ -727,8 +728,8 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
             label_exit_index + 1,
             0,
             vec![Event {
-                event_type: EventType::Exit,
-                token_type: Token::Label,
+                kind: Kind::Exit,
+                name: Name::Label,
                 point: events[label_exit_index].point.clone(),
                 link: None,
             }],
@@ -739,11 +740,11 @@ pub fn resolve_media(tokenizer: &mut Tokenizer) {
             group_end_index + 1,
             0,
             vec![Event {
-                event_type: EventType::Exit,
-                token_type: if group_enter_event.token_type == Token::LabelLink {
-                    Token::Link
+                kind: Kind::Exit,
+                name: if group_enter_event.name == Name::LabelLink {
+                    Name::Link
                 } else {
-                    Token::Image
+                    Name::Image
                 },
                 point: events[group_end_index].point.clone(),
                 link: None,

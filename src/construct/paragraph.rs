@@ -32,9 +32,9 @@
 //! [code_text]: crate::construct::code_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{ContentType, EventType, Tokenizer};
+use crate::event::{Content, Kind, Name};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt as skip_opt;
 
 /// Before a paragraph.
@@ -47,9 +47,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => unreachable!("unexpected eol/eof"),
         _ => {
-            tokenizer.enter(Token::Paragraph);
-            tokenizer.enter_with_content(Token::Data, Some(ContentType::Text));
-            State::Retry(Name::ParagraphInside)
+            tokenizer.enter(Name::Paragraph);
+            tokenizer.enter_with_content(Name::Data, Some(Content::Text));
+            State::Retry(StateName::ParagraphInside)
         }
     }
 }
@@ -63,8 +63,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
-            tokenizer.exit(Token::Data);
-            tokenizer.exit(Token::Paragraph);
+            tokenizer.exit(Name::Data);
+            tokenizer.exit(Name::Paragraph);
             tokenizer.register_resolver_before("paragraph".to_string(), Box::new(resolve));
             // You’d be interrupting.
             tokenizer.interrupt = true;
@@ -72,7 +72,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.consume();
-            State::Next(Name::ParagraphInside)
+            State::Next(StateName::ParagraphInside)
         }
     }
 }
@@ -85,21 +85,21 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
-        if event.event_type == EventType::Enter && event.token_type == Token::Paragraph {
+        if event.kind == Kind::Enter && event.name == Name::Paragraph {
             // Exit:Paragraph
             let mut exit_index = index + 3;
             let mut enter_next_index =
-                skip_opt(&tokenizer.events, exit_index + 1, &[Token::LineEnding]);
+                skip_opt(&tokenizer.events, exit_index + 1, &[Name::LineEnding]);
             // Enter:Paragraph
             enter_next_index = skip_opt(
                 &tokenizer.events,
                 enter_next_index,
-                &[Token::SpaceOrTab, Token::BlockQuotePrefix],
+                &[Name::SpaceOrTab, Name::BlockQuotePrefix],
             );
 
             // Find future `Paragraphs`.
             while enter_next_index < tokenizer.events.len()
-                && tokenizer.events[enter_next_index].token_type == Token::Paragraph
+                && tokenizer.events[enter_next_index].name == Name::Paragraph
             {
                 // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
                 tokenizer.map.add(exit_index, 3, vec![]);
@@ -123,12 +123,11 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 
                 // Potential next start.
                 exit_index = enter_next_index + 3;
-                enter_next_index =
-                    skip_opt(&tokenizer.events, exit_index + 1, &[Token::LineEnding]);
+                enter_next_index = skip_opt(&tokenizer.events, exit_index + 1, &[Name::LineEnding]);
                 enter_next_index = skip_opt(
                     &tokenizer.events,
                     enter_next_index,
-                    &[Token::SpaceOrTab, Token::BlockQuotePrefix],
+                    &[Name::SpaceOrTab, Name::BlockQuotePrefix],
                 );
             }
 

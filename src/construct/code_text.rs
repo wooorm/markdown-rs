@@ -83,8 +83,8 @@
 //! [code_fenced]: crate::construct::code_fenced
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Start of code (text).
@@ -101,12 +101,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             if tokenizer.parse_state.constructs.code_text
                 && (tokenizer.previous != Some(b'`')
                     || (!tokenizer.events.is_empty()
-                        && tokenizer.events[tokenizer.events.len() - 1].token_type
-                            == Token::CharacterEscape)) =>
+                        && tokenizer.events[tokenizer.events.len() - 1].name
+                            == Name::CharacterEscape)) =>
         {
-            tokenizer.enter(Token::CodeText);
-            tokenizer.enter(Token::CodeTextSequence);
-            State::Retry(Name::CodeTextSequenceOpen)
+            tokenizer.enter(Name::CodeText);
+            tokenizer.enter(Name::CodeTextSequence);
+            State::Retry(StateName::CodeTextSequenceOpen)
         }
         _ => State::Nok,
     }
@@ -122,10 +122,10 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'`') = tokenizer.current {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Next(Name::CodeTextSequenceOpen)
+        State::Next(StateName::CodeTextSequenceOpen)
     } else {
-        tokenizer.exit(Token::CodeTextSequence);
-        State::Retry(Name::CodeTextBetween)
+        tokenizer.exit(Name::CodeTextSequence);
+        State::Retry(StateName::CodeTextBetween)
     }
 }
 
@@ -142,18 +142,18 @@ pub fn between(tokenizer: &mut Tokenizer) -> State {
             State::Nok
         }
         Some(b'\n') => {
-            tokenizer.enter(Token::LineEnding);
+            tokenizer.enter(Name::LineEnding);
             tokenizer.consume();
-            tokenizer.exit(Token::LineEnding);
-            State::Next(Name::CodeTextBetween)
+            tokenizer.exit(Name::LineEnding);
+            State::Next(StateName::CodeTextBetween)
         }
         Some(b'`') => {
-            tokenizer.enter(Token::CodeTextSequence);
-            State::Retry(Name::CodeTextSequenceClose)
+            tokenizer.enter(Name::CodeTextSequence);
+            State::Retry(StateName::CodeTextSequenceClose)
         }
         _ => {
-            tokenizer.enter(Token::CodeTextData);
-            State::Retry(Name::CodeTextData)
+            tokenizer.enter(Name::CodeTextData);
+            State::Retry(StateName::CodeTextData)
         }
     }
 }
@@ -167,12 +167,12 @@ pub fn between(tokenizer: &mut Tokenizer) -> State {
 pub fn data(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n' | b'`') => {
-            tokenizer.exit(Token::CodeTextData);
-            State::Retry(Name::CodeTextBetween)
+            tokenizer.exit(Name::CodeTextData);
+            State::Retry(StateName::CodeTextBetween)
         }
         _ => {
             tokenizer.consume();
-            State::Next(Name::CodeTextData)
+            State::Next(StateName::CodeTextData)
         }
     }
 }
@@ -188,23 +188,23 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
         Some(b'`') => {
             tokenizer.tokenize_state.size_b += 1;
             tokenizer.consume();
-            State::Next(Name::CodeTextSequenceClose)
+            State::Next(StateName::CodeTextSequenceClose)
         }
         _ => {
             if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_b {
-                tokenizer.exit(Token::CodeTextSequence);
-                tokenizer.exit(Token::CodeText);
+                tokenizer.exit(Name::CodeTextSequence);
+                tokenizer.exit(Name::CodeText);
                 tokenizer.tokenize_state.size = 0;
                 tokenizer.tokenize_state.size_b = 0;
                 State::Ok
             } else {
                 let index = tokenizer.events.len();
-                tokenizer.exit(Token::CodeTextSequence);
+                tokenizer.exit(Name::CodeTextSequence);
                 // More or less accents: mark as data.
-                tokenizer.events[index - 1].token_type = Token::CodeTextData;
-                tokenizer.events[index].token_type = Token::CodeTextData;
+                tokenizer.events[index - 1].name = Name::CodeTextData;
+                tokenizer.events[index].name = Name::CodeTextData;
                 tokenizer.tokenize_state.size_b = 0;
-                State::Retry(Name::CodeTextBetween)
+                State::Retry(StateName::CodeTextBetween)
             }
         }
     }

@@ -1,6 +1,6 @@
 /// Semantic label of a span.
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub enum Token {
+pub enum Name {
     /// Attention sequence.
     ///
     /// > 👉 **Note**: this is used while parsing but compiled away.
@@ -1832,46 +1832,104 @@ pub enum Token {
     ThematicBreakSequence,
 }
 
-/// List of void tokens, used to make sure everything is working good.
-pub const VOID_TOKENS: [Token; 40] = [
-    Token::AttentionSequence,
-    Token::AutolinkEmail,
-    Token::AutolinkMarker,
-    Token::AutolinkProtocol,
-    Token::BlankLineEnding,
-    Token::BlockQuoteMarker,
-    Token::ByteOrderMark,
-    Token::CharacterEscapeMarker,
-    Token::CharacterEscapeValue,
-    Token::CharacterReferenceMarker,
-    Token::CharacterReferenceMarkerHexadecimal,
-    Token::CharacterReferenceMarkerNumeric,
-    Token::CharacterReferenceMarkerSemi,
-    Token::CharacterReferenceValue,
-    Token::CodeFencedFenceSequence,
-    Token::CodeFlowChunk,
-    Token::CodeTextData,
-    Token::CodeTextSequence,
-    Token::Data,
-    Token::DefinitionDestinationLiteralMarker,
-    Token::DefinitionLabelMarker,
-    Token::DefinitionMarker,
-    Token::DefinitionTitleMarker,
-    Token::EmphasisSequence,
-    Token::HardBreakEscape,
-    Token::HardBreakTrailing,
-    Token::HeadingAtxSequence,
-    Token::HeadingSetextUnderline,
-    Token::HtmlFlowData,
-    Token::HtmlTextData,
-    Token::LabelImageMarker,
-    Token::LabelMarker,
-    Token::LineEnding,
-    Token::ListItemMarker,
-    Token::ListItemValue,
-    Token::ReferenceMarker,
-    Token::ResourceMarker,
-    Token::ResourceTitleMarker,
-    Token::StrongSequence,
-    Token::ThematicBreakSequence,
+/// List of void tokens, used to make sure everything is working well.
+pub const VOID_EVENTS: [Name; 40] = [
+    Name::AttentionSequence,
+    Name::AutolinkEmail,
+    Name::AutolinkMarker,
+    Name::AutolinkProtocol,
+    Name::BlankLineEnding,
+    Name::BlockQuoteMarker,
+    Name::ByteOrderMark,
+    Name::CharacterEscapeMarker,
+    Name::CharacterEscapeValue,
+    Name::CharacterReferenceMarker,
+    Name::CharacterReferenceMarkerHexadecimal,
+    Name::CharacterReferenceMarkerNumeric,
+    Name::CharacterReferenceMarkerSemi,
+    Name::CharacterReferenceValue,
+    Name::CodeFencedFenceSequence,
+    Name::CodeFlowChunk,
+    Name::CodeTextData,
+    Name::CodeTextSequence,
+    Name::Data,
+    Name::DefinitionDestinationLiteralMarker,
+    Name::DefinitionLabelMarker,
+    Name::DefinitionMarker,
+    Name::DefinitionTitleMarker,
+    Name::EmphasisSequence,
+    Name::HardBreakEscape,
+    Name::HardBreakTrailing,
+    Name::HeadingAtxSequence,
+    Name::HeadingSetextUnderline,
+    Name::HtmlFlowData,
+    Name::HtmlTextData,
+    Name::LabelImageMarker,
+    Name::LabelMarker,
+    Name::LineEnding,
+    Name::ListItemMarker,
+    Name::ListItemValue,
+    Name::ReferenceMarker,
+    Name::ResourceMarker,
+    Name::ResourceTitleMarker,
+    Name::StrongSequence,
+    Name::ThematicBreakSequence,
 ];
+
+/// Embedded content type.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Content {
+    /// Represents [flow content][crate::content::flow].
+    Flow,
+    /// Represents [string content][crate::content::string].
+    String,
+    /// Represents [text content][crate::content::text].
+    Text,
+}
+
+/// A link to another event.
+#[derive(Debug, Clone)]
+pub struct Link {
+    pub previous: Option<usize>,
+    pub next: Option<usize>,
+    pub content_type: Content,
+}
+
+/// A location in the document (`line`/`column`/`offset`).
+///
+/// The interface for the location in the document comes from unist `Point`:
+/// <https://github.com/syntax-tree/unist#point>.
+#[derive(Debug, Clone)]
+pub struct Point {
+    /// 1-indexed line number.
+    pub line: usize,
+    /// 1-indexed column number.
+    /// This is increases up to a tab stop for tabs.
+    /// Some editors count tabs as 1 character, so this position is not the
+    /// same as editors.
+    pub column: usize,
+    /// 0-indexed position in the document.
+    ///
+    /// Also an `index` into `bytes`.
+    pub index: usize,
+    /// Virtual step on the same `index`.
+    pub vs: usize,
+}
+
+/// Possible event kinds.
+#[derive(Debug, PartialEq, Clone)]
+pub enum Kind {
+    /// The start of something.
+    Enter,
+    /// The end of something.
+    Exit,
+}
+
+/// Something semantic happening somewhere.
+#[derive(Debug, Clone)]
+pub struct Event {
+    pub kind: Kind,
+    pub name: Name,
+    pub point: Point,
+    pub link: Option<Link>,
+}

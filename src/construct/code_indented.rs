@@ -47,8 +47,8 @@
 
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::TAB_SIZE;
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Start of code (indented).
@@ -64,9 +64,13 @@ use crate::tokenizer::Tokenizer;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs.
     if !tokenizer.interrupt && tokenizer.parse_state.constructs.code_indented {
-        tokenizer.enter(Token::CodeIndented);
+        tokenizer.enter(Name::CodeIndented);
         let name = space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE);
-        tokenizer.attempt(name, State::Next(Name::CodeIndentedAtBreak), State::Nok)
+        tokenizer.attempt(
+            name,
+            State::Next(StateName::CodeIndentedAtBreak),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -80,15 +84,15 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Retry(Name::CodeIndentedAfter),
+        None => State::Retry(StateName::CodeIndentedAfter),
         Some(b'\n') => tokenizer.attempt(
-            Name::CodeIndentedFurtherStart,
-            State::Next(Name::CodeIndentedAtBreak),
-            State::Next(Name::CodeIndentedAfter),
+            StateName::CodeIndentedFurtherStart,
+            State::Next(StateName::CodeIndentedAtBreak),
+            State::Next(StateName::CodeIndentedAfter),
         ),
         _ => {
-            tokenizer.enter(Token::CodeFlowChunk);
-            State::Retry(Name::CodeIndentedInside)
+            tokenizer.enter(Name::CodeFlowChunk);
+            State::Retry(StateName::CodeIndentedInside)
         }
     }
 }
@@ -102,12 +106,12 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
-            tokenizer.exit(Token::CodeFlowChunk);
-            State::Retry(Name::CodeIndentedAtBreak)
+            tokenizer.exit(Name::CodeFlowChunk);
+            State::Retry(StateName::CodeIndentedAtBreak)
         }
         _ => {
             tokenizer.consume();
-            State::Next(Name::CodeIndentedInside)
+            State::Next(StateName::CodeIndentedInside)
         }
     }
 }
@@ -119,7 +123,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 ///            ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.exit(Token::CodeIndented);
+    tokenizer.exit(Name::CodeIndented);
     // Feel free to interrupt.
     tokenizer.interrupt = false;
     State::Ok
@@ -135,17 +139,17 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 pub fn further_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') if !tokenizer.lazy => {
-            tokenizer.enter(Token::LineEnding);
+            tokenizer.enter(Name::LineEnding);
             tokenizer.consume();
-            tokenizer.exit(Token::LineEnding);
-            State::Next(Name::CodeIndentedFurtherStart)
+            tokenizer.exit(Name::LineEnding);
+            State::Next(StateName::CodeIndentedFurtherStart)
         }
         _ if !tokenizer.lazy => {
             let name = space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE);
             tokenizer.attempt(
                 name,
-                State::Next(Name::CodeIndentedFurtherEnd),
-                State::Next(Name::CodeIndentedFurtherBegin),
+                State::Next(StateName::CodeIndentedFurtherEnd),
+                State::Next(StateName::CodeIndentedFurtherBegin),
             )
         }
         _ => State::Nok,
@@ -174,8 +178,8 @@ pub fn further_begin(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::CodeIndentedFurtherAfter),
-        State::Next(Name::CodeIndentedFurtherAfter),
+        State::Next(StateName::CodeIndentedFurtherAfter),
+        State::Next(StateName::CodeIndentedFurtherAfter),
     )
 }
 
@@ -188,7 +192,7 @@ pub fn further_begin(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn further_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => State::Retry(Name::CodeIndentedFurtherStart),
+        Some(b'\n') => State::Retry(StateName::CodeIndentedFurtherStart),
         _ => State::Nok,
     }
 }

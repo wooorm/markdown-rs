@@ -33,7 +33,7 @@
 //! [flow]: crate::content::flow
 
 use crate::construct::partial_space_or_tab::space_or_tab;
-use crate::state::{Name, State};
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Start of a blank line.
@@ -50,8 +50,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab(tokenizer);
     tokenizer.attempt(
         name,
-        State::Next(Name::BlankLineAfter),
-        State::Next(Name::BlankLineAfter),
+        State::Next(StateName::BlankLineAfter),
+        State::Next(StateName::BlankLineAfter),
     )
 }
 

@@ -4,10 +4,10 @@
 //!
 //! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
 
-use crate::state::{Name, State};
+use crate::event::{Content, Name};
+use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
-use crate::token::Token;
-use crate::tokenizer::{ContentType, Tokenizer};
+use crate::tokenizer::Tokenizer;
 
 /// Options to parse `space_or_tab`.
 #[derive(Debug)]
@@ -17,11 +17,11 @@ pub struct Options {
     /// Maximum allowed bytes (inclusive).
     pub max: usize,
     /// Token type to use for whitespace events.
-    pub kind: Token,
+    pub kind: Name,
     /// Connect this whitespace to the previous.
     pub connect: bool,
     /// Embedded content type to use.
-    pub content_type: Option<ContentType>,
+    pub content_type: Option<Content>,
 }
 
 /// Options to parse `space_or_tab` and one optional eol, but no blank line.
@@ -30,7 +30,7 @@ pub struct EolOptions {
     /// Connect this whitespace to the previous.
     pub connect: bool,
     /// Embedded content type to use.
-    pub content_type: Option<ContentType>,
+    pub content_type: Option<Content>,
 }
 
 /// One or more `space_or_tab`.
@@ -38,7 +38,7 @@ pub struct EolOptions {
 /// ```bnf
 /// space_or_tab ::= 1*( ' ' '\t' )
 /// ```
-pub fn space_or_tab(tokenizer: &mut Tokenizer) -> Name {
+pub fn space_or_tab(tokenizer: &mut Tokenizer) -> StateName {
     space_or_tab_min_max(tokenizer, 1, usize::MAX)
 }
 
@@ -47,11 +47,11 @@ pub fn space_or_tab(tokenizer: &mut Tokenizer) -> Name {
 /// ```bnf
 /// space_or_tab_min_max ::= x*y( ' ' '\t' )
 /// ```
-pub fn space_or_tab_min_max(tokenizer: &mut Tokenizer, min: usize, max: usize) -> Name {
+pub fn space_or_tab_min_max(tokenizer: &mut Tokenizer, min: usize, max: usize) -> StateName {
     space_or_tab_with_options(
         tokenizer,
         Options {
-            kind: Token::SpaceOrTab,
+            kind: Name::SpaceOrTab,
             min,
             max,
             content_type: None,
@@ -61,13 +61,13 @@ pub fn space_or_tab_min_max(tokenizer: &mut Tokenizer, min: usize, max: usize) -
 }
 
 /// `space_or_tab`, with the given options.
-pub fn space_or_tab_with_options(tokenizer: &mut Tokenizer, options: Options) -> Name {
+pub fn space_or_tab_with_options(tokenizer: &mut Tokenizer, options: Options) -> StateName {
     tokenizer.tokenize_state.space_or_tab_connect = options.connect;
     tokenizer.tokenize_state.space_or_tab_content_type = options.content_type;
     tokenizer.tokenize_state.space_or_tab_min = options.min;
     tokenizer.tokenize_state.space_or_tab_max = options.max;
     tokenizer.tokenize_state.space_or_tab_token = options.kind;
-    Name::SpaceOrTabStart
+    StateName::SpaceOrTabStart
 }
 
 /// `space_or_tab`, or optionally `space_or_tab`, one `eol`, and
@@ -76,7 +76,7 @@ pub fn space_or_tab_with_options(tokenizer: &mut Tokenizer, options: Options) ->
 /// ```bnf
 /// space_or_tab_eol ::= 1*( ' ' '\t' ) | 0*( ' ' '\t' ) eol 0*( ' ' '\t' )
 /// ```
-pub fn space_or_tab_eol(tokenizer: &mut Tokenizer) -> Name {
+pub fn space_or_tab_eol(tokenizer: &mut Tokenizer) -> StateName {
     space_or_tab_eol_with_options(
         tokenizer,
         EolOptions {
@@ -87,10 +87,10 @@ pub fn space_or_tab_eol(tokenizer: &mut Tokenizer) -> Name {
 }
 
 /// `space_or_tab_eol`, with the given options.
-pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: EolOptions) -> Name {
+pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: EolOptions) -> StateName {
     tokenizer.tokenize_state.space_or_tab_eol_content_type = options.content_type;
     tokenizer.tokenize_state.space_or_tab_eol_connect = options.connect;
-    Name::SpaceOrTabEolStart
+    StateName::SpaceOrTabEolStart
 }
 
 /// Before `space_or_tab`.
@@ -114,9 +114,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.tokenize_state.space_or_tab_connect = true;
             }
 
-            State::Retry(Name::SpaceOrTabInside)
+            State::Retry(StateName::SpaceOrTabInside)
         }
-        _ => State::Retry(Name::SpaceOrTabAfter),
+        _ => State::Retry(StateName::SpaceOrTabAfter),
     }
 }
 
@@ -134,11 +134,11 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.consume();
             tokenizer.tokenize_state.space_or_tab_size += 1;
-            State::Next(Name::SpaceOrTabInside)
+            State::Next(StateName::SpaceOrTabInside)
         }
         _ => {
             tokenizer.exit(tokenizer.tokenize_state.space_or_tab_token.clone());
-            State::Retry(Name::SpaceOrTabAfter)
+            State::Retry(StateName::SpaceOrTabAfter)
         }
     }
 }
@@ -162,7 +162,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.space_or_tab_size = 0;
     tokenizer.tokenize_state.space_or_tab_max = 0;
     tokenizer.tokenize_state.space_or_tab_min = 0;
-    tokenizer.tokenize_state.space_or_tab_token = Token::SpaceOrTab;
+    tokenizer.tokenize_state.space_or_tab_token = Name::SpaceOrTab;
     state
 }
 
@@ -170,7 +170,7 @@ pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_with_options(
         tokenizer,
         Options {
-            kind: Token::SpaceOrTab,
+            kind: Name::SpaceOrTab,
             min: 1,
             max: usize::MAX,
             content_type: tokenizer
@@ -183,8 +183,8 @@ pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
 
     tokenizer.attempt(
         name,
-        State::Next(Name::SpaceOrTabEolAfterFirst),
-        State::Next(Name::SpaceOrTabEolAtEol),
+        State::Next(StateName::SpaceOrTabEolAfterFirst),
+        State::Next(StateName::SpaceOrTabEolAtEol),
     )
 }
 
@@ -199,7 +199,7 @@ pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.space_or_tab_eol_connect = true;
     }
 
-    State::Retry(Name::SpaceOrTabEolAtEol)
+    State::Retry(StateName::SpaceOrTabEolAtEol)
 }
 
 /// `space_or_tab_eol`: after optionally first `space_or_tab`.
@@ -212,7 +212,7 @@ pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
 pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'\n') = tokenizer.current {
         tokenizer.enter_with_content(
-            Token::LineEnding,
+            Name::LineEnding,
             tokenizer
                 .tokenize_state
                 .space_or_tab_eol_content_type
@@ -231,8 +231,8 @@ pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
         }
 
         tokenizer.consume();
-        tokenizer.exit(Token::LineEnding);
-        State::Next(Name::SpaceOrTabEolAfterEol)
+        tokenizer.exit(Name::LineEnding);
+        State::Next(StateName::SpaceOrTabEolAfterEol)
     } else {
         let ok = tokenizer.tokenize_state.space_or_tab_eol_ok;
         tokenizer.tokenize_state.space_or_tab_eol_content_type = None;
@@ -258,7 +258,7 @@ pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_with_options(
         tokenizer,
         Options {
-            kind: Token::SpaceOrTab,
+            kind: Name::SpaceOrTab,
             min: 1,
             max: usize::MAX,
             content_type: tokenizer
@@ -270,8 +270,8 @@ pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
     );
     tokenizer.attempt(
         name,
-        State::Next(Name::SpaceOrTabEolAfterMore),
-        State::Next(Name::SpaceOrTabEolAfterMore),
+        State::Next(StateName::SpaceOrTabEolAfterMore),
+        State::Next(StateName::SpaceOrTabEolAfterMore),
     )
 }
 

@@ -51,9 +51,9 @@
 //! [html-em]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{Event, EventType, Point, Tokenizer};
+use crate::event::{Event, Kind, Name, Point};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 use crate::unicode::PUNCTUATION;
 use crate::util::slice::Slice;
 
@@ -120,8 +120,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'_') if tokenizer.parse_state.constructs.attention => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
-            tokenizer.enter(Token::AttentionSequence);
-            State::Retry(Name::AttentionInside)
+            tokenizer.enter(Name::AttentionSequence);
+            State::Retry(StateName::AttentionInside)
         }
         _ => State::Nok,
     }
@@ -137,10 +137,10 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'*' | b'_') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Next(Name::AttentionInside)
+            State::Next(StateName::AttentionInside)
         }
         _ => {
-            tokenizer.exit(Token::AttentionSequence);
+            tokenizer.exit(Name::AttentionSequence);
             tokenizer.register_resolver("attention".to_string(), Box::new(resolve_attention));
             tokenizer.tokenize_state.marker = b'\0';
             State::Ok
@@ -159,10 +159,10 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
     while start < tokenizer.events.len() {
         let enter = &tokenizer.events[start];
 
-        if enter.event_type == EventType::Enter {
+        if enter.kind == Kind::Enter {
             balance += 1;
 
-            if enter.token_type == Token::AttentionSequence {
+            if enter.name == Name::AttentionSequence {
                 let end = start + 1;
                 let exit = &tokenizer.events[end];
 
@@ -337,41 +337,41 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
                         0,
                         vec![
                             Event {
-                                event_type: EventType::Enter,
-                                token_type: if take == 1 {
-                                    Token::Emphasis
+                                kind: Kind::Enter,
+                                name: if take == 1 {
+                                    Name::Emphasis
                                 } else {
-                                    Token::Strong
+                                    Name::Strong
                                 },
                                 point: seq_open_enter.clone(),
                                 link: None,
                             },
                             Event {
-                                event_type: EventType::Enter,
-                                token_type: if take == 1 {
-                                    Token::EmphasisSequence
+                                kind: Kind::Enter,
+                                name: if take == 1 {
+                                    Name::EmphasisSequence
                                 } else {
-                                    Token::StrongSequence
+                                    Name::StrongSequence
                                 },
                                 point: seq_open_enter.clone(),
                                 link: None,
                             },
                             Event {
-                                event_type: EventType::Exit,
-                                token_type: if take == 1 {
-                                    Token::EmphasisSequence
+                                kind: Kind::Exit,
+                                name: if take == 1 {
+                                    Name::EmphasisSequence
                                 } else {
-                                    Token::StrongSequence
+                                    Name::StrongSequence
                                 },
                                 point: seq_open_exit.clone(),
                                 link: None,
                             },
                             Event {
-                                event_type: EventType::Enter,
-                                token_type: if take == 1 {
-                                    Token::EmphasisText
+                                kind: Kind::Enter,
+                                name: if take == 1 {
+                                    Name::EmphasisText
                                 } else {
-                                    Token::StrongText
+                                    Name::StrongText
                                 },
                                 point: seq_open_exit.clone(),
                                 link: None,
@@ -384,41 +384,41 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
                         0,
                         vec![
                             Event {
-                                event_type: EventType::Exit,
-                                token_type: if take == 1 {
-                                    Token::EmphasisText
+                                kind: Kind::Exit,
+                                name: if take == 1 {
+                                    Name::EmphasisText
                                 } else {
-                                    Token::StrongText
+                                    Name::StrongText
                                 },
                                 point: seq_close_enter.clone(),
                                 link: None,
                             },
                             Event {
-                                event_type: EventType::Enter,
-                                token_type: if take == 1 {
-                                    Token::EmphasisSequence
+                                kind: Kind::Enter,
+                                name: if take == 1 {
+                                    Name::EmphasisSequence
                                 } else {
-                                    Token::StrongSequence
+                                    Name::StrongSequence
                                 },
                                 point: seq_close_enter.clone(),
                                 link: None,
                             },
                             Event {
-                                event_type: EventType::Exit,
-                                token_type: if take == 1 {
-                                    Token::EmphasisSequence
+                                kind: Kind::Exit,
+                                name: if take == 1 {
+                                    Name::EmphasisSequence
                                 } else {
-                                    Token::StrongSequence
+                                    Name::StrongSequence
                                 },
                                 point: seq_close_exit.clone(),
                                 link: None,
                             },
                             Event {
-                                event_type: EventType::Exit,
-                                token_type: if take == 1 {
-                                    Token::Emphasis
+                                kind: Kind::Exit,
+                                name: if take == 1 {
+                                    Name::Emphasis
                                 } else {
-                                    Token::Strong
+                                    Name::Strong
                                 },
                                 point: seq_close_exit.clone(),
                                 link: None,
@@ -438,8 +438,8 @@ fn resolve_attention(tokenizer: &mut Tokenizer) {
     let mut index = 0;
     while index < sequences.len() {
         let sequence = &sequences[index];
-        tokenizer.events[sequence.event_index].token_type = Token::Data;
-        tokenizer.events[sequence.event_index + 1].token_type = Token::Data;
+        tokenizer.events[sequence.event_index].name = Name::Data;
+        tokenizer.events[sequence.event_index + 1].name = Name::Data;
         index += 1;
     }
 

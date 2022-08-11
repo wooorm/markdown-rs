@@ -59,9 +59,9 @@
 
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{EventType, Tokenizer};
+use crate::event::{Kind, Name};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt_back as skip_opt_back;
 
 /// At a line ending, presumably an underline.
@@ -79,10 +79,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             && tokenizer.events[skip_opt_back(
                 &tokenizer.events,
                 tokenizer.events.len() - 1,
-                &[Token::LineEnding, Token::SpaceOrTab],
+                &[Name::LineEnding, Name::SpaceOrTab],
             )]
-            .token_type
-                == Token::Paragraph)
+            .name
+                == Name::Paragraph)
     {
         let name = space_or_tab_min_max(
             tokenizer,
@@ -94,7 +94,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             },
         );
 
-        tokenizer.attempt(name, State::Next(Name::HeadingSetextBefore), State::Nok)
+        tokenizer.attempt(
+            name,
+            State::Next(StateName::HeadingSetextBefore),
+            State::Nok,
+        )
     } else {
         State::Nok
     }
@@ -111,8 +115,8 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
-            tokenizer.enter(Token::HeadingSetextUnderline);
-            State::Retry(Name::HeadingSetextInside)
+            tokenizer.enter(Name::HeadingSetextUnderline);
+            State::Retry(StateName::HeadingSetextInside)
         }
         _ => State::Nok,
     }
@@ -129,16 +133,16 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-' | b'=') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
             tokenizer.consume();
-            State::Next(Name::HeadingSetextInside)
+            State::Next(StateName::HeadingSetextInside)
         }
         _ => {
             tokenizer.tokenize_state.marker = 0;
-            tokenizer.exit(Token::HeadingSetextUnderline);
+            tokenizer.exit(Name::HeadingSetextUnderline);
             let name = space_or_tab(tokenizer);
             tokenizer.attempt(
                 name,
-                State::Next(Name::HeadingSetextAfter),
-                State::Next(Name::HeadingSetextAfter),
+                State::Next(StateName::HeadingSetextAfter),
+                State::Next(StateName::HeadingSetextAfter),
             )
         }
     }
@@ -173,28 +177,28 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         let event = &tokenizer.events[index];
 
         // Find paragraphs.
-        if event.event_type == EventType::Enter {
-            if event.token_type == Token::Paragraph {
+        if event.kind == Kind::Enter {
+            if event.name == Name::Paragraph {
                 paragraph_enter = Some(index);
             }
-        } else if event.token_type == Token::Paragraph {
+        } else if event.name == Name::Paragraph {
             paragraph_exit = Some(index);
         }
         // We know this is preceded by a paragraph.
         // Otherwise we don’t parse.
-        else if event.token_type == Token::HeadingSetextUnderline {
+        else if event.name == Name::HeadingSetextUnderline {
             let enter = paragraph_enter.take().unwrap();
             let exit = paragraph_exit.take().unwrap();
 
             // Change types of Enter:Paragraph, Exit:Paragraph.
-            tokenizer.events[enter].token_type = Token::HeadingSetextText;
-            tokenizer.events[exit].token_type = Token::HeadingSetextText;
+            tokenizer.events[enter].name = Name::HeadingSetextText;
+            tokenizer.events[exit].name = Name::HeadingSetextText;
 
             // Add Enter:HeadingSetext, Exit:HeadingSetext.
             let mut heading_enter = tokenizer.events[enter].clone();
-            heading_enter.token_type = Token::HeadingSetext;
+            heading_enter.name = Name::HeadingSetext;
             let mut heading_exit = tokenizer.events[index].clone();
-            heading_exit.token_type = Token::HeadingSetext;
+            heading_exit.name = Name::HeadingSetext;
 
             tokenizer.map.add(enter, 0, vec![heading_enter]);
             tokenizer.map.add(index + 1, 0, vec![heading_exit]);

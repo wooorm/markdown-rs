@@ -35,8 +35,8 @@
 
 use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Start of block quote.
@@ -56,7 +56,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.attempt(name, State::Next(Name::BlockQuoteBefore), State::Nok)
+        tokenizer.attempt(name, State::Next(StateName::BlockQuoteBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -71,10 +71,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
-            tokenizer.enter(Token::BlockQuote);
-            State::Retry(Name::BlockQuoteContBefore)
+            tokenizer.enter(Name::BlockQuote);
+            State::Retry(StateName::BlockQuoteContBefore)
         }
-        _ => State::Retry(Name::BlockQuoteContBefore),
+        _ => State::Retry(StateName::BlockQuoteContBefore),
     }
 }
 
@@ -95,7 +95,11 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
             usize::MAX
         },
     );
-    tokenizer.attempt(name, State::Next(Name::BlockQuoteContBefore), State::Nok)
+    tokenizer.attempt(
+        name,
+        State::Next(StateName::BlockQuoteContBefore),
+        State::Nok,
+    )
 }
 
 /// After whitespace, before `>`.
@@ -108,11 +112,11 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
 pub fn cont_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
-            tokenizer.enter(Token::BlockQuotePrefix);
-            tokenizer.enter(Token::BlockQuoteMarker);
+            tokenizer.enter(Name::BlockQuotePrefix);
+            tokenizer.enter(Name::BlockQuoteMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::BlockQuoteMarker);
-            State::Next(Name::BlockQuoteContAfter)
+            tokenizer.exit(Name::BlockQuoteMarker);
+            State::Next(StateName::BlockQuoteContAfter)
         }
         _ => State::Nok,
     }
@@ -128,11 +132,11 @@ pub fn cont_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn cont_after(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'\t' | b' ') = tokenizer.current {
-        tokenizer.enter(Token::SpaceOrTab);
+        tokenizer.enter(Name::SpaceOrTab);
         tokenizer.consume();
-        tokenizer.exit(Token::SpaceOrTab);
+        tokenizer.exit(Name::SpaceOrTab);
     }
 
-    tokenizer.exit(Token::BlockQuotePrefix);
+    tokenizer.exit(Name::BlockQuotePrefix);
     State::Ok
 }

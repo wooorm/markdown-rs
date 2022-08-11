@@ -6,9 +6,9 @@
 //! [string]: crate::content::string
 //! [text]: crate::content::text
 
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{EventType, Tokenizer};
+use crate::event::{Kind, Name};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 
 /// At the beginning of data.
 ///
@@ -20,11 +20,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Make sure to eat the first `markers`.
         Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
-            tokenizer.enter(Token::Data);
+            tokenizer.enter(Name::Data);
             tokenizer.consume();
-            State::Next(Name::DataInside)
+            State::Next(StateName::DataInside)
         }
-        _ => State::Retry(Name::DataAtBreak),
+        _ => State::Retry(StateName::DataAtBreak),
     }
 }
 
@@ -38,18 +38,18 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
         Some(b'\n') => {
-            tokenizer.enter(Token::LineEnding);
+            tokenizer.enter(Name::LineEnding);
             tokenizer.consume();
-            tokenizer.exit(Token::LineEnding);
-            State::Next(Name::DataAtBreak)
+            tokenizer.exit(Name::LineEnding);
+            State::Next(StateName::DataAtBreak)
         }
         Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
             tokenizer.register_resolver_before("data".to_string(), Box::new(resolve_data));
             State::Ok
         }
         _ => {
-            tokenizer.enter(Token::Data);
-            State::Retry(Name::DataInside)
+            tokenizer.enter(Name::Data);
+            State::Retry(StateName::DataInside)
         }
     }
 }
@@ -68,11 +68,11 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     };
 
     if done {
-        tokenizer.exit(Token::Data);
-        State::Retry(Name::DataAtBreak)
+        tokenizer.exit(Name::Data);
+        State::Retry(StateName::DataAtBreak)
     } else {
         tokenizer.consume();
-        State::Next(Name::DataInside)
+        State::Next(StateName::DataInside)
     }
 }
 
@@ -85,13 +85,13 @@ pub fn resolve_data(tokenizer: &mut Tokenizer) {
     while index < len {
         let event = &tokenizer.events[index];
 
-        if event.event_type == EventType::Enter && event.token_type == Token::Data {
+        if event.kind == Kind::Enter && event.name == Name::Data {
             let exit_index = index + 1;
             let mut exit_far_index = exit_index;
 
             // Find multiple `data` events.
             while exit_far_index + 1 < len
-                && tokenizer.events[exit_far_index + 1].token_type == Token::Data
+                && tokenizer.events[exit_far_index + 1].name == Name::Data
             {
                 exit_far_index += 2;
             }

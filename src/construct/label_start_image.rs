@@ -29,8 +29,8 @@
 //! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use super::label_end::resolve_media;
-use crate::state::{Name, State};
-use crate::token::Token;
+use crate::event::Name;
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::{LabelStart, Tokenizer};
 
 /// Start of label (image) start.
@@ -42,11 +42,11 @@ use crate::tokenizer::{LabelStart, Tokenizer};
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'!') if tokenizer.parse_state.constructs.label_start_image => {
-            tokenizer.enter(Token::LabelImage);
-            tokenizer.enter(Token::LabelImageMarker);
+            tokenizer.enter(Name::LabelImage);
+            tokenizer.enter(Name::LabelImageMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::LabelImageMarker);
-            State::Next(Name::LabelStartImageOpen)
+            tokenizer.exit(Name::LabelImageMarker);
+            State::Next(StateName::LabelStartImageOpen)
         }
         _ => State::Nok,
     }
@@ -61,10 +61,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
-            tokenizer.enter(Token::LabelMarker);
+            tokenizer.enter(Name::LabelMarker);
             tokenizer.consume();
-            tokenizer.exit(Token::LabelMarker);
-            tokenizer.exit(Token::LabelImage);
+            tokenizer.exit(Name::LabelMarker);
+            tokenizer.exit(Name::LabelImage);
             tokenizer.tokenize_state.label_start_stack.push(LabelStart {
                 start: (tokenizer.events.len() - 6, tokenizer.events.len() - 1),
                 balanced: false,

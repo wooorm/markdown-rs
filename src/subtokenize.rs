@@ -21,9 +21,10 @@
 //! thus the whole document needs to be parsed up to the level of definitions,
 //! before any level that can include references can be parsed.
 
+use crate::event::{Content, Event, Kind};
 use crate::parser::ParseState;
-use crate::state::{Name, State};
-use crate::tokenizer::{ContentType, Event, EventType, Tokenizer};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 use crate::util::edit_map::EditMap;
 
 /// Create a link between two [`Event`][]s.
@@ -37,10 +38,10 @@ pub fn link(events: &mut [Event], index: usize) {
 
 /// Link two arbitrary [`Event`][]s together.
 pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
-    debug_assert_eq!(events[pevious].event_type, EventType::Enter);
-    debug_assert_eq!(events[pevious + 1].event_type, EventType::Exit);
-    debug_assert_eq!(events[pevious + 1].token_type, events[pevious].token_type);
-    debug_assert_eq!(events[next].event_type, EventType::Enter);
+    debug_assert_eq!(events[pevious].kind, Kind::Enter);
+    debug_assert_eq!(events[pevious + 1].kind, Kind::Exit);
+    debug_assert_eq!(events[pevious + 1].name, events[pevious].name);
+    debug_assert_eq!(events[next].kind, Kind::Enter);
     // Note: the exit of this event may not exist, so don’t check for that.
 
     let link_previous = events[pevious]
@@ -70,7 +71,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
 
         // Find each first opening chunk.
         if let Some(ref link) = event.link {
-            debug_assert_eq!(event.event_type, EventType::Enter);
+            debug_assert_eq!(event.kind, Kind::Enter);
 
             // No need to enter linked events again.
             if link.previous == None {
@@ -79,17 +80,17 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
-                let mut state = State::Next(if link.content_type == ContentType::String {
-                    Name::StringStart
+                let mut state = State::Next(if link.content_type == Content::String {
+                    StateName::StringStart
                 } else {
-                    Name::TextStart
+                    StateName::TextStart
                 });
 
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {
                     let enter = &events[index];
                     let link_curr = enter.link.as_ref().expect("expected link");
-                    debug_assert_eq!(enter.event_type, EventType::Enter);
+                    debug_assert_eq!(enter.kind, Kind::Enter);
 
                     if link_curr.previous != None {
                         tokenizer.define_skip(enter.point.clone());

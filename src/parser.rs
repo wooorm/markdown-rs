@@ -1,7 +1,7 @@
 //! Turn a string of markdown into events.
 
 use crate::content::document::document;
-use crate::tokenizer::{Event, Point};
+use crate::event::{Event, Point};
 use crate::{Constructs, Options};
 
 /// Information needed, in all content types, when parsing markdown.

@@ -46,9 +46,9 @@
 
 use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
-use crate::state::{Name, State};
-use crate::token::Token;
-use crate::tokenizer::{EventType, Tokenizer};
+use crate::event::{Kind, Name};
+use crate::state::{Name as StateName, State};
+use crate::tokenizer::Tokenizer;
 use crate::util::{
     skip,
     slice::{Position, Slice},
@@ -62,7 +62,7 @@ use crate::util::{
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.list {
-        tokenizer.enter(Token::ListItem);
+        tokenizer.enter(Name::ListItem);
         let name = space_or_tab_min_max(
             tokenizer,
             0,
@@ -72,7 +72,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 usize::MAX
             },
         );
-        tokenizer.attempt(name, State::Next(Name::ListBefore), State::Nok)
+        tokenizer.attempt(name, State::Next(StateName::ListBefore), State::Nok)
     } else {
         State::Nok
     }
@@ -88,14 +88,14 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
         Some(b'*' | b'-') => tokenizer.check(
-            Name::ThematicBreakStart,
-            State::Next(Name::ListNok),
-            State::Next(Name::ListBeforeUnordered),
+            StateName::ThematicBreakStart,
+            State::Next(StateName::ListNok),
+            State::Next(StateName::ListBeforeUnordered),
         ),
-        Some(b'+') => State::Retry(Name::ListBeforeUnordered),
+        Some(b'+') => State::Retry(StateName::ListBeforeUnordered),
         // Ordered.
-        Some(b'0'..=b'9') if !tokenizer.interrupt => State::Retry(Name::ListBeforeOrdered),
-        Some(b'1') => State::Retry(Name::ListBeforeOrdered),
+        Some(b'0'..=b'9') if !tokenizer.interrupt => State::Retry(StateName::ListBeforeOrdered),
+        Some(b'1') => State::Retry(StateName::ListBeforeOrdered),
         _ => State::Nok,
     }
 }
@@ -109,8 +109,8 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.enter(Token::ListItemPrefix);
-    State::Retry(Name::ListMarker)
+    tokenizer.enter(Name::ListItemPrefix);
+    State::Retry(StateName::ListMarker)
 }
 
 /// Start of an ordered list item.
@@ -120,9 +120,9 @@ pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.enter(Token::ListItemPrefix);
-    tokenizer.enter(Token::ListItemValue);
-    State::Retry(Name::ListValue)
+    tokenizer.enter(Name::ListItemPrefix);
+    tokenizer.enter(Name::ListItemValue);
+    State::Retry(StateName::ListValue)
 }
 
 /// In an ordered list item value.
@@ -134,13 +134,13 @@ pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
 pub fn value(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'.' | b')') if !tokenizer.interrupt || tokenizer.tokenize_state.size < 2 => {
-            tokenizer.exit(Token::ListItemValue);
-            State::Retry(Name::ListMarker)
+            tokenizer.exit(Name::ListItemValue);
+            State::Retry(StateName::ListMarker)
         }
         Some(b'0'..=b'9') if tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
-            State::Next(Name::ListValue)
+            State::Next(StateName::ListValue)
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -158,10 +158,10 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 pub fn marker(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.enter(Token::ListItemMarker);
+    tokenizer.enter(Name::ListItemMarker);
     tokenizer.consume();
-    tokenizer.exit(Token::ListItemMarker);
-    State::Next(Name::ListMarkerAfter)
+    tokenizer.exit(Name::ListItemMarker);
+    State::Next(StateName::ListMarkerAfter)
 }
 
 /// After a list item marker.
@@ -175,9 +175,9 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 1;
     tokenizer.check(
-        Name::BlankLineStart,
-        State::Next(Name::ListAfter),
-        State::Next(Name::ListMarkerAfterFilled),
+        StateName::BlankLineStart,
+        State::Next(StateName::ListAfter),
+        State::Next(StateName::ListMarkerAfterFilled),
     )
 }
 
@@ -192,9 +192,9 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
 
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
     tokenizer.attempt(
-        Name::ListWhitespace,
-        State::Next(Name::ListAfter),
-        State::Next(Name::ListPrefixOther),
+        StateName::ListWhitespace,
+        State::Next(StateName::ListAfter),
+        State::Next(StateName::ListPrefixOther),
     )
 }
 
@@ -206,7 +206,11 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn whitespace(tokenizer: &mut Tokenizer) -> State {
     let name = space_or_tab_min_max(tokenizer, 1, TAB_SIZE);
-    tokenizer.attempt(name, State::Next(Name::ListWhitespaceAfter), State::Nok)
+    tokenizer.attempt(
+        name,
+        State::Next(StateName::ListWhitespaceAfter),
+        State::Nok,
+    )
 }
 
 /// After acceptable whitespace.
@@ -232,10 +236,10 @@ pub fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
 pub fn prefix_other(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\t' | b' ') => {
-            tokenizer.enter(Token::SpaceOrTab);
+            tokenizer.enter(Name::SpaceOrTab);
             tokenizer.consume();
-            tokenizer.exit(Token::SpaceOrTab);
-            State::Next(Name::ListAfter)
+            tokenizer.exit(Name::SpaceOrTab);
+            State::Next(StateName::ListAfter)
         }
         _ => State::Nok,
     }
@@ -257,7 +261,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         let start = skip::to_back(
             &tokenizer.events,
             tokenizer.events.len() - 1,
-            &[Token::ListItem],
+            &[Name::ListItem],
         );
         let mut prefix = Slice::from_position(
             tokenizer.parse_state.bytes,
@@ -278,7 +282,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         container.blank_initial = blank;
         container.size = prefix;
 
-        tokenizer.exit(Token::ListItemPrefix);
+        tokenizer.exit(Name::ListItemPrefix);
         tokenizer.register_resolver_before("list_item".to_string(), Box::new(resolve_list_item));
         State::Ok
     }
@@ -293,9 +297,9 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.check(
-        Name::BlankLineStart,
-        State::Next(Name::ListContBlank),
-        State::Next(Name::ListContFilled),
+        StateName::BlankLineStart,
+        State::Next(StateName::ListContBlank),
+        State::Next(StateName::ListContFilled),
     )
 }
 
@@ -317,7 +321,7 @@ pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
     } else {
         let name = space_or_tab_min_max(tokenizer, 0, size);
         // Consume, optionally, at most `size`.
-        tokenizer.attempt(name, State::Next(Name::ListOk), State::Nok)
+        tokenizer.attempt(name, State::Next(StateName::ListOk), State::Nok)
     }
 }
 
@@ -337,7 +341,7 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
 
     // Consume exactly `size`.
     let name = space_or_tab_min_max(tokenizer, size, size);
-    tokenizer.attempt(name, State::Next(Name::ListOk), State::Nok)
+    tokenizer.attempt(name, State::Next(StateName::ListOk), State::Nok)
 }
 
 /// A state fn to yield [`State::Ok`].
@@ -361,10 +365,10 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
     while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
-        if event.token_type == Token::ListItem {
-            if event.event_type == EventType::Enter {
-                let end = skip::opt(&tokenizer.events, index, &[Token::ListItem]) - 1;
-                let marker = skip::to(&tokenizer.events, index, &[Token::ListItemMarker]);
+        if event.name == Name::ListItem {
+            if event.kind == Kind::Enter {
+                let end = skip::opt(&tokenizer.events, index, &[Name::ListItem]) - 1;
+                let marker = skip::to(&tokenizer.events, index, &[Name::ListItemMarker]);
                 // Guaranteed to be a valid ASCII byte.
                 let marker = Slice::from_index(
                     tokenizer.parse_state.bytes,
@@ -384,10 +388,10 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
                         &tokenizer.events,
                         previous.3 + 1,
                         &[
-                            Token::SpaceOrTab,
-                            Token::LineEnding,
-                            Token::BlankLineEnding,
-                            Token::BlockQuotePrefix,
+                            Name::SpaceOrTab,
+                            Name::LineEnding,
+                            Name::BlankLineEnding,
+                            Name::BlockQuotePrefix,
                         ],
                     );
 
@@ -441,12 +445,12 @@ pub fn resolve_list_item(tokenizer: &mut Tokenizer) {
         let list_item = &lists[index];
         let mut list_start = tokenizer.events[list_item.2].clone();
         let mut list_end = tokenizer.events[list_item.3].clone();
-        let token_type = match list_item.0 {
-            b'.' | b')' => Token::ListOrdered,
-            _ => Token::ListUnordered,
+        let name = match list_item.0 {
+            b'.' | b')' => Name::ListOrdered,
+            _ => Name::ListUnordered,
         };
-        list_start.token_type = token_type.clone();
-        list_end.token_type = token_type;
+        list_start.name = name.clone();
+        list_end.name = name;
 
         tokenizer.map.add(list_item.2, 0, vec![list_start]);
         tokenizer.map.add(list_item.3 + 1, 0, vec![list_end]);

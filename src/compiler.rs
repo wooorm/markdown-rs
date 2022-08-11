@@ -1,11 +1,10 @@
 //! Turn events into a string of HTML.
 use crate::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
-use crate::token::Token;
-use crate::tokenizer::{Event, EventType};
-use crate::util::normalize_identifier::normalize_identifier;
+use crate::event::{Event, Kind, Name};
 use crate::util::{
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
+    normalize_identifier::normalize_identifier,
     sanitize_uri::sanitize_uri,
     skip,
     slice::{Position, Slice},
@@ -179,8 +178,8 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
     while index < events.len() {
         let event = &events[index];
 
-        if event.event_type == EventType::Exit
-            && (event.token_type == Token::BlankLineEnding || event.token_type == Token::LineEnding)
+        if event.kind == Kind::Exit
+            && (event.name == Name::BlankLineEnding || event.name == Name::LineEnding)
         {
             line_ending_inferred = Some(LineEnding::from_str(
                 Slice::from_position(bytes, &Position::from_exit_event(events, index)).as_str(),
@@ -216,8 +215,8 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
             handle(&mut context, index);
         }
 
-        if event.token_type == Token::Definition {
-            if event.event_type == EventType::Enter {
+        if event.name == Name::Definition {
+            if event.kind == Kind::Enter {
                 handle(&mut context, index); // Also handle start.
                 definition_inside = true;
                 definition_indices.push((index, index));
@@ -264,7 +263,7 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
 fn handle(context: &mut CompileContext, index: usize) {
     context.index = index;
 
-    if context.events[index].event_type == EventType::Enter {
+    if context.events[index].kind == Kind::Enter {
         enter(context);
     } else {
         exit(context);
@@ -273,87 +272,87 @@ fn handle(context: &mut CompileContext, index: usize) {
 
 /// Handle [`Enter`][EventType::Enter].
 fn enter(context: &mut CompileContext) {
-    match context.events[context.index].token_type {
-        Token::CodeFencedFenceInfo
-        | Token::CodeFencedFenceMeta
-        | Token::DefinitionLabelString
-        | Token::DefinitionTitleString
-        | Token::HeadingAtxText
-        | Token::HeadingSetextText
-        | Token::Label
-        | Token::ReferenceString
-        | Token::ResourceTitleString => on_enter_buffer(context),
+    match context.events[context.index].name {
+        Name::CodeFencedFenceInfo
+        | Name::CodeFencedFenceMeta
+        | Name::DefinitionLabelString
+        | Name::DefinitionTitleString
+        | Name::HeadingAtxText
+        | Name::HeadingSetextText
+        | Name::Label
+        | Name::ReferenceString
+        | Name::ResourceTitleString => on_enter_buffer(context),
 
-        Token::BlockQuote => on_enter_block_quote(context),
-        Token::CodeIndented => on_enter_code_indented(context),
-        Token::CodeFenced => on_enter_code_fenced(context),
-        Token::CodeText => on_enter_code_text(context),
-        Token::Definition => on_enter_definition(context),
-        Token::DefinitionDestinationString => on_enter_definition_destination_string(context),
-        Token::Emphasis => on_enter_emphasis(context),
-        Token::HtmlFlow => on_enter_html_flow(context),
-        Token::HtmlText => on_enter_html_text(context),
-        Token::Image => on_enter_image(context),
-        Token::Link => on_enter_link(context),
-        Token::ListItemMarker => on_enter_list_item_marker(context),
-        Token::ListOrdered | Token::ListUnordered => on_enter_list(context),
-        Token::Paragraph => on_enter_paragraph(context),
-        Token::Resource => on_enter_resource(context),
-        Token::ResourceDestinationString => on_enter_resource_destination_string(context),
-        Token::Strong => on_enter_strong(context),
+        Name::BlockQuote => on_enter_block_quote(context),
+        Name::CodeIndented => on_enter_code_indented(context),
+        Name::CodeFenced => on_enter_code_fenced(context),
+        Name::CodeText => on_enter_code_text(context),
+        Name::Definition => on_enter_definition(context),
+        Name::DefinitionDestinationString => on_enter_definition_destination_string(context),
+        Name::Emphasis => on_enter_emphasis(context),
+        Name::HtmlFlow => on_enter_html_flow(context),
+        Name::HtmlText => on_enter_html_text(context),
+        Name::Image => on_enter_image(context),
+        Name::Link => on_enter_link(context),
+        Name::ListItemMarker => on_enter_list_item_marker(context),
+        Name::ListOrdered | Name::ListUnordered => on_enter_list(context),
+        Name::Paragraph => on_enter_paragraph(context),
+        Name::Resource => on_enter_resource(context),
+        Name::ResourceDestinationString => on_enter_resource_destination_string(context),
+        Name::Strong => on_enter_strong(context),
         _ => {}
     }
 }
 
 /// Handle [`Exit`][EventType::Exit].
 fn exit(context: &mut CompileContext) {
-    match context.events[context.index].token_type {
-        Token::CodeFencedFenceMeta | Token::Resource => on_exit_drop(context),
-        Token::CharacterEscapeValue | Token::CodeTextData | Token::Data => on_exit_data(context),
+    match context.events[context.index].name {
+        Name::CodeFencedFenceMeta | Name::Resource => on_exit_drop(context),
+        Name::CharacterEscapeValue | Name::CodeTextData | Name::Data => on_exit_data(context),
 
-        Token::AutolinkEmail => on_exit_autolink_email(context),
-        Token::AutolinkProtocol => on_exit_autolink_protocol(context),
-        Token::BlankLineEnding => on_exit_blank_line_ending(context),
-        Token::BlockQuote => on_exit_block_quote(context),
-        Token::CharacterReferenceMarker => on_exit_character_reference_marker(context),
-        Token::CharacterReferenceMarkerNumeric => {
+        Name::AutolinkEmail => on_exit_autolink_email(context),
+        Name::AutolinkProtocol => on_exit_autolink_protocol(context),
+        Name::BlankLineEnding => on_exit_blank_line_ending(context),
+        Name::BlockQuote => on_exit_block_quote(context),
+        Name::CharacterReferenceMarker => on_exit_character_reference_marker(context),
+        Name::CharacterReferenceMarkerNumeric => {
             on_exit_character_reference_marker_numeric(context);
         }
-        Token::CharacterReferenceMarkerHexadecimal => {
+        Name::CharacterReferenceMarkerHexadecimal => {
             on_exit_character_reference_marker_hexadecimal(context);
         }
-        Token::CharacterReferenceValue => on_exit_character_reference_value(context),
-        Token::CodeFenced | Token::CodeIndented => on_exit_code_flow(context),
-        Token::CodeFencedFence => on_exit_code_fenced_fence(context),
-        Token::CodeFencedFenceInfo => on_exit_code_fenced_fence_info(context),
-        Token::CodeFlowChunk => on_exit_code_flow_chunk(context),
-        Token::CodeText => on_exit_code_text(context),
-        Token::Definition => on_exit_definition(context),
-        Token::DefinitionDestinationString => on_exit_definition_destination_string(context),
-        Token::DefinitionLabelString => on_exit_definition_label_string(context),
-        Token::DefinitionTitleString => on_exit_definition_title_string(context),
-        Token::Emphasis => on_exit_emphasis(context),
-        Token::HardBreakEscape | Token::HardBreakTrailing => on_exit_break(context),
-        Token::HeadingAtx => on_exit_heading_atx(context),
-        Token::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
-        Token::HeadingAtxText => on_exit_heading_atx_text(context),
-        Token::HeadingSetextText => on_exit_heading_setext_text(context),
-        Token::HeadingSetextUnderline => on_exit_heading_setext_underline(context),
-        Token::HtmlFlow | Token::HtmlText => on_exit_html(context),
-        Token::HtmlFlowData | Token::HtmlTextData => on_exit_html_data(context),
-        Token::Image | Token::Link => on_exit_media(context),
-        Token::Label => on_exit_label(context),
-        Token::LabelText => on_exit_label_text(context),
-        Token::LineEnding => on_exit_line_ending(context),
-        Token::ListOrdered | Token::ListUnordered => on_exit_list(context),
-        Token::ListItem => on_exit_list_item(context),
-        Token::ListItemValue => on_exit_list_item_value(context),
-        Token::Paragraph => on_exit_paragraph(context),
-        Token::ReferenceString => on_exit_reference_string(context),
-        Token::ResourceDestinationString => on_exit_resource_destination_string(context),
-        Token::ResourceTitleString => on_exit_resource_title_string(context),
-        Token::Strong => on_exit_strong(context),
-        Token::ThematicBreak => on_exit_thematic_break(context),
+        Name::CharacterReferenceValue => on_exit_character_reference_value(context),
+        Name::CodeFenced | Name::CodeIndented => on_exit_code_flow(context),
+        Name::CodeFencedFence => on_exit_code_fenced_fence(context),
+        Name::CodeFencedFenceInfo => on_exit_code_fenced_fence_info(context),
+        Name::CodeFlowChunk => on_exit_code_flow_chunk(context),
+        Name::CodeText => on_exit_code_text(context),
+        Name::Definition => on_exit_definition(context),
+        Name::DefinitionDestinationString => on_exit_definition_destination_string(context),
+        Name::DefinitionLabelString => on_exit_definition_label_string(context),
+        Name::DefinitionTitleString => on_exit_definition_title_string(context),
+        Name::Emphasis => on_exit_emphasis(context),
+        Name::HardBreakEscape | Name::HardBreakTrailing => on_exit_break(context),
+        Name::HeadingAtx => on_exit_heading_atx(context),
+        Name::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
+        Name::HeadingAtxText => on_exit_heading_atx_text(context),
+        Name::HeadingSetextText => on_exit_heading_setext_text(context),
+        Name::HeadingSetextUnderline => on_exit_heading_setext_underline(context),
+        Name::HtmlFlow | Name::HtmlText => on_exit_html(context),
+        Name::HtmlFlowData | Name::HtmlTextData => on_exit_html_data(context),
+        Name::Image | Name::Link => on_exit_media(context),
+        Name::Label => on_exit_label(context),
+        Name::LabelText => on_exit_label_text(context),
+        Name::LineEnding => on_exit_line_ending(context),
+        Name::ListOrdered | Name::ListUnordered => on_exit_list(context),
+        Name::ListItem => on_exit_list_item(context),
+        Name::ListItemValue => on_exit_list_item_value(context),
+        Name::Paragraph => on_exit_paragraph(context),
+        Name::ReferenceString => on_exit_reference_string(context),
+        Name::ResourceDestinationString => on_exit_resource_destination_string(context),
+        Name::ResourceTitleString => on_exit_resource_title_string(context),
+        Name::Strong => on_exit_strong(context),
+        Name::ThematicBreak => on_exit_thematic_break(context),
         _ => {}
     }
 }
@@ -469,17 +468,17 @@ fn on_enter_list(context: &mut CompileContext) {
     let mut index = context.index;
     let mut balance = 0;
     let mut loose = false;
-    let token_type = &events[index].token_type;
+    let name = &events[index].name;
 
     while index < events.len() {
         let event = &events[index];
 
-        if event.event_type == EventType::Enter {
+        if event.kind == Kind::Enter {
             balance += 1;
         } else {
             balance -= 1;
 
-            if balance < 3 && event.token_type == Token::BlankLineEnding {
+            if balance < 3 && event.name == Name::BlankLineEnding {
                 // Blank line directly after a prefix:
                 //
                 // ```markdown
@@ -508,29 +507,29 @@ fn on_enter_list(context: &mut CompileContext) {
                 if balance == 1 {
                     let mut before = index - 2;
 
-                    if events[before].token_type == Token::ListItem {
+                    if events[before].name == Name::ListItem {
                         before -= 1;
 
-                        if events[before].token_type == Token::SpaceOrTab {
+                        if events[before].name == Name::SpaceOrTab {
                             before -= 2;
                         }
 
-                        if events[before].token_type == Token::BlockQuote
-                            && events[before - 1].token_type == Token::BlockQuotePrefix
+                        if events[before].name == Name::BlockQuote
+                            && events[before - 1].name == Name::BlockQuotePrefix
                         {
                             at_empty_block_quote = true;
-                        } else if events[before].token_type == Token::ListItemPrefix {
+                        } else if events[before].name == Name::ListItemPrefix {
                             at_empty_list_item = true;
                         }
                     }
                 } else {
                     let mut before = index - 2;
 
-                    if events[before].token_type == Token::SpaceOrTab {
+                    if events[before].name == Name::SpaceOrTab {
                         before -= 2;
                     }
 
-                    if events[before].token_type == Token::ListItemPrefix {
+                    if events[before].name == Name::ListItemPrefix {
                         at_prefix = true;
                     }
                 }
@@ -542,7 +541,7 @@ fn on_enter_list(context: &mut CompileContext) {
             }
 
             // Done.
-            if balance == 0 && event.token_type == *token_type {
+            if balance == 0 && event.name == *name {
                 break;
             }
         }
@@ -553,7 +552,7 @@ fn on_enter_list(context: &mut CompileContext) {
     context.tight_stack.push(!loose);
     context.line_ending_if_needed();
     // Note: no `>`.
-    context.push(if *token_type == Token::ListOrdered {
+    context.push(if *name == Name::ListOrdered {
         "<ol"
     } else {
         "<ul"
@@ -766,7 +765,7 @@ fn on_exit_code_flow(context: &mut CompileContext) {
             // In a container.
             && !context.tight_stack.is_empty()
             // Empty (as the closing is right at the opening fence)
-            && context.events[context.index - 1].token_type != Token::CodeFencedFence
+            && context.events[context.index - 1].name != Name::CodeFencedFence
         {
             context.line_ending();
         }
@@ -1001,13 +1000,11 @@ fn on_exit_line_ending(context: &mut CompileContext) {
 fn on_exit_list(context: &mut CompileContext) {
     context.tight_stack.pop();
     context.line_ending();
-    context.push(
-        if context.events[context.index].token_type == Token::ListOrdered {
-            "</ol>"
-        } else {
-            "</ul>"
-        },
-    );
+    context.push(if context.events[context.index].name == Name::ListOrdered {
+        "</ol>"
+    } else {
+        "</ul>"
+    });
 }
 
 /// Handle [`Exit`][EventType::Exit]:[`ListItem`][Token::ListItem].
@@ -1017,15 +1014,15 @@ fn on_exit_list_item(context: &mut CompileContext) {
         context.events,
         context.index - 1,
         &[
-            Token::BlankLineEnding,
-            Token::LineEnding,
-            Token::SpaceOrTab,
-            Token::BlockQuotePrefix,
+            Name::BlankLineEnding,
+            Name::LineEnding,
+            Name::SpaceOrTab,
+            Name::BlockQuotePrefix,
         ],
     );
     let previous = &context.events[before_item];
-    let tight_paragraph = *tight && previous.token_type == Token::Paragraph;
-    let empty_item = previous.token_type == Token::ListItemPrefix;
+    let tight_paragraph = *tight && previous.name == Name::Paragraph;
+    let empty_item = previous.name == Name::ListItemPrefix;
 
     context.slurp_one_line_ending = false;
 
