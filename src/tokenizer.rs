@@ -18,22 +18,6 @@ use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, Name as StateName, State};
 use crate::util::edit_map::EditMap;
 
-/// Media we found.
-#[derive(Debug)]
-pub struct Media {
-    /// Indices of where the media’s label start starts and ends in `events`.
-    pub start: (usize, usize),
-    /// Indices of where the media’s label end starts and ends in `events`.
-    pub end: (usize, usize),
-}
-
-/// Supported containers.
-#[derive(Debug, PartialEq)]
-pub enum Container {
-    BlockQuote,
-    ListItem,
-}
-
 /// Info used to tokenize the current container.
 ///
 /// This info is shared between the initial construct and its continuation.
@@ -61,17 +45,32 @@ enum ByteAction {
     Ignore,
 }
 
+/// Supported containers.
+#[derive(Debug, PartialEq)]
+pub enum Container {
+    BlockQuote,
+    ListItem,
+}
+
 /// Loose label starts we found.
 #[derive(Debug)]
 pub struct LabelStart {
     /// Indices of where the label starts and ends in `events`.
     pub start: (usize, usize),
-    /// A boolean used internally to figure out if a label start link can’t be
-    /// used (because links in links are incorrect).
+    /// A boolean used internally to figure out if a (link) label start link
+    /// can’t be used anymore (because it would contain another link).
+    /// That link start is still looking for a balanced closing bracket though,
+    /// so we can’t remove it just yet.
     pub inactive: bool,
-    /// A boolean used internally to figure out if a label is balanced: they’re
-    /// not media, it’s just balanced braces.
-    pub balanced: bool,
+}
+
+/// Media we found.
+#[derive(Debug)]
+pub struct Media {
+    /// Indices of where the media’s label start starts and ends in `events`.
+    pub start: (usize, usize),
+    /// Indices of where the media’s label end starts and ends in `events`.
+    pub end: (usize, usize),
 }
 
 /// Different kinds of attempts.

@@ -67,7 +67,6 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Name::LabelImage);
             tokenizer.tokenize_state.label_start_stack.push(LabelStart {
                 start: (tokenizer.events.len() - 6, tokenizer.events.len() - 1),
-                balanced: false,
                 inactive: false,
             });
             tokenizer.register_resolver_before(ResolveName::Label);

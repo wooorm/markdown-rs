@@ -171,27 +171,10 @@ use crate::util::{
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if Some(b']') == tokenizer.current && tokenizer.parse_state.constructs.label_end {
-        let mut label_start_index = None;
-        let mut index = tokenizer.tokenize_state.label_start_stack.len();
-
-        while index > 0 {
-            index -= 1;
-
-            if !tokenizer.tokenize_state.label_start_stack[index].balanced {
-                label_start_index = Some(index);
-                break;
-            }
-        }
-
         // If there is an okay opening:
-        if let Some(label_start_index) = label_start_index {
-            let label_start = tokenizer
-                .tokenize_state
-                .label_start_stack
-                .get_mut(label_start_index)
-                .unwrap();
+        if !tokenizer.tokenize_state.label_start_stack.is_empty() {
+            let label_start = tokenizer.tokenize_state.label_start_stack.last().unwrap();
 
-            tokenizer.tokenize_state.start = label_start_index;
             tokenizer.tokenize_state.end = tokenizer.events.len();
 
             // Mark as balanced if the info is inactive.
@@ -224,7 +207,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
-    let start = &tokenizer.tokenize_state.label_start_stack[tokenizer.tokenize_state.start];
+    let start = tokenizer.tokenize_state.label_start_stack.last().unwrap();
     let defined = tokenizer
         .parse_state
         .definitions
@@ -299,18 +282,8 @@ pub fn reference_not_full(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 pub fn ok(tokenizer: &mut Tokenizer) -> State {
-    let label_start_index = tokenizer.tokenize_state.start;
-    // Remove this one and everything after it.
-    let mut left = tokenizer
-        .tokenize_state
-        .label_start_stack
-        .split_off(label_start_index);
-    // Remove this one from `left`, as we’ll move it to `media_list`.
-    let label_start = left.remove(0);
-    tokenizer
-        .tokenize_state
-        .label_start_list_loose
-        .append(&mut left);
+    // Remove the start.
+    let label_start = tokenizer.tokenize_state.label_start_stack.pop().unwrap();
 
     let is_link = tokenizer.events[label_start.start.0].name == Name::LabelLink;
 
@@ -329,7 +302,6 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
         start: label_start.start,
         end: (tokenizer.tokenize_state.end, tokenizer.events.len() - 1),
     });
-    tokenizer.tokenize_state.start = 0;
     tokenizer.tokenize_state.end = 0;
     tokenizer.register_resolver_before(ResolveName::Label);
     State::Ok
@@ -348,13 +320,10 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 pub fn nok(tokenizer: &mut Tokenizer) -> State {
-    tokenizer
-        .tokenize_state
-        .label_start_stack
-        .get_mut(tokenizer.tokenize_state.start)
-        .unwrap()
-        .balanced = true;
-    tokenizer.tokenize_state.start = 0;
+    let start = tokenizer.tokenize_state.label_start_stack.pop().unwrap();
+
+    tokenizer.tokenize_state.label_start_list_loose.push(start);
+
     tokenizer.tokenize_state.end = 0;
     State::Nok
 }

@@ -49,7 +49,6 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Name::LabelLink);
             tokenizer.tokenize_state.label_start_stack.push(LabelStart {
                 start: (start, tokenizer.events.len() - 1),
-                balanced: false,
                 inactive: false,
             });
             tokenizer.register_resolver_before(ResolveName::Label);
