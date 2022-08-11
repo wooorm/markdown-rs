@@ -15,7 +15,7 @@ use crate::constant::TAB_SIZE;
 use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
 use crate::parser::ParseState;
 use crate::resolve::{call as call_resolve, Name as ResolveName};
-use crate::state::{call, Name as StateName, State};
+use crate::state::{call, State};
 use crate::util::edit_map::EditMap;
 
 /// Info used to tokenize the current container.
@@ -525,9 +525,9 @@ impl<'a> Tokenizer<'a> {
         self.stack.truncate(previous.stack_len);
     }
 
-    /// Parse with `name` and its future states, to see if that results in
-    /// [`State::Ok`][] or [`State::Nok`][], then revert in both cases.
-    pub fn check(&mut self, name: StateName, ok: State, nok: State) -> State {
+    /// Stack an attempt, moving to `ok` on [`State::Ok`][] and `nok` on
+    /// [`State::Nok`][], reverting in both cases.
+    pub fn check(&mut self, ok: State, nok: State) {
         // Always capture (and restore) when checking.
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.
@@ -539,14 +539,11 @@ impl<'a> Tokenizer<'a> {
             ok,
             nok,
         });
-
-        call(self, name)
     }
 
-    /// Parse with `name` and its future states, to see if that results in
-    /// [`State::Ok`][] or [`State::Nok`][], revert in the case of
-    /// `State::Nok`.
-    pub fn attempt(&mut self, name: StateName, ok: State, nok: State) -> State {
+    /// Stack an attempt, moving to `ok` on [`State::Ok`][] and `nok` on
+    /// [`State::Nok`][], reverting in the latter case.
+    pub fn attempt(&mut self, ok: State, nok: State) {
         // Always capture (and restore) when checking.
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.
@@ -562,8 +559,6 @@ impl<'a> Tokenizer<'a> {
             ok,
             nok,
         });
-
-        call(self, name)
     }
 
     /// Tokenize.

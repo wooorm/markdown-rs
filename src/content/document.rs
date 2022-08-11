@@ -81,10 +81,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     )));
 
     tokenizer.attempt(
-        StateName::BomStart,
         State::Next(StateName::DocumentContainerExistingBefore),
         State::Next(StateName::DocumentContainerExistingBefore),
-    )
+    );
+
+    State::Retry(StateName::BomStart)
 }
 
 /// Before existing containers.
@@ -102,14 +103,17 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
         let container = &tokenizer.tokenize_state.document_container_stack
             [tokenizer.tokenize_state.document_continued];
 
+        let name = match container.kind {
+            Container::BlockQuote => StateName::BlockQuoteContStart,
+            Container::ListItem => StateName::ListContStart,
+        };
+
         tokenizer.attempt(
-            match container.kind {
-                Container::BlockQuote => StateName::BlockQuoteContStart,
-                Container::ListItem => StateName::ListContStart,
-            },
             State::Next(StateName::DocumentContainerExistingAfter),
             State::Next(StateName::DocumentContainerNewBefore),
-        )
+        );
+
+        State::Retry(name)
     }
     // Otherwise, check new containers.
     else {
@@ -173,10 +177,10 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
         .swap(tokenizer.tokenize_state.document_continued, tail);
 
     tokenizer.attempt(
-        StateName::BlockQuoteStart,
         State::Next(StateName::DocumentContainerNewAfter),
         State::Next(StateName::DocumentContainerNewBeforeNotBlockQuote),
-    )
+    );
+    State::Retry(StateName::BlockQuoteStart)
 }
 
 /// Maybe before a new container, but not a block quote.
@@ -196,10 +200,10 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
     };
 
     tokenizer.attempt(
-        StateName::ListStart,
         State::Next(StateName::DocumentContainerNewAfter),
         State::Next(StateName::DocumentContainerNewBeforeNotList),
-    )
+    );
+    State::Retry(StateName::ListStart)
 }
 
 /// Maybe before a new container, but not a list.

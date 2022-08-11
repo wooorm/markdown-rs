@@ -63,7 +63,8 @@ use crate::tokenizer::Tokenizer;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.thematic_break {
         tokenizer.enter(Name::ThematicBreak);
-        let name = space_or_tab_min_max(
+        tokenizer.attempt(State::Next(StateName::ThematicBreakBefore), State::Nok);
+        State::Retry(space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -71,13 +72,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             } else {
                 usize::MAX
             },
-        );
-
-        tokenizer.attempt(
-            name,
-            State::Next(StateName::ThematicBreakBefore),
-            State::Nok,
-        )
+        ))
     } else {
         State::Nok
     }
@@ -146,12 +141,11 @@ pub fn sequence(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.exit(Name::ThematicBreakSequence);
-            let name = space_or_tab(tokenizer);
             tokenizer.attempt(
-                name,
                 State::Next(StateName::ThematicBreakAtBreak),
                 State::Next(StateName::ThematicBreakAtBreak),
-            )
+            );
+            State::Retry(space_or_tab(tokenizer))
         }
     }
 }

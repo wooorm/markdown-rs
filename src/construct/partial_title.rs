@@ -99,19 +99,17 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             State::Nok
         }
         Some(b'\n') => {
-            let name = space_or_tab_eol_with_options(
+            tokenizer.attempt(
+                State::Next(StateName::TitleAfterEol),
+                State::Next(StateName::TitleAtBlankLine),
+            );
+            State::Retry(space_or_tab_eol_with_options(
                 tokenizer,
                 Options {
                     content_type: Some(Content::String),
                     connect: tokenizer.tokenize_state.connect,
                 },
-            );
-
-            tokenizer.attempt(
-                name,
-                State::Next(StateName::TitleAfterEol),
-                State::Next(StateName::TitleAtBlankLine),
-            )
+            ))
         }
         Some(b'"' | b'\'' | b')')
             if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>

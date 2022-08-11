@@ -30,27 +30,28 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
-        Some(b'&') => tokenizer.attempt(
-            StateName::CharacterReferenceStart,
-            State::Next(StateName::StringBefore),
-            State::Next(StateName::StringBeforeData),
-        ),
-        Some(b'\\') => tokenizer.attempt(
-            StateName::CharacterEscapeStart,
-            State::Next(StateName::StringBefore),
-            State::Next(StateName::StringBeforeData),
-        ),
+        Some(b'&') => {
+            tokenizer.attempt(
+                State::Next(StateName::StringBefore),
+                State::Next(StateName::StringBeforeData),
+            );
+            State::Retry(StateName::CharacterReferenceStart)
+        }
+        Some(b'\\') => {
+            tokenizer.attempt(
+                State::Next(StateName::StringBefore),
+                State::Next(StateName::StringBeforeData),
+            );
+            State::Retry(StateName::CharacterEscapeStart)
+        }
         _ => State::Retry(StateName::StringBeforeData),
     }
 }
 
 /// At data.
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        StateName::DataStart,
-        State::Next(StateName::StringBefore),
-        State::Nok,
-    )
+    tokenizer.attempt(State::Next(StateName::StringBefore), State::Nok);
+    State::Retry(StateName::DataStart)
 }
 
 /// Resolve whitespace.

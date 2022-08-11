@@ -70,7 +70,8 @@ use crate::tokenizer::Tokenizer;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.heading_atx {
         tokenizer.enter(Name::HeadingAtx);
-        let name = space_or_tab_min_max(
+        tokenizer.attempt(State::Next(StateName::HeadingAtxBefore), State::Nok);
+        State::Retry(space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -78,8 +79,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             } else {
                 usize::MAX
             },
-        );
-        tokenizer.attempt(name, State::Next(StateName::HeadingAtxBefore), State::Nok)
+        ))
     } else {
         State::Nok
     }
@@ -121,8 +121,8 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         _ if tokenizer.tokenize_state.size > 0 => {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Name::HeadingAtxSequence);
-            let name = space_or_tab(tokenizer);
-            tokenizer.attempt(name, State::Next(StateName::HeadingAtxAtBreak), State::Nok)
+            tokenizer.attempt(State::Next(StateName::HeadingAtxAtBreak), State::Nok);
+            State::Retry(space_or_tab(tokenizer))
         }
         _ => {
             tokenizer.tokenize_state.size = 0;
@@ -147,8 +147,8 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             State::Ok
         }
         Some(b'\t' | b' ') => {
-            let name = space_or_tab(tokenizer);
-            tokenizer.attempt(name, State::Next(StateName::HeadingAtxAtBreak), State::Nok)
+            tokenizer.attempt(State::Next(StateName::HeadingAtxAtBreak), State::Nok);
+            State::Retry(space_or_tab(tokenizer))
         }
         Some(b'#') => {
             tokenizer.enter(Name::HeadingAtxSequence);

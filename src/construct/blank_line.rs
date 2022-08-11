@@ -47,12 +47,12 @@ use crate::tokenizer::Tokenizer;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    let name = space_or_tab(tokenizer);
     tokenizer.attempt(
-        name,
         State::Next(StateName::BlankLineAfter),
         State::Next(StateName::BlankLineAfter),
-    )
+    );
+
+    State::Retry(space_or_tab(tokenizer))
 }
 
 /// After zero or more spaces or tabs, before a line ending or EOF.

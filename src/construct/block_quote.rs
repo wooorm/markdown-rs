@@ -47,7 +47,8 @@ use crate::tokenizer::Tokenizer;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.block_quote {
-        let name = space_or_tab_min_max(
+        tokenizer.attempt(State::Next(StateName::BlockQuoteBefore), State::Nok);
+        State::Retry(space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -55,8 +56,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             } else {
                 usize::MAX
             },
-        );
-        tokenizer.attempt(name, State::Next(StateName::BlockQuoteBefore), State::Nok)
+        ))
     } else {
         State::Nok
     }
@@ -86,7 +86,8 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
-    let name = space_or_tab_min_max(
+    tokenizer.attempt(State::Next(StateName::BlockQuoteContBefore), State::Nok);
+    State::Retry(space_or_tab_min_max(
         tokenizer,
         0,
         if tokenizer.parse_state.constructs.code_indented {
@@ -94,12 +95,7 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
         } else {
             usize::MAX
         },
-    );
-    tokenizer.attempt(
-        name,
-        State::Next(StateName::BlockQuoteContBefore),
-        State::Nok,
-    )
+    ))
 }
 
 /// After whitespace, before `>`.

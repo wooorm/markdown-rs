@@ -85,7 +85,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             .name
                 == Name::Paragraph)
     {
-        let name = space_or_tab_min_max(
+        tokenizer.attempt(State::Next(StateName::HeadingSetextBefore), State::Nok);
+        State::Retry(space_or_tab_min_max(
             tokenizer,
             0,
             if tokenizer.parse_state.constructs.code_indented {
@@ -93,13 +94,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             } else {
                 usize::MAX
             },
-        );
-
-        tokenizer.attempt(
-            name,
-            State::Next(StateName::HeadingSetextBefore),
-            State::Nok,
-        )
+        ))
     } else {
         State::Nok
     }
@@ -139,12 +134,11 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         _ => {
             tokenizer.tokenize_state.marker = 0;
             tokenizer.exit(Name::HeadingSetextUnderline);
-            let name = space_or_tab(tokenizer);
             tokenizer.attempt(
-                name,
                 State::Next(StateName::HeadingSetextAfter),
                 State::Next(StateName::HeadingSetextAfter),
-            )
+            );
+            State::Retry(space_or_tab(tokenizer))
         }
     }
 }

@@ -133,7 +133,8 @@ const COMPLETE: u8 = 7;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.html_flow {
         tokenizer.enter(Name::HtmlFlow);
-        let name = space_or_tab_with_options(
+        tokenizer.attempt(State::Next(StateName::HtmlFlowBefore), State::Nok);
+        State::Retry(space_or_tab_with_options(
             tokenizer,
             SpaceOrTabOptions {
                 kind: Name::HtmlFlowData,
@@ -146,9 +147,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 connect: false,
                 content_type: None,
             },
-        );
-
-        tokenizer.attempt(name, State::Next(StateName::HtmlFlowBefore), State::Nok)
+        ))
     } else {
         State::Nok
     }
@@ -632,10 +631,10 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
         {
             tokenizer.exit(Name::HtmlFlowData);
             tokenizer.check(
-                StateName::HtmlFlowBlankLineBefore,
                 State::Next(StateName::HtmlFlowContinuationAfter),
                 State::Next(StateName::HtmlFlowContinuationStart),
-            )
+            );
+            State::Retry(StateName::HtmlFlowBlankLineBefore)
         }
         // Note: important that this is after the basic/complete case.
         None | Some(b'\n') => {
@@ -678,10 +677,10 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn continuation_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.check(
-        StateName::NonLazyContinuationStart,
         State::Next(StateName::HtmlFlowContinuationStartNonLazy),
         State::Next(StateName::HtmlFlowContinuationAfter),
-    )
+    );
+    State::Retry(StateName::NonLazyContinuationStart)
 }
 
 /// In continuation, at an eol, before non-lazy content.

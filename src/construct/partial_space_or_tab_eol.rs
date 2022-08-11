@@ -45,7 +45,12 @@ pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: Options
 }
 
 pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
-    let name = space_or_tab_with_options(
+    tokenizer.attempt(
+        State::Next(StateName::SpaceOrTabEolAfterFirst),
+        State::Next(StateName::SpaceOrTabEolAtEol),
+    );
+
+    State::Retry(space_or_tab_with_options(
         tokenizer,
         SpaceOrTabOptions {
             kind: Name::SpaceOrTab,
@@ -57,13 +62,7 @@ pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
                 .clone(),
             connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
         },
-    );
-
-    tokenizer.attempt(
-        name,
-        State::Next(StateName::SpaceOrTabEolAfterFirst),
-        State::Next(StateName::SpaceOrTabEolAtEol),
-    )
+    ))
 }
 
 pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
@@ -133,7 +132,11 @@ pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
 /// ```
 #[allow(clippy::needless_pass_by_value)]
 pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
-    let name = space_or_tab_with_options(
+    tokenizer.attempt(
+        State::Next(StateName::SpaceOrTabEolAfterMore),
+        State::Next(StateName::SpaceOrTabEolAfterMore),
+    );
+    State::Retry(space_or_tab_with_options(
         tokenizer,
         SpaceOrTabOptions {
             kind: Name::SpaceOrTab,
@@ -145,12 +148,7 @@ pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
                 .clone(),
             connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
         },
-    );
-    tokenizer.attempt(
-        name,
-        State::Next(StateName::SpaceOrTabEolAfterMore),
-        State::Next(StateName::SpaceOrTabEolAfterMore),
-    )
+    ))
 }
 
 /// `space_or_tab_eol`: after more (optional) `space_or_tab`.

@@ -223,25 +223,29 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
-        Some(b'(') => tokenizer.attempt(
-            StateName::LabelEndResourceStart,
-            State::Next(StateName::LabelEndOk),
-            State::Next(if defined {
-                StateName::LabelEndOk
-            } else {
-                StateName::LabelEndNok
-            }),
-        ),
+        Some(b'(') => {
+            tokenizer.attempt(
+                State::Next(StateName::LabelEndOk),
+                State::Next(if defined {
+                    StateName::LabelEndOk
+                } else {
+                    StateName::LabelEndNok
+                }),
+            );
+            State::Retry(StateName::LabelEndResourceStart)
+        }
         // Full (`[asd][fgh]`) or collapsed (`[asd][]`) reference?
-        Some(b'[') => tokenizer.attempt(
-            StateName::LabelEndReferenceFull,
-            State::Next(StateName::LabelEndOk),
-            State::Next(if defined {
-                StateName::LabelEndReferenceNotFull
-            } else {
-                StateName::LabelEndNok
-            }),
-        ),
+        Some(b'[') => {
+            tokenizer.attempt(
+                State::Next(StateName::LabelEndOk),
+                State::Next(if defined {
+                    StateName::LabelEndReferenceNotFull
+                } else {
+                    StateName::LabelEndNok
+                }),
+            );
+            State::Retry(StateName::LabelEndReferenceFull)
+        }
         // Shortcut (`[asd]`) reference?
         _ => State::Retry(if defined {
             StateName::LabelEndOk
@@ -263,10 +267,10 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn reference_not_full(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
-        StateName::LabelEndReferenceCollapsed,
         State::Next(StateName::LabelEndOk),
         State::Next(StateName::LabelEndNok),
-    )
+    );
+    State::Retry(StateName::LabelEndReferenceCollapsed)
 }
 
 /// Done, we found something.
@@ -354,12 +358,11 @@ pub fn resource_start(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
-    let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
-        name,
         State::Next(StateName::LabelEndResourceOpen),
         State::Next(StateName::LabelEndResourceOpen),
-    )
+    );
+    State::Retry(space_or_tab_eol(tokenizer))
 }
 
 /// At the start of a resource, after optional whitespace.
@@ -380,10 +383,10 @@ pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.size_b = RESOURCE_DESTINATION_BALANCE_MAX;
 
         tokenizer.attempt(
-            StateName::DestinationStart,
             State::Next(StateName::LabelEndResourceDestinationAfter),
             State::Next(StateName::LabelEndResourceDestinationMissing),
-        )
+        );
+        State::Retry(StateName::DestinationStart)
     }
 }
 
@@ -400,12 +403,11 @@ pub fn resource_destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_4 = Name::Data;
     tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
-    let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
-        name,
         State::Next(StateName::LabelEndResourceBetween),
         State::Next(StateName::LabelEndResourceEnd),
-    )
+    );
+    State::Retry(space_or_tab_eol(tokenizer))
 }
 
 /// Without destination.
@@ -432,10 +434,10 @@ pub fn resource_between(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_2 = Name::ResourceTitleMarker;
             tokenizer.tokenize_state.token_3 = Name::ResourceTitleString;
             tokenizer.attempt(
-                StateName::TitleStart,
                 State::Next(StateName::LabelEndResourceTitleAfter),
                 State::Nok,
-            )
+            );
+            State::Retry(StateName::TitleStart)
         }
         _ => State::Retry(StateName::LabelEndResourceEnd),
     }
@@ -451,12 +453,11 @@ pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Name::Data;
     tokenizer.tokenize_state.token_2 = Name::Data;
     tokenizer.tokenize_state.token_3 = Name::Data;
-    let name = space_or_tab_eol(tokenizer);
     tokenizer.attempt(
-        name,
         State::Next(StateName::LabelEndResourceEnd),
         State::Next(StateName::LabelEndResourceEnd),
-    )
+    );
+    State::Retry(space_or_tab_eol(tokenizer))
 }
 
 /// In a resource, at the `)`.
@@ -491,10 +492,10 @@ pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_2 = Name::ReferenceMarker;
             tokenizer.tokenize_state.token_3 = Name::ReferenceString;
             tokenizer.attempt(
-                StateName::LabelStart,
                 State::Next(StateName::LabelEndReferenceFullAfter),
                 State::Nok,
-            )
+            );
+            State::Retry(StateName::LabelStart)
         }
         _ => unreachable!("expected `[`"),
     }
