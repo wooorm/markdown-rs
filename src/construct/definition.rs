@@ -98,7 +98,11 @@ use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::skip::opt_back as skip_opt_back;
+use crate::util::{
+    normalize_identifier::normalize_identifier,
+    skip,
+    slice::{Position, Slice},
+};
 
 /// At the start of a definition.
 ///
@@ -110,7 +114,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs (but do follow definitions).
     let possible = !tokenizer.interrupt
         || (!tokenizer.events.is_empty()
-            && tokenizer.events[skip_opt_back(
+            && tokenizer.events[skip::opt_back(
                 &tokenizer.events,
                 tokenizer.events.len() - 1,
                 &[Name::LineEnding, Name::SpaceOrTab],
@@ -164,6 +168,12 @@ pub fn label_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Name::Data;
     tokenizer.tokenize_state.token_2 = Name::Data;
     tokenizer.tokenize_state.token_3 = Name::Data;
+
+    tokenizer.tokenize_state.end = skip::to_back(
+        &tokenizer.events,
+        tokenizer.events.len() - 1,
+        &[Name::DefinitionLabelString],
+    );
 
     match tokenizer.current {
         Some(b':') => {
@@ -239,6 +249,7 @@ pub fn destination_missing(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_4 = Name::Data;
     tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
+    tokenizer.tokenize_state.end = 0;
     State::Nok
 }
 
@@ -271,11 +282,31 @@ pub fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None | Some(b'\n') => {
             tokenizer.exit(Name::Definition);
+
+            // Note: we don’t care about uniqueness.
+            // It’s likely that that doesn’t happen very frequently.
+            // It is more likely that it wastes precious time.
+            tokenizer.tokenize_state.definitions.push(
+                // Note: we don’t care about virtual spaces, so `as_str` is fine.
+                normalize_identifier(
+                    Slice::from_position(
+                        tokenizer.parse_state.bytes,
+                        &Position::from_exit_event(&tokenizer.events, tokenizer.tokenize_state.end),
+                    )
+                    .as_str(),
+                ),
+            );
+
+            tokenizer.tokenize_state.end = 0;
+
             // You’d be interrupting.
             tokenizer.interrupt = true;
             State::Ok
         }
-        _ => State::Nok,
+        _ => {
+            tokenizer.tokenize_state.end = 0;
+            State::Nok
+        },
     }
 }
 

@@ -13,11 +13,7 @@ use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::{divide_events, subtokenize};
 use crate::tokenizer::{Container, ContainerState, Tokenizer};
-use crate::util::{
-    normalize_identifier::normalize_identifier,
-    skip,
-    slice::{Position, Slice},
-};
+use crate::util::skip;
 
 /// Phases where we can exit containers.
 #[derive(Debug, PartialEq)]
@@ -61,33 +57,9 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     );
     tokenizer.flush(state, true);
 
-    let mut index = 0;
-    let mut definitions = vec![];
-
-    while index < tokenizer.events.len() {
-        let event = &tokenizer.events[index];
-
-        if event.kind == Kind::Exit && event.name == Name::DefinitionLabelString {
-            // Note: we don’t care about virtual spaces, so `as_str` is fine.
-            let id = normalize_identifier(
-                Slice::from_position(
-                    tokenizer.parse_state.bytes,
-                    &Position::from_exit_event(&tokenizer.events, index),
-                )
-                .as_str(),
-            );
-
-            if !definitions.contains(&id) {
-                definitions.push(id);
-            }
-        }
-
-        index += 1;
-    }
-
     let mut events = tokenizer.events;
 
-    parse_state.definitions = definitions;
+    parse_state.definitions = tokenizer.tokenize_state.definitions;
 
     while !subtokenize(&mut events, parse_state) {}
 
@@ -531,4 +503,9 @@ fn resolve(tokenizer: &mut Tokenizer) {
     tokenizer
         .resolvers
         .append(&mut child.resolvers.split_off(0));
+
+    tokenizer
+        .tokenize_state
+        .definitions
+        .append(&mut child.tokenize_state.definitions.split_off(0));
 }

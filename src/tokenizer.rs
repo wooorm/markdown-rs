@@ -165,6 +165,9 @@ pub struct TokenizeState<'a> {
     /// Used when tokenizing [text content][crate::content::text].
     pub media_list: Vec<Media>,
 
+    /// List of defined identifiers.
+    pub definitions: Vec<String>,
+
     /// Whether to connect tokens.
     pub connect: bool,
     /// Marker.
@@ -274,18 +277,18 @@ impl<'a> Tokenizer<'a> {
                 document_data_index: None,
                 document_child_state: None,
                 document_child: None,
+                definitions: vec![],
+                end: 0,
+                label_start_stack: vec![],
+                label_start_list_loose: vec![],
                 marker: 0,
                 marker_b: 0,
                 markers: &[],
+                media_list: vec![],
                 seen: false,
                 size: 0,
                 size_b: 0,
                 size_c: 0,
-                start: 0,
-                end: 0,
-                label_start_stack: vec![],
-                label_start_list_loose: vec![],
-                media_list: vec![],
                 space_or_tab_eol_content_type: None,
                 space_or_tab_eol_connect: false,
                 space_or_tab_eol_ok: false,
@@ -295,6 +298,7 @@ impl<'a> Tokenizer<'a> {
                 space_or_tab_max: 0,
                 space_or_tab_size: 0,
                 space_or_tab_token: Name::SpaceOrTab,
+                start: 0,
                 token_1: Name::Data,
                 token_2: Name::Data,
                 token_3: Name::Data,
