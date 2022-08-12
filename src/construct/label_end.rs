@@ -362,11 +362,15 @@ pub fn resource_start(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::LabelEndResourceOpen),
-        State::Next(StateName::LabelEndResourceOpen),
-    );
-    State::Retry(space_or_tab_eol(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::LabelEndResourceOpen),
+            State::Next(StateName::LabelEndResourceOpen),
+        );
+        State::Retry(space_or_tab_eol(tokenizer))
+    } else {
+        State::Retry(StateName::LabelEndResourceOpen)
+    }
 }
 
 /// In resource, after optional whitespace, at `)` or a destination.
@@ -407,11 +411,16 @@ pub fn resource_destination_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_4 = Name::Data;
     tokenizer.tokenize_state.token_5 = Name::Data;
     tokenizer.tokenize_state.size_b = 0;
-    tokenizer.attempt(
-        State::Next(StateName::LabelEndResourceBetween),
-        State::Next(StateName::LabelEndResourceEnd),
-    );
-    State::Retry(space_or_tab_eol(tokenizer))
+
+    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::LabelEndResourceBetween),
+            State::Next(StateName::LabelEndResourceEnd),
+        );
+        State::Retry(space_or_tab_eol(tokenizer))
+    } else {
+        State::Retry(StateName::LabelEndResourceEnd)
+    }
 }
 
 /// At invalid destination.
@@ -462,11 +471,16 @@ pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Name::Data;
     tokenizer.tokenize_state.token_2 = Name::Data;
     tokenizer.tokenize_state.token_3 = Name::Data;
-    tokenizer.attempt(
-        State::Next(StateName::LabelEndResourceEnd),
-        State::Next(StateName::LabelEndResourceEnd),
-    );
-    State::Retry(space_or_tab_eol(tokenizer))
+
+    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::LabelEndResourceBetween),
+            State::Next(StateName::LabelEndResourceEnd),
+        );
+        State::Retry(space_or_tab_eol(tokenizer))
+    } else {
+        State::Retry(StateName::LabelEndResourceEnd)
+    }
 }
 
 /// In resource, at `)`.

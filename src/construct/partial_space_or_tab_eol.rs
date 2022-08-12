@@ -54,21 +54,25 @@ pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: Options
 ///   | ␠␠b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::SpaceOrTabEolAfterFirst),
-        State::Next(StateName::SpaceOrTabEolAtEol),
-    );
+    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::SpaceOrTabEolAfterFirst),
+            State::Next(StateName::SpaceOrTabEolAtEol),
+        );
 
-    State::Retry(space_or_tab_with_options(
-        tokenizer,
-        SpaceOrTabOptions {
-            kind: Name::SpaceOrTab,
-            min: 1,
-            max: usize::MAX,
-            content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
-            connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
-        },
-    ))
+        State::Retry(space_or_tab_with_options(
+            tokenizer,
+            SpaceOrTabOptions {
+                kind: Name::SpaceOrTab,
+                min: 1,
+                max: usize::MAX,
+                content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
+                connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
+            },
+        ))
+    } else {
+        State::Nok
+    }
 }
 
 /// After initial whitespace, at optional eol.
@@ -151,20 +155,21 @@ pub fn at_eol(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::SpaceOrTabEolAfterMore),
-        State::Next(StateName::SpaceOrTabEolAfterMore),
-    );
-    State::Retry(space_or_tab_with_options(
-        tokenizer,
-        SpaceOrTabOptions {
-            kind: Name::SpaceOrTab,
-            min: 1,
-            max: usize::MAX,
-            content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
-            connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
-        },
-    ))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(State::Next(StateName::SpaceOrTabEolAfterMore), State::Nok);
+        State::Retry(space_or_tab_with_options(
+            tokenizer,
+            SpaceOrTabOptions {
+                kind: Name::SpaceOrTab,
+                min: 1,
+                max: usize::MAX,
+                content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
+                connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
+            },
+        ))
+    } else {
+        State::Retry(StateName::SpaceOrTabEolAfterMore)
+    }
 }
 
 /// After optional final whitespace.

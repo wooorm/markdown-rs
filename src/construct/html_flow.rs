@@ -133,21 +133,26 @@ const COMPLETE: u8 = 7;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.html_flow {
         tokenizer.enter(Name::HtmlFlow);
-        tokenizer.attempt(State::Next(StateName::HtmlFlowBefore), State::Nok);
-        State::Retry(space_or_tab_with_options(
-            tokenizer,
-            SpaceOrTabOptions {
-                kind: Name::HtmlFlowData,
-                min: 0,
-                max: if tokenizer.parse_state.constructs.code_indented {
-                    TAB_SIZE - 1
-                } else {
-                    usize::MAX
+
+        if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+            tokenizer.attempt(State::Next(StateName::HtmlFlowBefore), State::Nok);
+            State::Retry(space_or_tab_with_options(
+                tokenizer,
+                SpaceOrTabOptions {
+                    kind: Name::HtmlFlowData,
+                    min: 0,
+                    max: if tokenizer.parse_state.constructs.code_indented {
+                        TAB_SIZE - 1
+                    } else {
+                        usize::MAX
+                    },
+                    connect: false,
+                    content: None,
                 },
-                connect: false,
-                content: None,
-            },
-        ))
+            ))
+        } else {
+            State::Retry(StateName::HtmlFlowBefore)
+        }
     } else {
         State::Nok
     }

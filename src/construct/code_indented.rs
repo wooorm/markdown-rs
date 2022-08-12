@@ -63,7 +63,10 @@ use crate::tokenizer::Tokenizer;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs.
-    if !tokenizer.interrupt && tokenizer.parse_state.constructs.code_indented {
+    if !tokenizer.interrupt
+        && tokenizer.parse_state.constructs.code_indented
+        && matches!(tokenizer.current, Some(b'\t' | b' '))
+    {
         tokenizer.enter(Name::CodeIndented);
         tokenizer.attempt(State::Next(StateName::CodeIndentedAtBreak), State::Nok);
         State::Retry(space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE))
@@ -158,11 +161,12 @@ pub fn further_start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn further_begin(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::CodeIndentedFurtherAfter),
-        State::Next(StateName::CodeIndentedFurtherAfter),
-    );
-    State::Retry(space_or_tab(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(State::Next(StateName::CodeIndentedFurtherAfter), State::Nok);
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        State::Nok
+    }
 }
 
 /// After whitespace, not indented enough.

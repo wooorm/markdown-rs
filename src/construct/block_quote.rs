@@ -64,16 +64,20 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(State::Next(StateName::BlockQuoteContBefore), State::Nok);
-    State::Retry(space_or_tab_min_max(
-        tokenizer,
-        0,
-        if tokenizer.parse_state.constructs.code_indented {
-            TAB_SIZE - 1
-        } else {
-            usize::MAX
-        },
-    ))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(State::Next(StateName::BlockQuoteContBefore), State::Nok);
+        State::Retry(space_or_tab_min_max(
+            tokenizer,
+            1,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        ))
+    } else {
+        State::Retry(StateName::BlockQuoteContBefore)
+    }
 }
 
 /// At `>`, after optional whitespace.

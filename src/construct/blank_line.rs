@@ -47,12 +47,12 @@ use crate::tokenizer::Tokenizer;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::BlankLineAfter),
-        State::Next(StateName::BlankLineAfter),
-    );
-
-    State::Retry(space_or_tab(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(State::Next(StateName::BlankLineAfter), State::Nok);
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        State::Retry(StateName::BlankLineAfter)
+    }
 }
 
 /// At eof/eol, after optional whitespace.

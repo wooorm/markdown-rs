@@ -118,25 +118,32 @@ use crate::util::slice::{Position, Slice};
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.code_fenced {
-        tokenizer.enter(Name::CodeFenced);
-        tokenizer.enter(Name::CodeFencedFence);
+        if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+            tokenizer.enter(Name::CodeFenced);
+            tokenizer.enter(Name::CodeFencedFence);
+            tokenizer.attempt(
+                State::Next(StateName::CodeFencedBeforeSequenceOpen),
+                State::Nok,
+            );
+            return State::Retry(space_or_tab_min_max(
+                tokenizer,
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ));
+        }
 
-        tokenizer.attempt(
-            State::Next(StateName::CodeFencedBeforeSequenceOpen),
-            State::Nok,
-        );
-        State::Retry(space_or_tab_min_max(
-            tokenizer,
-            0,
-            if tokenizer.parse_state.constructs.code_indented {
-                TAB_SIZE - 1
-            } else {
-                usize::MAX
-            },
-        ))
-    } else {
-        State::Nok
+        if matches!(tokenizer.current, Some(b'`' | b'~')) {
+            tokenizer.enter(Name::CodeFenced);
+            tokenizer.enter(Name::CodeFencedFence);
+            return State::Retry(StateName::CodeFencedBeforeSequenceOpen);
+        }
     }
+
+    State::Nok
 }
 
 /// In opening fence, after prefix, at sequence.
@@ -184,20 +191,18 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
         State::Next(StateName::CodeFencedSequenceOpen)
-    } else if tokenizer.tokenize_state.size >= CODE_FENCED_SEQUENCE_SIZE_MIN {
-        tokenizer.exit(Name::CodeFencedFenceSequence);
-
-        tokenizer.attempt(
-            State::Next(StateName::CodeFencedInfoBefore),
-            State::Next(StateName::CodeFencedInfoBefore),
-        );
-
-        State::Retry(space_or_tab(tokenizer))
-    } else {
+    } else if tokenizer.tokenize_state.size < CODE_FENCED_SEQUENCE_SIZE_MIN {
         tokenizer.tokenize_state.marker = 0;
         tokenizer.tokenize_state.size_c = 0;
         tokenizer.tokenize_state.size = 0;
         State::Nok
+    } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.exit(Name::CodeFencedFenceSequence);
+        tokenizer.attempt(State::Next(StateName::CodeFencedInfoBefore), State::Nok);
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        tokenizer.exit(Name::CodeFencedFenceSequence);
+        State::Retry(StateName::CodeFencedInfoBefore)
     }
 }
 
@@ -254,10 +259,7 @@ pub fn info(tokenizer: &mut Tokenizer) -> State {
         Some(b'\t' | b' ') => {
             tokenizer.exit(Name::Data);
             tokenizer.exit(Name::CodeFencedFenceInfo);
-            tokenizer.attempt(
-                State::Next(StateName::CodeFencedMetaBefore),
-                State::Next(StateName::CodeFencedMetaBefore),
-            );
+            tokenizer.attempt(State::Next(StateName::CodeFencedMetaBefore), State::Nok);
             State::Retry(space_or_tab(tokenizer))
         }
         Some(byte) => {
@@ -362,20 +364,24 @@ pub fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
 pub fn close_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Name::CodeFencedFence);
 
-    tokenizer.attempt(
-        State::Next(StateName::CodeFencedBeforeSequenceClose),
-        State::Nok,
-    );
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::CodeFencedBeforeSequenceClose),
+            State::Nok,
+        );
 
-    State::Retry(space_or_tab_min_max(
-        tokenizer,
-        0,
-        if tokenizer.parse_state.constructs.code_indented {
-            TAB_SIZE - 1
-        } else {
-            usize::MAX
-        },
-    ))
+        State::Retry(space_or_tab_min_max(
+            tokenizer,
+            0,
+            if tokenizer.parse_state.constructs.code_indented {
+                TAB_SIZE - 1
+            } else {
+                usize::MAX
+            },
+        ))
+    } else {
+        State::Retry(StateName::CodeFencedBeforeSequenceClose)
+    }
 }
 
 /// In closing fence, after optional whitespace, at sequence.
@@ -413,11 +419,16 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     {
         tokenizer.tokenize_state.size_b = 0;
         tokenizer.exit(Name::CodeFencedFenceSequence);
-        tokenizer.attempt(
-            State::Next(StateName::CodeFencedAfterSequenceClose),
-            State::Next(StateName::CodeFencedAfterSequenceClose),
-        );
-        State::Retry(space_or_tab(tokenizer))
+
+        if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+            tokenizer.attempt(
+                State::Next(StateName::CodeFencedAfterSequenceClose),
+                State::Nok,
+            );
+            State::Retry(space_or_tab(tokenizer))
+        } else {
+            State::Retry(StateName::CodeFencedAfterSequenceClose)
+        }
     } else {
         tokenizer.tokenize_state.size_b = 0;
         State::Nok
@@ -466,15 +477,19 @@ pub fn content_before(tokenizer: &mut Tokenizer) -> State {
 ///   | ~~~
 /// ```
 pub fn content_start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::CodeFencedBeforeContentChunk),
-        State::Nok,
-    );
-    State::Retry(space_or_tab_min_max(
-        tokenizer,
-        0,
-        tokenizer.tokenize_state.size_c,
-    ))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::CodeFencedBeforeContentChunk),
+            State::Nok,
+        );
+        State::Retry(space_or_tab_min_max(
+            tokenizer,
+            0,
+            tokenizer.tokenize_state.size_c,
+        ))
+    } else {
+        State::Retry(StateName::CodeFencedBeforeContentChunk)
+    }
 }
 
 /// Before code content, after optional prefix.

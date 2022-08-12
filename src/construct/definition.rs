@@ -112,24 +112,26 @@ use crate::util::{
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs (but do follow definitions).
-    let possible = !tokenizer.interrupt
-        || (!tokenizer.events.is_empty()
-            && tokenizer.events[skip::opt_back(
-                &tokenizer.events,
-                tokenizer.events.len() - 1,
-                &[Name::LineEnding, Name::SpaceOrTab],
-            )]
-            .name
-                == Name::Definition);
-
-    if possible && tokenizer.parse_state.constructs.definition {
+    if tokenizer.parse_state.constructs.definition
+        && (!tokenizer.interrupt
+            || (!tokenizer.events.is_empty()
+                && tokenizer.events[skip::opt_back(
+                    &tokenizer.events,
+                    tokenizer.events.len() - 1,
+                    &[Name::LineEnding, Name::SpaceOrTab],
+                )]
+                .name
+                    == Name::Definition))
+    {
         tokenizer.enter(Name::Definition);
-        tokenizer.attempt(
-            State::Next(StateName::DefinitionBefore),
-            State::Next(StateName::DefinitionBefore),
-        );
-        // Note: arbitrary whitespace allowed even if code (indented) is on.
-        State::Retry(space_or_tab(tokenizer))
+
+        if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+            // Note: arbitrary whitespace allowed even if code (indented) is on.
+            tokenizer.attempt(State::Next(StateName::DefinitionBefore), State::Nok);
+            State::Retry(space_or_tab(tokenizer))
+        } else {
+            State::Retry(StateName::DefinitionBefore)
+        }
     } else {
         State::Nok
     }
@@ -189,11 +191,15 @@ pub fn label_after(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::DefinitionDestinationBefore),
-        State::Next(StateName::DefinitionDestinationBefore),
-    );
-    State::Retry(space_or_tab_eol(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::DefinitionDestinationBefore),
+            State::Next(StateName::DefinitionDestinationBefore),
+        );
+        State::Retry(space_or_tab_eol(tokenizer))
+    } else {
+        State::Retry(StateName::DefinitionDestinationBefore)
+    }
 }
 
 /// Before destination.
@@ -257,11 +263,15 @@ pub fn destination_missing(tokenizer: &mut Tokenizer) -> State {
 ///               ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::DefinitionAfterWhitespace),
-        State::Next(StateName::DefinitionAfterWhitespace),
-    );
-    State::Retry(space_or_tab(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::DefinitionAfterWhitespace),
+            State::Nok,
+        );
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        State::Retry(StateName::DefinitionAfterWhitespace)
+    }
 }
 
 /// After definition, after optional whitespace.
@@ -313,11 +323,15 @@ pub fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
 ///           ^
 /// ```
 pub fn title_before(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::DefinitionTitleBeforeMarker),
-        State::Nok,
-    );
-    State::Retry(space_or_tab_eol(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::DefinitionTitleBeforeMarker),
+            State::Nok,
+        );
+        State::Retry(space_or_tab_eol(tokenizer))
+    } else {
+        State::Nok
+    }
 }
 
 /// At title.
@@ -345,11 +359,15 @@ pub fn title_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Name::Data;
     tokenizer.tokenize_state.token_2 = Name::Data;
     tokenizer.tokenize_state.token_3 = Name::Data;
-    tokenizer.attempt(
-        State::Next(StateName::DefinitionTitleAfterOptionalWhitespace),
-        State::Next(StateName::DefinitionTitleAfterOptionalWhitespace),
-    );
-    State::Retry(space_or_tab(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::DefinitionTitleAfterOptionalWhitespace),
+            State::Nok,
+        );
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        State::Retry(StateName::DefinitionTitleAfterOptionalWhitespace)
+    }
 }
 
 /// After title, after optional whitespace.

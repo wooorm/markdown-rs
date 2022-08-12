@@ -64,16 +64,21 @@ use crate::util::{
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.list {
         tokenizer.enter(Name::ListItem);
-        tokenizer.attempt(State::Next(StateName::ListBefore), State::Nok);
-        State::Retry(space_or_tab_min_max(
-            tokenizer,
-            0,
-            if tokenizer.parse_state.constructs.code_indented {
-                TAB_SIZE - 1
-            } else {
-                usize::MAX
-            },
-        ))
+
+        if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+            tokenizer.attempt(State::Next(StateName::ListBefore), State::Nok);
+            State::Retry(space_or_tab_min_max(
+                tokenizer,
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ))
+        } else {
+            State::Retry(StateName::ListBefore)
+        }
     } else {
         State::Nok
     }
@@ -319,9 +324,11 @@ pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
 
     if container.blank_initial {
         State::Nok
-    } else {
+    } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
         // Consume, optionally, at most `size`.
         State::Retry(space_or_tab_min_max(tokenizer, 0, size))
+    } else {
+        State::Ok
     }
 }
 
@@ -339,8 +346,12 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
 
     container.blank_initial = false;
 
-    // Consume exactly `size`.
-    State::Retry(space_or_tab_min_max(tokenizer, size, size))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        // Consume exactly `size`.
+        State::Retry(space_or_tab_min_max(tokenizer, size, size))
+    } else {
+        State::Nok
+    }
 }
 
 /// Find adjacent list items with the same marker.

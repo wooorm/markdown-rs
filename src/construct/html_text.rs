@@ -666,11 +666,15 @@ pub fn line_ending_before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::HtmlTextLineEndingAfterPrefix),
-        State::Next(StateName::HtmlTextLineEndingAfterPrefix),
-    );
-    State::Retry(space_or_tab(tokenizer))
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.attempt(
+            State::Next(StateName::HtmlTextLineEndingAfterPrefix),
+            State::Nok,
+        );
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        State::Retry(StateName::HtmlTextLineEndingAfterPrefix)
+    }
 }
 
 /// After eol, after optional whitespace.

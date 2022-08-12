@@ -63,16 +63,21 @@ use crate::tokenizer::Tokenizer;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.thematic_break {
         tokenizer.enter(Name::ThematicBreak);
-        tokenizer.attempt(State::Next(StateName::ThematicBreakBefore), State::Nok);
-        State::Retry(space_or_tab_min_max(
-            tokenizer,
-            0,
-            if tokenizer.parse_state.constructs.code_indented {
-                TAB_SIZE - 1
-            } else {
-                usize::MAX
-            },
-        ))
+
+        if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+            tokenizer.attempt(State::Next(StateName::ThematicBreakBefore), State::Nok);
+            State::Retry(space_or_tab_min_max(
+                tokenizer,
+                0,
+                if tokenizer.parse_state.constructs.code_indented {
+                    TAB_SIZE - 1
+                } else {
+                    usize::MAX
+                },
+            ))
+        } else {
+            State::Retry(StateName::ThematicBreakBefore)
+        }
     } else {
         State::Nok
     }
@@ -127,21 +132,16 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn sequence(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'*' | b'-' | b'_')
-            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
-        {
-            tokenizer.consume();
-            tokenizer.tokenize_state.size += 1;
-            State::Next(StateName::ThematicBreakSequence)
-        }
-        _ => {
-            tokenizer.exit(Name::ThematicBreakSequence);
-            tokenizer.attempt(
-                State::Next(StateName::ThematicBreakAtBreak),
-                State::Next(StateName::ThematicBreakAtBreak),
-            );
-            State::Retry(space_or_tab(tokenizer))
-        }
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.consume();
+        tokenizer.tokenize_state.size += 1;
+        State::Next(StateName::ThematicBreakSequence)
+    } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.exit(Name::ThematicBreakSequence);
+        tokenizer.attempt(State::Next(StateName::ThematicBreakAtBreak), State::Nok);
+        State::Retry(space_or_tab(tokenizer))
+    } else {
+        tokenizer.exit(Name::ThematicBreakSequence);
+        State::Retry(StateName::ThematicBreakAtBreak)
     }
 }

@@ -66,22 +66,17 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 pub fn begin(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'"' | b'\'' | b')')
-            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
-        {
-            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
-            tokenizer.consume();
-            tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
-            tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
-            tokenizer.tokenize_state.marker = 0;
-            tokenizer.tokenize_state.connect = false;
-            State::Ok
-        }
-        _ => {
-            tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            State::Retry(StateName::TitleAtBreak)
-        }
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
+        tokenizer.consume();
+        tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+        tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.tokenize_state.connect = false;
+        State::Ok
+    } else {
+        tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
+        State::Retry(StateName::TitleAtBreak)
     }
 }
 
@@ -92,13 +87,11 @@ pub fn begin(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None => {
-            tokenizer.tokenize_state.marker = 0;
-            tokenizer.tokenize_state.connect = false;
-            State::Nok
-        }
-        Some(b'\n') => {
+    if let Some(byte) = tokenizer.current {
+        if byte == tokenizer.tokenize_state.marker {
+            tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
+            State::Retry(StateName::TitleBegin)
+        } else if byte == b'\n' {
             tokenizer.attempt(
                 State::Next(StateName::TitleAfterEol),
                 State::Next(StateName::TitleAtBlankLine),
@@ -110,14 +103,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                     connect: tokenizer.tokenize_state.connect,
                 },
             ))
-        }
-        Some(b'"' | b'\'' | b')')
-            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
-        {
-            tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
-            State::Retry(StateName::TitleBegin)
-        }
-        Some(_) => {
+        } else {
             tokenizer.enter_link(
                 Name::Data,
                 Link {
@@ -136,6 +122,10 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 
             State::Retry(StateName::TitleInside)
         }
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.tokenize_state.connect = false;
+        State::Nok
     }
 }
 
@@ -172,25 +162,19 @@ pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None | Some(b'\n') => {
-            tokenizer.exit(Name::Data);
-            State::Retry(StateName::TitleAtBreak)
-        }
-        Some(b'"' | b'\'' | b')')
-            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
-        {
-            tokenizer.exit(Name::Data);
-            State::Retry(StateName::TitleAtBreak)
-        }
-        Some(byte) => {
-            tokenizer.consume();
-            State::Next(if matches!(byte, b'\\') {
-                StateName::TitleEscape
-            } else {
-                StateName::TitleInside
-            })
-        }
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker)
+        || matches!(tokenizer.current, None | Some(b'\n'))
+    {
+        tokenizer.exit(Name::Data);
+        State::Retry(StateName::TitleAtBreak)
+    } else {
+        let name = if tokenizer.current == Some(b'\\') {
+            StateName::TitleEscape
+        } else {
+            StateName::TitleInside
+        };
+        tokenizer.consume();
+        State::Next(name)
     }
 }
 
