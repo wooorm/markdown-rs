@@ -46,7 +46,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         tokenizer.consume();
         tokenizer.exit(Name::LabelMarker);
         tokenizer.exit(Name::LabelLink);
-        tokenizer.tokenize_state.label_start_stack.push(LabelStart {
+        tokenizer.tokenize_state.label_starts.push(LabelStart {
             start: (start, tokenizer.events.len() - 1),
             inactive: false,
         });

@@ -64,12 +64,12 @@ pub struct LabelStart {
     pub inactive: bool,
 }
 
-/// Media we found.
+/// Valid label.
 #[derive(Debug)]
-pub struct Media {
-    /// Indices of where the media’s label start starts and ends in `events`.
+pub struct Label {
+    /// Indices of label start.
     pub start: (usize, usize),
-    /// Indices of where the media’s label end starts and ends in `events`.
+    /// Indices of label end.
     pub end: (usize, usize),
 }
 
@@ -152,18 +152,18 @@ pub struct TokenizeState<'a> {
     pub space_or_tab_token: Name,
 
     // Couple of media related fields.
-    /// Stack of label (start) that could form images and links.
+    /// List of usable label starts.
     ///
     /// Used when tokenizing [text content][crate::content::text].
-    pub label_start_stack: Vec<LabelStart>,
-    /// Stack of label (start) that cannot form images and links.
+    pub label_starts: Vec<LabelStart>,
+    /// List of unusable label starts.
     ///
     /// Used when tokenizing [text content][crate::content::text].
-    pub label_start_list_loose: Vec<LabelStart>,
+    pub label_starts_loose: Vec<LabelStart>,
     /// Stack of images and links.
     ///
     /// Used when tokenizing [text content][crate::content::text].
-    pub media_list: Vec<Media>,
+    pub labels: Vec<Label>,
 
     /// List of defined identifiers.
     pub definitions: Vec<String>,
@@ -279,12 +279,12 @@ impl<'a> Tokenizer<'a> {
                 document_child: None,
                 definitions: vec![],
                 end: 0,
-                label_start_stack: vec![],
-                label_start_list_loose: vec![],
+                label_starts: vec![],
+                label_starts_loose: vec![],
                 marker: 0,
                 marker_b: 0,
                 markers: &[],
-                media_list: vec![],
+                labels: vec![],
                 seen: false,
                 size: 0,
                 size_b: 0,
