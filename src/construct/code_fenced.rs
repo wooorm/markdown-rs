@@ -103,7 +103,7 @@
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
-use crate::event::{Content, Name};
+use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::slice::{Position, Slice};
@@ -223,7 +223,14 @@ pub fn info_before(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             tokenizer.enter(Name::CodeFencedFenceInfo);
-            tokenizer.enter_with_content(Name::Data, Some(Content::String));
+            tokenizer.enter_link(
+                Name::Data,
+                Link {
+                    previous: None,
+                    next: None,
+                    content: Content::String,
+                },
+            );
             State::Retry(StateName::CodeFencedInfo)
         }
     }
@@ -281,7 +288,14 @@ pub fn meta_before(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') => State::Retry(StateName::CodeFencedInfoBefore),
         _ => {
             tokenizer.enter(Name::CodeFencedFenceMeta);
-            tokenizer.enter_with_content(Name::Data, Some(Content::String));
+            tokenizer.enter_link(
+                Name::Data,
+                Link {
+                    previous: None,
+                    next: None,
+                    content: Content::String,
+                },
+            );
             State::Retry(StateName::CodeFencedMeta)
         }
     }

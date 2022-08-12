@@ -7,7 +7,7 @@
 use crate::construct::partial_space_or_tab::{
     space_or_tab_with_options, Options as SpaceOrTabOptions,
 };
-use crate::event::{Content, Name};
+use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
@@ -18,7 +18,7 @@ pub struct Options {
     /// Connect this whitespace to the previous.
     pub connect: bool,
     /// Embedded content type to use.
-    pub content_type: Option<Content>,
+    pub content: Option<Content>,
 }
 
 /// `space_or_tab`, or optionally `space_or_tab`, one `eol`, and
@@ -31,7 +31,7 @@ pub fn space_or_tab_eol(tokenizer: &mut Tokenizer) -> StateName {
     space_or_tab_eol_with_options(
         tokenizer,
         Options {
-            content_type: None,
+            content: None,
             connect: false,
         },
     )
@@ -39,7 +39,7 @@ pub fn space_or_tab_eol(tokenizer: &mut Tokenizer) -> StateName {
 
 /// `space_or_tab_eol`, with the given options.
 pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: Options) -> StateName {
-    tokenizer.tokenize_state.space_or_tab_eol_content_type = options.content_type;
+    tokenizer.tokenize_state.space_or_tab_eol_content = options.content;
     tokenizer.tokenize_state.space_or_tab_eol_connect = options.connect;
     StateName::SpaceOrTabEolStart
 }
@@ -65,10 +65,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             kind: Name::SpaceOrTab,
             min: 1,
             max: usize::MAX,
-            content_type: tokenizer
-                .tokenize_state
-                .space_or_tab_eol_content_type
-                .clone(),
+            content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
             connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
         },
     ))
@@ -86,11 +83,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn after_first(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.space_or_tab_eol_ok = true;
 
-    if tokenizer
-        .tokenize_state
-        .space_or_tab_eol_content_type
-        .is_some()
-    {
+    if tokenizer.tokenize_state.space_or_tab_eol_content.is_some() {
         tokenizer.tokenize_state.space_or_tab_eol_connect = true;
     }
 
@@ -111,22 +104,23 @@ pub fn after_first(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn at_eol(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'\n') = tokenizer.current {
-        tokenizer.enter_with_content(
-            Name::LineEnding,
-            tokenizer
-                .tokenize_state
-                .space_or_tab_eol_content_type
-                .clone(),
-        );
+        if let Some(ref content) = tokenizer.tokenize_state.space_or_tab_eol_content {
+            tokenizer.enter_link(
+                Name::LineEnding,
+                Link {
+                    previous: None,
+                    next: None,
+                    content: content.clone(),
+                },
+            );
+        } else {
+            tokenizer.enter(Name::LineEnding);
+        }
 
         if tokenizer.tokenize_state.space_or_tab_eol_connect {
             let index = tokenizer.events.len() - 1;
             link(&mut tokenizer.events, index);
-        } else if tokenizer
-            .tokenize_state
-            .space_or_tab_eol_content_type
-            .is_some()
-        {
+        } else if tokenizer.tokenize_state.space_or_tab_eol_content.is_some() {
             tokenizer.tokenize_state.space_or_tab_eol_connect = true;
         }
 
@@ -135,7 +129,7 @@ pub fn at_eol(tokenizer: &mut Tokenizer) -> State {
         State::Next(StateName::SpaceOrTabEolAfterEol)
     } else {
         let ok = tokenizer.tokenize_state.space_or_tab_eol_ok;
-        tokenizer.tokenize_state.space_or_tab_eol_content_type = None;
+        tokenizer.tokenize_state.space_or_tab_eol_content = None;
         tokenizer.tokenize_state.space_or_tab_eol_connect = false;
         tokenizer.tokenize_state.space_or_tab_eol_ok = false;
         if ok {
@@ -167,10 +161,7 @@ pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
             kind: Name::SpaceOrTab,
             min: 1,
             max: usize::MAX,
-            content_type: tokenizer
-                .tokenize_state
-                .space_or_tab_eol_content_type
-                .clone(),
+            content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
             connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
         },
     ))
@@ -187,7 +178,7 @@ pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn after_more(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.space_or_tab_eol_content_type = None;
+    tokenizer.tokenize_state.space_or_tab_eol_content = None;
     tokenizer.tokenize_state.space_or_tab_eol_connect = false;
     tokenizer.tokenize_state.space_or_tab_eol_ok = false;
 

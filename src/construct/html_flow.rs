@@ -145,7 +145,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                     usize::MAX
                 },
                 connect: false,
-                content_type: None,
+                content: None,
             },
         ))
     } else {

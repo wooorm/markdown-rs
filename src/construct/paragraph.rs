@@ -32,7 +32,7 @@
 //! [code_text]: crate::construct::code_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
-use crate::event::{Content, Kind, Name};
+use crate::event::{Content, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
@@ -49,7 +49,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') => unreachable!("unexpected eol/eof"),
         _ => {
             tokenizer.enter(Name::Paragraph);
-            tokenizer.enter_with_content(Name::Data, Some(Content::Text));
+            tokenizer.enter_link(
+                Name::Data,
+                Link {
+                    previous: None,
+                    next: None,
+                    content: Content::Text,
+                },
+            );
             State::Retry(StateName::ParagraphInside)
         }
     }

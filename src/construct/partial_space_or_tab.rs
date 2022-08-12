@@ -4,7 +4,7 @@
 //!
 //! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
 
-use crate::event::{Content, Name};
+use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
@@ -21,7 +21,7 @@ pub struct Options {
     /// Connect this whitespace to the previous.
     pub connect: bool,
     /// Embedded content type to use.
-    pub content_type: Option<Content>,
+    pub content: Option<Content>,
 }
 
 /// One or more `space_or_tab`.
@@ -45,7 +45,7 @@ pub fn space_or_tab_min_max(tokenizer: &mut Tokenizer, min: usize, max: usize) -
             kind: Name::SpaceOrTab,
             min,
             max,
-            content_type: None,
+            content: None,
             connect: false,
         },
     )
@@ -54,7 +54,7 @@ pub fn space_or_tab_min_max(tokenizer: &mut Tokenizer, min: usize, max: usize) -
 /// `space_or_tab`, with the given options.
 pub fn space_or_tab_with_options(tokenizer: &mut Tokenizer, options: Options) -> StateName {
     tokenizer.tokenize_state.space_or_tab_connect = options.connect;
-    tokenizer.tokenize_state.space_or_tab_content_type = options.content_type;
+    tokenizer.tokenize_state.space_or_tab_content = options.content;
     tokenizer.tokenize_state.space_or_tab_min = options.min;
     tokenizer.tokenize_state.space_or_tab_max = options.max;
     tokenizer.tokenize_state.space_or_tab_token = options.kind;
@@ -71,15 +71,23 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.tokenize_state.space_or_tab_max > 0
         && matches!(tokenizer.current, Some(b'\t' | b' '))
     {
-        tokenizer.enter_with_content(
-            tokenizer.tokenize_state.space_or_tab_token.clone(),
-            tokenizer.tokenize_state.space_or_tab_content_type.clone(),
-        );
+        if let Some(ref content) = tokenizer.tokenize_state.space_or_tab_content {
+            tokenizer.enter_link(
+                tokenizer.tokenize_state.space_or_tab_token.clone(),
+                Link {
+                    previous: None,
+                    next: None,
+                    content: content.clone(),
+                },
+            );
+        } else {
+            tokenizer.enter(tokenizer.tokenize_state.space_or_tab_token.clone());
+        }
 
         if tokenizer.tokenize_state.space_or_tab_connect {
             let index = tokenizer.events.len() - 1;
             link(&mut tokenizer.events, index);
-        } else if tokenizer.tokenize_state.space_or_tab_content_type.is_some() {
+        } else if tokenizer.tokenize_state.space_or_tab_content.is_some() {
             tokenizer.tokenize_state.space_or_tab_connect = true;
         }
 
@@ -127,7 +135,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         State::Nok
     };
     tokenizer.tokenize_state.space_or_tab_connect = false;
-    tokenizer.tokenize_state.space_or_tab_content_type = None;
+    tokenizer.tokenize_state.space_or_tab_content = None;
     tokenizer.tokenize_state.space_or_tab_size = 0;
     tokenizer.tokenize_state.space_or_tab_max = 0;
     tokenizer.tokenize_state.space_or_tab_min = 0;

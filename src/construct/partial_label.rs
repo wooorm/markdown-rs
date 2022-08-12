@@ -60,7 +60,7 @@
 
 use crate::constant::LINK_REFERENCE_SIZE_MAX;
 use crate::construct::partial_space_or_tab_eol::{space_or_tab_eol_with_options, Options};
-use crate::event::{Content, Name};
+use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
@@ -110,7 +110,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 State::Retry(space_or_tab_eol_with_options(
                     tokenizer,
                     Options {
-                        content_type: Some(Content::String),
+                        content: Some(Content::String),
                         connect: tokenizer.tokenize_state.connect,
                     },
                 ))
@@ -127,7 +127,14 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
                 State::Ok
             }
             _ => {
-                tokenizer.enter_with_content(Name::Data, Some(Content::String));
+                tokenizer.enter_link(
+                    Name::Data,
+                    Link {
+                        previous: None,
+                        next: None,
+                        content: Content::String,
+                    },
+                );
 
                 if tokenizer.tokenize_state.connect {
                     let index = tokenizer.events.len() - 1;

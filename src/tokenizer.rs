@@ -141,11 +141,11 @@ pub struct TokenizeState<'a> {
     pub document_paragraph_before: bool,
 
     // Couple of very frequent settings for parsing whitespace.
-    pub space_or_tab_eol_content_type: Option<Content>,
+    pub space_or_tab_eol_content: Option<Content>,
     pub space_or_tab_eol_connect: bool,
     pub space_or_tab_eol_ok: bool,
     pub space_or_tab_connect: bool,
-    pub space_or_tab_content_type: Option<Content>,
+    pub space_or_tab_content: Option<Content>,
     pub space_or_tab_min: usize,
     pub space_or_tab_max: usize,
     pub space_or_tab_size: usize,
@@ -289,11 +289,11 @@ impl<'a> Tokenizer<'a> {
                 size: 0,
                 size_b: 0,
                 size_c: 0,
-                space_or_tab_eol_content_type: None,
+                space_or_tab_eol_content: None,
                 space_or_tab_eol_connect: false,
                 space_or_tab_eol_ok: false,
                 space_or_tab_connect: false,
-                space_or_tab_content_type: None,
+                space_or_tab_content: None,
                 space_or_tab_min: 0,
                 space_or_tab_max: 0,
                 space_or_tab_size: 0,
@@ -423,34 +423,12 @@ impl<'a> Tokenizer<'a> {
 
     /// Mark the start of a semantic label.
     pub fn enter(&mut self, name: Name) {
-        self.enter_with_link(name, None);
-    }
-
-    /// Enter with a content type.
-    pub fn enter_with_content(&mut self, name: Name, content_type_opt: Option<Content>) {
-        self.enter_with_link(
-            name,
-            content_type_opt.map(|content_type| Link {
-                content_type,
-                previous: None,
-                next: None,
-            }),
-        );
+        enter_impl(self, name, None);
     }
 
     /// Enter with a link.
-    pub fn enter_with_link(&mut self, name: Name, link: Option<Link>) {
-        let mut point = self.point.clone();
-        move_point_back(self, &mut point);
-
-        log::debug!("enter:   `{:?}`", name);
-        self.events.push(Event {
-            kind: Kind::Enter,
-            name: name.clone(),
-            point,
-            link,
-        });
-        self.stack.push(name);
+    pub fn enter_link(&mut self, name: Name, link: Link) {
+        enter_impl(self, name, Some(link));
     }
 
     /// Mark the end of a semantic label.
@@ -595,6 +573,21 @@ fn move_point_back(tokenizer: &mut Tokenizer, point: &mut Point) {
             break;
         }
     }
+}
+
+/// Enter.
+fn enter_impl(tokenizer: &mut Tokenizer, name: Name, link: Option<Link>) {
+    let mut point = tokenizer.point.clone();
+    move_point_back(tokenizer, &mut point);
+
+    log::debug!("enter:   `{:?}`", name);
+    tokenizer.stack.push(name.clone());
+    tokenizer.events.push(Event {
+        kind: Kind::Enter,
+        name,
+        point,
+        link,
+    });
 }
 
 /// Run the tokenizer.

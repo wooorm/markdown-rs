@@ -281,13 +281,13 @@ pub fn containers_after(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.events[previous].link.as_mut().unwrap().next = Some(current);
             }
             tokenizer.tokenize_state.document_data_index = Some(current);
-            tokenizer.enter_with_link(
+            tokenizer.enter_link(
                 Name::Data,
-                Some(Link {
+                Link {
                     previous,
                     next: None,
-                    content_type: Content::Flow,
-                }),
+                    content: Content::Flow,
+                },
             );
             State::Retry(StateName::DocumentFlowInside)
         }

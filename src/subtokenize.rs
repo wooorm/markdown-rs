@@ -9,7 +9,7 @@
 //! *   …must occur on [`Enter`][Kind::Enter] events only
 //! *   …must occur on void events (they are followed by their corresponding
 //!     [`Exit`][Kind::Exit] event)
-//! *   …must have `content_type` field to define the kind of subcontent
+//! *   …must have `link` field
 //!
 //! Links will then be passed through a tokenizer for the corresponding content
 //! type by `subtokenize`.
@@ -53,8 +53,8 @@ pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
     link_next.previous = Some(pevious);
 
     debug_assert_eq!(
-        events[pevious].link.as_ref().unwrap().content_type,
-        events[next].link.as_ref().unwrap().content_type
+        events[pevious].link.as_ref().unwrap().content,
+        events[next].link.as_ref().unwrap().content
     );
 }
 
@@ -80,7 +80,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
-                let mut state = State::Next(if link.content_type == Content::String {
+                let mut state = State::Next(if link.content == Content::String {
                     StateName::StringStart
                 } else {
                     StateName::TextStart

@@ -56,7 +56,7 @@
 
 use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
-use crate::event::{Content, Event, Kind, Name};
+use crate::event::{Content, Event, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
@@ -157,7 +157,14 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             State::Retry(StateName::HeadingAtxSequenceFurther)
         }
         Some(_) => {
-            tokenizer.enter_with_content(Name::Data, Some(Content::Text));
+            tokenizer.enter_link(
+                Name::Data,
+                Link {
+                    previous: None,
+                    next: None,
+                    content: Content::Text,
+                },
+            );
             State::Retry(StateName::HeadingAtxData)
         }
     }

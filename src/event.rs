@@ -1892,7 +1892,7 @@ pub enum Content {
 pub struct Link {
     pub previous: Option<usize>,
     pub next: Option<usize>,
-    pub content_type: Content,
+    pub content: Content,
 }
 
 /// Place in the document.
