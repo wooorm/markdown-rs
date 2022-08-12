@@ -2,7 +2,7 @@ use crate::construct;
 use crate::content;
 use crate::tokenizer::Tokenizer;
 
-/// Names of functions to move to.
+/// Names of functions that resolve.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Name {
     Label,
@@ -16,7 +16,7 @@ pub enum Name {
     Text,
 }
 
-/// Call the corresponding function for a state name.
+/// Call the corresponding resolver.
 pub fn call(tokenizer: &mut Tokenizer, name: Name) {
     let func = match name {
         Name::Label => construct::label_end::resolve,

@@ -95,7 +95,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside code content.
+/// In code content.
 ///
 /// ```markdown
 /// > |     aaa
@@ -127,7 +127,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     State::Ok
 }
 
-/// Right at a line ending, trying to parse another indent.
+/// At eol, trying to parse another indent.
 ///
 /// ```markdown
 /// > |     aaa
@@ -153,7 +153,7 @@ pub fn further_start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At an eol, which is followed by an indented line.
+/// At eol, followed by an indented line.
 ///
 /// ```markdown
 /// >  |     aaa

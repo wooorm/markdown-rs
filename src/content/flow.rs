@@ -23,15 +23,15 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Before flow.
-///
-/// First we assume a blank line.
+/// Start of flow.
 //
 /// ```markdown
-/// |
-/// |## alpha
-/// |    bravo
-/// |***
+/// > | ## alpha
+///     ^
+/// > |     bravo
+///     ^
+/// > | ***
+///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
@@ -81,6 +81,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         // Actual parsing: blank line? Indented code? Indented anything?
         // Also includes `-` which can be a setext heading underline or a thematic break.
         None | Some(b'\t' | b'\n' | b' ' | b'-') => State::Retry(StateName::FlowBlankLineBefore),
+        // Must be a paragraph.
         Some(_) => {
             tokenizer.attempt(State::Next(StateName::FlowAfter), State::Nok);
             State::Retry(StateName::ParagraphStart)
@@ -88,6 +89,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
+/// At blank line.
+///
+/// ```markdown
+/// > | ␠␠␊
+///     ^
+/// ```
 pub fn blank_line_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowBlankLineAfter),
@@ -96,17 +103,11 @@ pub fn blank_line_before(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::BlankLineStart)
 }
 
-/// Before flow (initial).
-///
-/// “Initial” flow means unprefixed flow, so right at the start of a line.
-/// Interestingly, the only flow (initial) construct is indented code.
-/// Move to `before` afterwards.
+/// At code (indented).
 ///
 /// ```markdown
-/// |qwe
-/// |    asd
-/// |~~~js
-/// |<div>
+/// > | ␠␠␠␠a
+///     ^
 /// ```
 pub fn before_code_indented(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
@@ -116,6 +117,12 @@ pub fn before_code_indented(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::CodeIndentedStart)
 }
 
+/// At code (fenced).
+///
+/// ````markdown
+/// > | ```
+///     ^
+/// ````
 pub fn before_code_fenced(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
@@ -124,6 +131,12 @@ pub fn before_code_fenced(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::CodeFencedStart)
 }
 
+/// At html (flow).
+///
+/// ```markdown
+/// > | <a>
+///     ^
+/// ```
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
@@ -132,6 +145,12 @@ pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::HtmlFlowStart)
 }
 
+/// At heading (atx).
+///
+/// ```markdown
+/// > | # a
+///     ^
+/// ```
 pub fn before_heading_atx(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
@@ -140,6 +159,13 @@ pub fn before_heading_atx(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::HeadingAtxStart)
 }
 
+/// At heading (setext).
+///
+/// ```markdown
+///   | a
+/// > | =
+///     ^
+/// ```
 pub fn before_heading_setext(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
@@ -148,6 +174,12 @@ pub fn before_heading_setext(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::HeadingSetextStart)
 }
 
+/// At thematic break.
+///
+/// ```markdown
+/// > | ***
+///     ^
+/// ```
 pub fn before_thematic_break(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
@@ -156,6 +188,12 @@ pub fn before_thematic_break(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::ThematicBreakStart)
 }
 
+/// At definition.
+///
+/// ```markdown
+/// > | [a]: b
+///     ^
+/// ```
 pub fn before_definition(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
@@ -164,12 +202,22 @@ pub fn before_definition(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::DefinitionStart)
 }
 
-/// After a blank line.
-///
-/// Move to `start` afterwards.
+/// At paragraph.
 ///
 /// ```markdown
-/// ␠␠|
+/// > | a
+///     ^
+/// ```
+pub fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(State::Next(StateName::FlowAfter), State::Nok);
+    State::Retry(StateName::ParagraphStart)
+}
+
+/// After blank line.
+///
+/// ```markdown
+/// > | ␠␠␊
+///       ^
 /// ```
 pub fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
@@ -186,14 +234,11 @@ pub fn blank_line_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After something.
+/// After flow.
 ///
 /// ```markdown
-/// ## alpha|
-/// |
-/// ~~~js
-/// asd
-/// ~~~|
+/// > | # a␊
+///        ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
@@ -206,14 +251,4 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         }
         _ => unreachable!("expected eol/eof"),
     }
-}
-
-/// Before a paragraph.
-///
-/// ```markdown
-/// |asd
-/// ```
-pub fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(State::Next(StateName::FlowAfter), State::Nok);
-    State::Retry(StateName::ParagraphStart)
 }

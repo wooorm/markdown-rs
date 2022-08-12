@@ -70,7 +70,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::slice::Slice;
 
-/// Start of a character reference.
+/// Start of character reference.
 ///
 /// ```markdown
 /// > | a&amp;b
@@ -93,8 +93,8 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside a character reference, after `&`, before `#` for numeric references
-/// or an alphanumeric for named references.
+/// After `&`, at `#` for numeric references or alphanumeric for named
+/// references.
 ///
 /// ```markdown
 /// > | a&amp;b
@@ -117,8 +117,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside a numeric character reference, right before `x` for hexadecimals,
-/// or a digit for decimals.
+/// After `#`, at `x` for hexadecimals or digit for decimals.
 ///
 /// ```markdown
 /// > | a&#123;b
@@ -141,8 +140,7 @@ pub fn numeric(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside a character reference value, after the markers (`&#x`, `&#`, or
-/// `&`) that define its kind, but before the `;`.
+/// After markers (`&#x`, `&#`, or `&`), in value, before `;`.
 ///
 /// The character reference kind defines what and how many characters are
 /// allowed.

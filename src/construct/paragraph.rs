@@ -38,7 +38,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt as skip_opt;
 
-/// Before a paragraph.
+/// Before paragraph.
 ///
 /// ```markdown
 /// > | abc
@@ -55,7 +55,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a paragraph.
+/// In paragraph.
 ///
 /// ```markdown
 /// > | abc

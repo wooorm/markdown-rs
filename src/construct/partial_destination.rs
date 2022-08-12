@@ -75,7 +75,7 @@ use crate::event::{Content, Name};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Before a destination.
+/// Start of destination.
 ///
 /// ```markdown
 /// > | <aa>
@@ -105,7 +105,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<`, before an enclosed destination.
+/// After `<`, at an enclosed destination.
 ///
 /// ```markdown
 /// > | <aa>
@@ -126,7 +126,7 @@ pub fn enclosed_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an enclosed destination.
+/// In enclosed destination.
 ///
 /// ```markdown
 /// > | <aa>
@@ -151,7 +151,7 @@ pub fn enclosed(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `\`, in an enclosed destination.
+/// After `\`, at a special character.
 ///
 /// ```markdown
 /// > | <a\*a>
@@ -167,7 +167,7 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a raw destination.
+/// In raw destination.
 ///
 /// ```markdown
 /// > | aa
@@ -209,7 +209,7 @@ pub fn raw(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `\`, in a raw destination.
+/// After `\`, at special character.
 ///
 /// ```markdown
 /// > | a\*a

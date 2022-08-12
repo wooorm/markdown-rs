@@ -14,7 +14,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Start of continuation.
+/// At eol, before continuation.
 ///
 /// ```markdown
 /// > | * ```js
@@ -33,7 +33,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After line ending.
+/// A continuation.
 ///
 /// ```markdown
 ///   | * ```js

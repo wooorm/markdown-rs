@@ -76,7 +76,7 @@ pub struct Media {
 /// Different kinds of attempts.
 #[derive(Debug, PartialEq)]
 enum AttemptKind {
-    /// Discard what was tokenizer when unsuccessful.
+    /// Discard what was tokenized when unsuccessful.
     Attempt,
     /// Discard always.
     Check,
@@ -356,7 +356,7 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// Prepare for a next code to get consumed.
+    /// Prepare for a next byte to get consumed.
     fn expect(&mut self, byte: Option<u8>) {
         debug_assert!(self.consumed, "expected previous byte to be consumed");
         self.consumed = false;
@@ -368,11 +368,10 @@ impl<'a> Tokenizer<'a> {
     /// used, or call a next function.
     pub fn consume(&mut self) {
         debug_assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
-
         self.move_one();
 
         self.previous = self.current;
-        // While we’re not at the eof, it is at least better to not have the
+        // While we’re not at eof, it is at least better to not have the
         // same current code as `previous` *and* `current`.
         self.current = None;
         // Mark as consumed.
@@ -427,6 +426,7 @@ impl<'a> Tokenizer<'a> {
         self.enter_with_link(name, None);
     }
 
+    /// Enter with a content type.
     pub fn enter_with_content(&mut self, name: Name, content_type_opt: Option<Content>) {
         self.enter_with_link(
             name,
@@ -438,6 +438,7 @@ impl<'a> Tokenizer<'a> {
         );
     }
 
+    /// Enter with a link.
     pub fn enter_with_link(&mut self, name: Name, link: Option<Link>) {
         let mut point = self.point.clone();
         move_point_back(self, &mut point);
@@ -663,7 +664,7 @@ fn push_impl(
                 };
             }
             State::Retry(name) => {
-                log::debug!("retry:   {:?}", name);
+                log::debug!("retry:   `{:?}`", name);
                 state = call(tokenizer, name);
             }
         }

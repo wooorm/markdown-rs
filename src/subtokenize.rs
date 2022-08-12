@@ -27,7 +27,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::edit_map::EditMap;
 
-/// Create a link between two [`Event`][]s.
+/// Link two [`Event`][]s.
 ///
 /// Arbitrary (void) events can be linked together.
 /// This optimizes for the common case where the token at `index` is connected
@@ -60,7 +60,7 @@ pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
 
 /// Parse linked events.
 ///
-/// Supposed to be called repeatedly, returns `1: true` when done.
+/// Supposed to be called repeatedly, returns `true` when done.
 pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
     let mut map = EditMap::new();
     let mut done = true;
@@ -123,36 +123,35 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
     done
 }
 
-/// Parse linked events.
-///
-/// Supposed to be called repeatedly, returns `1: true` when done.
+/// Divide `child_events` over links in `events`, the first of which is at
+/// `link_index`.
 pub fn divide_events(
     map: &mut EditMap,
     events: &[Event],
     mut link_index: usize,
     child_events: &mut Vec<Event>,
 ) {
-    // Now, loop through all subevents to figure out which parts
-    // belong where and fix deep links.
-    let mut subindex = 0;
+    // Loop through `child_events` to figure out which parts belong where and
+    // fix deep links.
+    let mut child_index = 0;
     let mut slices = vec![];
     let mut slice_start = 0;
     let mut old_prev: Option<usize> = None;
 
-    while subindex < child_events.len() {
-        let current = &child_events[subindex].point;
+    while child_index < child_events.len() {
+        let current = &child_events[child_index].point;
         let end = &events[link_index + 1].point;
 
         // Find the first event that starts after the end we’re looking
         // for.
         if current.index > end.index || (current.index == end.index && current.vs > end.vs) {
             slices.push((link_index, slice_start));
-            slice_start = subindex;
+            slice_start = child_index;
             link_index = events[link_index].link.as_ref().unwrap().next.unwrap();
         }
 
         // Fix sublinks.
-        if let Some(sublink_curr) = &child_events[subindex].link {
+        if let Some(sublink_curr) = &child_events[child_index].link {
             if sublink_curr.previous.is_some() {
                 let old_prev = old_prev.unwrap();
                 let prev_event = &mut child_events[old_prev];
@@ -173,7 +172,7 @@ pub fn divide_events(
         // its `previous` index to account for the shifted events.
         // If it points to a next event, we also change the next event’s
         // reference back to *this* event.
-        if let Some(sublink_curr) = &child_events[subindex].link {
+        if let Some(sublink_curr) = &child_events[child_index].link {
             if let Some(next) = sublink_curr.next {
                 let sublink_next = child_events[next].link.as_mut().unwrap();
 
@@ -188,7 +187,7 @@ pub fn divide_events(
             }
         }
 
-        subindex += 1;
+        child_index += 1;
     }
 
     if !child_events.is_empty() {
@@ -200,10 +199,13 @@ pub fn divide_events(
 
     while index > 0 {
         index -= 1;
-        let start = slices[index].0;
         map.add(
-            start,
-            if start == events.len() { 0 } else { 2 },
+            slices[index].0,
+            if slices[index].0 == events.len() {
+                0
+            } else {
+                2
+            },
             child_events.split_off(slices[index].1),
         );
     }

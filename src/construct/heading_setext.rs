@@ -65,7 +65,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt_back as skip_opt_back;
 
-/// At a line ending, presumably an underline.
+/// At start of heading (setext) underline.
 ///
 /// ```markdown
 ///   | aa
@@ -100,7 +100,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After optional whitespace, presumably an underline.
+/// After optional whitespace, at `-` or `=`.
 ///
 /// ```markdown
 ///   | aa
@@ -118,7 +118,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an underline sequence.
+/// In sequence.
 ///
 /// ```markdown
 ///   | aa
@@ -143,7 +143,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an underline sequence, after optional whitespace.
+/// After sequence, after optional whitespace.
 ///
 /// ```markdown
 ///   | aa

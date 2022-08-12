@@ -11,7 +11,7 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// At the beginning of data.
+/// At beginning of data.
 ///
 /// ```markdown
 /// > | abc
@@ -79,11 +79,10 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 
 /// Merge adjacent data events.
 pub fn resolve(tokenizer: &mut Tokenizer) {
-    let len = tokenizer.events.len();
     let mut index = 0;
 
     // Loop through events and merge adjacent data events.
-    while index < len {
+    while index < tokenizer.events.len() {
         let event = &tokenizer.events[index];
 
         if event.kind == Kind::Enter && event.name == Name::Data {
@@ -91,7 +90,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
             let mut exit_far_index = exit_index;
 
             // Find multiple `data` events.
-            while exit_far_index + 1 < len
+            while exit_far_index + 1 < tokenizer.events.len()
                 && tokenizer.events[exit_far_index + 1].name == Name::Data
             {
                 exit_far_index += 2;

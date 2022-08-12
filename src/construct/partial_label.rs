@@ -65,7 +65,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
 
-/// Before a label.
+/// Start of label.
 ///
 /// ```markdown
 /// > | [a]
@@ -85,7 +85,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a label, at something.
+/// In label, at something, before something else.
 ///
 /// ```markdown
 /// > | [a]
@@ -142,7 +142,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a label, after whitespace.
+/// In label, after whitespace.
 ///
 /// ```markdown
 ///   | [a␊
@@ -154,7 +154,7 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::LabelAtBreak)
 }
 
-/// In a label, at a blank line.
+/// In label, at blank line.
 ///
 /// ```markdown
 ///   | [a␊
@@ -168,7 +168,7 @@ pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
     State::Nok
 }
 
-/// In a label, in text.
+/// In label, in text.
 ///
 /// ```markdown
 /// > | [a]
@@ -200,7 +200,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `\` in a label.
+/// After `\`, at a special character.
 ///
 /// ```markdown
 /// > | [a\*a]

@@ -291,6 +291,10 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
 
     let is_link = tokenizer.events[label_start.start.0].name == Name::LabelLink;
 
+    // If this is a link, we need to mark earlier link starts as no longer
+    // viable for use (as they would otherwise contain a link).
+    // These link starts are still looking for balanced closing brackets, so
+    // we can’t remove them.
     if is_link {
         let mut index = 0;
         while index < tokenizer.tokenize_state.label_start_stack.len() {
@@ -332,7 +336,7 @@ pub fn nok(tokenizer: &mut Tokenizer) -> State {
     State::Nok
 }
 
-/// Before a resource, at `(`.
+/// At a resource.
 ///
 /// ```markdown
 /// > | [a](b) c
@@ -351,7 +355,7 @@ pub fn resource_start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At the start of a resource, after `(`, before a destination.
+/// In resource, after `(`, at optional whitespace.
 ///
 /// ```markdown
 /// > | [a](b) c
@@ -365,7 +369,7 @@ pub fn resource_before(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab_eol(tokenizer))
 }
 
-/// At the start of a resource, after optional whitespace.
+/// In resource, after optional whitespace, at `)` or a destination.
 ///
 /// ```markdown
 /// > | [a](b) c
@@ -390,7 +394,7 @@ pub fn resource_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a resource, after a destination, before optional whitespace.
+/// In resource, after destination, at optional whitespace.
 ///
 /// ```markdown
 /// > | [a](b) c
@@ -410,7 +414,12 @@ pub fn resource_destination_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab_eol(tokenizer))
 }
 
-/// Without destination.
+/// At invalid destination.
+///
+/// ```markdown
+/// > | [a](<<) b
+///         ^
+/// ```
 pub fn resource_destination_missing(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_1 = Name::Data;
     tokenizer.tokenize_state.token_2 = Name::Data;
@@ -421,7 +430,7 @@ pub fn resource_destination_missing(tokenizer: &mut Tokenizer) -> State {
     State::Nok
 }
 
-/// In a resource, after a destination, after whitespace.
+/// In resource, after destination and whitespace, at `(` or title.
 ///
 /// ```markdown
 /// > | [a](b ) c
@@ -443,7 +452,7 @@ pub fn resource_between(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a resource, after a title.
+/// In resource, after title, at optional whitespace.
 ///
 /// ```markdown
 /// > | [a](b "c") d
@@ -460,7 +469,7 @@ pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab_eol(tokenizer))
 }
 
-/// In a resource, at the `)`.
+/// In resource, at `)`.
 ///
 /// ```markdown
 /// > | [a](b) d
@@ -479,7 +488,7 @@ pub fn resource_end(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a reference (full), at the `[`.
+/// In reference (full), at `[`.
 ///
 /// ```markdown
 /// > | [a][b] d
@@ -501,7 +510,7 @@ pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a reference (full), after `]`.
+/// In reference (full), after `]`.
 ///
 /// ```markdown
 /// > | [a][b] d
@@ -537,7 +546,7 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a reference (collapsed), at the `[`.
+/// In reference (collapsed), at `[`.
 ///
 /// > 👉 **Note**: we only get here if the label is defined.
 ///
@@ -558,7 +567,7 @@ pub fn reference_collapsed(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a reference (collapsed), at the `]`.
+/// In reference (collapsed), at `]`.
 ///
 /// > 👉 **Note**: we only get here if the label is defined.
 ///
@@ -581,8 +590,8 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
 
 /// Resolve media.
 ///
-/// This turns correct label start (image, link) and label end into links and
-/// images, or turns them back into data.
+/// This turns matching label start (image, link) and label ends into links and
+/// images, and turns unmatched label starts back into data.
 #[allow(clippy::too_many_lines)]
 pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut left = tokenizer.tokenize_state.label_start_list_loose.split_off(0);

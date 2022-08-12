@@ -52,7 +52,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `!`, before a `[`.
+/// After `!`, at `[`.
 ///
 /// ```markdown
 /// > | a ![b] c

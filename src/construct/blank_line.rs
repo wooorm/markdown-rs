@@ -36,7 +36,7 @@ use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Start of a blank line.
+/// Start of blank line.
 ///
 /// > 👉 **Note**: `␠` represents a space character.
 ///
@@ -55,7 +55,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab(tokenizer))
 }
 
-/// After zero or more spaces or tabs, before a line ending or EOF.
+/// At eof/eol, after optional whitespace.
 ///
 /// ```markdown
 /// > | ␠␠␊

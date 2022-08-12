@@ -79,7 +79,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Start of list item, after whitespace.
+/// After optional whitespace, at list item prefix.
 ///
 /// ```markdown
 /// > | * a
@@ -89,10 +89,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Unordered.
         Some(b'*' | b'-') => {
-            tokenizer.check(
-                State::Next(StateName::ListNok),
-                State::Next(StateName::ListBeforeUnordered),
-            );
+            tokenizer.check(State::Nok, State::Next(StateName::ListBeforeUnordered));
             State::Retry(StateName::ThematicBreakStart)
         }
         Some(b'+') => State::Retry(StateName::ListBeforeUnordered),
@@ -103,7 +100,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Start of an unordered list item.
+/// At unordered list item marker.
 ///
 /// The line is not a thematic break.
 ///
@@ -116,7 +113,7 @@ pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::ListMarker)
 }
 
-/// Start of an ordered list item.
+/// At ordered list item value.
 ///
 /// ```markdown
 /// > | * a
@@ -128,7 +125,7 @@ pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::ListValue)
 }
 
-/// In an ordered list item value.
+/// In ordered list item value.
 ///
 /// ```markdown
 /// > | 1. a
@@ -152,7 +149,7 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At a list item marker.
+/// At list item marker.
 ///
 /// ```markdown
 /// > | * a
@@ -167,7 +164,7 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
     State::Next(StateName::ListMarkerAfter)
 }
 
-/// After a list item marker.
+/// After list item marker.
 ///
 /// ```markdown
 /// > | * a
@@ -184,7 +181,9 @@ pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::BlankLineStart)
 }
 
-/// After a list item marker, not followed by a blank line.
+/// After list item marker.
+///
+/// The marker is not followed by a blank line.
 ///
 /// ```markdown
 /// > | * a
@@ -201,7 +200,7 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::ListWhitespace)
 }
 
-/// In whitespace after a marker.
+/// After marker, at whitespace.
 ///
 /// ```markdown
 /// > | * a
@@ -226,7 +225,7 @@ pub fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a list item marker, followed by no indent or more indent that needed.
+/// After marker, followed by no indent or more indent that needed.
 ///
 /// ```markdown
 /// > | * a
@@ -244,7 +243,7 @@ pub fn prefix_other(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a list item prefix.
+/// After list item prefix.
 ///
 /// ```markdown
 /// > | * a
@@ -318,7 +317,6 @@ pub fn cont_blank(tokenizer: &mut Tokenizer) -> State {
     if container.blank_initial {
         State::Nok
     } else {
-        tokenizer.attempt(State::Next(StateName::ListOk), State::Nok);
         // Consume, optionally, at most `size`.
         State::Retry(space_or_tab_min_max(tokenizer, 0, size))
     }
@@ -338,19 +336,8 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
 
     container.blank_initial = false;
 
-    tokenizer.attempt(State::Next(StateName::ListOk), State::Nok);
     // Consume exactly `size`.
     State::Retry(space_or_tab_min_max(tokenizer, size, size))
-}
-
-/// A state fn to yield [`State::Ok`].
-pub fn ok(_tokenizer: &mut Tokenizer) -> State {
-    State::Ok
-}
-
-/// A state fn to yield [`State::Nok`].
-pub fn nok(_tokenizer: &mut Tokenizer) -> State {
-    State::Nok
 }
 
 /// Find adjacent list items with the same marker.

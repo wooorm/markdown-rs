@@ -60,7 +60,7 @@ use crate::util::slice::Slice;
 
 /// Character code kinds.
 #[derive(Debug, PartialEq)]
-enum GroupKind {
+enum CharacterKind {
     /// Whitespace.
     ///
     /// ## Example
@@ -98,7 +98,7 @@ struct Sequence {
     /// The depth in events where this sequence resides.
     balance: usize,
     /// The index into events where this sequence’s `Enter` currently resides.
-    event_index: usize,
+    index: usize,
     /// The (shifted) point where this sequence starts.
     start_point: Point,
     /// The (shifted) point where this sequence end.
@@ -111,7 +111,7 @@ struct Sequence {
     close: bool,
 }
 
-/// Before a sequence.
+/// At start of attention.
 ///
 /// ```markdown
 /// > | **
@@ -128,7 +128,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a sequence.
+/// In sequence.
 ///
 /// ```markdown
 /// > | **
@@ -136,7 +136,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'*' | b'_') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
+        Some(b'*' | b'_') if tokenizer.current == Some(tokenizer.tokenize_state.marker) => {
             tokenizer.consume();
             State::Next(StateName::AttentionInside)
         }
@@ -150,28 +150,28 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve attention sequences.
-#[allow(clippy::too_many_lines)]
 pub fn resolve(tokenizer: &mut Tokenizer) {
-    let mut start = 0;
+    let mut index = 0;
     let mut balance = 0;
     let mut sequences = vec![];
 
-    // Find sequences of sequences and information about them.
-    while start < tokenizer.events.len() {
-        let enter = &tokenizer.events[start];
+    // Find all sequences, gather info about them.
+    while index < tokenizer.events.len() {
+        let enter = &tokenizer.events[index];
 
         if enter.kind == Kind::Enter {
             balance += 1;
 
             if enter.name == Name::AttentionSequence {
-                let end = start + 1;
+                let end = index + 1;
                 let exit = &tokenizer.events[end];
 
                 let before_end = enter.point.index;
                 let before_start = if before_end < 4 { 0 } else { before_end - 4 };
-                let string_before =
-                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[before_start..before_end]);
-                let char_before = string_before.chars().last();
+                let char_before =
+                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[before_start..before_end])
+                        .chars()
+                        .last();
 
                 let after_start = exit.point.index;
                 let after_end = if after_start + 4 > tokenizer.parse_state.bytes.len() {
@@ -179,26 +179,27 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 } else {
                     after_start + 4
                 };
-                let string_after =
-                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end]);
-                let char_after = string_after.chars().next();
+                let char_after =
+                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end])
+                        .chars()
+                        .next();
 
                 let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
                     .head()
                     .unwrap();
                 let before = classify_character(char_before);
                 let after = classify_character(char_after);
-                let open = after == GroupKind::Other
-                    || (after == GroupKind::Punctuation && before != GroupKind::Other);
+                let open = after == CharacterKind::Other
+                    || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
                 // To do: GFM strikethrough?
-                // || attentionMarkers.includes(code)
-                let close = before == GroupKind::Other
-                    || (before == GroupKind::Punctuation && after != GroupKind::Other);
+                // || char_after == '~'
+                let close = before == CharacterKind::Other
+                    || (before == CharacterKind::Punctuation && after != CharacterKind::Other);
                 // To do: GFM strikethrough?
-                // || attentionMarkers.includes(previous)
+                // || char_before == '~'
 
                 sequences.push(Sequence {
-                    event_index: start,
+                    index,
                     balance,
                     start_point: enter.point.clone(),
                     end_point: exit.point.clone(),
@@ -206,12 +207,12 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                     open: if marker == b'*' {
                         open
                     } else {
-                        open && (before != GroupKind::Other || !close)
+                        open && (before != CharacterKind::Other || !close)
                     },
                     close: if marker == b'*' {
                         close
                     } else {
-                        close && (after != GroupKind::Other || !open)
+                        close && (after != CharacterKind::Other || !open)
                     },
                     marker,
                 });
@@ -220,10 +221,10 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
             balance -= 1;
         }
 
-        start += 1;
+        index += 1;
     }
 
-    // Walk through sequences and match them.
+    // Now walk through them and match them.
     let mut close = 0;
 
     while close < sequences.len() {
@@ -240,7 +241,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 
                 let sequence_open = &sequences[open];
 
-                // We found a sequence that can open the closer we found.
+                // An opener matching our closer:
                 if sequence_open.open
                     && sequence_close.marker == sequence_open.marker
                     && sequence_close.balance == sequence_open.balance
@@ -257,175 +258,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                     }
 
                     // We’ve found a match!
-
-                    // Number of markers to use from the sequence.
-                    let take = if sequence_open.size > 1 && sequence_close.size > 1 {
-                        2
-                    } else {
-                        1
-                    };
-
-                    // We’re *on* a closing sequence, with a matching opening
-                    // sequence.
-                    // Now we make sure that we can’t have misnested attention:
-                    //
-                    // ```html
-                    // <em>a <strong>b</em> c</strong>
-                    // ```
-                    //
-                    // Do that by marking everything between it as no longer
-                    // possible to open anything.
-                    // Theoretically we could mark non-closing as well, but we
-                    // don’t look for closers backwards.
-                    let mut between = open + 1;
-
-                    while between < close {
-                        sequences[between].open = false;
-                        between += 1;
-                    }
-
-                    let sequence_close = &mut sequences[close];
-                    let close_event_index = sequence_close.event_index;
-                    let seq_close_enter = sequence_close.start_point.clone();
-                    // No need to worry about `VS`, because sequences are only actual characters.
-                    sequence_close.size -= take;
-                    sequence_close.start_point.column += take;
-                    sequence_close.start_point.index += take;
-                    let seq_close_exit = sequence_close.start_point.clone();
-
-                    // Stay on this closing sequence for the next iteration: it
-                    // might close more things.
-                    next_index -= 1;
-
-                    // Remove closing sequence if fully used.
-                    if sequence_close.size == 0 {
-                        sequences.remove(close);
-                        tokenizer.map.add(close_event_index, 2, vec![]);
-                    } else {
-                        // Shift remaining closing sequence forward.
-                        // Do it here because a sequence can open and close different
-                        // other sequences, and the remainder can be on any side or
-                        // somewhere in the middle.
-                        let mut enter = &mut tokenizer.events[close_event_index];
-                        enter.point = seq_close_exit.clone();
-                    }
-
-                    let sequence_open = &mut sequences[open];
-                    let open_event_index = sequence_open.event_index;
-                    let seq_open_exit = sequence_open.end_point.clone();
-                    // No need to worry about `VS`, because sequences are only actual characters.
-                    sequence_open.size -= take;
-                    sequence_open.end_point.column -= take;
-                    sequence_open.end_point.index -= take;
-                    let seq_open_enter = sequence_open.end_point.clone();
-
-                    // Remove opening sequence if fully used.
-                    if sequence_open.size == 0 {
-                        sequences.remove(open);
-                        tokenizer.map.add(open_event_index, 2, vec![]);
-                        next_index -= 1;
-                    } else {
-                        // Shift remaining opening sequence backwards.
-                        // See note above for why that happens here.
-                        let mut exit = &mut tokenizer.events[open_event_index + 1];
-                        exit.point = seq_open_enter.clone();
-                    }
-
-                    // Opening.
-                    tokenizer.map.add_before(
-                        // Add after the current sequence (it might remain).
-                        open_event_index + 2,
-                        0,
-                        vec![
-                            Event {
-                                kind: Kind::Enter,
-                                name: if take == 1 {
-                                    Name::Emphasis
-                                } else {
-                                    Name::Strong
-                                },
-                                point: seq_open_enter.clone(),
-                                link: None,
-                            },
-                            Event {
-                                kind: Kind::Enter,
-                                name: if take == 1 {
-                                    Name::EmphasisSequence
-                                } else {
-                                    Name::StrongSequence
-                                },
-                                point: seq_open_enter.clone(),
-                                link: None,
-                            },
-                            Event {
-                                kind: Kind::Exit,
-                                name: if take == 1 {
-                                    Name::EmphasisSequence
-                                } else {
-                                    Name::StrongSequence
-                                },
-                                point: seq_open_exit.clone(),
-                                link: None,
-                            },
-                            Event {
-                                kind: Kind::Enter,
-                                name: if take == 1 {
-                                    Name::EmphasisText
-                                } else {
-                                    Name::StrongText
-                                },
-                                point: seq_open_exit.clone(),
-                                link: None,
-                            },
-                        ],
-                    );
-                    // Closing.
-                    tokenizer.map.add(
-                        close_event_index,
-                        0,
-                        vec![
-                            Event {
-                                kind: Kind::Exit,
-                                name: if take == 1 {
-                                    Name::EmphasisText
-                                } else {
-                                    Name::StrongText
-                                },
-                                point: seq_close_enter.clone(),
-                                link: None,
-                            },
-                            Event {
-                                kind: Kind::Enter,
-                                name: if take == 1 {
-                                    Name::EmphasisSequence
-                                } else {
-                                    Name::StrongSequence
-                                },
-                                point: seq_close_enter.clone(),
-                                link: None,
-                            },
-                            Event {
-                                kind: Kind::Exit,
-                                name: if take == 1 {
-                                    Name::EmphasisSequence
-                                } else {
-                                    Name::StrongSequence
-                                },
-                                point: seq_close_exit.clone(),
-                                link: None,
-                            },
-                            Event {
-                                kind: Kind::Exit,
-                                name: if take == 1 {
-                                    Name::Emphasis
-                                } else {
-                                    Name::Strong
-                                },
-                                point: seq_close_exit.clone(),
-                                link: None,
-                            },
-                        ],
-                    );
+                    next_index = match_sequences(tokenizer, &mut sequences, open, close);
 
                     break;
                 }
@@ -439,12 +272,157 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     let mut index = 0;
     while index < sequences.len() {
         let sequence = &sequences[index];
-        tokenizer.events[sequence.event_index].name = Name::Data;
-        tokenizer.events[sequence.event_index + 1].name = Name::Data;
+        tokenizer.events[sequence.index].name = Name::Data;
+        tokenizer.events[sequence.index + 1].name = Name::Data;
         index += 1;
     }
 
     tokenizer.map.consume(&mut tokenizer.events);
+}
+
+/// Match two sequences.
+fn match_sequences(
+    tokenizer: &mut Tokenizer,
+    sequences: &mut Vec<Sequence>,
+    open: usize,
+    close: usize,
+) -> usize {
+    // Where to move to next.
+    // Stay on this closing sequence for the next iteration: it
+    // might close more things.
+    // It’s changed if sequences are removed.
+    let mut next = close;
+
+    // Number of markers to use from the sequence.
+    let take = if sequences[open].size > 1 && sequences[close].size > 1 {
+        2
+    } else {
+        1
+    };
+
+    // We’re *on* a closing sequence, with a matching opening
+    // sequence.
+    // Now we make sure that we can’t have misnested attention:
+    //
+    // ```html
+    // <em>a <strong>b</em> c</strong>
+    // ```
+    //
+    // Do that by marking everything between it as no longer
+    // possible to open anything.
+    // Theoretically we should mark as `close: false` too, but
+    // we don’t look for closers backwards, so it’s not needed.
+    let mut between = open + 1;
+
+    while between < close {
+        sequences[between].open = false;
+        between += 1;
+    }
+
+    let (group_name, seq_name, text_name) = if take == 1 {
+        (Name::Emphasis, Name::EmphasisSequence, Name::EmphasisText)
+    } else {
+        (Name::Strong, Name::StrongSequence, Name::StrongText)
+    };
+    let open_index = sequences[open].index;
+    let close_index = sequences[close].index;
+    let open_exit = sequences[open].end_point.clone();
+    let close_enter = sequences[close].start_point.clone();
+
+    // No need to worry about `VS`, because sequences are only actual characters.
+    sequences[open].size -= take;
+    sequences[close].size -= take;
+    sequences[open].end_point.column -= take;
+    sequences[open].end_point.index -= take;
+    sequences[close].start_point.column += take;
+    sequences[close].start_point.index += take;
+
+    // Opening.
+    tokenizer.map.add_before(
+        // Add after the current sequence (it might remain).
+        open_index + 2,
+        0,
+        vec![
+            Event {
+                kind: Kind::Enter,
+                name: group_name.clone(),
+                point: sequences[open].end_point.clone(),
+                link: None,
+            },
+            Event {
+                kind: Kind::Enter,
+                name: seq_name.clone(),
+                point: sequences[open].end_point.clone(),
+                link: None,
+            },
+            Event {
+                kind: Kind::Exit,
+                name: seq_name.clone(),
+                point: open_exit.clone(),
+                link: None,
+            },
+            Event {
+                kind: Kind::Enter,
+                name: text_name.clone(),
+                point: open_exit,
+                link: None,
+            },
+        ],
+    );
+    // Closing.
+    tokenizer.map.add(
+        close_index,
+        0,
+        vec![
+            Event {
+                kind: Kind::Exit,
+                name: text_name,
+                point: close_enter.clone(),
+                link: None,
+            },
+            Event {
+                kind: Kind::Enter,
+                name: seq_name.clone(),
+                point: close_enter,
+                link: None,
+            },
+            Event {
+                kind: Kind::Exit,
+                name: seq_name,
+                point: sequences[close].start_point.clone(),
+                link: None,
+            },
+            Event {
+                kind: Kind::Exit,
+                name: group_name,
+                point: sequences[close].start_point.clone(),
+                link: None,
+            },
+        ],
+    );
+
+    // Remove closing sequence if fully used.
+    if sequences[close].size == 0 {
+        sequences.remove(close);
+        tokenizer.map.add(close_index, 2, vec![]);
+    } else {
+        // Shift remaining closing sequence forward.
+        // Do it here because a sequence can open and close different
+        // other sequences, and the remainder can be on any side or
+        // somewhere in the middle.
+        tokenizer.events[close_index].point = sequences[close].start_point.clone();
+    }
+
+    if sequences[open].size == 0 {
+        sequences.remove(open);
+        tokenizer.map.add(open_index, 2, vec![]);
+        // Everything shifts one to the left, account for it in next iteration.
+        next -= 1;
+    } else {
+        tokenizer.events[open_index + 1].point = sequences[open].end_point.clone();
+    }
+
+    next
 }
 
 /// Classify whether a character code represents whitespace, punctuation, or
@@ -458,15 +436,15 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 /// ## References
 ///
 /// *   [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
-fn classify_character(char: Option<char>) -> GroupKind {
+fn classify_character(char: Option<char>) -> CharacterKind {
     match char {
         // EOF.
-        None => GroupKind::Whitespace,
+        None => CharacterKind::Whitespace,
         // Unicode whitespace.
-        Some(char) if char.is_whitespace() => GroupKind::Whitespace,
+        Some(char) if char.is_whitespace() => CharacterKind::Whitespace,
         // Unicode punctuation.
-        Some(char) if PUNCTUATION.contains(&char) => GroupKind::Punctuation,
+        Some(char) if PUNCTUATION.contains(&char) => CharacterKind::Punctuation,
         // Everything else.
-        Some(_) => GroupKind::Other,
+        Some(_) => CharacterKind::Other,
     }
 }

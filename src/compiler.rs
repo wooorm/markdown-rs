@@ -12,7 +12,7 @@ use crate::util::{
 use crate::{LineEnding, Options};
 use std::str;
 
-/// Representation of a link or image, resource or reference.
+/// Link or image, resource or reference.
 /// Reused for temporary definitions as well, in the first pass.
 #[derive(Debug)]
 struct Media {

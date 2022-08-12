@@ -54,7 +54,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Start of a thematic break.
+/// Start of thematic break.
 ///
 /// ```markdown
 /// > | ***
@@ -78,7 +78,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Start of a thematic break, after whitespace.
+/// After optional whitespace, at marker.
 ///
 /// ```markdown
 /// > | ***
@@ -94,7 +94,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After something but before something else.
+/// After something, before something else.
 ///
 /// ```markdown
 /// > | ***
@@ -124,7 +124,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a sequence of markers.
+/// In sequence.
 ///
 /// ```markdown
 /// > | ***

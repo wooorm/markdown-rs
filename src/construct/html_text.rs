@@ -77,7 +77,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<`, before a tag name or other stuff.
+/// After `<`, at tag name or other stuff.
 ///
 /// ```markdown
 /// > | a <b> c
@@ -110,7 +110,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<!`, so inside a declaration, comment, or CDATA.
+/// After `<!`, at declaration, comment, or CDATA.
 ///
 /// ```markdown
 /// > | a <!doctype> c
@@ -139,7 +139,7 @@ pub fn declaration_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<!-`, inside a comment, before another `-`.
+/// In a comment, after `<!-`, at another `-`.
 ///
 /// ```markdown
 /// > | a <!--b--> c
@@ -155,7 +155,7 @@ pub fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<!--`, inside a comment
+/// After `<!--`, in a comment.
 ///
 /// > 👉 **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
 /// > empty comments.
@@ -179,7 +179,7 @@ pub fn comment_start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<!---`, inside a comment
+/// After `<!---`, in a comment.
 ///
 /// > 👉 **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
 /// > empty comments.
@@ -199,7 +199,7 @@ pub fn comment_start_dash(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a comment.
+/// In comment.
 ///
 /// ```markdown
 /// > | a <!--b--> c
@@ -223,7 +223,7 @@ pub fn comment(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a comment, after `-`.
+/// In comment, after `-`.
 ///
 /// ```markdown
 /// > | a <!--b--> c
@@ -239,7 +239,7 @@ pub fn comment_close(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<![`, inside CDATA, expecting `CDATA[`.
+/// After `<![`, in CDATA, expecting `CDATA[`.
 ///
 /// ```markdown
 /// > | a <![CDATA[>&<]]> b
@@ -285,7 +285,7 @@ pub fn cdata(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In CDATA, after `]`.
+/// In CDATA, after `]`, at another `]`.
 ///
 /// ```markdown
 /// > | a <![CDATA[>&<]]> b
@@ -301,7 +301,7 @@ pub fn cdata_close(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In CDATA, after `]]`.
+/// In CDATA, after `]]`, at `>`.
 ///
 /// ```markdown
 /// > | a <![CDATA[>&<]]> b
@@ -315,7 +315,7 @@ pub fn cdata_end(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a declaration.
+/// In declaration.
 ///
 /// ```markdown
 /// > | a <!b> c
@@ -335,7 +335,7 @@ pub fn declaration(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an instruction.
+/// In instruction.
 ///
 /// ```markdown
 /// > | a <?b?> c
@@ -359,7 +359,7 @@ pub fn instruction(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an instruction, after `?`.
+/// In instruction, after `?`, at `>`.
 ///
 /// ```markdown
 /// > | a <?b?> c
@@ -372,7 +372,7 @@ pub fn instruction_close(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `</`, in a closing tag, before a tag name.
+/// After `</`, in closing tag, at tag name.
 ///
 /// ```markdown
 /// > | a </b> c
@@ -406,7 +406,7 @@ pub fn tag_close(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a closing tag, after the tag name.
+/// In closing tag, after tag name.
 ///
 /// ```markdown
 /// > | a </b> c
@@ -426,7 +426,7 @@ pub fn tag_close_between(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<x`, in an opening tag name.
+/// After `<x`, in opening tag name.
 ///
 /// ```markdown
 /// > | a <b> c
@@ -444,7 +444,7 @@ pub fn tag_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an opening tag, after the tag name.
+/// In opening tag, after tag name.
 ///
 /// ```markdown
 /// > | a <b> c
@@ -473,7 +473,7 @@ pub fn tag_open_between(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an attribute name.
+/// In attribute name.
 ///
 /// ```markdown
 /// > | a <b c> d
@@ -490,8 +490,8 @@ pub fn tag_open_attribute_name(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an attribute name, before an attribute initializer, the end of the
-/// tag, or whitespace.
+/// After attribute name, before initializer, the end of the tag, or
+/// whitespace.
 ///
 /// ```markdown
 /// > | a <b c> d
@@ -518,8 +518,8 @@ pub fn tag_open_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Before an unquoted, double quoted, or single quoted attribute value,
-/// allowing whitespace.
+/// Before unquoted, double quoted, or single quoted attribute value, allowing
+/// whitespace.
 ///
 /// ```markdown
 /// > | a <b c=d> e
@@ -551,7 +551,7 @@ pub fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a double or single quoted attribute value.
+/// In double or single quoted attribute value.
 ///
 /// ```markdown
 /// > | a <b c="d"> e
@@ -582,7 +582,7 @@ pub fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an unquoted attribute value.
+/// In unquoted attribute value.
 ///
 /// ```markdown
 /// > | a <b c=d> e
@@ -599,8 +599,8 @@ pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a double or single quoted attribute value, before whitespace or the
-/// end of the tag.
+/// After double or single quoted attribute value, before whitespace or the end
+/// of the tag.
 ///
 /// ```markdown
 /// > | a <b c="d"> e
@@ -613,7 +613,7 @@ pub fn tag_open_attribute_value_quoted_after(tokenizer: &mut Tokenizer) -> State
     }
 }
 
-/// In certain circumstances of a complete tag where only an `>` is allowed.
+/// In certain circumstances of a tag where only an `>` is allowed.
 ///
 /// ```markdown
 /// > | a <b c="d"> e
@@ -631,7 +631,7 @@ pub fn end(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At an allowed line ending.
+/// At eol.
 ///
 /// > 👉 **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
@@ -654,7 +654,7 @@ pub fn line_ending_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a line ending.
+/// After eol, at optional whitespace.
 ///
 /// > 👉 **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.
@@ -672,7 +672,7 @@ pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab(tokenizer))
 }
 
-/// After a line ending, after indent.
+/// After eol, after optional whitespace.
 ///
 /// > 👉 **Note**: we can’t have blank lines in text, so no need to worry about
 /// > empty tokens.

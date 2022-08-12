@@ -61,7 +61,7 @@ pub fn space_or_tab_with_options(tokenizer: &mut Tokenizer, options: Options) ->
     StateName::SpaceOrTabStart
 }
 
-/// Before `space_or_tab`.
+/// Start of `space_or_tab`.
 ///
 /// ```markdown
 /// > | a␠␠b

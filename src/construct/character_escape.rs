@@ -37,7 +37,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Start of a character escape.
+/// Start of character escape.
 ///
 /// ```markdown
 /// > | a\*b
@@ -56,7 +56,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside a character escape, after `\`.
+/// After `\`, at punctuation.
 ///
 /// ```markdown
 /// > | a\*b

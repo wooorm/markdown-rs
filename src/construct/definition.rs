@@ -104,7 +104,7 @@ use crate::util::{
     slice::{Position, Slice},
 };
 
-/// At the start of a definition.
+/// At start of a definition.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -135,7 +135,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At the start of a definition, after whitespace.
+/// After optional whitespace, at `[`.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -154,7 +154,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After the label of a definition.
+/// After label.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -182,7 +182,7 @@ pub fn label_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After the marker.
+/// After marker.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -196,7 +196,7 @@ pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab_eol(tokenizer))
 }
 
-/// Before a destination.
+/// Before destination.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -216,7 +216,7 @@ pub fn destination_before(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::DestinationStart)
 }
 
-/// After a destination.
+/// After destination.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -248,7 +248,7 @@ pub fn destination_missing(tokenizer: &mut Tokenizer) -> State {
     State::Nok
 }
 
-/// After a definition.
+/// After definition.
 ///
 /// ```markdown
 /// > | [a]: b
@@ -264,7 +264,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab(tokenizer))
 }
 
-/// After a definition, after optional whitespace.
+/// After definition, after optional whitespace.
 ///
 /// ```markdown
 /// > | [a]: b
@@ -304,7 +304,7 @@ pub fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a destination, presumably before a title.
+/// After destination, at whitespace.
 ///
 /// ```markdown
 /// > | [a]: b
@@ -320,7 +320,7 @@ pub fn title_before(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab_eol(tokenizer))
 }
 
-/// Before a title, after a line ending.
+/// At title.
 ///
 /// ```markdown
 ///   | [a]: b
@@ -335,7 +335,7 @@ pub fn title_before_marker(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::TitleStart)
 }
 
-/// After a title.
+/// After title.
 ///
 /// ```markdown
 /// > | [a]: b "c"
@@ -352,7 +352,7 @@ pub fn title_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(space_or_tab(tokenizer))
 }
 
-/// After a title, after optional whitespace.
+/// After title, after optional whitespace.
 ///
 /// ```markdown
 /// > | [a]: b "c"

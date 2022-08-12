@@ -16,7 +16,7 @@ use crate::tokenizer::Tokenizer;
 
 const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
-/// Before a BOM.
+/// Before BOM.
 ///
 /// ```text
 /// > | 0xEF 0xBB 0xBF
@@ -31,7 +31,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the BOM.
+/// In BOM.
 ///
 /// ```text
 /// > | 0xEF 0xBB 0xBF

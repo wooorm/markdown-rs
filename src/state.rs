@@ -36,7 +36,6 @@ pub enum Name {
     BlankLineAfter,
 
     BlockQuoteStart,
-    BlockQuoteBefore,
     BlockQuoteContStart,
     BlockQuoteContBefore,
     BlockQuoteContAfter,
@@ -245,7 +244,6 @@ pub enum Name {
 
     ListStart,
     ListBefore,
-    ListNok,
     ListBeforeOrdered,
     ListBeforeUnordered,
     ListValue,
@@ -259,7 +257,6 @@ pub enum Name {
     ListContStart,
     ListContBlank,
     ListContFilled,
-    ListOk,
 
     NonLazyContinuationStart,
     NonLazyContinuationAfter,
@@ -322,7 +319,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::BlankLineAfter => construct::blank_line::after,
 
         Name::BlockQuoteStart => construct::block_quote::start,
-        Name::BlockQuoteBefore => construct::block_quote::before,
         Name::BlockQuoteContStart => construct::block_quote::cont_start,
         Name::BlockQuoteContBefore => construct::block_quote::cont_before,
         Name::BlockQuoteContAfter => construct::block_quote::cont_after,
@@ -562,7 +558,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
 
         Name::ListStart => construct::list::start,
         Name::ListBefore => construct::list::before,
-        Name::ListNok => construct::list::nok,
         Name::ListBeforeOrdered => construct::list::before_ordered,
         Name::ListBeforeUnordered => construct::list::before_unordered,
         Name::ListValue => construct::list::value,
@@ -576,7 +571,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::ListContStart => construct::list::cont_start,
         Name::ListContBlank => construct::list::cont_blank,
         Name::ListContFilled => construct::list::cont_filled,
-        Name::ListOk => construct::list::ok,
 
         Name::NonLazyContinuationStart => construct::partial_non_lazy_continuation::start,
         Name::NonLazyContinuationAfter => construct::partial_non_lazy_continuation::after,
@@ -588,11 +582,11 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::SpaceOrTabInside => construct::partial_space_or_tab::inside,
         Name::SpaceOrTabAfter => construct::partial_space_or_tab::after,
 
-        Name::SpaceOrTabEolStart => construct::partial_space_or_tab_eol::eol_start,
-        Name::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab_eol::eol_after_first,
-        Name::SpaceOrTabEolAfterEol => construct::partial_space_or_tab_eol::eol_after_eol,
-        Name::SpaceOrTabEolAtEol => construct::partial_space_or_tab_eol::eol_at_eol,
-        Name::SpaceOrTabEolAfterMore => construct::partial_space_or_tab_eol::eol_after_more,
+        Name::SpaceOrTabEolStart => construct::partial_space_or_tab_eol::start,
+        Name::SpaceOrTabEolAfterFirst => construct::partial_space_or_tab_eol::after_first,
+        Name::SpaceOrTabEolAfterEol => construct::partial_space_or_tab_eol::after_eol,
+        Name::SpaceOrTabEolAtEol => construct::partial_space_or_tab_eol::at_eol,
+        Name::SpaceOrTabEolAfterMore => construct::partial_space_or_tab_eol::after_more,
 
         Name::StringStart => content::string::start,
         Name::StringBefore => content::string::before,

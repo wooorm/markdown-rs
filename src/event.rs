@@ -1887,7 +1887,7 @@ pub enum Content {
     Text,
 }
 
-/// A link to another event.
+/// Link to another event.
 #[derive(Debug, Clone)]
 pub struct Link {
     pub previous: Option<usize>,
@@ -1895,7 +1895,7 @@ pub struct Link {
     pub content_type: Content,
 }
 
-/// A location in the document (`line`/`column`/`offset`).
+/// Place in the document.
 ///
 /// The interface for the location in the document comes from unist `Point`:
 /// <https://github.com/syntax-tree/unist#point>.
@@ -1916,7 +1916,7 @@ pub struct Point {
     pub vs: usize,
 }
 
-/// Possible event kinds.
+/// Event kinds.
 #[derive(Debug, PartialEq, Clone)]
 pub enum Kind {
     /// The start of something.
@@ -1928,8 +1928,12 @@ pub enum Kind {
 /// Something semantic happening somewhere.
 #[derive(Debug, Clone)]
 pub struct Event {
+    /// Kind of event.
     pub kind: Kind,
+    /// Name of event.
     pub name: Name,
+    /// Place where this happens.
     pub point: Point,
+    /// Link to another event.
     pub link: Option<Link>,
 }

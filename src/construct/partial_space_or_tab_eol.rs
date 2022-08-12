@@ -44,7 +44,16 @@ pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: Options
     StateName::SpaceOrTabEolStart
 }
 
-pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
+/// Start of whitespace with at most one eol.
+///
+/// ```markdown
+/// > | a␠␠b
+///      ^
+/// > | a␠␠␊
+///      ^
+///   | ␠␠b
+/// ```
+pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::SpaceOrTabEolAfterFirst),
         State::Next(StateName::SpaceOrTabEolAtEol),
@@ -65,7 +74,16 @@ pub fn eol_start(tokenizer: &mut Tokenizer) -> State {
     ))
 }
 
-pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
+/// After initial whitespace, at optional eol.
+///
+/// ```markdown
+/// > | a␠␠b
+///        ^
+/// > | a␠␠␊
+///        ^
+///   | ␠␠b
+/// ```
+pub fn after_first(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.space_or_tab_eol_ok = true;
 
     if tokenizer
@@ -79,14 +97,19 @@ pub fn eol_after_first(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::SpaceOrTabEolAtEol)
 }
 
-/// `space_or_tab_eol`: after optionally first `space_or_tab`.
+/// After optional whitespace, at eol.
 ///
 /// ```markdown
-/// > | a
+/// > | a␠␠b
+///        ^
+/// > | a␠␠␊
+///        ^
+///   | ␠␠b
+/// > | a␊
 ///      ^
-///   | b
+///   | ␠␠b
 /// ```
-pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
+pub fn at_eol(tokenizer: &mut Tokenizer) -> State {
     if let Some(b'\n') = tokenizer.current {
         tokenizer.enter_with_content(
             Name::LineEnding,
@@ -123,15 +146,17 @@ pub fn eol_at_eol(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// `space_or_tab_eol`: after eol.
+/// After eol.
 ///
 /// ```markdown
-///   | a
-/// > | b
+///   | a␠␠␊
+/// > | ␠␠b
+///     ^
+///   | a␊
+/// > | ␠␠b
 ///     ^
 /// ```
-#[allow(clippy::needless_pass_by_value)]
-pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
+pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::SpaceOrTabEolAfterMore),
         State::Next(StateName::SpaceOrTabEolAfterMore),
@@ -151,14 +176,17 @@ pub fn eol_after_eol(tokenizer: &mut Tokenizer) -> State {
     ))
 }
 
-/// `space_or_tab_eol`: after more (optional) `space_or_tab`.
+/// After optional final whitespace.
 ///
 /// ```markdown
-///   | a
-/// > | b
-///     ^
+///   | a␠␠␊
+/// > | ␠␠b
+///       ^
+///   | a␊
+/// > | ␠␠b
+///       ^
 /// ```
-pub fn eol_after_more(tokenizer: &mut Tokenizer) -> State {
+pub fn after_more(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.space_or_tab_eol_content_type = None;
     tokenizer.tokenize_state.space_or_tab_eol_connect = false;
     tokenizer.tokenize_state.space_or_tab_eol_ok = false;

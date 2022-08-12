@@ -112,7 +112,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In the opening sequence.
+/// In opening sequence.
 ///
 /// ```markdown
 /// > | `a`
@@ -177,7 +177,7 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In the closing sequence.
+/// In closing sequence.
 ///
 /// ```markdown
 /// > | `a`

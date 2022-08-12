@@ -12,15 +12,18 @@ pub fn opt_back(events: &[Event], index: usize, names: &[Name]) -> usize {
     skip_opt_impl(events, index, names, false)
 }
 
-pub fn to_back(events: &[Event], index: usize, names: &[Name]) -> usize {
-    to_impl(events, index, names, false)
-}
-
+/// Skip from `index` forwards to `names`.
 pub fn to(events: &[Event], index: usize, names: &[Name]) -> usize {
     to_impl(events, index, names, true)
 }
 
-pub fn to_impl(events: &[Event], mut index: usize, names: &[Name], forward: bool) -> usize {
+/// Skip from `index` backwards to `names`.
+pub fn to_back(events: &[Event], index: usize, names: &[Name]) -> usize {
+    to_impl(events, index, names, false)
+}
+
+/// Skip to something.
+fn to_impl(events: &[Event], mut index: usize, names: &[Name], forward: bool) -> usize {
     while index < events.len() {
         let current = &events[index].name;
 
@@ -34,7 +37,7 @@ pub fn to_impl(events: &[Event], mut index: usize, names: &[Name], forward: bool
     index
 }
 
-/// Skip internals.
+/// Skip past things.
 fn skip_opt_impl(events: &[Event], mut index: usize, names: &[Name], forward: bool) -> usize {
     let mut balance = 0;
     let open = if forward { Kind::Enter } else { Kind::Exit };

@@ -43,7 +43,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Start of a hard break (escape).
+/// Start of hard break (escape).
 ///
 /// ```markdown
 /// > | a\
@@ -61,7 +61,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At the end of a hard break (escape), after `\`.
+/// After `\`, at eol.
 ///
 /// ```markdown
 /// > | a\

@@ -17,9 +17,15 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
+/// Characters that can start something in string.
 const MARKERS: [u8; 2] = [b'&', b'\\'];
 
 /// Start of string.
+///
+/// ````markdown
+/// > | ```js
+///        ^
+/// ````
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver(ResolveName::String);
     tokenizer.tokenize_state.markers = &MARKERS;
@@ -27,6 +33,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Before string.
+///
+/// ````markdown
+/// > | ```js
+///        ^
+/// ````
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
@@ -49,12 +60,17 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// At data.
+///
+/// ````markdown
+/// > | ```js
+///        ^
+/// ````
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(State::Next(StateName::StringBefore), State::Nok);
     State::Retry(StateName::DataStart)
 }
 
-/// Resolve whitespace.
+/// Resolve whitespace in string.
 pub fn resolve(tokenizer: &mut Tokenizer) {
     resolve_whitespace(tokenizer, false, false);
 }

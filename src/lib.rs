@@ -72,7 +72,7 @@ impl LineEnding {
             "\r\n" => LineEnding::CarriageReturnLineFeed,
             "\r" => LineEnding::CarriageReturn,
             "\n" => LineEnding::LineFeed,
-            _ => unreachable!("invalid code"),
+            _ => unreachable!("invalid str"),
         }
     }
 }

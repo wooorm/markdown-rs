@@ -47,38 +47,16 @@ use crate::tokenizer::Tokenizer;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.constructs.block_quote {
-        tokenizer.attempt(State::Next(StateName::BlockQuoteBefore), State::Nok);
-        State::Retry(space_or_tab_min_max(
-            tokenizer,
-            0,
-            if tokenizer.parse_state.constructs.code_indented {
-                TAB_SIZE - 1
-            } else {
-                usize::MAX
-            },
-        ))
+        tokenizer.enter(Name::BlockQuote);
+        State::Retry(StateName::BlockQuoteContStart)
     } else {
         State::Nok
     }
 }
 
-/// Start of block quote, after whitespace, before `>`.
-///
-/// ```markdown
-/// > | > a
-///     ^
-/// ```
-pub fn before(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'>') => {
-            tokenizer.enter(Name::BlockQuote);
-            State::Retry(StateName::BlockQuoteContBefore)
-        }
-        _ => State::Retry(StateName::BlockQuoteContBefore),
-    }
-}
-
 /// Start of block quote continuation.
+///
+/// Also used to parse the first block quote opening.
 ///
 /// ```markdown
 ///   | > a
@@ -98,7 +76,9 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
     ))
 }
 
-/// After whitespace, before `>`.
+/// At `>`, after optional whitespace.
+///
+/// Also used to parse the first block quote opening.
 ///
 /// ```markdown
 ///   | > a

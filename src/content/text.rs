@@ -25,6 +25,7 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
+/// Characters that can start something in text.
 const MARKERS: [u8; 9] = [
     b'!',  // `label_start_image`
     b'&',  // `character_reference`
@@ -38,6 +39,11 @@ const MARKERS: [u8; 9] = [
 ];
 
 /// Start of text.
+///
+/// ```markdown
+/// > | abc
+///     ^
+/// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.register_resolver(ResolveName::Text);
     tokenizer.tokenize_state.markers = &MARKERS;
@@ -45,6 +51,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Before text.
+///
+/// ```markdown
+/// > | abc
+///     ^
+/// ```
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => State::Ok,
@@ -109,7 +120,14 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At `<`, which wasn’t an autolink: before HTML?
+/// Before html (text).
+///
+/// At `<`, which wasn’t an autolink.
+///
+/// ```markdown
+/// > | a <b>
+///       ^
+/// ```
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::TextBefore),
@@ -118,7 +136,14 @@ pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::HtmlTextStart)
 }
 
-/// At `\`, which wasn’t a character escape: before a hard break?
+/// Before hard break escape.
+///
+/// At `\`, which wasn’t a character escape.
+///
+/// ```markdown
+/// > | a \␊
+///       ^
+/// ```
 pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::TextBefore),
@@ -127,7 +152,12 @@ pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::HardBreakEscapeStart)
 }
 
-/// At data.
+/// Before data.
+///
+/// ```markdown
+/// > | a
+///     ^
+/// ```
 pub fn before_data(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(State::Next(StateName::TextBefore), State::Nok);
     State::Retry(StateName::DataStart)

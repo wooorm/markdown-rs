@@ -36,7 +36,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
 
-/// Before a title.
+/// Start of title.
 ///
 /// ```markdown
 /// > | "a"
@@ -57,9 +57,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After the opening marker.
+/// After opening marker.
 ///
-/// This is also used when at the closing marker.
+/// This is also used at the closing marker.
 ///
 /// ```markdown
 /// > | "a"
@@ -132,7 +132,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a title, after whitespace.
+/// In title, after whitespace.
 ///
 /// ```markdown
 ///   | "a␊
@@ -144,7 +144,7 @@ pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::TitleAtBreak)
 }
 
-/// In a title, at a blank line.
+/// In title, at blank line.
 ///
 /// ```markdown
 ///   | "a␊
@@ -158,7 +158,7 @@ pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
     State::Nok
 }
 
-/// In title text.
+/// In text.
 ///
 /// ```markdown
 /// > | "a"
@@ -187,7 +187,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `\`, in title text.
+/// After `\`, at a special character.
 ///
 /// ```markdown
 /// > | "a\*b"

@@ -53,8 +53,7 @@ fn shift_links(events: &mut [Event], jumps: &[(usize, usize, usize)]) {
     }
 }
 
-/// Make it easy to insert and remove things while being performant and keeping
-/// links in check.
+/// Tracks a bunch of edits.
 #[derive(Debug)]
 pub struct EditMap {
     /// Record of changes.

@@ -46,7 +46,7 @@ enum Phase {
     Eof,
 }
 
-/// Turn `codes` as the document content type into events.
+/// Parse a document.
 pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     let mut tokenizer = Tokenizer::new(point, parse_state);
 
@@ -66,9 +66,7 @@ pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
     events
 }
 
-/// At the beginning.
-///
-/// Perhaps a BOM?
+/// Start of document, at an optional BOM.
 ///
 /// ```markdown
 /// > | a
@@ -88,7 +86,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::BomStart)
 }
 
-/// Before existing containers.
+/// At optional existing containers.
 //
 /// ```markdown
 ///   | * a
@@ -121,7 +119,7 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an existing container.
+/// After continued existing container.
 //
 /// ```markdown
 ///   | * a
@@ -133,7 +131,7 @@ pub fn container_existing_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::DocumentContainerExistingBefore)
 }
 
-/// Before a new container.
+/// At new containers.
 //
 /// ```markdown
 /// > | * a
@@ -183,7 +181,7 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::BlockQuoteStart)
 }
 
-/// Maybe before a new container, but not a block quote.
+/// At new container, but not a block quote.
 //
 /// ```markdown
 /// > | * a
@@ -206,7 +204,7 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
     State::Retry(StateName::ListStart)
 }
 
-/// Maybe before a new container, but not a list.
+/// At new container, but not a list (or block quote).
 //
 /// ```markdown
 /// > | a
@@ -224,7 +222,7 @@ pub fn container_new_before_not_list(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::DocumentContainersAfter)
 }
 
-/// After a new container.
+/// After new container.
 ///
 /// ```markdown
 /// > | * a
@@ -258,7 +256,7 @@ pub fn container_new_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::DocumentContainerNewBefore)
 }
 
-/// After containers, before flow.
+/// After containers, at flow.
 //
 /// ```markdown
 /// > | * a

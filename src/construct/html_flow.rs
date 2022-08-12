@@ -124,7 +124,7 @@ const BASIC: u8 = 6;
 /// Symbol for `<x>` (condition 7).
 const COMPLETE: u8 = 7;
 
-/// Start of HTML (flow), before optional whitespace.
+/// Start of HTML (flow).
 ///
 /// ```markdown
 /// > | <x />
@@ -153,7 +153,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After optional whitespace, before `<`.
+/// At `<`, after optional whitespace.
 ///
 /// ```markdown
 /// > | <x />
@@ -169,7 +169,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<`, before a tag name or other stuff.
+/// After `<`, at tag name or other stuff.
 ///
 /// ```markdown
 /// > | <x />
@@ -209,7 +209,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<!`, so inside a declaration, comment, or CDATA.
+/// After `<!`, at declaration, comment, or CDATA.
 ///
 /// ```markdown
 /// > | <!doctype>
@@ -242,7 +242,7 @@ pub fn declaration_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<!-`, inside a comment, before another `-`.
+/// After `<!-`, inside a comment, at another `-`.
 ///
 /// ```markdown
 /// > | <!--xxx-->
@@ -286,7 +286,7 @@ pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `</`, in a closing tag, before a tag name.
+/// After `</`, in closing tag, at tag name.
 ///
 /// ```markdown
 /// > | </x>
@@ -303,7 +303,7 @@ pub fn tag_close_start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a tag name.
+/// In tag name.
 ///
 /// ```markdown
 /// > | <ab>
@@ -372,7 +372,7 @@ pub fn tag_name(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a closing slash of a basic tag name.
+/// After closing slash of a basic tag name.
 ///
 /// ```markdown
 /// > | <div/>
@@ -390,7 +390,7 @@ pub fn basic_self_closing(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a closing slash of a complete tag name.
+/// After closing slash of a complete tag name.
 ///
 /// ```markdown
 /// > | <x/>
@@ -406,7 +406,7 @@ pub fn complete_closing_tag_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At a place where an attribute name would be valid.
+/// At an attribute name.
 ///
 /// At first, this state is used after a complete tag name, after whitespace,
 /// where it expects optional attributes or the end of the tag.
@@ -444,7 +444,7 @@ pub fn complete_attribute_name_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an attribute name.
+/// In attribute name.
 ///
 /// ```markdown
 /// > | <a :b>
@@ -465,8 +465,8 @@ pub fn complete_attribute_name(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an attribute name, before an attribute initializer, the end of the
-/// tag, or whitespace.
+/// After attribute name, at an optional initializer, the end of the tag, or
+/// whitespace.
 ///
 /// ```markdown
 /// > | <a b>
@@ -488,8 +488,8 @@ pub fn complete_attribute_name_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Before an unquoted, double quoted, or single quoted attribute value,
-/// allowing whitespace.
+/// Before unquoted, double quoted, or single quoted attribute value, allowing
+/// whitespace.
 ///
 /// ```markdown
 /// > | <a b=c>
@@ -516,7 +516,7 @@ pub fn complete_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a double or single quoted attribute value.
+/// In double or single quoted attribute value.
 ///
 /// ```markdown
 /// > | <a b="c">
@@ -543,7 +543,7 @@ pub fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In an unquoted attribute value.
+/// In unquoted attribute value.
 ///
 /// ```markdown
 /// > | <a b=c>
@@ -561,7 +561,7 @@ pub fn complete_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After a double or single quoted attribute value, before whitespace or the
+/// After double or single quoted attribute value, before whitespace or the
 /// end of the tag.
 ///
 /// ```markdown
@@ -617,7 +617,7 @@ pub fn complete_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside continuation of any HTML kind.
+/// In continuation of any HTML kind.
 ///
 /// ```markdown
 /// > | <!--xxx-->
@@ -668,7 +668,7 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In continuation, at an eol.
+/// In continuation, at eol.
 ///
 /// ```markdown
 /// > | <x>
@@ -683,7 +683,7 @@ pub fn continuation_start(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::NonLazyContinuationStart)
 }
 
-/// In continuation, at an eol, before non-lazy content.
+/// In continuation, at eol, before non-lazy content.
 ///
 /// ```markdown
 /// > | <x>
@@ -702,7 +702,7 @@ pub fn continuation_start_non_lazy(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In continuation, after an eol, before non-lazy content.
+/// In continuation, before non-lazy content.
 ///
 /// ```markdown
 ///   | <x>
@@ -735,7 +735,7 @@ pub fn continuation_comment_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In raw continuation, after `<`, expecting a `/`.
+/// In raw continuation, after `<`, at `/`.
 ///
 /// ```markdown
 /// > | <script>console.log(1)</script>
@@ -752,7 +752,7 @@ pub fn continuation_raw_tag_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In raw continuation, after `</`, expecting or inside a raw tag name.
+/// In raw continuation, after `</`, in a raw tag name.
 ///
 /// ```markdown
 /// > | <script>console.log(1)</script>
@@ -807,7 +807,7 @@ pub fn continuation_cdata_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In declaration or instruction continuation, waiting for `>` to close it.
+/// In declaration or instruction continuation, at `>`.
 ///
 /// ```markdown
 /// > | <!-->
@@ -870,7 +870,7 @@ pub fn continuation_after(tokenizer: &mut Tokenizer) -> State {
     State::Ok
 }
 
-/// Before a line ending, expecting a blank line.
+/// Before eol, expecting blank line.
 ///
 /// ```markdown
 /// > | <div>

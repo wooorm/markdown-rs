@@ -106,7 +106,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
-/// Start of an autolink.
+/// Start of autolink.
 ///
 /// ```markdown
 /// > | a<https://example.com>b
@@ -128,7 +128,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After `<`, before the protocol.
+/// After `<`, at protocol or atext.
 ///
 /// ```markdown
 /// > | a<https://example.com>b
@@ -147,7 +147,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After the first byte of the protocol or email name.
+/// At second byte of protocol or atext.
 ///
 /// ```markdown
 /// > | a<https://example.com>b
@@ -167,7 +167,7 @@ pub fn scheme_or_email_atext(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside an ambiguous protocol or email name.
+/// In ambiguous protocol or atext.
 ///
 /// ```markdown
 /// > | a<https://example.com>b
@@ -197,7 +197,7 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside a URL, after the protocol.
+/// After protocol, in URL.
 ///
 /// ```markdown
 /// > | a<https://example.com>b
@@ -222,7 +222,7 @@ pub fn url_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside email atext.
+/// In email atext.
 ///
 /// ```markdown
 /// > | a<user.name@example.com>b
@@ -261,7 +261,7 @@ pub fn email_atext(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an at-sign or a dot in the label.
+/// In label, after at-sign or dot.
 ///
 /// ```markdown
 /// > | a<user.name@example.com>b
@@ -277,7 +277,7 @@ pub fn email_at_sign_or_dot(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In the label, where `.` and `>` are allowed.
+/// In label, where `.` and `>` are allowed.
 ///
 /// ```markdown
 /// > | a<user.name@example.com>b
@@ -307,7 +307,7 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In the label, where `.` and `>` are *not* allowed.
+/// In label, where `.` and `>` are *not* allowed.
 ///
 /// Though, this is also used in `email_label` to parse other values.
 ///

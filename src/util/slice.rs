@@ -4,7 +4,7 @@ use crate::constant::TAB_SIZE;
 use crate::event::{Event, Kind, Point};
 use std::str;
 
-/// A range between two places.
+/// A range between two points.
 #[derive(Debug)]
 pub struct Position<'a> {
     pub start: &'a Point,
@@ -53,9 +53,9 @@ impl<'a> Position<'a> {
     }
 }
 
-/// Chars belonging to a range.
+/// Bytes belonging to a range.
 ///
-/// Includes information on virtual spaces before and after the chars.
+/// Includes information on virtual spaces before and after the bytes.
 #[derive(Debug)]
 pub struct Slice<'a> {
     pub bytes: &'a [u8],
@@ -64,7 +64,7 @@ pub struct Slice<'a> {
 }
 
 impl<'a> Slice<'a> {
-    /// Get the slice belonging to a point.
+    /// Get a slice for a single point.
     pub fn from_point(bytes: &'a [u8], point: &Point) -> Slice<'a> {
         let mut before = point.vs;
         let mut start = point.index;
@@ -88,16 +88,14 @@ impl<'a> Slice<'a> {
         }
     }
 
-    /// Create a slice from one index.
-    ///
-    /// Indices are places in `bytes`.
+    /// Get a slice for a single index.
     ///
     /// > 👉 **Note**: indices cannot represent virtual spaces.
     pub fn from_index(bytes: &'a [u8], index: usize) -> Slice<'a> {
         Slice::from_indices(bytes, index, index + 1)
     }
 
-    /// Get the slice belonging to a position.
+    /// Get a slice for a position.
     pub fn from_position(bytes: &'a [u8], position: &Position) -> Slice<'a> {
         let mut before = position.start.vs;
         let mut after = position.end.vs;
@@ -125,9 +123,7 @@ impl<'a> Slice<'a> {
         }
     }
 
-    /// Create a slice from two indices.
-    ///
-    /// Indices are places in `bytes`.
+    /// Get a slice for two indices.
     ///
     /// > 👉 **Note**: indices cannot represent virtual spaces.
     pub fn from_indices(bytes: &'a [u8], start: usize, end: usize) -> Slice<'a> {
@@ -157,7 +153,7 @@ impl<'a> Slice<'a> {
 
     /// Turn the slice into a `&str`.
     ///
-    /// Does not support virtual spaces.
+    /// > 👉 **Note**: cannot represent virtual spaces.
     pub fn as_str(&self) -> &str {
         str::from_utf8(self.bytes).unwrap()
     }

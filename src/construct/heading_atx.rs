@@ -85,7 +85,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Start of a heading (atx), after whitespace.
+/// After optional whitespace, at `#`.
 ///
 /// ```markdown
 /// > | ## aa
@@ -100,7 +100,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In the opening sequence.
+/// In opening sequence.
 ///
 /// ```markdown
 /// > | ## aa
@@ -131,7 +131,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After something but before something else.
+/// After something, before something else.
 ///
 /// ```markdown
 /// > | ## aa
@@ -161,7 +161,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In a further sequence (after whitespace).
+/// In further sequence (after whitespace).
 ///
 /// Could be normal “visible” hashes in the heading or a final sequence.
 ///

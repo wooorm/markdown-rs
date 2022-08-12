@@ -139,7 +139,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the opening fence, after an optional prefix, before a sequence.
+/// In opening fence, after prefix, at sequence.
 ///
 /// ```markdown
 /// > | ~~~js
@@ -171,7 +171,7 @@ pub fn before_sequence_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the opening fence sequence.
+/// In opening fence sequence.
 ///
 /// ```markdown
 /// > | ~~~js
@@ -205,7 +205,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the opening fence, after the sequence (and optional whitespace), before the info.
+/// In opening fence, after the sequence (and optional whitespace), before info.
 ///
 /// ```markdown
 /// > | ~~~js
@@ -233,7 +233,7 @@ pub fn info_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the opening fence info.
+/// In info.
 ///
 /// ```markdown
 /// > | ~~~js
@@ -271,7 +271,7 @@ pub fn info(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the opening fence, after the info and whitespace, before the meta.
+/// In opening fence, after info and whitespace, before meta.
 ///
 /// ```markdown
 /// > | ~~~js eval
@@ -290,7 +290,7 @@ pub fn meta_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Inside the opening fence meta.
+/// In meta.
 ///
 /// ```markdown
 /// > | ~~~js eval
@@ -319,7 +319,7 @@ pub fn meta(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At an eol/eof in code, before a non-lazy closing fence or content.
+/// At eol/eof in code, before a non-lazy closing fence or content.
 ///
 /// ```markdown
 /// > | ~~~js
@@ -336,7 +336,7 @@ pub fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::CodeFencedCloseBefore)
 }
 
-/// Before a closing fence, at the line ending.
+/// Before closing fence, at eol.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -356,7 +356,7 @@ pub fn close_before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Before a closing fence, before optional whitespace.
+/// Before closing fence, at optional whitespace.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -383,7 +383,7 @@ pub fn close_start(tokenizer: &mut Tokenizer) -> State {
     ))
 }
 
-/// In a closing fence, after optional whitespace, before sequence.
+/// In closing fence, after optional whitespace, at sequence.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -401,7 +401,7 @@ pub fn before_sequence_close(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In the closing fence sequence.
+/// In closing fence sequence.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -434,7 +434,7 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After the closing fence sequence after optional whitespace.
+/// After closing fence sequence, after optional whitespace.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -452,7 +452,7 @@ pub fn sequence_close_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Before a closing fence, at the line ending.
+/// Before closing fence, at eol.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -466,6 +466,7 @@ pub fn content_before(tokenizer: &mut Tokenizer) -> State {
     tokenizer.exit(Name::LineEnding);
     State::Next(StateName::CodeFencedContentStart)
 }
+
 /// Before code content, definitely not before a closing fence.
 ///
 /// ```markdown
@@ -486,7 +487,7 @@ pub fn content_start(tokenizer: &mut Tokenizer) -> State {
     ))
 }
 
-/// Before code content, after a prefix.
+/// Before code content, after optional prefix.
 ///
 /// ```markdown
 ///   | ~~~js
