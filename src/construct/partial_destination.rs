@@ -174,38 +174,39 @@ pub fn enclosed_escape(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn raw(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None | Some(b'\t' | b'\n' | b' ' | b')') if tokenizer.tokenize_state.size == 0 => {
-            tokenizer.exit(Name::Data);
-            tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
-            tokenizer.exit(tokenizer.tokenize_state.token_4.clone());
-            tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
-            tokenizer.tokenize_state.size = 0;
-            State::Ok
-        }
-        Some(b'(') if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_b => {
-            tokenizer.consume();
-            tokenizer.tokenize_state.size += 1;
-            State::Next(StateName::DestinationRaw)
-        }
-        // ASCII control (but *not* `\0`) and space and `(`.
-        None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F) => {
-            tokenizer.tokenize_state.size = 0;
-            State::Nok
-        }
-        Some(b')') => {
-            tokenizer.consume();
-            tokenizer.tokenize_state.size -= 1;
-            State::Next(StateName::DestinationRaw)
-        }
-        Some(b'\\') => {
-            tokenizer.consume();
-            State::Next(StateName::DestinationRawEscape)
-        }
-        Some(_) => {
-            tokenizer.consume();
-            State::Next(StateName::DestinationRaw)
-        }
+    if tokenizer.tokenize_state.size == 0
+        && matches!(tokenizer.current, None | Some(b'\t' | b'\n' | b' ' | b')'))
+    {
+        tokenizer.exit(Name::Data);
+        tokenizer.exit(tokenizer.tokenize_state.token_5.clone());
+        tokenizer.exit(tokenizer.tokenize_state.token_4.clone());
+        tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
+        tokenizer.tokenize_state.size = 0;
+        State::Ok
+    } else if tokenizer.tokenize_state.size < tokenizer.tokenize_state.size_b
+        && tokenizer.current == Some(b'(')
+    {
+        tokenizer.consume();
+        tokenizer.tokenize_state.size += 1;
+        State::Next(StateName::DestinationRaw)
+    } else if tokenizer.current == Some(b')') {
+        tokenizer.consume();
+        tokenizer.tokenize_state.size -= 1;
+        State::Next(StateName::DestinationRaw)
+    }
+    // ASCII control (but *not* `\0`) and space and `(`.
+    else if matches!(
+        tokenizer.current,
+        None | Some(0x01..=0x1F | b' ' | b'(' | 0x7F)
+    ) {
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
+    } else if tokenizer.current == Some(b'\\') {
+        tokenizer.consume();
+        State::Next(StateName::DestinationRawEscape)
+    } else {
+        tokenizer.consume();
+        State::Next(StateName::DestinationRaw)
     }
 }
 

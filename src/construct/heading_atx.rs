@@ -107,27 +107,29 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None | Some(b'\n') if tokenizer.tokenize_state.size > 0 => {
+    if tokenizer.current == Some(b'#')
+        && tokenizer.tokenize_state.size < HEADING_ATX_OPENING_FENCE_SIZE_MAX
+    {
+        tokenizer.tokenize_state.size += 1;
+        tokenizer.consume();
+        State::Next(StateName::HeadingAtxSequenceOpen)
+    } else if tokenizer.tokenize_state.size > 0 {
+        if matches!(tokenizer.current, None | Some(b'\n')) {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Name::HeadingAtxSequence);
             State::Retry(StateName::HeadingAtxAtBreak)
-        }
-        Some(b'#') if tokenizer.tokenize_state.size < HEADING_ATX_OPENING_FENCE_SIZE_MAX => {
-            tokenizer.tokenize_state.size += 1;
-            tokenizer.consume();
-            State::Next(StateName::HeadingAtxSequenceOpen)
-        }
-        _ if tokenizer.tokenize_state.size > 0 => {
+        } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
             tokenizer.tokenize_state.size = 0;
             tokenizer.exit(Name::HeadingAtxSequence);
             tokenizer.attempt(State::Next(StateName::HeadingAtxAtBreak), State::Nok);
             State::Retry(space_or_tab(tokenizer))
-        }
-        _ => {
+        } else {
             tokenizer.tokenize_state.size = 0;
             State::Nok
         }
+    } else {
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
     }
 }
 

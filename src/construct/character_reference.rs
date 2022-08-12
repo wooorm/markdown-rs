@@ -81,15 +81,14 @@ use crate::util::slice::Slice;
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'&') if tokenizer.parse_state.constructs.character_reference => {
-            tokenizer.enter(Name::CharacterReference);
-            tokenizer.enter(Name::CharacterReferenceMarker);
-            tokenizer.consume();
-            tokenizer.exit(Name::CharacterReferenceMarker);
-            State::Next(StateName::CharacterReferenceOpen)
-        }
-        _ => State::Nok,
+    if tokenizer.parse_state.constructs.character_reference && tokenizer.current == Some(b'&') {
+        tokenizer.enter(Name::CharacterReference);
+        tokenizer.enter(Name::CharacterReferenceMarker);
+        tokenizer.consume();
+        tokenizer.exit(Name::CharacterReferenceMarker);
+        State::Next(StateName::CharacterReferenceOpen)
+    } else {
+        State::Nok
     }
 }
 

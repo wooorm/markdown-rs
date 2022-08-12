@@ -44,15 +44,14 @@ use crate::tokenizer::Tokenizer;
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'\\') if tokenizer.parse_state.constructs.character_escape => {
-            tokenizer.enter(Name::CharacterEscape);
-            tokenizer.enter(Name::CharacterEscapeMarker);
-            tokenizer.consume();
-            tokenizer.exit(Name::CharacterEscapeMarker);
-            State::Next(StateName::CharacterEscapeInside)
-        }
-        _ => State::Nok,
+    if tokenizer.parse_state.constructs.character_escape && tokenizer.current == Some(b'\\') {
+        tokenizer.enter(Name::CharacterEscape);
+        tokenizer.enter(Name::CharacterEscapeMarker);
+        tokenizer.consume();
+        tokenizer.exit(Name::CharacterEscapeMarker);
+        State::Next(StateName::CharacterEscapeInside)
+    } else {
+        State::Nok
     }
 }
 

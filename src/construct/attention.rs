@@ -118,13 +118,13 @@ struct Sequence {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'*' | b'_') if tokenizer.parse_state.constructs.attention => {
-            tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
-            tokenizer.enter(Name::AttentionSequence);
-            State::Retry(StateName::AttentionInside)
-        }
-        _ => State::Nok,
+    if tokenizer.parse_state.constructs.attention && matches!(tokenizer.current, Some(b'*' | b'_'))
+    {
+        tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
+        tokenizer.enter(Name::AttentionSequence);
+        State::Retry(StateName::AttentionInside)
+    } else {
+        State::Nok
     }
 }
 
@@ -135,17 +135,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^^
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'*' | b'_') if tokenizer.current == Some(tokenizer.tokenize_state.marker) => {
-            tokenizer.consume();
-            State::Next(StateName::AttentionInside)
-        }
-        _ => {
-            tokenizer.exit(Name::AttentionSequence);
-            tokenizer.register_resolver(ResolveName::Attention);
-            tokenizer.tokenize_state.marker = b'\0';
-            State::Ok
-        }
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.consume();
+        State::Next(StateName::AttentionInside)
+    } else {
+        tokenizer.exit(Name::AttentionSequence);
+        tokenizer.register_resolver(ResolveName::Attention);
+        tokenizer.tokenize_state.marker = b'\0';
+        State::Ok
     }
 }
 
@@ -437,14 +434,22 @@ fn match_sequences(
 ///
 /// *   [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
 fn classify_character(char: Option<char>) -> CharacterKind {
-    match char {
-        // EOF.
-        None => CharacterKind::Whitespace,
+    if let Some(char) = char {
         // Unicode whitespace.
-        Some(char) if char.is_whitespace() => CharacterKind::Whitespace,
+        if char.is_whitespace() {
+            CharacterKind::Whitespace
+        }
         // Unicode punctuation.
-        Some(char) if PUNCTUATION.contains(&char) => CharacterKind::Punctuation,
+        else if PUNCTUATION.contains(&char) {
+            CharacterKind::Punctuation
+        }
         // Everything else.
-        Some(_) => CharacterKind::Other,
+        else {
+            CharacterKind::Other
+        }
+    }
+    // EOF.
+    else {
+        CharacterKind::Whitespace
     }
 }

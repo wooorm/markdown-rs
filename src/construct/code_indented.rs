@@ -135,33 +135,19 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///   |     bbb
 /// ```
 pub fn further_start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'\n') if !tokenizer.lazy => {
-            tokenizer.enter(Name::LineEnding);
-            tokenizer.consume();
-            tokenizer.exit(Name::LineEnding);
-            State::Next(StateName::CodeIndentedFurtherStart)
-        }
-        _ if !tokenizer.lazy => {
-            tokenizer.attempt(
-                State::Next(StateName::CodeIndentedFurtherEnd),
-                State::Next(StateName::CodeIndentedFurtherBegin),
-            );
-            State::Retry(space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE))
-        }
-        _ => State::Nok,
+    if tokenizer.lazy {
+        return State::Nok;
     }
-}
 
-/// At eol, followed by an indented line.
-///
-/// ```markdown
-/// >  |     aaa
-///             ^
-///    |     bbb
-/// ```
-pub fn further_end(_tokenizer: &mut Tokenizer) -> State {
-    State::Ok
+    if tokenizer.current == Some(b'\n') {
+        tokenizer.enter(Name::LineEnding);
+        tokenizer.consume();
+        tokenizer.exit(Name::LineEnding);
+        State::Next(StateName::CodeIndentedFurtherStart)
+    } else {
+        tokenizer.attempt(State::Ok, State::Next(StateName::CodeIndentedFurtherBegin));
+        State::Retry(space_or_tab_min_max(tokenizer, TAB_SIZE, TAB_SIZE))
+    }
 }
 
 /// At the beginning of a line that is not indented enough.

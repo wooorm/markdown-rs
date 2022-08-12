@@ -68,23 +68,24 @@ pub fn space_or_tab_with_options(tokenizer: &mut Tokenizer, options: Options) ->
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'\t' | b' ') if tokenizer.tokenize_state.space_or_tab_max > 0 => {
-            tokenizer.enter_with_content(
-                tokenizer.tokenize_state.space_or_tab_token.clone(),
-                tokenizer.tokenize_state.space_or_tab_content_type.clone(),
-            );
+    if tokenizer.tokenize_state.space_or_tab_max > 0
+        && matches!(tokenizer.current, Some(b'\t' | b' '))
+    {
+        tokenizer.enter_with_content(
+            tokenizer.tokenize_state.space_or_tab_token.clone(),
+            tokenizer.tokenize_state.space_or_tab_content_type.clone(),
+        );
 
-            if tokenizer.tokenize_state.space_or_tab_connect {
-                let index = tokenizer.events.len() - 1;
-                link(&mut tokenizer.events, index);
-            } else if tokenizer.tokenize_state.space_or_tab_content_type.is_some() {
-                tokenizer.tokenize_state.space_or_tab_connect = true;
-            }
-
-            State::Retry(StateName::SpaceOrTabInside)
+        if tokenizer.tokenize_state.space_or_tab_connect {
+            let index = tokenizer.events.len() - 1;
+            link(&mut tokenizer.events, index);
+        } else if tokenizer.tokenize_state.space_or_tab_content_type.is_some() {
+            tokenizer.tokenize_state.space_or_tab_connect = true;
         }
-        _ => State::Retry(StateName::SpaceOrTabAfter),
+
+        State::Retry(StateName::SpaceOrTabInside)
+    } else {
+        State::Retry(StateName::SpaceOrTabAfter)
     }
 }
 

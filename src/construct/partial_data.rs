@@ -18,15 +18,16 @@ use crate::tokenizer::Tokenizer;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        // Make sure to eat the first `markers`.
-        Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
+    // Make sure to eat the first `markers`.
+    if let Some(byte) = tokenizer.current {
+        if tokenizer.tokenize_state.markers.contains(&byte) {
             tokenizer.enter(Name::Data);
             tokenizer.consume();
-            State::Next(StateName::DataInside)
+            return State::Next(StateName::DataInside);
         }
-        _ => State::Retry(StateName::DataAtBreak),
     }
+
+    State::Retry(StateName::DataAtBreak)
 }
 
 /// Before something.
@@ -36,23 +37,21 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None => State::Ok,
-        Some(b'\n') => {
-            tokenizer.enter(Name::LineEnding);
-            tokenizer.consume();
-            tokenizer.exit(Name::LineEnding);
-            State::Next(StateName::DataAtBreak)
-        }
-        Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => {
-            tokenizer.register_resolver_before(ResolveName::Data);
-            State::Ok
-        }
-        _ => {
+    if let Some(byte) = tokenizer.current {
+        if !tokenizer.tokenize_state.markers.contains(&byte) {
+            if byte == b'\n' {
+                tokenizer.enter(Name::LineEnding);
+                tokenizer.consume();
+                tokenizer.exit(Name::LineEnding);
+                return State::Next(StateName::DataAtBreak);
+            }
             tokenizer.enter(Name::Data);
-            State::Retry(StateName::DataInside)
+            return State::Retry(StateName::DataInside);
         }
     }
+
+    tokenizer.register_resolver_before(ResolveName::Data);
+    State::Ok
 }
 
 /// In data.
@@ -62,19 +61,15 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 ///     ^^^
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
-    let done = match tokenizer.current {
-        None | Some(b'\n') => true,
-        Some(byte) if tokenizer.tokenize_state.markers.contains(&byte) => true,
-        _ => false,
-    };
-
-    if done {
-        tokenizer.exit(Name::Data);
-        State::Retry(StateName::DataAtBreak)
-    } else {
-        tokenizer.consume();
-        State::Next(StateName::DataInside)
+    if let Some(byte) = tokenizer.current {
+        if byte != b'\n' && !tokenizer.tokenize_state.markers.contains(&byte) {
+            tokenizer.consume();
+            return State::Next(StateName::DataInside);
+        }
     }
+
+    tokenizer.exit(Name::Data);
+    State::Retry(StateName::DataAtBreak)
 }
 
 /// Merge adjacent data events.

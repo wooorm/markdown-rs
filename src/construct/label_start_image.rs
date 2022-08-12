@@ -40,15 +40,14 @@ use crate::tokenizer::{LabelStart, Tokenizer};
 ///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'!') if tokenizer.parse_state.constructs.label_start_image => {
-            tokenizer.enter(Name::LabelImage);
-            tokenizer.enter(Name::LabelImageMarker);
-            tokenizer.consume();
-            tokenizer.exit(Name::LabelImageMarker);
-            State::Next(StateName::LabelStartImageOpen)
-        }
-        _ => State::Nok,
+    if tokenizer.parse_state.constructs.label_start_image && tokenizer.current == Some(b'!') {
+        tokenizer.enter(Name::LabelImage);
+        tokenizer.enter(Name::LabelImageMarker);
+        tokenizer.consume();
+        tokenizer.exit(Name::LabelImageMarker);
+        State::Next(StateName::LabelStartImageOpen)
+    } else {
+        State::Nok
     }
 }
 

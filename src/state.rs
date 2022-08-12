@@ -75,7 +75,6 @@ pub enum Name {
     CodeIndentedAfter,
     CodeIndentedFurtherStart,
     CodeIndentedInside,
-    CodeIndentedFurtherEnd,
     CodeIndentedFurtherBegin,
     CodeIndentedFurtherAfter,
 
@@ -358,7 +357,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::CodeIndentedAfter => construct::code_indented::after,
         Name::CodeIndentedFurtherStart => construct::code_indented::further_start,
         Name::CodeIndentedInside => construct::code_indented::inside,
-        Name::CodeIndentedFurtherEnd => construct::code_indented::further_end,
         Name::CodeIndentedFurtherBegin => construct::code_indented::further_begin,
         Name::CodeIndentedFurtherAfter => construct::code_indented::further_after,
 

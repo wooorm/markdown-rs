@@ -101,26 +101,22 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None | Some(b'\n') if tokenizer.tokenize_state.size >= THEMATIC_BREAK_MARKER_COUNT_MIN => {
-            tokenizer.tokenize_state.marker = 0;
-            tokenizer.tokenize_state.size = 0;
-            tokenizer.exit(Name::ThematicBreak);
-            // Feel free to interrupt.
-            tokenizer.interrupt = false;
-            State::Ok
-        }
-        Some(b'*' | b'-' | b'_')
-            if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker =>
-        {
-            tokenizer.enter(Name::ThematicBreakSequence);
-            State::Retry(StateName::ThematicBreakSequence)
-        }
-        _ => {
-            tokenizer.tokenize_state.marker = 0;
-            tokenizer.tokenize_state.size = 0;
-            State::Nok
-        }
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.enter(Name::ThematicBreakSequence);
+        State::Retry(StateName::ThematicBreakSequence)
+    } else if tokenizer.tokenize_state.size >= THEMATIC_BREAK_MARKER_COUNT_MIN
+        && matches!(tokenizer.current, None | Some(b'\n'))
+    {
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.tokenize_state.size = 0;
+        tokenizer.exit(Name::ThematicBreak);
+        // Feel free to interrupt.
+        tokenizer.interrupt = false;
+        State::Ok
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
     }
 }
 

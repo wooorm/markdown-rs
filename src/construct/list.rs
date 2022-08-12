@@ -86,17 +86,20 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn before(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        // Unordered.
-        Some(b'*' | b'-') => {
-            tokenizer.check(State::Nok, State::Next(StateName::ListBeforeUnordered));
-            State::Retry(StateName::ThematicBreakStart)
-        }
-        Some(b'+') => State::Retry(StateName::ListBeforeUnordered),
-        // Ordered.
-        Some(b'0'..=b'9') if !tokenizer.interrupt => State::Retry(StateName::ListBeforeOrdered),
-        Some(b'1') => State::Retry(StateName::ListBeforeOrdered),
-        _ => State::Nok,
+    // Unordered.
+    if matches!(tokenizer.current, Some(b'*' | b'-')) {
+        tokenizer.check(State::Nok, State::Next(StateName::ListBeforeUnordered));
+        State::Retry(StateName::ThematicBreakStart)
+    } else if tokenizer.current == Some(b'+') {
+        State::Retry(StateName::ListBeforeUnordered)
+    }
+    // Ordered.
+    else if tokenizer.current == Some(b'1')
+        || (matches!(tokenizer.current, Some(b'0'..=b'9')) && !tokenizer.interrupt)
+    {
+        State::Retry(StateName::ListBeforeOrdered)
+    } else {
+        State::Nok
     }
 }
 
@@ -132,20 +135,20 @@ pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn value(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'.' | b')') if !tokenizer.interrupt || tokenizer.tokenize_state.size < 2 => {
-            tokenizer.exit(Name::ListItemValue);
-            State::Retry(StateName::ListMarker)
-        }
-        Some(b'0'..=b'9') if tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX => {
-            tokenizer.tokenize_state.size += 1;
-            tokenizer.consume();
-            State::Next(StateName::ListValue)
-        }
-        _ => {
-            tokenizer.tokenize_state.size = 0;
-            State::Nok
-        }
+    if matches!(tokenizer.current, Some(b'.' | b')'))
+        && (!tokenizer.interrupt || tokenizer.tokenize_state.size < 2)
+    {
+        tokenizer.exit(Name::ListItemValue);
+        State::Retry(StateName::ListMarker)
+    } else if matches!(tokenizer.current, Some(b'0'..=b'9'))
+        && tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX
+    {
+        tokenizer.tokenize_state.size += 1;
+        tokenizer.consume();
+        State::Next(StateName::ListValue)
+    } else {
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
     }
 }
 

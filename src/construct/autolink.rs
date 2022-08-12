@@ -115,16 +115,15 @@ use crate::tokenizer::Tokenizer;
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'<') if tokenizer.parse_state.constructs.autolink => {
-            tokenizer.enter(Name::Autolink);
-            tokenizer.enter(Name::AutolinkMarker);
-            tokenizer.consume();
-            tokenizer.exit(Name::AutolinkMarker);
-            tokenizer.enter(Name::AutolinkProtocol);
-            State::Next(StateName::AutolinkOpen)
-        }
-        _ => State::Nok,
+    if tokenizer.parse_state.constructs.autolink && tokenizer.current == Some(b'<') {
+        tokenizer.enter(Name::Autolink);
+        tokenizer.enter(Name::AutolinkMarker);
+        tokenizer.consume();
+        tokenizer.exit(Name::AutolinkMarker);
+        tokenizer.enter(Name::AutolinkProtocol);
+        State::Next(StateName::AutolinkOpen)
+    } else {
+        State::Nok
     }
 }
 

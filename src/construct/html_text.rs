@@ -558,26 +558,27 @@ pub fn tag_open_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
 ///             ^
 /// ```
 pub fn tag_open_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        None => {
-            tokenizer.tokenize_state.marker = 0;
-            State::Nok
-        }
-        Some(b'\n') => {
-            tokenizer.attempt(
-                State::Next(StateName::HtmlTextTagOpenAttributeValueQuoted),
-                State::Nok,
-            );
-            State::Retry(StateName::HtmlTextLineEndingBefore)
-        }
-        Some(b'"' | b'\'') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
-            tokenizer.tokenize_state.marker = 0;
-            tokenizer.consume();
-            State::Next(StateName::HtmlTextTagOpenAttributeValueQuotedAfter)
-        }
-        _ => {
-            tokenizer.consume();
-            State::Next(StateName::HtmlTextTagOpenAttributeValueQuoted)
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.consume();
+        State::Next(StateName::HtmlTextTagOpenAttributeValueQuotedAfter)
+    } else {
+        match tokenizer.current {
+            None => {
+                tokenizer.tokenize_state.marker = 0;
+                State::Nok
+            }
+            Some(b'\n') => {
+                tokenizer.attempt(
+                    State::Next(StateName::HtmlTextTagOpenAttributeValueQuoted),
+                    State::Nok,
+                );
+                State::Retry(StateName::HtmlTextLineEndingBefore)
+            }
+            _ => {
+                tokenizer.consume();
+                State::Next(StateName::HtmlTextTagOpenAttributeValueQuoted)
+            }
         }
     }
 }

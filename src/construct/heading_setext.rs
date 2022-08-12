@@ -126,20 +126,17 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'-' | b'=') if tokenizer.current.unwrap() == tokenizer.tokenize_state.marker => {
-            tokenizer.consume();
-            State::Next(StateName::HeadingSetextInside)
-        }
-        _ => {
-            tokenizer.tokenize_state.marker = 0;
-            tokenizer.exit(Name::HeadingSetextUnderline);
-            tokenizer.attempt(
-                State::Next(StateName::HeadingSetextAfter),
-                State::Next(StateName::HeadingSetextAfter),
-            );
-            State::Retry(space_or_tab(tokenizer))
-        }
+    if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.consume();
+        State::Next(StateName::HeadingSetextInside)
+    } else {
+        tokenizer.tokenize_state.marker = 0;
+        tokenizer.exit(Name::HeadingSetextUnderline);
+        tokenizer.attempt(
+            State::Next(StateName::HeadingSetextAfter),
+            State::Next(StateName::HeadingSetextAfter),
+        );
+        State::Retry(space_or_tab(tokenizer))
     }
 }
 
