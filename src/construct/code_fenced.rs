@@ -331,27 +331,10 @@ pub fn at_non_lazy_break(tokenizer: &mut Tokenizer) -> State {
         State::Next(StateName::CodeFencedAfter),
         State::Next(StateName::CodeFencedContentBefore),
     );
-    State::Retry(StateName::CodeFencedCloseBefore)
-}
-
-/// Before closing fence, at eol.
-///
-/// ```markdown
-///   | ~~~js
-/// > | console.log(1)
-///                   ^
-///   | ~~~
-/// ```
-pub fn close_before(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'\n') => {
-            tokenizer.enter(Name::LineEnding);
-            tokenizer.consume();
-            tokenizer.exit(Name::LineEnding);
-            State::Next(StateName::CodeFencedCloseStart)
-        }
-        _ => unreachable!("expected eol"),
-    }
+    tokenizer.enter(Name::LineEnding);
+    tokenizer.consume();
+    tokenizer.exit(Name::LineEnding);
+    State::Next(StateName::CodeFencedCloseStart)
 }
 
 /// Before closing fence, at optional whitespace.
