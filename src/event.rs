@@ -1833,7 +1833,7 @@ pub enum Name {
 }
 
 /// List of void tokens, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 40] = [
+pub const VOID_EVENTS: [Name; 41] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -1872,6 +1872,7 @@ pub const VOID_EVENTS: [Name; 40] = [
     Name::ReferenceMarker,
     Name::ResourceMarker,
     Name::ResourceTitleMarker,
+    Name::SpaceOrTab,
     Name::StrongSequence,
     Name::ThematicBreakSequence,
 ];
