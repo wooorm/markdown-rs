@@ -1,5 +1,5 @@
 /// Semantic label of a span.
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Name {
     /// Attention sequence.
     ///
@@ -1877,7 +1877,7 @@ pub const VOID_EVENTS: [Name; 40] = [
 ];
 
 /// Embedded content type.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Content {
     /// Represents [flow content][crate::construct::flow].
     Flow,
@@ -1888,7 +1888,7 @@ pub enum Content {
 }
 
 /// Link to another event.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Link {
     pub previous: Option<usize>,
     pub next: Option<usize>,
@@ -1899,7 +1899,7 @@ pub struct Link {
 ///
 /// The interface for the location in the document comes from unist `Point`:
 /// <https://github.com/syntax-tree/unist#point>.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Point {
     /// 1-indexed line number.
     pub line: usize,
@@ -1917,7 +1917,7 @@ pub struct Point {
 }
 
 /// Event kinds.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Kind {
     /// The start of something.
     Enter,
@@ -1926,7 +1926,7 @@ pub enum Kind {
 }
 
 /// Something semantic happening somewhere.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Event {
     /// Kind of event.
     pub kind: Kind,

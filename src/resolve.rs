@@ -2,7 +2,7 @@ use crate::construct;
 use crate::tokenizer::Tokenizer;
 
 /// Names of functions that resolve.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Name {
     Label,
     Attention,

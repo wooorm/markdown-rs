@@ -20,7 +20,7 @@ use crate::compiler::compile;
 use crate::parser::parse;
 
 /// Type of line endings in markdown.
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum LineEnding {
     /// Both a carriage return (`\r`) and a line feed (`\n`).
     ///

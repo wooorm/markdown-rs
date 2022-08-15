@@ -102,7 +102,7 @@ struct Attempt {
 /// The internal state of a tokenizer, not to be confused with states from the
 /// state machine, this instead is all the information about where we currently
 /// are and what’s going on.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 struct Progress {
     /// Length of `events`.
     ///

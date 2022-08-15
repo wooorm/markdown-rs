@@ -2,7 +2,7 @@ use crate::construct;
 use crate::tokenizer::Tokenizer;
 
 /// The result of a state.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum State {
     /// Move to [`Name`][] next.
     Next(Name),
@@ -15,7 +15,7 @@ pub enum State {
 }
 
 /// Names of functions to move to.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::enum_variant_names)]
 pub enum Name {
     AttentionStart,
