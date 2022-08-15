@@ -168,7 +168,6 @@ impl<'a> CompileContext<'a> {
 }
 
 /// Turn events and codes into a string of HTML.
-#[allow(clippy::too_many_lines)]
 pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
     let mut index = 0;
     let mut line_ending_inferred = None;

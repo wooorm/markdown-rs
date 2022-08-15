@@ -151,7 +151,7 @@ use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::{Event, Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
-use crate::tokenizer::{Label, Tokenizer};
+use crate::tokenizer::{Label, LabelStart, Tokenizer};
 use crate::util::{
     normalize_identifier::normalize_identifier,
     skip,
@@ -606,43 +606,13 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
 ///
 /// This turns matching label start (image, link) and label ends into links and
 /// images, and turns unmatched label starts back into data.
-#[allow(clippy::too_many_lines)]
 pub fn resolve(tokenizer: &mut Tokenizer) {
-    let mut left = tokenizer.tokenize_state.label_starts_loose.split_off(0);
-    let mut left_2 = tokenizer.tokenize_state.label_starts.split_off(0);
+    let list = tokenizer.tokenize_state.label_starts.split_off(0);
+    mark_as_data(tokenizer, &list);
+    let list = tokenizer.tokenize_state.label_starts_loose.split_off(0);
+    mark_as_data(tokenizer, &list);
+
     let media = tokenizer.tokenize_state.labels.split_off(0);
-    left.append(&mut left_2);
-
-    let events = &tokenizer.events;
-
-    // Remove loose label starts.
-    let mut index = 0;
-    while index < left.len() {
-        let label_start = &left[index];
-        let data_enter_index = label_start.start.0;
-        let data_exit_index = label_start.start.1;
-
-        tokenizer.map.add(
-            data_enter_index,
-            data_exit_index - data_enter_index + 1,
-            vec![
-                Event {
-                    kind: Kind::Enter,
-                    name: Name::Data,
-                    point: events[data_enter_index].point.clone(),
-                    link: None,
-                },
-                Event {
-                    kind: Kind::Exit,
-                    name: Name::Data,
-                    point: events[data_exit_index].point.clone(),
-                    link: None,
-                },
-            ],
-        );
-
-        index += 1;
-    }
 
     // Add grouping events.
     let mut index = 0;
@@ -650,7 +620,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         let media = &media[index];
         // LabelLink:Enter or LabelImage:Enter.
         let group_enter_index = media.start.0;
-        let group_enter_event = &events[group_enter_index];
+        let group_enter_event = &tokenizer.events[group_enter_index];
         // LabelLink:Exit or LabelImage:Exit.
         let text_enter_index = media.start.0
             + (if group_enter_event.name == Name::LabelLink {
@@ -665,6 +635,12 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         // Resource:Exit, etc.
         let group_end_index = media.end.1;
 
+        let group_name = if group_enter_event.name == Name::LabelLink {
+            Name::Link
+        } else {
+            Name::Image
+        };
+
         // Insert a group enter and label enter.
         tokenizer.map.add(
             group_enter_index,
@@ -672,11 +648,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
             vec![
                 Event {
                     kind: Kind::Enter,
-                    name: if group_enter_event.name == Name::LabelLink {
-                        Name::Link
-                    } else {
-                        Name::Image
-                    },
+                    name: group_name.clone(),
                     point: group_enter_event.point.clone(),
                     link: None,
                 },
@@ -698,7 +670,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 vec![Event {
                     kind: Kind::Enter,
                     name: Name::LabelText,
-                    point: events[text_enter_index].point.clone(),
+                    point: tokenizer.events[text_enter_index].point.clone(),
                     link: None,
                 }],
             );
@@ -710,7 +682,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 vec![Event {
                     kind: Kind::Exit,
                     name: Name::LabelText,
-                    point: events[text_exit_index].point.clone(),
+                    point: tokenizer.events[text_exit_index].point.clone(),
                     link: None,
                 }],
             );
@@ -723,7 +695,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
             vec![Event {
                 kind: Kind::Exit,
                 name: Name::Label,
-                point: events[label_exit_index].point.clone(),
+                point: tokenizer.events[label_exit_index].point.clone(),
                 link: None,
             }],
         );
@@ -734,12 +706,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
             0,
             vec![Event {
                 kind: Kind::Exit,
-                name: if group_enter_event.name == Name::LabelLink {
-                    Name::Link
-                } else {
-                    Name::Image
-                },
-                point: events[group_end_index].point.clone(),
+                name: group_name,
+                point: tokenizer.events[group_end_index].point.clone(),
                 link: None,
             }],
         );
@@ -748,4 +716,35 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     }
 
     tokenizer.map.consume(&mut tokenizer.events);
+}
+
+/// Remove loose label starts.
+fn mark_as_data(tokenizer: &mut Tokenizer, events: &[LabelStart]) {
+    let mut index = 0;
+
+    while index < events.len() {
+        let data_enter_index = events[index].start.0;
+        let data_exit_index = events[index].start.1;
+
+        tokenizer.map.add(
+            data_enter_index,
+            data_exit_index - data_enter_index + 1,
+            vec![
+                Event {
+                    kind: Kind::Enter,
+                    name: Name::Data,
+                    point: tokenizer.events[data_enter_index].point.clone(),
+                    link: None,
+                },
+                Event {
+                    kind: Kind::Exit,
+                    name: Name::Data,
+                    point: tokenizer.events[data_exit_index].point.clone(),
+                    link: None,
+                },
+            ],
+        );
+
+        index += 1;
+    }
 }
