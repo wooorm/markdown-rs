@@ -23,7 +23,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) {
         Name::Attention => construct::attention::resolve,
         Name::HeadingAtx => construct::heading_atx::resolve,
         Name::HeadingSetext => construct::heading_setext::resolve,
-        Name::List => construct::list::resolve,
+        Name::List => construct::list_item::resolve,
         Name::Paragraph => construct::paragraph::resolve,
         Name::Data => construct::partial_data::resolve,
         Name::String => content::string::resolve,

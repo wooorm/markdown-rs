@@ -202,7 +202,8 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
-/// The max number of decimals allowed to form an (ordered) [list][] item.
+/// The max number of decimals allowed to form an (ordered)
+/// [list item][list-item].
 ///
 /// `CommonMark` caps this at 10 digits (9 is fine, 10 not).
 /// This limit is imposed because bigger numbers result in integer overflows
@@ -212,7 +213,7 @@ pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 ///
 /// *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.30/#ordered-list-marker)
 ///
-/// [list]: crate::construct::list
+/// [list-item]: crate::construct::list_item
 pub const LIST_ITEM_VALUE_SIZE_MAX: usize = 10;
 
 /// Maximum allowed unbalanced parens in destination.

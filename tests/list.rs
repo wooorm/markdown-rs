@@ -562,7 +562,7 @@ fn list() {
             "- one\n\n two",
             &Options {
                 constructs: Constructs {
-                    list: false,
+                    list_item: false,
                     ..Constructs::default()
                 },
                 ..Options::default()

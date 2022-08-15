@@ -218,13 +218,13 @@ pub struct Constructs {
     ///         ^^^^
     /// ```
     pub label_end: bool,
-    /// List.
+    /// List items.
     ///
     /// ```markdown
     /// > | * a
     ///     ^^^
     /// ```
-    pub list: bool,
+    pub list_item: bool,
     /// Thematic break.
     ///
     /// ```markdown
@@ -256,7 +256,7 @@ impl Default for Constructs {
             label_start_image: true,
             label_start_link: true,
             label_end: true,
-            list: true,
+            list_item: true,
             thematic_break: true,
         }
     }

@@ -6,7 +6,7 @@
 //! The constructs found in flow are:
 //!
 //! *   [Block quote][crate::construct::block_quote]
-//! *   [List][crate::construct::list]
+//! *   [List][crate::construct::list_item]
 
 use crate::event::{Content, Event, Kind, Link, Name, Point};
 use crate::parser::ParseState;
@@ -103,7 +103,7 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
 
         let name = match container.kind {
             Container::BlockQuote => StateName::BlockQuoteContStart,
-            Container::ListItem => StateName::ListContStart,
+            Container::ListItem => StateName::ListItemContStart,
         };
 
         tokenizer.attempt(
@@ -201,7 +201,7 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
         State::Next(StateName::DocumentContainerNewAfter),
         State::Next(StateName::DocumentContainerNewBeforeNotList),
     );
-    State::Retry(StateName::ListStart)
+    State::Retry(StateName::ListItemStart)
 }
 
 /// At new container, but not a list (or block quote).

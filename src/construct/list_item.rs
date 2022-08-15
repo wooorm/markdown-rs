@@ -1,4 +1,4 @@
-//! List is a construct that occurs in the [document][] content type.
+//! List item is a construct that occurs in the [document][] content type.
 //!
 //! It forms with, roughly, the following BNF:
 //!
@@ -62,11 +62,11 @@ use crate::util::{
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.list {
+    if tokenizer.parse_state.constructs.list_item {
         tokenizer.enter(Name::ListItem);
 
         if matches!(tokenizer.current, Some(b'\t' | b' ')) {
-            tokenizer.attempt(State::Next(StateName::ListBefore), State::Nok);
+            tokenizer.attempt(State::Next(StateName::ListItemBefore), State::Nok);
             State::Retry(space_or_tab_min_max(
                 tokenizer,
                 0,
@@ -77,7 +77,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 },
             ))
         } else {
-            State::Retry(StateName::ListBefore)
+            State::Retry(StateName::ListItemBefore)
         }
     } else {
         State::Nok
@@ -93,16 +93,16 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     // Unordered.
     if matches!(tokenizer.current, Some(b'*' | b'-')) {
-        tokenizer.check(State::Nok, State::Next(StateName::ListBeforeUnordered));
+        tokenizer.check(State::Nok, State::Next(StateName::ListItemBeforeUnordered));
         State::Retry(StateName::ThematicBreakStart)
     } else if tokenizer.current == Some(b'+') {
-        State::Retry(StateName::ListBeforeUnordered)
+        State::Retry(StateName::ListItemBeforeUnordered)
     }
     // Ordered.
     else if tokenizer.current == Some(b'1')
         || (matches!(tokenizer.current, Some(b'0'..=b'9')) && !tokenizer.interrupt)
     {
-        State::Retry(StateName::ListBeforeOrdered)
+        State::Retry(StateName::ListItemBeforeOrdered)
     } else {
         State::Nok
     }
@@ -118,7 +118,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Name::ListItemPrefix);
-    State::Retry(StateName::ListMarker)
+    State::Retry(StateName::ListItemMarker)
 }
 
 /// At ordered list item value.
@@ -130,7 +130,7 @@ pub fn before_unordered(tokenizer: &mut Tokenizer) -> State {
 pub fn before_ordered(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Name::ListItemPrefix);
     tokenizer.enter(Name::ListItemValue);
-    State::Retry(StateName::ListValue)
+    State::Retry(StateName::ListItemValue)
 }
 
 /// In ordered list item value.
@@ -144,13 +144,13 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
         && (!tokenizer.interrupt || tokenizer.tokenize_state.size < 2)
     {
         tokenizer.exit(Name::ListItemValue);
-        State::Retry(StateName::ListMarker)
+        State::Retry(StateName::ListItemMarker)
     } else if matches!(tokenizer.current, Some(b'0'..=b'9'))
         && tokenizer.tokenize_state.size + 1 < LIST_ITEM_VALUE_SIZE_MAX
     {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
-        State::Next(StateName::ListValue)
+        State::Next(StateName::ListItemValue)
     } else {
         tokenizer.tokenize_state.size = 0;
         State::Nok
@@ -169,7 +169,7 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Name::ListItemMarker);
     tokenizer.consume();
     tokenizer.exit(Name::ListItemMarker);
-    State::Next(StateName::ListMarkerAfter)
+    State::Next(StateName::ListItemMarkerAfter)
 }
 
 /// After list item marker.
@@ -183,8 +183,8 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.size = 1;
     tokenizer.check(
-        State::Next(StateName::ListAfter),
-        State::Next(StateName::ListMarkerAfterFilled),
+        State::Next(StateName::ListItemAfter),
+        State::Next(StateName::ListItemMarkerAfterFilled),
     );
     State::Retry(StateName::BlankLineStart)
 }
@@ -202,10 +202,10 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
 
     // Attempt to parse up to the largest allowed indent, `nok` if there is more whitespace.
     tokenizer.attempt(
-        State::Next(StateName::ListAfter),
-        State::Next(StateName::ListPrefixOther),
+        State::Next(StateName::ListItemAfter),
+        State::Next(StateName::ListItemPrefixOther),
     );
-    State::Retry(StateName::ListWhitespace)
+    State::Retry(StateName::ListItemWhitespace)
 }
 
 /// After marker, at whitespace.
@@ -215,7 +215,7 @@ pub fn marker_after_filled(tokenizer: &mut Tokenizer) -> State {
 ///      ^
 /// ```
 pub fn whitespace(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(State::Next(StateName::ListWhitespaceAfter), State::Nok);
+    tokenizer.attempt(State::Next(StateName::ListItemWhitespaceAfter), State::Nok);
     State::Retry(space_or_tab_min_max(tokenizer, 1, TAB_SIZE))
 }
 
@@ -245,7 +245,7 @@ pub fn prefix_other(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Name::SpaceOrTab);
             tokenizer.consume();
             tokenizer.exit(Name::SpaceOrTab);
-            State::Next(StateName::ListAfter)
+            State::Next(StateName::ListItemAfter)
         }
         _ => State::Nok,
     }
@@ -303,8 +303,8 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.check(
-        State::Next(StateName::ListContBlank),
-        State::Next(StateName::ListContFilled),
+        State::Next(StateName::ListItemContBlank),
+        State::Next(StateName::ListItemContFilled),
     );
     State::Retry(StateName::BlankLineStart)
 }

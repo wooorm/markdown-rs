@@ -1332,7 +1332,7 @@ pub enum Name {
     ///     [`ListItemPrefix`][Name::ListItemPrefix],
     ///     [flow content][crate::content::flow]
     /// *   **Construct**:
-    ///     [`list`][crate::construct::list]
+    ///     [`list item`][crate::construct::list_item]
     ///
     /// ## Example
     ///
@@ -1352,7 +1352,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`list`][crate::construct::list]
+    ///     [`list item`][crate::construct::list_item]
     ///
     /// ## Example
     ///
@@ -1374,7 +1374,7 @@ pub enum Name {
     ///     [`ListItemValue`][Name::ListItemValue],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`list`][crate::construct::list]
+    ///     [`list item`][crate::construct::list_item]
     ///
     /// ## Example
     ///
@@ -1394,7 +1394,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`list`][crate::construct::list]
+    ///     [`list item`][crate::construct::list_item]
     ///
     /// ## Example
     ///
@@ -1416,7 +1416,7 @@ pub enum Name {
     ///     [`LineEnding`][Name::LineEnding],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`list`][crate::construct::list]
+    ///     [`list item`][crate::construct::list_item]
     ///
     /// ## Example
     ///
@@ -1440,7 +1440,7 @@ pub enum Name {
     ///     [`LineEnding`][Name::LineEnding],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`list`][crate::construct::list]
+    ///     [`list item`][crate::construct::list_item]
     ///
     /// ## Example
     ///

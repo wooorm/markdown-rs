@@ -12,7 +12,7 @@
 //! such as between two [heading (atx)][heading-atx]s.
 //! Sometimes, whether blank lines are present, changes the behavior of how
 //! HTML is rendered, such as whether blank lines are present between list
-//! items in a [list][].
+//! items in a [list][list-item].
 //! More than one blank line is never needed in `CommonMark`.
 //!
 //! Because blank lines can be empty (line endings are not considered part of
@@ -28,7 +28,7 @@
 //! *   [*§ 4.9 Blank lines* in `CommonMark`](https://spec.commonmark.org/0.30/#blank-lines)
 //!
 //! [heading-atx]: crate::construct::heading_atx
-//! [list]: crate::construct::list
+//! [list-item]: crate::construct::list_item
 //! [paragraph]: crate::construct::paragraph
 //! [flow]: crate::content::flow
 
