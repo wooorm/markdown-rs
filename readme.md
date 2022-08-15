@@ -97,7 +97,7 @@ cargo fmt --all
 Lint:
 
 ```sh
-cargo fmt --all -- --check && cargo clippy -- -W clippy::pedantic
+cargo fmt --all -- --check && cargo clippy -- -W clippy::pedantic -A clippy::doc_link_with_quotes
 ```
 
 Tests:
