@@ -71,7 +71,7 @@ pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whol
     }
 }
 
-/// Trim a [`Data`][Name::Data] token.
+/// Trim a [`Data`][Name::Data] event.
 fn trim_data(
     tokenizer: &mut Tokenizer,
     exit_index: usize,
@@ -109,7 +109,7 @@ fn trim_data(
         };
 
         // The whole data is whitespace.
-        // We can be very fast: we only change the token types.
+        // We can be very fast: we only change the event names.
         if index == 0 {
             tokenizer.events[exit_index - 1].name = name.clone();
             tokenizer.events[exit_index].name = name;
@@ -157,7 +157,7 @@ fn trim_data(
         }
 
         // The whole data is whitespace.
-        // We can be very fast: we only change the token types.
+        // We can be very fast: we only change the event names.
         if index == slice.bytes.len() {
             tokenizer.events[exit_index - 1].name = Name::SpaceOrTab;
             tokenizer.events[exit_index].name = Name::SpaceOrTab;

@@ -1,7 +1,9 @@
-//! Character escapes are a construct that occurs in the [string][] and
-//! [text][] content types.
+//! Character escapes occur in the [string][] and [text][] content types.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Character escapes form with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! character_escape ::= '\\' ascii_punctuation
@@ -10,12 +12,19 @@
 //! Like much of markdown, there are no “invalid” character escapes: just a
 //! slash, or a slash followed by anything other than an ASCII punctuation
 //! character, is exactly that: just a slash.
-//! To escape (most) arbitrary characters, use a
-//! [character reference][character_reference] instead
+//!
+//! To escape (almost all) arbitrary characters instead of only ASCII
+//! punctuation, use a [character reference][character_reference] instead
 //! (as in, `&amp;`, `&#123;`, or say `&#x9;`).
+//!
 //! It is also possible to escape a line ending in text with a similar
 //! construct: a [hard break (escape)][hard_break_escape] is a backslash followed
 //! by a line ending (that is part of the construct instead of ending it).
+//!
+//! ## Recommendation
+//!
+//! If possible, use a character escape.
+//! Otherwise, use a character reference.
 //!
 //! ## Tokens
 //!

@@ -254,8 +254,7 @@ pub const THEMATIC_BREAK_MARKER_COUNT_MIN: usize = 3;
 
 // Important: please touch the below lists as few times as possible to keep Git small.
 
-/// List of names that can form named [character reference][character_reference]s
-/// and corresponding values.
+/// List of names and values that form named [character reference][character_reference]s.
 ///
 /// This list is sensitive to casing.
 ///

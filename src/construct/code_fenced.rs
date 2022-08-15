@@ -1,9 +1,12 @@
-//! Code (fenced) is a construct that occurs in the [flow][] content type.
+//! Code (fenced) occurs in the [flow][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Code (fenced) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! code_fenced ::= fence_open *( eol *code ) [ eol fence_close ]
+//! code_fenced ::= fence_open *( eol *byte ) [ eol fence_close ]
 //!
 //! fence_open ::= sequence [ 1*space_or_tab info [ 1*space_or_tab meta ] ] *space_or_tab
 //! ; Restriction: the number of markers in the closing fence sequence must be
@@ -13,41 +16,53 @@
 //! ; marker in the opening fence sequence
 //! fence_close ::= sequence *space_or_tab
 //! sequence ::= 3*'`' | 3*'~'
+//! ; Restriction: the `` ` `` character cannot occur in `info` if it is the marker.
 //! info ::= 1*text
+//! ; Restriction: the `` ` `` character cannot occur in `meta` if it is the marker.
 //! meta ::= 1*text *( *space_or_tab 1*text )
-//!
-//! ; Restriction: the `` ` `` character cannot occur in `text` if it is the
-//! ; marker of the opening fence sequence.
-//! text ::= code - eol - space_or_tab
-//! eol ::= '\r' | '\r\n' | '\n'
-//! space_or_tab ::= ' ' | '\t'
-//! code ::= . ; any unicode code point (other than line endings).
 //! ```
 //!
-//! The above grammar does not show how whitespace is handled.
-//! To parse code (fenced), let `X` be the number of whitespace characters
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
+//!
+//! The above grammar does not show how indentation (with `space_or_tab`) of
+//! each line is handled.
+//! To parse code (fenced), let `x` be the number of `space_or_tab` characters
 //! before the opening fence sequence.
 //! Each line of text is then allowed (not required) to be indented with up
-//! to `X` spaces or tabs, which are then ignored as an indent instead of being
+//! to `x` spaces or tabs, which are then ignored as an indent instead of being
 //! considered as part of the code.
 //! This indent does not affect the closing fence.
 //! It can be indented up to a separate 3 spaces or tabs.
 //! A bigger indent makes it part of the code instead of a fence.
 //!
-//! Code (fenced) relates to both the `<pre>` and the `<code>` elements in
-//! HTML.
-//! See [*§ 4.4.3 The `pre` element*][html-pre] and the [*§ 4.5.15 The `code`
-//! element*][html-code] in the HTML spec for more info.
+//! The `info` and `meta` parts are interpreted as the [string][] content type.
+//! That means that [character escapes][character_escape] and
+//! [character references][character_reference] are allowed.
 //!
 //! The optional `meta` part is ignored: it is not used when parsing or
 //! rendering.
+//!
 //! The optional `info` part is used and is expected to specify the programming
 //! language that the code is in.
 //! Which value it holds depends on what your syntax highlighter supports, if
 //! one is used.
+//!
+//! In markdown, it is also possible to use [code (text)][code_text] in the
+//! [text][] content type.
+//! It is also possible to create code with the
+//! [code (indented)][code_indented] construct.
+//!
+//! ## HTML
+//!
+//! Code (fenced) relates to both the `<pre>` and the `<code>` elements in
+//! HTML.
+//! See [*§ 4.4.3 The `pre` element*][html_pre] and the [*§ 4.5.15 The `code`
+//! element*][html_code] in the HTML spec for more info.
+//!
 //! The `info` is, when rendering to HTML, typically exposed as a class.
 //! This behavior stems from the HTML spec ([*§ 4.5.15 The `code`
-//! element*][html-code]).
+//! element*][html_code]).
 //! For example:
 //!
 //! ```markdown
@@ -63,17 +78,11 @@
 //! </code></pre>
 //! ```
 //!
-//! The `info` and `meta` parts are interpreted as the [string][] content type.
-//! That means that [character escapes][character_escape] and
-//! [character references][character_reference] are allowed.
+//! ## Recommendation
 //!
-//! In markdown, it is also possible to use [code (text)][code_text] in the
-//! [text][] content type.
-//! It is also possible to create code with the
-//! [code (indented)][code_indented] construct.
-//! That construct is less explicit, different from code (text), and has no
-//! support for specifying the programming language, so it is recommended to
-//! use code (fenced) instead of code (indented).
+//! It is recommended to use code (fenced) instead of code (indented).
+//! Code (fenced) is more explicit, similar to code (text), and has support
+//! for specifying the programming language.
 //!
 //! ## Tokens
 //!
@@ -94,12 +103,12 @@
 //! [flow]: crate::construct::flow
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text
-//! [code_indented]: crate::construct::code_indented
-//! [code_text]: crate::construct::code_text
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
-//! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
-//! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
+//! [code_indented]: crate::construct::code_indented
+//! [code_text]: crate::construct::code_text
+//! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
+//! [html_pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 
 use crate::constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE};
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};

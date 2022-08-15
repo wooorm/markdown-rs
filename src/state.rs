@@ -1,7 +1,9 @@
+//! States of the state machine.
+
 use crate::construct;
 use crate::tokenizer::Tokenizer;
 
-/// The result of a state.
+/// Result of a state.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum State {
     /// Move to [`Name`][] next.
@@ -14,7 +16,7 @@ pub enum State {
     Nok,
 }
 
-/// Names of functions to move to.
+/// Names of states to move to.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::enum_variant_names)]
 pub enum Name {
@@ -296,7 +298,7 @@ pub enum Name {
 }
 
 #[allow(clippy::too_many_lines)]
-/// Call the corresponding function for a state name.
+/// Call the corresponding state for a state name.
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     let func = match name {
         Name::AttentionStart => construct::attention::start,

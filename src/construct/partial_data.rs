@@ -1,6 +1,6 @@
 //! Data occurs in [text][] and [string][].
 //!
-//! It can include anything (including line endings), and stops at certain
+//! It can include anything (except for line endings) and stops at certain
 //! characters.
 //!
 //! [string]: crate::construct::string

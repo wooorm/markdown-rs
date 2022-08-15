@@ -1,6 +1,6 @@
-//! Helpers to deal with several changes in events, batching them together.
+//! Deal with several changes in events, batching them together.
 //!
-//! Preferably, changes should be kept to a minumum.
+//! Preferably, changes should be kept to a minimum.
 //! Sometimes, it’s needed to change the list of events, because parsing can be
 //! messy, and it helps to expose a cleaner interface of events to the compiler
 //! and other users.

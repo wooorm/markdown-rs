@@ -1,28 +1,33 @@
-//! Hard break (escape) is a construct that occurs in the  [text][] content
-//! type.
+//! Hard break (escape) occurs in the  [text][] content type.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Hard break (escape) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! ; Restriction: followed by a line ending  (that is part of the construct
+//! ; Restriction: followed by a line ending  (that is part of the content
 //! ; instead of ending it).
 //! hard_break_escape ::= '\\'
 //! ```
 //!
-//! Hard breaks in markdown relate to the HTML element `<br>`.
-//! See [*§ 4.5.27 The `br` element* in the HTML spec][html] for more info.
-//!
 //! It is also possible to create a hard break with a
 //! [hard break (trailing)][hard_break_trailing].
-//! That construct is not recommended because trailing spaces are typically
-//! invisible in editors, or even automatically removed, making them hard to
-//! use.
 //!
-//! It is also possible to escape punctuation characters with a similar
+//! Punctuation characters can be escaped with a similar
 //! construct: a [character escape][character_escape] is a backslash followed
 //! by an ASCII punctuation character.
 //! Arbitrary characters can be escaped with
-//! [character reference][character_reference]s.
+//! [character references][character_reference].
+//!
+//! ## HTML
+//!
+//! Hard breaks in markdown relate to the HTML element `<br>`.
+//! See [*§ 4.5.27 The `br` element* in the HTML spec][html] for more info.
+//!
+//! ## Recommendation
+//!
+//! Always use hard break (escape), never hard break (trailing).
 //!
 //! ## Tokens
 //!

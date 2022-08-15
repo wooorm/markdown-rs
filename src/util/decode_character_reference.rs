@@ -1,4 +1,4 @@
-//! Utilities to decode character references.
+//! Decode character references.
 
 use crate::constant::CHARACTER_REFERENCES;
 
@@ -43,11 +43,11 @@ pub fn decode_named(value: &str) -> String {
 /// Decode numeric character references.
 ///
 /// Turn the number (in string form as either hexadecimal or decimal) coming
-/// from a numeric character reference into a character.
-/// Whether the base of the string form is `10` (decimal) or `16` (hexadecimal)
-/// must be passed as the `radix` parameter.
+/// from a numeric character reference into a string.
+/// The base of the string form must be passed as the `radix` parameter, as
+/// `10` (decimal) or `16` (hexadecimal).
 ///
-/// This returns the `char` associated with that number or a replacement
+/// This returns a `String` form of the associated character or a replacement
 /// character for C0 control characters (except for ASCII whitespace), C1
 /// control characters, lone surrogates, noncharacters, and out of range
 /// characters.

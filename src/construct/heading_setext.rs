@@ -1,20 +1,21 @@
-//! Heading (setext) is a construct that occurs in the [flow] content type.
+//! Heading (setext) occurs in the [flow][] content type.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Heading (setext) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! heading_setext ::= line *(eol line) eol whitespace_optional (1*'-' | 1*'=') whitespace_optional
+//! heading_setext ::= paragraph eol *space_or_tab (1*'-' | 1*'=')  *space_or_tab
 //!
-//! whitespace ::= 1*space_or_tab
-//! whitespace_optional ::= [ whitespace ]
-//! line ::= code - eol
-//! eol ::= '\r' | '\r\n' | '\n'
+//! ; See the `paragraph` construct for the BNF of that part.
 //! ```
 //!
-//! Heading (setext) in markdown relates to the `<h1>` and `<h2>` elements in
-//! HTML.
-//! See [*§ 4.3.6 The `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` elements* in the
-//! HTML spec][html] for more info.
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
+//!
+//! See [`paragraph`][paragraph] for grammar, notes, and recommendations on
+//! that part.
 //!
 //! In markdown, it is also possible to create headings with a
 //! [heading (atx)][heading_atx] construct.
@@ -23,7 +24,6 @@
 //! [hard break (escape)][hard_break_escape]).
 //! However, their limit is that they cannot form `<h3>` through `<h6>`
 //! headings.
-//! Due to this limitation, it is recommended to use atx headings.
 //!
 //! [Thematic breaks][thematic_break] formed with dashes and without whitespace
 //! could be interpreted as a heading (setext).
@@ -32,11 +32,22 @@
 //!
 //! > 🏛 **Background**: the word *setext* originates from a small markup
 //! > language by Ian Feldman from 1991.
-//! > See [*§ Setext* on Wikipedia][wiki-setext] for more info.
+//! > See [*§ Setext* on Wikipedia][wiki_setext] for more info.
 //! > The word *atx* originates from a tiny markup language by Aaron Swartz
 //! > from 2002.
 //! > See [*§ atx, the true structured text format* on `aaronsw.com`][atx] for
 //! > more info.
+//!
+//! ## HTML
+//!
+//! Heading (setext) in markdown relates to the `<h1>` and `<h2>` elements in
+//! HTML.
+//! See [*§ 4.3.6 The `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` elements* in the
+//! HTML spec][html] for more info.
+//!
+//! ## Recommendation
+//!
+//! Always use heading (atx), never heading (setext).
 //!
 //! ## Tokens
 //!
@@ -50,11 +61,12 @@
 //! *   [*§ 4.3 Setext headings* in `CommonMark`](https://spec.commonmark.org/0.30/#setext-headings)
 //!
 //! [flow]: crate::construct::flow
+//! [paragraph]: crate::construct::paragraph
 //! [heading_atx]: crate::construct::heading_atx
 //! [thematic_break]: crate::construct::thematic_break
 //! [hard_break_escape]: crate::construct::hard_break_escape
 //! [html]: https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
-//! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
+//! [wiki_setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
 use crate::constant::TAB_SIZE;

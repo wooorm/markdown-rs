@@ -6,7 +6,7 @@
 //! The constructs found in flow are:
 //!
 //! *   [Block quote][crate::construct::block_quote]
-//! *   [List][crate::construct::list_item]
+//! *   [List item][crate::construct::list_item]
 
 use crate::event::{Content, Event, Kind, Link, Name};
 use crate::state::{Name as StateName, State};
@@ -409,7 +409,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
                 }
             }
 
-            debug_assert!(found, "expected to find container token to exit");
+            debug_assert!(found, "expected to find container event to exit");
         }
 
         if let Some(ref mut list) = tokenizer.tokenize_state.document_exits[index] {

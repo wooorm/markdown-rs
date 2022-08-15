@@ -19,26 +19,29 @@ struct Media {
     /// Whether this represents an image (`true`) or a link or definition
     /// (`false`).
     image: bool,
-    /// The text between the brackets (`x` in `![x]()` and `[x]()`), as an
-    /// identifier, meaning that the original source characters are used
-    /// instead of interpreting them.
+    /// The text between the brackets (`x` in `![x]()` and `[x]()`).
+    ///
     /// Not interpreted.
     label_id: Option<(usize, usize)>,
-    /// The text between the brackets (`x` in `![x]()` and `[x]()`), as
-    /// interpreted content.
-    /// When this is a link, it can contain further text content and thus HTML
+    /// The result of interpreting the text between the brackets
+    /// (`x` in `![x]()` and `[x]()`).
+    ///
+    /// When this is a link, it contains further text content and thus HTML
     /// tags.
     /// Otherwise, when an image, text content is also allowed, but resulting
     /// tags are ignored.
     label: Option<String>,
-    /// The text between the explicit brackets of the reference (`y` in
+    /// The string between the explicit brackets of the reference (`y` in
     /// `[x][y]`), as content.
+    ///
     /// Not interpreted.
     reference_id: Option<(usize, usize)>,
     /// The destination (url).
+    ///
     /// Interpreted string content.
     destination: Option<String>,
     /// The destination (url).
+    ///
     /// Interpreted string content.
     title: Option<String>,
 }
@@ -46,10 +49,14 @@ struct Media {
 /// Representation of a definition.
 #[derive(Debug)]
 struct Definition {
+    /// Identifier.
+    id: String,
     /// The destination (url).
+    ///
     /// Interpreted string content.
     destination: Option<String>,
     /// The title.
+    ///
     /// Interpreted string content.
     title: Option<String>,
 }
@@ -58,32 +65,55 @@ struct Definition {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug)]
 struct CompileContext<'a> {
-    /// Static info.
+    // Static info.
+    /// List of events.
     pub events: &'a [Event],
+    /// List of bytes.
     pub bytes: &'a [u8],
-    /// Fields used by handlers to track the things they need to track to
-    /// compile markdown.
-    pub atx_opening_sequence_size: Option<usize>,
+    // Fields used by handlers to track the things they need to track to
+    // compile markdown.
+    /// Rank of heading (atx).
+    pub heading_atx_rank: Option<usize>,
+    /// Buffer of heading (setext) text.
     pub heading_setext_buffer: Option<String>,
+    /// Whether code (flow) contains data.
     pub code_flow_seen_data: Option<bool>,
+    /// Number of code (fenced) fenced.
     pub code_fenced_fences_count: Option<usize>,
+    /// Whether we are in code (text).
     pub code_text_inside: bool,
+    /// Whether we are in image text.
+    pub image_alt_inside: bool,
+    /// Marker of character reference.
     pub character_reference_marker: Option<u8>,
-    pub expect_first_item: Option<bool>,
+    /// Whether we are expecting the first list item marker.
+    pub list_expect_first_marker: Option<bool>,
+    /// Stack of media (link, image).
     pub media_stack: Vec<Media>,
-    pub definitions: Vec<(String, Definition)>,
+    /// Stack of containers.
     pub tight_stack: Vec<bool>,
-    /// Fields used to influance the current compilation.
+    /// List of definitions.
+    pub definitions: Vec<Definition>,
+    // Fields used to influance the current compilation.
+    /// Ignore the next line ending.
     pub slurp_one_line_ending: bool,
-    pub in_image_alt: bool,
+    /// Whether to encode HTML.
     pub encode_html: bool,
-    /// Configuration
+    // Configuration
+    /// Whether to sanitize `href`s, and in which case, which protocols to
+    /// allow.
     pub protocol_href: Option<Vec<&'static str>>,
+    /// Whether to sanitize `src`s, and in which case, which protocols to
+    /// allow.
     pub protocol_src: Option<Vec<&'static str>>,
+    /// Line ending to use.
     pub line_ending_default: LineEnding,
+    /// Whether to allow HTML.
     pub allow_dangerous_html: bool,
-    /// Intermediate results.
+    // Intermediate results.
+    /// Stack of buffers.
     pub buffers: Vec<String>,
+    /// Current event index.
     pub index: usize,
 }
 
@@ -98,18 +128,18 @@ impl<'a> CompileContext<'a> {
         CompileContext {
             events,
             bytes,
-            atx_opening_sequence_size: None,
+            heading_atx_rank: None,
             heading_setext_buffer: None,
             code_flow_seen_data: None,
             code_fenced_fences_count: None,
             code_text_inside: false,
             character_reference_marker: None,
-            expect_first_item: None,
+            list_expect_first_marker: None,
             media_stack: vec![],
             definitions: vec![],
             tight_stack: vec![],
             slurp_one_line_ending: false,
-            in_image_alt: false,
+            image_alt_inside: false,
             encode_html: true,
             protocol_href: if options.allow_dangerous_protocol {
                 None
@@ -258,7 +288,7 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
         .to_string()
 }
 
-// Handle the event at `index`.
+/// Handle the event at `index`.
 fn handle(context: &mut CompileContext, index: usize) {
     context.index = index;
 
@@ -389,7 +419,7 @@ fn on_enter_code_fenced(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`CodeText`][Name::CodeText].
 fn on_enter_code_text(context: &mut CompileContext) {
     context.code_text_inside = true;
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("<code>");
     }
     context.buffer();
@@ -416,7 +446,7 @@ fn on_enter_definition_destination_string(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`Emphasis`][Name::Emphasis].
 fn on_enter_emphasis(context: &mut CompileContext) {
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("<em>");
     }
 }
@@ -446,7 +476,7 @@ fn on_enter_image(context: &mut CompileContext) {
         destination: None,
         title: None,
     });
-    context.in_image_alt = true; // Disallow tags.
+    context.image_alt_inside = true; // Disallow tags.
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`Link`][Name::Link].
@@ -556,21 +586,19 @@ fn on_enter_list(context: &mut CompileContext) {
     } else {
         "<ul"
     });
-    context.expect_first_item = Some(true);
+    context.list_expect_first_marker = Some(true);
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`ListItemMarker`][Name::ListItemMarker].
 fn on_enter_list_item_marker(context: &mut CompileContext) {
-    let expect_first_item = context.expect_first_item.take().unwrap();
-
-    if expect_first_item {
+    if context.list_expect_first_marker.take().unwrap() {
         context.push(">");
     }
 
     context.line_ending_if_needed();
 
     context.push("<li>");
-    context.expect_first_item = Some(false);
+    context.list_expect_first_marker = Some(false);
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`Paragraph`][Name::Paragraph].
@@ -599,7 +627,7 @@ fn on_enter_resource_destination_string(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`Strong`][Name::Strong].
 fn on_enter_strong(context: &mut CompileContext) {
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("<strong>");
     }
 }
@@ -612,7 +640,7 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
     );
     let value = slice.as_str();
 
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("<a href=\"");
         context.push(&sanitize_uri(
             &format!("mailto:{}", value),
@@ -623,7 +651,7 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
 
     context.push(&encode(value, context.encode_html));
 
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("</a>");
     }
 }
@@ -636,7 +664,7 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
     );
     let value = slice.as_str();
 
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("<a href=\"");
         context.push(&sanitize_uri(value, &context.protocol_href));
         context.push("\">");
@@ -644,14 +672,14 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
 
     context.push(&encode(value, context.encode_html));
 
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("</a>");
     }
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`HardBreakEscape`][Name::HardBreakEscape],[`HardBreakTrailing`][Name::HardBreakTrailing]}.
 fn on_exit_break(context: &mut CompileContext) {
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("<br />");
     }
 }
@@ -748,11 +776,6 @@ fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:{[`CodeFenced`][Name::CodeFenced],[`CodeIndented`][Name::CodeIndented]}.
 fn on_exit_code_flow(context: &mut CompileContext) {
-    let seen_data = context
-        .code_flow_seen_data
-        .take()
-        .expect("`code_flow_seen_data` must be defined");
-
     // One special case is if we are inside a container, and the fenced code was
     // not closed (meaning it runs to the end).
     // In that case, the following line ending, is considered *outside* the
@@ -772,7 +795,11 @@ fn on_exit_code_flow(context: &mut CompileContext) {
 
     // But in most cases, it’s simpler: when we’ve seen some data, emit an extra
     // line ending when needed.
-    if seen_data {
+    if context
+        .code_flow_seen_data
+        .take()
+        .expect("`code_flow_seen_data` must be defined")
+    {
         context.line_ending_if_needed();
     }
 
@@ -814,7 +841,7 @@ fn on_exit_code_text(context: &mut CompileContext) {
     context.code_text_inside = false;
     context.push(str::from_utf8(bytes).unwrap());
 
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("</code>");
     }
 }
@@ -846,13 +873,11 @@ fn on_exit_definition(context: &mut CompileContext) {
     let id =
         normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str());
 
-    context.definitions.push((
+    context.definitions.push(Definition {
         id,
-        Definition {
-            destination: media.destination,
-            title: media.title,
-        },
-    ));
+        destination: media.destination,
+        title: media.title,
+    });
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`DefinitionDestinationString`][Name::DefinitionDestinationString].
@@ -878,7 +903,7 @@ fn on_exit_definition_title_string(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`Strong`][Name::Emphasis].
 fn on_exit_emphasis(context: &mut CompileContext) {
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("</em>");
     }
 }
@@ -886,9 +911,9 @@ fn on_exit_emphasis(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit]:[`HeadingAtx`][Name::HeadingAtx].
 fn on_exit_heading_atx(context: &mut CompileContext) {
     let rank = context
-        .atx_opening_sequence_size
+        .heading_atx_rank
         .take()
-        .expect("`atx_opening_sequence_size` must be set in headings");
+        .expect("`heading_atx_rank` must be set in headings");
 
     context.push("</h");
     context.push(&rank.to_string());
@@ -898,14 +923,14 @@ fn on_exit_heading_atx(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit]:[`HeadingAtxSequence`][Name::HeadingAtxSequence].
 fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
     // First fence we see.
-    if context.atx_opening_sequence_size.is_none() {
+    if context.heading_atx_rank.is_none() {
         let rank = Slice::from_position(
             context.bytes,
             &Position::from_exit_event(context.events, context.index),
         )
         .len();
         context.line_ending_if_needed();
-        context.atx_opening_sequence_size = Some(rank);
+        context.heading_atx_rank = Some(rank);
         context.push("<h");
         context.push(&rank.to_string());
         context.push(">");
@@ -930,7 +955,7 @@ fn on_exit_heading_setext_underline(context: &mut CompileContext) {
     let text = context
         .heading_setext_buffer
         .take()
-        .expect("`atx_opening_sequence_size` must be set in headings");
+        .expect("`heading_atx_rank` must be set in headings");
     let head = Slice::from_position(
         context.bytes,
         &Position::from_exit_event(context.events, context.index),
@@ -1034,9 +1059,7 @@ fn on_exit_list_item(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`ListItemValue`][Name::ListItemValue].
 fn on_exit_list_item_value(context: &mut CompileContext) {
-    let expect_first_item = context.expect_first_item.unwrap();
-
-    if expect_first_item {
+    if context.list_expect_first_marker.unwrap() {
         let slice = Slice::from_position(
             context.bytes,
             &Position::from_exit_event(context.events, context.index),
@@ -1066,11 +1089,11 @@ fn on_exit_media(context: &mut CompileContext) {
         index += 1;
     }
 
-    context.in_image_alt = is_in_image;
+    context.image_alt_inside = is_in_image;
 
     let media = context.media_stack.pop().unwrap();
     let label = media.label.unwrap();
-    let in_image_alt = context.in_image_alt;
+    let image_alt_inside = context.image_alt_inside;
     let id = media.reference_id.or(media.label_id).map(|indices| {
         normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str())
     });
@@ -1080,7 +1103,7 @@ fn on_exit_media(context: &mut CompileContext) {
             let mut index = 0;
 
             while index < context.definitions.len() {
-                if context.definitions[index].0 == id {
+                if context.definitions[index].id == id {
                     return Some(index);
                 }
 
@@ -1093,7 +1116,7 @@ fn on_exit_media(context: &mut CompileContext) {
         None
     };
 
-    if !in_image_alt {
+    if !image_alt_inside {
         if media.image {
             context.push("<img src=\"");
         } else {
@@ -1101,7 +1124,7 @@ fn on_exit_media(context: &mut CompileContext) {
         };
 
         let destination = if let Some(index) = definition_index {
-            context.definitions[index].1.destination.as_ref()
+            context.definitions[index].destination.as_ref()
         } else {
             media.destination.as_ref()
         };
@@ -1126,11 +1149,11 @@ fn on_exit_media(context: &mut CompileContext) {
         context.push(&label);
     }
 
-    if !in_image_alt {
+    if !image_alt_inside {
         context.push("\"");
 
         let title = if let Some(index) = definition_index {
-            context.definitions[index].1.title.clone()
+            context.definitions[index].title.clone()
         } else {
             media.title
         };
@@ -1151,7 +1174,7 @@ fn on_exit_media(context: &mut CompileContext) {
     if !media.image {
         context.push(&label);
 
-        if !in_image_alt {
+        if !image_alt_inside {
             context.push("</a>");
         }
     }
@@ -1192,7 +1215,7 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`Strong`][Name::Strong].
 fn on_exit_strong(context: &mut CompileContext) {
-    if !context.in_image_alt {
+    if !context.image_alt_inside {
         context.push("</strong>");
     }
 }

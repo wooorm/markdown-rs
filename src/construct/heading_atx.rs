@@ -1,17 +1,16 @@
-//! Heading (atx) is a construct that occurs in the [flow] content type.
+//! Heading (atx) occurs in the [flow][] content type.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Heading (atx) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! heading_atx ::= 1*6'#' [ 1*space_or_tab text [ 1*space_or_tab 1*'#' ] ] *space_or_tab
-//!
-//! text ::= code - eol
-//! space_or_tab ::= ' ' | '\t'
+//! heading_atx ::= 1*6'#' [ 1*space_or_tab line [ 1*space_or_tab 1*'#' ] ] *space_or_tab
 //! ```
 //!
-//! Headings in markdown relate to the `<h1>` through `<h6>` elements in HTML.
-//! See [*§ 4.3.6 The `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` elements* in the
-//! HTML spec][html] for more info.
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
 //!
 //! `CommonMark` introduced the requirement on whitespace existing after the
 //! opening sequence and before text.
@@ -25,15 +24,24 @@
 //! [hard break (escape)][hard_break_escape]).
 //! However, their limit is that they cannot form `<h3>` through `<h6>`
 //! headings.
-//! Due to this limitation, it is recommended to use atx headings.
 //!
 //! > 🏛 **Background**: the word *setext* originates from a small markup
 //! > language by Ian Feldman from 1991.
-//! > See [*§ Setext* on Wikipedia][wiki-setext] for more info.
+//! > See [*§ Setext* on Wikipedia][wiki_setext] for more info.
 //! > The word *atx* originates from a tiny markup language by Aaron Swartz
 //! > from 2002.
 //! > See [*§ atx, the true structured text format* on `aaronsw.com`][atx] for
 //! > more info.
+//!
+//! ## HTML
+//!
+//! Headings in markdown relate to the `<h1>` through `<h6>` elements in HTML.
+//! See [*§ 4.3.6 The `h1`, `h2`, `h3`, `h4`, `h5`, and `h6` elements* in the
+//! HTML spec][html] for more info.
+//!
+//! ## Recommendation
+//!
+//! Always use heading (atx), never heading (setext).
 //!
 //! ## Tokens
 //!
@@ -51,7 +59,7 @@
 //! [heading_setext]: crate::construct::heading_setext
 //! [hard_break_escape]: crate::construct::hard_break_escape
 //! [html]: https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
-//! [wiki-setext]: https://en.wikipedia.org/wiki/Setext
+//! [wiki_setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
 use crate::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};

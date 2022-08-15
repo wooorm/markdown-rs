@@ -1,27 +1,23 @@
 //! Deal with content in other content.
 //!
 //! To deal with content in content, *you* (a `micromark-rs` contributor) add
-//! information on events.
-//! Events are a flat list, but they can be connected to each other by setting
-//! `previous` and `next` links.
-//! These links:
-//!
-//! *   …must occur on [`Enter`][Kind::Enter] events only
-//! *   …must occur on void events (they are followed by their corresponding
-//!     [`Exit`][Kind::Exit] event)
-//! *   …must have `link` field
+//! info on events.
+//! Events are a flat list, but they can be connected to each other with a
+//! [`Link`][crate::event::Link].
+//! Links must occur on [`Enter`][Kind::Enter] events only, which are void
+//! (they are followed by their corresponding [`Exit`][Kind::Exit] event).
 //!
 //! Links will then be passed through a tokenizer for the corresponding content
 //! type by `subtokenize`.
-//! The subevents they result in are split up into slots for each linked token
+//! The subevents they result in are split up into slots for each linked event
 //! and replace those links.
 //!
-//! Subevents are not immediately subtokenized again because markdown prevents
-//! us from doing so due to definitions, which can occur after references, and
-//! thus the whole document needs to be parsed up to the level of definitions,
-//! before any level that can include references can be parsed.
+//! Subevents are not immediately subtokenized as markdown prevents us from
+//! doing so due to definitions, which can occur after references, and thus the
+//! whole document needs to be parsed up to the level of definitions, before
+//! any level that can include references can be parsed.
 
-use crate::event::{Content, Event, Kind};
+use crate::event::{Content, Event, Kind, VOID_EVENTS};
 use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
@@ -30,31 +26,42 @@ use crate::util::edit_map::EditMap;
 /// Link two [`Event`][]s.
 ///
 /// Arbitrary (void) events can be linked together.
-/// This optimizes for the common case where the token at `index` is connected
-/// to the previous void token.
+/// This optimizes for the common case where the event at `index` is connected
+/// to the previous void event.
 pub fn link(events: &mut [Event], index: usize) {
     link_to(events, index - 2, index);
 }
 
 /// Link two arbitrary [`Event`][]s together.
-pub fn link_to(events: &mut [Event], pevious: usize, next: usize) {
-    debug_assert_eq!(events[pevious].kind, Kind::Enter);
-    debug_assert_eq!(events[pevious + 1].kind, Kind::Exit);
-    debug_assert_eq!(events[pevious + 1].name, events[pevious].name);
+pub fn link_to(events: &mut [Event], previous: usize, next: usize) {
+    debug_assert_eq!(events[previous].kind, Kind::Enter);
+    debug_assert!(
+        VOID_EVENTS.iter().any(|d| d == &events[previous].name),
+        "expected `{:?}` to be void",
+        events[previous].name
+    );
+    debug_assert_eq!(events[previous + 1].kind, Kind::Exit);
+    debug_assert_eq!(events[previous].name, events[previous + 1].name);
     debug_assert_eq!(events[next].kind, Kind::Enter);
+    debug_assert!(
+        VOID_EVENTS.iter().any(|d| d == &events[next].name),
+        "expected `{:?}` to be void",
+        events[next].name
+    );
     // Note: the exit of this event may not exist, so don’t check for that.
 
-    let link_previous = events[pevious]
+    let link_previous = events[previous]
         .link
         .as_mut()
         .expect("expected `link` on previous");
     link_previous.next = Some(next);
     let link_next = events[next].link.as_mut().expect("expected `link` on next");
-    link_next.previous = Some(pevious);
+    link_next.previous = Some(previous);
 
     debug_assert_eq!(
-        events[pevious].link.as_ref().unwrap().content,
-        events[next].link.as_ref().unwrap().content
+        events[previous].link.as_ref().unwrap().content,
+        events[next].link.as_ref().unwrap().content,
+        "expected `content` to match"
     );
 }
 

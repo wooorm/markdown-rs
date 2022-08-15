@@ -1,12 +1,16 @@
-//! Code (text) is a construct that occurs in the [text][] content type.
+//! Code (text) occurs in the [text][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Code (text) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! ; Restriction: the number of markers in the closing sequence must be equal
 //! ; to the number of markers in the opening sequence.
-//! code_text ::= sequence 1*code sequence
+//! code_text ::= sequence 1*byte sequence
 //!
+//! ; Restriction: not preceded or followed by `` ` ``.
 //! sequence ::= 1*'`'
 //! ```
 //!
@@ -18,15 +22,13 @@
 //! Include more: `a``b` or include less: ``a`b``.
 //! ```
 //!
-//! When turning markdown into HTML, each line ending is turned into a space.
-//!
 //! It is also possible to include just one grave accent (tick):
 //!
 //! ```markdown
 //! Include just one: `` ` ``.
 //! ```
 //!
-//! Sequences are “gready”, in that they cannot be preceded or succeeded by
+//! Sequences are “gready”, in that they cannot be preceded or followed by
 //! more grave accents (ticks).
 //! To illustrate:
 //!
@@ -53,17 +55,17 @@
 //! if both exist and there is also a non-space in the code, are removed.
 //! Line endings, at that stage, are considered as spaces.
 //!
-//! Code (text) relates to the `<code>` element in HTML.
-//! See [*§ 4.5.15 The `code` element*][html-code] in the HTML spec for more
-//! info.
-//!
 //! In markdown, it is possible to create code with the
 //! [code (fenced)][code_fenced] or [code (indented)][code_indented] constructs
 //! in the [flow][] content type.
-//! Compared to code (indented), fenced code is more explicit and more similar
-//! to code (text), and it has support for specifying the programming language
-//! that the code is in, so it is recommended to use that instead of indented
-//! code.
+//!
+//! ## HTML
+//!
+//! Code (text) relates to the `<code>` element in HTML.
+//! See [*§ 4.5.15 The `code` element*][html_code] in the HTML spec for more
+//! info.
+//!
+//! When turning markdown into HTML, each line ending is turned into a space.
 //!
 //! ## Tokens
 //!
@@ -81,7 +83,7 @@
 //! [text]: crate::construct::text
 //! [code_indented]: crate::construct::code_indented
 //! [code_fenced]: crate::construct::code_fenced
-//! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
+//! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};

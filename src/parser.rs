@@ -1,4 +1,4 @@
-//! Turn a string of markdown into events.
+//! Turn bytes of markdown into events.
 
 use crate::event::{Event, Point};
 use crate::state::{Name as StateName, State};

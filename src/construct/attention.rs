@@ -1,21 +1,28 @@
-//! Attention is a construct that occurs in the [text][] content type.
+//! Attention (emphasis and strong) occurs in the [text][] content type.
 //!
-//! How attention parses is too complex to explain in BNF.
-//! Essentially, one or more of `*` or `_` form attention sequences.
-//! Depending on the code before and after a sequence, it can open or close
-//! attention.
-//! When everything is parsed, we find each sequence that can close, and a
-//! corresponding sequence that can open which uses the same marker.
-//! If both sequences have two or more markers, strong is formed.
-//! Otherwise emphasis is formed.
+//! ## Grammar
 //!
-//! Attention sequences do not, on their own, relate to anything in HTML.
-//! When matched with another sequence, and two markers can be “taken” from
-//! them, they together relate to the `<strong>` element in HTML.
+//! Attention sequences form with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! attention_sequence ::= 1*'*' | 1*'_'
+//! ```
+//!
+//! Sequences are matched together to form attention based on which character
+//! they contain, and what character occurs before and after each sequence.
+//! Otherwise they are turned into data.
+//!
+//! ## HTML
+//!
+//! When sequences match, and two markers can be “taken” from them, they
+//! together relate to the `<strong>` element in HTML.
 //! When one marker can be taken, they relate to the `<em>` element.
 //! See [*§ 4.5.2 The `em` element*][html-em] and
 //! [*§ 4.5.3 The `strong` element*][html-strong] in the HTML spec for more
 //! info.
+//!
+//! ## Recommendation
 //!
 //! It is recommended to use asterisks for attention when writing markdown.
 //!

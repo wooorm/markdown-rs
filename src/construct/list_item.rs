@@ -289,7 +289,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         container.size = prefix;
 
         tokenizer.exit(Name::ListItemPrefix);
-        tokenizer.register_resolver_before(ResolveName::List);
+        tokenizer.register_resolver_before(ResolveName::ListItem);
         State::Ok
     }
 }

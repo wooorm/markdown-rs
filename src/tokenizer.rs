@@ -1,15 +1,12 @@
-//! The tokenizer glues states from the state machine together.
+//! A tokenizer glues states from the state machine together.
 //!
-//! It facilitates everything needed to turn codes into tokens and  with
-//! a state machine.
-//! It also enables logic needed for parsing markdown, such as an [`attempt`][]
-//! to parse something, which can succeed or, when unsuccessful, revert the
-//! attempt.
-//! Similarly, a [`check`][] exists, which does the same as an `attempt` but
-//! reverts even if successful.
+//! It facilitates everything needed to turn bytes into events with a state
+//! machine.
+//! It also enables the logic needed for parsing markdown, such as an
+//! [`attempt`][] to try and parse something, which can succeed or, when
+//! unsuccessful, revert the attempt.
 //!
 //! [`attempt`]: Tokenizer::attempt
-//! [`check`]: Tokenizer::check
 
 use crate::constant::TAB_SIZE;
 use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
@@ -18,17 +15,31 @@ use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, State};
 use crate::util::edit_map::EditMap;
 
-/// Info used to tokenize the current container.
+/// Containers.
 ///
-/// This info is shared between the initial construct and its continuation.
-/// It’s only used for list items.
+/// Containers are found when tokenizing
+/// [document content][crate::construct::document].
+/// They parse a portion at the start of one or more lines.
+/// The rest of those lines is a different content type (specifically, flow),
+/// which they “contain”.
+#[derive(Debug, Eq, PartialEq)]
+pub enum Container {
+    /// [Block quote][crate::construct::block_quote].
+    BlockQuote,
+    /// [List item][crate::construct::list_item].
+    ListItem,
+}
+
+/// Info used to tokenize a container.
+///
+/// Practically, these fields are only used for list items.
 #[derive(Debug)]
 pub struct ContainerState {
     /// Kind.
     pub kind: Container,
     /// Whether the first line was blank.
     pub blank_initial: bool,
-    /// The size of the initial construct.
+    /// Size.
     pub size: usize,
 }
 
@@ -39,26 +50,19 @@ enum ByteAction {
     ///
     /// Includes replaced bytes.
     Normal(u8),
-    /// This is a new byte.
-    Insert(u8),
     /// This byte must be ignored.
     Ignore,
+    /// This is a new byte.
+    Insert(u8),
 }
 
-/// Supported containers.
-#[derive(Debug, PartialEq)]
-pub enum Container {
-    BlockQuote,
-    ListItem,
-}
-
-/// Loose label starts we found.
+/// Label start, looking for an end.
 #[derive(Debug)]
 pub struct LabelStart {
     /// Indices of where the label starts and ends in `events`.
     pub start: (usize, usize),
-    /// A boolean used internally to figure out if a (link) label start link
-    /// can’t be used anymore (because it would contain another link).
+    /// A boolean used internally to figure out if a (link) label start can’t
+    /// be used anymore (because it would contain another link).
     /// That link start is still looking for a balanced closing bracket though,
     /// so we can’t remove it just yet.
     pub inactive: bool,
@@ -99,9 +103,10 @@ struct Attempt {
     progress: Option<Progress>,
 }
 
-/// The internal state of a tokenizer, not to be confused with states from the
-/// state machine, this instead is all the information about where we currently
-/// are and what’s going on.
+/// The internal state of a tokenizer.
+///
+/// Not to be confused with states from the state machine, this instead is all
+/// the information on where we currently are and what’s going on.
 #[derive(Clone, Debug)]
 struct Progress {
     /// Length of `events`.
@@ -168,7 +173,7 @@ pub struct TokenizeState<'a> {
     /// List of defined identifiers.
     pub definitions: Vec<String>,
 
-    /// Whether to connect tokens.
+    /// Whether to connect events.
     pub connect: bool,
     /// Marker.
     pub marker: u8,
@@ -188,15 +193,15 @@ pub struct TokenizeState<'a> {
     pub start: usize,
     /// Index.
     pub end: usize,
-    /// Slot for a token type.
+    /// Slot for an event name.
     pub token_1: Name,
-    /// Slot for a token type.
+    /// Slot for an event name.
     pub token_2: Name,
-    /// Slot for a token type.
+    /// Slot for an event name.
     pub token_3: Name,
-    /// Slot for a token type.
+    /// Slot for an event name.
     pub token_4: Name,
-    /// Slot for a token type.
+    /// Slot for an event name.
     pub token_5: Name,
 }
 
@@ -433,28 +438,25 @@ impl<'a> Tokenizer<'a> {
 
     /// Mark the end of a semantic label.
     pub fn exit(&mut self, name: Name) {
-        let current_token = self.stack.pop().expect("cannot close w/o open tokens");
+        let current = self.stack.pop().expect("cannot close w/o open tokens");
 
-        debug_assert_eq!(
-            current_token, name,
-            "expected exit token to match current token"
-        );
+        debug_assert_eq!(current, name, "expected exit event to match current event");
 
         let previous = self.events.last().expect("cannot close w/o open event");
         let mut point = self.point.clone();
 
         debug_assert!(
-            current_token != previous.name
+            current != previous.name
                 || previous.point.index != point.index
                 || previous.point.vs != point.vs,
-            "expected non-empty token"
+            "expected non-empty event"
         );
 
         if VOID_EVENTS.iter().any(|d| d == &name) {
             debug_assert!(
-                current_token == previous.name,
-                "expected token to be void (`{:?}`), instead of including `{:?}`",
-                current_token,
+                current == previous.name,
+                "expected event to be void (`{:?}`), instead of including `{:?}`",
+                current,
                 previous.name
             );
         }

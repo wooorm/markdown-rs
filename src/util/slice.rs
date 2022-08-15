@@ -1,4 +1,4 @@
-//! Utilities to deal with characters.
+//! Deal with bytes.
 
 use crate::constant::TAB_SIZE;
 use crate::event::{Event, Kind, Point};
@@ -7,7 +7,9 @@ use std::str;
 /// A range between two points.
 #[derive(Debug)]
 pub struct Position<'a> {
+    /// Start point.
     pub start: &'a Point,
+    /// End point.
     pub end: &'a Point,
 }
 
@@ -55,11 +57,14 @@ impl<'a> Position<'a> {
 
 /// Bytes belonging to a range.
 ///
-/// Includes information on virtual spaces before and after the bytes.
+/// Includes info on virtual spaces before and after the bytes.
 #[derive(Debug)]
 pub struct Slice<'a> {
+    /// Bytes.
     pub bytes: &'a [u8],
+    /// Number of virtual spaces before the bytes.
     pub before: usize,
+    /// Number of virtual spaces after the bytes.
     pub after: usize,
 }
 

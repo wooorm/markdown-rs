@@ -1,4 +1,4 @@
-//! Utilities to make urls safe.
+//! Make urls safe.
 
 use crate::util::encode::encode;
 
@@ -60,9 +60,10 @@ pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
     value
 }
 
-/// Normalize a URL (such as used in definitions).
+/// Normalize a URL (such as used in [definitions][definition],
+/// [references][label_end]).
 ///
-/// Encode unsafe characters with percent-encoding, skipping already encoded
+/// It encodes unsafe characters with percent-encoding, skipping already encoded
 /// sequences.
 ///
 /// ## Examples
@@ -77,6 +78,9 @@ pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
 /// ## References
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
+///
+/// [definition]: crate::construct::definition
+/// [label_end]: crate::construct::label_end
 fn normalize_uri(value: &str) -> String {
     let chars = value.chars().collect::<Vec<_>>();
     // Note: it’ll grow bigger for each non-ascii or non-safe character.

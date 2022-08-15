@@ -1,4 +1,4 @@
-//! Utilities to deal with lists of events.
+//! Move across lists of events.
 
 use crate::event::{Event, Kind, Name};
 

@@ -1,3 +1,5 @@
+//! Semantic labels of things happening.
+
 /// Semantic label of a span.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Name {
@@ -1832,7 +1834,7 @@ pub enum Name {
     ThematicBreakSequence,
 }
 
-/// List of void tokens, used to make sure everything is working well.
+/// List of void events, used to make sure everything is working well.
 pub const VOID_EVENTS: [Name; 41] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
@@ -1891,21 +1893,25 @@ pub enum Content {
 /// Link to another event.
 #[derive(Clone, Debug)]
 pub struct Link {
+    /// Previous event.
     pub previous: Option<usize>,
+    /// Next event.
     pub next: Option<usize>,
+    /// Content type.
     pub content: Content,
 }
 
 /// Place in the document.
 ///
-/// The interface for the location in the document comes from unist `Point`:
-/// <https://github.com/syntax-tree/unist#point>.
+/// The interface for the location in the document comes from unist
+/// [`Point`](https://github.com/syntax-tree/unist#point).
 #[derive(Clone, Debug)]
 pub struct Point {
     /// 1-indexed line number.
     pub line: usize,
     /// 1-indexed column number.
-    /// This is increases up to a tab stop for tabs.
+    ///
+    /// This is increased up to a tab stop for tabs.
     /// Some editors count tabs as 1 character, so this position is not the
     /// same as editors.
     pub column: usize,

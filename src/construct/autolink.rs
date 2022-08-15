@@ -1,22 +1,24 @@
-//! Autolinks are a construct that occurs in the [text][] content type.
+//! Autolinks occur in the [text][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Autolinks form with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! autolink ::= '<' ( url | email ) '>'
+//! autolink ::= '<' (url | email) '>'
 //!
-//! url ::= ascii_alphabetic 0*31( '+' '-' '.' ascii_alphanumeric ) ':' *( code - ascii_control - '\r' - '\n' - ' ')
-//! email ::= 1*ascii_atext '@' domain *('.' domain)
+//! url ::= protocol *url_byte
+//! protocol ::= ascii_alphabetic 0*31(protocol_byte) ':'
+//! protocol_byte ::= '+' '-' '.' ascii_alphanumeric
+//! url_byte ::= byte - ascii_control - ' '
+//!
+//! email ::= 1*ascii_atext '@' email_domain *('.' email_domain)
 //! ; Restriction: up to (including) 63 character are allowed in each domain.
-//! domain ::= ascii_alphanumeric *( ascii_alphanumeric | '-' ascii_alphanumeric )
-//! ascii_atext ::= ascii_alphanumeric | '#' .. '\'' | '*' | '+' | '-' | '/' | '=' | '?' | '^' .. '`' | '{' .. '~'
-//! ```
+//! email_domain ::= ascii_alphanumeric *(ascii_alphanumeric | '-' ascii_alphanumeric)
 //!
-//! Autolinks relate to the `<a>` element in HTML.
-//! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
-//! When an email autolink is used (so, without a protocol), the string
-//! `mailto:` is prepended before the email, when generating the `href`
-//! attribute of the hyperlink.
+//! ascii_atext ::= ascii_alphanumeric | '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '*' | '+' | '-' | '/' | '=' | '?' | '^' | '_' | '`' | '{' | '|' | '}' | '~'
+//! ```
 //!
 //! The maximum allowed size of a scheme is `31` (inclusive), which is defined
 //! in [`AUTOLINK_SCHEME_SIZE_MAX`][autolink_scheme_size_max].
@@ -41,7 +43,7 @@
 //! There are several cases where incorrect encoding of URLs would, in other
 //! languages, result in a parse error.
 //! In markdown, there are no errors, and URLs are normalized.
-//! In addition, unicode characters are percent encoded
+//! In addition, many characters are percent encoded
 //! ([`sanitize_uri`][sanitize_uri]).
 //! For example:
 //!
@@ -82,6 +84,22 @@
 //! <p><a href="#"></a><a href="https://example.com">https://example.com</a></p>
 //! ```
 //!
+//! ## HTML
+//!
+//! Autolinks relate to the `<a>` element in HTML.
+//! See [*§ 4.5.1 The `a` element*][html_a] in the HTML spec for more info.
+//! When an email autolink is used (so, without a protocol), the string
+//! `mailto:` is prepended before the email, when generating the `href`
+//! attribute of the hyperlink.
+//!
+//! ## Recommendation
+//!
+//! It is recommended to use labels ([label start link][label_start_link],
+//! [label end][label_end]), either with a resource or a definition
+//! ([definition][]), instead of autolinks, as those allow more characters in
+//! URLs, and allow relative URLs and `www.` URLs.
+//! They also allow for descriptive text to explain the URL in prose.
+//!
 //! ## Tokens
 //!
 //! *   [`Autolink`][Name::Autolink]
@@ -95,11 +113,13 @@
 //! *   [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.30/#autolinks)
 //!
 //! [text]: crate::construct::text
+//! [definition]: crate::construct::definition
+//! [label_start_link]: crate::construct::label_start_link
 //! [label_end]: crate::construct::label_end
 //! [autolink_scheme_size_max]: crate::constant::AUTOLINK_SCHEME_SIZE_MAX
 //! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX
 //! [sanitize_uri]: crate::util::sanitize_uri
-//! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 use crate::event::Name;
@@ -293,7 +313,7 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.size = 0;
             let index = tokenizer.events.len();
             tokenizer.exit(Name::AutolinkProtocol);
-            // Change the token type.
+            // Change the event name.
             tokenizer.events[index - 1].name = Name::AutolinkEmail;
             tokenizer.events[index].name = Name::AutolinkEmail;
             tokenizer.enter(Name::AutolinkMarker);

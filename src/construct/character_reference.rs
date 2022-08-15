@@ -1,25 +1,27 @@
-//! Character references are a construct that occurs in the [string][] and
-//! [text][] content types.
+//! Character references occur in the [string][] and [text][] content types.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Character references form with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! character_reference ::= '&' (numeric | named) ';'
 //!
 //! numeric ::= '#' (hexadecimal | decimal)
-//! ; Note: Limit of `6` imposed as all bigger numbers are invalid:
+//! ; Note: Limit of `6` imposed, as all bigger numbers are invalid.
 //! hexadecimal ::= ('x' | 'X') 1*6(ascii_hexdigit)
-//! ; Note: Limit of `7` imposed as all bigger numbers are invalid:
+//! ; Note: Limit of `7` imposed, as all bigger numbers are invalid.
 //! decimal ::= 1*7(ascii_digit)
-//! ; Note: Limit of `31` imposed by `CounterClockwiseContourIntegral`:
+//! ; Note: Limit of `31` imposed, for `CounterClockwiseContourIntegral`.
 //! ; Note: Limited to any known named character reference (see `constants.rs`)
 //! named ::= 1*31(ascii_alphanumeric)
 //! ```
 //!
 //! Like much of markdown, there are no “invalid” character references.
 //! However, for security reasons, several numeric character references parse
-//! fine but are not rendered as their corresponding character and they are
-//! instead replaced by a U+FFFD REPLACEMENT CHARACTER (`�`).
+//! fine but are not rendered as their corresponding character.
+//! They are instead replaced by a U+FFFD REPLACEMENT CHARACTER (`�`).
 //! See [`decode_numeric`][decode_numeric] for more info.
 //!
 //! To escape ASCII punctuation characters, use the terser
@@ -33,12 +35,17 @@
 //!
 //! Character references are parsed insensitive to casing.
 //! The casing of hexadecimal numeric character references has no effect.
-//! The casing of named character references does not matter when parsing them,
-//! but does affect whether they match.
+//! The casing of named character references does not matter when parsing, but
+//! does affect whether they match.
 //! Depending on the name, one or more cases are allowed, such as that `AMP`
 //! and `amp` are both allowed but other cases are not.
 //! See [`CHARACTER_REFERENCES`][character_references] for which
 //! names match.
+//!
+//! ## Recommendation
+//!
+//! If possible, use a character escape.
+//! Otherwise, use a character reference.
 //!
 //! ## Tokens
 //!

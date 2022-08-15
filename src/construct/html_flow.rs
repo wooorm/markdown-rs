@@ -1,38 +1,38 @@
-//! HTML (flow) is a construct that occurs in the [flow][] cont&ent type.
+//! HTML (flow) occurs in the [flow][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! HTML (flow) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! html_flow ::= raw | comment | instruction | declaration | cdata | basic | complete
 //!
-//! ; Note: closing tag name need to match opening tag name.
-//! raw ::= '<' raw_tag_name [ [ ( whitespace | '>' ) *line ] *( eol *line ) ] [ '</' raw_tag_name *line ]
-//! comment ::= '<!--' [ *'-' '>' *line | *line *( eol *line ) [ '-->' *line ] ]
-//! instruction ::= '<?' [ '>' *line | *line *( eol *line ) [ '?>' *line ] ]
-//! declaration ::= '<!' ascii_alphabetic *line *( eol *line ) [ '>' *line ]
-//! cdata ::= '<![CDATA[' *line *( eol *line ) [ ']]>' *line ]
-//! basic ::= '< [ '/' ] basic_tag_name [ [ '/' ] '>' *line *( eol 1*line ) ]
-//! complete ::= ( opening_tag | closing_tag ) ( whitespace_optional *( eol 1*line ) | whitespace_optional )
+//! ; Note: closing tag name does not need to match opening tag name.
+//! raw ::= '<' raw_tag_name [[space_or_tab *line | '>' *line] eol] *(*line eol) ['</' raw_tag_name *line]
+//! comment ::= '<!--' [*'-' '>' *line | *line *(eol *line) ['-->' *line]]
+//! instruction ::= '<?' ['>' *line | *line *(eol *line) ['?>' *line]]
+//! declaration ::= '<!' ascii_alphabetic *line *(eol *line) ['>' *line]
+//! cdata ::= '<![CDATA[' *line *(eol *line) [']]>' *line]
+//! basic ::= '< ['/'] basic_tag_name [['/'] '>' *line *(eol 1*line)]
+//! complete ::= (opening_tag | closing_tag) [*space_or_tab *(eol 1*line)]
 //!
 //! raw_tag_name ::= 'pre' | 'script' | 'style' | 'textarea' ; Note: case-insensitive.
 //! basic_tag_name ::= 'address' | 'article' | 'aside' | ... ; See `constants.rs`, and note: case-insensitive.
-//! opening_tag ::= '<' tag_name *( whitespace attribute ) [ whitespace_optional '/' ] whitespace_optional '>'
-//! closing_tag ::= '</' tag_name whitespace_optional '>'
-//! tag_name ::= ascii_alphabetic *( '-' | ascii_alphanumeric )
-//! attribute ::= attribute_name [ whitespace_optional '=' whitespace_optional attribute_value ]
-//! attribute_name ::= ( ':' | '_' | ascii_alphabetic ) *( '-' | '.' | ':' | '_' | ascii_alphanumeric )
-//! attribute_value ::= '"' *( line - '"' ) '"' | "'" *( line - "'" )  "'" | 1*( line - space_or_tab - '"' - "'" - '/' - '<' - '=' - '>' - '`')
-//!
-//! whitespace ::= 1*space_or_tab
-//! whitespace_optional ::= [ whitespace ]
-//! line ::= code - eol
-//! eol ::= '\r' | '\r\n' | '\n'
-//! space_or_tab ::= ' ' | '\t'
+//! opening_tag ::= '<' tag_name *(space_or_tab_eol attribute) [[space_or_tab_eol] '/'] [space_or_tab_eol] '>'
+//! closing_tag ::= '</' tag_name [space_or_tab_eol] '>'
+//! tag_name ::= ascii_alphabetic *('-' | ascii_alphanumeric)
+//! attribute ::= attribute_name [[space_or_tab_eol] '=' [space_or_tab_eol] attribute_value]
+//! attribute_name ::= (':' | '_' | ascii_alphabetic) *('-' | '.' | ':' | '_' | ascii_alphanumeric)
+//! attribute_value ::= '"' *(line - '"') '"' | "'" *(line - "'")  "'" | 1*(text - '"' - "'" - '/' - '<' - '=' - '>' - '`')
 //! ```
+//!
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
 //!
 //! The grammar for HTML in markdown does not resemble the rules of parsing
 //! HTML according to the [*§ 13.2 Parsing HTML documents* in the HTML
-//! spec][html-parsing].
+//! spec][html_parsing].
 //! As such, HTML in markdown *resembles* HTML, but is instead a (naïve?)
 //! attempt to parse an XML-like language.
 //! By extension, another notable property of the grammar is that it can
@@ -96,7 +96,7 @@
 //! [paragraph]: crate::construct::paragraph
 //! [html_raw_names]: crate::constant::HTML_RAW_NAMES
 //! [html_block_names]: crate::constant::HTML_BLOCK_NAMES
-//! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
+//! [html_parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
 use crate::constant::{
     HTML_BLOCK_NAMES, HTML_CDATA_PREFIX, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_SIZE,

@@ -1,6 +1,9 @@
-//! Block quote is a construct that occurs in the [document][] content type.
+//! Block quotes occur in the [document][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Block quotes form with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! block_quote_start ::= '>' [ space_or_tab ]
@@ -9,13 +12,23 @@
 //!
 //! Further lines that are not prefixed with `block_quote_cont` cause the block
 //! quote to be exited, except when those lines are lazy continuation.
-//! Like so many things in markdown, block quotes too, are very complex.
-//! See [*§ Phase 1: block structure*][commonmark-block] for more on parsing
-//! details.
+//! Like so many things in markdown, block quotes too, are complex.
+//! See [*§ Phase 1: block structure* in `CommonMark`][commonmark-block] for
+//! more on parsing details.
+//!
+//! As block quote is a container, it takes several bytes from the start of the
+//! line, while the rest of the line includes more containers or flow.
+//!
+//! ## HTML
 //!
 //! Block quote relates to the `<blockquote>` element in HTML.
 //! See [*§ 4.4.4 The `blockquote` element*][html-blockquote] in the HTML spec
 //! for more info.
+//!
+//! ## Recommendation
+//!
+//! Always use a single space after a block quote marker (`>`).
+//! Never use lazy continuation.
 //!
 //! ## Tokens
 //!

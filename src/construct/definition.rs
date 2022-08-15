@@ -1,31 +1,29 @@
-//! Definition is a construct that occurs in the [flow] content type.
+//! Definition occurs in the [flow] content type.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Definition forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! definition ::= label ':' [ whitespace ] destination [ whitespace title ] [ space_or_tab ]
+//! definition ::= label ':' [ space_or_tab_eol ] destination [ space_or_tab_eol title ] [ space_or_tab ]
 //!
 //! ; See the `destination`, `title`, and `label` constructs for the BNF of
 //! ; those parts.
 //! ```
 //!
-//! See [`destination`][destination], [`label`][label], and [`title`][title]
-//! for grammar, notes, and recommendations.
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
 //!
-//! Definitions in markdown do not, on their own, relate to anything in HTML.
-//! When matched with a [label end (reference)][label_end], they together
-//! relate to the `<a>` or `<img>` elements in HTML.
-//! The definition forms its `href` or `src`, and optionally `title`,
-//! attributes.
-//! See [*§ 4.5.1 The `a` element*][html-a] and
-//! [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
+//! See [`destination`][destination], [`label`][label], and [`title`][title]
+//! for grammar, notes, and recommendations on each part.
 //!
 //! The `destination`, `label`, and `title` parts are interpreted as the
 //! [string][] content type.
 //! That means that [character escapes][character_escape] and
 //! [character references][character_reference] are allowed.
 //!
-//! Definitions match to references through their label.
+//! Definitions match to references through identifiers.
 //! To match, both labels must be equal after normalizing with
 //! [`normalize_identifier`][normalize_identifier].
 //! One definition can match to multiple references.
@@ -57,6 +55,16 @@
 //! `<img>` when compiling, see
 //! [`sanitize_uri`][sanitize_uri].
 //!
+//! ## HTML
+//!
+//! Definitions in markdown do not, on their own, relate to anything in HTML.
+//! When matched with a [label end (reference)][label_end], they together
+//! relate to the `<a>` or `<img>` elements in HTML.
+//! The definition forms its `href` or `src`, and optionally `title`,
+//! attributes.
+//! See [*§ 4.5.1 The `a` element*][html_a] and
+//! [*§ 4.8.3 The `img` element*][html_img] in the HTML spec for more info.
+//!
 //! ## Tokens
 //!
 //! *   [`Definition`][Name::Definition]
@@ -84,14 +92,14 @@
 //! [string]: crate::construct::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
-//! [label_end]: crate::construct::label_end
 //! [destination]: crate::construct::partial_destination
-//! [title]: crate::construct::partial_title
 //! [label]: crate::construct::partial_label
+//! [label_end]: crate::construct::label_end
+//! [title]: crate::construct::partial_title
 //! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
 //! [normalize_identifier]: crate::util::normalize_identifier
-//! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
-//! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
+//! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [html_img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;

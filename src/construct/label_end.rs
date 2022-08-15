@@ -1,4 +1,4 @@
-//! Label end is a construct that occurs in the [text][] conten&t type.
+//! Label end is a construct that occurs in the [text][] content type.
 //!
 //! It forms with the following BNF:
 //!

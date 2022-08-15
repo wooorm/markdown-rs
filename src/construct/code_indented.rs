@@ -1,30 +1,38 @@
-//! Code (indented) is a construct that occurs in the [flow][] content type.
+//! Code (indented) occurs in the [flow][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Code (indented) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! code_indented ::= indented_filled_line *( eol *( blank_line eol ) indented_filled_line )
+//! code_indented ::= filled_line *( eol *( blank_line eol ) filled_line )
 //!
-//! ; Restriction: at least one `code` must not be whitespace.
-//! indented_filled_line ::= 4space_or_tab *code
+//! ; Restriction: at least one `line` byte must be `text`.
+//! filled_line ::= 4(space_or_tab) *line
 //! blank_line ::= *space_or_tab
-//! eol ::= '\r' | '\r\n' | '\n'
-//! code ::= . ; any unicode code point (other than line endings).
-//! space_or_tab ::= ' ' | '\t'
 //! ```
 //!
-//! Code (indented) relates to both the `<pre>` and the `<code>` elements in
-//! HTML.
-//! See [*§ 4.4.3 The `pre` element*][html-pre] and the [*§ 4.5.15 The `code`
-//! element*][html-code] in the HTML spec for more info.
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
 //!
 //! In markdown, it is also possible to use [code (text)][code_text] in the
 //! [text][] content type.
 //! It is also possible to create code with the [code (fenced)][code_fenced]
 //! construct.
-//! That construct is more explicit, more similar to code (text), and has
-//! support for specifying the programming language that the code is in, so it
-//! is recommended to use that instead of indented code.
+//!
+//! ## HTML
+//!
+//! Code (indented) relates to both the `<pre>` and the `<code>` elements in
+//! HTML.
+//! See [*§ 4.4.3 The `pre` element*][html_pre] and the [*§ 4.5.15 The `code`
+//! element*][html_code] in the HTML spec for more info.
+//!
+//! ## Recommendation
+//!
+//! It is recommended to use code (fenced) instead of code (indented).
+//! Code (fenced) is more explicit, similar to code (text), and has support
+//! for specifying the programming language.
 //!
 //! ## Tokens
 //!
@@ -40,10 +48,10 @@
 //!
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text
-//! [code_text]: crate::construct::code_text
 //! [code_fenced]: crate::construct::code_fenced
-//! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
-//! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
+//! [code_text]: crate::construct::code_text
+//! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
+//! [html_pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 
 use super::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::constant::TAB_SIZE;

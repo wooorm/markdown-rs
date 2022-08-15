@@ -1,4 +1,4 @@
-//! Utilities used when compiling markdown.
+//! Utilities used when processing markdown.
 
 pub mod decode_character_reference;
 pub mod edit_map;
