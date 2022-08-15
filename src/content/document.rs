@@ -8,10 +8,9 @@
 //! *   [Block quote][crate::construct::block_quote]
 //! *   [List][crate::construct::list_item]
 
-use crate::event::{Content, Event, Kind, Link, Name, Point};
-use crate::parser::ParseState;
+use crate::event::{Content, Event, Kind, Link, Name};
 use crate::state::{Name as StateName, State};
-use crate::subtokenize::{divide_events, subtokenize};
+use crate::subtokenize::divide_events;
 use crate::tokenizer::{Container, ContainerState, Tokenizer};
 use crate::util::skip;
 
@@ -44,26 +43,6 @@ enum Phase {
     ///        ^
     /// ```
     Eof,
-}
-
-/// Parse a document.
-pub fn document(parse_state: &mut ParseState, point: Point) -> Vec<Event> {
-    let mut tokenizer = Tokenizer::new(point, parse_state);
-
-    let state = tokenizer.push(
-        (0, 0),
-        (parse_state.bytes.len(), 0),
-        State::Next(StateName::DocumentStart),
-    );
-    tokenizer.flush(state, true);
-
-    let mut events = tokenizer.events;
-
-    parse_state.definitions = tokenizer.tokenize_state.definitions;
-
-    while !subtokenize(&mut events, parse_state) {}
-
-    events
 }
 
 /// Start of document, at an optional BOM.

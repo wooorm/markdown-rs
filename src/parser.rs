@@ -1,7 +1,9 @@
 //! Turn a string of markdown into events.
 
-use crate::content::document::document;
 use crate::event::{Event, Point};
+use crate::state::{Name as StateName, State};
+use crate::subtokenize::subtokenize;
+use crate::tokenizer::Tokenizer;
 use crate::{Constructs, Options};
 
 /// Info needed, in all content types, when parsing markdown.
@@ -27,15 +29,28 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8])
         definitions: vec![],
     };
 
-    let events = document(
-        &mut parse_state,
+    let mut tokenizer = Tokenizer::new(
         Point {
             line: 1,
             column: 1,
             index: 0,
             vs: 0,
         },
+        &parse_state,
     );
+
+    let state = tokenizer.push(
+        (0, 0),
+        (parse_state.bytes.len(), 0),
+        State::Next(StateName::DocumentStart),
+    );
+    tokenizer.flush(state, true);
+
+    let mut events = tokenizer.events;
+
+    parse_state.definitions = tokenizer.tokenize_state.definitions;
+
+    while !subtokenize(&mut events, &parse_state) {}
 
     (events, parse_state.bytes)
 }
