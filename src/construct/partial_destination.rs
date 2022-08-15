@@ -65,7 +65,7 @@
 //! *   [`micromark-factory-destination/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-destination/dev/index.js)
 //!
 //! [definition]: crate::construct::definition
-//! [string]: crate::content::string
+//! [string]: crate::construct::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
 //! [label_end]: crate::construct::label_end

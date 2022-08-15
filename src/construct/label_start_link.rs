@@ -23,7 +23,7 @@
 //! *   [`label-start-link.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-start-link.js)
 //! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.30/#links)
 //!
-//! [text]: crate::content::text
+//! [text]: crate::construct::text
 //! [label_end]: crate::construct::label_end
 //! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 

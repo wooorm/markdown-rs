@@ -54,8 +54,8 @@
 //! *   [`character-reference.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-reference.js)
 //! *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.30/#entity-and-numeric-character-references)
 //!
-//! [string]: crate::content::string
-//! [text]: crate::content::text
+//! [string]: crate::construct::string
+//! [text]: crate::construct::text
 //! [character_escape]: crate::construct::character_reference
 //! [decode_numeric]: crate::util::decode_character_reference::decode_numeric
 //! [character_references]: crate::constant::CHARACTER_REFERENCES

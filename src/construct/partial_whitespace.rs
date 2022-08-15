@@ -38,8 +38,8 @@
 //! *   [`initialize/text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark/dev/lib/initialize/text.js)
 //! *   [*§ 6.7 Hard line breaks* in `CommonMark`](https://spec.commonmark.org/0.30/#hard-line-breaks)
 //!
-//! [string]: crate::content::string
-//! [text]: crate::content::text
+//! [string]: crate::construct::string
+//! [text]: crate::construct::text
 //! [hard_break_escape]: crate::construct::hard_break_escape
 //! [character_escape]: crate::construct::character_escape
 //! [hard_break_prefix_size_min]: crate::constant::HARD_BREAK_PREFIX_SIZE_MIN

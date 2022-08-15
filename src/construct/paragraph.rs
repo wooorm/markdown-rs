@@ -26,8 +26,8 @@
 //! *   [`content.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/content.js)
 //! *   [*§ 4.8 Paragraphs* in `CommonMark`](https://spec.commonmark.org/0.30/#paragraphs)
 //!
-//! [flow]: crate::content::flow
-//! [text]: crate::content::text
+//! [flow]: crate::construct::flow
+//! [text]: crate::construct::text
 //! [autolink]: crate::construct::autolink
 //! [code_text]: crate::construct::code_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element

@@ -47,7 +47,7 @@
 //! *   [`heading-atx.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/heading-atx.js)
 //! *   [*§ 4.2 ATX headings* in `CommonMark`](https://spec.commonmark.org/0.30/#atx-headings)
 //!
-//! [flow]: crate::content::flow
+//! [flow]: crate::construct::flow
 //! [heading_setext]: crate::construct::heading_setext
 //! [hard_break_escape]: crate::construct::hard_break_escape
 //! [html]: https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements

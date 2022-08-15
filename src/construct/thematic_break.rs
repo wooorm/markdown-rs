@@ -43,7 +43,7 @@
 //! *   [`thematic-break.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/thematic-break.js)
 //! *   [*§ 4.1 Thematic breaks* in `CommonMark`](https://spec.commonmark.org/0.30/#thematic-breaks)
 //!
-//! [flow]: crate::content::flow
+//! [flow]: crate::construct::flow
 //! [heading_setext]: crate::construct::heading_setext
 //! [list-item]: crate::construct::list_item
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element

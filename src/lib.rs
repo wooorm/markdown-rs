@@ -7,7 +7,6 @@
 mod compiler;
 mod constant;
 mod construct;
-mod content;
 mod event;
 mod parser;
 mod resolve;

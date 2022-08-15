@@ -94,7 +94,7 @@
 //! *   [`autolink.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/autolink.js)
 //! *   [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.30/#autolinks)
 //!
-//! [text]: crate::content::text
+//! [text]: crate::construct::text
 //! [label_end]: crate::construct::label_end
 //! [autolink_scheme_size_max]: crate::constant::AUTOLINK_SCHEME_SIZE_MAX
 //! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX

@@ -132,8 +132,8 @@
 //! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.30/#links)
 //! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.30/#images)
 //!
-//! [string]: crate::content::string
-//! [text]: crate::content::text
+//! [string]: crate::construct::string
+//! [text]: crate::construct::text
 //! [destination]: crate::construct::partial_destination
 //! [title]: crate::construct::partial_title
 //! [label]: crate::construct::partial_label

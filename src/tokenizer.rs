@@ -154,15 +154,15 @@ pub struct TokenizeState<'a> {
     // Couple of media related fields.
     /// List of usable label starts.
     ///
-    /// Used when tokenizing [text content][crate::content::text].
+    /// Used when tokenizing [text content][crate::construct::text].
     pub label_starts: Vec<LabelStart>,
     /// List of unusable label starts.
     ///
-    /// Used when tokenizing [text content][crate::content::text].
+    /// Used when tokenizing [text content][crate::construct::text].
     pub label_starts_loose: Vec<LabelStart>,
     /// Stack of images and links.
     ///
-    /// Used when tokenizing [text content][crate::content::text].
+    /// Used when tokenizing [text content][crate::construct::text].
     pub labels: Vec<Label>,
 
     /// List of defined identifiers.
@@ -239,11 +239,11 @@ pub struct Tokenizer<'a> {
     pub tokenize_state: TokenizeState<'a>,
     /// Whether we would be interrupting something.
     ///
-    /// Used when tokenizing [flow content][crate::content::flow].
+    /// Used when tokenizing [flow content][crate::construct::flow].
     pub interrupt: bool,
     /// Whether containers cannot “pierce” into the current construct.
     ///
-    /// Used when tokenizing [document content][crate::content::document].
+    /// Used when tokenizing [document content][crate::construct::document].
     pub concrete: bool,
     /// Whether this line is lazy.
     ///

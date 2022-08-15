@@ -80,8 +80,8 @@
 //! *   [`definition.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/definition.js)
 //! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.30/#link-reference-definitions)
 //!
-//! [flow]: crate::content::flow
-//! [string]: crate::content::string
+//! [flow]: crate::construct::flow
+//! [string]: crate::construct::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
 //! [label_end]: crate::construct::label_end

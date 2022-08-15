@@ -1,5 +1,4 @@
 use crate::construct;
-use crate::content;
 use crate::tokenizer::Tokenizer;
 
 /// Names of functions that resolve.
@@ -26,8 +25,8 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) {
         Name::List => construct::list_item::resolve,
         Name::Paragraph => construct::paragraph::resolve,
         Name::Data => construct::partial_data::resolve,
-        Name::String => content::string::resolve,
-        Name::Text => content::text::resolve,
+        Name::String => construct::string::resolve,
+        Name::Text => construct::text::resolve,
     };
 
     func(tokenizer);

@@ -10,7 +10,7 @@
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
 //!
-//! [text]: crate::content::text
+//! [text]: crate::construct::text
 
 use crate::construct::partial_whitespace::resolve_whitespace;
 use crate::resolve::Name as ResolveName;

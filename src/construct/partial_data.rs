@@ -3,8 +3,8 @@
 //! It can include anything (including line endings), and stops at certain
 //! characters.
 //!
-//! [string]: crate::content::string
-//! [text]: crate::content::text
+//! [string]: crate::construct::string
+//! [text]: crate::construct::text
 
 use crate::event::{Kind, Name};
 use crate::resolve::Name as ResolveName;

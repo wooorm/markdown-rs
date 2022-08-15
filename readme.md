@@ -14,7 +14,6 @@ Crate docs are currently at
 
 ### Refactor
 
-- [ ] (1) Move `content` to `construct`
 - [ ] (1) Improve `interrupt`, `concrete`, `lazy` fields somehow?
 - [ ] (?) Remove last box: the one around the child tokenizer?
 - [ ] (1) Add helper to get byte at, get char before/after, etc.

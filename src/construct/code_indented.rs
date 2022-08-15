@@ -38,8 +38,8 @@
 //! *   [`code-indented.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-indented.js)
 //! *   [*§ 4.4 Indented code blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#indented-code-blocks)
 //!
-//! [flow]: crate::content::flow
-//! [text]: crate::content::text
+//! [flow]: crate::construct::flow
+//! [text]: crate::construct::text
 //! [code_text]: crate::construct::code_text
 //! [code_fenced]: crate::construct::code_fenced
 //! [html-pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element

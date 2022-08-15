@@ -38,7 +38,7 @@
 //! *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.30/#list-items)
 //! *   [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.30/#lists)
 //!
-//! [document]: crate::content::document
+//! [document]: crate::construct::document
 //! [html-li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
 //! [html-ol]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
 //! [html-ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element

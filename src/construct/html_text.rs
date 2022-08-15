@@ -50,7 +50,7 @@
 //! *   [`html-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-text.js)
 //! *   [*§ 6.6 Raw HTML* in `CommonMark`](https://spec.commonmark.org/0.30/#raw-html)
 //!
-//! [text]: crate::content::text
+//! [text]: crate::construct::text
 //! [html_flow]: crate::construct::html_flow
 //! [html-parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 

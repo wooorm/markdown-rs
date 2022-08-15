@@ -91,9 +91,9 @@
 //! *   [`code-fenced.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-fenced.js)
 //! *   [*§ 4.5 Fenced code blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#fenced-code-blocks)
 //!
-//! [flow]: crate::content::flow
-//! [string]: crate::content::string
-//! [text]: crate::content::text
+//! [flow]: crate::construct::flow
+//! [string]: crate::construct::string
+//! [text]: crate::construct::text
 //! [code_indented]: crate::construct::code_indented
 //! [code_text]: crate::construct::code_text
 //! [character_escape]: crate::construct::character_escape

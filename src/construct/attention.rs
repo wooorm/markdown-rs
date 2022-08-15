@@ -47,7 +47,7 @@
 //! *   [`attention.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/attention.js)
 //! *   [*§ 6.2 Emphasis and strong emphasis* in `CommonMark`](https://spec.commonmark.org/0.30/#emphasis-and-strong-emphasis)
 //!
-//! [text]: crate::content::text
+//! [text]: crate::construct::text
 //! [html-em]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
 

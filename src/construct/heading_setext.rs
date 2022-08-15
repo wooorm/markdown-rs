@@ -49,7 +49,7 @@
 //! *   [`setext-underline.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/setext-underline.js)
 //! *   [*§ 4.3 Setext headings* in `CommonMark`](https://spec.commonmark.org/0.30/#setext-headings)
 //!
-//! [flow]: crate::content::flow
+//! [flow]: crate::construct::flow
 //! [heading_atx]: crate::construct::heading_atx
 //! [thematic_break]: crate::construct::thematic_break
 //! [hard_break_escape]: crate::construct::hard_break_escape

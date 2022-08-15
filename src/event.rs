@@ -10,7 +10,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`AutolinkEmail`][Name::AutolinkEmail],
     ///     [`AutolinkMarker`][Name::AutolinkMarker],
@@ -84,7 +84,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -102,10 +102,10 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [document content][crate::content::document]
+    ///     [document content][crate::construct::document]
     /// *   **Content model**:
     ///     [`BlockQuotePrefix`][Name::BlockQuotePrefix],
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Construct**:
     ///     [`block_quote`][crate::construct::block_quote]
     ///
@@ -166,15 +166,15 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`document`][crate::content::document]
+    ///     [`document`][crate::construct::document]
     ByteOrderMark,
     /// Whole character escape.
     ///
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [string content][crate::content::string] or
-    ///     [text content][crate::content::text]
+    ///     [string content][crate::construct::string] or
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`CharacterEscapeMarker`][Name::CharacterEscapeMarker],
     ///     [`CharacterEscapeValue`][Name::CharacterEscapeValue]
@@ -229,8 +229,8 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [string content][crate::content::string] or
-    ///     [text content][crate::content::text]
+    ///     [string content][crate::construct::string] or
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`CharacterReferenceMarker`][Name::CharacterReferenceMarker],
     ///     [`CharacterReferenceMarkerHexadecimal`][Name::CharacterReferenceMarkerHexadecimal],
@@ -342,7 +342,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`CodeFencedFence`][Name::CodeFencedFence],
     ///     [`CodeFlowChunk`][Name::CodeFlowChunk],
@@ -393,7 +393,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`CodeFencedFence`][Name::CodeFencedFence]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`code_fenced`][crate::construct::code_fenced]
     ///
@@ -413,7 +413,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`CodeFencedFence`][Name::CodeFencedFence]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`code_fenced`][crate::construct::code_fenced]
     ///
@@ -479,7 +479,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`CodeFlowChunk`][Name::CodeFlowChunk],
     ///     [`LineEnding`][Name::LineEnding],
@@ -499,7 +499,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`CodeTextData`][Name::CodeTextData],
     ///     [`CodeTextSequence`][Name::CodeTextSequence],
@@ -555,8 +555,8 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [string content][crate::content::string],
-    ///     [text content][crate::content::text]
+    ///     [string content][crate::construct::string],
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -574,7 +574,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`DefinitionMarker`][Name::DefinitionMarker],
     ///     [`DefinitionLabel`][Name::DefinitionLabel],
@@ -676,7 +676,7 @@ pub enum Name {
     ///     [`DefinitionDestinationLiteral`][Name::DefinitionDestinationLiteral],
     ///     [`DefinitionDestinationRaw`][Name::DefinitionDestinationRaw]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`destination`][crate::construct::partial_destination]
     ///
@@ -735,7 +735,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`DefinitionLabel`][Name::DefinitionLabel]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`label`][crate::construct::partial_label]
     ///
@@ -810,7 +810,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`DefinitionTitle`][Name::DefinitionTitle]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`title`][crate::construct::partial_title]
     ///
@@ -826,7 +826,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`EmphasisSequence`][Name::EmphasisSequence],
     ///     [`EmphasisText`][Name::EmphasisText]
@@ -865,7 +865,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`Emphasis`][Name::Emphasis]
     /// *   **Content model**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Construct**:
     ///     [`attention`][crate::construct::attention]
     ///
@@ -881,7 +881,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -900,7 +900,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -919,7 +919,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`HeadingAtxSequence`][Name::HeadingAtxSequence],
     ///     [`HeadingAtxText`][Name::HeadingAtxText],
@@ -959,7 +959,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`HeadingAtx`][Name::HeadingAtx],
     /// *   **Content model**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Construct**:
     ///     [`heading_atx`][crate::construct::heading_atx]
     ///
@@ -975,7 +975,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`HeadingSetextText`][Name::HeadingSetextText],
     ///     [`HeadingSetextUnderline`][Name::HeadingSetextUnderline],
@@ -1000,7 +1000,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`HeadingSetext`][Name::HeadingSetext]
     /// *   **Content model**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Construct**:
     ///     [`heading_setext`][crate::construct::heading_setext]
     ///
@@ -1036,7 +1036,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`HtmlFlowData`][Name::HtmlFlowData],
     ///     [`LineEnding`][Name::LineEnding],
@@ -1074,7 +1074,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`HtmlTextData`][Name::HtmlTextData],
     ///     [`LineEnding`][Name::LineEnding],
@@ -1112,7 +1112,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`Label`][Name::Label],
     ///     [`Resource`][Name::Resource],
@@ -1263,7 +1263,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`Label`][Name::Label]
     /// *   **Content model**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Construct**:
     ///     [`label_end`][crate::construct::label_end]
     ///
@@ -1302,7 +1302,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`Label`][Name::Label],
     ///     [`Resource`][Name::Resource],
@@ -1330,7 +1330,7 @@ pub enum Name {
     ///     [`ListUnordered`][Name::ListUnordered],
     /// *   **Content model**:
     ///     [`ListItemPrefix`][Name::ListItemPrefix],
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Construct**:
     ///     [`list item`][crate::construct::list_item]
     ///
@@ -1408,7 +1408,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [document content][crate::content::document]
+    ///     [document content][crate::construct::document]
     /// *   **Content model**:
     ///     [`BlankLineEnding`][Name::BlankLineEnding],
     ///     [`BlockQuotePrefix`][Name::BlockQuotePrefix],
@@ -1432,7 +1432,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [document content][crate::content::document]
+    ///     [document content][crate::construct::document]
     /// *   **Content model**:
     ///     [`BlankLineEnding`][Name::BlankLineEnding],
     ///     [`BlockQuotePrefix`][Name::BlockQuotePrefix],
@@ -1456,9 +1456,9 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Construct**:
     ///     [`paragraph`][crate::construct::paragraph]
     ///
@@ -1516,7 +1516,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`Reference`][Name::Reference]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`label`][crate::construct::partial_label]
     ///
@@ -1634,7 +1634,7 @@ pub enum Name {
     ///     [`ResourceDestinationLiteral`][Name::ResourceDestinationLiteral],
     ///     [`ResourceDestinationRaw`][Name::ResourceDestinationRaw]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`destination`][crate::construct::partial_destination]
     ///
@@ -1709,7 +1709,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`ResourceTitle`][Name::ResourceTitle]
     /// *   **Content model**:
-    ///     [string content][crate::content::string]
+    ///     [string content][crate::construct::string]
     /// *   **Construct**:
     ///     [`title`][crate::construct::partial_title]
     ///
@@ -1743,7 +1743,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Content model**:
     ///     [`StrongSequence`][Name::StrongSequence],
     ///     [`StrongText`][Name::StrongText]
@@ -1782,7 +1782,7 @@ pub enum Name {
     /// *   **Context**:
     ///     [`Strong`][Name::Strong]
     /// *   **Content model**:
-    ///     [text content][crate::content::text]
+    ///     [text content][crate::construct::text]
     /// *   **Construct**:
     ///     [`attention`][crate::construct::attention]
     ///
@@ -1798,7 +1798,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::content::flow]
+    ///     [flow content][crate::construct::flow]
     /// *   **Content model**:
     ///     [`ThematicBreakSequence`][Name::ThematicBreakSequence],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
@@ -1879,11 +1879,11 @@ pub const VOID_EVENTS: [Name; 40] = [
 /// Embedded content type.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Content {
-    /// Represents [flow content][crate::content::flow].
+    /// Represents [flow content][crate::construct::flow].
     Flow,
-    /// Represents [string content][crate::content::string].
+    /// Represents [string content][crate::construct::string].
     String,
-    /// Represents [text content][crate::content::text].
+    /// Represents [text content][crate::construct::text].
     Text,
 }
 

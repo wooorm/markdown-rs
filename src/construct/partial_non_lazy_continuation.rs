@@ -5,7 +5,7 @@
 //! For example, [html (flow)][html_flow] and code ([fenced][code_fenced],
 //! [indented][code_indented]), stop when next line is lazy.
 //!
-//! [flow]: crate::content::flow
+//! [flow]: crate::construct::flow
 //! [code_fenced]: crate::construct::code_fenced
 //! [code_indented]: crate::construct::code_indented
 //! [html_flow]: crate::construct::html_flow

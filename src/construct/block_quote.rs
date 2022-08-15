@@ -29,7 +29,7 @@
 //! *   [`block-quote.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/block-quote.js)
 //! *   [*§ 5.1 Block quotes* in `CommonMark`](https://spec.commonmark.org/0.30/#block-quotes)
 //!
-//! [document]: crate::content::document
+//! [document]: crate::construct::document
 //! [html-blockquote]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element
 //! [commonmark-block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
 

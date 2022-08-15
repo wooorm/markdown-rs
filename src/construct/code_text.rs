@@ -77,8 +77,8 @@
 //! *   [`code-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-text.js)
 //! *   [*§ 6.1 Code spans* in `CommonMark`](https://spec.commonmark.org/0.30/#code-spans)
 //!
-//! [flow]: crate::content::flow
-//! [text]: crate::content::text
+//! [flow]: crate::construct::flow
+//! [text]: crate::construct::text
 //! [code_indented]: crate::construct::code_indented
 //! [code_fenced]: crate::construct::code_fenced
 //! [html-code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element

@@ -30,7 +30,7 @@
 //! [heading-atx]: crate::construct::heading_atx
 //! [list-item]: crate::construct::list_item
 //! [paragraph]: crate::construct::paragraph
-//! [flow]: crate::content::flow
+//! [flow]: crate::construct::flow
 
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::state::{Name as StateName, State};

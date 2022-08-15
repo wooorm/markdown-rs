@@ -1,5 +1,4 @@
 use crate::construct;
-use crate::content;
 use crate::tokenizer::Tokenizer;
 
 /// The result of a state.
@@ -391,31 +390,33 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DestinationRaw => construct::partial_destination::raw,
         Name::DestinationRawEscape => construct::partial_destination::raw_escape,
 
-        Name::DocumentStart => content::document::start,
-        Name::DocumentContainerExistingBefore => content::document::container_existing_before,
-        Name::DocumentContainerExistingAfter => content::document::container_existing_after,
-        Name::DocumentContainerNewBefore => content::document::container_new_before,
+        Name::DocumentStart => construct::document::start,
+        Name::DocumentContainerExistingBefore => construct::document::container_existing_before,
+        Name::DocumentContainerExistingAfter => construct::document::container_existing_after,
+        Name::DocumentContainerNewBefore => construct::document::container_new_before,
         Name::DocumentContainerNewBeforeNotBlockQuote => {
-            content::document::container_new_before_not_block_quote
+            construct::document::container_new_before_not_block_quote
         }
-        Name::DocumentContainerNewBeforeNotList => content::document::container_new_before_not_list,
-        Name::DocumentContainerNewAfter => content::document::container_new_after,
-        Name::DocumentContainersAfter => content::document::containers_after,
-        Name::DocumentFlowEnd => content::document::flow_end,
-        Name::DocumentFlowInside => content::document::flow_inside,
+        Name::DocumentContainerNewBeforeNotList => {
+            construct::document::container_new_before_not_list
+        }
+        Name::DocumentContainerNewAfter => construct::document::container_new_after,
+        Name::DocumentContainersAfter => construct::document::containers_after,
+        Name::DocumentFlowEnd => construct::document::flow_end,
+        Name::DocumentFlowInside => construct::document::flow_inside,
 
-        Name::FlowStart => content::flow::start,
-        Name::FlowBeforeCodeIndented => content::flow::before_code_indented,
-        Name::FlowBeforeCodeFenced => content::flow::before_code_fenced,
-        Name::FlowBeforeHtml => content::flow::before_html,
-        Name::FlowBeforeHeadingAtx => content::flow::before_heading_atx,
-        Name::FlowBeforeHeadingSetext => content::flow::before_heading_setext,
-        Name::FlowBeforeThematicBreak => content::flow::before_thematic_break,
-        Name::FlowBeforeDefinition => content::flow::before_definition,
-        Name::FlowAfter => content::flow::after,
-        Name::FlowBlankLineBefore => content::flow::blank_line_before,
-        Name::FlowBlankLineAfter => content::flow::blank_line_after,
-        Name::FlowBeforeParagraph => content::flow::before_paragraph,
+        Name::FlowStart => construct::flow::start,
+        Name::FlowBeforeCodeIndented => construct::flow::before_code_indented,
+        Name::FlowBeforeCodeFenced => construct::flow::before_code_fenced,
+        Name::FlowBeforeHtml => construct::flow::before_html,
+        Name::FlowBeforeHeadingAtx => construct::flow::before_heading_atx,
+        Name::FlowBeforeHeadingSetext => construct::flow::before_heading_setext,
+        Name::FlowBeforeThematicBreak => construct::flow::before_thematic_break,
+        Name::FlowBeforeDefinition => construct::flow::before_definition,
+        Name::FlowAfter => construct::flow::after,
+        Name::FlowBlankLineBefore => construct::flow::blank_line_before,
+        Name::FlowBlankLineAfter => construct::flow::blank_line_after,
+        Name::FlowBeforeParagraph => construct::flow::before_paragraph,
 
         Name::HardBreakEscapeStart => construct::hard_break_escape::start,
         Name::HardBreakEscapeAfter => construct::hard_break_escape::after,
@@ -584,15 +585,15 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::SpaceOrTabEolAtEol => construct::partial_space_or_tab_eol::at_eol,
         Name::SpaceOrTabEolAfterMore => construct::partial_space_or_tab_eol::after_more,
 
-        Name::StringStart => content::string::start,
-        Name::StringBefore => content::string::before,
-        Name::StringBeforeData => content::string::before_data,
+        Name::StringStart => construct::string::start,
+        Name::StringBefore => construct::string::before,
+        Name::StringBeforeData => construct::string::before_data,
 
-        Name::TextStart => content::text::start,
-        Name::TextBefore => content::text::before,
-        Name::TextBeforeHtml => content::text::before_html,
-        Name::TextBeforeHardBreakEscape => content::text::before_hard_break_escape,
-        Name::TextBeforeData => content::text::before_data,
+        Name::TextStart => construct::text::start,
+        Name::TextBefore => construct::text::before,
+        Name::TextBeforeHtml => construct::text::before_html,
+        Name::TextBeforeHardBreakEscape => construct::text::before_hard_break_escape,
+        Name::TextBeforeData => construct::text::before_data,
 
         Name::ThematicBreakStart => construct::thematic_break::start,
         Name::ThematicBreakBefore => construct::thematic_break::before,

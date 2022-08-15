@@ -28,8 +28,8 @@
 //! *   [`character-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-escape.js)
 //! *   [*§ 2.4 Backslash escapes* in `CommonMark`](https://spec.commonmark.org/0.30/#backslash-escapes)
 //!
-//! [string]: crate::content::string
-//! [text]: crate::content::text
+//! [string]: crate::construct::string
+//! [text]: crate::construct::text
 //! [character_reference]: crate::construct::character_reference
 //! [hard_break_escape]: crate::construct::hard_break_escape
 
