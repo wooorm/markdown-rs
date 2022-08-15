@@ -36,7 +36,6 @@ use crate::event::{Content, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::skip::opt as skip_opt;
 
 /// Before paragraph.
 ///
@@ -96,47 +95,57 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         if event.kind == Kind::Enter && event.name == Name::Paragraph {
             // Exit:Paragraph
             let mut exit_index = index + 3;
-            let mut enter_next_index =
-                skip_opt(&tokenizer.events, exit_index + 1, &[Name::LineEnding]);
-            // Enter:Paragraph
-            enter_next_index = skip_opt(
-                &tokenizer.events,
-                enter_next_index,
-                &[Name::SpaceOrTab, Name::BlockQuotePrefix],
-            );
 
-            // Find future `Paragraphs`.
-            while enter_next_index < tokenizer.events.len()
-                && tokenizer.events[enter_next_index].name == Name::Paragraph
-            {
-                // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding, Enter:Paragraph.
+            loop {
+                let mut enter_index = exit_index + 1;
+
+                if enter_index == tokenizer.events.len()
+                    || tokenizer.events[enter_index].name != Name::LineEnding
+                {
+                    break;
+                }
+
+                enter_index += 2;
+
+                while enter_index < tokenizer.events.len() {
+                    let event = &tokenizer.events[enter_index];
+
+                    if event.name != Name::SpaceOrTab
+                        && event.name != Name::BlockQuotePrefix
+                        && event.name != Name::BlockQuoteMarker
+                    {
+                        break;
+                    }
+
+                    enter_index += 1;
+                }
+
+                if enter_index == tokenizer.events.len()
+                    || tokenizer.events[enter_index].name != Name::Paragraph
+                {
+                    break;
+                }
+
+                // Remove Exit:Paragraph, Enter:LineEnding, Exit:LineEnding.
                 tokenizer.map.add(exit_index, 3, vec![]);
 
                 // Remove Enter:Paragraph.
-                tokenizer.map.add(enter_next_index, 1, vec![]);
+                tokenizer.map.add(enter_index, 1, vec![]);
 
                 // Add Exit:LineEnding position info to Exit:Data.
-                let line_ending_exit = &tokenizer.events[exit_index + 2];
-                let line_ending_point = line_ending_exit.point.clone();
-                let data_exit = &mut tokenizer.events[exit_index - 1];
-                data_exit.point = line_ending_point;
+                tokenizer.events[exit_index - 1].point =
+                    tokenizer.events[exit_index + 2].point.clone();
 
                 // Link Enter:Data on the previous line to Enter:Data on this line.
                 if let Some(link) = &mut tokenizer.events[exit_index - 2].link {
-                    link.next = Some(enter_next_index + 1);
+                    link.next = Some(enter_index + 1);
                 }
-                if let Some(link) = &mut tokenizer.events[enter_next_index + 1].link {
+                if let Some(link) = &mut tokenizer.events[enter_index + 1].link {
                     link.previous = Some(exit_index - 2);
                 }
 
                 // Potential next start.
-                exit_index = enter_next_index + 3;
-                enter_next_index = skip_opt(&tokenizer.events, exit_index + 1, &[Name::LineEnding]);
-                enter_next_index = skip_opt(
-                    &tokenizer.events,
-                    enter_next_index,
-                    &[Name::SpaceOrTab, Name::BlockQuotePrefix],
-                );
+                exit_index = enter_index + 3;
             }
 
             // Move to `Exit:Paragraph`.

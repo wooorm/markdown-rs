@@ -81,27 +81,24 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         let event = &tokenizer.events[index];
 
         if event.kind == Kind::Enter && event.name == Name::Data {
-            let exit_index = index + 1;
-            let mut exit_far_index = exit_index;
+            // Move to exit.
+            index += 1;
 
-            // Find multiple `data` events.
-            while exit_far_index + 1 < tokenizer.events.len()
-                && tokenizer.events[exit_far_index + 1].name == Name::Data
+            let mut exit_index = index;
+
+            // Find the farthest `data` event exit event.
+            while exit_index + 1 < tokenizer.events.len()
+                && tokenizer.events[exit_index + 1].name == Name::Data
             {
-                exit_far_index += 2;
+                exit_index += 2;
             }
 
-            if exit_far_index > exit_index {
-                tokenizer
-                    .map
-                    .add(exit_index, exit_far_index - exit_index, vec![]);
-
+            if exit_index > index {
+                tokenizer.map.add(index, exit_index - index, vec![]);
                 // Change positional info.
-                let exit_far = &tokenizer.events[exit_far_index];
-                tokenizer.events[exit_index].point = exit_far.point.clone();
-                index = exit_far_index;
-
-                continue;
+                tokenizer.events[index].point = tokenizer.events[exit_index].point.clone();
+                // Move to the end.
+                index = exit_index;
             }
         }
 
