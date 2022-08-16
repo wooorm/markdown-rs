@@ -1,7 +1,10 @@
 # micromark-rs
 
-Crate docs are currently at
-[`wooorm.com/micromark-rs/micromark/`](https://wooorm.com/micromark-rs/micromark/).
+A [CommonMark][] compliant, `no_std` + `alloc`, markdown parser, with extensions,
+in Rust.
+
+Crate docs currently at
+[`wooorm.com/micromark-rs/micromark/`][docs].
 
 ## To do
 
@@ -104,3 +107,6 @@ cargo doc --document-private-items
 ```
 
 (add `--open` to open them in a browser)
+
+[commonmark]: https://spec.commonmark.org
+[docs]: https://wooorm.com/micromark-rs/micromark/
