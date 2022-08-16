@@ -11,7 +11,7 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt, clippy
-      - run: cargo clippy -- -W clippy::pedantic -A clippy::doc_link_with_quotes
+      - run: cargo clippy -- -D clippy::pedantic -D clippy::cargo -A clippy::doc_link_with_quotes
       - run: cargo fmt --all -- --check
       - run: cargo test
       # - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml

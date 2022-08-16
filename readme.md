@@ -32,7 +32,6 @@ Crate docs are currently at
       and fix stuff I’m doing manually now
 - [ ] (5) Do some research on rust best practices for APIs, e.g., what to accept,
       how to integrate with streams or so?
-- [ ] (1) Go through clippy rules, and such, to add strict code styles
 - [ ] (3) Write comparison to other parsers
 - [ ] (3) Add node/etc bindings?
 - [ ] (3) Bunch of docs
@@ -90,7 +89,7 @@ cargo fmt --all
 Lint:
 
 ```sh
-cargo fmt --all -- --check && cargo clippy -- -W clippy::pedantic -A clippy::doc_link_with_quotes
+cargo fmt --all -- --check && cargo clippy -- -D clippy::pedantic -D clippy::cargo -A clippy::doc_link_with_quotes
 ```
 
 Tests:
