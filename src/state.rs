@@ -110,6 +110,7 @@ pub enum Name {
     DestinationRawEscape,
 
     DocumentStart,
+    DocumentBeforeFrontmatter,
     DocumentContainerExistingBefore,
     DocumentContainerExistingAfter,
     DocumentContainerNewBefore,
@@ -132,6 +133,17 @@ pub enum Name {
     FlowBlankLineBefore,
     FlowBlankLineAfter,
     FlowBeforeParagraph,
+
+    FrontmatterStart,
+    FrontmatterOpenSequence,
+    FrontmatterOpenAfter,
+    FrontmatterAfter,
+    FrontmatterContentStart,
+    FrontmatterContentInside,
+    FrontmatterContentEnd,
+    FrontmatterCloseStart,
+    FrontmatterCloseSequence,
+    FrontmatterCloseAfter,
 
     HardBreakEscapeStart,
     HardBreakEscapeAfter,
@@ -393,6 +405,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DestinationRawEscape => construct::partial_destination::raw_escape,
 
         Name::DocumentStart => construct::document::start,
+        Name::DocumentBeforeFrontmatter => construct::document::before_frontmatter,
         Name::DocumentContainerExistingBefore => construct::document::container_existing_before,
         Name::DocumentContainerExistingAfter => construct::document::container_existing_after,
         Name::DocumentContainerNewBefore => construct::document::container_new_before,
@@ -419,6 +432,17 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::FlowBlankLineBefore => construct::flow::blank_line_before,
         Name::FlowBlankLineAfter => construct::flow::blank_line_after,
         Name::FlowBeforeParagraph => construct::flow::before_paragraph,
+
+        Name::FrontmatterStart => construct::frontmatter::start,
+        Name::FrontmatterOpenSequence => construct::frontmatter::open_sequence,
+        Name::FrontmatterOpenAfter => construct::frontmatter::open_after,
+        Name::FrontmatterAfter => construct::frontmatter::after,
+        Name::FrontmatterContentStart => construct::frontmatter::content_start,
+        Name::FrontmatterContentInside => construct::frontmatter::content_inside,
+        Name::FrontmatterContentEnd => construct::frontmatter::content_end,
+        Name::FrontmatterCloseStart => construct::frontmatter::close_start,
+        Name::FrontmatterCloseSequence => construct::frontmatter::close_sequence,
+        Name::FrontmatterCloseAfter => construct::frontmatter::close_after,
 
         Name::HardBreakEscapeStart => construct::hard_break_escape::start,
         Name::HardBreakEscapeAfter => construct::hard_break_escape::after,

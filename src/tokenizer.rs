@@ -509,6 +509,11 @@ impl<'a> Tokenizer<'a> {
     /// Stack an attempt, moving to `ok` on [`State::Ok`][] and `nok` on
     /// [`State::Nok`][], reverting in both cases.
     pub fn check(&mut self, ok: State, nok: State) {
+        debug_assert_ne!(
+            nok,
+            State::Nok,
+            "checking w/ `State::Nok` should likely be an attempt"
+        );
         // Always capture (and restore) when checking.
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.

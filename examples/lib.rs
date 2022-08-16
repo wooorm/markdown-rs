@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
+use micromark::{micromark, micromark_with_options, Constructs, Options};
 
 fn main() {
     // Turn on debugging.
@@ -17,6 +17,21 @@ fn main() {
             &Options {
                 allow_dangerous_html: true,
                 allow_dangerous_protocol: true,
+                ..Options::default()
+            }
+        )
+    );
+
+    // Support extensions that are not in CommonMark.
+    println!(
+        "{:?}",
+        micromark_with_options(
+            "---\ntitle: Neptune\n---\nSome stuff on the moons of Neptune.",
+            &Options {
+                constructs: Constructs {
+                    frontmatter: true,
+                    ..Constructs::default()
+                },
                 ..Options::default()
             }
         )

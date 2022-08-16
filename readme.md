@@ -8,7 +8,6 @@ Crate docs are currently at
 ### Docs
 
 - [ ] (1) Add overview docs on how everything works
-- [ ] (1) Add more examples
 
 ### Refactor
 
@@ -41,14 +40,10 @@ Crate docs are currently at
 
 ### Extensions
 
-The main thing here is is to figure out if folks could extend from the outside
-with their own code, or if we need to maintain it all here.
-Regardless, it is essential for the launch of `micromark-rs` that extensions
-are theoretically or practically possible.
 The extensions below are listed from top to bottom from more important to less
 important.
 
-- [ ] (1) frontmatter (yaml, toml) (flow)
+- [x] (1) frontmatter (yaml, toml) (flow)
       — [`micromark-extension-frontmatter`](https://github.com/micromark/micromark-extension-frontmatter)
 - [ ] (3) autolink literal (GFM) (text)
       — [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)

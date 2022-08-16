@@ -1832,10 +1832,98 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+
+    /// Whole frontmatter.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [document content][crate::construct::document]
+    /// *   **Content model**:
+    ///     [`FrontmatterFence`][Name::FrontmatterFence],
+    ///     [`FrontmatterChunk`][Name::FrontmatterChunk],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ---
+    ///     ^^^
+    /// > | title: Neptune
+    ///     ^^^^^^^^^^^^^^
+    /// > | ---
+    ///     ^^^
+    /// ````
+    Frontmatter,
+    /// Frontmatter chunk.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Frontmatter`][Name::Frontmatter]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    ///   | ---
+    /// > | title: Neptune
+    ///     ^^^^^^^^^^^^^^
+    ///   | ---
+    /// ````
+    FrontmatterChunk,
+    /// Frontmatter fence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Frontmatter`][Name::Frontmatter]
+    /// *   **Content model**:
+    ///     [`FrontmatterSequence`][Name::FrontmatterSequence],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ---
+    ///     ^^^
+    ///   | title: Neptune
+    /// > | ---
+    ///     ^^^
+    /// ````
+    FrontmatterFence,
+    /// Frontmatter sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`FrontmatterFence`][Name::FrontmatterFence]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ````markdown
+    /// > | ---
+    ///     ^^^
+    ///   | title: Neptune
+    /// > | ---
+    ///     ^^^
+    /// ````
+    FrontmatterSequence,
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 41] = [
+pub const VOID_EVENTS: [Name; 43] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -1860,6 +1948,8 @@ pub const VOID_EVENTS: [Name; 41] = [
     Name::DefinitionMarker,
     Name::DefinitionTitleMarker,
     Name::EmphasisSequence,
+    Name::FrontmatterChunk,
+    Name::FrontmatterSequence,
     Name::HardBreakEscape,
     Name::HardBreakTrailing,
     Name::HeadingAtxSequence,

@@ -58,11 +58,27 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     )));
 
     tokenizer.attempt(
-        State::Next(StateName::DocumentContainerExistingBefore),
-        State::Next(StateName::DocumentContainerExistingBefore),
+        State::Next(StateName::DocumentBeforeFrontmatter),
+        State::Next(StateName::DocumentBeforeFrontmatter),
     );
 
     State::Retry(StateName::BomStart)
+}
+
+/// At optional frontmatter.
+///
+/// ```markdown
+/// > | ---
+///     ^
+///   | title: Venus
+///   | ---
+/// ```
+pub fn before_frontmatter(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        State::Next(StateName::DocumentContainerNewBefore),
+        State::Next(StateName::DocumentContainerNewBefore),
+    );
+    State::Retry(StateName::FrontmatterStart)
 }
 
 /// At optional existing containers.

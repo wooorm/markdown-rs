@@ -67,6 +67,13 @@ pub const CHARACTER_REFERENCE_NAMED_SIZE_MAX: usize = 31;
 /// [code_fenced]: crate::construct::code_fenced
 pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 
+/// The number of markers needed for [frontmatter][] to form.
+///
+/// Like many things in markdown, the number is `3`.
+///
+/// [frontmatter]: crate::construct::frontmatter
+pub const FRONTMATTER_SEQUENCE_SIZE: usize = 3;
+
 /// The number of preceding spaces needed for a [hard break
 /// (trailing)][whitespace] to form.
 ///

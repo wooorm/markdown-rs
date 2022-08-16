@@ -40,6 +40,7 @@
 //! *   [code (indented)][code_indented]
 //! *   [code (text)][code_text]
 //! *   [definition][]
+//! *   [frontmatter][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [heading (atx)][heading_atx]
 //! *   [heading (setext)][heading_setext]
@@ -139,6 +140,7 @@ pub mod code_text;
 pub mod definition;
 pub mod document;
 pub mod flow;
+pub mod frontmatter;
 pub mod hard_break_escape;
 pub mod heading_atx;
 pub mod heading_setext;

@@ -150,6 +150,17 @@ pub struct Constructs {
     ///     ^^^^^^^^^^
     /// ```
     pub definition: bool,
+    /// Frontmatter.
+    ///
+    /// ````markdown
+    /// > | ---
+    ///     ^^^
+    /// > | title: Neptune
+    ///     ^^^^^^^^^^^^^^
+    /// > | ---
+    ///     ^^^
+    /// ````
+    pub frontmatter: bool,
     /// Hard break (escape).
     ///
     /// ```markdown
@@ -246,6 +257,7 @@ impl Default for Constructs {
             code_fenced: true,
             code_text: true,
             definition: true,
+            frontmatter: false,
             hard_break_escape: true,
             hard_break_trailing: true,
             heading_atx: true,

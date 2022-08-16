@@ -319,6 +319,7 @@ fn enter(context: &mut CompileContext) {
         Name::Definition => on_enter_definition(context),
         Name::DefinitionDestinationString => on_enter_definition_destination_string(context),
         Name::Emphasis => on_enter_emphasis(context),
+        Name::Frontmatter => on_enter_frontmatter(context),
         Name::HtmlFlow => on_enter_html_flow(context),
         Name::HtmlText => on_enter_html_text(context),
         Name::Image => on_enter_image(context),
@@ -361,6 +362,7 @@ fn exit(context: &mut CompileContext) {
         Name::DefinitionLabelString => on_exit_definition_label_string(context),
         Name::DefinitionTitleString => on_exit_definition_title_string(context),
         Name::Emphasis => on_exit_emphasis(context),
+        Name::Frontmatter => on_exit_frontmatter(context),
         Name::HardBreakEscape | Name::HardBreakTrailing => on_exit_break(context),
         Name::HeadingAtx => on_exit_heading_atx(context),
         Name::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
@@ -449,6 +451,11 @@ fn on_enter_emphasis(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("<em>");
     }
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`Frontmatter`][Name::Frontmatter].
+fn on_enter_frontmatter(context: &mut CompileContext) {
+    context.buffer();
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`HtmlFlow`][Name::HtmlFlow].
@@ -906,6 +913,12 @@ fn on_exit_emphasis(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("</em>");
     }
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`Frontmatter`][Name::Frontmatter].
+fn on_exit_frontmatter(context: &mut CompileContext) {
+    context.resume();
+    context.slurp_one_line_ending = true;
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`HeadingAtx`][Name::HeadingAtx].
