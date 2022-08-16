@@ -169,6 +169,7 @@ use crate::util::{
     skip,
     slice::{Position, Slice},
 };
+use alloc::vec;
 
 /// Start of label end.
 ///

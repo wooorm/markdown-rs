@@ -61,6 +61,7 @@ use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
 use crate::event::{Event, Kind, Name};
 use crate::tokenizer::Tokenizer;
 use crate::util::slice::{Position, Slice};
+use alloc::vec;
 
 /// Resolve whitespace.
 pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whole: bool) {

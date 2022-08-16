@@ -68,6 +68,7 @@ use crate::event::{Content, Event, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use alloc::vec;
 
 /// Start of a heading (atx).
 ///

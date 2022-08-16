@@ -22,6 +22,7 @@ use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::edit_map::EditMap;
+use alloc::{vec, vec::Vec};
 
 /// Link two [`Event`][]s.
 ///

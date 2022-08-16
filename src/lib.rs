@@ -4,6 +4,10 @@
 //! `micromark` is a safe way to transform (untrusted?) markdown into HTML.
 //! `micromark_with_options` allows you to configure how markdown is turned into
 //! HTML, such as by allowing dangerous HTML when you trust it.
+#![no_std]
+
+extern crate alloc;
+
 mod compiler;
 mod constant;
 mod construct;
@@ -18,6 +22,7 @@ mod util;
 
 use crate::compiler::compile;
 use crate::parser::parse;
+use alloc::string::String;
 
 /// Type of line endings in markdown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

@@ -14,6 +14,7 @@ use crate::parser::ParseState;
 use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, State};
 use crate::util::edit_map::EditMap;
+use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
 /// Containers.
 ///

@@ -5,6 +5,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::Tokenizer;
 use crate::{Constructs, Options};
+use alloc::{string::String, vec, vec::Vec};
 
 /// Info needed, in all content types, when parsing markdown.
 ///

@@ -10,6 +10,7 @@ use crate::event::{Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use alloc::vec;
 
 /// At beginning of data.
 ///

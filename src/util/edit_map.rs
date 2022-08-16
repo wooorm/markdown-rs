@@ -9,6 +9,7 @@
 //! through another tokenizer and inject the result.
 
 use crate::event::Event;
+use alloc::{vec, vec::Vec};
 
 /// Shift `previous` and `next` links according to `jumps`.
 ///

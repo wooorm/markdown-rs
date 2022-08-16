@@ -1,5 +1,7 @@
 //! Encode HTML.
 
+use alloc::string::String;
+
 /// Encode dangerous html characters.
 ///
 /// This ensures that certain characters which have special meaning in HTML are

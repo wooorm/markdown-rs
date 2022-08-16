@@ -1,6 +1,11 @@
 //! Make urls safe.
 
 use crate::util::encode::encode;
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 /// Make a value safe for injection as a URL.
 ///

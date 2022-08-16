@@ -1,6 +1,7 @@
 //! Decode character references.
 
 use crate::constant::CHARACTER_REFERENCES;
+use alloc::string::{String, ToString};
 
 /// Decode named character references.
 ///

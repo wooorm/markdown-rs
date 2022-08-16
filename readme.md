@@ -24,7 +24,6 @@ Crate docs are currently at
 
 ### Misc
 
-- [ ] (3) `no_std`?
 - [ ] (?) Improve document performance (potential 50%)
 - [ ] (?) Improve paragraph performance (potential 15%)
 - [ ] (?) Improve label (link, image) performance (potential 7%)

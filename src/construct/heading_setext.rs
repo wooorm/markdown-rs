@@ -76,6 +76,7 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::skip::opt_back as skip_opt_back;
+use alloc::vec;
 
 /// At start of heading (setext) underline.
 ///

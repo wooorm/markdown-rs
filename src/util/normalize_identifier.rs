@@ -1,5 +1,7 @@
 //! Normalize identifiers.
 
+use alloc::string::String;
+
 /// Normalize an identifier, as found in [references][label_end] and
 /// [definitions][definition], so it can be compared when matching.
 ///

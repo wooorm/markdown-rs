@@ -13,6 +13,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::divide_events;
 use crate::tokenizer::{Container, ContainerState, Tokenizer};
 use crate::util::skip;
+use alloc::{boxed::Box, vec::Vec};
 
 /// Phases where we can exit containers.
 #[derive(Debug, PartialEq)]

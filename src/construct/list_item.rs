@@ -68,6 +68,7 @@ use crate::util::{
     skip,
     slice::{Position, Slice},
 };
+use alloc::{vec, vec::Vec};
 
 /// Start of list item.
 ///

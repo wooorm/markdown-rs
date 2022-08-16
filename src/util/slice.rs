@@ -2,7 +2,8 @@
 
 use crate::constant::TAB_SIZE;
 use crate::event::{Event, Kind, Point};
-use std::str;
+use alloc::string::String;
+use core::str;
 
 /// A range between two points.
 #[derive(Debug)]

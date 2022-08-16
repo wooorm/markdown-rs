@@ -10,7 +10,13 @@ use crate::util::{
     slice::{Position, Slice},
 };
 use crate::{LineEnding, Options};
-use std::str;
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
+use core::str;
 
 /// Link or image, resource or reference.
 /// Reused for temporary definitions as well, in the first pass.

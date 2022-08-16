@@ -64,6 +64,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::unicode::PUNCTUATION;
 use crate::util::slice::Slice;
+use alloc::{string::String, vec, vec::Vec};
 
 /// Character code kinds.
 #[derive(Debug, PartialEq)]
