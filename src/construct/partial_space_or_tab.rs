@@ -1,4 +1,13 @@
-//! Several helpers to parse whitespace (`space_or_tab`, `space_or_tab_eol`).
+//! Space or tab occurs in tons of places.
+//!
+//! ## Grammar
+//!
+//! Space or tab forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! space_or_tab ::= 1*('\t' | ' ')
+//! ```
 //!
 //! ## References
 //!
@@ -9,16 +18,16 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
 
-/// Options to parse `space_or_tab`.
+/// Configuration.
 #[derive(Debug)]
 pub struct Options {
     /// Minimum allowed bytes (inclusive).
     pub min: usize,
     /// Maximum allowed bytes (inclusive).
     pub max: usize,
-    /// Token type to use for whitespace events.
+    /// Name to use for events.
     pub kind: Name,
-    /// Connect this whitespace to the previous.
+    /// Connect this event to the previous.
     pub connect: bool,
     /// Embedded content type to use.
     pub content: Option<Content>,

@@ -1,27 +1,41 @@
-//! List item is a construct that occurs in the [document][] content type.
+//! List item occurs in the [document][] content type.
 //!
-//! It forms with, roughly, the following BNF:
+//! ## Grammar
+//!
+//! List item forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! ; Restriction: there must be `eol | space_or_tab` after the start.
+//! ; Restriction: if there is no space after the marker, the start must be followed by an `eol`.
 //! ; Restriction: if the first line after the marker is not blank and starts with `5( space_or_tab )`,
 //! ; only the first `space_or_tab` is part of the start.
-//! list_item_start ::= '*' | '+' | '-' | 1*9( ascii_decimal ) ( '.' | ')' ) [ 1*4 space_or_tab ]
+//! list_item_start ::= '*' | '+' | '-' | 1*9(ascii_decimal) ('.' | ')') [1*4 space_or_tab]
+//!
 //! ; Restriction: blank line allowed, except when this is the first continuation after a blank start.
 //! ; Restriction: if not blank, the line must be indented, exactly `n` times.
-//! list_item_cont ::= [ n( space_or_tab ) ]
+//! list_item_cont ::= [n(space_or_tab)]
 //! ```
 //!
-//! Further lines that are not prefixed with `list_item_cont` cause the item
-//! to be exited, except when those lines are lazy continuation.
-//! Like so many things in markdown, list (items) too, are very complex.
-//! See [*§ Phase 1: block structure*][commonmark-block] for more on parsing
-//! details.
+//! Further lines that are not prefixed with `list_item_cont` cause the list
+//! item to be exited, except when those lines are lazy continuation.
+//! Like so many things in markdown, list items too, are complex.
+//! See [*§ Phase 1: block structure* in `CommonMark`][commonmark_block] for
+//! more on parsing details.
 //!
-//! Lists relates to the `<li>`, `<ol>`, and `<ul>` elements in HTML.
-//! See [*§ 4.4.8 The `li` element*][html-li],
-//! [*§ 4.4.5 The `ol` element*][html-ol], and
-//! [*§ 4.4.7 The `ul` element*][html-ul] in the HTML spec for more info.
+//! As list item is a container, it takes several bytes from the start of the
+//! line, while the rest of the line includes more containers or flow.
+//!
+//! ## HTML
+//!
+//! List item relates to the `<li>`, `<ol>`, and `<ul>` elements in HTML.
+//! See [*§ 4.4.8 The `li` element*][html_li],
+//! [*§ 4.4.5 The `ol` element*][html_ol], and
+//! [*§ 4.4.7 The `ul` element*][html_ul] in the HTML spec for more info.
+//!
+//! ## Recommendation
+//!
+//! Use a single space after a marker.
+//! Never use lazy continuation.
 //!
 //! ## Tokens
 //!
@@ -39,10 +53,10 @@
 //! *   [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.30/#lists)
 //!
 //! [document]: crate::construct::document
-//! [html-li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
-//! [html-ol]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
-//! [html-ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
-//! [commonmark-block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
+//! [html_li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
+//! [html_ol]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
+//! [html_ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
+//! [commonmark_block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
 
 use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;

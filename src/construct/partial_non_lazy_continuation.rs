@@ -3,7 +3,7 @@
 //! This is a tiny helper that [flow][] constructs can use to make sure that
 //! the following line is not lazy.
 //! For example, [html (flow)][html_flow] and code ([fenced][code_fenced],
-//! [indented][code_indented]), stop when next line is lazy.
+//! [indented][code_indented]), stop when the next line is lazy.
 //!
 //! [flow]: crate::construct::flow
 //! [code_fenced]: crate::construct::code_fenced

@@ -1,11 +1,14 @@
-//! Label end is a construct that occurs in the [text][] content type.
+//! Label end occurs in the [text][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Label end forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! label_end ::= ']' [ resource | reference_full | reference_collapsed ]
+//! label_end ::= ']' [resource | reference_full | reference_collapsed]
 //!
-//! resource ::= '(' [ whitespace ] destination [ whitespace title ] [ whitespace ] ')'
+//! resource ::= '(' [space_or_tab_eol] destination [space_or_tab_eol title] [space_or_tab_eol] ')'
 //! reference_full ::= '[' label ']'
 //! reference_collapsed ::= '[' ']'
 //!
@@ -14,15 +17,7 @@
 //! ```
 //!
 //! See [`destination`][destination], [`label`][label], and [`title`][title]
-//! for grammar, notes, and recommendations.
-//!
-//! Label end does not, on its own, relate to anything in HTML.
-//! When matched with a [label start (link)][label_start_link], they together
-//! relate to the `<a>` element in HTML.
-//! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
-//! It can also match with [label start (image)][label_start_image], in which
-//! case they form an `<img>` element.
-//! See [*§ 4.8.3 The `img` element*][html-img] in the HTML spec for more info.
+//! for grammar, notes, and recommendations on each part.
 //!
 //! In the case of a resource, the destination and title are given directly
 //! with the label end.
@@ -49,7 +44,7 @@
 //!
 //! When the resource or reference matches, the destination forms the `href`
 //! attribute in case of a [label start (link)][label_start_link], and an
-//! `src` attribute otherwise.
+//! `src` attribute in case of a [label start (image)][label_start_image].
 //! The title is formed, optionally, on either `<a>` or `<img>`.
 //!
 //! For info on how to encode characters in URLs, see
@@ -94,11 +89,28 @@
 //! <p>a [b <a href="#">c</a> d](#) e</p>
 //! ```
 //!
-//! This limiation is imposed because links in links is invalid according to
+//! This limitation is imposed because links in links is invalid according to
 //! HTML.
 //! Technically though, in markdown it is still possible to construct them by
 //! using an [autolink][] in a link.
 //! You definitely should not do that.
+//!
+//! ## HTML
+//!
+//! Label end does not, on its own, relate to anything in HTML.
+//! When matched with a [label start (link)][label_start_link], they together
+//! relate to the `<a>` element in HTML.
+//! See [*§ 4.5.1 The `a` element*][html_a] in the HTML spec for more info.
+//! It can also match with [label start (image)][label_start_image], in which
+//! case they form an `<img>` element.
+//! See [*§ 4.8.3 The `img` element*][html_img] in the HTML spec for more info.
+//!
+//! ## Recommendation
+//!
+//! It is recommended to use labels instead of [autolinks][autolink].
+//! Labels allow more characters in URLs, and allow relative URLs and `www.`
+//! URLs.
+//! They also allow for descriptive text to explain the URL in prose.
 //!
 //! ## Tokens
 //!
@@ -143,8 +155,8 @@
 //! [autolink]: crate::construct::autolink
 //! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
 //! [normalize_identifier]: crate::util::normalize_identifier::normalize_identifier
-//! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
-//! [html-img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
+//! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [html_img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
 use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;

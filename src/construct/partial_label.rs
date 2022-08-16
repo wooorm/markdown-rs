@@ -1,14 +1,17 @@
-//! Label occurs in [definition][] and label end.
+//! Label occurs in [definition][] and [label end][label_end].
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Label forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! ; Restriction: maximum `999` codes allowed between brackets.
 //! ; Restriction: no blank lines.
-//! ; Restriction: at least 1 non-space and non-eol code must exist.
-//! label ::= '[' *( label_text | label_escape ) ']'
-//! label_text ::= code - '[' - '\\' - ']'
-//! label_escape ::= '\\' [ '[' | '\\' | ']' ]
+//! ; Restriction: at least 1 `text` byte must exist.
+//! label ::= '[' *(label_byte | label_escape) ']'
+//! label_byte ::= code - '[' - '\\' - ']'
+//! label_escape ::= '\\' ['[' | '\\' | ']']
 //! ```
 //!
 //! The maximum allowed size of the label, without the brackets, is `999`

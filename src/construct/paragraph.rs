@@ -1,21 +1,29 @@
-//! Paragraph is a construct that occurs in the [flow] content type.
+//! Paragraph occurs in the [flow][] content type.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Paragraph forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! ; Restriction: lines cannot start other flow constructs.
 //! ; Restriction: lines cannot be blank.
-//! paragraph ::= 1*line *( eol 1*line )
+//! paragraph ::= 1*line *(eol 1*line)
 //! ```
 //!
-//! Paragraphs in markdown relate to the `<p>` element in HTML.
-//! See [*§ 4.4.1 The `p` element* in the HTML spec][html] for more info.
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
 //!
 //! Paragraphs can contain line endings and whitespace, but they are not
 //! allowed to contain blank lines, or to be blank themselves.
 //!
 //! The paragraph is interpreted as the [text][] content type.
 //! That means that [autolinks][autolink], [code (text)][code_text], etc are allowed.
+//!
+//! ## HTML
+//!
+//! Paragraphs in markdown relate to the `<p>` element in HTML.
+//! See [*§ 4.4.1 The `p` element* in the HTML spec][html] for more info.
 //!
 //! ## Tokens
 //!

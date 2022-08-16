@@ -1,24 +1,24 @@
 //! Trailing whitespace occurs in [string][] and [text][].
 //!
-//! It occurs around line endings, and, in the case of text content it also
-//! occurs at the start or end of the whole.
+//! ## Grammar
 //!
-//! They’re formed with the following BNF:
+//! Trailing whitespace forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! ; Restriction: the start and end here count as an eol in the case of `text`.
-//! whitespace ::= 0.*space_or_tab eol 0.*space_or_tab
+//! whitespace ::= *space_or_tab eol *space_or_tab
 //! ```
+//!
+//! It occurs around line endings and, in the case of text content, it also
+//! occurs at the start or end of the whole.
 //!
 //! Normally this whitespace is ignored.
 //! In the case of text content, whitespace before a line ending that
 //! consistents solely of spaces, at least 2, forms a hard break (trailing).
 //!
-//! The minimum number of the spaces is defined in
+//! The minimum number of those spaces is defined in
 //! [`HARD_BREAK_PREFIX_SIZE_MIN`][hard_break_prefix_size_min].
-//!
-//! Hard breaks in markdown relate to the HTML element `<br>`.
-//! See [*§ 4.5.27 The `br` element* in the HTML spec][html] for more info.
 //!
 //! It is also possible to create a hard break with a similar construct: a
 //! [hard break (escape)][hard_break_escape] is a backslash followed
@@ -28,6 +28,18 @@
 //! “escaped” in other languages.
 //! Trailing spaces are typically invisible in editors, or even automatically
 //! removed, making hard break (trailing) hard to use.
+//!
+//! ## HTML
+//!
+//! Hard breaks in markdown relate to the HTML element `<br>`.
+//! See [*§ 4.5.27 The `br` element* in the HTML spec][html] for more info.
+//!
+//! ## Recommendation
+//!
+//! Do not use trailing whitespace.
+//! It is never needed when using [hard break (escape)][hard_break_escape]
+//! to create hard breaks.
+//!
 //! ## Tokens
 //!
 //! *   [`HardBreakTrailing`][Name::HardBreakTrailing]

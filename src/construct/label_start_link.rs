@@ -1,17 +1,21 @@
-//! Label start (link) is a construct that occurs in the [text][] content
-//! type.
+//! Label start (link) occurs in the [text][] content type.
 //!
-//! It forms with the following BNF:
+//! ## Grammar
+//!
+//! Label start (link) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! label_start_link ::= '['
 //! ```
 //!
+//! ## HTML
+//!
 //! Label start (link) does not, on its own, relate to anything in HTML.
 //! When matched with a [label end][label_end], they together relate to the
 //! `<a>` element in HTML.
-//! See [*§ 4.5.1 The `a` element*][html-a] in the HTML spec for more info.
-//! Without an end, the characters (`[`) are output.
+//! See [*§ 4.5.1 The `a` element*][html_a] in the HTML spec for more info.
+//! Without an end, the character (`[`) is output.
 //!
 //! ## Tokens
 //!
@@ -25,7 +29,7 @@
 //!
 //! [text]: crate::construct::text
 //! [label_end]: crate::construct::label_end
-//! [html-a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+//! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use crate::event::Name;
 use crate::resolve::Name as ResolveName;

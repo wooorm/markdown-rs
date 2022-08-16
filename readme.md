@@ -7,8 +7,6 @@ Crate docs are currently at
 
 ### Docs
 
-- [ ] (1) Go through all docs
-- [ ] (1) Go through all bnf docs
 - [ ] (1) Add overview docs on how everything works
 - [ ] (1) Add more examples
 

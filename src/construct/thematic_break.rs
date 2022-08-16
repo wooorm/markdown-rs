@@ -1,19 +1,27 @@
-//! Thematic breaks, sometimes called horizontal rules, are a construct that
-//! occurs in the [flow][] content type.
+//! Thematic break occurs in the [flow][] content type.
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Thematic break forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! ; Restriction: all markers must be identical.
 //! ; Restriction: at least 3 markers must be used.
 //! thematic_break ::= *space_or_tab 1*(1*marker *space_or_tab)
 //!
-//! space_or_tab ::= ' ' | '\t'
 //! marker ::= '*' | '-' | '_'
 //! ```
 //!
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
+//!
+//! ## HTML
+//!
 //! Thematic breaks in markdown typically relate to the HTML element `<hr>`.
 //! See [*§ 4.4.2 The `hr` element* in the HTML spec][html] for more info.
+//!
+//! ## Recommendation
 //!
 //! It is recommended to use exactly three asterisks without whitespace when
 //! writing markdown.

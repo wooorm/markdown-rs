@@ -1,17 +1,21 @@
 //! Destination occurs in [definition][] and [label end][label_end].
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Destination forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! destination ::= destination_enclosed | destination_raw
 //!
-//! destination_enclosed ::= '<' *( destination_enclosed_text | destination_enclosed_escape ) '>'
-//! destination_enclosed_text ::= code - '<' - '\\' - '>' - eol
-//! destination_enclosed_escape ::= '\\' [ '<' | '\\' | '>' ]
-//! destination_raw ::= 1*( destination_raw_text | destination_raw_escape )
+//! destination_enclosed ::= '<' *(destination_enclosed_byte | destination_enclosed_escape) '>'
+//! destination_enclosed_byte ::= line - '<' - '\\' - '>'
+//! destination_enclosed_escape ::= '\\' ['<' | '\\' | '>']
+//!
+//! destination_raw ::= 1*(destination_raw_byte | destination_raw_escape)
 //! ; Restriction: unbalanced `)` characters are not allowed.
-//! destination_raw_text ::= code - '\\' - ascii_control - space_or_tab - eol
-//! destination_raw_escape ::= '\\' [ '(' | ')' | '\\' ]
+//! destination_raw_byte ::= text - '\\' - ascii_control
+//! destination_raw_escape ::= '\\' ['(' | ')' | '\\']
 //! ```
 //!
 //! Balanced parens allowed in raw destinations.
@@ -28,18 +32,19 @@
 //! The grammar for enclosed destinations (`<x>`) prohibits the use of `<`,
 //! `>`, and line endings to form URLs.
 //! The angle brackets can be encoded as a character reference, character
-//! escape, or percent encoding: for `<` as `&lt;`, `\<`, or `%3c` and for
-//! `>` as `&gt;`, `\>`, or `%3e`.
+//! escape, or percent encoding:
+//!
+//! *   `<` as `&lt;`, `\<`, or `%3c`
+//! *   `>` as `&gt;`, `\>`, or `%3e`
 //!
 //! The grammar for raw destinations (`x`) prohibits space (` `) and all
-//! [ASCII control][char::is_ascii_control] characters, which thus must be
+//! [ASCII control][u8::is_ascii_control] characters, which thus must be
 //! encoded.
-//! Unbalanced arens can be encoded as a character reference, character escape,
-//! or percent encoding: for `(` as `&lpar;`, `\(`, or `%28` and for `)` as
-//! `&rpar;`, `\)`, or `%29`.
+//! Unbalanced parens can be encoded as a character reference, character escape,
+//! or percent encoding:
 //!
-//! It is recommended to use the enclosed variant of destinations, as it allows
-//! the most characters, including arbitrary parens, in URLs.
+//! *   `(` as `&lpar;`, `\(`, or `%28`
+//! *   `)` as `&rpar;`, `\)`, or `%29`
 //!
 //! There are several cases where incorrect encoding of URLs would, in other
 //! languages, result in a parse error.
@@ -59,6 +64,11 @@
 //! ```html
 //! <p><a href="https://a%F0%9F%91%8Db%25">x</a></p>
 //! ```
+//!
+//! ## Recommendation
+//!
+//! It is recommended to use the enclosed variant of destinations, as it allows
+//! the most characters, including arbitrary parens, in URLs.
 //!
 //! ## References
 //!

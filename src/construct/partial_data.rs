@@ -1,4 +1,4 @@
-//! Data occurs in [text][] and [string][].
+//! Data occurs in the [string][] and [text][] content types.
 //!
 //! It can include anything (except for line endings) and stops at certain
 //! characters.

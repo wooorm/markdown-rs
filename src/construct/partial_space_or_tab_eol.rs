@@ -1,8 +1,23 @@
-//! Several helpers to parse whitespace (`space_or_tab`, `space_or_tab_eol`).
+//! Space or tab (eol) occurs in [destination][], [label][], and [title][].
+//!
+//! ## Grammar
+//!
+//! Space or tab (eol) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! space_or_tab_eol ::= 1*space_or_tab | *space_or_tab eol *space_or_tab
+//! ```
+//!
+//! Importantly, this allows one line ending, but not blank lines.
 //!
 //! ## References
 //!
 //! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
+//!
+//! [destination]: crate::construct::partial_destination
+//! [label]: crate::construct::partial_label
+//! [title]: crate::construct::partial_title
 
 use crate::construct::partial_space_or_tab::{
     space_or_tab_with_options, Options as SpaceOrTabOptions,
@@ -12,7 +27,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
 
-/// Options to parse `space_or_tab` and one optional eol, but no blank line.
+/// Configuration.
 #[derive(Debug)]
 pub struct Options {
     /// Connect this whitespace to the previous.
@@ -21,12 +36,7 @@ pub struct Options {
     pub content: Option<Content>,
 }
 
-/// `space_or_tab`, or optionally `space_or_tab`, one `eol`, and
-/// optionally `space_or_tab`.
-///
-/// ```bnf
-/// space_or_tab_eol ::= 1*( ' ' '\t' ) | 0*( ' ' '\t' ) eol 0*( ' ' '\t' )
-/// ```
+/// `space_or_tab_eol`
 pub fn space_or_tab_eol(tokenizer: &mut Tokenizer) -> StateName {
     space_or_tab_eol_with_options(
         tokenizer,

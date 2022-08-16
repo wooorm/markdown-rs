@@ -1,8 +1,8 @@
-//! Autolinks occur in the [text][] content type.
+//! Autolink occurs in the [text][] content type.
 //!
 //! ## Grammar
 //!
-//! Autolinks form with the following BNF
+//! Autolink forms with the following BNF
 //! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf

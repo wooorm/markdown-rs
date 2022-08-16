@@ -1,6 +1,17 @@
 //! Byte order mark occurs at the start of the document.
 //!
-//! It’s the three bytes 0xEF, 0xBB, and 0xBF.
+//! ## Grammar
+//!
+//! Byte order mark forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! byte_order_mark ::= 0xEF 0xBB 0xBF
+//! ```
+//!
+//! ## Recommendation
+//!
+//! Don’t use BOMs.
 //!
 //! ## Tokens
 //!

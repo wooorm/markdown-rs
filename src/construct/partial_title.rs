@@ -1,11 +1,16 @@
 //! Title occurs in [definition][] and [label end][label_end].
 //!
-//! They’re formed with the following BNF:
+//! ## Grammar
+//!
+//! Title forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
 //! ; Restriction: no blank lines.
 //! ; Restriction: markers must match (in case of `(` with `)`).
-//! title ::= marker [  *( code - '\\' | '\\' [ marker ] ) ] marker
+//! title ::= marker *(title_byte | title_escape) marker
+//! title_byte ::= code - '\\' - marker
+//! title_escape ::= '\\' ['\\' | marker]
 //! marker ::= '"' | '\'' | '('
 //! ```
 //!
