@@ -878,6 +878,148 @@ pub enum Name {
     ///      ^
     /// ```
     EmphasisText,
+    // To do: sort.
+    /// Whole frontmatter.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [document content][crate::construct::document]
+    /// *   **Content model**:
+    ///     [`FrontmatterFence`][Name::FrontmatterFence],
+    ///     [`FrontmatterChunk`][Name::FrontmatterChunk],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ---
+    ///     ^^^
+    /// > | title: Neptune
+    ///     ^^^^^^^^^^^^^^
+    /// > | ---
+    ///     ^^^
+    /// ```
+    Frontmatter,
+    /// Frontmatter chunk.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Frontmatter`][Name::Frontmatter]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | ---
+    /// > | title: Neptune
+    ///     ^^^^^^^^^^^^^^
+    ///   | ---
+    /// ```
+    FrontmatterChunk,
+    /// Frontmatter fence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Frontmatter`][Name::Frontmatter]
+    /// *   **Content model**:
+    ///     [`FrontmatterSequence`][Name::FrontmatterSequence],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ---
+    ///     ^^^
+    ///   | title: Neptune
+    /// > | ---
+    ///     ^^^
+    /// ```
+    FrontmatterFence,
+    /// Frontmatter sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`FrontmatterFence`][Name::FrontmatterFence]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`frontmatter`][crate::construct::frontmatter]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ---
+    ///     ^^^
+    ///   | title: Neptune
+    /// > | ---
+    ///     ^^^
+    /// ```
+    FrontmatterSequence,
+    /// GFM extension: email autolink.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     void.
+    /// *   **Construct**:
+    ///     [`gfm_autolink_literal`][crate::construct::gfm_autolink_literal]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | context@example.com
+    ///     ^^^^^^^^^^^^^^^^^^^
+    /// ```
+    GfmAutolinkLiteralEmail,
+    /// GFM extension: autolink w/ protocol.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     void.
+    /// *   **Construct**:
+    ///     [`gfm_autolink_literal`][crate::construct::gfm_autolink_literal]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | https://example.com
+    ///     ^^^^^^^^^^^^^^^^^^^
+    /// ```
+    GfmAutolinkLiteralProtocol,
+    /// GFM extension: autolink w/ www.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     void.
+    /// *   **Construct**:
+    ///     [`gfm_autolink_literal`][crate::construct::gfm_autolink_literal]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | www.example.com
+    ///     ^^^^^^^^^^^^^^^
+    /// ```
+    GfmAutolinkLiteralWww,
     /// Whole hard break (escape).
     ///
     /// ## Info
@@ -1832,98 +1974,10 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
-
-    /// Whole frontmatter.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [document content][crate::construct::document]
-    /// *   **Content model**:
-    ///     [`FrontmatterFence`][Name::FrontmatterFence],
-    ///     [`FrontmatterChunk`][Name::FrontmatterChunk],
-    ///     [`LineEnding`][Name::LineEnding]
-    /// *   **Construct**:
-    ///     [`frontmatter`][crate::construct::frontmatter]
-    ///
-    /// ## Example
-    ///
-    /// ````markdown
-    /// > | ---
-    ///     ^^^
-    /// > | title: Neptune
-    ///     ^^^^^^^^^^^^^^
-    /// > | ---
-    ///     ^^^
-    /// ````
-    Frontmatter,
-    /// Frontmatter chunk.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Frontmatter`][Name::Frontmatter]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`frontmatter`][crate::construct::frontmatter]
-    ///
-    /// ## Example
-    ///
-    /// ````markdown
-    ///   | ---
-    /// > | title: Neptune
-    ///     ^^^^^^^^^^^^^^
-    ///   | ---
-    /// ````
-    FrontmatterChunk,
-    /// Frontmatter fence.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`Frontmatter`][Name::Frontmatter]
-    /// *   **Content model**:
-    ///     [`FrontmatterSequence`][Name::FrontmatterSequence],
-    ///     [`SpaceOrTab`][Name::SpaceOrTab]
-    /// *   **Construct**:
-    ///     [`frontmatter`][crate::construct::frontmatter]
-    ///
-    /// ## Example
-    ///
-    /// ````markdown
-    /// > | ---
-    ///     ^^^
-    ///   | title: Neptune
-    /// > | ---
-    ///     ^^^
-    /// ````
-    FrontmatterFence,
-    /// Frontmatter sequence.
-    ///
-    /// ## Info
-    ///
-    /// *   **Context**:
-    ///     [`FrontmatterFence`][Name::FrontmatterFence]
-    /// *   **Content model**:
-    ///     void
-    /// *   **Construct**:
-    ///     [`frontmatter`][crate::construct::frontmatter]
-    ///
-    /// ## Example
-    ///
-    /// ````markdown
-    /// > | ---
-    ///     ^^^
-    ///   | title: Neptune
-    /// > | ---
-    ///     ^^^
-    /// ````
-    FrontmatterSequence,
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 43] = [
+pub const VOID_EVENTS: [Name; 46] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -1949,6 +2003,9 @@ pub const VOID_EVENTS: [Name; 43] = [
     Name::DefinitionTitleMarker,
     Name::EmphasisSequence,
     Name::FrontmatterChunk,
+    Name::GfmAutolinkLiteralEmail,
+    Name::GfmAutolinkLiteralProtocol,
+    Name::GfmAutolinkLiteralWww,
     Name::FrontmatterSequence,
     Name::HardBreakEscape,
     Name::HardBreakTrailing,
@@ -2011,6 +2068,40 @@ pub struct Point {
     pub index: usize,
     /// Virtual step on the same `index`.
     pub vs: usize,
+}
+
+impl Point {
+    /// Create a new point, that is shifted from the close earlier current
+    /// point, to `index.`
+    // To do: tabs.
+    pub fn shift_to(&self, bytes: &[u8], index: usize) -> Point {
+        let mut next = self.clone();
+        debug_assert!(index > next.index, "expect");
+
+        while next.index < index {
+            match bytes[next.index] {
+                b'\n' | b'\r' => unreachable!("cannot move past line endings"),
+                b'\t' => {
+                    unreachable!("to do: tab")
+                    // let remainder = next.column % TAB_SIZE;
+                    // let vs = if remainder == 0 {
+                    //     0
+                    // } else {
+                    //     TAB_SIZE - remainder
+                    // };
+
+                    // next.index += 1;
+                    // next.column += 1 + vs;
+                }
+                _ => {
+                    next.index += 1;
+                    next.column += 1;
+                }
+            }
+        }
+
+        next
+    }
 }
 
 /// Event kinds.

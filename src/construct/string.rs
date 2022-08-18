@@ -27,7 +27,6 @@ const MARKERS: [u8; 2] = [b'&', b'\\'];
 ///        ^
 /// ````
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.register_resolver(ResolveName::String);
     tokenizer.tokenize_state.markers = &MARKERS;
     State::Retry(StateName::StringBefore)
 }
@@ -40,7 +39,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ````
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Ok,
+        None => {
+            tokenizer.register_resolver(ResolveName::Data);
+            tokenizer.register_resolver(ResolveName::String);
+            State::Ok
+        }
         Some(b'&') => {
             tokenizer.attempt(
                 State::Next(StateName::StringBefore),

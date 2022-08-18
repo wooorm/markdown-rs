@@ -7,7 +7,6 @@
 //! [text]: crate::construct::text
 
 use crate::event::{Kind, Name};
-use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use alloc::vec;
@@ -51,7 +50,6 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         }
     }
 
-    tokenizer.register_resolver_before(ResolveName::Data);
     State::Ok
 }
 

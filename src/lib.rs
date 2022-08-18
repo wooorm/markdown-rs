@@ -166,6 +166,13 @@ pub struct Constructs {
     ///     ^^^
     /// ````
     pub frontmatter: bool,
+    /// GFM: autolink literal.
+    ///
+    /// ```markdown
+    /// > | https://example.com
+    ///     ^^^^^^^^^^^^^^^^^^^
+    /// ```
+    pub gfm_autolink_literal: bool,
     /// Hard break (escape).
     ///
     /// ```markdown
@@ -263,6 +270,7 @@ impl Default for Constructs {
             code_text: true,
             definition: true,
             frontmatter: false,
+            gfm_autolink_literal: false,
             hard_break_escape: true,
             hard_break_trailing: true,
             heading_atx: true,
@@ -274,6 +282,19 @@ impl Default for Constructs {
             label_end: true,
             list_item: true,
             thematic_break: true,
+        }
+    }
+}
+
+impl Constructs {
+    /// GFM.
+    ///
+    /// This turns on `CommonMark` + GFM.
+    #[must_use]
+    pub fn gfm() -> Self {
+        Self {
+            gfm_autolink_literal: true,
+            ..Self::default()
         }
     }
 }

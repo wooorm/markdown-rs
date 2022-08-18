@@ -28,7 +28,7 @@
 //! For example, [code (fenced)][code_fenced] and
 //! [code (indented)][code_indented] are considered different constructs.
 //!
-//! The following constructs are found in markdown:
+//! The following constructs are found in markdown (CommonMark):
 //!
 //! *   [attention (strong, emphasis)][attention]
 //! *   [autolink][]
@@ -40,7 +40,6 @@
 //! *   [code (indented)][code_indented]
 //! *   [code (text)][code_text]
 //! *   [definition][]
-//! *   [frontmatter][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [heading (atx)][heading_atx]
 //! *   [heading (setext)][heading_setext]
@@ -55,6 +54,11 @@
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
 //! > [whitespace][partial_whitespace].
+//!
+//! The following constructs are extensions found in markdown:
+//!
+//! *   [frontmatter][]
+//! *   [gfm autolink literal][gfm_autolink_literal]
 //!
 //! There are also several small subroutines typically used in different places:
 //!
@@ -141,6 +145,7 @@ pub mod definition;
 pub mod document;
 pub mod flow;
 pub mod frontmatter;
+pub mod gfm_autolink_literal;
 pub mod hard_break_escape;
 pub mod heading_atx;
 pub mod heading_setext;

@@ -62,41 +62,9 @@ use crate::event::{Event, Kind, Name, Point};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::unicode::PUNCTUATION;
+use crate::util::classify_character::{classify_opt, Kind as CharacterKind};
 use crate::util::slice::Slice;
 use alloc::{string::String, vec, vec::Vec};
-
-/// Character code kinds.
-#[derive(Debug, PartialEq)]
-enum CharacterKind {
-    /// Whitespace.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | **a_b_ c**.
-    ///    ^      ^    ^
-    /// ```
-    Whitespace,
-    /// Punctuation.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | **a_b_ c**.
-    ///     ^^ ^ ^    ^
-    /// ```
-    Punctuation,
-    /// Everything else.
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// > | **a_b_ c**.
-    ///       ^ ^  ^
-    /// ```
-    Other,
-}
 
 /// Attentention sequence that we can take markers from.
 #[derive(Debug)]
@@ -192,8 +160,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
                     .head()
                     .unwrap();
-                let before = classify_character(char_before);
-                let after = classify_character(char_after);
+                let before = classify_opt(char_before);
+                let after = classify_opt(char_after);
                 let open = after == CharacterKind::Other
                     || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
                 // To do: GFM strikethrough?
@@ -428,36 +396,4 @@ fn match_sequences(
     }
 
     next
-}
-
-/// Classify whether a character code represents whitespace, punctuation, or
-/// something else.
-///
-/// Used for attention (emphasis, strong), whose sequences can open or close
-/// based on the class of surrounding characters.
-///
-/// > 👉 **Note** that eof (`None`) is seen as whitespace.
-///
-/// ## References
-///
-/// *   [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
-fn classify_character(char: Option<char>) -> CharacterKind {
-    if let Some(char) = char {
-        // Unicode whitespace.
-        if char.is_whitespace() {
-            CharacterKind::Whitespace
-        }
-        // Unicode punctuation.
-        else if PUNCTUATION.contains(&char) {
-            CharacterKind::Punctuation
-        }
-        // Everything else.
-        else {
-            CharacterKind::Other
-        }
-    }
-    // EOF.
-    else {
-        CharacterKind::Whitespace
-    }
 }

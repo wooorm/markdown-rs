@@ -369,6 +369,9 @@ fn exit(context: &mut CompileContext) {
         Name::DefinitionTitleString => on_exit_definition_title_string(context),
         Name::Emphasis => on_exit_emphasis(context),
         Name::Frontmatter => on_exit_frontmatter(context),
+        Name::GfmAutolinkLiteralProtocol => on_exit_gfm_autolink_literal_protocol(context),
+        Name::GfmAutolinkLiteralWww => on_exit_gfm_autolink_literal_www(context),
+        Name::GfmAutolinkLiteralEmail => on_exit_gfm_autolink_literal_email(context),
         Name::HardBreakEscape | Name::HardBreakTrailing => on_exit_break(context),
         Name::HeadingAtx => on_exit_heading_atx(context),
         Name::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
@@ -647,47 +650,28 @@ fn on_enter_strong(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`AutolinkEmail`][Name::AutolinkEmail].
 fn on_exit_autolink_email(context: &mut CompileContext) {
-    let slice = Slice::from_position(
-        context.bytes,
-        &Position::from_exit_event(context.events, context.index),
+    generate_autolink(
+        context,
+        Some("mailto:"),
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
     );
-    let value = slice.as_str();
-
-    if !context.image_alt_inside {
-        context.push("<a href=\"");
-        context.push(&sanitize_uri(
-            &format!("mailto:{}", value),
-            &context.protocol_href,
-        ));
-        context.push("\">");
-    }
-
-    context.push(&encode(value, context.encode_html));
-
-    if !context.image_alt_inside {
-        context.push("</a>");
-    }
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`AutolinkProtocol`][Name::AutolinkProtocol].
 fn on_exit_autolink_protocol(context: &mut CompileContext) {
-    let slice = Slice::from_position(
-        context.bytes,
-        &Position::from_exit_event(context.events, context.index),
+    generate_autolink(
+        context,
+        None,
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
     );
-    let value = slice.as_str();
-
-    if !context.image_alt_inside {
-        context.push("<a href=\"");
-        context.push(&sanitize_uri(value, &context.protocol_href));
-        context.push("\">");
-    }
-
-    context.push(&encode(value, context.encode_html));
-
-    if !context.image_alt_inside {
-        context.push("</a>");
-    }
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`HardBreakEscape`][Name::HardBreakEscape],[`HardBreakTrailing`][Name::HardBreakTrailing]}.
@@ -925,6 +909,37 @@ fn on_exit_emphasis(context: &mut CompileContext) {
 fn on_exit_frontmatter(context: &mut CompileContext) {
     context.resume();
     context.slurp_one_line_ending = true;
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol].
+fn on_exit_gfm_autolink_literal_protocol(context: &mut CompileContext) {
+    generate_autolink(
+        context,
+        None,
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
+    );
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralWww`][Name::GfmAutolinkLiteralWww].
+fn on_exit_gfm_autolink_literal_www(context: &mut CompileContext) {
+    generate_autolink(
+        context,
+        Some("http://"),
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
+    );
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail].
+fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
+    on_exit_autolink_email(context);
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`HeadingAtx`][Name::HeadingAtx].
@@ -1243,4 +1258,26 @@ fn on_exit_strong(context: &mut CompileContext) {
 fn on_exit_thematic_break(context: &mut CompileContext) {
     context.line_ending_if_needed();
     context.push("<hr />");
+}
+
+/// Generate an autolink (used by unicode autolinks and GFM autolink literals).
+fn generate_autolink(context: &mut CompileContext, protocol: Option<&str>, value: &str) {
+    if !context.image_alt_inside {
+        context.push("<a href=\"");
+        if let Some(protocol) = protocol {
+            context.push(&sanitize_uri(
+                &format!("{}{}", protocol, value),
+                &context.protocol_href,
+            ));
+        } else {
+            context.push(&sanitize_uri(value, &context.protocol_href));
+        };
+        context.push("\">");
+    }
+
+    context.push(&encode(value, context.encode_html));
+
+    if !context.image_alt_inside {
+        context.push("</a>");
+    }
 }

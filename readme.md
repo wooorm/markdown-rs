@@ -46,7 +46,7 @@ important.
 
 - [x] (1) frontmatter (yaml, toml) (flow)
       — [`micromark-extension-frontmatter`](https://github.com/micromark/micromark-extension-frontmatter)
-- [ ] (3) autolink literal (GFM) (text)
+- [x] (3) autolink literal (GFM) (text)
       — [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)
 - [ ] (3) footnote (GFM) (flow, text)
       — [`micromark-extension-gfm-footnote`](https://github.com/micromark/micromark-extension-gfm-footnote)

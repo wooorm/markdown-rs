@@ -20,6 +20,7 @@
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
 //! > [whitespace][crate::construct::partial_whitespace].
 
+use crate::construct::gfm_autolink_literal::resolve as resolve_gfm_autolink_literal;
 use crate::construct::partial_whitespace::resolve_whitespace;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
@@ -45,7 +46,6 @@ const MARKERS: [u8; 9] = [
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.register_resolver(ResolveName::Text);
     tokenizer.tokenize_state.markers = &MARKERS;
     State::Retry(StateName::TextBefore)
 }
@@ -58,7 +58,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Ok,
+        None => {
+            tokenizer.register_resolver(ResolveName::Data);
+            tokenizer.register_resolver(ResolveName::Text);
+            State::Ok
+        }
         Some(b'!') => {
             tokenizer.attempt(
                 State::Next(StateName::TextBefore),
@@ -170,4 +174,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         tokenizer.parse_state.constructs.hard_break_trailing,
         true,
     );
+
+    if tokenizer.parse_state.constructs.gfm_autolink_literal {
+        resolve_gfm_autolink_literal(tokenizer);
+    }
 }

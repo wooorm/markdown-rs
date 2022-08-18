@@ -22,7 +22,19 @@ fn main() {
         )
     );
 
-    // Support extensions that are not in CommonMark.
+    // Support GFM extensions.
+    println!(
+        "{}",
+        micromark_with_options(
+            "Just a link! https://example.com.",
+            &Options {
+                constructs: Constructs::gfm(),
+                ..Options::default()
+            }
+        )
+    );
+
+    // Support other extensions that are not in CommonMark.
     println!(
         "{:?}",
         micromark_with_options(
