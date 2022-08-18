@@ -1,5 +1,6 @@
 extern crate micromark;
 use micromark::micromark;
+use pretty_assertions::assert_eq;
 
 #[test]
 fn soft_break() {

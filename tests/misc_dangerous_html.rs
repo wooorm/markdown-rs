@@ -1,5 +1,6 @@
 extern crate micromark;
 use micromark::{micromark, micromark_with_options, Options};
+use pretty_assertions::assert_eq;
 
 #[test]
 fn dangerous_html() {

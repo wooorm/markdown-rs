@@ -23,6 +23,7 @@ log = "0.4"
 [dev-dependencies]
 env_logger = "0.9"
 criterion = "0.3"
+pretty_assertions = "1.2"
 
 [build-dependencies]
 regex = "1.5"

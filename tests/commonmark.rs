@@ -5,6 +5,7 @@
 
 extern crate micromark;
 use micromark::{micromark_with_options, Options};
+use pretty_assertions::assert_eq;
 
 #[rustfmt::skip]
 #[test]
