@@ -6,15 +6,14 @@
 
 <!-- To do: enable badges when repo is public/published -->
 <!-- To do: link `Downloads`/`crate-badge` to `crate` instead of temporary site. -->
-<!-- To do: enable discussions on this repo? -->
 
 <!-- [![Build][build-badge]][build] -->
 <!-- [![Downloads][crate-badge]][docs] -->
 <!-- [![Coverage][coverage-badge]][coverage] -->
-<!-- [![Chat][chat-badge]][chat] -->
 
 [![Sponsors][sponsors-badge]][opencollective]
 [![Backers][backers-badge]][opencollective]
+[![Chat][chat-badge]][chat]
 
 A [`CommonMark`][commonmark-spec] compliant markdown parser in [Rust][] with
 positional info, concrete tokens, and extensions.
@@ -48,10 +47,9 @@ generate syntax trees or compile to other output formats.
 `micromark-rs` has a sibling in JavaScript, [`micromark-js`][micromark-js].
 
 <!-- To do: link to unified etc if this repo gets moved there? -->
-<!-- To do: link to discussions -->
-<!-- *   for questions, see [Discussions][chat] -->
 
 - to learn markdown, see this [cheatsheet and tutorial][cheat]
+- for questions, see [Discussions][chat]
 - to help, see [contribute][] or [sponsor][] below
 
 ## Contents
@@ -341,6 +339,8 @@ Support this effort and give back by sponsoring:
 [backers-badge]: https://opencollective.com/unified/backers/badge.svg
 [opencollective]: https://opencollective.com/unified
 [docs]: https://wooorm.com/micromark-rs/micromark/
+[chat-badge]: https://img.shields.io/badge/chat-discussions-success.svg
+[chat]: https://github.com/wooorm/micromark-rs/discussions
 [commonmark-spec]: https://spec.commonmark.org
 [cheat]: https://commonmark.org/help/
 [gfm-spec]: https://github.github.com/gfm/
