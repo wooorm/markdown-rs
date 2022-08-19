@@ -29,6 +29,7 @@ Existing issues might benefit from your unique experience or opinions.
 Code contributions are very welcome too.
 It’s probably a good idea to first post a question or open an issue to report a
 bug or suggest a new feature before creating a pull request.
+See [Project][] for more info.
 
 ## Submitting an issue
 
@@ -74,3 +75,4 @@ bug or suggest a new feature before creating a pull request.
 [support]: support.md
 [collective]: https://opencollective.com/unified
 [sponsor]: https://github.com/wooorm/micromark-rs/#sponsor
+[project]: https://github.com/wooorm/micromark-rs/#project
