@@ -1,5 +1,7 @@
 # micromark-rs
 
+<img align="right" width="106" height="106" alt="" src="https://raw.githubusercontent.com/wooorm/micromark-rs/14f1ad0/logo.svg?sanitize=true">
+
 A [CommonMark][] compliant, `no_std` + `alloc`, markdown parser, with extensions,
 in Rust.
 
