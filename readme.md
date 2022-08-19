@@ -258,11 +258,11 @@ The following scripts are useful when working on this project:
   ```
 - format:
   ```sh
-  cargo fmt --all
+  cargo fmt
   ```
 - lint:
   ```sh
-  cargo fmt --all --check && cargo clippy -- -D clippy::pedantic -D clippy::cargo -A clippy::doc_link_with_quotes
+  cargo fmt --check && cargo clippy -- -D clippy::pedantic -D clippy::cargo -A clippy::doc_link_with_quotes
   ```
 - test:
   ```sh
