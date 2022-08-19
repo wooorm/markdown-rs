@@ -7,7 +7,7 @@ fn main() {
     env_logger::init();
 
     // Safely turn (untrusted?) markdown into HTML.
-    println!("{:?}", micromark("# Hello, world!"));
+    println!("{:?}", micromark("## Hello, *world*!"));
 
     // Turn trusted markdown into HTML.
     println!(
