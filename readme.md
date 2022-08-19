@@ -54,9 +54,15 @@ generate syntax trees or compile to other output formats.
 
 ## Contents
 
-<!-- To do: generate this? Use remark? -->
-
-> 🚧 **To do**.
+- [Install](#install)
+- [Use](#use)
+- [API](#api)
+- [Extensions](#extensions)
+- [Architecture](#architecture)
+- [Examples](#examples)
+- [Markdown](#markdown)
+- [Project](#project)
+- [License](#license)
 
 ## Install
 
@@ -322,7 +328,7 @@ Support this effort and give back by sponsoring:
 
 <!-- To do: origin story -->
 
-### License
+## License
 
 [MIT][license] © [Titus Wormer][author]
 
