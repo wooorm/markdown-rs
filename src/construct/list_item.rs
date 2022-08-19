@@ -58,13 +58,13 @@
 //! [html_ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
 //! [commonmark_block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
 
-use crate::constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE};
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::{Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
+    constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE},
     skip,
     slice::{Position, Slice},
 };

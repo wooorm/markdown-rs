@@ -51,11 +51,11 @@
 //! [html_flow]: crate::construct::html_flow
 //! [html_parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
-use crate::constant::HTML_CDATA_PREFIX;
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use crate::util::constant::HTML_CDATA_PREFIX;
 
 /// Start of HTML (text)
 ///

@@ -94,20 +94,20 @@
 //! [flow]: crate::construct::flow
 //! [html_text]: crate::construct::html_text
 //! [paragraph]: crate::construct::paragraph
-//! [html_raw_names]: crate::constant::HTML_RAW_NAMES
-//! [html_block_names]: crate::constant::HTML_BLOCK_NAMES
+//! [html_raw_names]: crate::util::constant::HTML_RAW_NAMES
+//! [html_block_names]: crate::util::constant::HTML_BLOCK_NAMES
 //! [html_parsing]: https://html.spec.whatwg.org/multipage/parsing.html#parsing
 
-use crate::constant::{
-    HTML_BLOCK_NAMES, HTML_CDATA_PREFIX, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_SIZE,
-};
 use crate::construct::partial_space_or_tab::{
     space_or_tab_with_options, Options as SpaceOrTabOptions,
 };
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::slice::Slice;
+use crate::util::{
+    constant::{HTML_BLOCK_NAMES, HTML_CDATA_PREFIX, HTML_RAW_NAMES, HTML_RAW_SIZE_MAX, TAB_SIZE},
+    slice::Slice,
+};
 
 /// Symbol for `<script>` (condition 1).
 const RAW: u8 = 1;

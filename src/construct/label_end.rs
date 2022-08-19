@@ -158,13 +158,13 @@
 //! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html_img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
 
-use crate::constant::RESOURCE_DESTINATION_BALANCE_MAX;
 use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::{Event, Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::{Label, LabelStart, Tokenizer};
 use crate::util::{
+    constant::RESOURCE_DESTINATION_BALANCE_MAX,
     normalize_identifier::normalize_identifier,
     skip,
     slice::{Position, Slice},

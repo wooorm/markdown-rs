@@ -92,7 +92,7 @@ fn commonmark() {{
 async fn punctuation() {
     let url = "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt";
     let data_url = "unicode-data.txt";
-    let code_url = "src/unicode.rs";
+    let code_url = "src/util/unicode.rs";
 
     let value = if let Ok(value) = fs::read_to_string(data_url) {
         value

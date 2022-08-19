@@ -69,13 +69,12 @@
 //! [wiki_setext]: https://en.wikipedia.org/wiki/Setext
 //! [atx]: http://www.aaronsw.com/2002/atx/
 
-use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::{Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::skip::opt_back as skip_opt_back;
+use crate::util::{constant::TAB_SIZE, skip::opt_back as skip_opt_back};
 use alloc::vec;
 
 /// At start of heading (setext) underline.

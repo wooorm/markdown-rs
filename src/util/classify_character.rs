@@ -1,6 +1,6 @@
 //! Utilities to classify characters as whitespace, punctuation, or rest.
 
-use crate::unicode::PUNCTUATION;
+use crate::util::unicode::PUNCTUATION;
 
 /// Character kinds.
 #[derive(Debug, PartialEq, Eq)]

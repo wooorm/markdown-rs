@@ -59,14 +59,14 @@
 //! [label_start_link]: crate::construct::label_start_link
 //! [label_end]: crate::construct::label_end
 //! [code_text]: crate::construct::code_text
-//! [link_reference_size_max]: crate::constant::LINK_REFERENCE_SIZE_MAX
+//! [link_reference_size_max]: crate::util::constant::LINK_REFERENCE_SIZE_MAX
 
-use crate::constant::LINK_REFERENCE_SIZE_MAX;
 use crate::construct::partial_space_or_tab_eol::{space_or_tab_eol_with_options, Options};
 use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
 use crate::tokenizer::Tokenizer;
+use crate::util::constant::LINK_REFERENCE_SIZE_MAX;
 
 /// Start of label.
 ///

@@ -53,11 +53,11 @@
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 //! [html_pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 
-use crate::constant::TAB_SIZE;
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use crate::util::constant::TAB_SIZE;
 
 /// Start of code (indented).
 ///

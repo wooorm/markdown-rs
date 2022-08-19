@@ -116,15 +116,15 @@
 //! [definition]: crate::construct::definition
 //! [label_start_link]: crate::construct::label_start_link
 //! [label_end]: crate::construct::label_end
-//! [autolink_scheme_size_max]: crate::constant::AUTOLINK_SCHEME_SIZE_MAX
-//! [autolink_domain_size_max]: crate::constant::AUTOLINK_DOMAIN_SIZE_MAX
+//! [autolink_scheme_size_max]: crate::util::constant::AUTOLINK_SCHEME_SIZE_MAX
+//! [autolink_domain_size_max]: crate::util::constant::AUTOLINK_DOMAIN_SIZE_MAX
 //! [sanitize_uri]: crate::util::sanitize_uri
 //! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
-use crate::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use crate::util::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 
 /// Start of autolink.
 ///

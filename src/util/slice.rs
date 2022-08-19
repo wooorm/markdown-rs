@@ -1,7 +1,7 @@
 //! Deal with bytes.
 
-use crate::constant::TAB_SIZE;
 use crate::event::{Event, Kind, Point};
+use crate::util::constant::TAB_SIZE;
 use alloc::string::String;
 use core::str;
 

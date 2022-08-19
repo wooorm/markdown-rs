@@ -1,7 +1,7 @@
 //! Turn events into a string of HTML.
-use crate::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
 use crate::event::{Event, Kind, Name};
 use crate::util::{
+    constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
     normalize_identifier::normalize_identifier,

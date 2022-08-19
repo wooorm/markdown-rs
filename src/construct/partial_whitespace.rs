@@ -54,13 +54,15 @@
 //! [text]: crate::construct::text
 //! [hard_break_escape]: crate::construct::hard_break_escape
 //! [character_escape]: crate::construct::character_escape
-//! [hard_break_prefix_size_min]: crate::constant::HARD_BREAK_PREFIX_SIZE_MIN
+//! [hard_break_prefix_size_min]: crate::util::constant::HARD_BREAK_PREFIX_SIZE_MIN
 //! [html]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-br-element
 
-use crate::constant::HARD_BREAK_PREFIX_SIZE_MIN;
 use crate::event::{Event, Kind, Name};
 use crate::tokenizer::Tokenizer;
-use crate::util::slice::{Position, Slice};
+use crate::util::{
+    constant::HARD_BREAK_PREFIX_SIZE_MIN,
+    slice::{Position, Slice},
+};
 use alloc::vec;
 
 /// Resolve whitespace.

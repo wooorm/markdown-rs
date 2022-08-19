@@ -56,11 +56,11 @@
 //!
 //! [constructs]: crate::Constructs
 
-use crate::constant::FRONTMATTER_SEQUENCE_SIZE;
 use crate::construct::partial_space_or_tab::space_or_tab;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use crate::util::constant::FRONTMATTER_SEQUENCE_SIZE;
 
 /// Start of frontmatter.
 ///

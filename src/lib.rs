@@ -9,7 +9,6 @@
 extern crate alloc;
 
 mod compiler;
-mod constant;
 mod construct;
 mod event;
 mod parser;
@@ -17,7 +16,6 @@ mod resolve;
 mod state;
 mod subtokenize;
 mod tokenizer;
-mod unicode;
 mod util;
 
 use crate::compiler::compile;

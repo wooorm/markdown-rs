@@ -65,17 +65,19 @@
 //! [text]: crate::construct::text
 //! [character_escape]: crate::construct::character_reference
 //! [decode_numeric]: crate::util::decode_character_reference::decode_numeric
-//! [character_references]: crate::constant::CHARACTER_REFERENCES
+//! [character_references]: crate::util::constant::CHARACTER_REFERENCES
 //! [html]: https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
 
-use crate::constant::{
-    CHARACTER_REFERENCES, CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
-    CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
-};
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::slice::Slice;
+use crate::util::{
+    constant::{
+        CHARACTER_REFERENCES, CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
+        CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
+    },
+    slice::Slice,
+};
 
 /// Start of character reference.
 ///

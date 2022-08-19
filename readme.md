@@ -179,8 +179,6 @@ The files in `src/` are as follows:
   — helpers often needed when parsing markdown
 - `compiler.rs`
   — turns events into a string of HTML
-- `constants.rs`
-  — magic numbers and sets used in markdown
 - `event.rs`
   — things with meaning happening somewhere
 - `lib.rs`
@@ -195,8 +193,6 @@ The files in `src/` are as follows:
   — handle content in other content
 - `tokenizer.rs`
   — glue the states of the state machine together
-- `unicode.rs`
-  — info on unicode
 
 ## Examples
 
