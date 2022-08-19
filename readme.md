@@ -301,11 +301,8 @@ For more information on markdown sanitation, see
 
 ### Contribute
 
-> 🚧 **To do**.
-
-<!-- To do: contrib. -->
-<!-- See [`contributing.md`][contributing] for ways to get started.
-See [`support.md`][support] for ways to get help. -->
+See [`contributing.md`][contributing] for ways to help.
+See [`support.md`][support] for ways to get help.
 
 <!-- To do: CoC. -->
 
@@ -359,3 +356,5 @@ Support this effort and give back by sponsoring:
 [security]: #security
 [test]: #test
 [comparison]: #comparison
+[contributing]: .github/contribute.md
+[support]: .github/support.md
