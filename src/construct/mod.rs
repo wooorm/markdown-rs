@@ -146,6 +146,7 @@ pub mod document;
 pub mod flow;
 pub mod frontmatter;
 pub mod gfm_autolink_literal;
+pub mod gfm_task_list_item_check;
 pub mod hard_break_escape;
 pub mod heading_atx;
 pub mod heading_setext;

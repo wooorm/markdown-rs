@@ -42,13 +42,21 @@ const MARKERS: [u8; 10] = [
 
 /// Start of text.
 ///
+/// There is a slightly weird case where task list items have their check at
+/// the start of the first paragraph.
+/// So we start by checking for that.
+///
 /// ```markdown
 /// > | abc
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.markers = &MARKERS;
-    State::Retry(StateName::TextBefore)
+    tokenizer.attempt(
+        State::Next(StateName::TextBefore),
+        State::Next(StateName::TextBefore),
+    );
+    State::Retry(StateName::GfmTaskListItemCheckStart)
 }
 
 /// Before text.

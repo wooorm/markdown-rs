@@ -145,6 +145,12 @@ pub enum Name {
     FrontmatterCloseSequence,
     FrontmatterCloseAfter,
 
+    GfmTaskListItemCheckStart,
+    GfmTaskListItemCheckInside,
+    GfmTaskListItemCheckClose,
+    GfmTaskListItemCheckAfter,
+    GfmTaskListItemCheckAfterSpaceOrTab,
+
     HardBreakEscapeStart,
     HardBreakEscapeAfter,
 
@@ -443,6 +449,14 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::FrontmatterCloseStart => construct::frontmatter::close_start,
         Name::FrontmatterCloseSequence => construct::frontmatter::close_sequence,
         Name::FrontmatterCloseAfter => construct::frontmatter::close_after,
+
+        Name::GfmTaskListItemCheckStart => construct::gfm_task_list_item_check::start,
+        Name::GfmTaskListItemCheckInside => construct::gfm_task_list_item_check::inside,
+        Name::GfmTaskListItemCheckClose => construct::gfm_task_list_item_check::close,
+        Name::GfmTaskListItemCheckAfter => construct::gfm_task_list_item_check::after,
+        Name::GfmTaskListItemCheckAfterSpaceOrTab => {
+            construct::gfm_task_list_item_check::after_space_or_tab
+        }
 
         Name::HardBreakEscapeStart => construct::hard_break_escape::start,
         Name::HardBreakEscapeAfter => construct::hard_break_escape::after,

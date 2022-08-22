@@ -178,6 +178,13 @@ pub struct Constructs {
     ///       ^^^
     /// ```
     pub gfm_strikethrough: bool,
+    /// GFM: task list item.
+    ///
+    /// ```markdown
+    /// > | * [x] y.
+    ///       ^^^
+    /// ```
+    pub gfm_task_list_item: bool,
     /// Hard break (escape).
     ///
     /// ```markdown
@@ -277,6 +284,7 @@ impl Default for Constructs {
             frontmatter: false,
             gfm_autolink_literal: false,
             gfm_strikethrough: false,
+            gfm_task_list_item: false,
             hard_break_escape: true,
             hard_break_trailing: true,
             heading_atx: true,
@@ -301,6 +309,7 @@ impl Constructs {
         Self {
             gfm_autolink_literal: true,
             gfm_strikethrough: true,
+            gfm_task_list_item: true,
             ..Self::default()
         }
     }

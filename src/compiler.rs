@@ -327,6 +327,7 @@ fn enter(context: &mut CompileContext) {
         Name::Emphasis => on_enter_emphasis(context),
         Name::Frontmatter => on_enter_frontmatter(context),
         Name::GfmStrikethrough => on_enter_gfm_strikethrough(context),
+        Name::GfmTaskListItemCheck => on_enter_gfm_task_list_item_check(context),
         Name::HtmlFlow => on_enter_html_flow(context),
         Name::HtmlText => on_enter_html_text(context),
         Name::Image => on_enter_image(context),
@@ -370,10 +371,12 @@ fn exit(context: &mut CompileContext) {
         Name::DefinitionTitleString => on_exit_definition_title_string(context),
         Name::Emphasis => on_exit_emphasis(context),
         Name::Frontmatter => on_exit_frontmatter(context),
-        Name::GfmStrikethrough => on_exit_gfm_strikethrough(context),
         Name::GfmAutolinkLiteralProtocol => on_exit_gfm_autolink_literal_protocol(context),
         Name::GfmAutolinkLiteralWww => on_exit_gfm_autolink_literal_www(context),
         Name::GfmAutolinkLiteralEmail => on_exit_gfm_autolink_literal_email(context),
+        Name::GfmStrikethrough => on_exit_gfm_strikethrough(context),
+        Name::GfmTaskListItemCheck => on_exit_gfm_task_list_item_check(context),
+        Name::GfmTaskListItemValueChecked => on_exit_gfm_task_list_item_value_checked(context),
         Name::HardBreakEscape | Name::HardBreakTrailing => on_exit_break(context),
         Name::HeadingAtx => on_exit_heading_atx(context),
         Name::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
@@ -473,6 +476,13 @@ fn on_enter_frontmatter(context: &mut CompileContext) {
 fn on_enter_gfm_strikethrough(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("<del>");
+    }
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck].
+fn on_enter_gfm_task_list_item_check(context: &mut CompileContext) {
+    if !context.image_alt_inside {
+        context.push("<input type=\"checkbox\" disabled=\"\" ");
     }
 }
 
@@ -955,6 +965,20 @@ fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
 fn on_exit_gfm_strikethrough(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("</del>");
+    }
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck].
+fn on_exit_gfm_task_list_item_check(context: &mut CompileContext) {
+    if !context.image_alt_inside {
+        context.push("/>");
+    }
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTaskListItemValueChecked`][Name::GfmTaskListItemValueChecked].
+fn on_exit_gfm_task_list_item_value_checked(context: &mut CompileContext) {
+    if !context.image_alt_inside {
+        context.push("checked=\"\" ");
     }
 }
 

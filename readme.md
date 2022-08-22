@@ -145,7 +145,7 @@ They are not enabled by default but can be turned on with `options.constructs`.
   - [x] strikethrough
   - [ ] table
   - [ ] tagfilter
-  - [ ] task list item
+  - [x] task list item
 - [ ] math
 
 It is not a goal of this project to support lots of different extensions.

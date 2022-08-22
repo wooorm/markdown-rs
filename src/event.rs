@@ -1074,6 +1074,80 @@ pub enum Name {
     ///      ^
     /// ```
     GfmStrikethroughText,
+    /// GFM: Task list item check.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     [`GfmTaskListItemMarker`][Name::GfmTaskListItemMarker],
+    ///     [`GfmTaskListItemValueChecked`][Name::GfmTaskListItemValueChecked],
+    ///     [`GfmTaskListItemValueUnchecked`][Name::GfmTaskListItemValueUnchecked]
+    /// *   **Construct**:
+    ///     [`gfm_task_list_item_check`][crate::construct::gfm_task_list_item_check]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * [x] y.
+    ///       ^^^
+    /// ```
+    GfmTaskListItemCheck,
+    /// GFM: Task list item check marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_task_list_item_check`][crate::construct::gfm_task_list_item_check]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * [x] y.
+    ///       ^ ^
+    /// ```
+    GfmTaskListItemMarker,
+    /// GFM: Task list item value: checked.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_task_list_item_check`][crate::construct::gfm_task_list_item_check]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * [x] y.
+    ///        ^
+    /// ```
+    GfmTaskListItemValueChecked,
+    /// GFM: Task list item value: unchecked.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_task_list_item_check`][crate::construct::gfm_task_list_item_check]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | * [ ] z.
+    ///        ^
+    /// ```
+    GfmTaskListItemValueUnchecked,
     /// Whole hard break (escape).
     ///
     /// ## Info
@@ -2031,7 +2105,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 47] = [
+pub const VOID_EVENTS: [Name; 50] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2061,6 +2135,9 @@ pub const VOID_EVENTS: [Name; 47] = [
     Name::GfmAutolinkLiteralProtocol,
     Name::GfmAutolinkLiteralWww,
     Name::GfmStrikethroughSequence,
+    Name::GfmTaskListItemMarker,
+    Name::GfmTaskListItemValueChecked,
+    Name::GfmTaskListItemValueUnchecked,
     Name::FrontmatterSequence,
     Name::HardBreakEscape,
     Name::HardBreakTrailing,

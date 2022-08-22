@@ -17,11 +17,11 @@
 //! whole document needs to be parsed up to the level of definitions, before
 //! any level that can include references can be parsed.
 
-use crate::event::{Content, Event, Kind, VOID_EVENTS};
+use crate::event::{Content, Event, Kind, Name, VOID_EVENTS};
 use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::edit_map::EditMap;
+use crate::util::{edit_map::EditMap, skip};
 use alloc::{vec, vec::Vec};
 
 /// Link two [`Event`][]s.
@@ -93,6 +93,34 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                 } else {
                     StateName::TextStart
                 });
+
+                // Check if this is the first paragraph, after zero or more
+                // definitions (or a blank line), in a list item.
+                // Used for GFM task list items.
+                if tokenizer.parse_state.options.constructs.gfm_task_list_item
+                    && index > 2
+                    && events[index - 1].kind == Kind::Enter
+                    && events[index - 1].name == Name::Paragraph
+                {
+                    let before = skip::opt_back(
+                        events,
+                        index - 2,
+                        &[
+                            Name::BlankLineEnding,
+                            Name::Definition,
+                            Name::LineEnding,
+                            Name::SpaceOrTab,
+                        ],
+                    );
+
+                    if events[before].kind == Kind::Exit
+                        && events[before].name == Name::ListItemPrefix
+                    {
+                        tokenizer
+                            .tokenize_state
+                            .document_at_first_paragraph_of_list_item = true;
+                    }
+                }
 
                 // Loop through links to pass them in order to the subtokenizer.
                 while let Some(index) = link_index {

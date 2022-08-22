@@ -59,12 +59,20 @@ fn skip_opt_impl(events: &[Event], mut index: usize, names: &[Name], forward: bo
                 balance - 1
             };
 
+            let next = if forward {
+                index + 1
+            } else if index > 0 {
+                index - 1
+            } else {
+                index
+            };
+
             if events[index].name == *current && balance == 0 {
-                index = if forward { index + 1 } else { index - 1 };
+                index = next;
                 break;
             }
 
-            index = if forward { index + 1 } else { index - 1 };
+            index = next;
         }
     }
 

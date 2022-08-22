@@ -144,6 +144,10 @@ pub struct TokenizeState<'a> {
     pub document_exits: Vec<Option<Vec<Event>>>,
     /// Whether the previous flow was a paragraph.
     pub document_paragraph_before: bool,
+    /// Whether this is the first paragraph (potentially after definitions) in
+    /// a list item.
+    /// Used for GFM task list items.
+    pub document_at_first_paragraph_of_list_item: bool,
 
     // Couple of very frequent settings for parsing whitespace.
     pub space_or_tab_eol_content: Option<Content>,
@@ -282,6 +286,7 @@ impl<'a> Tokenizer<'a> {
                 document_data_index: None,
                 document_child_state: None,
                 document_child: None,
+                document_at_first_paragraph_of_list_item: false,
                 definitions: vec![],
                 end: 0,
                 label_starts: vec![],
@@ -509,11 +514,6 @@ impl<'a> Tokenizer<'a> {
     /// Stack an attempt, moving to `ok` on [`State::Ok`][] and `nok` on
     /// [`State::Nok`][], reverting in both cases.
     pub fn check(&mut self, ok: State, nok: State) {
-        debug_assert_ne!(
-            nok,
-            State::Nok,
-            "checking w/ `State::Nok` should likely be an attempt"
-        );
         // Always capture (and restore) when checking.
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.
