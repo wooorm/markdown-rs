@@ -72,7 +72,7 @@ use crate::util::constant::FRONTMATTER_SEQUENCE_SIZE;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Indent not allowed.
-    if tokenizer.parse_state.constructs.frontmatter
+    if tokenizer.parse_state.options.constructs.frontmatter
         && matches!(tokenizer.current, Some(b'+' | b'-'))
     {
         tokenizer.tokenize_state.marker = tokenizer.current.unwrap();

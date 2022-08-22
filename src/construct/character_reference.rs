@@ -90,7 +90,9 @@ use crate::util::{
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.character_reference && tokenizer.current == Some(b'&') {
+    if tokenizer.parse_state.options.constructs.character_reference
+        && tokenizer.current == Some(b'&')
+    {
         tokenizer.enter(Name::CharacterReference);
         tokenizer.enter(Name::CharacterReferenceMarker);
         tokenizer.consume();

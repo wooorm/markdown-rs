@@ -44,7 +44,8 @@ use crate::tokenizer::{LabelStart, Tokenizer};
 ///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.label_start_image && tokenizer.current == Some(b'!') {
+    if tokenizer.parse_state.options.constructs.label_start_image && tokenizer.current == Some(b'!')
+    {
         tokenizer.enter(Name::LabelImage);
         tokenizer.enter(Name::LabelImageMarker);
         tokenizer.consume();

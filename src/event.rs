@@ -878,7 +878,6 @@ pub enum Name {
     ///      ^
     /// ```
     EmphasisText,
-    // To do: sort.
     /// Whole frontmatter.
     ///
     /// ## Info
@@ -1020,6 +1019,61 @@ pub enum Name {
     ///     ^^^^^^^^^^^^^^^
     /// ```
     GfmAutolinkLiteralWww,
+    /// GFM: Strikethrough.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     [`GfmStrikethroughSequence`][Name::GfmStrikethroughSequence],
+    ///     [`GfmStrikethroughText`][Name::GfmStrikethroughText]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ~a~
+    ///     ^^^
+    /// ```
+    GfmStrikethrough,
+    /// Gfm: Strikethrough sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmStrikethrough`][Name::GfmStrikethrough]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ~a~
+    ///     ^ ^
+    /// ```
+    GfmStrikethroughSequence,
+    /// Gfm: Strikethrough text.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmStrikethrough`][Name::GfmStrikethrough]
+    /// *   **Content model**:
+    ///     [text content][crate::construct::text]
+    /// *   **Construct**:
+    ///     [`attention`][crate::construct::attention]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | ~a~
+    ///      ^
+    /// ```
+    GfmStrikethroughText,
     /// Whole hard break (escape).
     ///
     /// ## Info
@@ -1977,7 +2031,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 46] = [
+pub const VOID_EVENTS: [Name; 47] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2006,6 +2060,7 @@ pub const VOID_EVENTS: [Name; 46] = [
     Name::GfmAutolinkLiteralEmail,
     Name::GfmAutolinkLiteralProtocol,
     Name::GfmAutolinkLiteralWww,
+    Name::GfmStrikethroughSequence,
     Name::FrontmatterSequence,
     Name::HardBreakEscape,
     Name::HardBreakTrailing,

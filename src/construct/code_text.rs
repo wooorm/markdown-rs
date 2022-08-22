@@ -100,7 +100,7 @@ use crate::tokenizer::Tokenizer;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'`')
-            if tokenizer.parse_state.constructs.code_text
+            if tokenizer.parse_state.options.constructs.code_text
                 && (tokenizer.previous != Some(b'`')
                     || (!tokenizer.events.is_empty()
                         && tokenizer.events[tokenizer.events.len() - 1].name

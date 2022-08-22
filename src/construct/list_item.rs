@@ -77,7 +77,7 @@ use alloc::{vec, vec::Vec};
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.list_item {
+    if tokenizer.parse_state.options.constructs.list_item {
         tokenizer.enter(Name::ListItem);
 
         if matches!(tokenizer.current, Some(b'\t' | b' ')) {
@@ -85,7 +85,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             State::Retry(space_or_tab_min_max(
                 tokenizer,
                 0,
-                if tokenizer.parse_state.constructs.code_indented {
+                if tokenizer.parse_state.options.constructs.code_indented {
                     TAB_SIZE - 1
                 } else {
                     usize::MAX

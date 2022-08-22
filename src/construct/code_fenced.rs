@@ -128,7 +128,7 @@ use crate::util::{
 ///   | ~~~
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.code_fenced {
+    if tokenizer.parse_state.options.constructs.code_fenced {
         if matches!(tokenizer.current, Some(b'\t' | b' ')) {
             tokenizer.enter(Name::CodeFenced);
             tokenizer.enter(Name::CodeFencedFence);
@@ -139,7 +139,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             return State::Retry(space_or_tab_min_max(
                 tokenizer,
                 0,
-                if tokenizer.parse_state.constructs.code_indented {
+                if tokenizer.parse_state.options.constructs.code_indented {
                     TAB_SIZE - 1
                 } else {
                     usize::MAX
@@ -384,7 +384,7 @@ pub fn close_start(tokenizer: &mut Tokenizer) -> State {
         State::Retry(space_or_tab_min_max(
             tokenizer,
             0,
-            if tokenizer.parse_state.constructs.code_indented {
+            if tokenizer.parse_state.options.constructs.code_indented {
                 TAB_SIZE - 1
             } else {
                 usize::MAX

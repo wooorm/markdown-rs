@@ -72,7 +72,7 @@ use crate::util::constant::TAB_SIZE;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs.
     if !tokenizer.interrupt
-        && tokenizer.parse_state.constructs.code_indented
+        && tokenizer.parse_state.options.constructs.code_indented
         && matches!(tokenizer.current, Some(b'\t' | b' '))
     {
         tokenizer.enter(Name::CodeIndented);

@@ -142,7 +142,7 @@ They are not enabled by default but can be turned on with `options.constructs`.
 - [ ] gfm
   - [x] autolink literal
   - [ ] footnote
-  - [ ] strikethrough
+  - [x] strikethrough
   - [ ] table
   - [ ] tagfilter
   - [ ] task list item

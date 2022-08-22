@@ -326,6 +326,7 @@ fn enter(context: &mut CompileContext) {
         Name::DefinitionDestinationString => on_enter_definition_destination_string(context),
         Name::Emphasis => on_enter_emphasis(context),
         Name::Frontmatter => on_enter_frontmatter(context),
+        Name::GfmStrikethrough => on_enter_gfm_strikethrough(context),
         Name::HtmlFlow => on_enter_html_flow(context),
         Name::HtmlText => on_enter_html_text(context),
         Name::Image => on_enter_image(context),
@@ -369,6 +370,7 @@ fn exit(context: &mut CompileContext) {
         Name::DefinitionTitleString => on_exit_definition_title_string(context),
         Name::Emphasis => on_exit_emphasis(context),
         Name::Frontmatter => on_exit_frontmatter(context),
+        Name::GfmStrikethrough => on_exit_gfm_strikethrough(context),
         Name::GfmAutolinkLiteralProtocol => on_exit_gfm_autolink_literal_protocol(context),
         Name::GfmAutolinkLiteralWww => on_exit_gfm_autolink_literal_www(context),
         Name::GfmAutolinkLiteralEmail => on_exit_gfm_autolink_literal_email(context),
@@ -465,6 +467,13 @@ fn on_enter_emphasis(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`Frontmatter`][Name::Frontmatter].
 fn on_enter_frontmatter(context: &mut CompileContext) {
     context.buffer();
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmStrikethrough`][Name::GfmStrikethrough].
+fn on_enter_gfm_strikethrough(context: &mut CompileContext) {
+    if !context.image_alt_inside {
+        context.push("<del>");
+    }
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`HtmlFlow`][Name::HtmlFlow].
@@ -898,7 +907,7 @@ fn on_exit_definition_title_string(context: &mut CompileContext) {
     context.media_stack.last_mut().unwrap().title = Some(buf);
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`Strong`][Name::Emphasis].
+/// Handle [`Exit`][Kind::Exit]:[`Emphasis`][Name::Emphasis].
 fn on_exit_emphasis(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("</em>");
@@ -940,6 +949,13 @@ fn on_exit_gfm_autolink_literal_www(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail].
 fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
     on_exit_autolink_email(context);
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmStrikethrough`][Name::GfmStrikethrough].
+fn on_exit_gfm_strikethrough(context: &mut CompileContext) {
+    if !context.image_alt_inside {
+        context.push("</del>");
+    }
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`HeadingAtx`][Name::HeadingAtx].

@@ -171,6 +171,13 @@ pub struct Constructs {
     ///     ^^^^^^^^^^^^^^^^^^^
     /// ```
     pub gfm_autolink_literal: bool,
+    /// GFM: strikethrough.
+    ///
+    /// ```markdown
+    /// > | a ~b~ c.
+    ///       ^^^
+    /// ```
+    pub gfm_strikethrough: bool,
     /// Hard break (escape).
     ///
     /// ```markdown
@@ -269,6 +276,7 @@ impl Default for Constructs {
             definition: true,
             frontmatter: false,
             gfm_autolink_literal: false,
+            gfm_strikethrough: false,
             hard_break_escape: true,
             hard_break_trailing: true,
             heading_atx: true,
@@ -292,13 +300,14 @@ impl Constructs {
     pub fn gfm() -> Self {
         Self {
             gfm_autolink_literal: true,
+            gfm_strikethrough: true,
             ..Self::default()
         }
     }
 }
 
 /// Configuration (optional).
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Options {
     /// Whether to allow (dangerous) HTML.
     /// The default is `false`, you can turn it on to `true` for trusted
@@ -357,6 +366,43 @@ pub struct Options {
     /// );
     /// ```
     pub allow_dangerous_protocol: bool,
+
+    /// Whether to support GFM strikethrough (if enabled in `constructs`) with
+    /// a single tilde (default: true).
+    ///
+    /// Single tildes work on github.com but are technically prohibited by GFM.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    ///
+    /// // micromark supports single tildes by default:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///       "~a~",
+    ///       &Options {
+    ///         constructs: Constructs::gfm(),
+    ///         ..Options::default()
+    ///       }
+    ///   ),
+    ///   "<p><del>a</del></p>"
+    /// );
+    ///
+    /// // Pass `gfm_strikethrough_single_tilde: false` to turn that off:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///       "~a~",
+    ///       &Options {
+    ///         constructs: Constructs::gfm(),
+    ///         gfm_strikethrough_single_tilde: false,
+    ///         ..Options::default()
+    ///       }
+    ///   ),
+    ///   "<p>~a~</p>"
+    /// );
+    /// ```
+    pub gfm_strikethrough_single_tilde: bool,
 
     /// Default line ending to use, for line endings not in `value`.
     ///
@@ -425,6 +471,19 @@ pub struct Options {
     /// );
     /// ```
     pub constructs: Constructs,
+}
+
+impl Default for Options {
+    /// Safe `CommonMark` defaults.
+    fn default() -> Self {
+        Self {
+            allow_dangerous_html: false,
+            allow_dangerous_protocol: false,
+            gfm_strikethrough_single_tilde: true,
+            default_line_ending: LineEnding::default(),
+            constructs: Constructs::default(),
+        }
+    }
 }
 
 /// Turn markdown into HTML.

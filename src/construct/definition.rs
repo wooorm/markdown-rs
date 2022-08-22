@@ -120,7 +120,7 @@ use crate::util::{
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Do not interrupt paragraphs (but do follow definitions).
-    if tokenizer.parse_state.constructs.definition
+    if tokenizer.parse_state.options.constructs.definition
         && (!tokenizer.interrupt
             || (!tokenizer.events.is_empty()
                 && tokenizer.events[skip::opt_back(

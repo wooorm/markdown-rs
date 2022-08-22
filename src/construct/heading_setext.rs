@@ -85,7 +85,7 @@ use alloc::vec;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.heading_setext
+    if tokenizer.parse_state.options.constructs.heading_setext
         && !tokenizer.lazy
         // Require a paragraph before.
         && (!tokenizer.events.is_empty()
@@ -102,7 +102,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             State::Retry(space_or_tab_min_max(
                 tokenizer,
                 0,
-                if tokenizer.parse_state.constructs.code_indented {
+                if tokenizer.parse_state.options.constructs.code_indented {
                     TAB_SIZE - 1
                 } else {
                     usize::MAX

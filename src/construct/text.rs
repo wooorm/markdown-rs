@@ -27,7 +27,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Characters that can start something in text.
-const MARKERS: [u8; 9] = [
+const MARKERS: [u8; 10] = [
     b'!',  // `label_start_image`
     b'&',  // `character_reference`
     b'*',  // `attention`
@@ -37,6 +37,7 @@ const MARKERS: [u8; 9] = [
     b']',  // `label_end`
     b'_',  // `attention`
     b'`',  // `code_text`
+    b'~',  // `attention` (w/ `gfm_strikethrough`)
 ];
 
 /// Start of text.
@@ -77,7 +78,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::CharacterReferenceStart)
         }
-        Some(b'*' | b'_') => {
+        Some(b'*' | b'_' | b'~') => {
             tokenizer.attempt(
                 State::Next(StateName::TextBefore),
                 State::Next(StateName::TextBeforeData),
@@ -171,11 +172,16 @@ pub fn before_data(tokenizer: &mut Tokenizer) -> State {
 pub fn resolve(tokenizer: &mut Tokenizer) {
     resolve_whitespace(
         tokenizer,
-        tokenizer.parse_state.constructs.hard_break_trailing,
+        tokenizer.parse_state.options.constructs.hard_break_trailing,
         true,
     );
 
-    if tokenizer.parse_state.constructs.gfm_autolink_literal {
+    if tokenizer
+        .parse_state
+        .options
+        .constructs
+        .gfm_autolink_literal
+    {
         resolve_gfm_autolink_literal(tokenizer);
     }
 }

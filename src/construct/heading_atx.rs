@@ -77,14 +77,14 @@ use alloc::vec;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.heading_atx {
+    if tokenizer.parse_state.options.constructs.heading_atx {
         tokenizer.enter(Name::HeadingAtx);
         if matches!(tokenizer.current, Some(b'\t' | b' ')) {
             tokenizer.attempt(State::Next(StateName::HeadingAtxBefore), State::Nok);
             State::Retry(space_or_tab_min_max(
                 tokenizer,
                 0,
-                if tokenizer.parse_state.constructs.code_indented {
+                if tokenizer.parse_state.options.constructs.code_indented {
                     TAB_SIZE - 1
                 } else {
                     usize::MAX

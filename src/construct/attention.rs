@@ -1,4 +1,5 @@
-//! Attention (emphasis and strong) occurs in the [text][] content type.
+//! Attention (emphasis, strong, optionally GFM strikethrough) occurs in the
+//! [text][] content type.
 //!
 //! ## Grammar
 //!
@@ -7,24 +8,31 @@
 //!
 //! ```bnf
 //! attention_sequence ::= 1*'*' | 1*'_'
+//! gfm_attention_sequence ::= 1*'~'
 //! ```
 //!
 //! Sequences are matched together to form attention based on which character
-//! they contain, and what character occurs before and after each sequence.
+//! they contain, how long they are, and what character occurs before and after
+//! each sequence.
 //! Otherwise they are turned into data.
 //!
 //! ## HTML
 //!
-//! When sequences match, and two markers can be “taken” from them, they
-//! together relate to the `<strong>` element in HTML.
+//! When asterisk/underscore sequences match, and two markers can be “taken”
+//! from them, they together relate to the `<strong>` element in HTML.
 //! When one marker can be taken, they relate to the `<em>` element.
 //! See [*§ 4.5.2 The `em` element*][html-em] and
 //! [*§ 4.5.3 The `strong` element*][html-strong] in the HTML spec for more
 //! info.
 //!
+//! When tilde sequences match, they together relate to the `<del>` element in
+//! HTML.
+//! See [*§ 4.7.2 The `del` element*][html-del] in the HTML spec for more info.
+//!
 //! ## Recommendation
 //!
-//! It is recommended to use asterisks for attention when writing markdown.
+//! It is recommended to use asterisks for emphasis/strong attention when
+//! writing markdown.
 //!
 //! There are some small differences in whether sequences can open and/or close
 //! based on whether they are formed with asterisks or underscores.
@@ -37,11 +45,18 @@
 //! can look for asterisks to find syntax while not worrying about other
 //! characters.
 //!
+//! For strikethrough attention, it is recommended to use two markers.
+//! While `github.com` allows single tildes too, it technically prohibits it in
+//! their spec.
+//!
 //! ## Tokens
 //!
 //! *   [`Emphasis`][Name::Emphasis]
 //! *   [`EmphasisSequence`][Name::EmphasisSequence]
 //! *   [`EmphasisText`][Name::EmphasisText]
+//! *   [`GfmStrikethrough`][Name::GfmStrikethrough]
+//! *   [`GfmStrikethroughSequence`][Name::GfmStrikethroughSequence]
+//! *   [`GfmStrikethroughText`][Name::GfmStrikethroughText]
 //! *   [`Strong`][Name::Strong]
 //! *   [`StrongSequence`][Name::StrongSequence]
 //! *   [`StrongText`][Name::StrongText]
@@ -52,11 +67,14 @@
 //! ## References
 //!
 //! *   [`attention.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/attention.js)
+//! *   [`micromark-extension-gfm-strikethrough`](https://github.com/micromark/micromark-extension-gfm-strikethrough)
 //! *   [*§ 6.2 Emphasis and strong emphasis* in `CommonMark`](https://spec.commonmark.org/0.30/#emphasis-and-strong-emphasis)
+//! *   [*§ 6.5 Strikethrough (extension)* in `GFM`](https://github.github.com/gfm/#strikethrough-extension-)
 //!
 //! [text]: crate::construct::text
 //! [html-em]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element
 //! [html-strong]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element
+//! [html-del]: https://html.spec.whatwg.org/multipage/edits.html#the-del-element
 
 use crate::event::{Event, Kind, Name, Point};
 use crate::resolve::Name as ResolveName;
@@ -94,7 +112,11 @@ struct Sequence {
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.attention && matches!(tokenizer.current, Some(b'*' | b'_'))
+    // Emphasis/strong:
+    if (tokenizer.parse_state.options.constructs.attention
+        && matches!(tokenizer.current, Some(b'*' | b'_')))
+        // GFM strikethrough:
+        || (tokenizer.parse_state.options.constructs.gfm_strikethrough && tokenizer.current == Some(b'~'))
     {
         tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
         tokenizer.enter(Name::AttentionSequence);
@@ -117,85 +139,15 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     } else {
         tokenizer.exit(Name::AttentionSequence);
         tokenizer.register_resolver(ResolveName::Attention);
-        tokenizer.tokenize_state.marker = b'\0';
+        tokenizer.tokenize_state.marker = 0;
         State::Ok
     }
 }
 
-/// Resolve attention sequences.
+/// Resolve sequences.
 pub fn resolve(tokenizer: &mut Tokenizer) {
-    let mut index = 0;
-    let mut balance = 0;
-    let mut sequences = vec![];
-
     // Find all sequences, gather info about them.
-    while index < tokenizer.events.len() {
-        let enter = &tokenizer.events[index];
-
-        if enter.kind == Kind::Enter {
-            balance += 1;
-
-            if enter.name == Name::AttentionSequence {
-                let end = index + 1;
-                let exit = &tokenizer.events[end];
-
-                let before_end = enter.point.index;
-                let before_start = if before_end < 4 { 0 } else { before_end - 4 };
-                let char_before =
-                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[before_start..before_end])
-                        .chars()
-                        .last();
-
-                let after_start = exit.point.index;
-                let after_end = if after_start + 4 > tokenizer.parse_state.bytes.len() {
-                    tokenizer.parse_state.bytes.len()
-                } else {
-                    after_start + 4
-                };
-                let char_after =
-                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end])
-                        .chars()
-                        .next();
-
-                let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
-                    .head()
-                    .unwrap();
-                let before = classify_opt(char_before);
-                let after = classify_opt(char_after);
-                let open = after == CharacterKind::Other
-                    || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
-                // To do: GFM strikethrough?
-                // || char_after == '~'
-                let close = before == CharacterKind::Other
-                    || (before == CharacterKind::Punctuation && after != CharacterKind::Other);
-                // To do: GFM strikethrough?
-                // || char_before == '~'
-
-                sequences.push(Sequence {
-                    index,
-                    balance,
-                    start_point: enter.point.clone(),
-                    end_point: exit.point.clone(),
-                    size: exit.point.index - enter.point.index,
-                    open: if marker == b'*' {
-                        open
-                    } else {
-                        open && (before != CharacterKind::Other || !close)
-                    },
-                    close: if marker == b'*' {
-                        close
-                    } else {
-                        close && (after != CharacterKind::Other || !open)
-                    },
-                    marker,
-                });
-            }
-        } else {
-            balance -= 1;
-        }
-
-        index += 1;
-    }
+    let mut sequences = get_sequences(tokenizer);
 
     // Now walk through them and match them.
     let mut close = 0;
@@ -230,7 +182,20 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                         continue;
                     }
 
-                    // We’ve found a match!
+                    // For GFM strikethrough:
+                    // * both sequences must have the same size
+                    // * more than 2 markers don’t work
+                    // * one marker is prohibited by the spec, but supported by GH
+                    if sequence_close.marker == b'~'
+                        && (sequence_close.size != sequence_open.size
+                            || sequence_close.size > 2
+                            || sequence_close.size == 1
+                                && !tokenizer.parse_state.options.gfm_strikethrough_single_tilde)
+                    {
+                        continue;
+                    }
+
+                    // We found a match!
                     next_index = match_sequences(tokenizer, &mut sequences, open, close);
 
                     break;
@@ -253,7 +218,80 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     tokenizer.map.consume(&mut tokenizer.events);
 }
 
+/// Get sequences.
+fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
+    let mut index = 0;
+    let mut balance = 0;
+    let mut sequences = vec![];
+
+    while index < tokenizer.events.len() {
+        let enter = &tokenizer.events[index];
+
+        if enter.kind == Kind::Enter {
+            balance += 1;
+
+            if enter.name == Name::AttentionSequence {
+                let end = index + 1;
+                let exit = &tokenizer.events[end];
+
+                let before_end = enter.point.index;
+                let before_start = if before_end < 4 { 0 } else { before_end - 4 };
+                let after_start = exit.point.index;
+                let after_end = if after_start + 4 > tokenizer.parse_state.bytes.len() {
+                    tokenizer.parse_state.bytes.len()
+                } else {
+                    after_start + 4
+                };
+
+                let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
+                    .head()
+                    .unwrap();
+                let before = classify_opt(
+                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[before_start..before_end])
+                        .chars()
+                        .last(),
+                );
+                let after = classify_opt(
+                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end])
+                        .chars()
+                        .next(),
+                );
+                let open = after == CharacterKind::Other
+                    || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
+                let close = before == CharacterKind::Other
+                    || (before == CharacterKind::Punctuation && after != CharacterKind::Other);
+
+                sequences.push(Sequence {
+                    index,
+                    balance,
+                    start_point: enter.point.clone(),
+                    end_point: exit.point.clone(),
+                    size: exit.point.index - enter.point.index,
+                    open: if marker == b'_' {
+                        open && (before != CharacterKind::Other || !close)
+                    } else {
+                        open
+                    },
+                    close: if marker == b'_' {
+                        close && (after != CharacterKind::Other || !open)
+                    } else {
+                        close
+                    },
+                    marker,
+                });
+            }
+        } else {
+            balance -= 1;
+        }
+
+        index += 1;
+    }
+
+    sequences
+}
+
 /// Match two sequences.
+#[allow(clippy::too_many_lines)]
 fn match_sequences(
     tokenizer: &mut Tokenizer,
     sequences: &mut Vec<Sequence>,
@@ -292,7 +330,13 @@ fn match_sequences(
         between += 1;
     }
 
-    let (group_name, seq_name, text_name) = if take == 1 {
+    let (group_name, seq_name, text_name) = if sequences[open].marker == b'~' {
+        (
+            Name::GfmStrikethrough,
+            Name::GfmStrikethroughSequence,
+            Name::GfmStrikethroughText,
+        )
+    } else if take == 1 {
         (Name::Emphasis, Name::EmphasisSequence, Name::EmphasisText)
     } else {
         (Name::Strong, Name::StrongSequence, Name::StrongText)

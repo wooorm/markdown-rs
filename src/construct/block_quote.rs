@@ -59,7 +59,7 @@ use crate::util::constant::TAB_SIZE;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.block_quote {
+    if tokenizer.parse_state.options.constructs.block_quote {
         tokenizer.enter(Name::BlockQuote);
         State::Retry(StateName::BlockQuoteContStart)
     } else {
@@ -82,7 +82,7 @@ pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
         State::Retry(space_or_tab_min_max(
             tokenizer,
             1,
-            if tokenizer.parse_state.constructs.code_indented {
+            if tokenizer.parse_state.options.constructs.code_indented {
                 TAB_SIZE - 1
             } else {
                 usize::MAX

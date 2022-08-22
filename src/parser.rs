@@ -4,7 +4,7 @@ use crate::event::{Event, Point};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::Tokenizer;
-use crate::{Constructs, Options};
+use crate::Options;
 use alloc::{string::String, vec, vec::Vec};
 
 /// Info needed, in all content types, when parsing markdown.
@@ -13,7 +13,8 @@ use alloc::{string::String, vec, vec::Vec};
 /// It also references the input value as bytes (`u8`).
 #[derive(Debug)]
 pub struct ParseState<'a> {
-    pub constructs: &'a Constructs,
+    /// Configuration.
+    pub options: &'a Options,
     /// List of chars.
     pub bytes: &'a [u8],
     /// Set of defined identifiers.
@@ -25,7 +26,7 @@ pub struct ParseState<'a> {
 /// Passes the bytes back so the compiler can access the source.
 pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8]) {
     let mut parse_state = ParseState {
-        constructs: &options.constructs,
+        options,
         bytes: value.as_bytes(),
         definitions: vec![],
     };

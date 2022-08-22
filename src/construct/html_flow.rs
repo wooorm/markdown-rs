@@ -131,7 +131,7 @@ const COMPLETE: u8 = 7;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.html_flow {
+    if tokenizer.parse_state.options.constructs.html_flow {
         tokenizer.enter(Name::HtmlFlow);
 
         if matches!(tokenizer.current, Some(b'\t' | b' ')) {
@@ -141,7 +141,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 SpaceOrTabOptions {
                     kind: Name::HtmlFlowData,
                     min: 0,
-                    max: if tokenizer.parse_state.constructs.code_indented {
+                    max: if tokenizer.parse_state.options.constructs.code_indented {
                         TAB_SIZE - 1
                     } else {
                         usize::MAX

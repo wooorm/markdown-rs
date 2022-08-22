@@ -56,7 +56,9 @@ use crate::tokenizer::Tokenizer;
 ///   | b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.hard_break_escape && tokenizer.current == Some(b'\\') {
+    if tokenizer.parse_state.options.constructs.hard_break_escape
+        && tokenizer.current == Some(b'\\')
+    {
         tokenizer.enter(Name::HardBreakEscape);
         tokenizer.consume();
         State::Next(StateName::HardBreakEscapeAfter)

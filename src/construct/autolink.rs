@@ -135,7 +135,7 @@ use crate::util::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 ///      ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.parse_state.constructs.autolink && tokenizer.current == Some(b'<') {
+    if tokenizer.parse_state.options.constructs.autolink && tokenizer.current == Some(b'<') {
         tokenizer.enter(Name::Autolink);
         tokenizer.enter(Name::AutolinkMarker);
         tokenizer.consume();

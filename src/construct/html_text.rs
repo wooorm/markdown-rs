@@ -64,7 +64,7 @@ use crate::util::constant::HTML_CDATA_PREFIX;
 ///       ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if Some(b'<') == tokenizer.current && tokenizer.parse_state.constructs.html_text {
+    if Some(b'<') == tokenizer.current && tokenizer.parse_state.options.constructs.html_text {
         tokenizer.enter(Name::HtmlText);
         tokenizer.enter(Name::HtmlTextData);
         tokenizer.consume();
