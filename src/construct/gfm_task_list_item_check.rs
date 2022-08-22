@@ -81,7 +81,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\t' | b' ') => {
+        Some(b'\t' | b'\n' | b' ') => {
             tokenizer.enter(Name::GfmTaskListItemValueUnchecked);
             tokenizer.consume();
             tokenizer.exit(Name::GfmTaskListItemValueUnchecked);

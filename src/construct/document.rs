@@ -337,16 +337,65 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
         state,
     );
 
-    let paragraph = matches!(state, State::Next(StateName::ParagraphInside))
-        || (!child.events.is_empty()
-            && child.events
-                [skip::opt_back(&child.events, child.events.len() - 1, &[Name::LineEnding])]
-            .name
-                == Name::Paragraph);
-
     tokenizer.tokenize_state.document_child_state = Some(state);
 
-    if child.lazy && paragraph && tokenizer.tokenize_state.document_paragraph_before {
+    // If we’re in a lazy line, and the previous (lazy or not) line is something
+    // that can be lazy, and this line is that too, allow it.
+    //
+    // Accept:
+    //
+    // ```markdown
+    //   | * a
+    // > | b
+    //     ^
+    //   | ```
+    // ```
+    //
+    // Do not accept:
+    //
+    // ```markdown
+    //   | * # a
+    // > | b
+    //     ^
+    //   | ```
+    // ```
+    //
+    // Do not accept:
+    //
+    // ```markdown
+    //   | * a
+    // > | # b
+    //     ^
+    //   | ```
+    // ```
+    let mut document_lazy_continuation_current = false;
+    let mut stack_index = child.stack.len();
+
+    // Use two algo’s: one for when we’re suspended or in multiline things
+    // like definitions, another (b) for when we fed the line ending and closed
+    // a)
+    while !document_lazy_continuation_current && stack_index > 0 {
+        stack_index -= 1;
+        let name = &child.stack[stack_index];
+        if name == &Name::Paragraph || name == &Name::Definition {
+            document_lazy_continuation_current = true;
+        }
+    }
+
+    // …another because we parse each “rest” line as a paragraph, and we passed
+    // a EOL already.
+    if !document_lazy_continuation_current && !child.events.is_empty() {
+        let before = skip::opt_back(&child.events, child.events.len() - 1, &[Name::LineEnding]);
+        let name = &child.events[before].name;
+        if name == &Name::Paragraph {
+            document_lazy_continuation_current = true;
+        }
+    }
+
+    if child.lazy
+        && tokenizer.tokenize_state.document_lazy_accepting_before
+        && document_lazy_continuation_current
+    {
         tokenizer.tokenize_state.document_continued =
             tokenizer.tokenize_state.document_container_stack.len();
     }
@@ -366,7 +415,8 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
         }
         Some(_) => {
             tokenizer.tokenize_state.document_continued = 0;
-            tokenizer.tokenize_state.document_paragraph_before = paragraph;
+            tokenizer.tokenize_state.document_lazy_accepting_before =
+                document_lazy_continuation_current;
             // Containers would only be interrupting if we’ve continued.
             tokenizer.interrupt = false;
             State::Retry(StateName::DocumentContainerExistingBefore)

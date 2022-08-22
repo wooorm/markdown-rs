@@ -70,6 +70,9 @@ fn gfm_task_list_item() {
 
 + [X] With an upper case `x`
 
+* [
+] In a lazy line
+
 - [  ] With two spaces
 
 +  [x] Two spaces indent
@@ -161,6 +164,9 @@ EOL after:
 </ul>
 <ul>
 <li><input type="checkbox" disabled="" checked="" /> With an upper case <code>x</code></li>
+</ul>
+<ul>
+<li><input type="checkbox" disabled="" /> In a lazy line</li>
 </ul>
 <ul>
 <li>[  ] With two spaces</li>

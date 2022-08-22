@@ -262,6 +262,18 @@ fn list() {
     );
 
     assert_eq!(
+        micromark("- [\na"),
+        "<ul>\n<li>[\na</li>\n</ul>",
+        "should support lazy, definition-like lines"
+    );
+
+    assert_eq!(
+        micromark("- [a]: b\nc"),
+        "<ul>\n<li>c</li>\n</ul>",
+        "should support a definition, followed by a lazy paragraph"
+    );
+
+    assert_eq!(
         micromark("- foo\n  - bar\n    - baz\n      - boo"),
         "<ul>\n<li>foo\n<ul>\n<li>bar\n<ul>\n<li>baz\n<ul>\n<li>boo</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
         "should support sublists w/ enough spaces (1)"

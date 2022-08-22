@@ -89,6 +89,18 @@ fn block_quote() {
     );
 
     assert_eq!(
+        micromark("> [\na"),
+        "<blockquote>\n<p>[\na</p>\n</blockquote>",
+        "should support lazy, definition-like lines"
+    );
+
+    assert_eq!(
+        micromark("> [a]: b\nc"),
+        "<blockquote>\n<p>c</p>\n</blockquote>",
+        "should support a definition, followed by a lazy paragraph"
+    );
+
+    assert_eq!(
         micromark(">"),
         "<blockquote>\n</blockquote>",
         "should support empty block quotes (1)"

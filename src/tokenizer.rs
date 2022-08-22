@@ -142,8 +142,8 @@ pub struct TokenizeState<'a> {
     pub document_data_index: Option<usize>,
     /// Container exits by line number.
     pub document_exits: Vec<Option<Vec<Event>>>,
-    /// Whether the previous flow was a paragraph.
-    pub document_paragraph_before: bool,
+    /// Whether the previous flow was a paragraph or a definition.
+    pub document_lazy_accepting_before: bool,
     /// Whether this is the first paragraph (potentially after definitions) in
     /// a list item.
     /// Used for GFM task list items.
@@ -282,7 +282,7 @@ impl<'a> Tokenizer<'a> {
                 document_container_stack: vec![],
                 document_exits: vec![],
                 document_continued: 0,
-                document_paragraph_before: false,
+                document_lazy_accepting_before: false,
                 document_data_index: None,
                 document_child_state: None,
                 document_child: None,
