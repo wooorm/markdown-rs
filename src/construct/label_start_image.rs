@@ -35,7 +35,7 @@
 use crate::event::Name;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
-use crate::tokenizer::{LabelStart, Tokenizer};
+use crate::tokenizer::{LabelKind, LabelStart, Tokenizer};
 
 /// Start of label (image) start.
 ///
@@ -68,14 +68,52 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Name::LabelMarker);
             tokenizer.consume();
             tokenizer.exit(Name::LabelMarker);
-            tokenizer.exit(Name::LabelImage);
-            tokenizer.tokenize_state.label_starts.push(LabelStart {
-                start: (tokenizer.events.len() - 6, tokenizer.events.len() - 1),
-                inactive: false,
-            });
-            tokenizer.register_resolver_before(ResolveName::Label);
-            State::Ok
+            State::Next(StateName::LabelStartImageAfter)
         }
         _ => State::Nok,
+    }
+}
+
+/// After `![`.
+///
+/// ```markdown
+/// > | a ![b] c
+///         ^
+/// ```
+///
+/// This is needed in because, when GFM footnotes are enabled, images never
+/// form when started with a `^`.
+/// Instead, links form:
+///
+/// ```markdown
+/// ![^a](b)
+///
+/// ![^a][b]
+///
+/// [b]: c
+/// ```
+///
+/// ```html
+/// <p>!<a href=\"b\">^a</a></p>
+/// <p>!<a href=\"c\">^a</a></p>
+/// ```
+pub fn after(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer
+        .parse_state
+        .options
+        .constructs
+        .gfm_label_start_footnote
+        && tokenizer.current == Some(b'^')
+    {
+        State::Nok
+    } else {
+        tokenizer.exit(Name::LabelImage);
+        tokenizer.tokenize_state.label_starts.push(LabelStart {
+            kind: LabelKind::Image,
+            start: (tokenizer.events.len() - 6, tokenizer.events.len() - 1),
+            inactive: false,
+        });
+        tokenizer.register_resolver_before(ResolveName::Label);
+        State::Ok
     }
 }

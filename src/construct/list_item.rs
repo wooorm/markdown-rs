@@ -17,7 +17,7 @@
 //! ```
 //!
 //! Further lines that are not prefixed with `list_item_cont` cause the list
-//! item to be exited, except when those lines are lazy continuation.
+//! item to be exited, except when those lines are lazy continuation or blank.
 //! Like so many things in markdown, list items too, are complex.
 //! See [*§ Phase 1: block structure* in `CommonMark`][commonmark_block] for
 //! more on parsing details.

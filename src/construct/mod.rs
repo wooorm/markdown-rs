@@ -59,6 +59,9 @@
 //!
 //! *   [frontmatter][]
 //! *   [gfm autolink literal][gfm_autolink_literal]
+//! *   [gfm footnote definition][gfm_footnote_definition]
+//! *   [gfm task list item check][gfm_task_list_item_check]
+//! *   [gfm label start footnote][gfm_label_start_footnote]
 //!
 //! There are also several small subroutines typically used in different places:
 //!
@@ -146,6 +149,8 @@ pub mod document;
 pub mod flow;
 pub mod frontmatter;
 pub mod gfm_autolink_literal;
+pub mod gfm_footnote_definition;
+pub mod gfm_label_start_footnote;
 pub mod gfm_task_list_item_check;
 pub mod hard_break_escape;
 pub mod heading_atx;

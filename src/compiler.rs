@@ -18,7 +18,8 @@ use alloc::{
 };
 use core::str;
 
-/// Link or image, resource or reference.
+/// Link, image, or footnote call.
+/// Resource or reference.
 /// Reused for temporary definitions as well, in the first pass.
 #[derive(Debug)]
 struct Media {
@@ -76,6 +77,8 @@ struct CompileContext<'a> {
     pub events: &'a [Event],
     /// List of bytes.
     pub bytes: &'a [u8],
+    /// Configuration.
+    pub options: &'a Options,
     // Fields used by handlers to track the things they need to track to
     // compile markdown.
     /// Rank of heading (atx).
@@ -100,6 +103,10 @@ struct CompileContext<'a> {
     pub tight_stack: Vec<bool>,
     /// List of definitions.
     pub definitions: Vec<Definition>,
+    /// List of definitions.
+    pub gfm_footnote_definitions: Vec<(String, String)>,
+    pub gfm_footnote_definition_calls: Vec<(String, usize)>,
+    pub gfm_footnote_definition_stack: Vec<(usize, usize)>,
     // Fields used to influance the current compilation.
     /// Ignore the next line ending.
     pub slurp_one_line_ending: bool,
@@ -128,7 +135,7 @@ impl<'a> CompileContext<'a> {
     pub fn new(
         events: &'a [Event],
         bytes: &'a [u8],
-        options: &Options,
+        options: &'a Options,
         line_ending: LineEnding,
     ) -> CompileContext<'a> {
         CompileContext {
@@ -143,6 +150,9 @@ impl<'a> CompileContext<'a> {
             list_expect_first_marker: None,
             media_stack: vec![],
             definitions: vec![],
+            gfm_footnote_definitions: vec![],
+            gfm_footnote_definition_calls: vec![],
+            gfm_footnote_definition_stack: vec![],
             tight_stack: vec![],
             slurp_one_line_ending: false,
             image_alt_inside: false,
@@ -161,6 +171,7 @@ impl<'a> CompileContext<'a> {
             allow_dangerous_html: options.allow_dangerous_html,
             buffers: vec![String::new()],
             index: 0,
+            options,
         }
     }
 
@@ -243,6 +254,11 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
     //
     // To speed things up, we collect the places we can jump over for the
     // second pass.
+    //
+    // We don’t need to handle GFM footnote definitions like this, because
+    // unlike normal definitions, what they produce is not used in calls.
+    // It would also get very complex, because footnote definitions can be
+    // nested.
     while index < events.len() {
         let event = &events[index];
 
@@ -250,15 +266,15 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
             handle(&mut context, index);
         }
 
-        if event.name == Name::Definition {
-            if event.kind == Kind::Enter {
+        if event.kind == Kind::Enter {
+            if event.name == Name::Definition {
                 handle(&mut context, index); // Also handle start.
                 definition_inside = true;
                 definition_indices.push((index, index));
-            } else {
-                definition_inside = false;
-                definition_indices.last_mut().unwrap().1 = index;
             }
+        } else if event.name == Name::Definition {
+            definition_inside = false;
+            definition_indices.last_mut().unwrap().1 = index;
         }
 
         index += 1;
@@ -278,12 +294,15 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
             jump = definition_indices
                 .get(definition_index)
                 .unwrap_or(&jump_default);
-            // Ignore line endings after definitions.
-            context.slurp_one_line_ending = true;
         } else {
             handle(&mut context, index);
             index += 1;
         }
+    }
+
+    // No section to generate.
+    if !context.gfm_footnote_definition_calls.is_empty() {
+        generate_footnote_section(&mut context);
     }
 
     assert_eq!(context.buffers.len(), 1, "expected 1 final buffer");
@@ -312,6 +331,7 @@ fn enter(context: &mut CompileContext) {
         | Name::CodeFencedFenceMeta
         | Name::DefinitionLabelString
         | Name::DefinitionTitleString
+        | Name::GfmFootnoteDefinitionPrefix
         | Name::HeadingAtxText
         | Name::HeadingSetextText
         | Name::Label
@@ -326,6 +346,8 @@ fn enter(context: &mut CompileContext) {
         Name::DefinitionDestinationString => on_enter_definition_destination_string(context),
         Name::Emphasis => on_enter_emphasis(context),
         Name::Frontmatter => on_enter_frontmatter(context),
+        Name::GfmFootnoteDefinition => on_enter_gfm_footnote_definition(context),
+        Name::GfmFootnoteCall => on_enter_gfm_footnote_call(context),
         Name::GfmStrikethrough => on_enter_gfm_strikethrough(context),
         Name::GfmTaskListItemCheck => on_enter_gfm_task_list_item_check(context),
         Name::HtmlFlow => on_enter_html_flow(context),
@@ -374,6 +396,12 @@ fn exit(context: &mut CompileContext) {
         Name::GfmAutolinkLiteralProtocol => on_exit_gfm_autolink_literal_protocol(context),
         Name::GfmAutolinkLiteralWww => on_exit_gfm_autolink_literal_www(context),
         Name::GfmAutolinkLiteralEmail => on_exit_gfm_autolink_literal_email(context),
+        Name::GfmFootnoteCall => on_exit_gfm_footnote_call(context),
+        Name::GfmFootnoteDefinitionLabelString => {
+            on_exit_gfm_footnote_definition_label_string(context);
+        }
+        Name::GfmFootnoteDefinitionPrefix => on_exit_gfm_footnote_definition_prefix(context),
+        Name::GfmFootnoteDefinition => on_exit_gfm_footnote_definition(context),
         Name::GfmStrikethrough => on_exit_gfm_strikethrough(context),
         Name::GfmTaskListItemCheck => on_exit_gfm_task_list_item_check(context),
         Name::GfmTaskListItemValueChecked => on_exit_gfm_task_list_item_value_checked(context),
@@ -470,6 +498,23 @@ fn on_enter_emphasis(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`Frontmatter`][Name::Frontmatter].
 fn on_enter_frontmatter(context: &mut CompileContext) {
     context.buffer();
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmFootnoteDefinition`][Name::GfmFootnoteDefinition].
+fn on_enter_gfm_footnote_definition(context: &mut CompileContext) {
+    context.tight_stack.push(false);
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmFootnoteCall`][Name::GfmFootnoteCall].
+fn on_enter_gfm_footnote_call(context: &mut CompileContext) {
+    context.media_stack.push(Media {
+        image: false,
+        label_id: None,
+        label: None,
+        reference_id: None,
+        destination: None,
+        title: None,
+    });
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`GfmStrikethrough`][Name::GfmStrikethrough].
@@ -961,6 +1006,92 @@ fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
     on_exit_autolink_email(context);
 }
 
+/// Handle [`Exit`][Kind::Exit]:[`GfmFootnoteCall`][Name::GfmFootnoteCall].
+fn on_exit_gfm_footnote_call(context: &mut CompileContext) {
+    let indices = context.media_stack.pop().unwrap().label_id.unwrap();
+    let id =
+        normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str());
+    let safe_id = sanitize_uri(&id.to_lowercase(), &None);
+    let mut call_index = 0;
+
+    // See if this has been called before.
+    while call_index < context.gfm_footnote_definition_calls.len() {
+        if context.gfm_footnote_definition_calls[call_index].0 == id {
+            break;
+        }
+        call_index += 1;
+    }
+
+    // New.
+    if call_index == context.gfm_footnote_definition_calls.len() {
+        context.gfm_footnote_definition_calls.push((id, 0));
+    }
+
+    // Increment.
+    context.gfm_footnote_definition_calls[call_index].1 += 1;
+
+    // No call is output in an image alt, though the definition and
+    // backreferences are generated as if it was the case.
+    if context.image_alt_inside {
+        return;
+    }
+
+    context.push("<sup><a href=\"#");
+    if let Some(ref value) = context.options.gfm_footnote_clobber_prefix {
+        context.push(&encode(value, context.encode_html));
+    } else {
+        context.push("user-content-");
+    }
+    context.push("fn-");
+    context.push(&safe_id);
+    context.push("\" id=\"");
+    if let Some(ref value) = context.options.gfm_footnote_clobber_prefix {
+        context.push(&encode(value, context.encode_html));
+    } else {
+        context.push("user-content-");
+    }
+    context.push("fnref-");
+    context.push(&safe_id);
+    if context.gfm_footnote_definition_calls[call_index].1 > 1 {
+        context.push("-");
+        context.push(
+            &context.gfm_footnote_definition_calls[call_index]
+                .1
+                .to_string(),
+        );
+    }
+    context.push("\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">");
+
+    context.push(&(call_index + 1).to_string());
+    context.push("</a></sup>");
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmFootnoteDefinitionLabelString`][Name::GfmFootnoteDefinitionLabelString].
+fn on_exit_gfm_footnote_definition_label_string(context: &mut CompileContext) {
+    context
+        .gfm_footnote_definition_stack
+        .push(Position::from_exit_event(context.events, context.index).to_indices());
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmFootnoteDefinitionPrefix`][Name::GfmFootnoteDefinitionPrefix].
+fn on_exit_gfm_footnote_definition_prefix(context: &mut CompileContext) {
+    // Drop the prefix.
+    context.resume();
+    // Capture everything until end of definition.
+    context.buffer();
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmFootnoteDefinition`][Name::GfmFootnoteDefinition].
+fn on_exit_gfm_footnote_definition(context: &mut CompileContext) {
+    let value = context.resume();
+    let indices = context.gfm_footnote_definition_stack.pop().unwrap();
+    context.tight_stack.pop();
+    context.gfm_footnote_definitions.push((
+        normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str()),
+        value,
+    ));
+}
+
 /// Handle [`Exit`][Kind::Exit]:[`GfmStrikethrough`][Name::GfmStrikethrough].
 fn on_exit_gfm_strikethrough(context: &mut CompileContext) {
     if !context.image_alt_inside {
@@ -1080,7 +1211,12 @@ fn on_exit_label_text(context: &mut CompileContext) {
 fn on_exit_line_ending(context: &mut CompileContext) {
     if context.code_text_inside {
         context.push(" ");
-    } else if context.slurp_one_line_ending {
+    } else if context.slurp_one_line_ending
+        // Ignore line endings after definitions.
+        || (context.index > 1
+            && (context.events[context.index - 2].name == Name::Definition
+                || context.events[context.index - 2].name == Name::GfmFootnoteDefinition))
+    {
         context.slurp_one_line_ending = false;
     } else {
         context.push(&encode(
@@ -1113,9 +1249,12 @@ fn on_exit_list_item(context: &mut CompileContext) {
         context.index - 1,
         &[
             Name::BlankLineEnding,
+            Name::BlockQuotePrefix,
             Name::LineEnding,
             Name::SpaceOrTab,
-            Name::BlockQuotePrefix,
+            // Also ignore things that don’t contribute to the document.
+            Name::Definition,
+            Name::GfmFootnoteDefinition,
         ],
     );
     let previous = &context.events[before_item];
@@ -1167,7 +1306,6 @@ fn on_exit_media(context: &mut CompileContext) {
 
     let media = context.media_stack.pop().unwrap();
     let label = media.label.unwrap();
-    let image_alt_inside = context.image_alt_inside;
     let id = media.reference_id.or(media.label_id).map(|indices| {
         normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str())
     });
@@ -1190,7 +1328,7 @@ fn on_exit_media(context: &mut CompileContext) {
         None
     };
 
-    if !image_alt_inside {
+    if !is_in_image {
         if media.image {
             context.push("<img src=\"");
         } else {
@@ -1223,7 +1361,7 @@ fn on_exit_media(context: &mut CompileContext) {
         context.push(&label);
     }
 
-    if !image_alt_inside {
+    if !is_in_image {
         context.push("\"");
 
         let title = if let Some(index) = definition_index {
@@ -1248,7 +1386,7 @@ fn on_exit_media(context: &mut CompileContext) {
     if !media.image {
         context.push(&label);
 
-        if !image_alt_inside {
+        if !is_in_image {
             context.push("</a>");
         }
     }
@@ -1298,6 +1436,154 @@ fn on_exit_strong(context: &mut CompileContext) {
 fn on_exit_thematic_break(context: &mut CompileContext) {
     context.line_ending_if_needed();
     context.push("<hr />");
+}
+
+/// Generate a footnote section.
+fn generate_footnote_section(context: &mut CompileContext) {
+    context.line_ending_if_needed();
+    context.push("<section data-footnotes=\"\" class=\"footnotes\"><");
+    if let Some(ref value) = context.options.gfm_footnote_label_tag_name {
+        context.push(&encode(value, context.encode_html));
+    } else {
+        context.push("h2");
+    }
+    context.push(" id=\"footnote-label\" ");
+    if let Some(ref value) = context.options.gfm_footnote_label_attributes {
+        context.push(value);
+    } else {
+        context.push("class=\"sr-only\"");
+    }
+    context.push(">");
+    if let Some(ref value) = context.options.gfm_footnote_label {
+        context.push(&encode(value, context.encode_html));
+    } else {
+        context.push("Footnotes");
+    }
+    context.push("</");
+    if let Some(ref value) = context.options.gfm_footnote_label_tag_name {
+        context.push(&encode(value, context.encode_html));
+    } else {
+        context.push("h2");
+    }
+    context.push(">");
+    context.line_ending();
+    context.push("<ol>");
+
+    let mut index = 0;
+    while index < context.gfm_footnote_definition_calls.len() {
+        generate_footnote_item(context, index);
+        index += 1;
+    }
+
+    context.line_ending();
+    context.push("</ol>");
+    context.line_ending();
+    context.push("</section>");
+    context.line_ending();
+}
+
+/// Generate a footnote item from a call.
+fn generate_footnote_item(context: &mut CompileContext, index: usize) {
+    let id = &context.gfm_footnote_definition_calls[index].0;
+    let safe_id = sanitize_uri(&id.to_lowercase(), &None);
+
+    // Find definition: we’ll always find it.
+    let mut definition_index = 0;
+    while definition_index < context.gfm_footnote_definitions.len() {
+        if &context.gfm_footnote_definitions[definition_index].0 == id {
+            break;
+        }
+        definition_index += 1;
+    }
+
+    debug_assert_ne!(
+        definition_index,
+        context.gfm_footnote_definitions.len(),
+        "expected definition"
+    );
+
+    context.line_ending();
+    context.push("<li id=\"");
+    if let Some(ref value) = context.options.gfm_footnote_clobber_prefix {
+        context.push(&encode(value, context.encode_html));
+    } else {
+        context.push("user-content-");
+    }
+    context.push("fn-");
+    context.push(&safe_id);
+    context.push("\">");
+    context.line_ending();
+
+    // Create one or more backreferences.
+    let mut reference_index = 0;
+    let mut backreferences = String::new();
+    while reference_index < context.gfm_footnote_definition_calls[index].1 {
+        if reference_index != 0 {
+            backreferences.push(' ');
+        }
+        backreferences.push_str("<a href=\"#");
+        if let Some(ref value) = context.options.gfm_footnote_clobber_prefix {
+            backreferences.push_str(&encode(value, context.encode_html));
+        } else {
+            backreferences.push_str("user-content-");
+        }
+        backreferences.push_str("fnref-");
+        backreferences.push_str(&safe_id);
+        if reference_index != 0 {
+            backreferences.push('-');
+            backreferences.push_str(&(reference_index + 1).to_string());
+        }
+        backreferences.push_str(
+            "\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"",
+        );
+        if let Some(ref value) = context.options.gfm_footnote_back_label {
+            backreferences.push_str(&encode(value, context.encode_html));
+        } else {
+            backreferences.push_str("Back to content");
+        }
+        backreferences.push_str("\">↩");
+        if reference_index != 0 {
+            backreferences.push_str("<sup>");
+            backreferences.push_str(&(reference_index + 1).to_string());
+            backreferences.push_str("</sup>");
+        }
+        backreferences.push_str("</a>");
+
+        reference_index += 1;
+    }
+
+    let value = context.gfm_footnote_definitions[definition_index].1.clone();
+    let bytes = value.as_bytes();
+    let mut byte_index = bytes.len();
+    // Move back past EOL.
+    while byte_index > 0 && matches!(bytes[byte_index - 1], b'\n' | b'\r') {
+        byte_index -= 1;
+    }
+    // Check if it ends in `</p>`.
+    // This is a bit funky if someone wrote a safe paragraph by hand in
+    // there.
+    // But in all other cases, `<` and `>` would be encoded, so we can be
+    // sure that this is generated by our compiler.
+    if byte_index > 3
+        && bytes[byte_index - 4] == b'<'
+        && bytes[byte_index - 3] == b'/'
+        && bytes[byte_index - 2] == b'p'
+        && bytes[byte_index - 1] == b'>'
+    {
+        let (before, after) = bytes.split_at(byte_index - 4);
+        let mut result = String::new();
+        result.push_str(str::from_utf8(before).unwrap());
+        result.push(' ');
+        result.push_str(&backreferences);
+        result.push_str(str::from_utf8(after).unwrap());
+        context.push(&result);
+    } else {
+        context.push(&value);
+        context.line_ending_if_needed();
+        context.push(&backreferences);
+    }
+    context.line_ending_if_needed();
+    context.push("</li>");
 }
 
 /// Generate an autolink (used by unicode autolinks and GFM autolink literals).

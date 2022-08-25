@@ -175,14 +175,14 @@ pub fn label_after(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.token_2 = Name::Data;
     tokenizer.tokenize_state.token_3 = Name::Data;
 
-    tokenizer.tokenize_state.end = skip::to_back(
-        &tokenizer.events,
-        tokenizer.events.len() - 1,
-        &[Name::DefinitionLabelString],
-    );
-
     match tokenizer.current {
         Some(b':') => {
+            tokenizer.tokenize_state.end = skip::to_back(
+                &tokenizer.events,
+                tokenizer.events.len() - 1,
+                &[Name::DefinitionLabelString],
+            );
+
             tokenizer.enter(Name::DefinitionMarker);
             tokenizer.consume();
             tokenizer.exit(Name::DefinitionMarker);

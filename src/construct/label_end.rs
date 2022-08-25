@@ -46,6 +46,8 @@
 //! attribute in case of a [label start (link)][label_start_link], and an
 //! `src` attribute in case of a [label start (image)][label_start_image].
 //! The title is formed, optionally, on either `<a>` or `<img>`.
+//! When matched with a [gfm label start (footnote)][gfm_label_start_footnote],
+//! no reference or resource can follow the label end.
 //!
 //! For info on how to encode characters in URLs, see
 //! [`destination`][destination].
@@ -53,11 +55,13 @@
 //! `<img>` when compiling, see
 //! [`sanitize_uri`][sanitize_uri].
 //!
+//! In case of a matched [gfm label start (footnote)][gfm_label_start_footnote],
+//! a counter is injected.
 //! In case of a matched [label start (link)][label_start_link], the interpreted
 //! content between it and the label end, is placed between the opening and
 //! closing tags.
-//! Otherwise, the text is also interpreted, but used *without* the resulting
-//! tags:
+//! In case of a matched [label start (image)][label_start_image], the text is
+//! also interpreted, but used *without* the resulting tags:
 //!
 //! ```markdown
 //! [a *b* c](#)
@@ -75,8 +79,9 @@
 //! It is possible to use images in links.
 //! It’s somewhat possible to have links in images (the text will be used, not
 //! the HTML, see above).
-//! But it’s not possible to use links in links.
-//! The “deepest” link wins.
+//! But it’s not possible to use links (or footnotes, which result in links)
+//! in links.
+//! The “deepest” link (or footnote) wins.
 //! To illustrate:
 //!
 //! ```markdown
@@ -104,17 +109,26 @@
 //! It can also match with [label start (image)][label_start_image], in which
 //! case they form an `<img>` element.
 //! See [*§ 4.8.3 The `img` element*][html_img] in the HTML spec for more info.
+//! It can also match with [gfm label start (footnote)][gfm_label_start_footnote],
+//! in which case they form `<sup>` and `<a>` elements in HTML.
+//! See [*§ 4.5.19 The `sub` and `sup` elements*][html_sup] and
+//! [*§ 4.5.1 The `a` element*][html_a] in the HTML spec for more info.
 //!
 //! ## Recommendation
 //!
-//! It is recommended to use labels instead of [autolinks][autolink].
+//! It is recommended to use labels for links instead of [autolinks][autolink].
 //! Labels allow more characters in URLs, and allow relative URLs and `www.`
 //! URLs.
 //! They also allow for descriptive text to explain the URL in prose.
 //!
+//! In footnotes, it’s recommended to use words instead of numbers (or letters
+//! or anything with an order) as calls.
+//! That makes it easier to reuse and reorder footnotes.
+//!
 //! ## Tokens
 //!
 //! *   [`Data`][Name::Data]
+//! *   [`GfmFootnoteCall`][Name::GfmFootnoteCall]
 //! *   [`Image`][Name::Image]
 //! *   [`Label`][Name::Label]
 //! *   [`LabelEnd`][Name::LabelEnd]
@@ -140,9 +154,14 @@
 //! ## References
 //!
 //! *   [`label-end.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-end.js)
+//! *   [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-footnote)
 //! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.30/#link-reference-definitions)
 //! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.30/#links)
 //! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.30/#images)
+//!
+//! > 👉 **Note**: Footnotes are not specified in GFM yet.
+//! > See [`github/cmark-gfm#270`](https://github.com/github/cmark-gfm/issues/270)
+//! > for the related issue.
 //!
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text
@@ -151,25 +170,28 @@
 //! [label]: crate::construct::partial_label
 //! [label_start_image]: crate::construct::label_start_image
 //! [label_start_link]: crate::construct::label_start_link
+//! [gfm_label_start_footnote]: crate::construct::gfm_label_start_footnote
 //! [definition]: crate::construct::definition
 //! [autolink]: crate::construct::autolink
 //! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
 //! [normalize_identifier]: crate::util::normalize_identifier::normalize_identifier
 //! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html_img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element
+//! [html_sup]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements
 
 use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::{Event, Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
-use crate::tokenizer::{Label, LabelStart, Tokenizer};
+use crate::tokenizer::{Label, LabelKind, LabelStart, Tokenizer};
 use crate::util::{
     constant::RESOURCE_DESTINATION_BALANCE_MAX,
     normalize_identifier::normalize_identifier,
     skip,
     slice::{Position, Slice},
 };
-use alloc::vec;
+use alloc::{string::String, vec};
+extern crate std;
 
 /// Start of label end.
 ///
@@ -190,7 +212,15 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 
             tokenizer.tokenize_state.end = tokenizer.events.len();
 
-            // Mark as balanced if the info is inactive.
+            // If the corresponding label (link) start is marked as inactive,
+            // it means we’d be wrapping a link, like this:
+            //
+            // ```markdown
+            // > | a [b [c](d) e](f) g.
+            //                  ^
+            // ```
+            //
+            // We can’t have that, so it’s just balanced brackets.
             if label_start.inactive {
                 return State::Retry(StateName::LabelEndNok);
             }
@@ -220,19 +250,34 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
-    let start = tokenizer.tokenize_state.label_starts.last().unwrap();
-    let defined = tokenizer
-        .parse_state
-        .definitions
-        .contains(&normalize_identifier(
-            // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
-            Slice::from_indices(
-                tokenizer.parse_state.bytes,
-                tokenizer.events[start.start.1].point.index,
-                tokenizer.events[tokenizer.tokenize_state.end].point.index,
-            )
-            .as_str(),
-        ));
+    let start_index = tokenizer.tokenize_state.label_starts.len() - 1;
+    let start = &tokenizer.tokenize_state.label_starts[start_index];
+
+    let indices = (
+        tokenizer.events[start.start.1].point.index,
+        tokenizer.events[tokenizer.tokenize_state.end].point.index,
+    );
+
+    // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
+    let mut id = normalize_identifier(
+        Slice::from_indices(tokenizer.parse_state.bytes, indices.0, indices.1).as_str(),
+    );
+
+    // See if this matches a footnote definition.
+    if start.kind == LabelKind::GfmFootnote {
+        if tokenizer.parse_state.gfm_footnote_definitions.contains(&id) {
+            return State::Retry(StateName::LabelEndOk);
+        }
+
+        // Nope, this might be a normal link?
+        tokenizer.tokenize_state.label_starts[start_index].kind = LabelKind::GfmUndefinedFootnote;
+        let mut new_id = String::new();
+        new_id.push('^');
+        new_id.push_str(&id);
+        id = new_id;
+    }
+
+    let defined = tokenizer.parse_state.definitions.contains(&id);
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
@@ -302,17 +347,15 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
     // Remove the start.
     let label_start = tokenizer.tokenize_state.label_starts.pop().unwrap();
 
-    let is_link = tokenizer.events[label_start.start.0].name == Name::LabelLink;
-
-    // If this is a link, we need to mark earlier link starts as no longer
-    // viable for use (as they would otherwise contain a link).
+    // If this is a link or footnote, we need to mark earlier link starts as no
+    // longer viable for use (as they would otherwise contain a link).
     // These link starts are still looking for balanced closing brackets, so
-    // we can’t remove them.
-    if is_link {
+    // we can’t remove them, but we can mark them.
+    if label_start.kind != LabelKind::Image {
         let mut index = 0;
         while index < tokenizer.tokenize_state.label_starts.len() {
             let label_start = &mut tokenizer.tokenize_state.label_starts[index];
-            if tokenizer.events[label_start.start.0].name == Name::LabelLink {
+            if label_start.kind != LabelKind::Image {
                 label_start.inactive = true;
             }
             index += 1;
@@ -320,6 +363,7 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
     }
 
     tokenizer.tokenize_state.labels.push(Label {
+        kind: label_start.kind,
         start: label_start.start,
         end: (tokenizer.tokenize_state.end, tokenizer.events.len() - 1),
     });
@@ -342,9 +386,7 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn nok(tokenizer: &mut Tokenizer) -> State {
     let start = tokenizer.tokenize_state.label_starts.pop().unwrap();
-
     tokenizer.tokenize_state.label_starts_loose.push(start);
-
     tokenizer.tokenize_state.end = 0;
     State::Nok
 }
@@ -615,120 +657,142 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Resolve media.
+/// Resolve images, links, and footnotes.
 ///
-/// This turns matching label start (image, link) and label ends into links and
-/// images, and turns unmatched label starts back into data.
+/// This turns matching label starts and label ends into links, images, and
+/// footnotes, and turns unmatched label starts back into data.
 pub fn resolve(tokenizer: &mut Tokenizer) {
-    let list = tokenizer.tokenize_state.label_starts.split_off(0);
-    mark_as_data(tokenizer, &list);
-    let list = tokenizer.tokenize_state.label_starts_loose.split_off(0);
-    mark_as_data(tokenizer, &list);
+    // Inject labels.
+    let labels = tokenizer.tokenize_state.labels.split_off(0);
+    inject_labels(tokenizer, &labels);
+    // Handle loose starts.
+    let starts = tokenizer.tokenize_state.label_starts.split_off(0);
+    mark_as_data(tokenizer, &starts);
+    let starts = tokenizer.tokenize_state.label_starts_loose.split_off(0);
+    mark_as_data(tokenizer, &starts);
 
-    let media = tokenizer.tokenize_state.labels.split_off(0);
+    tokenizer.map.consume(&mut tokenizer.events);
+}
 
+/// Inject links/images/footnotes.
+fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
     // Add grouping events.
     let mut index = 0;
-    while index < media.len() {
-        let media = &media[index];
-        // LabelLink:Enter or LabelImage:Enter.
-        let group_enter_index = media.start.0;
-        let group_enter_event = &tokenizer.events[group_enter_index];
-        // LabelLink:Exit or LabelImage:Exit.
-        let text_enter_index = media.start.0
-            + (if group_enter_event.name == Name::LabelLink {
-                4
-            } else {
-                6
-            });
-        // LabelEnd:Enter.
-        let text_exit_index = media.end.0;
-        // LabelEnd:Exit.
-        let label_exit_index = media.end.0 + 3;
-        // Resource:Exit, etc.
-        let group_end_index = media.end.1;
-
-        let group_name = if group_enter_event.name == Name::LabelLink {
-            Name::Link
-        } else {
+    while index < labels.len() {
+        let label = &labels[index];
+        let group_name = if label.kind == LabelKind::GfmFootnote {
+            Name::GfmFootnoteCall
+        } else if label.kind == LabelKind::Image {
             Name::Image
+        } else {
+            Name::Link
         };
+
+        // If this is a fine link, which starts with a footnote start that did
+        // not match, we need to inject the caret as data.
+        let mut caret = vec![];
+
+        if label.kind == LabelKind::GfmUndefinedFootnote {
+            // Add caret.
+            caret.push(Event {
+                kind: Kind::Enter,
+                name: Name::Data,
+                // Enter:GfmFootnoteCallMarker.
+                point: tokenizer.events[label.start.1 - 2].point.clone().clone(),
+                link: None,
+            });
+            caret.push(Event {
+                kind: Kind::Exit,
+                name: Name::Data,
+                // Exit:GfmFootnoteCallMarker.
+                point: tokenizer.events[label.start.1 - 1].point.clone(),
+                link: None,
+            });
+            // Change and move label end.
+            tokenizer.events[label.start.0].name = Name::LabelLink;
+            tokenizer.events[label.start.1].name = Name::LabelLink;
+            tokenizer.events[label.start.1].point = caret[0].point.clone();
+            // Remove the caret.
+            // Enter:GfmFootnoteCallMarker, Exit:GfmFootnoteCallMarker.
+            tokenizer.map.add(label.start.1 - 2, 2, vec![]);
+        }
 
         // Insert a group enter and label enter.
         tokenizer.map.add(
-            group_enter_index,
+            label.start.0,
             0,
             vec![
                 Event {
                     kind: Kind::Enter,
                     name: group_name.clone(),
-                    point: group_enter_event.point.clone(),
+                    point: tokenizer.events[label.start.0].point.clone(),
                     link: None,
                 },
                 Event {
                     kind: Kind::Enter,
                     name: Name::Label,
-                    point: group_enter_event.point.clone(),
+                    point: tokenizer.events[label.start.0].point.clone(),
                     link: None,
                 },
             ],
         );
 
         // Empty events not allowed.
-        if text_enter_index != text_exit_index {
-            // Insert a text enter.
+        // Though: if this was what looked like a footnote, but didn’t match,
+        // it’s a link instead, and we need to inject the `^`.
+        if label.start.1 != label.end.0 || !caret.is_empty() {
             tokenizer.map.add(
-                text_enter_index,
+                label.start.1 + 1,
                 0,
                 vec![Event {
                     kind: Kind::Enter,
                     name: Name::LabelText,
-                    point: tokenizer.events[text_enter_index].point.clone(),
+                    point: tokenizer.events[label.start.1].point.clone(),
                     link: None,
                 }],
             );
-
-            // Insert a text exit.
             tokenizer.map.add(
-                text_exit_index,
+                label.end.0,
                 0,
                 vec![Event {
                     kind: Kind::Exit,
                     name: Name::LabelText,
-                    point: tokenizer.events[text_exit_index].point.clone(),
+                    point: tokenizer.events[label.end.0].point.clone(),
                     link: None,
                 }],
             );
         }
 
+        if !caret.is_empty() {
+            tokenizer.map.add(label.start.1 + 1, 0, caret);
+        }
+
         // Insert a label exit.
         tokenizer.map.add(
-            label_exit_index + 1,
+            label.end.0 + 4,
             0,
             vec![Event {
                 kind: Kind::Exit,
                 name: Name::Label,
-                point: tokenizer.events[label_exit_index].point.clone(),
+                point: tokenizer.events[label.end.0 + 3].point.clone(),
                 link: None,
             }],
         );
 
         // Insert a group exit.
         tokenizer.map.add(
-            group_end_index + 1,
+            label.end.1 + 1,
             0,
             vec![Event {
                 kind: Kind::Exit,
                 name: group_name,
-                point: tokenizer.events[group_end_index].point.clone(),
+                point: tokenizer.events[label.end.1].point.clone(),
                 link: None,
             }],
         );
 
         index += 1;
     }
-
-    tokenizer.map.consume(&mut tokenizer.events);
 }
 
 /// Remove loose label starts.

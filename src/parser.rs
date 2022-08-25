@@ -17,8 +17,10 @@ pub struct ParseState<'a> {
     pub options: &'a Options,
     /// List of chars.
     pub bytes: &'a [u8],
-    /// Set of defined identifiers.
+    /// Set of defined definition identifiers.
     pub definitions: Vec<String>,
+    /// Set of defined GFM footnote definition identifiers.
+    pub gfm_footnote_definitions: Vec<String>,
 }
 
 /// Turn a string of markdown into events.
@@ -29,6 +31,7 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8])
         options,
         bytes: value.as_bytes(),
         definitions: vec![],
+        gfm_footnote_definitions: vec![],
     };
 
     let mut tokenizer = Tokenizer::new(
@@ -50,7 +53,10 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8])
 
     let mut events = tokenizer.events;
 
-    parse_state.definitions = tokenizer.tokenize_state.definitions;
+    let footnote = tokenizer.tokenize_state.gfm_footnote_definitions;
+    let normal = tokenizer.tokenize_state.definitions;
+    parse_state.gfm_footnote_definitions = footnote;
+    parse_state.definitions = normal;
 
     while !subtokenize(&mut events, &parse_state) {}
 

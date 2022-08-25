@@ -1,12 +1,13 @@
 //! The document content type.
 //!
-//! **Document** represents the containers, such as block quotes and lists,
-//! which structure the document and contain other sections.
+//! **Document** represents the containers, such as block quotes, list items,
+//! or GFM footnotes, which structure the document and contain other sections.
 //!
 //! The constructs found in flow are:
 //!
 //! *   [Block quote][crate::construct::block_quote]
 //! *   [List item][crate::construct::list_item]
+//! *   [GFM: Footnote definition][crate::construct::gfm_footnote_definition]
 
 use crate::event::{Content, Event, Kind, Link, Name};
 use crate::state::{Name as StateName, State};
@@ -99,6 +100,7 @@ pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
 
         let name = match container.kind {
             Container::BlockQuote => StateName::BlockQuoteContStart,
+            Container::GfmFootnoteDefinition => StateName::GfmFootnoteDefinitionContStart,
             Container::ListItem => StateName::ListItemContStart,
         };
 
@@ -185,7 +187,7 @@ pub fn container_new_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State {
     // List item?
-    // We replace the empty block quote container for this new list one.
+    // We replace the empty block quote container for this new list item one.
     tokenizer.tokenize_state.document_container_stack
         [tokenizer.tokenize_state.document_continued] = ContainerState {
         kind: Container::ListItem,
@@ -200,14 +202,38 @@ pub fn container_new_before_not_block_quote(tokenizer: &mut Tokenizer) -> State 
     State::Retry(StateName::ListItemStart)
 }
 
-/// At new container, but not a list (or block quote).
+/// At new container, but not a block quote or list item.
 //
 /// ```markdown
 /// > | a
 ///     ^
 /// ```
 pub fn container_new_before_not_list(tokenizer: &mut Tokenizer) -> State {
-    // It wasn’t a new block quote or a list.
+    // Footnote definition?
+    // We replace the empty list item container for this new footnote
+    // definition one.
+    tokenizer.tokenize_state.document_container_stack
+        [tokenizer.tokenize_state.document_continued] = ContainerState {
+        kind: Container::GfmFootnoteDefinition,
+        blank_initial: false,
+        size: 0,
+    };
+
+    tokenizer.attempt(
+        State::Next(StateName::DocumentContainerNewAfter),
+        State::Next(StateName::DocumentContainerNewBeforeNotGfmFootnoteDefinition),
+    );
+    State::Retry(StateName::GfmFootnoteDefinitionStart)
+}
+
+/// At new container, but not a block quote, list item, or footnote definition.
+//
+/// ```markdown
+/// > | a
+///     ^
+/// ```
+pub fn container_new_before_not_footnote_definition(tokenizer: &mut Tokenizer) -> State {
+    // It wasn’t a new block quote, list item, or footnote definition.
     // Swap the new container (in the middle) with the existing one (at the end).
     // Drop what was in the middle.
     tokenizer
@@ -227,7 +253,7 @@ pub fn container_new_before_not_list(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn container_new_after(tokenizer: &mut Tokenizer) -> State {
-    // It was a new block quote or a list.
+    // It was a new block quote, list item, or footnote definition.
     // Swap the new container (in the middle) with the existing one (at the end).
     // Take the new container.
     let container = tokenizer
@@ -453,6 +479,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
             let container = stack_close.pop().unwrap();
             let name = match container.kind {
                 Container::BlockQuote => Name::BlockQuote,
+                Container::GfmFootnoteDefinition => Name::GfmFootnoteDefinition,
                 Container::ListItem => Name::ListItem,
             };
 

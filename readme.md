@@ -141,7 +141,7 @@ They are not enabled by default but can be turned on with `options.constructs`.
 - [x] frontmatter
 - [ ] gfm
   - [x] autolink literal
-  - [ ] footnote
+  - [x] footnote
   - [x] strikethrough
   - [ ] table
   - [ ] tagfilter

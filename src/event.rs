@@ -753,7 +753,8 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`Definition`][Name::Definition]
+    ///     [`Definition`][Name::Definition],
+    ///     [`GfmFootnoteDefinition`][Name::GfmFootnoteDefinition]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -1019,7 +1020,172 @@ pub enum Name {
     ///     ^^^^^^^^^^^^^^^
     /// ```
     GfmAutolinkLiteralWww,
-    /// GFM: Strikethrough.
+    /// GFM extension: whole footnote call.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     [`Label`][Name::Label]
+    /// *   **Construct**:
+    ///     [`label_end`][crate::construct::label_end]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a [^b] c
+    ///       ^^^^
+    /// ```
+    GfmFootnoteCall,
+    /// GFM extension: label start (footnote).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`Label`][Name::Label]
+    /// *   **Content model**:
+    ///     [`GfmFootnoteCallMarker`][Name::GfmFootnoteCallMarker],
+    ///     [`LabelMarker`][Name::LabelMarker]
+    /// *   **Construct**:
+    ///     [`gfm_label_start_footnote`][crate::construct::gfm_label_start_footnote]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a [^b] c
+    ///       ^^
+    /// ```
+    GfmFootnoteCallLabel,
+    /// GFM extension: label start (footnote) marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmFootnoteCallLabel`][Name::GfmFootnoteCallLabel]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_label_start_footnote`][crate::construct::gfm_label_start_footnote]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a [^b] c
+    ///        ^
+    /// ```
+    GfmFootnoteCallMarker,
+    /// GFM extension: whole footnote definition.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [document content][crate::construct::document]
+    /// *   **Content model**:
+    ///     [`GfmFootnoteDefinitionPrefix`][Name::GfmFootnoteDefinitionPrefix],
+    ///     [document content][crate::construct::flow]
+    /// *   **Construct**:
+    ///     [`gfm_footnote_definition`][crate::construct::gfm_footnote_definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [^a]: b
+    ///     ^^^^^^^
+    /// ```
+    GfmFootnoteDefinition,
+    /// GFM extension: footnote definition prefix.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmFootnoteDefinition`][Name::GfmFootnoteDefinition]
+    /// *   **Content model**:
+    ///     [`DefinitionMarker`][Name::DefinitionMarker],
+    ///     [`GfmFootnoteDefinitionLabel`][Name::GfmFootnoteDefinitionLabel],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`gfm_footnote_definition`][crate::construct::gfm_footnote_definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [^a]: b
+    ///     ^^^^^^
+    /// ```
+    GfmFootnoteDefinitionPrefix,
+    /// GFM extension: footnote definition label.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmFootnoteDefinitionPrefix`][Name::GfmFootnoteDefinitionPrefix]
+    /// *   **Content model**:
+    ///     [`GfmFootnoteDefinitionLabelMarker`][Name::GfmFootnoteDefinitionLabelMarker],
+    ///     [`GfmFootnoteDefinitionLabelString`][Name::GfmFootnoteDefinitionLabelString],
+    ///     [`GfmFootnoteDefinitionMarker`][Name::GfmFootnoteDefinitionMarker]
+    /// *   **Construct**:
+    ///     [`gfm_footnote_definition`][crate::construct::gfm_footnote_definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [^a]: b
+    ///     ^^^^
+    /// ```
+    GfmFootnoteDefinitionLabel,
+    /// GFM extension: footnote definition label marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmFootnoteDefinitionLabel`][Name::GfmFootnoteDefinitionLabel]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_footnote_definition`][crate::construct::gfm_footnote_definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [^a]: b
+    ///     ^  ^
+    GfmFootnoteDefinitionLabelMarker,
+    /// GFM extension: footnote definition label string.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmFootnoteDefinitionLabel`][Name::GfmFootnoteDefinitionLabel]
+    /// *   **Content model**:
+    ///     [string content][crate::construct::string]
+    /// *   **Construct**:
+    ///     [`gfm_footnote_definition`][crate::construct::gfm_footnote_definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [^a]: b
+    ///       ^
+    GfmFootnoteDefinitionLabelString,
+    /// GFM extension: footnote definition marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmFootnoteDefinitionLabel`][Name::GfmFootnoteDefinitionLabel]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_footnote_definition`][crate::construct::gfm_footnote_definition]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [^a]: b
+    ///      ^
+    GfmFootnoteDefinitionMarker,
+    /// GFM extension: Strikethrough.
     ///
     /// ## Info
     ///
@@ -1038,7 +1204,7 @@ pub enum Name {
     ///     ^^^
     /// ```
     GfmStrikethrough,
-    /// Gfm: Strikethrough sequence.
+    /// GFM extension: Strikethrough sequence.
     ///
     /// ## Info
     ///
@@ -1056,7 +1222,7 @@ pub enum Name {
     ///     ^ ^
     /// ```
     GfmStrikethroughSequence,
-    /// Gfm: Strikethrough text.
+    /// GFM extension: Strikethrough text.
     ///
     /// ## Info
     ///
@@ -1074,7 +1240,7 @@ pub enum Name {
     ///      ^
     /// ```
     GfmStrikethroughText,
-    /// GFM: Task list item check.
+    /// GFM extension: task list item check.
     ///
     /// ## Info
     ///
@@ -1094,7 +1260,7 @@ pub enum Name {
     ///       ^^^
     /// ```
     GfmTaskListItemCheck,
-    /// GFM: Task list item check marker.
+    /// GFM extension: task list item check marker.
     ///
     /// ## Info
     ///
@@ -1112,7 +1278,7 @@ pub enum Name {
     ///       ^ ^
     /// ```
     GfmTaskListItemMarker,
-    /// GFM: Task list item value: checked.
+    /// GFM extension: task list item value: checked.
     ///
     /// ## Info
     ///
@@ -1130,7 +1296,7 @@ pub enum Name {
     ///        ^
     /// ```
     GfmTaskListItemValueChecked,
-    /// GFM: Task list item value: unchecked.
+    /// GFM extension: task list item value: unchecked.
     ///
     /// ## Info
     ///
@@ -2105,7 +2271,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 50] = [
+pub const VOID_EVENTS: [Name; 53] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2134,6 +2300,9 @@ pub const VOID_EVENTS: [Name; 50] = [
     Name::GfmAutolinkLiteralEmail,
     Name::GfmAutolinkLiteralProtocol,
     Name::GfmAutolinkLiteralWww,
+    Name::GfmFootnoteCallMarker,
+    Name::GfmFootnoteDefinitionLabelMarker,
+    Name::GfmFootnoteDefinitionMarker,
     Name::GfmStrikethroughSequence,
     Name::GfmTaskListItemMarker,
     Name::GfmTaskListItemValueChecked,

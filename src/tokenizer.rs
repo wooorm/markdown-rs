@@ -28,6 +28,8 @@ pub enum Container {
     BlockQuote,
     /// [List item][crate::construct::list_item].
     ListItem,
+    /// [GFM: Footnote definition][crate::construct::gfm_footnote_definition].
+    GfmFootnoteDefinition,
 }
 
 /// Info used to tokenize a container.
@@ -56,9 +58,53 @@ enum ByteAction {
     Insert(u8),
 }
 
+/// Label start kind.
+#[derive(Debug, PartialEq, Eq)]
+pub enum LabelKind {
+    /// Label (image) start.
+    ///
+    /// ```markdown
+    /// > | a ![b] c
+    ///       ^^
+    /// ```
+    ///
+    /// Construct: [Label start (image)][crate::construct::label_start_image].
+    Image,
+    /// Label (image) link.
+    ///
+    /// ```markdown
+    /// > | a [b] c
+    ///       ^
+    /// ```
+    ///
+    /// Construct: [Label start (link)][crate::construct::label_start_link].
+    Link,
+    /// GFM: Label (footnote) link.
+    ///
+    /// ```markdown
+    /// > | a [^b] c
+    ///       ^^
+    /// ```
+    ///
+    /// Construct: [GFM: Label start (footnote)][crate::construct::gfm_label_start_footnote].
+    GfmFootnote,
+    /// GFM: Label (footnote) link, not matching a footnote definition, so
+    /// handled as a label (link) start.
+    ///
+    /// ```markdown
+    /// > | a [^b](c) d
+    ///       ^^
+    /// ```
+    ///
+    /// Construct: [Label end][crate::construct::label_end].
+    GfmUndefinedFootnote,
+}
+
 /// Label start, looking for an end.
 #[derive(Debug)]
 pub struct LabelStart {
+    /// Kind of start.
+    pub kind: LabelKind,
     /// Indices of where the label starts and ends in `events`.
     pub start: (usize, usize),
     /// A boolean used internally to figure out if a (link) label start can’t
@@ -71,6 +117,7 @@ pub struct LabelStart {
 /// Valid label.
 #[derive(Debug)]
 pub struct Label {
+    pub kind: LabelKind,
     /// Indices of label start.
     pub start: (usize, usize),
     /// Indices of label end.
@@ -174,8 +221,10 @@ pub struct TokenizeState<'a> {
     /// Used when tokenizing [text content][crate::construct::text].
     pub labels: Vec<Label>,
 
-    /// List of defined identifiers.
+    /// List of defined definition identifiers.
     pub definitions: Vec<String>,
+    /// List of defined GFM footnote definition identifiers.
+    pub gfm_footnote_definitions: Vec<String>,
 
     /// Whether to connect events.
     pub connect: bool,
@@ -288,6 +337,7 @@ impl<'a> Tokenizer<'a> {
                 document_child: None,
                 document_at_first_paragraph_of_list_item: false,
                 definitions: vec![],
+                gfm_footnote_definitions: vec![],
                 end: 0,
                 label_starts: vec![],
                 label_starts_loose: vec![],

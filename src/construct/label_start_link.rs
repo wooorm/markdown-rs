@@ -34,7 +34,7 @@
 use crate::event::Name;
 use crate::resolve::Name as ResolveName;
 use crate::state::State;
-use crate::tokenizer::{LabelStart, Tokenizer};
+use crate::tokenizer::{LabelKind, LabelStart, Tokenizer};
 
 /// Start of label (link) start.
 ///
@@ -52,6 +52,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Name::LabelMarker);
         tokenizer.exit(Name::LabelLink);
         tokenizer.tokenize_state.label_starts.push(LabelStart {
+            kind: LabelKind::Link,
             start: (start, tokenizer.events.len() - 1),
             inactive: false,
         });

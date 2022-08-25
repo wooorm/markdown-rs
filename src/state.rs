@@ -116,6 +116,7 @@ pub enum Name {
     DocumentContainerNewBefore,
     DocumentContainerNewBeforeNotBlockQuote,
     DocumentContainerNewBeforeNotList,
+    DocumentContainerNewBeforeNotGfmFootnoteDefinition,
     DocumentContainerNewAfter,
     DocumentContainersAfter,
     DocumentFlowInside,
@@ -144,6 +145,17 @@ pub enum Name {
     FrontmatterCloseStart,
     FrontmatterCloseSequence,
     FrontmatterCloseAfter,
+
+    GfmFootnoteDefinitionStart,
+    GfmFootnoteDefinitionLabelBefore,
+    GfmFootnoteDefinitionLabelAfter,
+    GfmFootnoteDefinitionWhitespaceAfter,
+    GfmFootnoteDefinitionContStart,
+    GfmFootnoteDefinitionContBlank,
+    GfmFootnoteDefinitionContFilled,
+
+    GfmLabelStartFootnoteStart,
+    GfmLabelStartFootnoteOpen,
 
     GfmTaskListItemCheckStart,
     GfmTaskListItemCheckInside,
@@ -230,6 +242,7 @@ pub enum Name {
     HtmlTextLineEndingAfterPrefix,
 
     LabelStart,
+    LabelAtMarker,
     LabelAtBreak,
     LabelEolAfter,
     LabelAtBlankLine,
@@ -256,6 +269,7 @@ pub enum Name {
 
     LabelStartImageStart,
     LabelStartImageOpen,
+    LabelStartImageAfter,
 
     LabelStartLinkStart,
 
@@ -299,6 +313,7 @@ pub enum Name {
     TextBefore,
     TextBeforeHtml,
     TextBeforeHardBreakEscape,
+    TextBeforeLabelStartLink,
     TextBeforeData,
 
     ThematicBreakStart,
@@ -421,6 +436,9 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentContainerNewBeforeNotList => {
             construct::document::container_new_before_not_list
         }
+        Name::DocumentContainerNewBeforeNotGfmFootnoteDefinition => {
+            construct::document::container_new_before_not_footnote_definition
+        }
         Name::DocumentContainerNewAfter => construct::document::container_new_after,
         Name::DocumentContainersAfter => construct::document::containers_after,
         Name::DocumentFlowEnd => construct::document::flow_end,
@@ -449,6 +467,19 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::FrontmatterCloseStart => construct::frontmatter::close_start,
         Name::FrontmatterCloseSequence => construct::frontmatter::close_sequence,
         Name::FrontmatterCloseAfter => construct::frontmatter::close_after,
+
+        Name::GfmFootnoteDefinitionStart => construct::gfm_footnote_definition::start,
+        Name::GfmFootnoteDefinitionLabelBefore => construct::gfm_footnote_definition::label_before,
+        Name::GfmFootnoteDefinitionLabelAfter => construct::gfm_footnote_definition::label_after,
+        Name::GfmFootnoteDefinitionWhitespaceAfter => {
+            construct::gfm_footnote_definition::whitespace_after
+        }
+        Name::GfmFootnoteDefinitionContStart => construct::gfm_footnote_definition::cont_start,
+        Name::GfmFootnoteDefinitionContBlank => construct::gfm_footnote_definition::cont_blank,
+        Name::GfmFootnoteDefinitionContFilled => construct::gfm_footnote_definition::cont_filled,
+
+        Name::GfmLabelStartFootnoteStart => construct::gfm_label_start_footnote::start,
+        Name::GfmLabelStartFootnoteOpen => construct::gfm_label_start_footnote::open,
 
         Name::GfmTaskListItemCheckStart => construct::gfm_task_list_item_check::start,
         Name::GfmTaskListItemCheckInside => construct::gfm_task_list_item_check::inside,
@@ -563,6 +594,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::HtmlTextLineEndingAfterPrefix => construct::html_text::line_ending_after_prefix,
 
         Name::LabelStart => construct::partial_label::start,
+        Name::LabelAtMarker => construct::partial_label::at_marker,
         Name::LabelAtBreak => construct::partial_label::at_break,
         Name::LabelEolAfter => construct::partial_label::eol_after,
         Name::LabelAtBlankLine => construct::partial_label::at_blank_line,
@@ -591,6 +623,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
 
         Name::LabelStartImageStart => construct::label_start_image::start,
         Name::LabelStartImageOpen => construct::label_start_image::open,
+        Name::LabelStartImageAfter => construct::label_start_image::after,
         Name::LabelStartLinkStart => construct::label_start_link::start,
 
         Name::ListItemStart => construct::list_item::start,
@@ -633,6 +666,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::TextBefore => construct::text::before,
         Name::TextBeforeHtml => construct::text::before_html,
         Name::TextBeforeHardBreakEscape => construct::text::before_hard_break_escape,
+        Name::TextBeforeLabelStartLink => construct::text::before_label_start_link,
         Name::TextBeforeData => construct::text::before_data,
 
         Name::ThematicBreakStart => construct::thematic_break::start,

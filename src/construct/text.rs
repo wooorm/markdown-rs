@@ -11,6 +11,8 @@
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
 //! *   [Code (text)][crate::construct::code_text]
+//! *   [GFM: Label start (footnote)][crate::construct::gfm_label_start_footnote]
+//! *   [GFM: Task list item check][crate::construct::gfm_task_list_item_check]
 //! *   [Hard break (escape)][crate::construct::hard_break_escape]
 //! *   [HTML (text)][crate::construct::html_text]
 //! *   [Label start (image)][crate::construct::label_start_image]
@@ -34,7 +36,7 @@ const MARKERS: [u8; 10] = [
     b'<',  // `autolink`, `html_text`
     b'[',  // `label_start_link`
     b'\\', // `character_escape`, `hard_break_escape`
-    b']',  // `label_end`
+    b']',  // `label_end`, `gfm_label_start_footnote`
     b'_',  // `attention`
     b'`',  // `code_text`
     b'~',  // `attention` (w/ `gfm_strikethrough`)
@@ -104,9 +106,9 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         Some(b'[') => {
             tokenizer.attempt(
                 State::Next(StateName::TextBefore),
-                State::Next(StateName::TextBeforeData),
+                State::Next(StateName::TextBeforeLabelStartLink),
             );
-            State::Retry(StateName::LabelStartLinkStart)
+            State::Retry(StateName::GfmLabelStartFootnoteStart)
         }
         Some(b'\\') => {
             tokenizer.attempt(
@@ -163,6 +165,22 @@ pub fn before_hard_break_escape(tokenizer: &mut Tokenizer) -> State {
         State::Next(StateName::TextBeforeData),
     );
     State::Retry(StateName::HardBreakEscapeStart)
+}
+
+/// Before label start (link).
+///
+/// At `[`, which wasn’t a GFM label start (footnote).
+///
+/// ```markdown
+/// > | [a](b)
+///     ^
+/// ```
+pub fn before_label_start_link(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        State::Next(StateName::TextBefore),
+        State::Next(StateName::TextBeforeData),
+    );
+    State::Retry(StateName::LabelStartLinkStart)
 }
 
 /// Before data.

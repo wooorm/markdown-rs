@@ -81,10 +81,34 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
             tokenizer.consume();
             tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
-            tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-            State::Next(StateName::LabelAtBreak)
+            State::Next(StateName::LabelAtMarker)
         }
         _ => State::Nok,
+    }
+}
+
+/// At an optional extra marker.
+///
+/// Used for footnotes.
+///
+/// ```markdown
+/// > | [^a]
+///      ^
+/// ```
+pub fn at_marker(tokenizer: &mut Tokenizer) -> State {
+    // For footnotes (and potentially other custom things in the future),
+    // We need to make sure there is a certain marker after `[`.
+    if tokenizer.tokenize_state.marker == 0 {
+        tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
+        State::Retry(StateName::LabelAtBreak)
+    } else if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
+        tokenizer.enter(tokenizer.tokenize_state.token_4.clone());
+        tokenizer.consume();
+        tokenizer.exit(tokenizer.tokenize_state.token_4.clone());
+        tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
+        State::Next(StateName::LabelAtBreak)
+    } else {
+        State::Nok
     }
 }
 
