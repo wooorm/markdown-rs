@@ -16,7 +16,7 @@
 //! As this construct occurs in flow, like all flow constructs, it must be
 //! followed by an eol (line ending) or eof (end of file).
 //!
-//! In markdown, it is also possible to use [code (text)][code_text] in the
+//! In markdown, it is also possible to use [code (text)][raw_text] in the
 //! [text][] content type.
 //! It is also possible to create code with the [code (fenced)][code_fenced]
 //! construct.
@@ -49,7 +49,7 @@
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text
 //! [code_fenced]: crate::construct::code_fenced
-//! [code_text]: crate::construct::code_text
+//! [raw_text]: crate::construct::raw_text
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 //! [html_pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 

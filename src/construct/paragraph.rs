@@ -18,7 +18,7 @@
 //! allowed to contain blank lines, or to be blank themselves.
 //!
 //! The paragraph is interpreted as the [text][] content type.
-//! That means that [autolinks][autolink], [code (text)][code_text], etc are allowed.
+//! That means that [autolinks][autolink], [code (text)][raw_text], etc are allowed.
 //!
 //! ## HTML
 //!
@@ -37,7 +37,7 @@
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text
 //! [autolink]: crate::construct::autolink
-//! [code_text]: crate::construct::code_text
+//! [raw_text]: crate::construct::raw_text
 //! [html]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
 
 use crate::event::{Content, Kind, Link, Name};

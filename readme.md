@@ -196,7 +196,7 @@ The files in `src/` are as follows:
 
 ## Examples
 
-<!-- To do: example section with more full-fledges examples, on GFM, math, frontmatter, etc. -->
+<!-- To do: example section with more full-fledged examples, on GFM, math, frontmatter, etc. -->
 
 > 🚧 **To do**.
 

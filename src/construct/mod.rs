@@ -38,7 +38,7 @@
 //! *   [character reference][character_reference]
 //! *   [code (fenced)][code_fenced]
 //! *   [code (indented)][code_indented]
-//! *   [code (text)][code_text]
+//! *   [code (text)][raw_text]
 //! *   [definition][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [heading (atx)][heading_atx]
@@ -62,6 +62,8 @@
 //! *   [gfm footnote definition][gfm_footnote_definition]
 //! *   [gfm task list item check][gfm_task_list_item_check]
 //! *   [gfm label start footnote][gfm_label_start_footnote]
+//! *   math (text) (in `raw_text`)
+//! *   gfm strikethrough (in attention)
 //!
 //! There are also several small subroutines typically used in different places:
 //!
@@ -143,7 +145,6 @@ pub mod character_escape;
 pub mod character_reference;
 pub mod code_fenced;
 pub mod code_indented;
-pub mod code_text;
 pub mod definition;
 pub mod document;
 pub mod flow;
@@ -171,6 +172,7 @@ pub mod partial_space_or_tab;
 pub mod partial_space_or_tab_eol;
 pub mod partial_title;
 pub mod partial_whitespace;
+pub mod raw_text;
 pub mod string;
 pub mod text;
 pub mod thematic_break;

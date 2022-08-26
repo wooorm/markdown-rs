@@ -507,7 +507,7 @@ pub enum Name {
     ///     [`CodeTextSequence`][Name::CodeTextSequence],
     ///     [`LineEnding`][Name::LineEnding]
     /// *   **Construct**:
-    ///     [`code_text`][crate::construct::code_text]
+    ///     [`raw_text`][crate::construct::raw_text]
     ///
     /// ## Example
     ///
@@ -525,7 +525,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`code_text`][crate::construct::code_text]
+    ///     [`raw_text`][crate::construct::raw_text]
     ///
     /// ## Example
     ///
@@ -543,7 +543,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`code_text`][crate::construct::code_text]
+    ///     [`raw_text`][crate::construct::raw_text]
     ///
     /// ## Example
     ///
@@ -1889,6 +1889,62 @@ pub enum Name {
     ///     ^^^
     /// ```
     ListUnordered,
+    /// Whole math (text).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     [`MathTextData`][Name::MathTextData],
+    ///     [`MathTextSequence`][Name::MathTextSequence],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`raw_text`][crate::construct::raw_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a $b$ c
+    ///       ^^^
+    /// ```
+    MathText,
+    /// Math (text) data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MathText`][Name::MathText],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`raw_text`][crate::construct::raw_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a `b` c
+    ///        ^
+    /// ```
+    MathTextData,
+    /// Math (text) sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MathText`][Name::MathText],
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`raw_text`][crate::construct::raw_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a $b$ c
+    ///       ^ ^
+    /// ```
+    MathTextSequence,
     /// Whole paragraph.
     ///
     /// ## Info
@@ -2271,7 +2327,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 53] = [
+pub const VOID_EVENTS: [Name; 55] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2319,6 +2375,8 @@ pub const VOID_EVENTS: [Name; 53] = [
     Name::LineEnding,
     Name::ListItemMarker,
     Name::ListItemValue,
+    Name::MathTextData,
+    Name::MathTextSequence,
     Name::ReferenceMarker,
     Name::ResourceMarker,
     Name::ResourceTitleMarker,

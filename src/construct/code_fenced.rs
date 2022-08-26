@@ -48,7 +48,7 @@
 //! Which value it holds depends on what your syntax highlighter supports, if
 //! one is used.
 //!
-//! In markdown, it is also possible to use [code (text)][code_text] in the
+//! In markdown, it is also possible to use [code (text)][raw_text] in the
 //! [text][] content type.
 //! It is also possible to create code with the
 //! [code (indented)][code_indented] construct.
@@ -106,7 +106,7 @@
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
 //! [code_indented]: crate::construct::code_indented
-//! [code_text]: crate::construct::code_text
+//! [raw_text]: crate::construct::raw_text
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 //! [html_pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
 

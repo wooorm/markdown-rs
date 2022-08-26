@@ -78,11 +78,11 @@ pub enum Name {
     CodeIndentedFurtherBegin,
     CodeIndentedFurtherAfter,
 
-    CodeTextStart,
-    CodeTextSequenceOpen,
-    CodeTextBetween,
-    CodeTextData,
-    CodeTextSequenceClose,
+    RawTextStart,
+    RawTextSequenceOpen,
+    RawTextBetween,
+    RawTextData,
+    RawTextSequenceClose,
 
     DataStart,
     DataInside,
@@ -392,11 +392,11 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::CodeIndentedFurtherBegin => construct::code_indented::further_begin,
         Name::CodeIndentedFurtherAfter => construct::code_indented::further_after,
 
-        Name::CodeTextStart => construct::code_text::start,
-        Name::CodeTextSequenceOpen => construct::code_text::sequence_open,
-        Name::CodeTextBetween => construct::code_text::between,
-        Name::CodeTextData => construct::code_text::data,
-        Name::CodeTextSequenceClose => construct::code_text::sequence_close,
+        Name::RawTextStart => construct::raw_text::start,
+        Name::RawTextSequenceOpen => construct::raw_text::sequence_open,
+        Name::RawTextBetween => construct::raw_text::between,
+        Name::RawTextData => construct::raw_text::data,
+        Name::RawTextSequenceClose => construct::raw_text::sequence_close,
 
         Name::DataStart => construct::partial_data::start,
         Name::DataInside => construct::partial_data::inside,

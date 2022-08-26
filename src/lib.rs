@@ -272,6 +272,13 @@ pub struct Constructs {
     ///     ^^^
     /// ```
     pub list_item: bool,
+    /// Math (text).
+    ///
+    /// ```markdown
+    /// > | a $b$ c
+    ///       ^^^
+    /// ```
+    pub math_text: bool,
     /// Thematic break.
     ///
     /// ```markdown
@@ -310,6 +317,7 @@ impl Default for Constructs {
             label_start_link: true,
             label_end: true,
             list_item: true,
+            math_text: false,
             thematic_break: true,
         }
     }
@@ -333,6 +341,7 @@ impl Constructs {
 }
 
 /// Configuration (optional).
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug)]
 pub struct Options {
     /// Whether to allow (dangerous) HTML.
@@ -392,6 +401,74 @@ pub struct Options {
     /// );
     /// ```
     pub allow_dangerous_protocol: bool,
+
+    /// Which constructs to enable and disable.
+    /// The default is to follow `CommonMark`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    ///
+    /// // micromark follows CommonMark by default:
+    /// assert_eq!(
+    ///     micromark("    indented code?"),
+    ///     "<pre><code>indented code?\n</code></pre>"
+    /// );
+    ///
+    /// // Pass `constructs` to choose what to enable and disable:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "    indented code?",
+    ///         &Options {
+    ///             constructs: Constructs {
+    ///                 code_indented: false,
+    ///                 ..Constructs::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     ),
+    ///     "<p>indented code?</p>"
+    /// );
+    /// ```
+    pub constructs: Constructs,
+
+    /// Default line ending to use, for line endings not in `value`.
+    ///
+    /// Generally, micromark copies line endings (`\r`, `\n`, `\r\n`) in the
+    /// markdown document over to the compiled HTML.
+    /// In some cases, such as `> a`, CommonMark requires that extra line
+    /// endings are added: `<blockquote>\n<p>a</p>\n</blockquote>`.
+    ///
+    /// To create that line ending, the document is checked for the first line
+    /// ending that is used.
+    /// If there is no line ending, `default_line_ending` is used.
+    /// If that isn’t configured, `\n` is used.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use micromark::{micromark, micromark_with_options, Options, LineEnding};
+    ///
+    /// // micromark uses `\n` by default:
+    /// assert_eq!(
+    ///     micromark("> a"),
+    ///     "<blockquote>\n<p>a</p>\n</blockquote>"
+    /// );
+    ///
+    /// // Define `default_line_ending` to configure the default:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "> a",
+    ///         &Options {
+    ///             default_line_ending: LineEnding::CarriageReturnLineFeed,
+    ///             ..Options::default()
+    ///         }
+    ///     ),
+    ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
+    /// );
+    /// ```
+    pub default_line_ending: LineEnding,
 
     /// Label to use for the footnotes section.
     ///
@@ -594,7 +671,7 @@ pub struct Options {
     pub gfm_footnote_clobber_prefix: Option<String>,
 
     /// Whether to support GFM strikethrough (if enabled in `constructs`) with
-    /// a single tilde (default: true).
+    /// a single tilde (default: `true`).
     ///
     /// Single tildes work on github.com but are technically prohibited by GFM.
     ///
@@ -630,73 +707,49 @@ pub struct Options {
     /// ```
     pub gfm_strikethrough_single_tilde: bool,
 
-    /// Default line ending to use, for line endings not in `value`.
+    /// Whether to support math (text) (if enabled in `constructs`) with a
+    /// single dollar (default: `true`).
     ///
-    /// Generally, micromark copies line endings (`\r`, `\n`, `\r\n`) in the
-    /// markdown document over to the compiled HTML.
-    /// In some cases, such as `> a`, CommonMark requires that extra line
-    /// endings are added: `<blockquote>\n<p>a</p>\n</blockquote>`.
-    ///
-    /// To create that line ending, the document is checked for the first line
-    /// ending that is used.
-    /// If there is no line ending, `default_line_ending` is used.
-    /// If that isn’t configured, `\n` is used.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, LineEnding};
-    ///
-    /// // micromark uses `\n` by default:
-    /// assert_eq!(
-    ///     micromark("> a"),
-    ///     "<blockquote>\n<p>a</p>\n</blockquote>"
-    /// );
-    ///
-    /// // Define `default_line_ending` to configure the default:
-    /// assert_eq!(
-    ///     micromark_with_options(
-    ///         "> a",
-    ///         &Options {
-    ///             default_line_ending: LineEnding::CarriageReturnLineFeed,
-    ///             ..Options::default()
-    ///         }
-    ///     ),
-    ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
-    /// );
-    /// ```
-    pub default_line_ending: LineEnding,
-
-    /// Which constructs to enable and disable.
-    /// The default is to follow `CommonMark`.
+    /// Single dollars work in Pandoc and many other places, but often
+    /// interfere with “normal” dollars in text.
     ///
     /// ## Examples
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
     ///
-    /// // micromark follows CommonMark by default:
-    /// assert_eq!(
-    ///     micromark("    indented code?"),
-    ///     "<pre><code>indented code?\n</code></pre>"
-    /// );
-    ///
-    /// // Pass `constructs` to choose what to enable and disable:
+    /// // micromark supports single dollars by default:
     /// assert_eq!(
     ///     micromark_with_options(
-    ///         "    indented code?",
+    ///         "$a$",
     ///         &Options {
     ///             constructs: Constructs {
-    ///                 code_indented: false,
+    ///                 math_text: true,
     ///                 ..Constructs::default()
     ///             },
     ///             ..Options::default()
     ///         }
     ///     ),
-    ///     "<p>indented code?</p>"
+    ///     "<p><code class=\"lang-math math-inline\">a</code></p>"
+    /// );
+    ///
+    /// // Pass `math_text_single_dollar: false` to turn that off:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "$a$",
+    ///         &Options {
+    ///             constructs: Constructs {
+    ///                 math_text: true,
+    ///                 ..Constructs::default()
+    ///             },
+    ///             math_text_single_dollar: false,
+    ///             ..Options::default()
+    ///         }
+    ///     ),
+    ///     "<p>$a$</p>"
     /// );
     /// ```
-    pub constructs: Constructs,
+    pub math_text_single_dollar: bool,
 }
 
 impl Default for Options {
@@ -705,14 +758,15 @@ impl Default for Options {
         Self {
             allow_dangerous_html: false,
             allow_dangerous_protocol: false,
+            constructs: Constructs::default(),
+            default_line_ending: LineEnding::default(),
             gfm_footnote_label: None,
             gfm_footnote_label_tag_name: None,
             gfm_footnote_label_attributes: None,
             gfm_footnote_back_label: None,
             gfm_footnote_clobber_prefix: None,
             gfm_strikethrough_single_tilde: true,
-            default_line_ending: LineEnding::default(),
-            constructs: Constructs::default(),
+            math_text_single_dollar: true,
         }
     }
 }

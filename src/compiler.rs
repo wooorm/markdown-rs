@@ -90,7 +90,7 @@ struct CompileContext<'a> {
     /// Number of code (fenced) fenced.
     pub code_fenced_fences_count: Option<usize>,
     /// Whether we are in code (text).
-    pub code_text_inside: bool,
+    pub raw_text_inside: bool,
     /// Whether we are in image text.
     pub image_alt_inside: bool,
     /// Marker of character reference.
@@ -145,7 +145,7 @@ impl<'a> CompileContext<'a> {
             heading_setext_buffer: None,
             code_flow_seen_data: None,
             code_fenced_fences_count: None,
-            code_text_inside: false,
+            raw_text_inside: false,
             character_reference_marker: None,
             list_expect_first_marker: None,
             media_stack: vec![],
@@ -341,7 +341,7 @@ fn enter(context: &mut CompileContext) {
         Name::BlockQuote => on_enter_block_quote(context),
         Name::CodeIndented => on_enter_code_indented(context),
         Name::CodeFenced => on_enter_code_fenced(context),
-        Name::CodeText => on_enter_code_text(context),
+        Name::CodeText | Name::MathText => on_enter_raw_text(context),
         Name::Definition => on_enter_definition(context),
         Name::DefinitionDestinationString => on_enter_definition_destination_string(context),
         Name::Emphasis => on_enter_emphasis(context),
@@ -368,8 +368,9 @@ fn enter(context: &mut CompileContext) {
 fn exit(context: &mut CompileContext) {
     match context.events[context.index].name {
         Name::CodeFencedFenceMeta | Name::Resource => on_exit_drop(context),
-        Name::CharacterEscapeValue | Name::CodeTextData | Name::Data => on_exit_data(context),
-
+        Name::CharacterEscapeValue | Name::CodeTextData | Name::Data | Name::MathTextData => {
+            on_exit_data(context);
+        }
         Name::AutolinkEmail => on_exit_autolink_email(context),
         Name::AutolinkProtocol => on_exit_autolink_protocol(context),
         Name::BlankLineEnding => on_exit_blank_line_ending(context),
@@ -386,7 +387,7 @@ fn exit(context: &mut CompileContext) {
         Name::CodeFencedFence => on_exit_code_fenced_fence(context),
         Name::CodeFencedFenceInfo => on_exit_code_fenced_fence_info(context),
         Name::CodeFlowChunk => on_exit_code_flow_chunk(context),
-        Name::CodeText => on_exit_code_text(context),
+        Name::CodeText | Name::MathText => on_exit_raw_text(context),
         Name::Definition => on_exit_definition(context),
         Name::DefinitionDestinationString => on_exit_definition_destination_string(context),
         Name::DefinitionLabelString => on_exit_definition_label_string(context),
@@ -460,11 +461,15 @@ fn on_enter_code_fenced(context: &mut CompileContext) {
     context.code_fenced_fences_count = Some(0);
 }
 
-/// Handle [`Enter`][Kind::Enter]:[`CodeText`][Name::CodeText].
-fn on_enter_code_text(context: &mut CompileContext) {
-    context.code_text_inside = true;
+/// Handle [`Enter`][Kind::Enter]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
+fn on_enter_raw_text(context: &mut CompileContext) {
+    context.raw_text_inside = true;
     if !context.image_alt_inside {
-        context.push("<code>");
+        context.push("<code");
+        if context.events[context.index].name == Name::MathText {
+            context.push(" class=\"lang-math math-inline\"");
+        }
+        context.push(">");
     }
     context.buffer();
 }
@@ -875,8 +880,8 @@ fn on_exit_code_flow(context: &mut CompileContext) {
     context.slurp_one_line_ending = false;
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`CodeText`][Name::CodeText].
-fn on_exit_code_text(context: &mut CompileContext) {
+/// Handle [`Exit`][Kind::Exit]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
+fn on_exit_raw_text(context: &mut CompileContext) {
     let result = context.resume();
     let mut bytes = result.as_bytes();
     let mut trim = false;
@@ -899,7 +904,7 @@ fn on_exit_code_text(context: &mut CompileContext) {
         bytes = &bytes[1..end];
     }
 
-    context.code_text_inside = false;
+    context.raw_text_inside = false;
     context.push(str::from_utf8(bytes).unwrap());
 
     if !context.image_alt_inside {
@@ -1209,7 +1214,7 @@ fn on_exit_label_text(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`LineEnding`][Name::LineEnding].
 fn on_exit_line_ending(context: &mut CompileContext) {
-    if context.code_text_inside {
+    if context.raw_text_inside {
         context.push(" ");
     } else if context.slurp_one_line_ending
         // Ignore line endings after definitions.

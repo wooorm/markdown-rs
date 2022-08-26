@@ -44,7 +44,7 @@
 //! > ([label start (image)][label_start_image] or
 //! > [label start (link)][label_start_link]) and a closing
 //! > ([label end][label_end]), so as to allow further phrasing such as
-//! > [code (text)][code_text] or [attention][].
+//! > [code (text)][raw_text] or [attention][].
 //!
 //! ## References
 //!
@@ -58,7 +58,7 @@
 //! [label_start_image]: crate::construct::label_start_image
 //! [label_start_link]: crate::construct::label_start_link
 //! [label_end]: crate::construct::label_end
-//! [code_text]: crate::construct::code_text
+//! [raw_text]: crate::construct::raw_text
 //! [link_reference_size_max]: crate::util::constant::LINK_REFERENCE_SIZE_MAX
 
 use crate::construct::partial_space_or_tab_eol::{space_or_tab_eol_with_options, Options};

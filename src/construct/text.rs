@@ -1,16 +1,16 @@
 //! The text content type.
 //!
 //! **Text** contains phrasing content such as
-//! [attention][crate::construct::attention] (emphasis, strong),
-//! [code (text)][crate::construct::code_text], and actual text.
+//! [attention][crate::construct::attention] (emphasis, gfm strikethrough, strong),
+//! [raw (text)][crate::construct::raw_text] (code (text), math (text)), and actual text.
 //!
 //! The constructs found in text are:
 //!
-//! *   [Attention][crate::construct::attention]
+//! *   [Attention][crate::construct::attention] (emphasis, gfm strikethrough, strong)
 //! *   [Autolink][crate::construct::autolink]
 //! *   [Character escape][crate::construct::character_escape]
 //! *   [Character reference][crate::construct::character_reference]
-//! *   [Code (text)][crate::construct::code_text]
+//! *   [Raw (text)][crate::construct::raw_text] (code (text), math (text))
 //! *   [GFM: Label start (footnote)][crate::construct::gfm_label_start_footnote]
 //! *   [GFM: Task list item check][crate::construct::gfm_task_list_item_check]
 //! *   [Hard break (escape)][crate::construct::hard_break_escape]
@@ -29,17 +29,18 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Characters that can start something in text.
-const MARKERS: [u8; 10] = [
+const MARKERS: [u8; 11] = [
     b'!',  // `label_start_image`
+    b'$',  // `raw_text` (math (text))
     b'&',  // `character_reference`
-    b'*',  // `attention`
+    b'*',  // `attention` (emphasis, strong)
     b'<',  // `autolink`, `html_text`
     b'[',  // `label_start_link`
     b'\\', // `character_escape`, `hard_break_escape`
     b']',  // `label_end`, `gfm_label_start_footnote`
-    b'_',  // `attention`
-    b'`',  // `code_text`
-    b'~',  // `attention` (w/ `gfm_strikethrough`)
+    b'_',  // `attention` (emphasis, strong)
+    b'`',  // `raw_text` (code (text))
+    b'~',  // `attention` (gfm strikethrough)
 ];
 
 /// Start of text.
@@ -81,6 +82,14 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::LabelStartImageStart)
         }
+        // raw (text) (code (text), math (text))
+        Some(b'$' | b'`') => {
+            tokenizer.attempt(
+                State::Next(StateName::TextBefore),
+                State::Next(StateName::TextBeforeData),
+            );
+            State::Retry(StateName::RawTextStart)
+        }
         Some(b'&') => {
             tokenizer.attempt(
                 State::Next(StateName::TextBefore),
@@ -88,6 +97,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::CharacterReferenceStart)
         }
+        // attention (emphasis, gfm strikethrough, strong)
         Some(b'*' | b'_' | b'~') => {
             tokenizer.attempt(
                 State::Next(StateName::TextBefore),
@@ -123,13 +133,6 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::TextBeforeData),
             );
             State::Retry(StateName::LabelEndStart)
-        }
-        Some(b'`') => {
-            tokenizer.attempt(
-                State::Next(StateName::TextBefore),
-                State::Next(StateName::TextBeforeData),
-            );
-            State::Retry(StateName::CodeTextStart)
         }
         _ => State::Retry(StateName::TextBeforeData),
     }
