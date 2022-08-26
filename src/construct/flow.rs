@@ -11,12 +11,12 @@
 //! The constructs found in flow are:
 //!
 //! *   [Blank line][crate::construct::blank_line]
-//! *   [Code (fenced)][crate::construct::code_fenced]
 //! *   [Code (indented)][crate::construct::code_indented]
 //! *   [Definition][crate::construct::definition]
 //! *   [Heading (atx)][crate::construct::heading_atx]
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
+//! *   [Raw (flow)][crate::construct::raw_flow] (code (fenced), math (flow))
 //! *   [Thematic break][crate::construct::thematic_break]
 
 use crate::event::Name;
@@ -42,6 +42,15 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::HeadingAtxStart)
         }
+        Some(b'$' | b'`' | b'~') => {
+            tokenizer.attempt(
+                State::Next(StateName::FlowAfter),
+                State::Next(StateName::FlowBeforeParagraph),
+            );
+            State::Retry(StateName::RawFlowStart)
+        }
+        // Note: `-` is also used in setext heading underline so it’s not
+        // included here.
         Some(b'*' | b'_') => {
             tokenizer.attempt(
                 State::Next(StateName::FlowAfter),
@@ -70,13 +79,6 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::FlowBeforeParagraph),
             );
             State::Retry(StateName::DefinitionStart)
-        }
-        Some(b'`' | b'~') => {
-            tokenizer.attempt(
-                State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
-            );
-            State::Retry(StateName::CodeFencedStart)
         }
         // Actual parsing: blank line? Indented code? Indented anything?
         // Also includes `-` which can be a setext heading underline or thematic break.
@@ -112,23 +114,23 @@ pub fn blank_line_before(tokenizer: &mut Tokenizer) -> State {
 pub fn before_code_indented(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
-        State::Next(StateName::FlowBeforeCodeFenced),
+        State::Next(StateName::FlowBeforeRaw),
     );
     State::Retry(StateName::CodeIndentedStart)
 }
 
-/// At code (fenced).
+/// At raw.
 ///
 /// ````markdown
 /// > | ```
 ///     ^
 /// ````
-pub fn before_code_fenced(tokenizer: &mut Tokenizer) -> State {
+pub fn before_raw(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
         State::Next(StateName::FlowBeforeHtml),
     );
-    State::Retry(StateName::CodeFencedStart)
+    State::Retry(StateName::RawFlowStart)
 }
 
 /// At html (flow).

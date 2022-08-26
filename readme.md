@@ -146,7 +146,7 @@ They are not enabled by default but can be turned on with `options.constructs`.
   - [ ] table
   - [ ] tagfilter
   - [x] task list item
-- [ ] math
+- [x] math
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support incredibly common, somewhat standardized,

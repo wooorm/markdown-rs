@@ -25,7 +25,7 @@
 //! thematic break.
 //! These things are called constructs here.
 //! Sometimes, there are several constructs that result in an equivalent thing.
-//! For example, [code (fenced)][code_fenced] and
+//! For example, [code (fenced)][raw_flow] and
 //! [code (indented)][code_indented] are considered different constructs.
 //!
 //! The following constructs are found in markdown (CommonMark):
@@ -36,7 +36,6 @@
 //! *   [block quote][block_quote]
 //! *   [character escape][character_escape]
 //! *   [character reference][character_reference]
-//! *   [code (fenced)][code_fenced]
 //! *   [code (indented)][code_indented]
 //! *   [code (text)][raw_text]
 //! *   [definition][]
@@ -50,6 +49,7 @@
 //! *   [label start (link)][label_start_link]
 //! *   [list item][list_item]
 //! *   [paragraph][]
+//! *   [raw (flow)][raw_flow] (code (fenced), math (flow))
 //! *   [thematic break][thematic_break]
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
@@ -143,7 +143,6 @@ pub mod blank_line;
 pub mod block_quote;
 pub mod character_escape;
 pub mod character_reference;
-pub mod code_fenced;
 pub mod code_indented;
 pub mod definition;
 pub mod document;
@@ -172,6 +171,7 @@ pub mod partial_space_or_tab;
 pub mod partial_space_or_tab_eol;
 pub mod partial_title;
 pub mod partial_whitespace;
+pub mod raw_flow;
 pub mod raw_text;
 pub mod string;
 pub mod text;

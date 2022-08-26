@@ -1,7 +1,7 @@
 //! Constants needed to parse markdown.
 //!
 //! Most of these constants are magic numbers, such as the number of markers
-//! needed to parse [code (fenced)][code_fenced]
+//! needed to parse [code (fenced)][raw_flow]
 //! ([`CODE_FENCED_SEQUENCE_SIZE_MIN`][]) or the max number of allowed markers
 //! in a [heading (atx)][heading_atx]
 //! ([`HEADING_ATX_OPENING_FENCE_SIZE_MAX`][]).
@@ -11,7 +11,7 @@
 //! ([`HTML_RAW_NAMES`][]), or the list of named character references
 //! ([`CHARACTER_REFERENCES`][]).
 //!
-//! [code_fenced]: crate::construct::code_fenced
+//! [raw_flow]: crate::construct::raw_flow
 //! [heading_atx]: crate::construct::heading_atx
 //! [html_flow]: crate::construct::html_flow
 
@@ -60,11 +60,11 @@ pub const CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX: usize = 6;
 /// [character_reference]: crate::construct::character_reference
 pub const CHARACTER_REFERENCE_NAMED_SIZE_MAX: usize = 31;
 
-/// The number of markers needed for [code (fenced)][code_fenced] to form.
+/// The number of markers needed for [code (fenced)][raw_flow] to form.
 ///
 /// Like many things in markdown, the number is `3`.
 ///
-/// [code_fenced]: crate::construct::code_fenced
+/// [raw_flow]: crate::construct::raw_flow
 pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 
 /// The number of markers needed for [frontmatter][] to form.

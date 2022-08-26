@@ -18,7 +18,7 @@
 //!
 //! In markdown, it is also possible to use [code (text)][raw_text] in the
 //! [text][] content type.
-//! It is also possible to create code with the [code (fenced)][code_fenced]
+//! It is also possible to create code with the [code (fenced)][raw_flow]
 //! construct.
 //!
 //! ## HTML
@@ -48,7 +48,7 @@
 //!
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text
-//! [code_fenced]: crate::construct::code_fenced
+//! [raw_flow]: crate::construct::raw_flow
 //! [raw_text]: crate::construct::raw_text
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 //! [html_pre]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element

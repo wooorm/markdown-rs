@@ -256,6 +256,8 @@ pub struct TokenizeState<'a> {
     pub token_4: Name,
     /// Slot for an event name.
     pub token_5: Name,
+    /// Slot for an event name.
+    pub token_6: Name,
 }
 
 /// A tokenizer itself.
@@ -364,6 +366,7 @@ impl<'a> Tokenizer<'a> {
                 token_3: Name::Data,
                 token_4: Name::Data,
                 token_5: Name::Data,
+                token_6: Name::Data,
             },
             map: EditMap::new(),
             interrupt: false,

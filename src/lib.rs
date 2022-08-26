@@ -272,6 +272,17 @@ pub struct Constructs {
     ///     ^^^
     /// ```
     pub list_item: bool,
+    /// Math (flow).
+    ///
+    /// ```markdown
+    /// > | $$
+    ///     ^^
+    /// > | \frac{1}{2}
+    ///     ^^^^^^^^^^^
+    /// > | $$
+    ///     ^^
+    /// ```
+    pub math_flow: bool,
     /// Math (text).
     ///
     /// ```markdown
@@ -317,6 +328,7 @@ impl Default for Constructs {
             label_start_link: true,
             label_end: true,
             list_item: true,
+            math_flow: false,
             math_text: false,
             thematic_break: true,
         }
@@ -730,7 +742,7 @@ pub struct Options {
     ///             ..Options::default()
     ///         }
     ///     ),
-    ///     "<p><code class=\"lang-math math-inline\">a</code></p>"
+    ///     "<p><code class=\"language-math math-inline\">a</code></p>"
     /// );
     ///
     /// // Pass `math_text_single_dollar: false` to turn that off:

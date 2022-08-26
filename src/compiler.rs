@@ -85,10 +85,10 @@ struct CompileContext<'a> {
     pub heading_atx_rank: Option<usize>,
     /// Buffer of heading (setext) text.
     pub heading_setext_buffer: Option<String>,
-    /// Whether code (flow) contains data.
-    pub code_flow_seen_data: Option<bool>,
-    /// Number of code (fenced) fenced.
-    pub code_fenced_fences_count: Option<usize>,
+    /// Whether raw (flow) (code (fenced), math (flow)) or code (indented) contains data.
+    pub raw_flow_seen_data: Option<bool>,
+    /// Number of raw (flow) fences.
+    pub raw_flow_fences_count: Option<usize>,
     /// Whether we are in code (text).
     pub raw_text_inside: bool,
     /// Whether we are in image text.
@@ -143,8 +143,8 @@ impl<'a> CompileContext<'a> {
             bytes,
             heading_atx_rank: None,
             heading_setext_buffer: None,
-            code_flow_seen_data: None,
-            code_fenced_fences_count: None,
+            raw_flow_seen_data: None,
+            raw_flow_fences_count: None,
             raw_text_inside: false,
             character_reference_marker: None,
             list_expect_first_marker: None,
@@ -329,6 +329,7 @@ fn enter(context: &mut CompileContext) {
     match context.events[context.index].name {
         Name::CodeFencedFenceInfo
         | Name::CodeFencedFenceMeta
+        | Name::MathFlowFenceMeta
         | Name::DefinitionLabelString
         | Name::DefinitionTitleString
         | Name::GfmFootnoteDefinitionPrefix
@@ -340,7 +341,7 @@ fn enter(context: &mut CompileContext) {
 
         Name::BlockQuote => on_enter_block_quote(context),
         Name::CodeIndented => on_enter_code_indented(context),
-        Name::CodeFenced => on_enter_code_fenced(context),
+        Name::CodeFenced | Name::MathFlow => on_enter_raw_flow(context),
         Name::CodeText | Name::MathText => on_enter_raw_text(context),
         Name::Definition => on_enter_definition(context),
         Name::DefinitionDestinationString => on_enter_definition_destination_string(context),
@@ -367,7 +368,9 @@ fn enter(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit].
 fn exit(context: &mut CompileContext) {
     match context.events[context.index].name {
-        Name::CodeFencedFenceMeta | Name::Resource => on_exit_drop(context),
+        Name::CodeFencedFenceMeta | Name::MathFlowFenceMeta | Name::Resource => {
+            on_exit_drop(context);
+        }
         Name::CharacterEscapeValue | Name::CodeTextData | Name::Data | Name::MathTextData => {
             on_exit_data(context);
         }
@@ -383,10 +386,10 @@ fn exit(context: &mut CompileContext) {
             on_exit_character_reference_marker_hexadecimal(context);
         }
         Name::CharacterReferenceValue => on_exit_character_reference_value(context),
-        Name::CodeFenced | Name::CodeIndented => on_exit_code_flow(context),
-        Name::CodeFencedFence => on_exit_code_fenced_fence(context),
-        Name::CodeFencedFenceInfo => on_exit_code_fenced_fence_info(context),
-        Name::CodeFlowChunk => on_exit_code_flow_chunk(context),
+        Name::CodeFenced | Name::CodeIndented | Name::MathFlow => on_exit_raw_flow(context),
+        Name::CodeFencedFence | Name::MathFlowFence => on_exit_raw_flow_fence(context),
+        Name::CodeFencedFenceInfo => on_exit_raw_flow_fence_info(context),
+        Name::CodeFlowChunk | Name::MathFlowChunk => on_exit_raw_flow_chunk(context),
         Name::CodeText | Name::MathText => on_exit_raw_text(context),
         Name::Definition => on_exit_definition(context),
         Name::DefinitionDestinationString => on_exit_definition_destination_string(context),
@@ -447,18 +450,22 @@ fn on_enter_block_quote(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`CodeIndented`][Name::CodeIndented].
 fn on_enter_code_indented(context: &mut CompileContext) {
-    context.code_flow_seen_data = Some(false);
+    context.raw_flow_seen_data = Some(false);
     context.line_ending_if_needed();
     context.push("<pre><code>");
 }
 
-/// Handle [`Enter`][Kind::Enter]:[`CodeFenced`][Name::CodeFenced].
-fn on_enter_code_fenced(context: &mut CompileContext) {
-    context.code_flow_seen_data = Some(false);
+/// Handle [`Enter`][Kind::Enter]:{[`CodeFenced`][Name::CodeFenced],[`MathFlow`][Name::MathFlow]}.
+fn on_enter_raw_flow(context: &mut CompileContext) {
+    context.raw_flow_seen_data = Some(false);
     context.line_ending_if_needed();
-    // Note that no `>` is used, which is added later.
+    // Note that no `>` is used, which is added later (due to info)
     context.push("<pre><code");
-    context.code_fenced_fences_count = Some(0);
+    context.raw_flow_fences_count = Some(0);
+
+    if context.events[context.index].name == Name::MathFlow {
+        context.push(" class=\"language-math math-display\"");
+    }
 }
 
 /// Handle [`Enter`][Kind::Enter]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
@@ -467,7 +474,7 @@ fn on_enter_raw_text(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("<code");
         if context.events[context.index].name == Name::MathText {
-            context.push(" class=\"lang-math math-inline\"");
+            context.push(" class=\"language-math math-inline\"");
         }
         context.push(">");
     }
@@ -802,9 +809,9 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
     context.push(&encode(&value, context.encode_html));
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`CodeFlowChunk`][Name::CodeFlowChunk].
-fn on_exit_code_flow_chunk(context: &mut CompileContext) {
-    context.code_flow_seen_data = Some(true);
+/// Handle [`Exit`][Kind::Exit]:{[`CodeFlowChunk`][Name::CodeFlowChunk],[`MathFlowChunk`][Name::MathFlowChunk]}.
+fn on_exit_raw_flow_chunk(context: &mut CompileContext) {
+    context.raw_flow_seen_data = Some(true);
     context.push(&encode(
         &Slice::from_position(
             context.bytes,
@@ -816,9 +823,9 @@ fn on_exit_code_flow_chunk(context: &mut CompileContext) {
     ));
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`CodeFencedFence`][Name::CodeFencedFence].
-fn on_exit_code_fenced_fence(context: &mut CompileContext) {
-    let count = if let Some(count) = context.code_fenced_fences_count {
+/// Handle [`Exit`][Kind::Exit]:{[`CodeFencedFence`][Name::CodeFencedFence],[`MathFlowFence`][Name::MathFlowFence]}.
+fn on_exit_raw_flow_fence(context: &mut CompileContext) {
+    let count = if let Some(count) = context.raw_flow_fences_count {
         count
     } else {
         0
@@ -829,31 +836,33 @@ fn on_exit_code_fenced_fence(context: &mut CompileContext) {
         context.slurp_one_line_ending = true;
     }
 
-    context.code_fenced_fences_count = Some(count + 1);
+    context.raw_flow_fences_count = Some(count + 1);
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`CodeFencedFenceInfo`][Name::CodeFencedFenceInfo].
-fn on_exit_code_fenced_fence_info(context: &mut CompileContext) {
+///
+/// Note: math (flow) does not support `info`.
+fn on_exit_raw_flow_fence_info(context: &mut CompileContext) {
     let value = context.resume();
     context.push(" class=\"language-");
     context.push(&value);
     context.push("\"");
 }
 
-/// Handle [`Exit`][Kind::Exit]:{[`CodeFenced`][Name::CodeFenced],[`CodeIndented`][Name::CodeIndented]}.
-fn on_exit_code_flow(context: &mut CompileContext) {
-    // One special case is if we are inside a container, and the fenced code was
+/// Handle [`Exit`][Kind::Exit]:{[`CodeFenced`][Name::CodeFenced],[`CodeIndented`][Name::CodeIndented],[`MathFlow`][Name::MathFlow]}.
+fn on_exit_raw_flow(context: &mut CompileContext) {
+    // One special case is if we are inside a container, and the raw (flow) was
     // not closed (meaning it runs to the end).
     // In that case, the following line ending, is considered *outside* the
     // fenced code and block quote by micromark, but CM wants to treat that
     // ending as part of the code.
-    if let Some(count) = context.code_fenced_fences_count {
+    if let Some(count) = context.raw_flow_fences_count {
         // No closing fence.
         if count == 1
             // In a container.
             && !context.tight_stack.is_empty()
             // Empty (as the closing is right at the opening fence)
-            && context.events[context.index - 1].name != Name::CodeFencedFence
+            && !matches!(context.events[context.index - 1].name, Name::CodeFencedFence | Name::MathFlowFence)
         {
             context.line_ending();
         }
@@ -862,16 +871,16 @@ fn on_exit_code_flow(context: &mut CompileContext) {
     // But in most cases, it’s simpler: when we’ve seen some data, emit an extra
     // line ending when needed.
     if context
-        .code_flow_seen_data
+        .raw_flow_seen_data
         .take()
-        .expect("`code_flow_seen_data` must be defined")
+        .expect("`raw_flow_seen_data` must be defined")
     {
         context.line_ending_if_needed();
     }
 
     context.push("</code></pre>");
 
-    if let Some(count) = context.code_fenced_fences_count.take() {
+    if let Some(count) = context.raw_flow_fences_count.take() {
         if count < 2 {
             context.line_ending_if_needed();
         }

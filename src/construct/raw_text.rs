@@ -57,10 +57,9 @@
 //! if both exist and there is also a non-space in the code, are removed.
 //! Line endings, at that stage, are considered as spaces.
 //!
-//! In markdown, it is possible to create code with the
-//! [code (fenced)][code_fenced] or [code (indented)][code_indented],
-//! and math with the [math (flow)][math_flow] constructs in the [flow][]
-//! content type.
+//! In markdown, it is possible to create code or math with the
+//! [raw (flow)][raw_flow] (or [code (indented)][code_indented]) constructs
+//! in the [flow][] content type.
 //!
 //! ## HTML
 //!
@@ -74,7 +73,7 @@
 //! Instead, it is recommended to use client side JavaScript with something like
 //! `KaTeX` or `MathJax` to process the math
 //! For that, the math is compiled as a `<code>` element with two classes:
-//! `lang-math` and `math-inline`.
+//! `language-math` and `math-inline`.
 //! Client side JavaScript can look for these classes to process them further.
 //!
 //! When turning markdown into HTML, each line ending in raw (text) is turned
@@ -87,9 +86,9 @@
 //! Notably, GitHub currently has a really weird crappy client-side regex-based
 //! thing.
 //! But on your own (math-heavy?) site it can be great!
-//! Alternatively, set `options.math_text_single_dollar: false`, which prevents
-//! single dollars from being seen as math, and thus prevents normal dollars in
-//! text from being seen as math.
+//! You can set `options.math_text_single_dollar: false` to improve this, as it
+//! prevents single dollars from being seen as math, and thus prevents normal
+//! dollars in text from being seen as math.
 //!
 //! ## Tokens
 //!
@@ -107,10 +106,12 @@
 //! *   [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
 //! *   [*§ 6.1 Code spans* in `CommonMark`](https://spec.commonmark.org/0.30/#code-spans)
 //!
+//! > 👉 **Note**: math is not specified anywhere.
+//!
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text
 //! [code_indented]: crate::construct::code_indented
-//! [code_fenced]: crate::construct::code_fenced
+//! [raw_flow]: crate::construct::raw_flow
 //! [math_flow]: # "to do"
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 

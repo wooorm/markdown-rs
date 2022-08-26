@@ -2,11 +2,11 @@
 //!
 //! This is a tiny helper that [flow][] constructs can use to make sure that
 //! the following line is not lazy.
-//! For example, [html (flow)][html_flow] and code ([fenced][code_fenced],
+//! For example, [html (flow)][html_flow] and ([raw (flow)][raw_flow],
 //! [indented][code_indented]), stop when the next line is lazy.
 //!
 //! [flow]: crate::construct::flow
-//! [code_fenced]: crate::construct::code_fenced
+//! [raw_flow]: crate::construct::raw_flow
 //! [code_indented]: crate::construct::code_indented
 //! [html_flow]: crate::construct::html_flow
 

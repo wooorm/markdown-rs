@@ -351,7 +351,7 @@ pub enum Name {
     ///     [`LineEnding`][Name::LineEnding],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///     [`raw_flow`][crate::construct::raw_flow]
     ///
     /// ## Example
     ///
@@ -376,7 +376,7 @@ pub enum Name {
     ///     [`CodeFencedFenceSequence`][Name::CodeFencedFenceSequence],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///     [`raw_flow`][crate::construct::raw_flow]
     ///
     /// ## Example
     ///
@@ -397,7 +397,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     [string content][crate::construct::string]
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///     [`raw_flow`][crate::construct::raw_flow]
     ///
     /// ## Example
     ///
@@ -417,7 +417,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     [string content][crate::construct::string]
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///     [`raw_flow`][crate::construct::raw_flow]
     ///
     /// ## Example
     ///
@@ -437,7 +437,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///     [`raw_flow`][crate::construct::raw_flow]
     ///
     /// ## Example
     ///
@@ -459,7 +459,7 @@ pub enum Name {
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced],
+    ///     [`raw_flow`][crate::construct::raw_flow],
     ///     [`code_indented`][crate::construct::code_indented]
     ///
     /// ## Example
@@ -487,7 +487,7 @@ pub enum Name {
     ///     [`LineEnding`][Name::LineEnding],
     ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
-    ///     [`code_fenced`][crate::construct::code_fenced]
+    ///     [`raw_flow`][crate::construct::raw_flow]
     ///
     /// ## Example
     ///
@@ -1889,6 +1889,115 @@ pub enum Name {
     ///     ^^^
     /// ```
     ListUnordered,
+    /// Whole math (flow).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     [`MathFlowFence`][Name::MathFlowFence],
+    ///     [`MathFlowChunk`][Name::MathFlowChunk],
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`raw_flow`][crate::construct::raw_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | $$
+    ///     ^^
+    /// > | \frac{1}{2}
+    ///     ^^^^^^^^^^^
+    /// > | $$
+    ///     ^^
+    /// ```
+    MathFlow,
+    /// A math (flow) fence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MathFlow`][Name::MathFlow]
+    /// *   **Content model**:
+    ///     [`MathFlowFenceMeta`][Name::MathFlowFenceMeta],
+    ///     [`MathFlowFenceSequence`][Name::MathFlowFenceSequence],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`raw_flow`][crate::construct::raw_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | $$
+    ///     ^^
+    ///   | \frac{1}{2}
+    /// > | $$
+    ///     ^^
+    /// ```
+    MathFlowFence,
+    /// A math (flow) fence meta string.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MathFlowFence`][Name::MathFlowFence]
+    /// *   **Content model**:
+    ///     [string content][crate::construct::string]
+    /// *   **Construct**:
+    ///     [`raw_flow`][crate::construct::raw_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | $$alpha bravo
+    ///       ^^^^^^^^^^^
+    ///   | \frac{1}{2}
+    ///   | $$
+    /// ```
+    MathFlowFenceMeta,
+    /// A math (flow) fence sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MathFlowFenceSequence`][Name::MathFlowFenceSequence]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`raw_flow`][crate::construct::raw_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | $$
+    ///     ^^
+    ///   | \frac{1}{2}
+    /// > | $$
+    ///     ^^
+    /// ```
+    MathFlowFenceSequence,
+    /// A math (flow) chunk.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MathFlow`][Name::MathFlow]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`raw_flow`][crate::construct::raw_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | $$
+    /// > | \frac{1}{2}
+    ///     ^^^^^^^^^^^
+    ///   | $$
+    /// ```
+    MathFlowChunk,
     /// Whole math (text).
     ///
     /// ## Info
@@ -2327,7 +2436,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 55] = [
+pub const VOID_EVENTS: [Name; 57] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2375,6 +2484,8 @@ pub const VOID_EVENTS: [Name; 55] = [
     Name::LineEnding,
     Name::ListItemMarker,
     Name::ListItemValue,
+    Name::MathFlowFenceSequence,
+    Name::MathFlowChunk,
     Name::MathTextData,
     Name::MathTextSequence,
     Name::ReferenceMarker,
