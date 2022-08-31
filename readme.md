@@ -143,7 +143,7 @@ They are not enabled by default but can be turned on with `options.constructs`.
   - [x] autolink literal
   - [x] footnote
   - [x] strikethrough
-  - [ ] table
+  - [x] table
   - [ ] tagfilter
   - [x] task list item
 - [x] math
@@ -277,7 +277,7 @@ The following scripts are useful when working on this project:
 
 ### Version
 
-micromark adheres to [semver](https://semver.org).
+micromark adheres to [SemVer](https://semver.org).
 
 ### Security
 
