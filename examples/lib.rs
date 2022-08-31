@@ -26,8 +26,7 @@ fn main() {
     println!(
         "{}",
         micromark_with_options(
-            // To do: use readme example when all of GFM work.
-            "Just a link! https://example.com.",
+            "* [x] contact@example.com ~~strikethrough~~",
             &Options {
                 constructs: Constructs::gfm(),
                 ..Options::default()
