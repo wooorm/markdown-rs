@@ -19,6 +19,11 @@ pub enum Name {
     /// and what occurs before and after each sequence.
     /// Otherwise they are turned into data.
     Attention,
+    /// Resolve GFM tables.
+    ///
+    /// The table head, and later each row, are all parsed separately.
+    /// Resolving groups everything together, and groups cells.
+    GfmTable,
     /// Resolve heading (atx).
     ///
     /// Heading (atx) contains further sequences and data.
@@ -60,6 +65,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) {
     let func = match name {
         Name::Label => construct::label_end::resolve,
         Name::Attention => construct::attention::resolve,
+        Name::GfmTable => construct::gfm_table::resolve,
         Name::HeadingAtx => construct::heading_atx::resolve,
         Name::HeadingSetext => construct::heading_setext::resolve,
         Name::ListItem => construct::list_item::resolve,

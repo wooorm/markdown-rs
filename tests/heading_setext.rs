@@ -258,6 +258,18 @@ fn heading_setext() {
     );
 
     assert_eq!(
+        micromark("a\n- ==="),
+        "<p>a</p>\n<ul>\n<li>===</li>\n</ul>",
+        "should not support piercing (1)"
+    );
+
+    assert_eq!(
+        micromark("a\n* ---"),
+        "<p>a</p>\n<ul>\n<li>\n<hr />\n</li>\n</ul>",
+        "should not support piercing (2)"
+    );
+
+    assert_eq!(
         micromark_with_options(
             "a\n-",
             &Options {

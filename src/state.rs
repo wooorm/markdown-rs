@@ -123,6 +123,7 @@ pub enum Name {
     DocumentFlowEnd,
 
     FlowStart,
+    FlowBeforeGfmTable,
     FlowBeforeCodeIndented,
     FlowBeforeRaw,
     FlowBeforeHtml,
@@ -309,6 +310,28 @@ pub enum Name {
     StringBefore,
     StringBeforeData,
 
+    GfmTableStart,
+    GfmTableHeadRowBefore,
+    GfmTableHeadRowStart,
+    GfmTableHeadRowBreak,
+    GfmTableHeadRowData,
+    GfmTableHeadRowEscape,
+    GfmTableHeadDelimiterStart,
+    GfmTableHeadDelimiterBefore,
+    GfmTableHeadDelimiterCellBefore,
+    GfmTableHeadDelimiterValueBefore,
+    GfmTableHeadDelimiterLeftAlignmentAfter,
+    GfmTableHeadDelimiterFiller,
+    GfmTableHeadDelimiterRightAlignmentAfter,
+    GfmTableHeadDelimiterCellAfter,
+    GfmTableHeadDelimiterNok,
+
+    GfmTableBodyRowBefore,
+    GfmTableBodyRowStart,
+    GfmTableBodyRowBreak,
+    GfmTableBodyRowData,
+    GfmTableBodyRowEscape,
+
     TextStart,
     TextBefore,
     TextBeforeHtml,
@@ -445,6 +468,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentFlowInside => construct::document::flow_inside,
 
         Name::FlowStart => construct::flow::start,
+        Name::FlowBeforeGfmTable => construct::flow::before_gfm_table,
         Name::FlowBeforeCodeIndented => construct::flow::before_code_indented,
         Name::FlowBeforeRaw => construct::flow::before_raw,
         Name::FlowBeforeHtml => construct::flow::before_html,
@@ -661,6 +685,33 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::StringStart => construct::string::start,
         Name::StringBefore => construct::string::before,
         Name::StringBeforeData => construct::string::before_data,
+
+        Name::GfmTableStart => construct::gfm_table::start,
+        Name::GfmTableHeadRowBefore => construct::gfm_table::head_row_before,
+        Name::GfmTableHeadRowStart => construct::gfm_table::head_row_start,
+        Name::GfmTableHeadRowBreak => construct::gfm_table::head_row_break,
+        Name::GfmTableHeadRowData => construct::gfm_table::head_row_data,
+        Name::GfmTableHeadRowEscape => construct::gfm_table::head_row_escape,
+
+        Name::GfmTableHeadDelimiterStart => construct::gfm_table::head_delimiter_start,
+        Name::GfmTableHeadDelimiterBefore => construct::gfm_table::head_delimiter_before,
+        Name::GfmTableHeadDelimiterCellBefore => construct::gfm_table::head_delimiter_cell_before,
+        Name::GfmTableHeadDelimiterValueBefore => construct::gfm_table::head_delimiter_value_before,
+        Name::GfmTableHeadDelimiterLeftAlignmentAfter => {
+            construct::gfm_table::head_delimiter_left_alignment_after
+        }
+        Name::GfmTableHeadDelimiterFiller => construct::gfm_table::head_delimiter_filler,
+        Name::GfmTableHeadDelimiterRightAlignmentAfter => {
+            construct::gfm_table::head_delimiter_right_alignment_after
+        }
+        Name::GfmTableHeadDelimiterCellAfter => construct::gfm_table::head_delimiter_cell_after,
+        Name::GfmTableHeadDelimiterNok => construct::gfm_table::head_delimiter_nok,
+
+        Name::GfmTableBodyRowBefore => construct::gfm_table::body_row_before,
+        Name::GfmTableBodyRowStart => construct::gfm_table::body_row_start,
+        Name::GfmTableBodyRowBreak => construct::gfm_table::body_row_break,
+        Name::GfmTableBodyRowData => construct::gfm_table::body_row_data,
+        Name::GfmTableBodyRowEscape => construct::gfm_table::body_row_escape,
 
         Name::TextStart => construct::text::start,
         Name::TextBefore => construct::text::before,

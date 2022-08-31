@@ -65,29 +65,10 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::HtmlFlowStart)
         }
-        // Note: `-` is also used in thematic breaks so it’s not included here.
-        Some(b'=') => {
-            tokenizer.attempt(
-                State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
-            );
-            State::Retry(StateName::HeadingSetextStart)
-        }
-        Some(b'[') => {
-            tokenizer.attempt(
-                State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
-            );
-            State::Retry(StateName::DefinitionStart)
-        }
         // Actual parsing: blank line? Indented code? Indented anything?
-        // Also includes `-` which can be a setext heading underline or thematic break.
-        None | Some(b'\t' | b'\n' | b' ' | b'-') => State::Retry(StateName::FlowBlankLineBefore),
-        // Must be a paragraph.
-        Some(_) => {
-            tokenizer.attempt(State::Next(StateName::FlowAfter), State::Nok);
-            State::Retry(StateName::ParagraphStart)
-        }
+        // Tables, setext heading underlines, definitions, and paragraphs are
+        // particularly weird.
+        _ => State::Retry(StateName::FlowBlankLineBefore),
     }
 }
 
@@ -185,9 +166,23 @@ pub fn before_heading_setext(tokenizer: &mut Tokenizer) -> State {
 pub fn before_thematic_break(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
-        State::Next(StateName::FlowBeforeDefinition),
+        State::Next(StateName::FlowBeforeGfmTable),
     );
     State::Retry(StateName::ThematicBreakStart)
+}
+
+/// At GFM table.
+///
+/// ```markdown
+/// > | | a |
+///     ^
+/// ```
+pub fn before_gfm_table(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeDefinition),
+    );
+    State::Retry(StateName::GfmTableStart)
 }
 
 /// At definition.

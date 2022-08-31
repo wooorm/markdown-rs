@@ -269,6 +269,14 @@ pub fn container_new_after(tokenizer: &mut Tokenizer) -> State {
         exit_containers(tokenizer, &Phase::Prefix);
     }
 
+    // We are “piercing” into the flow with a new container.
+    tokenizer
+        .tokenize_state
+        .document_child
+        .as_mut()
+        .unwrap()
+        .pierce = true;
+
     tokenizer
         .tokenize_state
         .document_container_stack
@@ -398,12 +406,11 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     let mut stack_index = child.stack.len();
 
     // Use two algo’s: one for when we’re suspended or in multiline things
-    // like definitions, another (b) for when we fed the line ending and closed
-    // a)
+    // like definitions, another for when we fed the line ending and closed.
     while !document_lazy_continuation_current && stack_index > 0 {
         stack_index -= 1;
         let name = &child.stack[stack_index];
-        if name == &Name::Paragraph || name == &Name::Definition {
+        if name == &Name::Paragraph || name == &Name::Definition || name == &Name::GfmTableHead {
             document_lazy_continuation_current = true;
         }
     }
@@ -417,6 +424,9 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
             document_lazy_continuation_current = true;
         }
     }
+
+    // Reset “piercing”.
+    child.pierce = false;
 
     if child.lazy
         && tokenizer.tokenize_state.document_lazy_accepting_before

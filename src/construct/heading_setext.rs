@@ -87,6 +87,7 @@ use alloc::vec;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.options.constructs.heading_setext
         && !tokenizer.lazy
+        && !tokenizer.pierce
         // Require a paragraph before.
         && (!tokenizer.events.is_empty()
             && tokenizer.events[skip_opt_back(

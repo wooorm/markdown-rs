@@ -5,7 +5,6 @@ use crate::tokenizer::Tokenizer;
 use crate::util::classify_character::{classify, Kind as CharacterKind};
 use crate::util::slice::{Position, Slice};
 use alloc::vec::Vec;
-extern crate std;
 use core::str;
 
 // To do: doc al functions.

@@ -68,6 +68,43 @@ struct Definition {
     title: Option<String>,
 }
 
+/// GFM table: column alignment.
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+enum GfmTableAlign {
+    /// No alignment.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | --- |
+    ///       ^^^
+    /// ```
+    None,
+    /// Left alignment.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | :-- |
+    ///       ^^^
+    /// ```
+    Left,
+    /// Center alignment.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | :-: |
+    ///       ^^^
+    /// ```
+    Center,
+    /// Right alignment.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | --: |
+    ///       ^^^
+    /// ```
+    Right,
+}
+
 /// Context used to compile markdown.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug)]
@@ -107,6 +144,12 @@ struct CompileContext<'a> {
     pub gfm_footnote_definitions: Vec<(String, String)>,
     pub gfm_footnote_definition_calls: Vec<(String, usize)>,
     pub gfm_footnote_definition_stack: Vec<(usize, usize)>,
+    /// Whether we are in a GFM table head.
+    pub gfm_table_in_head: bool,
+    /// Current GFM table alignment.
+    pub gfm_table_align: Option<Vec<GfmTableAlign>>,
+    /// Current GFM table column.
+    pub gfm_table_column: usize,
     // Fields used to influance the current compilation.
     /// Ignore the next line ending.
     pub slurp_one_line_ending: bool,
@@ -153,6 +196,9 @@ impl<'a> CompileContext<'a> {
             gfm_footnote_definitions: vec![],
             gfm_footnote_definition_calls: vec![],
             gfm_footnote_definition_stack: vec![],
+            gfm_table_in_head: false,
+            gfm_table_align: None,
+            gfm_table_column: 0,
             tight_stack: vec![],
             slurp_one_line_ending: false,
             image_alt_inside: false,
@@ -350,6 +396,11 @@ fn enter(context: &mut CompileContext) {
         Name::GfmFootnoteDefinition => on_enter_gfm_footnote_definition(context),
         Name::GfmFootnoteCall => on_enter_gfm_footnote_call(context),
         Name::GfmStrikethrough => on_enter_gfm_strikethrough(context),
+        Name::GfmTable => on_enter_gfm_table(context),
+        Name::GfmTableBody => on_enter_gfm_table_body(context),
+        Name::GfmTableCell => on_enter_gfm_table_cell(context),
+        Name::GfmTableHead => on_enter_gfm_table_head(context),
+        Name::GfmTableRow => on_enter_gfm_table_row(context),
         Name::GfmTaskListItemCheck => on_enter_gfm_task_list_item_check(context),
         Name::HtmlFlow => on_enter_html_flow(context),
         Name::HtmlText => on_enter_html_text(context),
@@ -407,6 +458,11 @@ fn exit(context: &mut CompileContext) {
         Name::GfmFootnoteDefinitionPrefix => on_exit_gfm_footnote_definition_prefix(context),
         Name::GfmFootnoteDefinition => on_exit_gfm_footnote_definition(context),
         Name::GfmStrikethrough => on_exit_gfm_strikethrough(context),
+        Name::GfmTable => on_exit_gfm_table(context),
+        Name::GfmTableBody => on_exit_gfm_table_body(context),
+        Name::GfmTableCell => on_exit_gfm_table_cell(context),
+        Name::GfmTableHead => on_exit_gfm_table_head(context),
+        Name::GfmTableRow => on_exit_gfm_table_row(context),
         Name::GfmTaskListItemCheck => on_exit_gfm_task_list_item_check(context),
         Name::GfmTaskListItemValueChecked => on_exit_gfm_task_list_item_value_checked(context),
         Name::HardBreakEscape | Name::HardBreakTrailing => on_exit_break(context),
@@ -534,6 +590,105 @@ fn on_enter_gfm_strikethrough(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("<del>");
     }
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmTable`][Name::GfmTable].
+fn on_enter_gfm_table(context: &mut CompileContext) {
+    // Find the alignment.
+    let mut index = context.index;
+    let mut in_delimiter_row = false;
+    let mut align = vec![];
+
+    while index < context.events.len() {
+        let event = &context.events[index];
+
+        if in_delimiter_row {
+            if event.kind == Kind::Enter {
+                // Start of alignment value: set a new column.
+                if event.name == Name::GfmTableDelimiterCellValue {
+                    align.push(
+                        if context.events[index + 1].name == Name::GfmTableDelimiterMarker {
+                            GfmTableAlign::Left
+                        } else {
+                            GfmTableAlign::None
+                        },
+                    );
+                }
+            } else {
+                // End of alignment value: change the column.
+                if event.name == Name::GfmTableDelimiterCellValue {
+                    if context.events[index - 1].name == Name::GfmTableDelimiterMarker {
+                        let align_index = align.len() - 1;
+                        align[align_index] = if align[align_index] == GfmTableAlign::Left {
+                            GfmTableAlign::Center
+                        } else {
+                            GfmTableAlign::Right
+                        }
+                    }
+                }
+                // Done!
+                else if event.name == Name::GfmTableDelimiterRow {
+                    break;
+                }
+            }
+        } else if event.kind == Kind::Enter && event.name == Name::GfmTableDelimiterRow {
+            in_delimiter_row = true;
+        }
+
+        index += 1;
+    }
+
+    // Generate.
+    context.gfm_table_align = Some(align);
+    context.line_ending_if_needed();
+    context.push("<table>");
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmTableBody`][Name::GfmTableBody].
+fn on_enter_gfm_table_body(context: &mut CompileContext) {
+    context.push("<tbody>");
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmTableCell`][Name::GfmTableCell].
+fn on_enter_gfm_table_cell(context: &mut CompileContext) {
+    let column = context.gfm_table_column;
+    let align = context.gfm_table_align.as_ref().unwrap();
+
+    if column >= align.len() {
+        // Capture cell to ignore it.
+        context.buffer();
+    } else {
+        let value = align[column];
+        context.line_ending_if_needed();
+
+        if context.gfm_table_in_head {
+            context.push("<th");
+        } else {
+            context.push("<td");
+        }
+
+        match value {
+            GfmTableAlign::Left => context.push(" align=\"left\""),
+            GfmTableAlign::Right => context.push(" align=\"right\""),
+            GfmTableAlign::Center => context.push(" align=\"center\""),
+            GfmTableAlign::None => {}
+        }
+
+        context.push(">");
+    }
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmTableHead`][Name::GfmTableHead].
+fn on_enter_gfm_table_head(context: &mut CompileContext) {
+    context.line_ending_if_needed();
+    context.push("<thead>");
+    context.gfm_table_in_head = true;
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`GfmTableRow`][Name::GfmTableRow].
+fn on_enter_gfm_table_row(context: &mut CompileContext) {
+    context.line_ending_if_needed();
+    context.push("<tr>");
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck].
@@ -892,7 +1047,24 @@ fn on_exit_raw_flow(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
 fn on_exit_raw_text(context: &mut CompileContext) {
     let result = context.resume();
-    let mut bytes = result.as_bytes();
+    let mut bytes = result.as_bytes().to_vec();
+
+    // If we are in a GFM table, we need to decode escaped pipes.
+    // This is a rather weird GFM feature.
+    if context.gfm_table_align.is_some() {
+        let mut index = 0;
+        let mut len = bytes.len();
+
+        while index < len {
+            if index + 1 < len && bytes[index] == b'\\' && bytes[index + 1] == b'|' {
+                bytes.remove(index);
+                len -= 1;
+            }
+
+            index += 1;
+        }
+    }
+
     let mut trim = false;
     let mut index = 0;
     let mut end = bytes.len();
@@ -910,11 +1082,12 @@ fn on_exit_raw_text(context: &mut CompileContext) {
     }
 
     if trim {
-        bytes = &bytes[1..end];
+        bytes.remove(0);
+        bytes.pop();
     }
 
     context.raw_text_inside = false;
-    context.push(str::from_utf8(bytes).unwrap());
+    context.push(str::from_utf8(&bytes).unwrap());
 
     if !context.image_alt_inside {
         context.push("</code>");
@@ -1111,6 +1284,62 @@ fn on_exit_gfm_strikethrough(context: &mut CompileContext) {
     if !context.image_alt_inside {
         context.push("</del>");
     }
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTable`][Name::GfmTable].
+fn on_exit_gfm_table(context: &mut CompileContext) {
+    context.gfm_table_align = None;
+    context.line_ending_if_needed();
+    context.push("</table>");
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTableBody`][Name::GfmTableBody].
+fn on_exit_gfm_table_body(context: &mut CompileContext) {
+    context.line_ending_if_needed();
+    context.push("</tbody>");
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTableCell`][Name::GfmTableCell].
+fn on_exit_gfm_table_cell(context: &mut CompileContext) {
+    let align = context.gfm_table_align.as_ref().unwrap();
+
+    if context.gfm_table_column < align.len() {
+        if context.gfm_table_in_head {
+            context.push("</th>");
+        } else {
+            context.push("</td>");
+        }
+    } else {
+        // Stop capturing.
+        context.resume();
+    }
+
+    context.gfm_table_column += 1;
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTableHead`][Name::GfmTableHead].
+fn on_exit_gfm_table_head(context: &mut CompileContext) {
+    context.gfm_table_in_head = false;
+    context.line_ending_if_needed();
+    context.push("</thead>");
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmTableRow`][Name::GfmTableRow].
+fn on_exit_gfm_table_row(context: &mut CompileContext) {
+    let mut column = context.gfm_table_column;
+    let len = context.gfm_table_align.as_ref().unwrap().len();
+
+    // Add “phantom” cells, for body rows that are shorter than the delimiter
+    // row (which is equal to the head row).
+    while column < len {
+        on_enter_gfm_table_cell(context);
+        on_exit_gfm_table_cell(context);
+        column += 1;
+    }
+
+    context.gfm_table_column = 0;
+    context.line_ending_if_needed();
+    context.push("</tr>");
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck].

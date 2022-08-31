@@ -191,6 +191,17 @@ pub struct Constructs {
     ///       ^^^
     /// ```
     pub gfm_strikethrough: bool,
+    /// GFM: table.
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///     ^^^^^
+    /// > | | - |
+    ///     ^^^^^
+    /// > | | b |
+    ///     ^^^^^
+    /// ```
+    pub gfm_table: bool,
     /// GFM: task list item.
     ///
     /// ```markdown
@@ -317,6 +328,7 @@ impl Default for Constructs {
             gfm_label_start_footnote: false,
             gfm_footnote_definition: false,
             gfm_strikethrough: false,
+            gfm_table: false,
             gfm_task_list_item: false,
             hard_break_escape: true,
             hard_break_trailing: true,
@@ -346,6 +358,7 @@ impl Constructs {
             gfm_footnote_definition: true,
             gfm_label_start_footnote: true,
             gfm_strikethrough: true,
+            gfm_table: true,
             gfm_task_list_item: true,
             ..Self::default()
         }

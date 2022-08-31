@@ -1240,6 +1240,265 @@ pub enum Name {
     ///      ^
     /// ```
     GfmStrikethroughText,
+    /// GFM extension: Table.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     [`GfmTableBody`][Name::GfmTableBody],
+    ///     [`GfmTableHead`][Name::GfmTableHead],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///     ^^^^^
+    /// > | | - |
+    ///     ^^^^^
+    /// > | | b |
+    ///     ^^^^^
+    /// ```
+    GfmTable,
+    /// GFM extension: Table body.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTable`][Name::GfmTable]
+    /// *   **Content model**:
+    ///     [`GfmTableRow`][Name::GfmTableRow],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | | a |
+    ///   | | - |
+    /// > | | b |
+    ///     ^^^^^
+    /// ```
+    GfmTableBody,
+    /// GFM extension: Table cell.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableRow`][Name::GfmTableRow]
+    /// *   **Content model**:
+    ///     [`GfmTableCellDivider`][Name::GfmTableCellDivider],
+    ///     [`GfmTableCellText`][Name::GfmTableCellText],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///     ^^^^^
+    ///   | | - |
+    /// > | | b |
+    ///     ^^^^^
+    /// ```
+    GfmTableCell,
+    /// GFM extension: Table cell text.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableCell`][Name::GfmTableCell]
+    /// *   **Content model**:
+    ///     [text content][crate::construct::text]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///       ^
+    ///   | | - |
+    /// > | | b |
+    ///       ^
+    /// ```
+    GfmTableCellText,
+    /// GFM extension: Table cell divider.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableCell`][Name::GfmTableCell]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///     ^   ^
+    /// > | | - |
+    ///     ^   ^
+    /// > | | b |
+    ///     ^   ^
+    /// ```
+    GfmTableCellDivider,
+    /// GFM extension: Table delimiter row.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableHead`][Name::GfmTableHead]
+    /// *   **Content model**:
+    ///     [`GfmTableDelimiterCell`][Name::GfmTableDelimiterCell]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | | a |
+    /// > | | - |
+    ///     ^^^^^
+    ///   | | b |
+    /// ```
+    GfmTableDelimiterRow,
+    /// GFM extension: Table delimiter alignment marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableDelimiterCellValue`][Name::GfmTableDelimiterCellValue]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | | a  |
+    /// > | | :- |
+    ///       ^
+    ///   | | b  |
+    /// ```
+    GfmTableDelimiterMarker,
+    /// GFM extension: Table delimiter cell.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableDelimiterRow`][Name::GfmTableDelimiterRow]
+    /// *   **Content model**:
+    ///     [`GfmTableCellDivider`][Name::GfmTableCellDivider],
+    ///     [`GfmTableDelimiterCellValue`][Name::GfmTableDelimiterCellValue],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | | a |
+    /// > | | - |
+    ///     ^^^^^
+    ///   | | b |
+    /// ```
+    GfmTableDelimiterCell,
+    /// GFM extension: Table delimiter cell alignment.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableDelimiterCell`][Name::GfmTableDelimiterCell]
+    /// *   **Content model**:
+    ///     [`GfmTableDelimiterMarker`][Name::GfmTableDelimiterMarker],
+    ///     [`GfmTableDelimiterFiller`][Name::GfmTableDelimiterFiller]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | | a |
+    /// > | | - |
+    ///       ^
+    ///   | | b |
+    /// ```
+    GfmTableDelimiterCellValue,
+    /// GFM extension: Table delimiter filler.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableDelimiterCellValue`][Name::GfmTableDelimiterCellValue]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | | a |
+    /// > | | - |
+    ///       ^
+    ///   | | b |
+    /// ```
+    GfmTableDelimiterFiller,
+    /// GFM extension: Table head.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTable`][Name::GfmTable]
+    /// *   **Content model**:
+    ///     [`GfmTableRow`][Name::GfmTableRow],
+    ///     [`GfmTableDelimiterRow`][Name::GfmTableDelimiterRow],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///     ^^^^^
+    /// > | | - |
+    ///     ^^^^^
+    ///   | | b |
+    /// ```
+    GfmTableHead,
+    /// GFM extension: Table row.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`GfmTableBody`][Name::GfmTableBody],
+    ///     [`GfmTableHead`][Name::GfmTableHead]
+    /// *   **Content model**:
+    ///     [`GfmTableCell`][Name::GfmTableCell]
+    /// *   **Construct**:
+    ///     [`gfm_table`][crate::construct::gfm_table]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | | a |
+    ///     ^^^^^
+    ///   | | - |
+    /// > | | b |
+    ///     ^^^^^
+    /// ```
+    GfmTableRow,
     /// GFM extension: task list item check.
     ///
     /// ## Info
@@ -2436,7 +2695,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 57] = [
+pub const VOID_EVENTS: [Name; 60] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2469,6 +2728,9 @@ pub const VOID_EVENTS: [Name; 57] = [
     Name::GfmFootnoteDefinitionLabelMarker,
     Name::GfmFootnoteDefinitionMarker,
     Name::GfmStrikethroughSequence,
+    Name::GfmTableCellDivider,
+    Name::GfmTableDelimiterMarker,
+    Name::GfmTableDelimiterFiller,
     Name::GfmTaskListItemMarker,
     Name::GfmTaskListItemValueChecked,
     Name::GfmTaskListItemValueUnchecked,

@@ -305,10 +305,12 @@ pub struct Tokenizer<'a> {
     ///
     /// Used when tokenizing [document content][crate::construct::document].
     pub concrete: bool,
-    /// Whether this line is lazy.
+    /// Whether this row is piercing into the current construct with more
+    /// containers.
     ///
-    /// The previous line was a paragraph, and this line’s containers did not
-    /// match.
+    /// Used when tokenizing [document content][crate::construct::document].
+    pub pierce: bool,
+    /// Whether this line is lazy: there are less containers than before.
     pub lazy: bool,
 }
 
@@ -370,6 +372,7 @@ impl<'a> Tokenizer<'a> {
             },
             map: EditMap::new(),
             interrupt: false,
+            pierce: true,
             concrete: false,
             lazy: false,
             resolvers: vec![],

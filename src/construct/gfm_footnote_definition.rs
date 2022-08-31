@@ -141,7 +141,7 @@
 //!
 //! ## References
 //!
-//! *   [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-footnote)
+//! *   [`micromark-extension-gfm-footnote`](https://github.com/micromark/micromark-extension-gfm-footnote)
 //!
 //! > 👉 **Note**: Footnotes are not specified in GFM yet.
 //! > See [`github/cmark-gfm#270`](https://github.com/github/cmark-gfm/issues/270)

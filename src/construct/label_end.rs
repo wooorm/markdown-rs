@@ -191,7 +191,6 @@ use crate::util::{
     slice::{Position, Slice},
 };
 use alloc::{string::String, vec};
-extern crate std;
 
 /// Start of label end.
 ///
