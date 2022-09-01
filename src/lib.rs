@@ -732,6 +732,52 @@ pub struct Options {
     /// ```
     pub gfm_strikethrough_single_tilde: bool,
 
+    /// Whether to support the GFM tagfilter, when `allow_dangerous_html` is on
+    /// (default: `false`).
+    ///
+    /// The tagfilter is kinda weird and kinda useless.
+    /// The tag filter is a naïve attempt at XSS protection.
+    /// You should use a proper HTML sanitizing algorithm.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use micromark::{micromark_with_options, Options, Constructs};
+    ///
+    /// // With `allow_dangerous_html`, micromark passes HTML through untouched:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "<iframe>",
+    ///         &Options {
+    ///             allow_dangerous_html: true,
+    ///             constructs: Constructs::gfm(),
+    ///             ..Options::default()
+    ///         }
+    ///     ),
+    ///     "<iframe>"
+    /// );
+    ///
+    /// // Pass `gfm_tagfilter: true` to make some of that safe:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "<iframe>",
+    ///         &Options {
+    ///             allow_dangerous_html: true,
+    ///             constructs: Constructs::gfm(),
+    ///             gfm_tagfilter: true,
+    ///             ..Options::default()
+    ///         }
+    ///     ),
+    ///     "&lt;iframe>"
+    /// );
+    /// ```
+    ///
+    /// ## References
+    ///
+    /// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
+    /// *   [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
+    pub gfm_tagfilter: bool,
+
     /// Whether to support math (text) (if enabled in `constructs`) with a
     /// single dollar (default: `true`).
     ///
@@ -791,6 +837,7 @@ impl Default for Options {
             gfm_footnote_back_label: None,
             gfm_footnote_clobber_prefix: None,
             gfm_strikethrough_single_tilde: true,
+            gfm_tagfilter: false,
             math_text_single_dollar: true,
         }
     }

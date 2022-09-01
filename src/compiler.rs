@@ -4,8 +4,9 @@ use crate::util::{
     constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
+    gfm_tagfilter::gfm_tagfilter,
     normalize_identifier::normalize_identifier,
-    sanitize_uri::sanitize_uri,
+    sanitize_uri::{sanitize, sanitize_with_protocols},
     skip,
     slice::{Position, Slice},
 };
@@ -156,16 +157,8 @@ struct CompileContext<'a> {
     /// Whether to encode HTML.
     pub encode_html: bool,
     // Configuration
-    /// Whether to sanitize `href`s, and in which case, which protocols to
-    /// allow.
-    pub protocol_href: Option<Vec<&'static str>>,
-    /// Whether to sanitize `src`s, and in which case, which protocols to
-    /// allow.
-    pub protocol_src: Option<Vec<&'static str>>,
     /// Line ending to use.
     pub line_ending_default: LineEnding,
-    /// Whether to allow HTML.
-    pub allow_dangerous_html: bool,
     // Intermediate results.
     /// Stack of buffers.
     pub buffers: Vec<String>,
@@ -203,18 +196,7 @@ impl<'a> CompileContext<'a> {
             slurp_one_line_ending: false,
             image_alt_inside: false,
             encode_html: true,
-            protocol_href: if options.allow_dangerous_protocol {
-                None
-            } else {
-                Some(SAFE_PROTOCOL_HREF.to_vec())
-            },
-            protocol_src: if options.allow_dangerous_protocol {
-                None
-            } else {
-                Some(SAFE_PROTOCOL_SRC.to_vec())
-            },
             line_ending_default: line_ending,
-            allow_dangerous_html: options.allow_dangerous_html,
             buffers: vec![String::new()],
             index: 0,
             options,
@@ -701,14 +683,14 @@ fn on_enter_gfm_task_list_item_check(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`HtmlFlow`][Name::HtmlFlow].
 fn on_enter_html_flow(context: &mut CompileContext) {
     context.line_ending_if_needed();
-    if context.allow_dangerous_html {
+    if context.options.allow_dangerous_html {
         context.encode_html = false;
     }
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`HtmlText`][Name::HtmlText].
 fn on_enter_html_text(context: &mut CompileContext) {
-    if context.allow_dangerous_html {
+    if context.options.allow_dangerous_html {
         context.encode_html = false;
     }
 }
@@ -1198,7 +1180,7 @@ fn on_exit_gfm_footnote_call(context: &mut CompileContext) {
     let indices = context.media_stack.pop().unwrap().label_id.unwrap();
     let id =
         normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str());
-    let safe_id = sanitize_uri(&id.to_lowercase(), &None);
+    let safe_id = sanitize(&id.to_lowercase());
     let mut call_index = 0;
 
     // See if this has been called before.
@@ -1428,14 +1410,19 @@ fn on_exit_html(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:{[`HtmlFlowData`][Name::HtmlFlowData],[`HtmlTextData`][Name::HtmlTextData]}.
 fn on_exit_html_data(context: &mut CompileContext) {
-    context.push(&encode(
-        Slice::from_position(
-            context.bytes,
-            &Position::from_exit_event(context.events, context.index),
-        )
-        .as_str(),
-        context.encode_html,
-    ));
+    let slice = Slice::from_position(
+        context.bytes,
+        &Position::from_exit_event(context.events, context.index),
+    );
+    let value = slice.as_str();
+
+    let encoded = if context.options.gfm_tagfilter && context.options.allow_dangerous_html {
+        encode(&gfm_tagfilter(value), context.encode_html)
+    } else {
+        encode(value, context.encode_html)
+    };
+
+    context.push(&encoded);
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`Label`][Name::Label].
@@ -1585,14 +1572,19 @@ fn on_exit_media(context: &mut CompileContext) {
         };
 
         if let Some(destination) = destination {
-            context.push(&sanitize_uri(
-                destination,
-                if media.image {
-                    &context.protocol_src
-                } else {
-                    &context.protocol_href
-                },
-            ));
+            let url = if context.options.allow_dangerous_protocol {
+                sanitize(destination)
+            } else {
+                sanitize_with_protocols(
+                    destination,
+                    if media.image {
+                        &SAFE_PROTOCOL_SRC
+                    } else {
+                        &SAFE_PROTOCOL_HREF
+                    },
+                )
+            };
+            context.push(&url);
         }
 
         if media.image {
@@ -1728,7 +1720,7 @@ fn generate_footnote_section(context: &mut CompileContext) {
 /// Generate a footnote item from a call.
 fn generate_footnote_item(context: &mut CompileContext, index: usize) {
     let id = &context.gfm_footnote_definition_calls[index].0;
-    let safe_id = sanitize_uri(&id.to_lowercase(), &None);
+    let safe_id = sanitize(&id.to_lowercase());
 
     // Find definition: we’ll always find it.
     let mut definition_index = 0;
@@ -1833,14 +1825,19 @@ fn generate_footnote_item(context: &mut CompileContext, index: usize) {
 fn generate_autolink(context: &mut CompileContext, protocol: Option<&str>, value: &str) {
     if !context.image_alt_inside {
         context.push("<a href=\"");
-        if let Some(protocol) = protocol {
-            context.push(&sanitize_uri(
-                &format!("{}{}", protocol, value),
-                &context.protocol_href,
-            ));
+        let url = if let Some(protocol) = protocol {
+            format!("{}{}", protocol, value)
         } else {
-            context.push(&sanitize_uri(value, &context.protocol_href));
+            value.to_string()
         };
+
+        let url = if context.options.allow_dangerous_protocol {
+            sanitize(&url)
+        } else {
+            sanitize_with_protocols(&url, &SAFE_PROTOCOL_HREF)
+        };
+
+        context.push(&url);
         context.push("\">");
     }
 

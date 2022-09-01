@@ -74,6 +74,31 @@ pub const CODE_FENCED_SEQUENCE_SIZE_MIN: usize = 3;
 /// [frontmatter]: crate::construct::frontmatter
 pub const FRONTMATTER_SEQUENCE_SIZE: usize = 3;
 
+/// The number of the longest tag name in [`GFM_HTML_TAGFILTER_NAMES`][].
+///
+/// This is currently the size of `plaintext`.
+pub const GFM_HTML_TAGFILTER_SIZE_MAX: usize = 9;
+
+/// List of HTML tag names that are escaped by GFMs tag filter.
+///
+/// Tag name matching must be performed insensitive to case, and thus this list
+/// includes lowercase tag names.
+///
+/// ## References
+///
+/// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
+pub const GFM_HTML_TAGFILTER_NAMES: [&str; 9] = [
+    "iframe",
+    "noembed",
+    "noframes",
+    "plaintext",
+    "script",
+    "style",
+    "textarea",
+    "title",
+    "xmp",
+];
+
 /// The number of preceding spaces needed for a [hard break
 /// (trailing)][whitespace] to form.
 ///
@@ -2424,6 +2449,12 @@ mod tests {
             CHARACTER_REFERENCE_NAMED_SIZE_MAX,
             longest(&CHARACTER_REFERENCES.map(|d| d.0)).unwrap().len(),
             "`CHARACTER_REFERENCE_NAMED_SIZE_MAX`"
+        );
+
+        assert_eq!(
+            GFM_HTML_TAGFILTER_SIZE_MAX,
+            longest(&GFM_HTML_TAGFILTER_NAMES).unwrap().len(),
+            "`GFM_HTML_TAGFILTER_SIZE_MAX`"
         );
 
         assert_eq!(

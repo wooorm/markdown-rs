@@ -173,7 +173,7 @@
 //! [gfm_label_start_footnote]: crate::construct::gfm_label_start_footnote
 //! [definition]: crate::construct::definition
 //! [autolink]: crate::construct::autolink
-//! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
+//! [sanitize_uri]: crate::util::sanitize_uri::sanitize
 //! [normalize_identifier]: crate::util::normalize_identifier::normalize_identifier
 //! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html_img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element

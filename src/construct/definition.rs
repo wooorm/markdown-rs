@@ -96,7 +96,7 @@
 //! [label]: crate::construct::partial_label
 //! [label_end]: crate::construct::label_end
 //! [title]: crate::construct::partial_title
-//! [sanitize_uri]: crate::util::sanitize_uri::sanitize_uri
+//! [sanitize_uri]: crate::util::sanitize_uri::sanitize
 //! [normalize_identifier]: crate::util::normalize_identifier
 //! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html_img]: https://html.spec.whatwg.org/multipage/embedded-content.html#the-img-element

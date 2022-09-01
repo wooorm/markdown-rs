@@ -133,18 +133,18 @@ See [crate docs][docs] for more info.
 
 micromark supports extensions.
 These extensions are maintained in this project.
-They are not enabled by default but can be turned on with `options.constructs`.
+They are not enabled by default but can be turned on with options.
 
 > 🐣 **Note**: extensions are currently within progress.
 
 - [ ] directive
 - [x] frontmatter
-- [ ] gfm
+- [x] gfm
   - [x] autolink literal
   - [x] footnote
   - [x] strikethrough
   - [x] table
-  - [ ] tagfilter
+  - [x] tagfilter
   - [x] task list item
 - [x] math
 

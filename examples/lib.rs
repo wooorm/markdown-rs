@@ -29,6 +29,7 @@ fn main() {
             "* [x] contact@example.com ~~strikethrough~~",
             &Options {
                 constructs: Constructs::gfm(),
+                gfm_tagfilter: true,
                 ..Options::default()
             }
         )

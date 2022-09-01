@@ -10,55 +10,71 @@ use alloc::{
 /// Make a value safe for injection as a URL.
 ///
 /// This encodes unsafe characters with percent-encoding and skips already
-/// encoded sequences (see [`normalize_uri`][] below).
+/// encoded sequences (see [`normalize`][] below).
 /// Further unsafe characters are encoded as character references (see
 /// [`encode`][]).
 ///
-/// Then, a vec of (lowercase) allowed protocols can be given, in which case
-/// the URL is sanitized.
+/// ## Examples
 ///
-/// For example, `Some(vec!["http", "https", "irc", "ircs", "mailto", "xmpp"])`
-/// can be used for `a[href]`, or `Some(vec!["http", "https"])` for `img[src]`.
+/// ```rust ignore
+/// use micromark::util::sanitize_uri::sanitize;
+///
+/// assert_eq!(sanitize("javascript:alert(1)"), "javascript:alert(1)");
+/// assert_eq!(sanitize("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");
+/// ```
+///
+/// ## References
+///
+/// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
+pub fn sanitize(value: &str) -> String {
+    encode(&*normalize(value), true)
+}
+
+/// Make a value safe for injection as a URL, and check protocols.
+///
+/// This first uses [`sanitize`][sanitize].
+/// Then, a vec of (lowercase) allowed protocols can be given, in which case
+/// the URL is ignored or kept.
+///
+/// For example, `&["http", "https", "irc", "ircs", "mailto", "xmpp"]`
+/// can be used for `a[href]`, or `&["http", "https"]` for `img[src]`.
 /// If the URL includes an unknown protocol (one not matched by `protocol`, such
 /// as a dangerous example, `javascript:`), the value is ignored.
 ///
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::sanitize_url::sanitize_url;
+/// use micromark::util::sanitize_uri::sanitize_with_protocols;
 ///
-/// assert_eq!(sanitize_uri("javascript:alert(1)", &None), "javascript:alert(1)");
-/// assert_eq!(sanitize_uri("javascript:alert(1)", &Some(vec!["http", "https"])), "");
-/// assert_eq!(sanitize_uri("https://example.com", &Some(vec!["http", "https"])), "https://example.com");
-/// assert_eq!(sanitize_uri("https://a👍b.c/%20/%", &Some(vec!["http", "https"])), "https://a%F0%9F%91%8Db.c/%20/%25");
+/// assert_eq!(sanitize_with_protocols("javascript:alert(1)", &["http", "https"]), "");
+/// assert_eq!(sanitize_with_protocols("https://example.com", &["http", "https"]), "https://example.com");
+/// assert_eq!(sanitize_with_protocols("https://a👍b.c/%20/%", &["http", "https"]), "https://a%F0%9F%91%8Db.c/%20/%25");
 /// ```
 ///
 /// ## References
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
-pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
-    let value = encode(&*normalize_uri(value), true);
+pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
+    let value = sanitize(value);
 
-    if let Some(protocols) = protocols {
-        let end = value.find(|c| matches!(c, '?' | '#' | '/'));
-        let mut colon = value.find(|c| matches!(c, ':'));
+    let end = value.find(|c| matches!(c, '?' | '#' | '/'));
+    let mut colon = value.find(|c| matches!(c, ':'));
 
-        // If the first colon is after `?`, `#`, or `/`, it’s not a protocol.
-        if let Some(end) = end {
-            if let Some(index) = colon {
-                if index > end {
-                    colon = None;
-                }
+    // If the first colon is after `?`, `#`, or `/`, it’s not a protocol.
+    if let Some(end) = end {
+        if let Some(index) = colon {
+            if index > end {
+                colon = None;
             }
         }
+    }
 
-        // If there is no protocol, it’s relative, and fine.
-        if let Some(colon) = colon {
-            // If it is a protocol, it should be allowed.
-            let protocol = value[0..colon].to_lowercase();
-            if !protocols.contains(&protocol.as_str()) {
-                return "".to_string();
-            }
+    // If there is no protocol, it’s relative, and fine.
+    if let Some(colon) = colon {
+        // If it is a protocol, it should be allowed.
+        let protocol = value[0..colon].to_lowercase();
+        if !protocols.contains(&protocol.as_str()) {
+            return "".to_string();
         }
     }
 
@@ -74,7 +90,7 @@ pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::sanitize_url::normalize_uri;
+/// use micromark::util::sanitize_uri::normalize;
 ///
 /// assert_eq!(sanitize_uri("https://example.com"), "https://example.com");
 /// assert_eq!(sanitize_uri("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");
@@ -86,7 +102,7 @@ pub fn sanitize_uri(value: &str, protocols: &Option<Vec<&str>>) -> String {
 ///
 /// [definition]: crate::construct::definition
 /// [label_end]: crate::construct::label_end
-fn normalize_uri(value: &str) -> String {
+fn normalize(value: &str) -> String {
     let chars = value.chars().collect::<Vec<_>>();
     // Note: it’ll grow bigger for each non-ascii or non-safe character.
     let mut result = String::with_capacity(value.len());
