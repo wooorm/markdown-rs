@@ -81,8 +81,8 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::classify_character::{classify_opt, Kind as CharacterKind};
-use crate::util::slice::Slice;
-use alloc::{string::String, vec, vec::Vec};
+use crate::util::slice::{char_after_index, char_before_index, Slice};
+use alloc::{vec, vec::Vec};
 
 /// Attentention sequence that we can take markers from.
 #[derive(Debug)]
@@ -234,28 +234,17 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
                 let end = index + 1;
                 let exit = &tokenizer.events[end];
 
-                let before_end = enter.point.index;
-                let before_start = if before_end < 4 { 0 } else { before_end - 4 };
-                let after_start = exit.point.index;
-                let after_end = if after_start + 4 > tokenizer.parse_state.bytes.len() {
-                    tokenizer.parse_state.bytes.len()
-                } else {
-                    after_start + 4
-                };
-
                 let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
                     .head()
                     .unwrap();
-                let before = classify_opt(
-                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[before_start..before_end])
-                        .chars()
-                        .last(),
-                );
-                let after = classify_opt(
-                    String::from_utf8_lossy(&tokenizer.parse_state.bytes[after_start..after_end])
-                        .chars()
-                        .next(),
-                );
+                let before = classify_opt(char_before_index(
+                    tokenizer.parse_state.bytes,
+                    enter.point.index,
+                ));
+                let after = classify_opt(char_after_index(
+                    tokenizer.parse_state.bytes,
+                    exit.point.index,
+                ));
                 let open = after == CharacterKind::Other
                     || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
                 let close = before == CharacterKind::Other
