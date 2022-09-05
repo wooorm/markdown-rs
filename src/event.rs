@@ -2807,7 +2807,6 @@ pub struct Point {
 impl Point {
     /// Create a new point, that is shifted from the close earlier current
     /// point, to `index.`
-    // To do: tabs.
     pub fn shift_to(&self, bytes: &[u8], index: usize) -> Point {
         let mut next = self.clone();
         debug_assert!(index > next.index, "expect");

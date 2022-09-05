@@ -112,7 +112,6 @@
 //! [text]: crate::construct::text
 //! [code_indented]: crate::construct::code_indented
 //! [raw_flow]: crate::construct::raw_flow
-//! [math_flow]: # "to do"
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
 
 use crate::event::Name;

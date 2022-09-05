@@ -20,8 +20,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LabelImage`][Name::LabelImage]
-//! *   To do.
+//! *   [`GfmFootnoteCallLabel`][Name::GfmFootnoteCallLabel]
+//! *   [`GfmFootnoteCallMarker`][Name::GfmFootnoteCallMarker]
+//! *   [`LabelMarker`][Name::LabelMarker]
 //!
 //! ## References
 //!

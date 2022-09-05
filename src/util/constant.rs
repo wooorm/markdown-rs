@@ -248,6 +248,13 @@ pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 /// [list-item]: crate::construct::list_item
 pub const LIST_ITEM_VALUE_SIZE_MAX: usize = 10;
 
+/// The number of markers needed for [math (flow)][raw_flow] to form.
+///
+/// Unlike code (fenced), this number is `2`.
+///
+/// [raw_flow]: crate::construct::raw_flow
+pub const MATH_FLOW_SEQUENCE_SIZE_MIN: usize = 2;
+
 /// Maximum allowed unbalanced parens in destination.
 ///
 /// There can be many balanced parens, but if there are 33 opens that were not

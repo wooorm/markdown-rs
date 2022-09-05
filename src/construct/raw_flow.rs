@@ -143,7 +143,7 @@ use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
-    constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, TAB_SIZE},
+    constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, MATH_FLOW_SEQUENCE_SIZE_MIN, TAB_SIZE},
     slice::{Position, Slice},
 };
 
@@ -253,10 +253,9 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.consume();
         State::Next(StateName::RawFlowSequenceOpen)
     }
-    // To do: constant.
     else if tokenizer.tokenize_state.size
         < (if tokenizer.tokenize_state.marker == b'$' {
-            2
+            MATH_FLOW_SEQUENCE_SIZE_MIN
         } else {
             CODE_FENCED_SEQUENCE_SIZE_MIN
         })
