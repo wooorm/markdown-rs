@@ -430,9 +430,11 @@ fn exit(context: &mut CompileContext) {
         Name::DefinitionTitleString => on_exit_definition_title_string(context),
         Name::Emphasis => on_exit_emphasis(context),
         Name::Frontmatter => on_exit_frontmatter(context),
+        Name::GfmAutolinkLiteralEmail => on_exit_gfm_autolink_literal_email(context),
+        Name::GfmAutolinkLiteralMailto => on_exit_gfm_autolink_literal_mailto(context),
         Name::GfmAutolinkLiteralProtocol => on_exit_gfm_autolink_literal_protocol(context),
         Name::GfmAutolinkLiteralWww => on_exit_gfm_autolink_literal_www(context),
-        Name::GfmAutolinkLiteralEmail => on_exit_gfm_autolink_literal_email(context),
+        Name::GfmAutolinkLiteralXmpp => on_exit_gfm_autolink_literal_xmpp(context),
         Name::GfmFootnoteCall => on_exit_gfm_footnote_call(context),
         Name::GfmFootnoteDefinitionLabelString => {
             on_exit_gfm_footnote_definition_label_string(context);
@@ -1146,6 +1148,34 @@ fn on_exit_frontmatter(context: &mut CompileContext) {
     context.slurp_one_line_ending = true;
 }
 
+/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail].
+fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
+    generate_autolink(
+        context,
+        Some("mailto:"),
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
+        true,
+    );
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralMailto`][Name::GfmAutolinkLiteralMailto].
+fn on_exit_gfm_autolink_literal_mailto(context: &mut CompileContext) {
+    generate_autolink(
+        context,
+        None,
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
+        true,
+    );
+}
+
 /// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol].
 fn on_exit_gfm_autolink_literal_protocol(context: &mut CompileContext) {
     generate_autolink(
@@ -1174,11 +1204,11 @@ fn on_exit_gfm_autolink_literal_www(context: &mut CompileContext) {
     );
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail].
-fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
+/// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralXmpp`][Name::GfmAutolinkLiteralXmpp].
+fn on_exit_gfm_autolink_literal_xmpp(context: &mut CompileContext) {
     generate_autolink(
         context,
-        Some("mailto:"),
+        None,
         Slice::from_position(
             context.bytes,
             &Position::from_exit_event(context.events, context.index),

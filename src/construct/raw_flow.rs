@@ -252,8 +252,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
         State::Next(StateName::RawFlowSequenceOpen)
-    }
-    else if tokenizer.tokenize_state.size
+    } else if tokenizer.tokenize_state.size
         < (if tokenizer.tokenize_state.marker == b'$' {
             MATH_FLOW_SEQUENCE_SIZE_MIN
         } else {

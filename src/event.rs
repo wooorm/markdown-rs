@@ -986,6 +986,24 @@ pub enum Name {
     ///     ^^^^^^^^^^^^^^^^^^^
     /// ```
     GfmAutolinkLiteralEmail,
+    /// GFM extension: email autolink w/ explicit `mailto`.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     void.
+    /// *   **Construct**:
+    ///     [`gfm_autolink_literal`][crate::construct::gfm_autolink_literal]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | mailto:context@example.com
+    ///     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    /// ```
+    GfmAutolinkLiteralMailto,
     /// GFM extension: autolink w/ protocol.
     ///
     /// ## Info
@@ -1022,6 +1040,24 @@ pub enum Name {
     ///     ^^^^^^^^^^^^^^^
     /// ```
     GfmAutolinkLiteralWww,
+    /// GFM extension: email autolink w/ explicit `xmpp`.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     void.
+    /// *   **Construct**:
+    ///     [`gfm_autolink_literal`][crate::construct::gfm_autolink_literal]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | mailto:a@b.c/d
+    ///     ^^^^^^^^^^^^^^
+    /// ```
+    GfmAutolinkLiteralXmpp,
     /// GFM extension: whole footnote call.
     ///
     /// ## Info

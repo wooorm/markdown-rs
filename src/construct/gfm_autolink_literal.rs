@@ -122,14 +122,19 @@
 //!
 //! ## Tokens
 //!
+//! *   [`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail]
+//! *   [`GfmAutolinkLiteralMailto`][Name::GfmAutolinkLiteralMailto]
 //! *   [`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol]
 //! *   [`GfmAutolinkLiteralWww`][Name::GfmAutolinkLiteralWww]
-//! *   [`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail]
+//! *   [`GfmAutolinkLiteralXmpp`][Name::GfmAutolinkLiteralXmpp]
 //!
 //! ## References
 //!
 //! *   [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)
 //! *   [*§ 6.9 Autolinks (extension)* in `GFM`](https://github.github.com/gfm/#autolinks-extension-)
+//!
+//! > 👉 **Note**: `mailto:` and `xmpp:` protocols before email autolinks were
+//! > added in `cmark-gfm@0.29.0.gfm.5` and are as of yet undocumented.
 //!
 //! [text]: crate::construct::text
 //! [definition]: crate::construct::definition
@@ -644,12 +649,17 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 
                 while byte_index < bytes.len() {
                     if bytes[byte_index] == b'@' {
-                        let mut range = (0, 0);
+                        let mut range = (0, 0, Name::GfmAutolinkLiteralEmail);
 
                         if let Some(start) = peek_bytes_atext(bytes, byte_index) {
-                            if let Some(end) = peek_bytes_email_domain(bytes, byte_index + 1) {
-                                let end = peek_bytes_truncate(bytes, start, end);
-                                range = (start, end);
+                            let (start, kind) = peek_protocol(bytes, start);
+
+                            if let Some(end) = peek_bytes_email_domain(
+                                bytes,
+                                byte_index + 1,
+                                kind == Name::GfmAutolinkLiteralXmpp,
+                            ) {
+                                range = (start, peek_bytes_truncate(bytes, start, end), kind);
                             }
                         }
 
@@ -678,7 +688,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                             // Add the link.
                             replace.push(Event {
                                 kind: Kind::Enter,
-                                name: Name::GfmAutolinkLiteralEmail,
+                                name: range.2.clone(),
                                 point: point.clone(),
                                 link: None,
                             });
@@ -686,7 +696,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 point.shift_to(tokenizer.parse_state.bytes, start_index + range.1);
                             replace.push(Event {
                                 kind: Kind::Exit,
-                                name: Name::GfmAutolinkLiteralEmail,
+                                name: range.2.clone(),
                                 point: point.clone(),
                                 link: None,
                             });
@@ -728,8 +738,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     }
 }
 
-// To do: add `xmpp`, `mailto` support.
-
 /// Move back past atext.
 ///
 /// Moving back is only used when post processing text: so for the email address
@@ -763,6 +771,40 @@ fn peek_bytes_atext(bytes: &[u8], end: usize) -> Option<usize> {
     }
 }
 
+/// Move back past a `mailto:` or `xmpp:` protocol.
+///
+/// Moving back is only used when post processing text: so for the email address
+/// algorithm.
+///
+/// ```markdown
+/// > | a mailto:contact@example.org b
+///              ^-- from
+///       ^-- to
+/// ```
+fn peek_protocol(bytes: &[u8], end: usize) -> (usize, Name) {
+    let mut index = end;
+
+    if index > 0 && bytes[index - 1] == b':' {
+        index -= 1;
+
+        // Take alphanumerical.
+        while index > 0 && matches!(bytes[index - 1], b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') {
+            index -= 1;
+        }
+
+        let slice = Slice::from_indices(bytes, index, end - 1);
+        let name = slice.as_str().to_ascii_lowercase();
+
+        if name == "xmpp" {
+            return (index, Name::GfmAutolinkLiteralXmpp);
+        } else if name == "mailto" {
+            return (index, Name::GfmAutolinkLiteralMailto);
+        }
+    }
+
+    (end, Name::GfmAutolinkLiteralEmail)
+}
+
 /// Move past email domain.
 ///
 /// Peeking like this only used when post processing text: so for the email
@@ -773,7 +815,7 @@ fn peek_bytes_atext(bytes: &[u8], end: usize) -> Option<usize> {
 ///               ^-- from
 ///                         ^-- to
 /// ```
-fn peek_bytes_email_domain(bytes: &[u8], start: usize) -> Option<usize> {
+fn peek_bytes_email_domain(bytes: &[u8], start: usize, xmpp: bool) -> Option<usize> {
     let mut index = start;
     let mut dot = false;
 
@@ -784,6 +826,7 @@ fn peek_bytes_email_domain(bytes: &[u8], start: usize) -> Option<usize> {
         match bytes[index] {
             // Alphanumerical, `-`, and `_`.
             b'-' | b'0'..=b'9' | b'A'..=b'Z' | b'_' | b'a'..=b'z' => {}
+            b'/' if xmpp => {}
             // Dot followed by alphanumerical (not `-` or `_`).
             b'.' if index + 1 < bytes.len()
                 && matches!(bytes[index + 1], b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') =>

@@ -228,6 +228,49 @@ fn gfm_autolink_literal() {
     assert_eq!(
         micromark_with_options(
             r###"
+mailto:scyther@pokemon.com
+
+This is a mailto:scyther@pokemon.com
+
+mailto:scyther@pokemon.com.
+
+mmmmailto:scyther@pokemon.com
+
+mailto:scyther@pokemon.com/
+
+mailto:scyther@pokemon.com/message
+
+mailto:scyther@pokemon.com/mailto:beedrill@pokemon.com
+
+xmpp:scyther@pokemon.com
+
+xmpp:scyther@pokemon.com.
+
+xmpp:scyther@pokemon.com/message
+
+xmpp:scyther@pokemon.com/message.
+
+Email me at:scyther@pokemon.com"###,
+            &gfm
+        ),
+        r###"<p><a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a></p>
+<p>This is a <a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a></p>
+<p><a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a>.</p>
+<p>mmmmailto:<a href="mailto:scyther@pokemon.com">scyther@pokemon.com</a></p>
+<p><a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a>/</p>
+<p><a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a>/message</p>
+<p><a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a>/<a href="mailto:beedrill@pokemon.com">mailto:beedrill@pokemon.com</a></p>
+<p><a href="xmpp:scyther@pokemon.com">xmpp:scyther@pokemon.com</a></p>
+<p><a href="xmpp:scyther@pokemon.com">xmpp:scyther@pokemon.com</a>.</p>
+<p><a href="xmpp:scyther@pokemon.com/message">xmpp:scyther@pokemon.com/message</a></p>
+<p><a href="xmpp:scyther@pokemon.com/message">xmpp:scyther@pokemon.com/message</a>.</p>
+<p>Email me at:<a href="mailto:scyther@pokemon.com">scyther@pokemon.com</a></p>"###,
+        "should support `mailto:` and `xmpp:` protocols"
+    );
+
+    assert_eq!(
+        micromark_with_options(
+            r###"
 a www.example.com&xxx;b c
 
 a www.example.com&xxx;. b
