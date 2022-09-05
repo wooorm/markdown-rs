@@ -1,5 +1,7 @@
 //! Semantic labels of things happening.
 
+use crate::util::constant::TAB_SIZE;
+
 /// Semantic label of a span.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Name {
@@ -2814,16 +2816,15 @@ impl Point {
             match bytes[next.index] {
                 b'\n' | b'\r' => unreachable!("cannot move past line endings"),
                 b'\t' => {
-                    unreachable!("to do: tab")
-                    // let remainder = next.column % TAB_SIZE;
-                    // let vs = if remainder == 0 {
-                    //     0
-                    // } else {
-                    //     TAB_SIZE - remainder
-                    // };
+                    let remainder = next.column % TAB_SIZE;
+                    let vs = if remainder == 0 {
+                        0
+                    } else {
+                        TAB_SIZE - remainder
+                    };
 
-                    // next.index += 1;
-                    // next.column += 1 + vs;
+                    next.index += 1;
+                    next.column += 1 + vs;
                 }
                 _ => {
                     next.index += 1;
