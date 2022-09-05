@@ -310,6 +310,29 @@ pub enum Name {
     StringBefore,
     StringBeforeData,
 
+    GfmAutolinkLiteralProtocolStart,
+    GfmAutolinkLiteralProtocolAfter,
+    GfmAutolinkLiteralProtocolPrefixInside,
+    GfmAutolinkLiteralProtocolSlashesInside,
+
+    GfmAutolinkLiteralWwwStart,
+    GfmAutolinkLiteralWwwAfter,
+    GfmAutolinkLiteralWwwPrefixInside,
+    GfmAutolinkLiteralWwwPrefixAfter,
+
+    GfmAutolinkLiteralDomainInside,
+    GfmAutolinkLiteralDomainAtPunctuation,
+    GfmAutolinkLiteralDomainAfter,
+
+    GfmAutolinkLiteralPathInside,
+    GfmAutolinkLiteralPathAtPunctuation,
+    GfmAutolinkLiteralPathAfter,
+
+    GfmAutolinkLiteralTrail,
+    GfmAutolinkLiteralTrailCharRefInside,
+    GfmAutolinkLiteralTrailCharRefStart,
+    GfmAutolinkLiteralTrailBracketAfter,
+
     GfmTableStart,
     GfmTableHeadRowBefore,
     GfmTableHeadRowStart,
@@ -685,6 +708,43 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::StringStart => construct::string::start,
         Name::StringBefore => construct::string::before,
         Name::StringBeforeData => construct::string::before_data,
+
+        Name::GfmAutolinkLiteralProtocolStart => construct::gfm_autolink_literal::protocol_start,
+        Name::GfmAutolinkLiteralProtocolAfter => construct::gfm_autolink_literal::protocol_after,
+        Name::GfmAutolinkLiteralProtocolPrefixInside => {
+            construct::gfm_autolink_literal::protocol_prefix_inside
+        }
+        Name::GfmAutolinkLiteralProtocolSlashesInside => {
+            construct::gfm_autolink_literal::protocol_slashes_inside
+        }
+
+        Name::GfmAutolinkLiteralWwwAfter => construct::gfm_autolink_literal::www_after,
+        Name::GfmAutolinkLiteralWwwStart => construct::gfm_autolink_literal::www_start,
+        Name::GfmAutolinkLiteralWwwPrefixInside => {
+            construct::gfm_autolink_literal::www_prefix_inside
+        }
+        Name::GfmAutolinkLiteralWwwPrefixAfter => construct::gfm_autolink_literal::www_prefix_after,
+        Name::GfmAutolinkLiteralDomainInside => construct::gfm_autolink_literal::domain_inside,
+        Name::GfmAutolinkLiteralDomainAtPunctuation => {
+            construct::gfm_autolink_literal::domain_at_punctuation
+        }
+        Name::GfmAutolinkLiteralDomainAfter => construct::gfm_autolink_literal::domain_after,
+
+        Name::GfmAutolinkLiteralPathInside => construct::gfm_autolink_literal::path_inside,
+        Name::GfmAutolinkLiteralPathAtPunctuation => {
+            construct::gfm_autolink_literal::path_at_punctuation
+        }
+        Name::GfmAutolinkLiteralPathAfter => construct::gfm_autolink_literal::path_after,
+        Name::GfmAutolinkLiteralTrail => construct::gfm_autolink_literal::trail,
+        Name::GfmAutolinkLiteralTrailCharRefStart => {
+            construct::gfm_autolink_literal::trail_char_ref_start
+        }
+        Name::GfmAutolinkLiteralTrailCharRefInside => {
+            construct::gfm_autolink_literal::trail_char_ref_inside
+        }
+        Name::GfmAutolinkLiteralTrailBracketAfter => {
+            construct::gfm_autolink_literal::trail_bracket_after
+        }
 
         Name::GfmTableStart => construct::gfm_table::start,
         Name::GfmTableHeadRowBefore => construct::gfm_table::head_row_before,

@@ -191,7 +191,7 @@
 //! This bug is not present in this project.
 //! The issue relating to tables is:
 //!
-//! *   [GFM tables: escaped escapes are incorrectly treated as escapes](https://github.com/github/cmark-gfm/issues/277)\
+//! *   [GFM tables: escaped escapes are incorrectly treated as escapes](https://github.com/github/cmark-gfm/issues/277)
 //!
 //! ## Tokens
 //!

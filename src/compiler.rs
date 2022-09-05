@@ -871,6 +871,7 @@ fn on_exit_autolink_email(context: &mut CompileContext) {
             &Position::from_exit_event(context.events, context.index),
         )
         .as_str(),
+        false,
     );
 }
 
@@ -884,6 +885,7 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) {
             &Position::from_exit_event(context.events, context.index),
         )
         .as_str(),
+        false,
     );
 }
 
@@ -1154,6 +1156,7 @@ fn on_exit_gfm_autolink_literal_protocol(context: &mut CompileContext) {
             &Position::from_exit_event(context.events, context.index),
         )
         .as_str(),
+        true,
     );
 }
 
@@ -1167,12 +1170,22 @@ fn on_exit_gfm_autolink_literal_www(context: &mut CompileContext) {
             &Position::from_exit_event(context.events, context.index),
         )
         .as_str(),
+        true,
     );
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail].
 fn on_exit_gfm_autolink_literal_email(context: &mut CompileContext) {
-    on_exit_autolink_email(context);
+    generate_autolink(
+        context,
+        Some("mailto:"),
+        Slice::from_position(
+            context.bytes,
+            &Position::from_exit_event(context.events, context.index),
+        )
+        .as_str(),
+        true,
+    );
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`GfmFootnoteCall`][Name::GfmFootnoteCall].
@@ -1822,8 +1835,24 @@ fn generate_footnote_item(context: &mut CompileContext, index: usize) {
 }
 
 /// Generate an autolink (used by unicode autolinks and GFM autolink literals).
-fn generate_autolink(context: &mut CompileContext, protocol: Option<&str>, value: &str) {
-    if !context.image_alt_inside {
+fn generate_autolink(
+    context: &mut CompileContext,
+    protocol: Option<&str>,
+    value: &str,
+    is_gfm_literal: bool,
+) {
+    let mut is_in_link = false;
+    let mut index = 0;
+
+    while index < context.media_stack.len() {
+        if !context.media_stack[index].image {
+            is_in_link = true;
+            break;
+        }
+        index += 1;
+    }
+
+    if !context.image_alt_inside && (!is_in_link || !is_gfm_literal) {
         context.push("<a href=\"");
         let url = if let Some(protocol) = protocol {
             format!("{}{}", protocol, value)
@@ -1843,7 +1872,7 @@ fn generate_autolink(context: &mut CompileContext, protocol: Option<&str>, value
 
     context.push(&encode(value, context.encode_html));
 
-    if !context.image_alt_inside {
+    if !context.image_alt_inside && (!is_in_link || !is_gfm_literal) {
         context.push("</a>");
     }
 }

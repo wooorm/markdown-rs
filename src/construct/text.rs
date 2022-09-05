@@ -29,17 +29,21 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Characters that can start something in text.
-const MARKERS: [u8; 11] = [
+const MARKERS: [u8; 15] = [
     b'!',  // `label_start_image`
     b'$',  // `raw_text` (math (text))
     b'&',  // `character_reference`
     b'*',  // `attention` (emphasis, strong)
     b'<',  // `autolink`, `html_text`
+    b'H',  // `gfm_autolink_literal` (`protocol` kind)
+    b'W',  // `gfm_autolink_literal` (`www.` kind)
     b'[',  // `label_start_link`
     b'\\', // `character_escape`, `hard_break_escape`
     b']',  // `label_end`, `gfm_label_start_footnote`
     b'_',  // `attention` (emphasis, strong)
     b'`',  // `raw_text` (code (text))
+    b'h',  // `gfm_autolink_literal` (`protocol` kind)
+    b'w',  // `gfm_autolink_literal` (`www.` kind)
     b'~',  // `attention` (gfm strikethrough)
 ];
 
@@ -112,6 +116,20 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::TextBeforeHtml),
             );
             State::Retry(StateName::AutolinkStart)
+        }
+        Some(b'H' | b'h') => {
+            tokenizer.attempt(
+                State::Next(StateName::TextBefore),
+                State::Next(StateName::TextBeforeData),
+            );
+            State::Retry(StateName::GfmAutolinkLiteralProtocolStart)
+        }
+        Some(b'W' | b'w') => {
+            tokenizer.attempt(
+                State::Next(StateName::TextBefore),
+                State::Next(StateName::TextBeforeData),
+            );
+            State::Retry(StateName::GfmAutolinkLiteralWwwStart)
         }
         Some(b'[') => {
             tokenizer.attempt(

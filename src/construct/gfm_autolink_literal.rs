@@ -1,14 +1,621 @@
-//! To do.
+//! GFM: autolink literal occurs in the [text][] content type.
+//!
+//! ## Grammar
+//!
+//! Autolink literals form with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! gfm_autolink_literal ::= gfm_protocol_autolink | gfm_www_autolink | gfm_email_autolink
+//!
+//! ; Restriction: the code before must be `www_autolink_before`.
+//! ; Restriction: the code after `.` must not be eof.
+//! www_autolink ::= 3('w' | 'W') '.' [domain [path]]
+//! www_autolink_before ::= eof | eol | space_or_tab | '(' | '*' | '_' | '[' | ']' | '~'
+//!
+//! ; Restriction: the code before must be `http_autolink_before`.
+//! ; Restriction: the code after the protocol must be `http_autolink_protocol_after`.
+//! http_autolink ::= ('h' | 'H') 2('t' | 'T') ('p' | 'P') ['s' | 'S'] ':' 2'/' domain [path]
+//! http_autolink_before ::= byte - ascii_alpha
+//! http_autolink_protocol_after ::= byte - eof - eol - ascii_control - unicode_whitespace - unicode_punctuation
+//!
+//! ; Restriction: the code before must be `email_autolink_before`.
+//! ; Restriction: `ascii_digit` may not occur in the last label part of the label.
+//! email_autolink ::= 1*('+' | '-' | '.' | '_' | ascii_alphanumeric) '@' 1*(1*label_segment label_dot_cont) 1*label_segment
+//! email_autolink_before ::= byte - ascii_alpha - '/'
+//!
+//! ; Restriction: `_` may not occur in the last two domain parts.
+//! domain ::= 1*(url_ampt_cont | domain_punct_cont | '-' | byte - eof - ascii_control - unicode_whitespace - unicode_punctuation)
+//! ; Restriction: must not be followed by `punct`.
+//! domain_punct_cont ::= '.' | '_'
+//! ; Restriction: must not be followed by `char-ref`.
+//! url_ampt_cont ::= '&'
+//!
+//! ; Restriction: a counter `balance = 0` is increased for every `(`, and decreased for every `)`.
+//! ; Restriction: `)` must not be `paren_at_end`.
+//! path ::= 1*(url_ampt_cont | path_punctuation_cont | '(' | ')' | byte - eof - eol - space_or_tab)
+//! ; Restriction: must not be followed by `punct`.
+//! path_punctuation_cont ::= trailing_punctuation - '<'
+//! ; Restriction: must be followed by `punct` and `balance` must be less than `0`.
+//! paren_at_end ::= ')'
+//!
+//! label_segment ::= label_dash_underscore_cont | ascii_alpha | ascii_digit
+//! ; Restriction: if followed by `punct`, the whole email autolink is invalid.
+//! label_dash_underscore_cont ::= '-' | '_'
+//! ; Restriction: must not be followed by `punct`.
+//! label_dot_cont ::= '.'
+//!
+//! punct ::= *trailing_punctuation ( byte - eof - eol - space_or_tab - '<' )
+//! char_ref ::= *ascii_alpha ';' path_end
+//! trailing_punctuation ::= '!' | '"' | '\'' | ')' | '*' | ',' | '.' | ':' | ';' | '<' | '?' | '_' | '~'
+//! ```
+//!
+//! The grammar for GFM autolink literal is very relaxed: basically anything
+//! except for whitespace is allowed after a prefix.
+//! To use whitespace characters and otherwise impossible characters, in URLs,
+//! you can use percent encoding:
+//!
+//! ```markdown
+//! https://example.com/alpha%20bravo
+//! ```
+//!
+//! Yields:
+//!
+//! ```html
+//! <p><a href="https://example.com/alpha%20bravo">https://example.com/alpha%20bravo</a></p>
+//! ```
+//!
+//! There are several cases where incorrect encoding of URLs would, in other
+//! languages, result in a parse error.
+//! In markdown, there are no errors, and URLs are normalized.
+//! In addition, many characters are percent encoded
+//! ([`sanitize_uri`][sanitize_uri]).
+//! For example:
+//!
+//! ```markdown
+//! www.a👍b%
+//! ```
+//!
+//! Yields:
+//!
+//! ```html
+//! <p><a href="http://www.a%F0%9F%91%8Db%25">www.a👍b%</a></p>
+//! ```
+//!
+//! There is a big difference between how www and protocol literals work
+//! compared to how email literals work.
+//! The first two are done when parsing, and work like anything else in
+//! markdown.
+//! But email literals are handled afterwards: when everything is parsed, we
+//! look back at the events to figure out if there were email addresses.
+//! This particularly affects how they interleave with character escapes and
+//! character references.
+//!
+//! ## HTML
+//!
+//! GFM autolink literals relate to the `<a>` element in HTML.
+//! See [*§ 4.5.1 The `a` element*][html_a] in the HTML spec for more info.
+//! When an email autolink is used, the string `mailto:` is prepended when
+//! generating the `href` attribute of the hyperlink.
+//! When a www autolink is used, the string `http:` is prepended.
+//!
+//! ## Recommendation
+//!
+//! It is recommended to use labels ([label start link][label_start_link],
+//! [label end][label_end]), either with a resource or a definition
+//! ([definition][]), instead of autolink literals, as those allow relative
+//! URLs and descriptive text to explain the URL in prose.
+//!
+//! ## Bugs
+//!
+//! GitHub’s own algorithm to parse autolink literals contains three bugs.
+//! A smaller bug is left unfixed in this project for consistency.
+//! Two main bugs are not present in this project.
+//! The issues relating to autolink literals are:
+//!
+//! *   [GFM autolink extension (`www.`, `https?://` parts): links don’t work when after bracket](https://github.com/github/cmark-gfm/issues/278)\
+//!     fixed here ✅
+//! *   [GFM autolink extension (`www.` part): uppercase does not match on issues/PRs/comments](https://github.com/github/cmark-gfm/issues/280)\
+//!     fixed here ✅
+//! *   [GFM autolink extension (`www.` part): the word `www` matches](https://github.com/github/cmark-gfm/issues/279)\
+//!     present here for consistency
+//!
+//! ## Tokens
+//!
+//! *   [`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol]
+//! *   [`GfmAutolinkLiteralWww`][Name::GfmAutolinkLiteralWww]
+//! *   [`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail]
+//!
+//! ## References
+//!
+//! *   [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)
+//! *   [*§ 6.9 Autolinks (extension)* in `GFM`](https://github.github.com/gfm/#autolinks-extension-)
+//!
+//! [text]: crate::construct::text
+//! [definition]: crate::construct::definition
+//! [attention]: crate::construct::attention
+//! [label_start_link]: crate::construct::label_start_link
+//! [label_end]: crate::construct::label_end
+//! [sanitize_uri]: crate::util::sanitize_uri
+//! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 
 use crate::event::{Event, Kind, Name};
+use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::classify_character::{classify, Kind as CharacterKind};
-use crate::util::slice::{Position, Slice};
+use crate::util::{
+    classify_character::{classify_opt, Kind as CharacterKind},
+    slice::{char_after_index, Position, Slice},
+};
 use alloc::vec::Vec;
-use core::str;
 
-// To do: doc al functions.
+/// Start of protocol autolink literal.
+///
+/// ```markdown
+/// > | https://example.com/a?b#c
+///     ^
+/// ```
+pub fn protocol_start(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer
+        .parse_state
+        .options
+        .constructs
+        .gfm_autolink_literal &&
+        matches!(tokenizer.current, Some(b'H' | b'h'))
+            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L214>.
+            && !matches!(tokenizer.previous, Some(b'A'..=b'Z' | b'a'..=b'z'))
+    {
+        tokenizer.enter(Name::GfmAutolinkLiteralProtocol);
+        tokenizer.attempt(
+            State::Next(StateName::GfmAutolinkLiteralProtocolAfter),
+            State::Nok,
+        );
+        tokenizer.attempt(
+            State::Next(StateName::GfmAutolinkLiteralDomainInside),
+            State::Nok,
+        );
+        tokenizer.tokenize_state.start = tokenizer.point.index;
+        State::Retry(StateName::GfmAutolinkLiteralProtocolPrefixInside)
+    } else {
+        State::Nok
+    }
+}
 
+/// After a protocol autolink literal.
+///
+/// ```markdown
+/// > | https://example.com/a?b#c
+///                              ^
+/// ```
+pub fn protocol_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.exit(Name::GfmAutolinkLiteralProtocol);
+    State::Ok
+}
+
+/// In protocol.
+///
+/// ```markdown
+/// > | https://example.com/a?b#c
+///     ^^^^^
+/// ```
+pub fn protocol_prefix_inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some(b'A'..=b'Z' | b'a'..=b'z')
+            // `5` is size of `https`
+            if tokenizer.point.index - tokenizer.tokenize_state.start < 5 =>
+        {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralProtocolPrefixInside)
+        }
+        Some(b':') => {
+            let slice = Slice::from_indices(
+                tokenizer.parse_state.bytes,
+                tokenizer.tokenize_state.start,
+                tokenizer.point.index,
+            );
+            let name = slice.as_str().to_ascii_lowercase();
+
+            tokenizer.tokenize_state.start = 0;
+
+            if name == "http" || name == "https" {
+                tokenizer.consume();
+                State::Next(StateName::GfmAutolinkLiteralProtocolSlashesInside)
+            } else {
+                State::Nok
+            }
+        }
+        _ => {
+            tokenizer.tokenize_state.start = 0;
+            State::Nok
+        }
+    }
+}
+
+/// In protocol slashes.
+///
+/// ```markdown
+/// > | https://example.com/a?b#c
+///           ^^
+/// ```
+pub fn protocol_slashes_inside(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.current == Some(b'/') {
+        tokenizer.consume();
+        if tokenizer.tokenize_state.size == 0 {
+            tokenizer.tokenize_state.size += 1;
+            State::Next(StateName::GfmAutolinkLiteralProtocolSlashesInside)
+        } else {
+            tokenizer.tokenize_state.size = 0;
+            State::Ok
+        }
+    } else {
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
+    }
+}
+
+/// Start of www autolink literal.
+///
+/// ```markdown
+/// > | www.example.com/a?b#c
+///     ^
+/// ```
+pub fn www_start(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer
+        .parse_state
+        .options
+        .constructs
+        .gfm_autolink_literal &&
+        matches!(tokenizer.current, Some(b'W' | b'w'))
+            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
+            && matches!(tokenizer.previous, None | Some(b'\t' | b'\n' | b' ' | b'(' | b'*' | b'_' | b'[' | b']' | b'~'))
+    {
+        tokenizer.enter(Name::GfmAutolinkLiteralWww);
+        tokenizer.attempt(
+            State::Next(StateName::GfmAutolinkLiteralWwwAfter),
+            State::Nok,
+        );
+        // Note: we *check*, so we can discard the `www.` we parsed.
+        // If it worked, we consider it as a part of the domain.
+        tokenizer.check(
+            State::Next(StateName::GfmAutolinkLiteralDomainInside),
+            State::Nok,
+        );
+        State::Retry(StateName::GfmAutolinkLiteralWwwPrefixInside)
+    } else {
+        State::Nok
+    }
+}
+
+/// After a www autolink literal.
+///
+/// ```markdown
+/// > | www.example.com/a?b#c
+///                          ^
+/// ```
+pub fn www_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.exit(Name::GfmAutolinkLiteralWww);
+    State::Ok
+}
+
+/// In www prefix.
+///
+/// ```markdown
+/// > | www.example.com
+///     ^^^^
+/// ```
+pub fn www_prefix_inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some(b'.') if tokenizer.tokenize_state.size == 3 => {
+            tokenizer.tokenize_state.size = 0;
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralWwwPrefixAfter)
+        }
+        Some(b'W' | b'w') if tokenizer.tokenize_state.size < 3 => {
+            tokenizer.tokenize_state.size += 1;
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralWwwPrefixInside)
+        }
+        _ => {
+            tokenizer.tokenize_state.size = 0;
+            State::Nok
+        }
+    }
+}
+
+/// After www prefix.
+///
+/// ```markdown
+/// > | www.example.com
+///         ^
+/// ```
+pub fn www_prefix_after(tokenizer: &mut Tokenizer) -> State {
+    // If there is *anything*, we can link.
+    if tokenizer.current == None {
+        State::Nok
+    } else {
+        State::Ok
+    }
+}
+
+/// In domain.
+///
+/// ```markdown
+/// > | https://example.com/a
+///             ^^^^^^^^^^^
+/// ```
+pub fn domain_inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        // Check whether this marker, which is a trailing punctuation
+        // marker, optionally followed by more trailing markers, and then
+        // followed by an end.
+        Some(b'.' | b'_') => {
+            tokenizer.check(
+                State::Next(StateName::GfmAutolinkLiteralDomainAfter),
+                State::Next(StateName::GfmAutolinkLiteralDomainAtPunctuation),
+            );
+            State::Retry(StateName::GfmAutolinkLiteralTrail)
+        }
+        // Dashes and continuation bytes are fine.
+        Some(b'-' | 0x80..=0xBF) => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralDomainInside)
+        }
+        _ => {
+            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
+            if byte_to_kind(
+                tokenizer.parse_state.bytes,
+                tokenizer.point.index,
+                tokenizer.current,
+            ) == CharacterKind::Other
+            {
+                tokenizer.tokenize_state.seen = true;
+                tokenizer.consume();
+                State::Next(StateName::GfmAutolinkLiteralDomainInside)
+            } else {
+                State::Retry(StateName::GfmAutolinkLiteralDomainAfter)
+            }
+        }
+    }
+}
+
+/// In domain, at potential trailing punctuation, that was not trailing.
+///
+/// ```markdown
+/// > | https://example.com
+///                    ^
+/// ```
+pub fn domain_at_punctuation(tokenizer: &mut Tokenizer) -> State {
+    // There is an underscore in the last segment of the domain
+    if matches!(tokenizer.current, Some(b'_')) {
+        tokenizer.tokenize_state.marker = b'_';
+    }
+    // Otherwise, it’s a `.`: save the last segment underscore in the
+    // penultimate segment slot.
+    else {
+        tokenizer.tokenize_state.marker_b = tokenizer.tokenize_state.marker;
+        tokenizer.tokenize_state.marker = 0;
+    }
+
+    tokenizer.consume();
+    State::Next(StateName::GfmAutolinkLiteralDomainInside)
+}
+
+/// After domain
+///
+/// ```markdown
+/// > | https://example.com/a
+///                        ^
+/// ```
+pub fn domain_after(tokenizer: &mut Tokenizer) -> State {
+    // No underscores allowed in last two segments.
+    let result = if tokenizer.tokenize_state.marker_b == b'_'
+        || tokenizer.tokenize_state.marker == b'_'
+        // At least one character must be seen.
+        || !tokenizer.tokenize_state.seen
+    // Note: that’s GH says a dot is needed, but it’s not true:
+    // <https://github.com/github/cmark-gfm/issues/279>
+    {
+        State::Nok
+    } else {
+        State::Retry(StateName::GfmAutolinkLiteralPathInside)
+    };
+
+    tokenizer.tokenize_state.seen = false;
+    tokenizer.tokenize_state.marker = 0;
+    tokenizer.tokenize_state.marker_b = 0;
+    result
+}
+
+/// In path.
+///
+/// ```markdown
+/// > | https://example.com/a
+///                        ^^
+/// ```
+pub fn path_inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        // Continuation bytes are fine, we’ve already checked the first one.
+        Some(0x80..=0xBF) => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralPathInside)
+        }
+        // Count opening parens.
+        Some(b'(') => {
+            tokenizer.tokenize_state.size += 1;
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralPathInside)
+        }
+        // Check whether this trailing punctuation marker is optionally
+        // followed by more trailing markers, and then followed
+        // by an end.
+        // If this is a paren (followed by trailing, then the end), we
+        // *continue* if we saw less closing parens than opening parens.
+        Some(
+            b'!' | b'"' | b'&' | b'\'' | b')' | b'*' | b',' | b'.' | b':' | b';' | b'<' | b'?'
+            | b']' | b'_' | b'~',
+        ) => {
+            let next = if tokenizer.current == Some(b')')
+                && tokenizer.tokenize_state.size_b < tokenizer.tokenize_state.size
+            {
+                StateName::GfmAutolinkLiteralPathAtPunctuation
+            } else {
+                StateName::GfmAutolinkLiteralPathAfter
+            };
+            tokenizer.check(
+                State::Next(next),
+                State::Next(StateName::GfmAutolinkLiteralPathAtPunctuation),
+            );
+            State::Retry(StateName::GfmAutolinkLiteralTrail)
+        }
+        _ => {
+            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
+            if byte_to_kind(
+                tokenizer.parse_state.bytes,
+                tokenizer.point.index,
+                tokenizer.current,
+            ) == CharacterKind::Whitespace
+            {
+                State::Retry(StateName::GfmAutolinkLiteralPathAfter)
+            } else {
+                tokenizer.consume();
+                State::Next(StateName::GfmAutolinkLiteralPathInside)
+            }
+        }
+    }
+}
+
+/// In path, at potential trailing punctuation, that was not trailing.
+///
+/// ```markdown
+/// > | https://example.com/a"b
+///                          ^
+/// ```
+pub fn path_at_punctuation(tokenizer: &mut Tokenizer) -> State {
+    // Count closing parens.
+    if tokenizer.current == Some(b')') {
+        tokenizer.tokenize_state.size_b += 1;
+    }
+
+    tokenizer.consume();
+    State::Next(StateName::GfmAutolinkLiteralPathInside)
+}
+
+/// At end of path, reset parens.
+///
+/// ```markdown
+/// > | https://example.com/asd(qwe).
+///                                 ^
+/// ```
+pub fn path_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.size = 0;
+    tokenizer.tokenize_state.size_b = 0;
+    State::Ok
+}
+
+/// In trail of domain or path.
+///
+/// ```markdown
+/// > | https://example.com").
+///                        ^
+/// ```
+pub fn trail(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        // Regular trailing punctuation.
+        Some(
+            b'!' | b'"' | b'\'' | b')' | b'*' | b',' | b'.' | b':' | b';' | b'?' | b'_' | b'~',
+        ) => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralTrail)
+        }
+        // `&` followed by one or more alphabeticals and then a `;`, is
+        // as a whole considered as trailing punctuation.
+        // In all other cases, it is considered as continuation of the URL.
+        Some(b'&') => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralTrailCharRefStart)
+        }
+        // `<` is an end.
+        Some(b'<') => State::Ok,
+        // Needed because we allow literals after `[`, as we fix:
+        // <https://github.com/github/cmark-gfm/issues/278>.
+        // Check that it is not followed by `(` or `[`.
+        Some(b']') => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralTrailBracketAfter)
+        }
+        _ => {
+            // Whitespace is the end of the URL, anything else is continuation.
+            if byte_to_kind(
+                tokenizer.parse_state.bytes,
+                tokenizer.point.index,
+                tokenizer.current,
+            ) == CharacterKind::Whitespace
+            {
+                State::Ok
+            } else {
+                State::Nok
+            }
+        }
+    }
+}
+
+/// In trail, after `]`.
+///
+/// > 👉 **Note**: this deviates from `cmark-gfm` to fix a bug.
+/// > See end of <https://github.com/github/cmark-gfm/issues/278> for more.
+///
+/// ```markdown
+/// > | https://example.com](
+///                         ^
+/// ```
+pub fn trail_bracket_after(tokenizer: &mut Tokenizer) -> State {
+    // Whitespace or something that could start a resource or reference is the end.
+    // Switch back to trail otherwise.
+    if matches!(
+        tokenizer.current,
+        None | Some(b'\t' | b'\n' | b' ' | b'(' | b'[')
+    ) {
+        State::Ok
+    } else {
+        State::Retry(StateName::GfmAutolinkLiteralTrail)
+    }
+}
+
+/// In character-reference like trail, after `&`.
+///
+/// ```markdown
+/// > | https://example.com&amp;).
+///                         ^
+/// ```
+pub fn trail_char_ref_start(tokenizer: &mut Tokenizer) -> State {
+    if matches!(tokenizer.current, Some(b'A'..=b'Z' | b'a'..=b'z')) {
+        State::Retry(StateName::GfmAutolinkLiteralTrailCharRefInside)
+    } else {
+        State::Nok
+    }
+}
+
+/// In character-reference like trail.
+///
+/// ```markdown
+/// > | https://example.com&amp;).
+///                         ^
+/// ```
+pub fn trail_char_ref_inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some(b'A'..=b'Z' | b'a'..=b'z') => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralTrailCharRefInside)
+        }
+        // Switch back to trail if this is well-formed.
+        Some(b';') => {
+            tokenizer.consume();
+            State::Next(StateName::GfmAutolinkLiteralTrail)
+        }
+        _ => State::Nok,
+    }
+}
+
+/// Resolve: postprocess text to find email autolink literals.
 pub fn resolve(tokenizer: &mut Tokenizer) {
     tokenizer.map.consume(&mut tokenizer.events);
 
@@ -36,23 +643,30 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 let mut start = 0;
 
                 while byte_index < bytes.len() {
-                    if matches!(bytes[byte_index], b'H' | b'h' | b'W' | b'w' | b'@') {
-                        if let Some(autolink) = peek(bytes, byte_index) {
-                            byte_index = autolink.1;
+                    if bytes[byte_index] == b'@' {
+                        let mut range = (0, 0);
+
+                        if let Some(start) = peek_bytes_atext(bytes, byte_index) {
+                            if let Some(end) = peek_bytes_email_domain(bytes, byte_index + 1) {
+                                let end = peek_bytes_truncate(bytes, start, end);
+                                range = (start, end);
+                            }
+                        }
+
+                        if range.1 != 0 {
+                            byte_index = range.1;
 
                             // If there is something between the last link
                             // (or the start) and this link.
-                            if start != autolink.0 {
+                            if start != range.0 {
                                 replace.push(Event {
                                     kind: Kind::Enter,
                                     name: Name::Data,
                                     point: point.clone(),
                                     link: None,
                                 });
-                                point = point.shift_to(
-                                    tokenizer.parse_state.bytes,
-                                    start_index + autolink.0,
-                                );
+                                point = point
+                                    .shift_to(tokenizer.parse_state.bytes, start_index + range.0);
                                 replace.push(Event {
                                     kind: Kind::Exit,
                                     name: Name::Data,
@@ -64,19 +678,19 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                             // Add the link.
                             replace.push(Event {
                                 kind: Kind::Enter,
-                                name: autolink.2.clone(),
+                                name: Name::GfmAutolinkLiteralEmail,
                                 point: point.clone(),
                                 link: None,
                             });
-                            point = point
-                                .shift_to(tokenizer.parse_state.bytes, start_index + autolink.1);
+                            point =
+                                point.shift_to(tokenizer.parse_state.bytes, start_index + range.1);
                             replace.push(Event {
                                 kind: Kind::Exit,
-                                name: autolink.2.clone(),
+                                name: Name::GfmAutolinkLiteralEmail,
                                 point: point.clone(),
                                 link: None,
                             });
-                            start = autolink.1;
+                            start = range.1;
                         }
                     }
 
@@ -114,140 +728,19 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     }
 }
 
-fn peek(bytes: &[u8], index: usize) -> Option<(usize, usize, Name)> {
-    // Protocol.
-    if let Some(protocol_end) = peek_protocol(bytes, index) {
-        if let Some(domain_end) = peek_domain(bytes, protocol_end, true) {
-            let end = truncate(bytes, protocol_end, domain_end);
+// To do: add `xmpp`, `mailto` support.
 
-            // Cannot be empty.
-            if end != protocol_end {
-                return Some((index, end, Name::GfmAutolinkLiteralProtocol));
-            }
-        }
-    }
-
-    // Www.
-    if peek_www(bytes, index).is_some() {
-        // Note: we discard the `www.` we parsed, we now try to parse it as a domain.
-        let domain_end = peek_domain(bytes, index, false).unwrap_or(index);
-        let end = truncate(bytes, index, domain_end);
-        return Some((index, end, Name::GfmAutolinkLiteralWww));
-    }
-
-    // Email.
-    if bytes[index] == b'@' {
-        if let Some(start) = peek_atext(bytes, index) {
-            if let Some(end) = peek_email_domain(bytes, index + 1) {
-                let end = truncate(bytes, start, end);
-                return Some((start, end, Name::GfmAutolinkLiteralEmail));
-            }
-        }
-    }
-
-    None
-}
-
-/// Move past `http://`, `https://`, case-insensitive.
-fn peek_protocol(bytes: &[u8], mut index: usize) -> Option<usize> {
-    // `http`
-    if index + 3 < bytes.len()
-        && matches!(bytes[index], b'H' | b'h')
-        && matches!(bytes[index + 1], b'T' | b't')
-        && matches!(bytes[index + 2], b'T' | b't')
-        && matches!(bytes[index + 3], b'P' | b'p')
-    {
-        index += 4;
-
-        // `s`, optional.
-        if index + 1 < bytes.len() && matches!(bytes[index], b'S' | b's') {
-            index += 1;
-        }
-
-        // `://`
-        if index + 3 < bytes.len()
-            && bytes[index] == b':'
-            && bytes[index + 1] == b'/'
-            && bytes[index + 2] == b'/'
-        {
-            return Some(index + 3);
-        }
-    }
-
-    None
-}
-
-/// Move past `www.`, case-insensitive.
-fn peek_www(bytes: &[u8], index: usize) -> Option<usize> {
-    // `www.`
-    if index + 3 < bytes.len()
-        // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
-        && (index == 0 || matches!(bytes[index - 1], b'\t' | b'\n' | b'\r' | b' ' | b'(' | b'*' | b'_' | b'~'))
-        && matches!(bytes[index], b'W' | b'w')
-        && matches!(bytes[index + 1], b'W' | b'w')
-        && matches!(bytes[index + 2], b'W' | b'w')
-        && bytes[index + 3] == b'.'
-    {
-        Some(index + 4)
-    } else {
-        None
-    }
-}
-
-/// Move past `example.com`.
-fn peek_domain(bytes: &[u8], start: usize, allow_short: bool) -> Option<usize> {
-    let mut dots = false;
-    let mut penultime = false;
-    let mut last = false;
-    // To do: expose this from slice?
-    // To do: do it ourselves? <https://github.com/commonmark/cmark/blob/8a023286198a7e408398e282f293e3b0baebb644/src/utf8.c#L150>, <https://doc.rust-lang.org/core/str/fn.next_code_point.html>, <https://www.reddit.com/r/rust/comments/4g2zu0/lazy_unicode_iterator_from_byte_iteratorslice/>, <http://bjoern.hoehrmann.de/utf-8/decoder/dfa/>.
-    let char_indices = str::from_utf8(&bytes[start..])
-        .unwrap()
-        .char_indices()
-        .collect::<Vec<_>>();
-    let mut index = 0;
-
-    while index < char_indices.len() {
-        match char_indices[index].1 {
-            '_' => last = true,
-            '.' => {
-                penultime = last;
-                last = false;
-                dots = true;
-            }
-            '-' => {}
-            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
-            char if classify(char) == CharacterKind::Other => {}
-            _ => break,
-        }
-
-        index += 1;
-    }
-
-    // No underscores allowed in last two parts.
-    // A valid domain needs to have at least a dot.
-    if penultime || last || (!allow_short && !dots) {
-        None
-    } else {
-        // Now peek past `/path?search#hash` (anything except whitespace).
-        while index < char_indices.len() {
-            if classify(char_indices[index].1) == CharacterKind::Whitespace {
-                break;
-            }
-
-            index += 1;
-        }
-
-        Some(if index == char_indices.len() {
-            bytes.len()
-        } else {
-            start + char_indices[index].0
-        })
-    }
-}
-
-/// Move back past `contact`.
-fn peek_atext(bytes: &[u8], end: usize) -> Option<usize> {
+/// Move back past atext.
+///
+/// Moving back is only used when post processing text: so for the email address
+/// algorithm.
+///
+/// ```markdown
+/// > | a contact@example.org b
+///              ^-- from
+///       ^-- to
+/// ```
+fn peek_bytes_atext(bytes: &[u8], end: usize) -> Option<usize> {
     let mut index = end;
 
     // Take simplified atext.
@@ -270,8 +763,17 @@ fn peek_atext(bytes: &[u8], end: usize) -> Option<usize> {
     }
 }
 
-/// Move past `example.com`.
-fn peek_email_domain(bytes: &[u8], start: usize) -> Option<usize> {
+/// Move past email domain.
+///
+/// Peeking like this only used when post processing text: so for the email
+/// address algorithm.
+///
+/// ```markdown
+/// > | a contact@example.org b
+///               ^-- from
+///                         ^-- to
+/// ```
+fn peek_bytes_email_domain(bytes: &[u8], start: usize) -> Option<usize> {
     let mut index = start;
     let mut dot = false;
 
@@ -303,8 +805,21 @@ fn peek_email_domain(bytes: &[u8], start: usize) -> Option<usize> {
     }
 }
 
-/// Split trialing stuff from a URL.
-fn truncate(bytes: &[u8], start: usize, mut end: usize) -> usize {
+/// Move back past punctuation.
+///
+/// Moving back is only used when post processing text: so for the email address
+/// algorithm.
+///
+/// This is much more complex that needed, because GH allows a lot of
+/// punctuation in the protocol and www algorithms.
+/// However, those aren’t implemented like the email algo.
+///
+/// ```markdown
+/// > | a contact@example.org”) b
+///                           ^-- from
+///                         ^-- to
+/// ```
+fn peek_bytes_truncate(bytes: &[u8], start: usize, mut end: usize) -> usize {
     let mut index = start;
 
     // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L42>
@@ -378,4 +893,25 @@ fn truncate(bytes: &[u8], start: usize, mut end: usize) -> usize {
     }
 
     split
+}
+
+/// Classify a byte (or `char`).
+fn byte_to_kind(bytes: &[u8], index: usize, byte: Option<u8>) -> CharacterKind {
+    match byte {
+        None => CharacterKind::Whitespace,
+        Some(byte) => {
+            if byte.is_ascii_whitespace() {
+                CharacterKind::Whitespace
+            } else if byte.is_ascii_punctuation() {
+                CharacterKind::Punctuation
+            } else if byte.is_ascii_alphanumeric() {
+                CharacterKind::Other
+            } else {
+                // Otherwise: seems to be an ASCII control, so it seems to be a
+                // non-ASCII `char`.
+                let char = char_after_index(bytes, index);
+                classify_opt(char)
+            }
+        }
+    }
 }
