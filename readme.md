@@ -21,14 +21,14 @@ positional info, concrete tokens, and extensions.
 ## Feature highlights
 
 - [x] **[compliant][commonmark]** (100% to CommonMark)
-- [x] **[extensions][]** (GFM, directives, frontmatter, math)
+- [x] **[extensions][]** (GFM, frontmatter, math)
 - [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
 - [x] **[robust][test]** (1800+ tests, 100% coverage)
 
 It’s also `#![no_std]` + `alloc`, has tons of docs, and has a single dependency
 (for optional debug logging).
 
-> 🐣 **Note**: extensions and coverage are currently within progress.
+> 🐣 **Note**: coverage is currently within progress.
 
 ## When to use this
 
@@ -135,18 +135,15 @@ micromark supports extensions.
 These extensions are maintained in this project.
 They are not enabled by default but can be turned on with options.
 
-> 🐣 **Note**: extensions are currently within progress.
-
-- [ ] directive
-- [x] frontmatter
-- [x] gfm
-  - [x] autolink literal
-  - [x] footnote
-  - [x] strikethrough
-  - [x] table
-  - [x] tagfilter
-  - [x] task list item
-- [x] math
+- frontmatter
+- gfm
+  - autolink literal
+  - footnote
+  - strikethrough
+  - table
+  - tagfilter
+  - task list item
+- math
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support incredibly common, somewhat standardized,
