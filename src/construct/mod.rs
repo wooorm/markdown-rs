@@ -30,14 +30,13 @@
 //!
 //! The following constructs are found in markdown (CommonMark):
 //!
-//! *   [attention (strong, emphasis)][attention]
+//! *   [attention][attention] (strong, emphasis, extension: GFM strikethrough)
 //! *   [autolink][]
 //! *   [blank line][blank_line]
 //! *   [block quote][block_quote]
 //! *   [character escape][character_escape]
 //! *   [character reference][character_reference]
 //! *   [code (indented)][code_indented]
-//! *   [code (text)][raw_text]
 //! *   [definition][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [heading (atx)][heading_atx]
@@ -49,7 +48,8 @@
 //! *   [label start (link)][label_start_link]
 //! *   [list item][list_item]
 //! *   [paragraph][]
-//! *   [raw (flow)][raw_flow] (code (fenced), math (flow))
+//! *   [raw (flow)][raw_flow] (code (fenced), extensions: math (flow))
+//! *   [raw (text)][raw_text] (code (text), extensions: math (text))
 //! *   [thematic break][thematic_break]
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
@@ -60,11 +60,10 @@
 //! *   [frontmatter][]
 //! *   [gfm autolink literal][gfm_autolink_literal]
 //! *   [gfm footnote definition][gfm_footnote_definition]
+//! *   [gfm label start footnote][gfm_label_start_footnote]
 //! *   [gfm table][gfm_table]
 //! *   [gfm task list item check][gfm_task_list_item_check]
-//! *   [gfm label start footnote][gfm_label_start_footnote]
-//! *   math (text) (in `raw_text`)
-//! *   gfm strikethrough (in attention)
+//! *   [mdx jsx (text)][mdx_jsx_text]
 //!
 //! There are also several small subroutines typically used in different places:
 //!
@@ -163,6 +162,7 @@ pub mod label_end;
 pub mod label_start_image;
 pub mod label_start_link;
 pub mod list_item;
+pub mod mdx_jsx_text;
 pub mod paragraph;
 pub mod partial_bom;
 pub mod partial_data;

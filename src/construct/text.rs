@@ -18,6 +18,7 @@
 //! *   [Label start (image)][crate::construct::label_start_image]
 //! *   [Label start (link)][crate::construct::label_start_link]
 //! *   [Label end][crate::construct::label_end]
+//! *   [MDX: JSX (text)][crate::construct::mdx_jsx_text]
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
 //! > [whitespace][crate::construct::partial_whitespace].
@@ -34,7 +35,7 @@ const MARKERS: [u8; 15] = [
     b'$',  // `raw_text` (math (text))
     b'&',  // `character_reference`
     b'*',  // `attention` (emphasis, strong)
-    b'<',  // `autolink`, `html_text`
+    b'<',  // `autolink`, `html_text`, `mdx_jsx_text`
     b'H',  // `gfm_autolink_literal` (`protocol` kind)
     b'W',  // `gfm_autolink_literal` (`www.` kind)
     b'[',  // `label_start_link`
@@ -109,7 +110,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::AttentionStart)
         }
-        // `autolink`, `html_text` (order does not matter)
+        // `autolink`, `html_text` (order does not matter), `mdx_jsx_text` (order matters).
         Some(b'<') => {
             tokenizer.attempt(
                 State::Next(StateName::TextBefore),
@@ -167,9 +168,25 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::TextBefore),
-        State::Next(StateName::TextBeforeData),
+        State::Next(StateName::TextBeforeMdxJsx),
     );
     State::Retry(StateName::HtmlTextStart)
+}
+
+/// Before mdx jsx (text).
+///
+/// At `<`, which wasn’t an autolink or html.
+///
+/// ```markdown
+/// > | a <b>
+///       ^
+/// ```
+pub fn before_mdx_jsx(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        State::Next(StateName::TextBefore),
+        State::Next(StateName::TextBeforeData),
+    );
+    State::Retry(StateName::MdxJsxTextStart)
 }
 
 /// Before hard break escape.

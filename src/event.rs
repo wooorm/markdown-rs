@@ -2730,6 +2730,28 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+
+    // To do: sort.
+    MdxJsxTextTag,
+    MdxJsxTextTagMarker,        // void
+    MdxJsxTextEsWhitespace,     // void
+    MdxJsxTextTagClosingMarker, // void
+    MdxJsxTextTagName,
+    MdxJsxTextTagNamePrimary,       // void?
+    MdxJsxTextTagNameMemberMarker,  // void
+    MdxJsxTextTagNamePrefixMarker,  // void
+    MdxJsxTextTagNameMember,        // void
+    MdxJsxTextTagNameLocal,         // void
+    MdxJsxTextTagSelfClosingMarker, // void
+    MdxJsxTextTagAttribute,
+    MdxJsxTextTagAttributeName,
+    MdxJsxTextTagAttributePrimaryName,
+    MdxJsxTextTagAttributeNamePrefixMarker,  // void
+    MdxJsxTextTagAttributeInitializerMarker, // void
+    MdxJsxTextTagAttributeNameLocal,         // void
+    MdxJsxTextTagAttributeValueLiteral,
+    MdxJsxTextTagAttributeValueLiteralMarker, // void
+    MdxJsxTextTagAttributeValueLiteralValue,
 }
 
 /// List of void events, used to make sure everything is working well.

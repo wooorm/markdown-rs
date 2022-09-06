@@ -301,6 +301,13 @@ pub struct Constructs {
     ///       ^^^
     /// ```
     pub math_text: bool,
+    /// MDX: JSX (text).
+    ///
+    /// ```markdown
+    /// > | a <Component /> c
+    ///       ^^^^^^^^^^^^^
+    /// ```
+    pub mdx_jsx_text: bool,
     /// Thematic break.
     ///
     /// ```markdown
@@ -342,6 +349,7 @@ impl Default for Constructs {
             list_item: true,
             math_flow: false,
             math_text: false,
+            mdx_jsx_text: false,
             thematic_break: true,
         }
     }
@@ -349,6 +357,8 @@ impl Default for Constructs {
 
 impl Constructs {
     /// GFM.
+    ///
+    /// <https://github.github.com/gfm/>
     ///
     /// This turns on `CommonMark` + GFM.
     #[must_use]
@@ -360,6 +370,25 @@ impl Constructs {
             gfm_strikethrough: true,
             gfm_table: true,
             gfm_task_list_item: true,
+            ..Self::default()
+        }
+    }
+
+    /// MDX.
+    ///
+    /// <https://mdxjs.com>
+    ///
+    /// This turns on `CommonMark`, turns off some conflicting constructs
+    /// (autolinks, code (indented), html), and turns on MDX (JSX,
+    /// expressions, ESM).
+    #[must_use]
+    pub fn mdx() -> Self {
+        Self {
+            autolink: false,
+            code_indented: false,
+            html_flow: false,
+            html_text: false,
+            mdx_jsx_text: true,
             ..Self::default()
         }
     }

@@ -1,7 +1,10 @@
 //! Deal with bytes.
 
 use crate::event::{Event, Kind, Point};
-use crate::util::constant::TAB_SIZE;
+use crate::util::{
+    classify_character::{classify_opt, Kind as CharacterKind},
+    constant::TAB_SIZE,
+};
 use alloc::string::String;
 use core::str;
 
@@ -25,6 +28,26 @@ pub fn char_after_index(bytes: &[u8], index: usize) -> Option<char> {
         index + 4
     };
     String::from_utf8_lossy(&bytes[index..end]).chars().next()
+}
+
+/// Classify a byte (or `char`).
+pub fn byte_to_kind(bytes: &[u8], index: usize) -> CharacterKind {
+    if index == bytes.len() {
+        CharacterKind::Whitespace
+    } else {
+        let byte = bytes[index];
+        if byte.is_ascii_whitespace() {
+            CharacterKind::Whitespace
+        } else if byte.is_ascii_punctuation() {
+            CharacterKind::Punctuation
+        } else if byte.is_ascii_alphanumeric() {
+            CharacterKind::Other
+        } else {
+            // Otherwise: seems to be an ASCII control, so it seems to be a
+            // non-ASCII `char`.
+            classify_opt(char_after_index(bytes, index))
+        }
+    }
 }
 
 /// A range between two points.

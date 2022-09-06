@@ -358,6 +358,7 @@ pub enum Name {
     TextStart,
     TextBefore,
     TextBeforeHtml,
+    TextBeforeMdxJsx,
     TextBeforeHardBreakEscape,
     TextBeforeLabelStartLink,
     TextBeforeData,
@@ -374,12 +375,74 @@ pub enum Name {
     TitleAtBlankLine,
     TitleEscape,
     TitleInside,
+
+    // To do: sort.
+    MdxJsxTextEsWhitespaceStart,
+    MdxJsxTextEsWhitespaceInside,
+    MdxJsxTextStart,
+    MdxJsxTextStartAfter,
+    MdxJsxTextNameBefore,
+    MdxJsxTextClosingTagNameBefore,
+    MdxJsxTextTagEnd,
+    MdxJsxTextPrimaryName,
+    MdxJsxTextPrimaryNameAfter,
+    MdxJsxTextMemberNameBefore,
+    MdxJsxTextMemberName,
+    MdxJsxTextMemberNameAfter,
+    MdxJsxTextLocalNameBefore,
+    MdxJsxTextLocalName,
+    MdxJsxTextLocalNameAfter,
+    MdxJsxTextAttributeBefore,
+    MdxJsxTextSelfClosing,
+    MdxJsxTextAttributePrimaryName,
+    MdxJsxTextAttributePrimaryNameAfter,
+    MdxJsxTextAttributeLocalNameBefore,
+    MdxJsxTextAttributeLocalName,
+    MdxJsxTextAttributeLocalNameAfter,
+    MdxJsxTextAttributeValueBefore,
+    MdxJsxTextAttributeValueQuotedStart,
+    MdxJsxTextAttributeValueQuoted,
 }
 
 #[allow(clippy::too_many_lines)]
 /// Call the corresponding state for a state name.
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     let func = match name {
+        // To do: sort.
+        Name::MdxJsxTextEsWhitespaceStart => construct::mdx_jsx_text::es_whitespace_start,
+        Name::MdxJsxTextEsWhitespaceInside => construct::mdx_jsx_text::es_whitespace_inside,
+        Name::MdxJsxTextStart => construct::mdx_jsx_text::start,
+        Name::MdxJsxTextStartAfter => construct::mdx_jsx_text::start_after,
+        Name::MdxJsxTextNameBefore => construct::mdx_jsx_text::name_before,
+        Name::MdxJsxTextClosingTagNameBefore => construct::mdx_jsx_text::closing_tag_name_before,
+        Name::MdxJsxTextTagEnd => construct::mdx_jsx_text::tag_end,
+        Name::MdxJsxTextPrimaryName => construct::mdx_jsx_text::primary_name,
+        Name::MdxJsxTextPrimaryNameAfter => construct::mdx_jsx_text::primary_name_after,
+        Name::MdxJsxTextMemberNameBefore => construct::mdx_jsx_text::member_name_before,
+        Name::MdxJsxTextMemberName => construct::mdx_jsx_text::member_name,
+        Name::MdxJsxTextMemberNameAfter => construct::mdx_jsx_text::member_name_after,
+        Name::MdxJsxTextLocalNameBefore => construct::mdx_jsx_text::local_name_before,
+        Name::MdxJsxTextLocalName => construct::mdx_jsx_text::local_name,
+        Name::MdxJsxTextLocalNameAfter => construct::mdx_jsx_text::local_name_after,
+        Name::MdxJsxTextAttributeBefore => construct::mdx_jsx_text::attribute_before,
+        Name::MdxJsxTextSelfClosing => construct::mdx_jsx_text::self_closing,
+        Name::MdxJsxTextAttributePrimaryName => construct::mdx_jsx_text::attribute_primary_name,
+        Name::MdxJsxTextAttributePrimaryNameAfter => {
+            construct::mdx_jsx_text::attribute_primary_name_after
+        }
+        Name::MdxJsxTextAttributeLocalNameBefore => {
+            construct::mdx_jsx_text::attribute_local_name_before
+        }
+        Name::MdxJsxTextAttributeLocalName => construct::mdx_jsx_text::attribute_local_name,
+        Name::MdxJsxTextAttributeLocalNameAfter => {
+            construct::mdx_jsx_text::attribute_local_name_after
+        }
+        Name::MdxJsxTextAttributeValueBefore => construct::mdx_jsx_text::attribute_value_before,
+        Name::MdxJsxTextAttributeValueQuotedStart => {
+            construct::mdx_jsx_text::attribute_value_quoted_start
+        }
+        Name::MdxJsxTextAttributeValueQuoted => construct::mdx_jsx_text::attribute_value_quoted,
+
         Name::AttentionStart => construct::attention::start,
         Name::AttentionInside => construct::attention::inside,
 
@@ -776,6 +839,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::TextStart => construct::text::start,
         Name::TextBefore => construct::text::before,
         Name::TextBeforeHtml => construct::text::before_html,
+        Name::TextBeforeMdxJsx => construct::text::before_mdx_jsx,
         Name::TextBeforeHardBreakEscape => construct::text::before_hard_break_escape,
         Name::TextBeforeLabelStartLink => construct::text::before_label_start_link,
         Name::TextBeforeData => construct::text::before_data,

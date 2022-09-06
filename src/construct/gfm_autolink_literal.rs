@@ -148,8 +148,8 @@ use crate::event::{Event, Kind, Name};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
-    classify_character::{classify_opt, Kind as CharacterKind},
-    slice::{char_after_index, Position, Slice},
+    classify_character::Kind as CharacterKind,
+    slice::{byte_to_kind, Position, Slice},
 };
 use alloc::vec::Vec;
 
@@ -366,11 +366,8 @@ pub fn domain_inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
-            if byte_to_kind(
-                tokenizer.parse_state.bytes,
-                tokenizer.point.index,
-                tokenizer.current,
-            ) == CharacterKind::Other
+            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+                == CharacterKind::Other
             {
                 tokenizer.tokenize_state.seen = true;
                 tokenizer.consume();
@@ -473,11 +470,8 @@ pub fn path_inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
-            if byte_to_kind(
-                tokenizer.parse_state.bytes,
-                tokenizer.point.index,
-                tokenizer.current,
-            ) == CharacterKind::Whitespace
+            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+                == CharacterKind::Whitespace
             {
                 State::Retry(StateName::GfmAutolinkLiteralPathAfter)
             } else {
@@ -549,11 +543,8 @@ pub fn trail(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // Whitespace is the end of the URL, anything else is continuation.
-            if byte_to_kind(
-                tokenizer.parse_state.bytes,
-                tokenizer.point.index,
-                tokenizer.current,
-            ) == CharacterKind::Whitespace
+            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+                == CharacterKind::Whitespace
             {
                 State::Ok
             } else {
@@ -936,25 +927,4 @@ fn peek_bytes_truncate(bytes: &[u8], start: usize, mut end: usize) -> usize {
     }
 
     split
-}
-
-/// Classify a byte (or `char`).
-fn byte_to_kind(bytes: &[u8], index: usize, byte: Option<u8>) -> CharacterKind {
-    match byte {
-        None => CharacterKind::Whitespace,
-        Some(byte) => {
-            if byte.is_ascii_whitespace() {
-                CharacterKind::Whitespace
-            } else if byte.is_ascii_punctuation() {
-                CharacterKind::Punctuation
-            } else if byte.is_ascii_alphanumeric() {
-                CharacterKind::Other
-            } else {
-                // Otherwise: seems to be an ASCII control, so it seems to be a
-                // non-ASCII `char`.
-                let char = char_after_index(bytes, index);
-                classify_opt(char)
-            }
-        }
-    }
 }
