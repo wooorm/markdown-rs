@@ -19,6 +19,8 @@ harness = false
 
 [dependencies]
 log = "0.4"
+unicode-id = { version = "0.3", features = ["no_std"] }
+
 
 [dev-dependencies]
 env_logger = "0.9"

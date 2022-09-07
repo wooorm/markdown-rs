@@ -4,12 +4,16 @@ use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::{classify_character::Kind as CharacterKind, slice::byte_to_kind};
+use crate::util::{
+    classify_character::Kind as CharacterKind,
+    slice::{byte_to_kind, char_after_index},
+};
 use alloc::{
     format,
     string::{String, ToString},
 };
 use core::str;
+use unicode_id::UnicodeID;
 
 /// Start of MDX: JSX (text).
 ///
@@ -73,7 +77,9 @@ pub fn name_before(tokenizer: &mut Tokenizer) -> State {
         Some(b'>') => State::Retry(StateName::MdxJsxTextTagEnd),
         _ => {
             // To do: unicode.
-            if id_start(tokenizer.current) {
+            let char_opt = char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index);
+
+            if id_start(char_opt) {
                 tokenizer.enter(Name::MdxJsxTextTagName);
                 tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
                 tokenizer.consume();
@@ -111,7 +117,9 @@ pub fn closing_tag_name_before(tokenizer: &mut Tokenizer) -> State {
         // Start of a closing tag name.
         _ => {
             // To do: unicode.
-            if id_start(tokenizer.current) {
+            let char_opt = char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index);
+
+            if id_start(char_opt) {
                 tokenizer.enter(Name::MdxJsxTextTagName);
                 tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
                 tokenizer.consume();
@@ -153,8 +161,14 @@ pub fn primary_name(tokenizer: &mut Tokenizer) -> State {
         State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
     }
     // Continuation of name: remain.
+    // Allow continuation bytes.
     // To do: unicode.
-    else if matches!(tokenizer.current, Some(b'-')) || id_cont(tokenizer.current) {
+    else if matches!(tokenizer.current, Some(0x80..=0xBF))
+        || id_cont(char_after_index(
+            tokenizer.parse_state.bytes,
+            tokenizer.point.index,
+        ))
+    {
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextPrimaryName)
     } else {
@@ -207,7 +221,11 @@ pub fn primary_name_after(tokenizer: &mut Tokenizer) -> State {
         }
         // End of name.
         _ => {
-            if matches!(tokenizer.current, Some(b'/' | b'>' | b'{')) || id_start(tokenizer.current)
+            if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
+                || id_start(char_after_index(
+                    tokenizer.parse_state.bytes,
+                    tokenizer.point.index,
+                ))
             {
                 tokenizer.exit(Name::MdxJsxTextTagName);
                 State::Retry(StateName::MdxJsxTextAttributeBefore)
@@ -230,7 +248,10 @@ pub fn primary_name_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn member_name_before(tokenizer: &mut Tokenizer) -> State {
     // Start of a member name.
-    if id_start(tokenizer.current) {
+    if id_start(char_after_index(
+        tokenizer.parse_state.bytes,
+        tokenizer.point.index,
+    )) {
         tokenizer.enter(Name::MdxJsxTextTagNameMember);
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextMemberName)
@@ -264,7 +285,12 @@ pub fn member_name(tokenizer: &mut Tokenizer) -> State {
     }
     // Continuation of name: remain.
     // To do: unicode.
-    else if matches!(tokenizer.current, Some(b'-')) || id_cont(tokenizer.current) {
+    else if matches!(tokenizer.current, Some(0x80..=0xBF))
+        || id_cont(char_after_index(
+            tokenizer.parse_state.bytes,
+            tokenizer.point.index,
+        ))
+    {
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextMemberName)
     } else {
@@ -306,7 +332,11 @@ pub fn member_name_after(tokenizer: &mut Tokenizer) -> State {
         }
         // End of name.
         _ => {
-            if matches!(tokenizer.current, Some(b'/' | b'>' | b'{')) || id_start(tokenizer.current)
+            if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
+                || id_start(char_after_index(
+                    tokenizer.parse_state.bytes,
+                    tokenizer.point.index,
+                ))
             {
                 tokenizer.exit(Name::MdxJsxTextTagName);
                 State::Retry(StateName::MdxJsxTextAttributeBefore)
@@ -329,7 +359,10 @@ pub fn member_name_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn local_name_before(tokenizer: &mut Tokenizer) -> State {
     // Start of a local name.
-    if id_start(tokenizer.current) {
+    if id_start(char_after_index(
+        tokenizer.parse_state.bytes,
+        tokenizer.point.index,
+    )) {
         tokenizer.enter(Name::MdxJsxTextTagNameLocal);
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextLocalName)
@@ -366,7 +399,12 @@ pub fn local_name(tokenizer: &mut Tokenizer) -> State {
     }
     // Continuation of name: remain.
     // To do: unicode.
-    else if matches!(tokenizer.current, Some(b'-')) || id_cont(tokenizer.current) {
+    else if matches!(tokenizer.current, Some(0x80..=0xBF))
+        || id_cont(char_after_index(
+            tokenizer.parse_state.bytes,
+            tokenizer.point.index,
+        ))
+    {
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextLocalName)
     } else {
@@ -391,7 +429,12 @@ pub fn local_name(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn local_name_after(tokenizer: &mut Tokenizer) -> State {
     // End of name.
-    if matches!(tokenizer.current, Some(b'/' | b'>' | b'{')) || id_start(tokenizer.current) {
+    if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
+        || id_start(char_after_index(
+            tokenizer.parse_state.bytes,
+            tokenizer.point.index,
+        ))
+    {
         tokenizer.exit(Name::MdxJsxTextTagName);
         State::Retry(StateName::MdxJsxTextAttributeBefore)
     } else {
@@ -431,7 +474,10 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
         Some(b'{') => unreachable!("to do: attribute expression"),
         _ => {
             // Start of an attribute name.
-            if id_start(tokenizer.current) {
+            if id_start(char_after_index(
+                tokenizer.parse_state.bytes,
+                tokenizer.point.index,
+            )) {
                 tokenizer.enter(Name::MdxJsxTextTagAttribute);
                 tokenizer.enter(Name::MdxJsxTextTagAttributeName);
                 tokenizer.enter(Name::MdxJsxTextTagAttributePrimaryName);
@@ -472,7 +518,12 @@ pub fn attribute_primary_name(tokenizer: &mut Tokenizer) -> State {
     }
     // Continuation of the attribute name: remain.
     // To do: unicode.
-    else if matches!(tokenizer.current, Some(b'-')) || id_cont(tokenizer.current) {
+    else if matches!(tokenizer.current, Some(0x80..=0xBF))
+        || id_cont(char_after_index(
+            tokenizer.parse_state.bytes,
+            tokenizer.point.index,
+        ))
+    {
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextLocalName)
     } else {
@@ -524,7 +575,10 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
             if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
                 || matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
-                || id_start(tokenizer.current)
+                || id_start(char_after_index(
+                    tokenizer.parse_state.bytes,
+                    tokenizer.point.index,
+                ))
             {
                 tokenizer.exit(Name::MdxJsxTextTagAttributeName);
                 tokenizer.exit(Name::MdxJsxTextTagAttribute);
@@ -552,7 +606,10 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn attribute_local_name_before(tokenizer: &mut Tokenizer) -> State {
     // Start of a local name.
-    if id_start(tokenizer.current) {
+    if id_start(char_after_index(
+        tokenizer.parse_state.bytes,
+        tokenizer.point.index,
+    )) {
         tokenizer.enter(Name::MdxJsxTextTagAttributeNameLocal);
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextAttributeLocalName)
@@ -588,7 +645,12 @@ pub fn attribute_local_name(tokenizer: &mut Tokenizer) -> State {
     }
     // Continuation of local name: remain.
     // To do: unicode.
-    else if matches!(tokenizer.current, Some(b'-')) || id_cont(tokenizer.current) {
+    else if matches!(tokenizer.current, Some(0x80..=0xBF))
+        || id_cont(char_after_index(
+            tokenizer.parse_state.bytes,
+            tokenizer.point.index,
+        ))
+    {
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextAttributeLocalName)
     } else {
@@ -623,7 +685,11 @@ pub fn attribute_local_name_after(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // End of name.
-            if matches!(tokenizer.current, Some(b'/' | b'>' | b'{')) || id_start(tokenizer.current)
+            if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
+                || id_start(char_after_index(
+                    tokenizer.parse_state.bytes,
+                    tokenizer.point.index,
+                ))
             {
                 tokenizer.exit(Name::MdxJsxTextTagAttribute);
                 State::Retry(StateName::MdxJsxTextAttributeBefore)
@@ -841,16 +907,21 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
 }
 
 // To do: unicode.
-fn id_start(code: Option<u8>) -> bool {
-    matches!(code, Some(b'$' | b'_' | b'A'..=b'Z' | b'a'..=b'z'))
+fn id_start(code: Option<char>) -> bool {
+    if let Some(char) = code {
+        UnicodeID::is_id_start(char) || matches!(char, '$' | '_')
+    } else {
+        false
+    }
 }
 
 // To do: unicode.
-fn id_cont(code: Option<u8>) -> bool {
-    matches!(
-        code,
-        Some(b'$' | b'_' | b'A'..=b'Z' | b'0'..=b'9' | b'a'..=b'z')
-    )
+fn id_cont(code: Option<char>) -> bool {
+    if let Some(char) = code {
+        UnicodeID::is_id_continue(char) || matches!(char, '-' | '\u{200c}' | '\u{200d}')
+    } else {
+        false
+    }
 }
 
 fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> ! {
