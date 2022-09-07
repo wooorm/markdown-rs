@@ -440,7 +440,7 @@ impl<'a> Tokenizer<'a> {
     /// Each state function is expected to call this to signal that this code is
     /// used, or call a next function.
     pub fn consume(&mut self) {
-        debug_assert!(!self.consumed, "expected code to not have been consumed: this might be because `x(code)` instead of `x` was returned");
+        debug_assert!(!self.consumed, "expected code to *not* have been consumed: this might be because `State::Retry(x)` instead of `State::Next(x)` was returned");
         self.move_one();
 
         self.previous = self.current;
