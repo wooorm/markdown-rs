@@ -26,7 +26,7 @@ pub struct ParseState<'a> {
 /// Turn a string of markdown into events.
 ///
 /// Passes the bytes back so the compiler can access the source.
-pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8]) {
+pub fn parse<'a>(value: &'a str, options: &'a Options) -> Result<(Vec<Event>, &'a [u8]), String> {
     let mut parse_state = ParseState {
         options,
         bytes: value.as_bytes(),
@@ -49,7 +49,7 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8])
         (parse_state.bytes.len(), 0),
         State::Next(StateName::DocumentStart),
     );
-    tokenizer.flush(state, true);
+    tokenizer.flush(state, true)?;
 
     let mut events = tokenizer.events;
 
@@ -58,7 +58,7 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> (Vec<Event>, &'a [u8])
     parse_state.gfm_footnote_definitions = footnote;
     parse_state.definitions = normal;
 
-    while !subtokenize(&mut events, &parse_state) {}
+    while !(subtokenize(&mut events, &parse_state)?) {}
 
-    (events, parse_state.bytes)
+    Ok((events, parse_state.bytes))
 }

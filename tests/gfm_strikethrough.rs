@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_strikethrough() {
+fn gfm_strikethrough() -> Result<(), String> {
     let gfm = Options {
         constructs: Constructs::gfm(),
         ..Options::default()
@@ -16,49 +16,49 @@ fn gfm_strikethrough() {
     );
 
     assert_eq!(
-        micromark_with_options("a ~b~", &gfm),
+        micromark_with_options("a ~b~", &gfm)?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ one tilde"
     );
 
     assert_eq!(
-        micromark_with_options("a ~~b~~", &gfm),
+        micromark_with_options("a ~~b~~", &gfm)?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ two tildes"
     );
 
     assert_eq!(
-        micromark_with_options("a ~~~b~~~", &gfm),
+        micromark_with_options("a ~~~b~~~", &gfm)?,
         "<p>a ~~~b~~~</p>",
         "should not support strikethrough w/ three tildes"
     );
 
     assert_eq!(
-        micromark_with_options("a \\~~~b~~ c", &gfm),
+        micromark_with_options("a \\~~~b~~ c", &gfm)?,
         "<p>a ~<del>b</del> c</p>",
         "should support strikethrough after an escaped tilde"
     );
 
     assert_eq!(
-        micromark_with_options("a ~~b ~~c~~ d~~ e", &gfm),
+        micromark_with_options("a ~~b ~~c~~ d~~ e", &gfm)?,
         "<p>a <del>b <del>c</del> d</del> e</p>",
         "should support nested strikethrough"
     );
 
     assert_eq!(
-        micromark_with_options("a ~-1~ b", &gfm),
+        micromark_with_options("a ~-1~ b", &gfm)?,
         "<p>a <del>-1</del> b</p>",
         "should open if preceded by whitespace and followed by punctuation"
     );
 
     assert_eq!(
-        micromark_with_options("a ~b.~ c", &gfm),
+        micromark_with_options("a ~b.~ c", &gfm)?,
         "<p>a <del>b.</del> c</p>",
         "should close if preceded by punctuation and followed by whitespace"
     );
 
     assert_eq!(
-        micromark_with_options("~b.~.", &gfm),
+        micromark_with_options("~b.~.", &gfm)?,
         "<p><del>b.</del>.</p>",
         "should close if preceded and followed by punctuation"
     );
@@ -123,7 +123,7 @@ a ~~two b one~ c two~~ d
 a ~~two b two~~ c one~ d
 "###,
             &gfm
-        ),
+        )?,
         r###"<h1>Balanced</h1>
 <p>a <del>one</del> b</p>
 <p>a <del>two</del> b</p>
@@ -192,7 +192,7 @@ a ~~twoLeft b ~~twoLeft c twoRight~~ d
 a ~~twoLeft b ~~twoLeft c ~~twoLeft d
 "###,
             &gfm
-        ),
+        )?,
         r###"<h1>Flank</h1>
 <p>a oneRight~ b oneRight~ c oneRight~ d</p>
 <p>a oneRight~ b oneRight~ c ~oneLeft d</p>
@@ -309,7 +309,7 @@ t ~~**xxx**~~ zzz
 u ~**xxx**~ zzz
 "###,
             &gfm
-        ),
+        )?,
         r###"<h1>Interlpay</h1>
 <h2>Interleave with attention</h2>
 <p>a <del>two <em>emphasis</em> two</del> b</p>
@@ -367,7 +367,7 @@ u ~**xxx**~ zzz
                 gfm_strikethrough_single_tilde: false,
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>a ~b~ <del>c</del> d</p>",
         "should not support strikethrough w/ one tilde if `singleTilde: false`"
     );
@@ -380,8 +380,10 @@ u ~**xxx**~ zzz
                 gfm_strikethrough_single_tilde: true,
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>a <del>b</del> <del>c</del> d</p>",
         "should support strikethrough w/ one tilde if `singleTilde: true`"
     );
+
+    Ok(())
 }

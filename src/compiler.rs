@@ -333,7 +333,7 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
         generate_footnote_section(&mut context);
     }
 
-    assert_eq!(context.buffers.len(), 1, "expected 1 final buffer");
+    debug_assert_eq!(context.buffers.len(), 1, "expected 1 final buffer");
     context
         .buffers
         .get(0)

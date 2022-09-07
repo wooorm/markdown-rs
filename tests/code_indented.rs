@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn code_indented() {
+fn code_indented() -> Result<(), String> {
     assert_eq!(
         micromark("    a simple\n      indented code block"),
         "<pre><code>a simple\n  indented code block\n</code></pre>",
@@ -127,37 +127,37 @@ fn code_indented() {
     };
 
     assert_eq!(
-        micromark_with_options("    a", &off),
+        micromark_with_options("    a", &off)?,
         "<p>a</p>",
         "should support turning off code (indented, 1)"
     );
 
     assert_eq!(
-        micromark_with_options("> a\n    b", &off),
+        micromark_with_options("> a\n    b", &off)?,
         "<blockquote>\n<p>a\nb</p>\n</blockquote>",
         "should support turning off code (indented, 2)"
     );
 
     assert_eq!(
-        micromark_with_options("- a\n    b", &off),
+        micromark_with_options("- a\n    b", &off)?,
         "<ul>\n<li>a\nb</li>\n</ul>",
         "should support turning off code (indented, 3)"
     );
 
     assert_eq!(
-        micromark_with_options("- a\n    - b", &off),
+        micromark_with_options("- a\n    - b", &off)?,
         "<ul>\n<li>a\n<ul>\n<li>b</li>\n</ul>\n</li>\n</ul>",
         "should support turning off code (indented, 4)"
     );
 
     assert_eq!(
-        micromark_with_options("- a\n    - b", &off),
+        micromark_with_options("- a\n    - b", &off)?,
         "<ul>\n<li>a\n<ul>\n<li>b</li>\n</ul>\n</li>\n</ul>",
         "should support turning off code (indented, 5)"
     );
 
     assert_eq!(
-        micromark_with_options("```\na\n    ```", &off),
+        micromark_with_options("```\na\n    ```", &off)?,
         "<pre><code>a\n</code></pre>",
         "should support turning off code (indented, 6)"
     );
@@ -169,20 +169,22 @@ fn code_indented() {
                 allow_dangerous_html: true,
                 ..off.clone()
             }
-        ),
+        )?,
         "<p>a <?\n?></p>",
         "should support turning off code (indented, 7)"
     );
 
     assert_eq!(
-        micromark_with_options("- Foo\n---", &off),
+        micromark_with_options("- Foo\n---", &off)?,
         "<ul>\n<li>Foo</li>\n</ul>\n<hr />",
         "should support turning off code (indented, 8)"
     );
 
     assert_eq!(
-        micromark_with_options("- Foo\n     ---", &off),
+        micromark_with_options("- Foo\n     ---", &off)?,
         "<ul>\n<li>\n<h2>Foo</h2>\n</li>\n</ul>",
         "should support turning off code (indented, 9)"
     );
+
+    Ok(())
 }

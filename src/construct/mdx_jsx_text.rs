@@ -76,10 +76,10 @@ pub fn name_before(tokenizer: &mut Tokenizer) -> State {
         // Fragment opening tag.
         Some(b'>') => State::Retry(StateName::MdxJsxTextTagEnd),
         _ => {
-            // To do: unicode.
-            let char_opt = char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index);
-
-            if id_start(char_opt) {
+            if id_start(char_after_index(
+                tokenizer.parse_state.bytes,
+                tokenizer.point.index,
+            )) {
                 tokenizer.enter(Name::MdxJsxTextTagName);
                 tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
                 tokenizer.consume();
@@ -111,34 +111,32 @@ pub fn name_before(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn closing_tag_name_before(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        // Fragment closing tag.
-        Some(b'>') => State::Retry(StateName::MdxJsxTextTagEnd),
-        // Start of a closing tag name.
-        _ => {
-            // To do: unicode.
-            let char_opt = char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index);
-
-            if id_start(char_opt) {
-                tokenizer.enter(Name::MdxJsxTextTagName);
-                tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
-                tokenizer.consume();
-                State::Next(StateName::MdxJsxTextPrimaryName)
-            } else {
-                crash(
-                    tokenizer,
-                    "before name",
-                    &format!(
-                        "a character that can start a name, such as a letter, `$`, or `_`{}",
-                        if tokenizer.current == Some(b'*' | b'/') {
-                            " (note: JS comments in JSX tags are not supported in MDX)"
-                        } else {
-                            ""
-                        }
-                    ),
-                )
-            }
-        }
+    // Fragment closing tag.
+    if let Some(b'>') = tokenizer.current {
+        State::Retry(StateName::MdxJsxTextTagEnd)
+    }
+    // Start of a closing tag name.
+    else if id_start(char_after_index(
+        tokenizer.parse_state.bytes,
+        tokenizer.point.index,
+    )) {
+        tokenizer.enter(Name::MdxJsxTextTagName);
+        tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
+        tokenizer.consume();
+        State::Next(StateName::MdxJsxTextPrimaryName)
+    } else {
+        crash(
+            tokenizer,
+            "before name",
+            &format!(
+                "a character that can start a name, such as a letter, `$`, or `_`{}",
+                if tokenizer.current == Some(b'*' | b'/') {
+                    " (note: JS comments in JSX tags are not supported in MDX)"
+                } else {
+                    ""
+                }
+            ),
+        )
     }
 }
 
@@ -162,7 +160,6 @@ pub fn primary_name(tokenizer: &mut Tokenizer) -> State {
     }
     // Continuation of name: remain.
     // Allow continuation bytes.
-    // To do: unicode.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
         || id_cont(char_after_index(
             tokenizer.parse_state.bytes,
@@ -284,7 +281,7 @@ pub fn member_name(tokenizer: &mut Tokenizer) -> State {
         State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
     }
     // Continuation of name: remain.
-    // To do: unicode.
+    // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
         || id_cont(char_after_index(
             tokenizer.parse_state.bytes,
@@ -398,7 +395,7 @@ pub fn local_name(tokenizer: &mut Tokenizer) -> State {
         State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
     }
     // Continuation of name: remain.
-    // To do: unicode.
+    // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
         || id_cont(char_after_index(
             tokenizer.parse_state.bytes,
@@ -516,8 +513,8 @@ pub fn attribute_primary_name(tokenizer: &mut Tokenizer) -> State {
         );
         State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
     }
-    // Continuation of the attribute name: remain.
-    // To do: unicode.
+    // Continuation of name: remain.
+    // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
         || id_cont(char_after_index(
             tokenizer.parse_state.bytes,
@@ -525,7 +522,7 @@ pub fn attribute_primary_name(tokenizer: &mut Tokenizer) -> State {
         ))
     {
         tokenizer.consume();
-        State::Next(StateName::MdxJsxTextLocalName)
+        State::Next(StateName::MdxJsxTextAttributePrimaryName)
     } else {
         crash(
             tokenizer,
@@ -643,8 +640,8 @@ pub fn attribute_local_name(tokenizer: &mut Tokenizer) -> State {
         );
         State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
     }
-    // Continuation of local name: remain.
-    // To do: unicode.
+    // Continuation of name: remain.
+    // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
         || id_cont(char_after_index(
             tokenizer.parse_state.bytes,
@@ -906,7 +903,6 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-// To do: unicode.
 fn id_start(code: Option<char>) -> bool {
     if let Some(char) = code {
         UnicodeID::is_id_start(char) || matches!(char, '$' | '_')
@@ -915,7 +911,6 @@ fn id_start(code: Option<char>) -> bool {
     }
 }
 
-// To do: unicode.
 fn id_cont(code: Option<char>) -> bool {
     if let Some(char) = code {
         UnicodeID::is_id_continue(char) || matches!(char, '-' | '\u{200c}' | '\u{200d}')
@@ -924,25 +919,24 @@ fn id_cont(code: Option<char>) -> bool {
     }
 }
 
-fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> ! {
+fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
     // To do: externalize this, and the print mechanism in the tokenizer,
     // to one proper formatter.
-    // To do: figure out how Rust does errors?
     let actual = match tokenizer.current {
         None => "end of file".to_string(),
         Some(byte) => format_byte(byte),
     };
 
-    unreachable!(
+    State::Error(format!(
         "{}:{}: Unexpected {} {}, expected {}",
         tokenizer.point.line, tokenizer.point.column, actual, at, expect
-    )
+    ))
 }
 
 fn format_byte(byte: u8) -> String {
     match byte {
         b'`' => "`` ` ``".to_string(),
         b' '..=b'~' => format!("`{}`", str::from_utf8(&[byte]).unwrap()),
-        _ => format!("U+{:>04X}", byte),
+        _ => format!("character U+{:>04X}", byte),
     }
 }

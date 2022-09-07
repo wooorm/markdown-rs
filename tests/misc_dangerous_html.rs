@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn dangerous_html() {
+fn dangerous_html() -> Result<(), String> {
     let danger = &Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -23,8 +23,10 @@ fn dangerous_html() {
     );
 
     assert_eq!(
-        micromark_with_options("<x>", danger),
+        micromark_with_options("<x>", danger)?,
         "<x>",
         "should be unsafe w/ `allowDangerousHtml`"
     );
+
+    Ok(())
 }

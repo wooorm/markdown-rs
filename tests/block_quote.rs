@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn block_quote() {
+fn block_quote() -> Result<(), String> {
     assert_eq!(
         micromark("> # a\n> b\n> c"),
         "<blockquote>\n<h1>a</h1>\n<p>b\nc</p>\n</blockquote>",
@@ -206,8 +206,10 @@ fn block_quote() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>&gt; # a\n&gt; b\n&gt; c</p>",
         "should support turning off block quotes"
     );
+
+    Ok(())
 }

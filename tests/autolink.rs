@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn autolink() {
+fn autolink() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -41,7 +41,7 @@ fn autolink() {
     );
 
     assert_eq!(
-        micromark_with_options("<a+b+c:d>", &danger),
+        micromark_with_options("<a+b+c:d>", &danger)?,
         "<p><a href=\"a+b+c:d\">a+b+c:d</a></p>",
         "should support protocol autolinks w/ incorrect URIs (1, danger)"
     );
@@ -53,7 +53,7 @@ fn autolink() {
     );
 
     assert_eq!(
-        micromark_with_options("<made-up-scheme://foo,bar>", &danger),
+        micromark_with_options("<made-up-scheme://foo,bar>", &danger)?,
         "<p><a href=\"made-up-scheme://foo,bar\">made-up-scheme://foo,bar</a></p>",
         "should support protocol autolinks w/ incorrect URIs (2, danger)"
     );
@@ -65,7 +65,7 @@ fn autolink() {
     );
 
     assert_eq!(
-        micromark_with_options("<localhost:5001/foo>", &danger),
+        micromark_with_options("<localhost:5001/foo>", &danger)?,
         "<p><a href=\"localhost:5001/foo\">localhost:5001/foo</a></p>",
         "should support protocol autolinks w/ incorrect URIs (4)"
     );
@@ -182,12 +182,11 @@ fn autolink() {
     );
 
     assert_eq!(
-    micromark(
-      "<asd@012345678901234567890123456789012345678901234567890123456789012>"
-    ),
-    "<p><a href=\"mailto:asd@012345678901234567890123456789012345678901234567890123456789012\">asd@012345678901234567890123456789012345678901234567890123456789012</a></p>",
-    "should support 63 character in email autolinks domains"
-  );
+        micromark(
+        "<asd@012345678901234567890123456789012345678901234567890123456789012>"),
+        "<p><a href=\"mailto:asd@012345678901234567890123456789012345678901234567890123456789012\">asd@012345678901234567890123456789012345678901234567890123456789012</a></p>",
+        "should support 63 character in email autolinks domains"
+    );
 
     assert_eq!(
         micromark("<asd@0123456789012345678901234567890123456789012345678901234567890123>"),
@@ -196,12 +195,11 @@ fn autolink() {
     );
 
     assert_eq!(
-    micromark(
-      "<asd@012345678901234567890123456789012345678901234567890123456789012.a>"
-    ),
-    "<p><a href=\"mailto:asd@012345678901234567890123456789012345678901234567890123456789012.a\">asd@012345678901234567890123456789012345678901234567890123456789012.a</a></p>",
-    "should support a TLD after a 63 character domain in email autolinks"
-  );
+        micromark(
+            "<asd@012345678901234567890123456789012345678901234567890123456789012.a>"),
+        "<p><a href=\"mailto:asd@012345678901234567890123456789012345678901234567890123456789012.a\">asd@012345678901234567890123456789012345678901234567890123456789012.a</a></p>",
+        "should support a TLD after a 63 character domain in email autolinks"
+    );
 
     assert_eq!(
         micromark("<asd@0123456789012345678901234567890123456789012345678901234567890123.a>"),
@@ -210,12 +208,11 @@ fn autolink() {
     );
 
     assert_eq!(
-    micromark(
-      "<asd@a.012345678901234567890123456789012345678901234567890123456789012>"
-    ),
-    "<p><a href=\"mailto:asd@a.012345678901234567890123456789012345678901234567890123456789012\">asd@a.012345678901234567890123456789012345678901234567890123456789012</a></p>",
-    "should support a 63 character TLD in email autolinks"
-  );
+        micromark(
+            "<asd@a.012345678901234567890123456789012345678901234567890123456789012>"),
+        "<p><a href=\"mailto:asd@a.012345678901234567890123456789012345678901234567890123456789012\">asd@a.012345678901234567890123456789012345678901234567890123456789012</a></p>",
+        "should support a 63 character TLD in email autolinks"
+    );
 
     assert_eq!(
         micromark("<asd@a.0123456789012345678901234567890123456789012345678901234567890123>"),
@@ -257,8 +254,10 @@ fn autolink() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>&lt;a@b.co&gt;</p>",
         "should support turning off autolinks"
     );
+
+    Ok(())
 }

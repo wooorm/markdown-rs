@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn code_text() {
+fn code_text() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -107,7 +107,7 @@ fn code_text() {
     );
 
     assert_eq!(
-        micromark_with_options("<a href=\"`\">`", &danger),
+        micromark_with_options("<a href=\"`\">`", &danger)?,
         "<p><a href=\"`\">`</p>",
         "should have same precedence as HTML (2)"
     );
@@ -165,8 +165,10 @@ fn code_text() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>`a`</p>",
         "should support turning off code (text)"
     );
+
+    Ok(())
 }

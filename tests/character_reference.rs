@@ -3,11 +3,10 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn character_reference() {
+fn character_reference() -> Result<(), String> {
     assert_eq!(
       micromark(
-        "&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;"
-      ),
+        "&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;"),
       "<p>\u{a0} &amp; © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸</p>",
       "should support named character references"
     );
@@ -26,8 +25,7 @@ fn character_reference() {
 
     assert_eq!(
       micromark(
-        "&nbsp &x; &#; &#x;\n&#987654321;\n&#abcdef0;\n&ThisIsNotDefined; &hi?;"
-      ),
+        "&nbsp &x; &#; &#x;\n&#987654321;\n&#abcdef0;\n&ThisIsNotDefined; &hi?;"),
       "<p>&amp;nbsp &amp;x; &amp;#; &amp;#x;\n&amp;#987654321;\n&amp;#abcdef0;\n&amp;ThisIsNotDefined; &amp;hi?;</p>",
       "should not support other things that look like character references"
     );
@@ -51,7 +49,7 @@ fn character_reference() {
                 allow_dangerous_html: true,
                 ..Options::default()
             }
-        ),
+        )?,
         "<a href=\"&ouml;&ouml;.html\">",
         "should not care about character references in html"
     );
@@ -199,8 +197,10 @@ fn character_reference() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>&amp;amp;</p>",
         "should support turning off character references"
     );
+
+    Ok(())
 }

@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn thematic_break() {
+fn thematic_break() -> Result<(), String> {
     assert_eq!(
         micromark("***\n---\n___"),
         "<hr />\n<hr />\n<hr />",
@@ -176,8 +176,10 @@ fn thematic_break() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>***</p>",
         "should support turning off thematic breaks"
     );
+
+    Ok(())
 }

@@ -616,11 +616,12 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Flush.
-    pub fn flush(&mut self, state: State, resolve: bool) {
+    pub fn flush(&mut self, state: State, resolve: bool) -> Result<(), String> {
         let to = (self.point.index, self.point.vs);
-        push_impl(self, to, to, state, true);
+        let state = push_impl(self, to, to, state, true);
+        let result = state.to_result();
 
-        if resolve {
+        if resolve && result.is_ok() {
             let resolvers = self.resolvers.split_off(0);
             let mut index = 0;
             while index < resolvers.len() {
@@ -630,6 +631,8 @@ impl<'a> Tokenizer<'a> {
 
             self.map.consume(&mut self.events);
         }
+
+        result
     }
 }
 
@@ -678,6 +681,7 @@ fn push_impl(
 
     loop {
         match state {
+            State::Error(_) => break,
             State::Ok | State::Nok => {
                 if let Some(attempt) = tokenizer.attempts.pop() {
                     if attempt.kind == AttemptKind::Check || state == State::Nok {
@@ -743,9 +747,12 @@ fn push_impl(
     tokenizer.consumed = true;
 
     if flush {
-        debug_assert!(matches!(state, State::Ok), "must be ok");
+        debug_assert!(matches!(state, State::Ok | State::Error(_)), "must be ok");
     } else {
-        debug_assert!(matches!(state, State::Next(_)), "must have a next state");
+        debug_assert!(
+            matches!(state, State::Next(_) | State::Error(_)),
+            "must have a next state"
+        );
     }
 
     state

@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn math_text() {
+fn math_text() -> Result<(), String> {
     let math = Options {
         constructs: Constructs {
             math_text: true,
@@ -20,7 +20,7 @@ fn math_text() {
     );
 
     assert_eq!(
-        micromark_with_options("$foo$ $$bar$$", &math),
+        micromark_with_options("$foo$ $$bar$$", &math)?,
         "<p><code class=\"language-math math-inline\">foo</code> <code class=\"language-math math-inline\">bar</code></p>",
         "should support math (text) if enabled"
     );
@@ -32,97 +32,97 @@ fn math_text() {
                 math_text_single_dollar: false,
                 ..math.clone()
             }
-        ),
+        )?,
         "<p>$foo$ <code class=\"language-math math-inline\">bar</code></p>",
         "should not support math (text) w/ a single dollar, w/ `math_text_single_dollar: false`"
     );
 
     assert_eq!(
-        micromark_with_options("$$ foo $ bar $$", &math),
+        micromark_with_options("$$ foo $ bar $$", &math)?,
         "<p><code class=\"language-math math-inline\">foo $ bar</code></p>",
         "should support math (text) w/ more dollars"
     );
 
     assert_eq!(
-        micromark_with_options("$ $$ $", &math),
+        micromark_with_options("$ $$ $", &math)?,
         "<p><code class=\"language-math math-inline\">$$</code></p>",
         "should support math (text) w/ fences inside, and padding"
     );
 
     assert_eq!(
-        micromark_with_options("$  $$  $", &math),
+        micromark_with_options("$  $$  $", &math)?,
         "<p><code class=\"language-math math-inline\"> $$ </code></p>",
         "should support math (text) w/ extra padding"
     );
 
     assert_eq!(
-        micromark_with_options("$ a$", &math),
+        micromark_with_options("$ a$", &math)?,
         "<p><code class=\"language-math math-inline\"> a</code></p>",
         "should support math (text) w/ unbalanced padding"
     );
 
     assert_eq!(
-        micromark_with_options("$\u{a0}b\u{a0}$", &math),
+        micromark_with_options("$\u{a0}b\u{a0}$", &math)?,
         "<p><code class=\"language-math math-inline\">\u{a0}b\u{a0}</code></p>",
         "should support math (text) w/ non-padding whitespace"
     );
 
     assert_eq!(
-        micromark_with_options("$ $\n$  $", &math),
+        micromark_with_options("$ $\n$  $", &math)?,
         "<p><code class=\"language-math math-inline\"> </code>\n<code class=\"language-math math-inline\">  </code></p>",
         "should support math (text) w/o data"
     );
 
     assert_eq!(
-        micromark_with_options("$\nfoo\nbar  \nbaz\n$", &math),
+        micromark_with_options("$\nfoo\nbar  \nbaz\n$", &math)?,
         "<p><code class=\"language-math math-inline\">foo bar   baz</code></p>",
         "should support math (text) w/o line endings (1)"
     );
 
     assert_eq!(
-        micromark_with_options("$\nfoo \n$", &math),
+        micromark_with_options("$\nfoo \n$", &math)?,
         "<p><code class=\"language-math math-inline\">foo </code></p>",
         "should support math (text) w/o line endings (2)"
     );
 
     assert_eq!(
-        micromark_with_options("$foo   bar \nbaz$", &math),
+        micromark_with_options("$foo   bar \nbaz$", &math)?,
         "<p><code class=\"language-math math-inline\">foo   bar  baz</code></p>",
         "should not support whitespace collapsing"
     );
 
     assert_eq!(
-        micromark_with_options("$foo\\$bar$", &math),
+        micromark_with_options("$foo\\$bar$", &math)?,
         "<p><code class=\"language-math math-inline\">foo\\</code>bar$</p>",
         "should not support character escapes"
     );
 
     assert_eq!(
-        micromark_with_options("$$foo$bar$$", &math),
+        micromark_with_options("$$foo$bar$$", &math)?,
         "<p><code class=\"language-math math-inline\">foo$bar</code></p>",
         "should support more dollars"
     );
 
     assert_eq!(
-        micromark_with_options("$ foo $$ bar $", &math),
+        micromark_with_options("$ foo $$ bar $", &math)?,
         "<p><code class=\"language-math math-inline\">foo $$ bar</code></p>",
         "should support less dollars"
     );
 
     assert_eq!(
-        micromark_with_options("*foo$*$", &math),
+        micromark_with_options("*foo$*$", &math)?,
         "<p>*foo<code class=\"language-math math-inline\">*</code></p>",
         "should precede over emphasis"
     );
 
     assert_eq!(
-        micromark_with_options("[not a $link](/foo$)", &math),
+        micromark_with_options("[not a $link](/foo$)", &math)?,
         "<p>[not a <code class=\"language-math math-inline\">link](/foo</code>)</p>",
         "should precede over links"
     );
 
     assert_eq!(
-        micromark_with_options("$<a href=\"$\">$", &math),
+        micromark_with_options("$<a href=\"$\">$", &math)?,
         "<p><code class=\"language-math math-inline\">&lt;a href=&quot;</code>&quot;&gt;$</p>",
         "should have same precedence as HTML (1)"
     );
@@ -135,50 +135,52 @@ fn math_text() {
                 allow_dangerous_protocol: true,
                 ..math.clone()
             }
-        ),
+        )?,
         "<p><a href=\"$\">$</p>",
         "should have same precedence as HTML (2)"
     );
 
     assert_eq!(
-        micromark_with_options("$<http://foo.bar.$baz>$", &math),
+        micromark_with_options("$<http://foo.bar.$baz>$", &math)?,
         "<p><code class=\"language-math math-inline\">&lt;http://foo.bar.</code>baz&gt;$</p>",
         "should have same precedence as autolinks (1)"
     );
 
     assert_eq!(
-        micromark_with_options("<http://foo.bar.$baz>$", &math),
+        micromark_with_options("<http://foo.bar.$baz>$", &math)?,
         "<p><a href=\"http://foo.bar.$baz\">http://foo.bar.$baz</a>$</p>",
         "should have same precedence as autolinks (2)"
     );
 
     assert_eq!(
-        micromark_with_options("$$$foo$$", &math),
+        micromark_with_options("$$$foo$$", &math)?,
         "<p>$$$foo$$</p>",
         "should not support more dollars before a fence"
     );
 
     assert_eq!(
-        micromark_with_options("$foo", &math),
+        micromark_with_options("$foo", &math)?,
         "<p>$foo</p>",
         "should not support no closing fence (1)"
     );
 
     assert_eq!(
-        micromark_with_options("$foo$$bar$$", &math),
+        micromark_with_options("$foo$$bar$$", &math)?,
         "<p>$foo<code class=\"language-math math-inline\">bar</code></p>",
         "should not support no closing fence (2)"
     );
 
     assert_eq!(
-        micromark_with_options("$foo\t\tbar$", &math),
+        micromark_with_options("$foo\t\tbar$", &math)?,
         "<p><code class=\"language-math math-inline\">foo\t\tbar</code></p>",
         "should support tabs in code"
     );
 
     assert_eq!(
-        micromark_with_options("\\$$x$", &math),
+        micromark_with_options("\\$$x$", &math)?,
         "<p>$<code class=\"language-math math-inline\">x</code></p>",
         "should support an escaped initial dollar"
     );
+
+    Ok(())
 }

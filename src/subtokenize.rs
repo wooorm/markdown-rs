@@ -22,7 +22,7 @@ use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{edit_map::EditMap, skip};
-use alloc::{vec, vec::Vec};
+use alloc::{string::String, vec, vec::Vec};
 
 /// Link two [`Event`][]s.
 ///
@@ -69,7 +69,7 @@ pub fn link_to(events: &mut [Event], previous: usize, next: usize) {
 /// Parse linked events.
 ///
 /// Supposed to be called repeatedly, returns `true` when done.
-pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
+pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> Result<bool, String> {
     let mut map = EditMap::new();
     let mut done = true;
     let mut index = 0;
@@ -143,7 +143,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
                     link_index = link_curr.next;
                 }
 
-                tokenizer.flush(state, true);
+                tokenizer.flush(state, true)?;
 
                 divide_events(&mut map, events, index, &mut tokenizer.events);
 
@@ -156,7 +156,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> bool {
 
     map.consume(events);
 
-    done
+    Ok(done)
 }
 
 /// Divide `child_events` over links in `events`, the first of which is at

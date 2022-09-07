@@ -14,7 +14,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::divide_events;
 use crate::tokenizer::{Container, ContainerState, Tokenizer};
 use crate::util::skip;
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 /// Phases where we can exit containers.
 #[derive(Debug, PartialEq)]
@@ -266,7 +266,9 @@ pub fn container_new_after(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.tokenize_state.document_continued
         != tokenizer.tokenize_state.document_container_stack.len()
     {
-        exit_containers(tokenizer, &Phase::Prefix);
+        if let Err(message) = exit_containers(tokenizer, &Phase::Prefix) {
+            return State::Error(message);
+        }
     }
 
     // We are “piercing” into the flow with a new container.
@@ -361,6 +363,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     let state = tokenizer
         .tokenize_state
         .document_child_state
+        .take()
         .unwrap_or(State::Next(StateName::FlowStart));
 
     tokenizer.tokenize_state.document_exits.push(None);
@@ -439,13 +442,17 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.tokenize_state.document_continued
         != tokenizer.tokenize_state.document_container_stack.len()
     {
-        exit_containers(tokenizer, &Phase::After);
+        if let Err(message) = exit_containers(tokenizer, &Phase::After) {
+            return State::Error(message);
+        }
     }
 
     match tokenizer.current {
         None => {
             tokenizer.tokenize_state.document_continued = 0;
-            exit_containers(tokenizer, &Phase::Eof);
+            if let Err(message) = exit_containers(tokenizer, &Phase::Eof) {
+                return State::Error(message);
+            }
             resolve(tokenizer);
             State::Ok
         }
@@ -461,7 +468,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Close containers (and flow if needed).
-fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
+fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) -> Result<(), String> {
     let mut stack_close = tokenizer
         .tokenize_state
         .document_container_stack
@@ -477,7 +484,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
             .take()
             .unwrap_or(State::Next(StateName::FlowStart));
 
-        child.flush(state, false);
+        child.flush(state, false)?;
     }
 
     if !stack_close.is_empty() {
@@ -524,6 +531,8 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) {
     }
 
     child.interrupt = false;
+
+    Ok(())
 }
 
 // Inject everything together.

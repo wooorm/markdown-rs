@@ -3,7 +3,7 @@ use micromark::micromark;
 use pretty_assertions::assert_eq;
 
 #[test]
-fn zero() {
+fn zero() -> Result<(), String> {
     assert_eq!(micromark(""), "", "should support no markdown");
 
     assert_eq!(
@@ -25,4 +25,6 @@ fn zero() {
         "<p>\\0</p>",
         "should not support NUL in a character escape"
     );
+
+    Ok(())
 }

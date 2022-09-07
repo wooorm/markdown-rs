@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn definition() {
+fn definition() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -77,7 +77,7 @@ fn definition() {
     );
 
     assert_eq!(
-        micromark_with_options("[foo]: <bar>(baz)\n\n[foo]", &danger),
+        micromark_with_options("[foo]: <bar>(baz)\n\n[foo]", &danger)?,
         "<p>[foo]: <bar>(baz)</p>\n<p>[foo]</p>",
         "should not support definitions w/ no whitespace between destination and title"
     );
@@ -211,8 +211,7 @@ fn definition() {
 
     assert_eq!(
         micromark(
-        "[foo]: /foo-url \"foo\"\n[bar]: /bar-url\n  \"bar\"\n[baz]: /baz-url\n\n[foo],\n[bar],\n[baz]"
-        ),
+            "[foo]: /foo-url \"foo\"\n[bar]: /bar-url\n  \"bar\"\n[baz]: /baz-url\n\n[foo],\n[bar],\n[baz]"),
         "<p><a href=\"/foo-url\" title=\"foo\">foo</a>,\n<a href=\"/bar-url\" title=\"bar\">bar</a>,\n<a href=\"/baz-url\">baz</a></p>",
         "should support definitions after definitions"
     );
@@ -370,7 +369,7 @@ fn definition() {
     );
 
     assert_eq!(
-        micromark_with_options("[a]\n\n[a]: <b<c>", &danger),
+        micromark_with_options("[a]\n\n[a]: <b<c>", &danger)?,
         "<p>[a]</p>\n<p>[a]: &lt;b<c></p>",
         "should not support a less than in an enclosed destination"
     );
@@ -451,8 +450,10 @@ fn definition() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>[foo]: /url &quot;title&quot;</p>",
         "should support turning off definitions"
     );
+
+    Ok(())
 }

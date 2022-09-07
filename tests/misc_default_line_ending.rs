@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, LineEnding, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn default_line_ending() {
+fn default_line_ending() -> Result<(), String> {
     assert_eq!(
         micromark("> a"),
         "<blockquote>\n<p>a</p>\n</blockquote>",
@@ -35,7 +35,7 @@ fn default_line_ending() {
                 default_line_ending: LineEnding::CarriageReturn,
                 ..Options::default()
             }
-        ),
+        )?,
         "<blockquote>\r<p>a</p>\r</blockquote>",
         "should support the given line ending"
     );
@@ -47,10 +47,12 @@ fn default_line_ending() {
                 default_line_ending: LineEnding::CarriageReturn,
                 ..Options::default()
             }
-        ),
+        )?,
         // To do: is this a bug in `micromark.js` that it uses `\r` for earlier line endings?
         // "<blockquote>\r<p>a</p>\r</blockquote>\n",
         "<blockquote>\n<p>a</p>\n</blockquote>\n",
         "should support the given line ending, even if line endings exist"
     );
+
+    Ok(())
 }

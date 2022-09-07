@@ -406,6 +406,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // micromark is safe by default:
     /// assert_eq!(
@@ -421,9 +422,11 @@ pub struct Options {
     ///             allow_dangerous_html: true,
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p>Hi, <i>venus</i>!</p>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub allow_dangerous_html: bool,
 
@@ -435,6 +438,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // micromark is safe by default:
     /// assert_eq!(
@@ -450,9 +454,11 @@ pub struct Options {
     ///             allow_dangerous_protocol: true,
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><a href=\"javascript:alert(1)\">javascript:alert(1)</a></p>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub allow_dangerous_protocol: bool,
 
@@ -463,6 +469,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // micromark follows CommonMark by default:
     /// assert_eq!(
@@ -481,9 +488,11 @@ pub struct Options {
     ///             },
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p>indented code?</p>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub constructs: Constructs,
 
@@ -503,6 +512,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, LineEnding};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // micromark uses `\n` by default:
     /// assert_eq!(
@@ -518,9 +528,11 @@ pub struct Options {
     ///             default_line_ending: LineEnding::CarriageReturnLineFeed,
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub default_line_ending: LineEnding,
 
@@ -534,6 +546,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // `"Footnotes"` is used by default:
     /// assert_eq!(
@@ -543,7 +556,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     ///
@@ -556,9 +569,11 @@ pub struct Options {
     ///             gfm_footnote_label: Some("Notes de bas de page".to_string()),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Notes de bas de page</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub gfm_footnote_label: Option<String>,
 
@@ -570,6 +585,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // `"h2"` is used by default:
     /// assert_eq!(
@@ -579,7 +595,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     ///
@@ -592,9 +608,11 @@ pub struct Options {
     ///             gfm_footnote_label_tag_name: Some("h1".to_string()),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub gfm_footnote_label_tag_name: Option<String>,
 
@@ -612,6 +630,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // `"class=\"sr-only\""` is used by default:
     /// assert_eq!(
@@ -621,7 +640,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     ///
@@ -634,9 +653,11 @@ pub struct Options {
     ///             gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".to_string()),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub gfm_footnote_label_attributes: Option<String>,
 
@@ -649,6 +670,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // `"Back to content"` is used by default:
     /// assert_eq!(
@@ -658,7 +680,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     ///
@@ -671,9 +693,11 @@ pub struct Options {
     ///             gfm_footnote_back_label: Some("Arrière".to_string()),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Arrière\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub gfm_footnote_back_label: Option<String>,
 
@@ -696,6 +720,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // `"user-content-"` is used by default:
     /// assert_eq!(
@@ -705,7 +730,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     ///
@@ -718,9 +743,11 @@ pub struct Options {
     ///             gfm_footnote_clobber_prefix: Some("".to_string()),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><sup><a href=\"#fn-a\" id=\"fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"fn-a\">\n<p>b <a href=\"#fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub gfm_footnote_clobber_prefix: Option<String>,
 
@@ -733,6 +760,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // micromark supports single tildes by default:
     /// assert_eq!(
@@ -742,7 +770,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><del>a</del></p>"
     /// );
     ///
@@ -755,9 +783,11 @@ pub struct Options {
     ///             gfm_strikethrough_single_tilde: false,
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p>~a~</p>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub gfm_strikethrough_single_tilde: bool,
 
@@ -772,6 +802,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // With `allow_dangerous_html`, micromark passes HTML through untouched:
     /// assert_eq!(
@@ -782,7 +813,7 @@ pub struct Options {
     ///             constructs: Constructs::gfm(),
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<iframe>"
     /// );
     ///
@@ -796,9 +827,11 @@ pub struct Options {
     ///             gfm_tagfilter: true,
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "&lt;iframe>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// ## References
@@ -817,6 +850,7 @@ pub struct Options {
     ///
     /// ```
     /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// # fn main() -> Result<(), String> {
     ///
     /// // micromark supports single dollars by default:
     /// assert_eq!(
@@ -829,7 +863,7 @@ pub struct Options {
     ///             },
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p><code class=\"language-math math-inline\">a</code></p>"
     /// );
     ///
@@ -845,9 +879,11 @@ pub struct Options {
     ///             math_text_single_dollar: false,
     ///             ..Options::default()
     ///         }
-    ///     ),
+    ///     )?,
     ///     "<p>$a$</p>"
     /// );
+    /// # Ok(())
+    /// # }
     /// ```
     pub math_text_single_dollar: bool,
 }
@@ -879,32 +915,41 @@ impl Default for Options {
 /// ```
 /// use micromark::micromark;
 ///
-/// let result = micromark("# Hello, world!");
-///
-/// assert_eq!(result, "<h1>Hello, world!</h1>");
+/// assert_eq!(micromark("# Hello, world!"), "<h1>Hello, world!</h1>");
 /// ```
 #[must_use]
+#[allow(clippy::missing_panics_doc)]
 pub fn micromark(value: &str) -> String {
-    micromark_with_options(value, &Options::default())
+    micromark_with_options(value, &Options::default()).unwrap()
 }
 
 /// Turn markdown into HTML, with configuration.
+///
+/// ## Errors
+///
+/// `micromark_with_options` never errors with normal markdown because markdown
+/// does not have syntax errors, so feel free to `unwrap()`.
+/// However, MDX does have syntax errors.
+/// When MDX is turned on, there are several errors that can occur with how
+/// JSX, expressions, or ESM are written.
 ///
 /// ## Examples
 ///
 /// ```
 /// use micromark::{micromark_with_options, Options};
+/// # fn main() -> Result<(), String> {
 ///
 /// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
 ///     allow_dangerous_html: true,
 ///     allow_dangerous_protocol: true,
 ///     ..Options::default()
-/// });
+/// })?;
 ///
 /// assert_eq!(result, "<div>\n<h1>Hello, world!</h1>\n</div>");
+/// # Ok(())
+/// # }
 /// ```
-#[must_use]
-pub fn micromark_with_options(value: &str, options: &Options) -> String {
-    let (events, bytes) = parse(value, options);
-    compile(&events, bytes, options)
+pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, String> {
+    let (events, bytes) = parse(value, options)?;
+    Ok(compile(&events, bytes, options))
 }

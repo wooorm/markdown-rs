@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn hard_break_escape() {
+fn hard_break_escape() -> Result<(), String> {
     assert_eq!(
         micromark("foo\\\nbaz"),
         "<p>foo<br />\nbaz</p>",
@@ -50,8 +50,10 @@ fn hard_break_escape() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>a\\\nb</p>",
         "should support turning off hard break (escape)"
     );
+
+    Ok(())
 }

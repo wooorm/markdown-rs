@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn heading_setext() {
+fn heading_setext() -> Result<(), String> {
     assert_eq!(
         micromark("Foo *bar*\n========="),
         "<h1>Foo <em>bar</em></h1>",
@@ -279,8 +279,10 @@ fn heading_setext() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>a\n-</p>",
         "should support turning off setext underlines"
     );
+
+    Ok(())
 }

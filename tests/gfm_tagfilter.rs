@@ -3,7 +3,7 @@ use micromark::{micromark_with_options, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_tagfilter() {
+fn gfm_tagfilter() -> Result<(), String> {
     assert_eq!(
         micromark_with_options(
             "<iframe>",
@@ -11,7 +11,7 @@ fn gfm_tagfilter() {
                 allow_dangerous_html: true,
                 ..Options::default()
             }
-        ),
+        )?,
         "<iframe>",
         "should not filter by default"
     );
@@ -23,7 +23,7 @@ fn gfm_tagfilter() {
                 gfm_tagfilter: true,
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>a &lt;i&gt;</p>\n&lt;script&gt;",
         "should not turn `allow_dangerous_html` on"
     );
@@ -36,7 +36,7 @@ fn gfm_tagfilter() {
                 allow_dangerous_html: true,
                 ..Options::default()
             }
-        ),
+        )?,
         "&lt;iframe>",
         "should filter"
     );
@@ -91,7 +91,7 @@ javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onm
                 allow_dangerous_html: true,
                 ..Options::default()
             }
-        ),
+        )?,
         r###"&lt;title>
 <div title="&lt;title>"></div>
 <p><span title="&lt;title>"></span></p>
@@ -118,4 +118,6 @@ javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onm
 "###,
         "should handle things like GitHub"
     );
+
+    Ok(())
 }

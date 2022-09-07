@@ -53,7 +53,7 @@ async fn commonmark() {
                 format!("{}\n", parts[1])
             };
 
-            let test = format!("    assert_eq!(\n        micromark_with_options(\n            r###\"{}\"###,\n            &danger\n        ),\n        r###\"{}\"###,\n        r###\"{} ({})\"###\n);", input, output, section, number);
+            let test = format!("    assert_eq!(\n        micromark_with_options(\n            r###\"{}\"###,\n            &danger\n        )?,\n        r###\"{}\"###,\n        r###\"{} ({})\"###\n);", input, output, section, number);
 
             cases.push(test);
 
@@ -73,7 +73,7 @@ use pretty_assertions::assert_eq;
 
 #[rustfmt::skip]
 #[test]
-fn commonmark() {{
+fn commonmark() -> Result<(), String> {{
     let danger = Options {{
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -81,6 +81,8 @@ fn commonmark() {{
     }};
 
 {}
+
+    Ok(())
 }}
 ",
         cases.join("\n\n")

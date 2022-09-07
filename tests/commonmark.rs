@@ -9,7 +9,7 @@ use pretty_assertions::assert_eq;
 
 #[rustfmt::skip]
 #[test]
-fn commonmark() {
+fn commonmark() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -21,7 +21,7 @@ fn commonmark() {
             r###"	foo	baz		bim
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo	baz		bim
 </code></pre>
 "###,
@@ -33,7 +33,7 @@ fn commonmark() {
             r###"  	foo	baz		bim
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo	baz		bim
 </code></pre>
 "###,
@@ -46,7 +46,7 @@ fn commonmark() {
     ὐ	a
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>a	a
 ὐ	a
 </code></pre>
@@ -61,7 +61,7 @@ fn commonmark() {
 	bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -79,7 +79,7 @@ fn commonmark() {
 		bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -96,7 +96,7 @@ fn commonmark() {
             r###">		foo
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <pre><code>  foo
 </code></pre>
@@ -110,7 +110,7 @@ fn commonmark() {
             r###"-		foo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <pre><code>  foo
@@ -127,7 +127,7 @@ fn commonmark() {
 	bar
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo
 bar
 </code></pre>
@@ -142,7 +142,7 @@ bar
 	 - baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo
 <ul>
@@ -163,7 +163,7 @@ bar
             r###"#	Foo
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>Foo</h1>
 "###,
         r###"Tabs (10)"###
@@ -174,7 +174,7 @@ bar
             r###"*	*	*	
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 "###,
         r###"Tabs (11)"###
@@ -185,7 +185,7 @@ bar
             r###"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~
 "###,
             &danger
-        ),
+        )?,
         r###"<p>!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~</p>
 "###,
         r###"Backslash escapes (12)"###
@@ -196,7 +196,7 @@ bar
             r###"\	\A\a\ \3\φ\«
 "###,
             &danger
-        ),
+        )?,
         r###"<p>\	\A\a\ \3\φ\«</p>
 "###,
         r###"Backslash escapes (13)"###
@@ -215,7 +215,7 @@ bar
 \&ouml; not a character entity
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*not emphasized*
 &lt;br/&gt; not a tag
 [not a link](/foo)
@@ -234,7 +234,7 @@ bar
             r###"\\*emphasis*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>\<em>emphasis</em></p>
 "###,
         r###"Backslash escapes (15)"###
@@ -246,7 +246,7 @@ bar
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<br />
 bar</p>
 "###,
@@ -258,7 +258,7 @@ bar</p>
             r###"`` \[\` ``
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>\[\`</code></p>
 "###,
         r###"Backslash escapes (17)"###
@@ -269,7 +269,7 @@ bar</p>
             r###"    \[\]
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>\[\]
 </code></pre>
 "###,
@@ -283,7 +283,7 @@ bar</p>
 ~~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>\[\]
 </code></pre>
 "###,
@@ -295,7 +295,7 @@ bar</p>
             r###"<http://example.com?find=\*>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="http://example.com?find=%5C*">http://example.com?find=\*</a></p>
 "###,
         r###"Backslash escapes (20)"###
@@ -306,7 +306,7 @@ bar</p>
             r###"<a href="/bar\/)">
 "###,
             &danger
-        ),
+        )?,
         r###"<a href="/bar\/)">
 "###,
         r###"Backslash escapes (21)"###
@@ -317,7 +317,7 @@ bar</p>
             r###"[foo](/bar\* "ti\*tle")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/bar*" title="ti*tle">foo</a></p>
 "###,
         r###"Backslash escapes (22)"###
@@ -330,7 +330,7 @@ bar</p>
 [foo]: /bar\* "ti\*tle"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/bar*" title="ti*tle">foo</a></p>
 "###,
         r###"Backslash escapes (23)"###
@@ -343,7 +343,7 @@ foo
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code class="language-foo+bar">foo
 </code></pre>
 "###,
@@ -357,7 +357,7 @@ foo
 &ClockwiseContourIntegral; &ngE;
 "###,
             &danger
-        ),
+        )?,
         r###"<p>  &amp; © Æ Ď
 ¾ ℋ ⅆ
 ∲ ≧̸</p>
@@ -370,7 +370,7 @@ foo
             r###"&#35; &#1234; &#992; &#0;
 "###,
             &danger
-        ),
+        )?,
         r###"<p># Ӓ Ϡ �</p>
 "###,
         r###"Entity and numeric character references (26)"###
@@ -381,7 +381,7 @@ foo
             r###"&#X22; &#XD06; &#xcab;
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&quot; ആ ಫ</p>
 "###,
         r###"Entity and numeric character references (27)"###
@@ -395,7 +395,7 @@ foo
 &ThisIsNotDefined; &hi?;
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&amp;nbsp &amp;x; &amp;#; &amp;#x;
 &amp;#87654321;
 &amp;#abcdef0;
@@ -409,7 +409,7 @@ foo
             r###"&copy
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&amp;copy</p>
 "###,
         r###"Entity and numeric character references (29)"###
@@ -420,7 +420,7 @@ foo
             r###"&MadeUpEntity;
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&amp;MadeUpEntity;</p>
 "###,
         r###"Entity and numeric character references (30)"###
@@ -431,7 +431,7 @@ foo
             r###"<a href="&ouml;&ouml;.html">
 "###,
             &danger
-        ),
+        )?,
         r###"<a href="&ouml;&ouml;.html">
 "###,
         r###"Entity and numeric character references (31)"###
@@ -442,7 +442,7 @@ foo
             r###"[foo](/f&ouml;&ouml; "f&ouml;&ouml;")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
 "###,
         r###"Entity and numeric character references (32)"###
@@ -455,7 +455,7 @@ foo
 [foo]: /f&ouml;&ouml; "f&ouml;&ouml;"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
 "###,
         r###"Entity and numeric character references (33)"###
@@ -468,7 +468,7 @@ foo
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code class="language-föö">foo
 </code></pre>
 "###,
@@ -480,7 +480,7 @@ foo
             r###"`f&ouml;&ouml;`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>f&amp;ouml;&amp;ouml;</code></p>
 "###,
         r###"Entity and numeric character references (35)"###
@@ -491,7 +491,7 @@ foo
             r###"    f&ouml;f&ouml;
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>f&amp;ouml;f&amp;ouml;
 </code></pre>
 "###,
@@ -504,7 +504,7 @@ foo
 *foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*foo*
 <em>foo</em></p>
 "###,
@@ -518,7 +518,7 @@ foo
 * foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p>* foo</p>
 <ul>
 <li>foo</li>
@@ -532,7 +532,7 @@ foo
             r###"foo&#10;&#10;bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo
 
 bar</p>
@@ -545,7 +545,7 @@ bar</p>
             r###"&#9;foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p>	foo</p>
 "###,
         r###"Entity and numeric character references (40)"###
@@ -556,7 +556,7 @@ bar</p>
             r###"[a](url &quot;tit&quot;)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[a](url &quot;tit&quot;)</p>
 "###,
         r###"Entity and numeric character references (41)"###
@@ -568,7 +568,7 @@ bar</p>
 - two`
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>`one</li>
 <li>two`</li>
@@ -584,7 +584,7 @@ bar</p>
 ___
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 <hr />
 <hr />
@@ -597,7 +597,7 @@ ___
             r###"+++
 "###,
             &danger
-        ),
+        )?,
         r###"<p>+++</p>
 "###,
         r###"Thematic breaks (44)"###
@@ -608,7 +608,7 @@ ___
             r###"===
 "###,
             &danger
-        ),
+        )?,
         r###"<p>===</p>
 "###,
         r###"Thematic breaks (45)"###
@@ -621,7 +621,7 @@ ___
 __
 "###,
             &danger
-        ),
+        )?,
         r###"<p>--
 **
 __</p>
@@ -636,7 +636,7 @@ __</p>
    ***
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 <hr />
 <hr />
@@ -649,7 +649,7 @@ __</p>
             r###"    ***
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>***
 </code></pre>
 "###,
@@ -662,7 +662,7 @@ __</p>
     ***
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 ***</p>
 "###,
@@ -674,7 +674,7 @@ __</p>
             r###"_____________________________________
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 "###,
         r###"Thematic breaks (50)"###
@@ -685,7 +685,7 @@ __</p>
             r###" - - -
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 "###,
         r###"Thematic breaks (51)"###
@@ -696,7 +696,7 @@ __</p>
             r###" **  * ** * ** * **
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 "###,
         r###"Thematic breaks (52)"###
@@ -707,7 +707,7 @@ __</p>
             r###"-     -      -      -
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 "###,
         r###"Thematic breaks (53)"###
@@ -718,7 +718,7 @@ __</p>
             r###"- - - -    
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 "###,
         r###"Thematic breaks (54)"###
@@ -733,7 +733,7 @@ a------
 ---a---
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_ _ _ _ a</p>
 <p>a------</p>
 <p>---a---</p>
@@ -746,7 +746,7 @@ a------
             r###" *-*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>-</em></p>
 "###,
         r###"Thematic breaks (56)"###
@@ -759,7 +759,7 @@ a------
 - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -778,7 +778,7 @@ a------
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo</p>
 <hr />
 <p>bar</p>
@@ -793,7 +793,7 @@ bar
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo</h2>
 <p>bar</p>
 "###,
@@ -807,7 +807,7 @@ bar
 * Bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>Foo</li>
 </ul>
@@ -825,7 +825,7 @@ bar
 - * * *
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>Foo</li>
 <li>
@@ -846,7 +846,7 @@ bar
 ###### foo
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>foo</h1>
 <h2>foo</h2>
 <h3>foo</h3>
@@ -862,7 +862,7 @@ bar
             r###"####### foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p>####### foo</p>
 "###,
         r###"ATX headings (63)"###
@@ -875,7 +875,7 @@ bar
 #hashtag
 "###,
             &danger
-        ),
+        )?,
         r###"<p>#5 bolt</p>
 <p>#hashtag</p>
 "###,
@@ -887,7 +887,7 @@ bar
             r###"\## foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p>## foo</p>
 "###,
         r###"ATX headings (65)"###
@@ -898,7 +898,7 @@ bar
             r###"# foo *bar* \*baz\*
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>foo <em>bar</em> *baz*</h1>
 "###,
         r###"ATX headings (66)"###
@@ -909,7 +909,7 @@ bar
             r###"#                  foo                     
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>foo</h1>
 "###,
         r###"ATX headings (67)"###
@@ -922,7 +922,7 @@ bar
    # foo
 "###,
             &danger
-        ),
+        )?,
         r###"<h3>foo</h3>
 <h2>foo</h2>
 <h1>foo</h1>
@@ -935,7 +935,7 @@ bar
             r###"    # foo
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code># foo
 </code></pre>
 "###,
@@ -948,7 +948,7 @@ bar
     # bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo
 # bar</p>
 "###,
@@ -961,7 +961,7 @@ bar
   ###   bar    ###
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>foo</h2>
 <h3>bar</h3>
 "###,
@@ -974,7 +974,7 @@ bar
 ##### foo ##
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>foo</h1>
 <h5>foo</h5>
 "###,
@@ -986,7 +986,7 @@ bar
             r###"### foo ###     
 "###,
             &danger
-        ),
+        )?,
         r###"<h3>foo</h3>
 "###,
         r###"ATX headings (73)"###
@@ -997,7 +997,7 @@ bar
             r###"### foo ### b
 "###,
             &danger
-        ),
+        )?,
         r###"<h3>foo ### b</h3>
 "###,
         r###"ATX headings (74)"###
@@ -1008,7 +1008,7 @@ bar
             r###"# foo#
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>foo#</h1>
 "###,
         r###"ATX headings (75)"###
@@ -1021,7 +1021,7 @@ bar
 # foo \#
 "###,
             &danger
-        ),
+        )?,
         r###"<h3>foo ###</h3>
 <h2>foo ###</h2>
 <h1>foo #</h1>
@@ -1036,7 +1036,7 @@ bar
 ****
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 <h2>foo</h2>
 <hr />
@@ -1051,7 +1051,7 @@ bar
 Bar foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo bar</p>
 <h1>baz</h1>
 <p>Bar foo</p>
@@ -1066,7 +1066,7 @@ Bar foo
 ### ###
 "###,
             &danger
-        ),
+        )?,
         r###"<h2></h2>
 <h1></h1>
 <h3></h3>
@@ -1083,7 +1083,7 @@ Foo *bar*
 ---------
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>Foo <em>bar</em></h1>
 <h2>Foo <em>bar</em></h2>
 "###,
@@ -1097,7 +1097,7 @@ baz*
 ====
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>Foo <em>bar
 baz</em></h1>
 "###,
@@ -1111,7 +1111,7 @@ baz*
 ====
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>Foo <em>bar
 baz</em></h1>
 "###,
@@ -1127,7 +1127,7 @@ Foo
 =
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo</h2>
 <h1>Foo</h1>
 "###,
@@ -1146,7 +1146,7 @@ Foo
   ===
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo</h2>
 <h2>Foo</h2>
 <h1>Foo</h1>
@@ -1163,7 +1163,7 @@ Foo
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>Foo
 ---
 
@@ -1180,7 +1180,7 @@ Foo
    ----      
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo</h2>
 "###,
         r###"Setext headings (86)"###
@@ -1192,7 +1192,7 @@ Foo
     ---
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 ---</p>
 "###,
@@ -1208,7 +1208,7 @@ Foo
 --- -
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 = =</p>
 <p>Foo</p>
@@ -1223,7 +1223,7 @@ Foo
 -----
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo</h2>
 "###,
         r###"Setext headings (89)"###
@@ -1235,7 +1235,7 @@ Foo
 ----
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo\</h2>
 "###,
         r###"Setext headings (90)"###
@@ -1252,7 +1252,7 @@ Foo
 of dashes"/>
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>`Foo</h2>
 <p>`</p>
 <h2>&lt;a title=&quot;a lot</h2>
@@ -1267,7 +1267,7 @@ of dashes"/>
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>Foo</p>
 </blockquote>
@@ -1283,7 +1283,7 @@ bar
 ===
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo
 bar
@@ -1299,7 +1299,7 @@ bar
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>Foo</li>
 </ul>
@@ -1315,7 +1315,7 @@ Bar
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>Foo
 Bar</h2>
 "###,
@@ -1332,7 +1332,7 @@ Bar
 Baz
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 <h2>Foo</h2>
 <h2>Bar</h2>
@@ -1347,7 +1347,7 @@ Baz
 ====
 "###,
             &danger
-        ),
+        )?,
         r###"<p>====</p>
 "###,
         r###"Setext headings (97)"###
@@ -1359,7 +1359,7 @@ Baz
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<hr />
 <hr />
 "###,
@@ -1372,7 +1372,7 @@ Baz
 -----
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -1387,7 +1387,7 @@ Baz
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo
 </code></pre>
 <hr />
@@ -1401,7 +1401,7 @@ Baz
 -----
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -1416,7 +1416,7 @@ Baz
 ------
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>&gt; foo</h2>
 "###,
         r###"Setext headings (102)"###
@@ -1431,7 +1431,7 @@ bar
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo</p>
 <h2>bar</h2>
 <p>baz</p>
@@ -1449,7 +1449,7 @@ bar
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 bar</p>
 <hr />
@@ -1466,7 +1466,7 @@ bar
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 bar</p>
 <hr />
@@ -1483,7 +1483,7 @@ bar
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 bar
 ---
@@ -1498,7 +1498,7 @@ baz</p>
       indented code block
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>a simple
   indented code block
 </code></pre>
@@ -1513,7 +1513,7 @@ baz</p>
     bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -1531,7 +1531,7 @@ baz</p>
     - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>foo</p>
@@ -1552,7 +1552,7 @@ baz</p>
     - one
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>&lt;a/&gt;
 *hi*
 
@@ -1573,7 +1573,7 @@ baz</p>
     chunk3
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>chunk1
 
 chunk2
@@ -1593,7 +1593,7 @@ chunk3
       chunk2
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>chunk1
   
   chunk2
@@ -1609,7 +1609,7 @@ chunk3
 
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 bar</p>
 "###,
@@ -1622,7 +1622,7 @@ bar</p>
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo
 </code></pre>
 <p>bar</p>
@@ -1640,7 +1640,7 @@ Heading
 ----
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>Heading</h1>
 <pre><code>foo
 </code></pre>
@@ -1658,7 +1658,7 @@ Heading
     bar
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>    foo
 bar
 </code></pre>
@@ -1675,7 +1675,7 @@ bar
 
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo
 </code></pre>
 "###,
@@ -1687,7 +1687,7 @@ bar
             r###"    foo  
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>foo  
 </code></pre>
 "###,
@@ -1702,7 +1702,7 @@ bar
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>&lt;
  &gt;
 </code></pre>
@@ -1718,7 +1718,7 @@ bar
 ~~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>&lt;
  &gt;
 </code></pre>
@@ -1733,7 +1733,7 @@ foo
 ``
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo</code></p>
 "###,
         r###"Fenced code blocks (121)"###
@@ -1747,7 +1747,7 @@ aaa
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 ~~~
 </code></pre>
@@ -1763,7 +1763,7 @@ aaa
 ~~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 ```
 </code></pre>
@@ -1779,7 +1779,7 @@ aaa
 ``````
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 ```
 </code></pre>
@@ -1795,7 +1795,7 @@ aaa
 ~~~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 ~~~
 </code></pre>
@@ -1808,7 +1808,7 @@ aaa
             r###"```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code></code></pre>
 "###,
         r###"Fenced code blocks (126)"###
@@ -1822,7 +1822,7 @@ aaa
 aaa
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>
 ```
 aaa
@@ -1839,7 +1839,7 @@ aaa
 bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <pre><code>aaa
 </code></pre>
@@ -1857,7 +1857,7 @@ bbb
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>
   
 </code></pre>
@@ -1871,7 +1871,7 @@ bbb
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code></code></pre>
 "###,
         r###"Fenced code blocks (130)"###
@@ -1885,7 +1885,7 @@ aaa
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 aaa
 </code></pre>
@@ -1902,7 +1902,7 @@ aaa
   ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 aaa
 aaa
@@ -1920,7 +1920,7 @@ aaa
    ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
  aaa
 aaa
@@ -1936,7 +1936,7 @@ aaa
     ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>```
 aaa
 ```
@@ -1952,7 +1952,7 @@ aaa
   ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 </code></pre>
 "###,
@@ -1966,7 +1966,7 @@ aaa
   ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 </code></pre>
 "###,
@@ -1980,7 +1980,7 @@ aaa
     ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
     ```
 </code></pre>
@@ -1994,7 +1994,7 @@ aaa
 aaa
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code> </code>
 aaa</p>
 "###,
@@ -2008,7 +2008,7 @@ aaa
 ~~~ ~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 ~~~ ~~
 </code></pre>
@@ -2025,7 +2025,7 @@ bar
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo</p>
 <pre><code>bar
 </code></pre>
@@ -2044,7 +2044,7 @@ bar
 # baz
 "###,
             &danger
-        ),
+        )?,
         r###"<h2>foo</h2>
 <pre><code>bar
 </code></pre>
@@ -2062,7 +2062,7 @@ end
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code class="language-ruby">def foo(x)
   return 3
 end
@@ -2080,7 +2080,7 @@ end
 ~~~~~~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code class="language-ruby">def foo(x)
   return 3
 end
@@ -2095,7 +2095,7 @@ end
 ````
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code class="language-;"></code></pre>
 "###,
         r###"Fenced code blocks (144)"###
@@ -2107,7 +2107,7 @@ end
 foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>aa</code>
 foo</p>
 "###,
@@ -2121,7 +2121,7 @@ foo
 ~~~
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code class="language-aa">foo
 </code></pre>
 "###,
@@ -2135,7 +2135,7 @@ foo
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>``` aaa
 </code></pre>
 "###,
@@ -2153,7 +2153,7 @@ _world_.
 </td></tr></table>
 "###,
             &danger
-        ),
+        )?,
         r###"<table><tr><td>
 <pre>
 **Hello**,
@@ -2177,7 +2177,7 @@ _world_.
 okay.
 "###,
             &danger
-        ),
+        )?,
         r###"<table>
   <tr>
     <td>
@@ -2197,7 +2197,7 @@ okay.
          <foo><a>
 "###,
             &danger
-        ),
+        )?,
         r###" <div>
   *hello*
          <foo><a>
@@ -2211,7 +2211,7 @@ okay.
 *foo*
 "###,
             &danger
-        ),
+        )?,
         r###"</div>
 *foo*
 "###,
@@ -2227,7 +2227,7 @@ okay.
 </DIV>
 "###,
             &danger
-        ),
+        )?,
         r###"<DIV CLASS="foo">
 <p><em>Markdown</em></p>
 </DIV>
@@ -2242,7 +2242,7 @@ okay.
 </div>
 "###,
             &danger
-        ),
+        )?,
         r###"<div id="foo"
   class="bar">
 </div>
@@ -2257,7 +2257,7 @@ okay.
 </div>
 "###,
             &danger
-        ),
+        )?,
         r###"<div id="foo" class="bar
   baz">
 </div>
@@ -2273,7 +2273,7 @@ okay.
 *bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<div>
 *foo*
 <p><em>bar</em></p>
@@ -2287,7 +2287,7 @@ okay.
 *hi*
 "###,
             &danger
-        ),
+        )?,
         r###"<div id="foo"
 *hi*
 "###,
@@ -2300,7 +2300,7 @@ okay.
 foo
 "###,
             &danger
-        ),
+        )?,
         r###"<div class
 foo
 "###,
@@ -2313,7 +2313,7 @@ foo
 *foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<div *???-&&&-<---
 *foo*
 "###,
@@ -2325,7 +2325,7 @@ foo
             r###"<div><a href="bar">*foo*</a></div>
 "###,
             &danger
-        ),
+        )?,
         r###"<div><a href="bar">*foo*</a></div>
 "###,
         r###"HTML blocks (159)"###
@@ -2338,7 +2338,7 @@ foo
 </td></tr></table>
 "###,
             &danger
-        ),
+        )?,
         r###"<table><tr><td>
 foo
 </td></tr></table>
@@ -2354,7 +2354,7 @@ int x = 33;
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<div></div>
 ``` c
 int x = 33;
@@ -2370,7 +2370,7 @@ int x = 33;
 </a>
 "###,
             &danger
-        ),
+        )?,
         r###"<a href="foo">
 *bar*
 </a>
@@ -2385,7 +2385,7 @@ int x = 33;
 </Warning>
 "###,
             &danger
-        ),
+        )?,
         r###"<Warning>
 *bar*
 </Warning>
@@ -2400,7 +2400,7 @@ int x = 33;
 </i>
 "###,
             &danger
-        ),
+        )?,
         r###"<i class="foo">
 *bar*
 </i>
@@ -2414,7 +2414,7 @@ int x = 33;
 *bar*
 "###,
             &danger
-        ),
+        )?,
         r###"</ins>
 *bar*
 "###,
@@ -2428,7 +2428,7 @@ int x = 33;
 </del>
 "###,
             &danger
-        ),
+        )?,
         r###"<del>
 *foo*
 </del>
@@ -2445,7 +2445,7 @@ int x = 33;
 </del>
 "###,
             &danger
-        ),
+        )?,
         r###"<del>
 <p><em>foo</em></p>
 </del>
@@ -2458,7 +2458,7 @@ int x = 33;
             r###"<del>*foo*</del>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><del><em>foo</em></del></p>
 "###,
         r###"HTML blocks (168)"###
@@ -2475,7 +2475,7 @@ main = print $ parseTags tags
 okay
 "###,
             &danger
-        ),
+        )?,
         r###"<pre language="haskell"><code>
 import Text.HTML.TagSoup
 
@@ -2497,7 +2497,7 @@ document.getElementById("demo").innerHTML = "Hello JavaScript!";
 okay
 "###,
             &danger
-        ),
+        )?,
         r###"<script type="text/javascript">
 // JavaScript example
 
@@ -2519,7 +2519,7 @@ _bar_
 </textarea>
 "###,
             &danger
-        ),
+        )?,
         r###"<textarea>
 
 *foo*
@@ -2542,7 +2542,7 @@ p {color:blue;}
 okay
 "###,
             &danger
-        ),
+        )?,
         r###"<style
   type="text/css">
 h1 {color:red;}
@@ -2562,7 +2562,7 @@ p {color:blue;}
 foo
 "###,
             &danger
-        ),
+        )?,
         r###"<style
   type="text/css">
 
@@ -2579,7 +2579,7 @@ foo
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <div>
 foo
@@ -2595,7 +2595,7 @@ foo
 - foo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <div>
@@ -2612,7 +2612,7 @@ foo
 *foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<style>p{color:red;}</style>
 <p><em>foo</em></p>
 "###,
@@ -2625,7 +2625,7 @@ foo
 *baz*
 "###,
             &danger
-        ),
+        )?,
         r###"<!-- foo -->*bar*
 <p><em>baz</em></p>
 "###,
@@ -2639,7 +2639,7 @@ foo
 </script>1. *bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<script>
 foo
 </script>1. *bar*
@@ -2656,7 +2656,7 @@ bar
 okay
 "###,
             &danger
-        ),
+        )?,
         r###"<!-- Foo
 
 bar
@@ -2676,7 +2676,7 @@ bar
 okay
 "###,
             &danger
-        ),
+        )?,
         r###"<?php
 
   echo '>';
@@ -2692,7 +2692,7 @@ okay
             r###"<!DOCTYPE html>
 "###,
             &danger
-        ),
+        )?,
         r###"<!DOCTYPE html>
 "###,
         r###"HTML blocks (181)"###
@@ -2715,7 +2715,7 @@ function matchwo(a,b)
 okay
 "###,
             &danger
-        ),
+        )?,
         r###"<![CDATA[
 function matchwo(a,b)
 {
@@ -2740,7 +2740,7 @@ function matchwo(a,b)
     <!-- foo -->
 "###,
             &danger
-        ),
+        )?,
         r###"  <!-- foo -->
 <pre><code>&lt;!-- foo --&gt;
 </code></pre>
@@ -2755,7 +2755,7 @@ function matchwo(a,b)
     <div>
 "###,
             &danger
-        ),
+        )?,
         r###"  <div>
 <pre><code>&lt;div&gt;
 </code></pre>
@@ -2771,7 +2771,7 @@ bar
 </div>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo</p>
 <div>
 bar
@@ -2788,7 +2788,7 @@ bar
 *foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<div>
 bar
 </div>
@@ -2804,7 +2804,7 @@ bar
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 <a href="bar">
 baz</p>
@@ -2821,7 +2821,7 @@ baz</p>
 </div>
 "###,
             &danger
-        ),
+        )?,
         r###"<div>
 <p><em>Emphasized</em> text.</p>
 </div>
@@ -2836,7 +2836,7 @@ baz</p>
 </div>
 "###,
             &danger
-        ),
+        )?,
         r###"<div>
 *Emphasized* text.
 </div>
@@ -2859,7 +2859,7 @@ Hi
 </table>
 "###,
             &danger
-        ),
+        )?,
         r###"<table>
 <tr>
 <td>
@@ -2886,7 +2886,7 @@ Hi
 </table>
 "###,
             &danger
-        ),
+        )?,
         r###"<table>
   <tr>
 <pre><code>&lt;td&gt;
@@ -2906,7 +2906,7 @@ Hi
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Link reference definitions (192)"###
@@ -2921,7 +2921,7 @@ Hi
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="the title">foo</a></p>
 "###,
         r###"Link reference definitions (193)"###
@@ -2934,7 +2934,7 @@ Hi
 [Foo*bar\]]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="my_(url)" title="title (with parens)">Foo*bar]</a></p>
 "###,
         r###"Link reference definitions (194)"###
@@ -2949,7 +2949,7 @@ Hi
 [Foo bar]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="my%20url" title="title">Foo bar</a></p>
 "###,
         r###"Link reference definitions (195)"###
@@ -2966,7 +2966,7 @@ line2
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="
 title
 line1
@@ -2985,7 +2985,7 @@ with blank line'
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]: /url 'title</p>
 <p>with blank line'</p>
 <p>[foo]</p>
@@ -3001,7 +3001,7 @@ with blank line'
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url">foo</a></p>
 "###,
         r###"Link reference definitions (198)"###
@@ -3014,7 +3014,7 @@ with blank line'
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]:</p>
 <p>[foo]</p>
 "###,
@@ -3028,7 +3028,7 @@ with blank line'
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="">foo</a></p>
 "###,
         r###"Link reference definitions (200)"###
@@ -3041,7 +3041,7 @@ with blank line'
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]: <bar>(baz)</p>
 <p>[foo]</p>
 "###,
@@ -3055,7 +3055,7 @@ with blank line'
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url%5Cbar*baz" title="foo&quot;bar\baz">foo</a></p>
 "###,
         r###"Link reference definitions (202)"###
@@ -3068,7 +3068,7 @@ with blank line'
 [foo]: url
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="url">foo</a></p>
 "###,
         r###"Link reference definitions (203)"###
@@ -3082,7 +3082,7 @@ with blank line'
 [foo]: second
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="first">foo</a></p>
 "###,
         r###"Link reference definitions (204)"###
@@ -3095,7 +3095,7 @@ with blank line'
 [Foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url">Foo</a></p>
 "###,
         r###"Link reference definitions (205)"###
@@ -3108,7 +3108,7 @@ with blank line'
 [αγω]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/%CF%86%CE%BF%CF%85">αγω</a></p>
 "###,
         r###"Link reference definitions (206)"###
@@ -3119,7 +3119,7 @@ with blank line'
             r###"[foo]: /url
 "###,
             &danger
-        ),
+        )?,
         r###""###,
         r###"Link reference definitions (207)"###
 );
@@ -3132,7 +3132,7 @@ foo
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>bar</p>
 "###,
         r###"Link reference definitions (208)"###
@@ -3143,7 +3143,7 @@ bar
             r###"[foo]: /url "title" ok
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]: /url &quot;title&quot; ok</p>
 "###,
         r###"Link reference definitions (209)"###
@@ -3155,7 +3155,7 @@ bar
 "title" ok
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&quot;title&quot; ok</p>
 "###,
         r###"Link reference definitions (210)"###
@@ -3168,7 +3168,7 @@ bar
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>[foo]: /url &quot;title&quot;
 </code></pre>
 <p>[foo]</p>
@@ -3185,7 +3185,7 @@ bar
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>[foo]: /url
 </code></pre>
 <p>[foo]</p>
@@ -3201,7 +3201,7 @@ bar
 [bar]
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo
 [bar]: /baz</p>
 <p>[bar]</p>
@@ -3216,7 +3216,7 @@ bar
 > bar
 "###,
             &danger
-        ),
+        )?,
         r###"<h1><a href="/url">Foo</a></h1>
 <blockquote>
 <p>bar</p>
@@ -3233,7 +3233,7 @@ bar
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<h1>bar</h1>
 <p><a href="/url">foo</a></p>
 "###,
@@ -3247,7 +3247,7 @@ bar
 [foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p>===
 <a href="/url">foo</a></p>
 "###,
@@ -3266,7 +3266,7 @@ bar
 [baz]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/foo-url" title="foo">foo</a>,
 <a href="/bar-url" title="bar">bar</a>,
 <a href="/baz-url">baz</a></p>
@@ -3281,7 +3281,7 @@ bar
 > [foo]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url">foo</a></p>
 <blockquote>
 </blockquote>
@@ -3296,7 +3296,7 @@ bar
 bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa</p>
 <p>bbb</p>
 "###,
@@ -3312,7 +3312,7 @@ ccc
 ddd
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa
 bbb</p>
 <p>ccc
@@ -3329,7 +3329,7 @@ ddd</p>
 bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa</p>
 <p>bbb</p>
 "###,
@@ -3342,7 +3342,7 @@ bbb
  bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa
 bbb</p>
 "###,
@@ -3356,7 +3356,7 @@ bbb</p>
                                        ccc
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa
 bbb
 ccc</p>
@@ -3370,7 +3370,7 @@ ccc</p>
 bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa
 bbb</p>
 "###,
@@ -3383,7 +3383,7 @@ bbb</p>
 bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>aaa
 </code></pre>
 <p>bbb</p>
@@ -3397,7 +3397,7 @@ bbb
 bbb     
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa<br />
 bbb</p>
 "###,
@@ -3416,7 +3416,7 @@ aaa
   
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aaa</p>
 <h1>aaa</h1>
 "###,
@@ -3430,7 +3430,7 @@ aaa
 > baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -3447,7 +3447,7 @@ baz</p>
 > baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -3464,7 +3464,7 @@ baz</p>
  > baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -3481,7 +3481,7 @@ baz</p>
     > baz
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>&gt; # Foo
 &gt; bar
 &gt; baz
@@ -3497,7 +3497,7 @@ baz</p>
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <h1>Foo</h1>
 <p>bar
@@ -3514,7 +3514,7 @@ baz
 > foo
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>bar
 baz
@@ -3530,7 +3530,7 @@ foo</p>
 ---
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -3545,7 +3545,7 @@ foo</p>
 - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <ul>
 <li>foo</li>
@@ -3564,7 +3564,7 @@ foo</p>
     bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <pre><code>foo
 </code></pre>
@@ -3582,7 +3582,7 @@ foo
 ```
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <pre><code></code></pre>
 </blockquote>
@@ -3598,7 +3598,7 @@ foo
     - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo
 - bar</p>
@@ -3612,7 +3612,7 @@ foo
             r###">
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 </blockquote>
 "###,
@@ -3626,7 +3626,7 @@ foo
 > 
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 </blockquote>
 "###,
@@ -3640,7 +3640,7 @@ foo
 >  
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -3655,7 +3655,7 @@ foo
 > bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo</p>
 </blockquote>
@@ -3672,7 +3672,7 @@ foo
 > bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo
 bar</p>
@@ -3688,7 +3688,7 @@ bar</p>
 > bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>foo</p>
 <p>bar</p>
@@ -3703,7 +3703,7 @@ bar</p>
 > bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo</p>
 <blockquote>
 <p>bar</p>
@@ -3719,7 +3719,7 @@ bar</p>
 > bbb
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>aaa</p>
 </blockquote>
@@ -3737,7 +3737,7 @@ bar</p>
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>bar
 baz</p>
@@ -3753,7 +3753,7 @@ baz</p>
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>bar</p>
 </blockquote>
@@ -3769,7 +3769,7 @@ baz
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <p>bar</p>
 </blockquote>
@@ -3784,7 +3784,7 @@ baz
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <blockquote>
 <blockquote>
@@ -3804,7 +3804,7 @@ bar</p>
 >>baz
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <blockquote>
 <blockquote>
@@ -3825,7 +3825,7 @@ baz</p>
 >    not code
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <pre><code>code
 </code></pre>
@@ -3847,7 +3847,7 @@ with two lines.
 > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<p>A paragraph
 with two lines.</p>
 <pre><code>indented code
@@ -3869,7 +3869,7 @@ with two lines.</p>
     > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>A paragraph
@@ -3892,7 +3892,7 @@ with two lines.</p>
  two
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>one</li>
 </ul>
@@ -3908,7 +3908,7 @@ with two lines.</p>
   two
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>one</p>
@@ -3926,7 +3926,7 @@ with two lines.</p>
      two
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>one</li>
 </ul>
@@ -3943,7 +3943,7 @@ with two lines.</p>
       two
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>one</p>
@@ -3961,7 +3961,7 @@ with two lines.</p>
 >>     two
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <blockquote>
 <ol>
@@ -3983,7 +3983,7 @@ with two lines.</p>
   >  > two
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <blockquote>
 <ul>
@@ -4003,7 +4003,7 @@ with two lines.</p>
 2.two
 "###,
             &danger
-        ),
+        )?,
         r###"<p>-one</p>
 <p>2.two</p>
 "###,
@@ -4018,7 +4018,7 @@ with two lines.</p>
   bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4042,7 +4042,7 @@ with two lines.</p>
     > bam
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>foo</p>
@@ -4068,7 +4068,7 @@ with two lines.</p>
       baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>Foo</p>
@@ -4088,7 +4088,7 @@ baz
             r###"123456789. ok
 "###,
             &danger
-        ),
+        )?,
         r###"<ol start="123456789">
 <li>ok</li>
 </ol>
@@ -4101,7 +4101,7 @@ baz
             r###"1234567890. not ok
 "###,
             &danger
-        ),
+        )?,
         r###"<p>1234567890. not ok</p>
 "###,
         r###"List items (266)"###
@@ -4112,7 +4112,7 @@ baz
             r###"0. ok
 "###,
             &danger
-        ),
+        )?,
         r###"<ol start="0">
 <li>ok</li>
 </ol>
@@ -4125,7 +4125,7 @@ baz
             r###"003. ok
 "###,
             &danger
-        ),
+        )?,
         r###"<ol start="3">
 <li>ok</li>
 </ol>
@@ -4138,7 +4138,7 @@ baz
             r###"-1. not ok
 "###,
             &danger
-        ),
+        )?,
         r###"<p>-1. not ok</p>
 "###,
         r###"List items (269)"###
@@ -4151,7 +4151,7 @@ baz
       bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4170,7 +4170,7 @@ baz
            bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ol start="10">
 <li>
 <p>foo</p>
@@ -4191,7 +4191,7 @@ paragraph
     more code
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>indented code
 </code></pre>
 <p>paragraph</p>
@@ -4210,7 +4210,7 @@ paragraph
        more code
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <pre><code>indented code
@@ -4233,7 +4233,7 @@ paragraph
        more code
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <pre><code> indented code
@@ -4254,7 +4254,7 @@ paragraph
 bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo</p>
 <p>bar</p>
 "###,
@@ -4268,7 +4268,7 @@ bar
   bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -4284,7 +4284,7 @@ bar
    bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4307,7 +4307,7 @@ bar
       baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 <li>
@@ -4329,7 +4329,7 @@ bar
   foo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 </ul>
@@ -4344,7 +4344,7 @@ bar
   foo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li></li>
 </ul>
@@ -4360,7 +4360,7 @@ bar
 - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 <li></li>
@@ -4377,7 +4377,7 @@ bar
 - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 <li></li>
@@ -4394,7 +4394,7 @@ bar
 3. bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>foo</li>
 <li></li>
@@ -4409,7 +4409,7 @@ bar
             r###"*
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li></li>
 </ul>
@@ -4426,7 +4426,7 @@ foo
 1.
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo
 *</p>
 <p>foo
@@ -4445,7 +4445,7 @@ foo
      > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>A paragraph
@@ -4471,7 +4471,7 @@ with two lines.</p>
       > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>A paragraph
@@ -4497,7 +4497,7 @@ with two lines.</p>
        > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>A paragraph
@@ -4523,7 +4523,7 @@ with two lines.</p>
         > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<pre><code>1.  A paragraph
     with two lines.
 
@@ -4545,7 +4545,7 @@ with two lines.
       > A block quote.
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>A paragraph
@@ -4567,7 +4567,7 @@ with two lines.</p>
     with two lines.
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>A paragraph
 with two lines.</li>
@@ -4582,7 +4582,7 @@ with two lines.</li>
 continued here.
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <ol>
 <li>
@@ -4603,7 +4603,7 @@ continued here.</p>
 > continued here.
 "###,
             &danger
-        ),
+        )?,
         r###"<blockquote>
 <ol>
 <li>
@@ -4626,7 +4626,7 @@ continued here.</p>
       - boo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo
 <ul>
@@ -4654,7 +4654,7 @@ continued here.</p>
    - boo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 <li>bar</li>
@@ -4671,7 +4671,7 @@ continued here.</p>
     - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ol start="10">
 <li>foo
 <ul>
@@ -4689,7 +4689,7 @@ continued here.</p>
    - bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ol start="10">
 <li>foo</li>
 </ol>
@@ -4705,7 +4705,7 @@ continued here.</p>
             r###"- - foo
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <ul>
@@ -4722,7 +4722,7 @@ continued here.</p>
             r###"1. - 2. foo
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <ul>
@@ -4746,7 +4746,7 @@ continued here.</p>
   baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <h1>Foo</h1>
@@ -4766,7 +4766,7 @@ baz</li>
 + baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 <li>bar</li>
@@ -4785,7 +4785,7 @@ baz</li>
 3) baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>foo</li>
 <li>bar</li>
@@ -4804,7 +4804,7 @@ baz</li>
 - baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo</p>
 <ul>
 <li>bar</li>
@@ -4820,7 +4820,7 @@ baz</li>
 14.  The number of doors is 6.
 "###,
             &danger
-        ),
+        )?,
         r###"<p>The number of windows in my house is
 14.  The number of doors is 6.</p>
 "###,
@@ -4833,7 +4833,7 @@ baz</li>
 1.  The number of doors is 6.
 "###,
             &danger
-        ),
+        )?,
         r###"<p>The number of windows in my house is</p>
 <ol>
 <li>The number of doors is 6.</li>
@@ -4852,7 +4852,7 @@ baz</li>
 - baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4878,7 +4878,7 @@ baz</li>
       bim
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo
 <ul>
@@ -4908,7 +4908,7 @@ baz</li>
 - bim
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>foo</li>
 <li>bar</li>
@@ -4935,7 +4935,7 @@ baz</li>
     code
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -4963,7 +4963,7 @@ baz</li>
 - g
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a</li>
 <li>b</li>
@@ -4986,7 +4986,7 @@ baz</li>
    3. c
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>a</p>
@@ -5011,7 +5011,7 @@ baz</li>
     - e
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a</li>
 <li>b</li>
@@ -5032,7 +5032,7 @@ baz</li>
     3. c
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <p>a</p>
@@ -5055,7 +5055,7 @@ baz</li>
 - c
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>a</p>
@@ -5079,7 +5079,7 @@ baz</li>
 * c
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>a</p>
@@ -5102,7 +5102,7 @@ baz</li>
 - d
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>a</p>
@@ -5128,7 +5128,7 @@ baz</li>
 - d
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>a</p>
@@ -5155,7 +5155,7 @@ baz</li>
 - c
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a</li>
 <li>
@@ -5179,7 +5179,7 @@ baz</li>
 - d
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a
 <ul>
@@ -5203,7 +5203,7 @@ baz</li>
 * c
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a
 <blockquote>
@@ -5226,7 +5226,7 @@ baz</li>
 - d
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a
 <blockquote>
@@ -5246,7 +5246,7 @@ baz</li>
             r###"- a
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a</li>
 </ul>
@@ -5260,7 +5260,7 @@ baz</li>
   - b
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>a
 <ul>
@@ -5281,7 +5281,7 @@ baz</li>
    bar
 "###,
             &danger
-        ),
+        )?,
         r###"<ol>
 <li>
 <pre><code>foo
@@ -5301,7 +5301,7 @@ baz</li>
   baz
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>foo</p>
@@ -5326,7 +5326,7 @@ baz</li>
   - f
 "###,
             &danger
-        ),
+        )?,
         r###"<ul>
 <li>
 <p>a</p>
@@ -5352,7 +5352,7 @@ baz</li>
             r###"`hi`lo`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>hi</code>lo`</p>
 "###,
         r###"Inlines (327)"###
@@ -5363,7 +5363,7 @@ baz</li>
             r###"`foo`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo</code></p>
 "###,
         r###"Code spans (328)"###
@@ -5374,7 +5374,7 @@ baz</li>
             r###"`` foo ` bar ``
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo ` bar</code></p>
 "###,
         r###"Code spans (329)"###
@@ -5385,7 +5385,7 @@ baz</li>
             r###"` `` `
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>``</code></p>
 "###,
         r###"Code spans (330)"###
@@ -5396,7 +5396,7 @@ baz</li>
             r###"`  ``  `
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code> `` </code></p>
 "###,
         r###"Code spans (331)"###
@@ -5407,7 +5407,7 @@ baz</li>
             r###"` a`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code> a</code></p>
 "###,
         r###"Code spans (332)"###
@@ -5418,7 +5418,7 @@ baz</li>
             r###"` b `
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code> b </code></p>
 "###,
         r###"Code spans (333)"###
@@ -5430,7 +5430,7 @@ baz</li>
 `  `
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code> </code>
 <code>  </code></p>
 "###,
@@ -5446,7 +5446,7 @@ baz
 ``
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo bar   baz</code></p>
 "###,
         r###"Code spans (335)"###
@@ -5459,7 +5459,7 @@ foo
 ``
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo </code></p>
 "###,
         r###"Code spans (336)"###
@@ -5471,7 +5471,7 @@ foo
 baz`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo   bar  baz</code></p>
 "###,
         r###"Code spans (337)"###
@@ -5482,7 +5482,7 @@ baz`
             r###"`foo\`bar`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo\</code>bar`</p>
 "###,
         r###"Code spans (338)"###
@@ -5493,7 +5493,7 @@ baz`
             r###"``foo`bar``
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo`bar</code></p>
 "###,
         r###"Code spans (339)"###
@@ -5504,7 +5504,7 @@ baz`
             r###"` foo `` bar `
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>foo `` bar</code></p>
 "###,
         r###"Code spans (340)"###
@@ -5515,7 +5515,7 @@ baz`
             r###"*foo`*`
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*foo<code>*</code></p>
 "###,
         r###"Code spans (341)"###
@@ -5526,7 +5526,7 @@ baz`
             r###"[not a `link](/foo`)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[not a <code>link](/foo</code>)</p>
 "###,
         r###"Code spans (342)"###
@@ -5537,7 +5537,7 @@ baz`
             r###"`<a href="`">`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>&lt;a href=&quot;</code>&quot;&gt;`</p>
 "###,
         r###"Code spans (343)"###
@@ -5548,7 +5548,7 @@ baz`
             r###"<a href="`">`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="`">`</p>
 "###,
         r###"Code spans (344)"###
@@ -5559,7 +5559,7 @@ baz`
             r###"`<http://foo.bar.`baz>`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>&lt;http://foo.bar.</code>baz&gt;`</p>
 "###,
         r###"Code spans (345)"###
@@ -5570,7 +5570,7 @@ baz`
             r###"<http://foo.bar.`baz>`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="http://foo.bar.%60baz">http://foo.bar.`baz</a>`</p>
 "###,
         r###"Code spans (346)"###
@@ -5581,7 +5581,7 @@ baz`
             r###"```foo``
 "###,
             &danger
-        ),
+        )?,
         r###"<p>```foo``</p>
 "###,
         r###"Code spans (347)"###
@@ -5592,7 +5592,7 @@ baz`
             r###"`foo
 "###,
             &danger
-        ),
+        )?,
         r###"<p>`foo</p>
 "###,
         r###"Code spans (348)"###
@@ -5603,7 +5603,7 @@ baz`
             r###"`foo``bar``
 "###,
             &danger
-        ),
+        )?,
         r###"<p>`foo<code>bar</code></p>
 "###,
         r###"Code spans (349)"###
@@ -5614,7 +5614,7 @@ baz`
             r###"*foo bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (350)"###
@@ -5625,7 +5625,7 @@ baz`
             r###"a * foo bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>a * foo bar*</p>
 "###,
         r###"Emphasis and strong emphasis (351)"###
@@ -5636,7 +5636,7 @@ baz`
             r###"a*"foo"*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>a*&quot;foo&quot;*</p>
 "###,
         r###"Emphasis and strong emphasis (352)"###
@@ -5647,7 +5647,7 @@ baz`
             r###"* a *
 "###,
             &danger
-        ),
+        )?,
         r###"<p>* a *</p>
 "###,
         r###"Emphasis and strong emphasis (353)"###
@@ -5658,7 +5658,7 @@ baz`
             r###"foo*bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<em>bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (354)"###
@@ -5669,7 +5669,7 @@ baz`
             r###"5*6*78
 "###,
             &danger
-        ),
+        )?,
         r###"<p>5<em>6</em>78</p>
 "###,
         r###"Emphasis and strong emphasis (355)"###
@@ -5680,7 +5680,7 @@ baz`
             r###"_foo bar_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (356)"###
@@ -5691,7 +5691,7 @@ baz`
             r###"_ foo bar_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_ foo bar_</p>
 "###,
         r###"Emphasis and strong emphasis (357)"###
@@ -5702,7 +5702,7 @@ baz`
             r###"a_"foo"_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>a_&quot;foo&quot;_</p>
 "###,
         r###"Emphasis and strong emphasis (358)"###
@@ -5713,7 +5713,7 @@ baz`
             r###"foo_bar_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo_bar_</p>
 "###,
         r###"Emphasis and strong emphasis (359)"###
@@ -5724,7 +5724,7 @@ baz`
             r###"5_6_78
 "###,
             &danger
-        ),
+        )?,
         r###"<p>5_6_78</p>
 "###,
         r###"Emphasis and strong emphasis (360)"###
@@ -5735,7 +5735,7 @@ baz`
             r###"пристаням_стремятся_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>пристаням_стремятся_</p>
 "###,
         r###"Emphasis and strong emphasis (361)"###
@@ -5746,7 +5746,7 @@ baz`
             r###"aa_"bb"_cc
 "###,
             &danger
-        ),
+        )?,
         r###"<p>aa_&quot;bb&quot;_cc</p>
 "###,
         r###"Emphasis and strong emphasis (362)"###
@@ -5757,7 +5757,7 @@ baz`
             r###"foo-_(bar)_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo-<em>(bar)</em></p>
 "###,
         r###"Emphasis and strong emphasis (363)"###
@@ -5768,7 +5768,7 @@ baz`
             r###"_foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_foo*</p>
 "###,
         r###"Emphasis and strong emphasis (364)"###
@@ -5779,7 +5779,7 @@ baz`
             r###"*foo bar *
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*foo bar *</p>
 "###,
         r###"Emphasis and strong emphasis (365)"###
@@ -5791,7 +5791,7 @@ baz`
 *
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*foo bar
 *</p>
 "###,
@@ -5803,7 +5803,7 @@ baz`
             r###"*(*foo)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*(*foo)</p>
 "###,
         r###"Emphasis and strong emphasis (367)"###
@@ -5814,7 +5814,7 @@ baz`
             r###"*(*foo*)*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>(<em>foo</em>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (368)"###
@@ -5825,7 +5825,7 @@ baz`
             r###"*foo*bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo</em>bar</p>
 "###,
         r###"Emphasis and strong emphasis (369)"###
@@ -5836,7 +5836,7 @@ baz`
             r###"_foo bar _
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_foo bar _</p>
 "###,
         r###"Emphasis and strong emphasis (370)"###
@@ -5847,7 +5847,7 @@ baz`
             r###"_(_foo)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_(_foo)</p>
 "###,
         r###"Emphasis and strong emphasis (371)"###
@@ -5858,7 +5858,7 @@ baz`
             r###"_(_foo_)_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>(<em>foo</em>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (372)"###
@@ -5869,7 +5869,7 @@ baz`
             r###"_foo_bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_foo_bar</p>
 "###,
         r###"Emphasis and strong emphasis (373)"###
@@ -5880,7 +5880,7 @@ baz`
             r###"_пристаням_стремятся
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_пристаням_стремятся</p>
 "###,
         r###"Emphasis and strong emphasis (374)"###
@@ -5891,7 +5891,7 @@ baz`
             r###"_foo_bar_baz_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo_bar_baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (375)"###
@@ -5902,7 +5902,7 @@ baz`
             r###"_(bar)_.
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>(bar)</em>.</p>
 "###,
         r###"Emphasis and strong emphasis (376)"###
@@ -5913,7 +5913,7 @@ baz`
             r###"**foo bar**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (377)"###
@@ -5924,7 +5924,7 @@ baz`
             r###"** foo bar**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>** foo bar**</p>
 "###,
         r###"Emphasis and strong emphasis (378)"###
@@ -5935,7 +5935,7 @@ baz`
             r###"a**"foo"**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>a**&quot;foo&quot;**</p>
 "###,
         r###"Emphasis and strong emphasis (379)"###
@@ -5946,7 +5946,7 @@ baz`
             r###"foo**bar**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<strong>bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (380)"###
@@ -5957,7 +5957,7 @@ baz`
             r###"__foo bar__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (381)"###
@@ -5968,7 +5968,7 @@ baz`
             r###"__ foo bar__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__ foo bar__</p>
 "###,
         r###"Emphasis and strong emphasis (382)"###
@@ -5980,7 +5980,7 @@ baz`
 foo bar__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__
 foo bar__</p>
 "###,
@@ -5992,7 +5992,7 @@ foo bar__</p>
             r###"a__"foo"__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>a__&quot;foo&quot;__</p>
 "###,
         r###"Emphasis and strong emphasis (384)"###
@@ -6003,7 +6003,7 @@ foo bar__</p>
             r###"foo__bar__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo__bar__</p>
 "###,
         r###"Emphasis and strong emphasis (385)"###
@@ -6014,7 +6014,7 @@ foo bar__</p>
             r###"5__6__78
 "###,
             &danger
-        ),
+        )?,
         r###"<p>5__6__78</p>
 "###,
         r###"Emphasis and strong emphasis (386)"###
@@ -6025,7 +6025,7 @@ foo bar__</p>
             r###"пристаням__стремятся__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>пристаням__стремятся__</p>
 "###,
         r###"Emphasis and strong emphasis (387)"###
@@ -6036,7 +6036,7 @@ foo bar__</p>
             r###"__foo, __bar__, baz__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo, <strong>bar</strong>, baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (388)"###
@@ -6047,7 +6047,7 @@ foo bar__</p>
             r###"foo-__(bar)__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo-<strong>(bar)</strong></p>
 "###,
         r###"Emphasis and strong emphasis (389)"###
@@ -6058,7 +6058,7 @@ foo bar__</p>
             r###"**foo bar **
 "###,
             &danger
-        ),
+        )?,
         r###"<p>**foo bar **</p>
 "###,
         r###"Emphasis and strong emphasis (390)"###
@@ -6069,7 +6069,7 @@ foo bar__</p>
             r###"**(**foo)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>**(**foo)</p>
 "###,
         r###"Emphasis and strong emphasis (391)"###
@@ -6080,7 +6080,7 @@ foo bar__</p>
             r###"*(**foo**)*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>(<strong>foo</strong>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (392)"###
@@ -6092,7 +6092,7 @@ foo bar__</p>
 *Asclepias physocarpa*)**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>Gomphocarpus (<em>Gomphocarpus physocarpus</em>, syn.
 <em>Asclepias physocarpa</em>)</strong></p>
 "###,
@@ -6104,7 +6104,7 @@ foo bar__</p>
             r###"**foo "*bar*" foo**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (394)"###
@@ -6115,7 +6115,7 @@ foo bar__</p>
             r###"**foo**bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo</strong>bar</p>
 "###,
         r###"Emphasis and strong emphasis (395)"###
@@ -6126,7 +6126,7 @@ foo bar__</p>
             r###"__foo bar __
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__foo bar __</p>
 "###,
         r###"Emphasis and strong emphasis (396)"###
@@ -6137,7 +6137,7 @@ foo bar__</p>
             r###"__(__foo)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__(__foo)</p>
 "###,
         r###"Emphasis and strong emphasis (397)"###
@@ -6148,7 +6148,7 @@ foo bar__</p>
             r###"_(__foo__)_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>(<strong>foo</strong>)</em></p>
 "###,
         r###"Emphasis and strong emphasis (398)"###
@@ -6159,7 +6159,7 @@ foo bar__</p>
             r###"__foo__bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__foo__bar</p>
 "###,
         r###"Emphasis and strong emphasis (399)"###
@@ -6170,7 +6170,7 @@ foo bar__</p>
             r###"__пристаням__стремятся
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__пристаням__стремятся</p>
 "###,
         r###"Emphasis and strong emphasis (400)"###
@@ -6181,7 +6181,7 @@ foo bar__</p>
             r###"__foo__bar__baz__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo__bar__baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (401)"###
@@ -6192,7 +6192,7 @@ foo bar__</p>
             r###"__(bar)__.
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>(bar)</strong>.</p>
 "###,
         r###"Emphasis and strong emphasis (402)"###
@@ -6203,7 +6203,7 @@ foo bar__</p>
             r###"*foo [bar](/url)*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <a href="/url">bar</a></em></p>
 "###,
         r###"Emphasis and strong emphasis (403)"###
@@ -6215,7 +6215,7 @@ foo bar__</p>
 bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo
 bar</em></p>
 "###,
@@ -6227,7 +6227,7 @@ bar</em></p>
             r###"_foo __bar__ baz_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <strong>bar</strong> baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (405)"###
@@ -6238,7 +6238,7 @@ bar</em></p>
             r###"_foo _bar_ baz_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <em>bar</em> baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (406)"###
@@ -6249,7 +6249,7 @@ bar</em></p>
             r###"__foo_ bar_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em><em>foo</em> bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (407)"###
@@ -6260,7 +6260,7 @@ bar</em></p>
             r###"*foo *bar**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <em>bar</em></em></p>
 "###,
         r###"Emphasis and strong emphasis (408)"###
@@ -6271,7 +6271,7 @@ bar</em></p>
             r###"*foo **bar** baz*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <strong>bar</strong> baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (409)"###
@@ -6282,7 +6282,7 @@ bar</em></p>
             r###"*foo**bar**baz*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo<strong>bar</strong>baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (410)"###
@@ -6293,7 +6293,7 @@ bar</em></p>
             r###"*foo**bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo**bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (411)"###
@@ -6304,7 +6304,7 @@ bar</em></p>
             r###"***foo** bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em><strong>foo</strong> bar</em></p>
 "###,
         r###"Emphasis and strong emphasis (412)"###
@@ -6315,7 +6315,7 @@ bar</em></p>
             r###"*foo **bar***
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <strong>bar</strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (413)"###
@@ -6326,7 +6326,7 @@ bar</em></p>
             r###"*foo**bar***
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo<strong>bar</strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (414)"###
@@ -6337,7 +6337,7 @@ bar</em></p>
             r###"foo***bar***baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<em><strong>bar</strong></em>baz</p>
 "###,
         r###"Emphasis and strong emphasis (415)"###
@@ -6348,7 +6348,7 @@ bar</em></p>
             r###"foo******bar*********baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>
 "###,
         r###"Emphasis and strong emphasis (416)"###
@@ -6359,7 +6359,7 @@ bar</em></p>
             r###"*foo **bar *baz* bim** bop*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <strong>bar <em>baz</em> bim</strong> bop</em></p>
 "###,
         r###"Emphasis and strong emphasis (417)"###
@@ -6370,7 +6370,7 @@ bar</em></p>
             r###"*foo [*bar*](/url)*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <a href="/url"><em>bar</em></a></em></p>
 "###,
         r###"Emphasis and strong emphasis (418)"###
@@ -6381,7 +6381,7 @@ bar</em></p>
             r###"** is not an empty emphasis
 "###,
             &danger
-        ),
+        )?,
         r###"<p>** is not an empty emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (419)"###
@@ -6392,7 +6392,7 @@ bar</em></p>
             r###"**** is not an empty strong emphasis
 "###,
             &danger
-        ),
+        )?,
         r###"<p>**** is not an empty strong emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (420)"###
@@ -6403,7 +6403,7 @@ bar</em></p>
             r###"**foo [bar](/url)**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <a href="/url">bar</a></strong></p>
 "###,
         r###"Emphasis and strong emphasis (421)"###
@@ -6415,7 +6415,7 @@ bar</em></p>
 bar**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo
 bar</strong></p>
 "###,
@@ -6427,7 +6427,7 @@ bar</strong></p>
             r###"__foo _bar_ baz__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <em>bar</em> baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (423)"###
@@ -6438,7 +6438,7 @@ bar</strong></p>
             r###"__foo __bar__ baz__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <strong>bar</strong> baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (424)"###
@@ -6449,7 +6449,7 @@ bar</strong></p>
             r###"____foo__ bar__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong><strong>foo</strong> bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (425)"###
@@ -6460,7 +6460,7 @@ bar</strong></p>
             r###"**foo **bar****
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <strong>bar</strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (426)"###
@@ -6471,7 +6471,7 @@ bar</strong></p>
             r###"**foo *bar* baz**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <em>bar</em> baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (427)"###
@@ -6482,7 +6482,7 @@ bar</strong></p>
             r###"**foo*bar*baz**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo<em>bar</em>baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (428)"###
@@ -6493,7 +6493,7 @@ bar</strong></p>
             r###"***foo* bar**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong><em>foo</em> bar</strong></p>
 "###,
         r###"Emphasis and strong emphasis (429)"###
@@ -6504,7 +6504,7 @@ bar</strong></p>
             r###"**foo *bar***
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <em>bar</em></strong></p>
 "###,
         r###"Emphasis and strong emphasis (430)"###
@@ -6516,7 +6516,7 @@ bar</strong></p>
 bim* bop**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <em>bar <strong>baz</strong>
 bim</em> bop</strong></p>
 "###,
@@ -6528,7 +6528,7 @@ bim</em> bop</strong></p>
             r###"**foo [*bar*](/url)**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo <a href="/url"><em>bar</em></a></strong></p>
 "###,
         r###"Emphasis and strong emphasis (432)"###
@@ -6539,7 +6539,7 @@ bim</em> bop</strong></p>
             r###"__ is not an empty emphasis
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__ is not an empty emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (433)"###
@@ -6550,7 +6550,7 @@ bim</em> bop</strong></p>
             r###"____ is not an empty strong emphasis
 "###,
             &danger
-        ),
+        )?,
         r###"<p>____ is not an empty strong emphasis</p>
 "###,
         r###"Emphasis and strong emphasis (434)"###
@@ -6561,7 +6561,7 @@ bim</em> bop</strong></p>
             r###"foo ***
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo ***</p>
 "###,
         r###"Emphasis and strong emphasis (435)"###
@@ -6572,7 +6572,7 @@ bim</em> bop</strong></p>
             r###"foo *\**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <em>*</em></p>
 "###,
         r###"Emphasis and strong emphasis (436)"###
@@ -6583,7 +6583,7 @@ bim</em> bop</strong></p>
             r###"foo *_*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <em>_</em></p>
 "###,
         r###"Emphasis and strong emphasis (437)"###
@@ -6594,7 +6594,7 @@ bim</em> bop</strong></p>
             r###"foo *****
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo *****</p>
 "###,
         r###"Emphasis and strong emphasis (438)"###
@@ -6605,7 +6605,7 @@ bim</em> bop</strong></p>
             r###"foo **\***
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <strong>*</strong></p>
 "###,
         r###"Emphasis and strong emphasis (439)"###
@@ -6616,7 +6616,7 @@ bim</em> bop</strong></p>
             r###"foo **_**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <strong>_</strong></p>
 "###,
         r###"Emphasis and strong emphasis (440)"###
@@ -6627,7 +6627,7 @@ bim</em> bop</strong></p>
             r###"**foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (441)"###
@@ -6638,7 +6638,7 @@ bim</em> bop</strong></p>
             r###"*foo**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo</em>*</p>
 "###,
         r###"Emphasis and strong emphasis (442)"###
@@ -6649,7 +6649,7 @@ bim</em> bop</strong></p>
             r###"***foo**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (443)"###
@@ -6660,7 +6660,7 @@ bim</em> bop</strong></p>
             r###"****foo*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>***<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (444)"###
@@ -6671,7 +6671,7 @@ bim</em> bop</strong></p>
             r###"**foo***
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo</strong>*</p>
 "###,
         r###"Emphasis and strong emphasis (445)"###
@@ -6682,7 +6682,7 @@ bim</em> bop</strong></p>
             r###"*foo****
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo</em>***</p>
 "###,
         r###"Emphasis and strong emphasis (446)"###
@@ -6693,7 +6693,7 @@ bim</em> bop</strong></p>
             r###"foo ___
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo ___</p>
 "###,
         r###"Emphasis and strong emphasis (447)"###
@@ -6704,7 +6704,7 @@ bim</em> bop</strong></p>
             r###"foo _\__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <em>_</em></p>
 "###,
         r###"Emphasis and strong emphasis (448)"###
@@ -6715,7 +6715,7 @@ bim</em> bop</strong></p>
             r###"foo _*_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <em>*</em></p>
 "###,
         r###"Emphasis and strong emphasis (449)"###
@@ -6726,7 +6726,7 @@ bim</em> bop</strong></p>
             r###"foo _____
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo _____</p>
 "###,
         r###"Emphasis and strong emphasis (450)"###
@@ -6737,7 +6737,7 @@ bim</em> bop</strong></p>
             r###"foo __\___
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <strong>_</strong></p>
 "###,
         r###"Emphasis and strong emphasis (451)"###
@@ -6748,7 +6748,7 @@ bim</em> bop</strong></p>
             r###"foo __*__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <strong>*</strong></p>
 "###,
         r###"Emphasis and strong emphasis (452)"###
@@ -6759,7 +6759,7 @@ bim</em> bop</strong></p>
             r###"__foo_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (453)"###
@@ -6770,7 +6770,7 @@ bim</em> bop</strong></p>
             r###"_foo__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo</em>_</p>
 "###,
         r###"Emphasis and strong emphasis (454)"###
@@ -6781,7 +6781,7 @@ bim</em> bop</strong></p>
             r###"___foo__
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_<strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (455)"###
@@ -6792,7 +6792,7 @@ bim</em> bop</strong></p>
             r###"____foo_
 "###,
             &danger
-        ),
+        )?,
         r###"<p>___<em>foo</em></p>
 "###,
         r###"Emphasis and strong emphasis (456)"###
@@ -6803,7 +6803,7 @@ bim</em> bop</strong></p>
             r###"__foo___
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo</strong>_</p>
 "###,
         r###"Emphasis and strong emphasis (457)"###
@@ -6814,7 +6814,7 @@ bim</em> bop</strong></p>
             r###"_foo____
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo</em>___</p>
 "###,
         r###"Emphasis and strong emphasis (458)"###
@@ -6825,7 +6825,7 @@ bim</em> bop</strong></p>
             r###"**foo**
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (459)"###
@@ -6836,7 +6836,7 @@ bim</em> bop</strong></p>
             r###"*_foo_*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em><em>foo</em></em></p>
 "###,
         r###"Emphasis and strong emphasis (460)"###
@@ -6847,7 +6847,7 @@ bim</em> bop</strong></p>
             r###"__foo__
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong>foo</strong></p>
 "###,
         r###"Emphasis and strong emphasis (461)"###
@@ -6858,7 +6858,7 @@ bim</em> bop</strong></p>
             r###"_*foo*_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em><em>foo</em></em></p>
 "###,
         r###"Emphasis and strong emphasis (462)"###
@@ -6869,7 +6869,7 @@ bim</em> bop</strong></p>
             r###"****foo****
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong><strong>foo</strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (463)"###
@@ -6880,7 +6880,7 @@ bim</em> bop</strong></p>
             r###"____foo____
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong><strong>foo</strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (464)"###
@@ -6891,7 +6891,7 @@ bim</em> bop</strong></p>
             r###"******foo******
 "###,
             &danger
-        ),
+        )?,
         r###"<p><strong><strong><strong>foo</strong></strong></strong></p>
 "###,
         r###"Emphasis and strong emphasis (465)"###
@@ -6902,7 +6902,7 @@ bim</em> bop</strong></p>
             r###"***foo***
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em><strong>foo</strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (466)"###
@@ -6913,7 +6913,7 @@ bim</em> bop</strong></p>
             r###"_____foo_____
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em><strong><strong>foo</strong></strong></em></p>
 "###,
         r###"Emphasis and strong emphasis (467)"###
@@ -6924,7 +6924,7 @@ bim</em> bop</strong></p>
             r###"*foo _bar* baz_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo _bar</em> baz_</p>
 "###,
         r###"Emphasis and strong emphasis (468)"###
@@ -6935,7 +6935,7 @@ bim</em> bop</strong></p>
             r###"*foo __bar *baz bim__ bam*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo <strong>bar *baz bim</strong> bam</em></p>
 "###,
         r###"Emphasis and strong emphasis (469)"###
@@ -6946,7 +6946,7 @@ bim</em> bop</strong></p>
             r###"**foo **bar baz**
 "###,
             &danger
-        ),
+        )?,
         r###"<p>**foo <strong>bar baz</strong></p>
 "###,
         r###"Emphasis and strong emphasis (470)"###
@@ -6957,7 +6957,7 @@ bim</em> bop</strong></p>
             r###"*foo *bar baz*
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*foo <em>bar baz</em></p>
 "###,
         r###"Emphasis and strong emphasis (471)"###
@@ -6968,7 +6968,7 @@ bim</em> bop</strong></p>
             r###"*[bar*](/url)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<a href="/url">bar*</a></p>
 "###,
         r###"Emphasis and strong emphasis (472)"###
@@ -6979,7 +6979,7 @@ bim</em> bop</strong></p>
             r###"_foo [bar_](/url)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>_foo <a href="/url">bar_</a></p>
 "###,
         r###"Emphasis and strong emphasis (473)"###
@@ -6990,7 +6990,7 @@ bim</em> bop</strong></p>
             r###"*<img src="foo" title="*"/>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<img src="foo" title="*"/></p>
 "###,
         r###"Emphasis and strong emphasis (474)"###
@@ -7001,7 +7001,7 @@ bim</em> bop</strong></p>
             r###"**<a href="**">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>**<a href="**"></p>
 "###,
         r###"Emphasis and strong emphasis (475)"###
@@ -7012,7 +7012,7 @@ bim</em> bop</strong></p>
             r###"__<a href="__">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__<a href="__"></p>
 "###,
         r###"Emphasis and strong emphasis (476)"###
@@ -7023,7 +7023,7 @@ bim</em> bop</strong></p>
             r###"*a `*`*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>a <code>*</code></em></p>
 "###,
         r###"Emphasis and strong emphasis (477)"###
@@ -7034,7 +7034,7 @@ bim</em> bop</strong></p>
             r###"_a `_`_
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>a <code>_</code></em></p>
 "###,
         r###"Emphasis and strong emphasis (478)"###
@@ -7045,7 +7045,7 @@ bim</em> bop</strong></p>
             r###"**a<http://foo.bar/?q=**>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>**a<a href="http://foo.bar/?q=**">http://foo.bar/?q=**</a></p>
 "###,
         r###"Emphasis and strong emphasis (479)"###
@@ -7056,7 +7056,7 @@ bim</em> bop</strong></p>
             r###"__a<http://foo.bar/?q=__>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>__a<a href="http://foo.bar/?q=__">http://foo.bar/?q=__</a></p>
 "###,
         r###"Emphasis and strong emphasis (480)"###
@@ -7067,7 +7067,7 @@ bim</em> bop</strong></p>
             r###"[link](/uri "title")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri" title="title">link</a></p>
 "###,
         r###"Links (481)"###
@@ -7078,7 +7078,7 @@ bim</em> bop</strong></p>
             r###"[link](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link</a></p>
 "###,
         r###"Links (482)"###
@@ -7089,7 +7089,7 @@ bim</em> bop</strong></p>
             r###"[](./target.md)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="./target.md"></a></p>
 "###,
         r###"Links (483)"###
@@ -7100,7 +7100,7 @@ bim</em> bop</strong></p>
             r###"[link]()
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="">link</a></p>
 "###,
         r###"Links (484)"###
@@ -7111,7 +7111,7 @@ bim</em> bop</strong></p>
             r###"[link](<>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="">link</a></p>
 "###,
         r###"Links (485)"###
@@ -7122,7 +7122,7 @@ bim</em> bop</strong></p>
             r###"[]()
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href=""></a></p>
 "###,
         r###"Links (486)"###
@@ -7133,7 +7133,7 @@ bim</em> bop</strong></p>
             r###"[link](/my uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link](/my uri)</p>
 "###,
         r###"Links (487)"###
@@ -7144,7 +7144,7 @@ bim</em> bop</strong></p>
             r###"[link](</my uri>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/my%20uri">link</a></p>
 "###,
         r###"Links (488)"###
@@ -7156,7 +7156,7 @@ bim</em> bop</strong></p>
 bar)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link](foo
 bar)</p>
 "###,
@@ -7169,7 +7169,7 @@ bar)</p>
 bar>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link](<foo
 bar>)</p>
 "###,
@@ -7181,7 +7181,7 @@ bar>)</p>
             r###"[a](<b)c>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="b)c">a</a></p>
 "###,
         r###"Links (491)"###
@@ -7192,7 +7192,7 @@ bar>)</p>
             r###"[link](<foo\>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link](&lt;foo&gt;)</p>
 "###,
         r###"Links (492)"###
@@ -7205,7 +7205,7 @@ bar>)</p>
 [a](<b>c)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[a](&lt;b)c
 [a](&lt;b)c&gt;
 [a](<b>c)</p>
@@ -7218,7 +7218,7 @@ bar>)</p>
             r###"[link](\(foo\))
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="(foo)">link</a></p>
 "###,
         r###"Links (494)"###
@@ -7229,7 +7229,7 @@ bar>)</p>
             r###"[link](foo(and(bar)))
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo(and(bar))">link</a></p>
 "###,
         r###"Links (495)"###
@@ -7240,7 +7240,7 @@ bar>)</p>
             r###"[link](foo(and(bar))
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link](foo(and(bar))</p>
 "###,
         r###"Links (496)"###
@@ -7251,7 +7251,7 @@ bar>)</p>
             r###"[link](foo\(and\(bar\))
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo(and(bar)">link</a></p>
 "###,
         r###"Links (497)"###
@@ -7262,7 +7262,7 @@ bar>)</p>
             r###"[link](<foo(and(bar)>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo(and(bar)">link</a></p>
 "###,
         r###"Links (498)"###
@@ -7273,7 +7273,7 @@ bar>)</p>
             r###"[link](foo\)\:)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo):">link</a></p>
 "###,
         r###"Links (499)"###
@@ -7288,7 +7288,7 @@ bar>)</p>
 [link](http://example.com?foo=3#frag)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="#fragment">link</a></p>
 <p><a href="http://example.com#fragment">link</a></p>
 <p><a href="http://example.com?foo=3#frag">link</a></p>
@@ -7301,7 +7301,7 @@ bar>)</p>
             r###"[link](foo\bar)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo%5Cbar">link</a></p>
 "###,
         r###"Links (501)"###
@@ -7312,7 +7312,7 @@ bar>)</p>
             r###"[link](foo%20b&auml;)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo%20b%C3%A4">link</a></p>
 "###,
         r###"Links (502)"###
@@ -7323,7 +7323,7 @@ bar>)</p>
             r###"[link]("title")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="%22title%22">link</a></p>
 "###,
         r###"Links (503)"###
@@ -7336,7 +7336,7 @@ bar>)</p>
 [link](/url (title))
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a></p>
@@ -7349,7 +7349,7 @@ bar>)</p>
             r###"[link](/url "title \"&quot;")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title &quot;&quot;">link</a></p>
 "###,
         r###"Links (505)"###
@@ -7360,7 +7360,7 @@ bar>)</p>
             r###"[link](/url "title")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url%C2%A0%22title%22">link</a></p>
 "###,
         r###"Links (506)"###
@@ -7371,7 +7371,7 @@ bar>)</p>
             r###"[link](/url "title "and" title")
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link](/url &quot;title &quot;and&quot; title&quot;)</p>
 "###,
         r###"Links (507)"###
@@ -7382,7 +7382,7 @@ bar>)</p>
             r###"[link](/url 'title "and" title')
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title &quot;and&quot; title">link</a></p>
 "###,
         r###"Links (508)"###
@@ -7394,7 +7394,7 @@ bar>)</p>
   "title"  )
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri" title="title">link</a></p>
 "###,
         r###"Links (509)"###
@@ -7405,7 +7405,7 @@ bar>)</p>
             r###"[link] (/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link] (/uri)</p>
 "###,
         r###"Links (510)"###
@@ -7416,7 +7416,7 @@ bar>)</p>
             r###"[link [foo [bar]]](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link [foo [bar]]</a></p>
 "###,
         r###"Links (511)"###
@@ -7427,7 +7427,7 @@ bar>)</p>
             r###"[link] bar](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link] bar](/uri)</p>
 "###,
         r###"Links (512)"###
@@ -7438,7 +7438,7 @@ bar>)</p>
             r###"[link [bar](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[link <a href="/uri">bar</a></p>
 "###,
         r###"Links (513)"###
@@ -7449,7 +7449,7 @@ bar>)</p>
             r###"[link \[bar](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link [bar</a></p>
 "###,
         r###"Links (514)"###
@@ -7460,7 +7460,7 @@ bar>)</p>
             r###"[link *foo **bar** `#`*](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
 "###,
         r###"Links (515)"###
@@ -7471,7 +7471,7 @@ bar>)</p>
             r###"[![moon](moon.jpg)](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
 "###,
         r###"Links (516)"###
@@ -7482,7 +7482,7 @@ bar>)</p>
             r###"[foo [bar](/uri)](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo <a href="/uri">bar</a>](/uri)</p>
 "###,
         r###"Links (517)"###
@@ -7493,7 +7493,7 @@ bar>)</p>
             r###"[foo *[bar [baz](/uri)](/uri)*](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo <em>[bar <a href="/uri">baz</a>](/uri)</em>](/uri)</p>
 "###,
         r###"Links (518)"###
@@ -7504,7 +7504,7 @@ bar>)</p>
             r###"![[[foo](uri1)](uri2)](uri3)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="uri3" alt="[foo](uri2)" /></p>
 "###,
         r###"Links (519)"###
@@ -7515,7 +7515,7 @@ bar>)</p>
             r###"*[foo*](/uri)
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<a href="/uri">foo*</a></p>
 "###,
         r###"Links (520)"###
@@ -7526,7 +7526,7 @@ bar>)</p>
             r###"[foo *bar](baz*)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="baz*">foo *bar</a></p>
 "###,
         r###"Links (521)"###
@@ -7537,7 +7537,7 @@ bar>)</p>
             r###"*foo [bar* baz]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo [bar</em> baz]</p>
 "###,
         r###"Links (522)"###
@@ -7548,7 +7548,7 @@ bar>)</p>
             r###"[foo <bar attr="](baz)">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo <bar attr="](baz)"></p>
 "###,
         r###"Links (523)"###
@@ -7559,7 +7559,7 @@ bar>)</p>
             r###"[foo`](/uri)`
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo<code>](/uri)</code></p>
 "###,
         r###"Links (524)"###
@@ -7570,7 +7570,7 @@ bar>)</p>
             r###"[foo<http://example.com/?search=](uri)>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo<a href="http://example.com/?search=%5D(uri)">http://example.com/?search=](uri)</a></p>
 "###,
         r###"Links (525)"###
@@ -7583,7 +7583,7 @@ bar>)</p>
 [bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (526)"###
@@ -7596,7 +7596,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link [foo [bar]]</a></p>
 "###,
         r###"Links (527)"###
@@ -7609,7 +7609,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link [bar</a></p>
 "###,
         r###"Links (528)"###
@@ -7622,7 +7622,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
 "###,
         r###"Links (529)"###
@@ -7635,7 +7635,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
 "###,
         r###"Links (530)"###
@@ -7648,7 +7648,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo <a href="/uri">bar</a>]<a href="/uri">ref</a></p>
 "###,
         r###"Links (531)"###
@@ -7661,7 +7661,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo <em>bar <a href="/uri">baz</a></em>]<a href="/uri">ref</a></p>
 "###,
         r###"Links (532)"###
@@ -7674,7 +7674,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<a href="/uri">foo*</a></p>
 "###,
         r###"Links (533)"###
@@ -7687,7 +7687,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">foo *bar</a>*</p>
 "###,
         r###"Links (534)"###
@@ -7700,7 +7700,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo <bar attr="][ref]"></p>
 "###,
         r###"Links (535)"###
@@ -7713,7 +7713,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo<code>][ref]</code></p>
 "###,
         r###"Links (536)"###
@@ -7726,7 +7726,7 @@ bar>)</p>
 [ref]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo<a href="http://example.com/?search=%5D%5Bref%5D">http://example.com/?search=][ref]</a></p>
 "###,
         r###"Links (537)"###
@@ -7739,7 +7739,7 @@ bar>)</p>
 [bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (538)"###
@@ -7752,7 +7752,7 @@ bar>)</p>
 [SS]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url">ẞ</a></p>
 "###,
         r###"Links (539)"###
@@ -7766,7 +7766,7 @@ bar>)</p>
 [Baz][Foo bar]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url">Baz</a></p>
 "###,
         r###"Links (540)"###
@@ -7779,7 +7779,7 @@ bar>)</p>
 [bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo] <a href="/url" title="title">bar</a></p>
 "###,
         r###"Links (541)"###
@@ -7793,7 +7793,7 @@ bar>)</p>
 [bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]
 <a href="/url" title="title">bar</a></p>
 "###,
@@ -7809,7 +7809,7 @@ bar>)</p>
 [bar][foo]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url1">bar</a></p>
 "###,
         r###"Links (543)"###
@@ -7822,7 +7822,7 @@ bar>)</p>
 [foo!]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[bar][foo!]</p>
 "###,
         r###"Links (544)"###
@@ -7835,7 +7835,7 @@ bar>)</p>
 [ref[]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo][ref[]</p>
 <p>[ref[]: /uri</p>
 "###,
@@ -7849,7 +7849,7 @@ bar>)</p>
 [ref[bar]]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo][ref[bar]]</p>
 <p>[ref[bar]]: /uri</p>
 "###,
@@ -7863,7 +7863,7 @@ bar>)</p>
 [[[foo]]]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[[[foo]]]</p>
 <p>[[[foo]]]: /url</p>
 "###,
@@ -7877,7 +7877,7 @@ bar>)</p>
 [ref\[]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">foo</a></p>
 "###,
         r###"Links (548)"###
@@ -7890,7 +7890,7 @@ bar>)</p>
 [bar\\]
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/uri">bar\</a></p>
 "###,
         r###"Links (549)"###
@@ -7903,7 +7903,7 @@ bar>)</p>
 []: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[]</p>
 <p>[]: /uri</p>
 "###,
@@ -7919,7 +7919,7 @@ bar>)</p>
  ]: /uri
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[
 ]</p>
 <p>[
@@ -7935,7 +7935,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (552)"###
@@ -7948,7 +7948,7 @@ bar>)</p>
 [*foo* bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
 "###,
         r###"Links (553)"###
@@ -7961,7 +7961,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">Foo</a></p>
 "###,
         r###"Links (554)"###
@@ -7975,7 +7975,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">foo</a>
 []</p>
 "###,
@@ -7989,7 +7989,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
         r###"Links (556)"###
@@ -8002,7 +8002,7 @@ bar>)</p>
 [*foo* bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
 "###,
         r###"Links (557)"###
@@ -8015,7 +8015,7 @@ bar>)</p>
 [*foo* bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[<a href="/url" title="title"><em>foo</em> bar</a>]</p>
 "###,
         r###"Links (558)"###
@@ -8028,7 +8028,7 @@ bar>)</p>
 [foo]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[[bar <a href="/url">foo</a></p>
 "###,
         r###"Links (559)"###
@@ -8041,7 +8041,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url" title="title">Foo</a></p>
 "###,
         r###"Links (560)"###
@@ -8054,7 +8054,7 @@ bar>)</p>
 [foo]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url">foo</a> bar</p>
 "###,
         r###"Links (561)"###
@@ -8067,7 +8067,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]</p>
 "###,
         r###"Links (562)"###
@@ -8080,7 +8080,7 @@ bar>)</p>
 *[foo*]
 "###,
             &danger
-        ),
+        )?,
         r###"<p>*<a href="/url">foo*</a></p>
 "###,
         r###"Links (563)"###
@@ -8094,7 +8094,7 @@ bar>)</p>
 [bar]: /url2
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url2">foo</a></p>
 "###,
         r###"Links (564)"###
@@ -8107,7 +8107,7 @@ bar>)</p>
 [foo]: /url1
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url1">foo</a></p>
 "###,
         r###"Links (565)"###
@@ -8120,7 +8120,7 @@ bar>)</p>
 [foo]: /url1
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="">foo</a></p>
 "###,
         r###"Links (566)"###
@@ -8133,7 +8133,7 @@ bar>)</p>
 [foo]: /url1
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url1">foo</a>(not a link)</p>
 "###,
         r###"Links (567)"###
@@ -8146,7 +8146,7 @@ bar>)</p>
 [baz]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]<a href="/url">bar</a></p>
 "###,
         r###"Links (568)"###
@@ -8160,7 +8160,7 @@ bar>)</p>
 [bar]: /url2
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="/url2">foo</a><a href="/url1">baz</a></p>
 "###,
         r###"Links (569)"###
@@ -8174,7 +8174,7 @@ bar>)</p>
 [foo]: /url2
 "###,
             &danger
-        ),
+        )?,
         r###"<p>[foo]<a href="/url1">bar</a></p>
 "###,
         r###"Links (570)"###
@@ -8185,7 +8185,7 @@ bar>)</p>
             r###"![foo](/url "title")
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
         r###"Images (571)"###
@@ -8198,7 +8198,7 @@ bar>)</p>
 [foo *bar*]: train.jpg "train & tracks"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
         r###"Images (572)"###
@@ -8209,7 +8209,7 @@ bar>)</p>
             r###"![foo ![bar](/url)](/url2)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url2" alt="foo bar" /></p>
 "###,
         r###"Images (573)"###
@@ -8220,7 +8220,7 @@ bar>)</p>
             r###"![foo [bar](/url)](/url2)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url2" alt="foo bar" /></p>
 "###,
         r###"Images (574)"###
@@ -8233,7 +8233,7 @@ bar>)</p>
 [foo *bar*]: train.jpg "train & tracks"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
         r###"Images (575)"###
@@ -8246,7 +8246,7 @@ bar>)</p>
 [FOOBAR]: train.jpg "train & tracks"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
         r###"Images (576)"###
@@ -8257,7 +8257,7 @@ bar>)</p>
             r###"![foo](train.jpg)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="train.jpg" alt="foo" /></p>
 "###,
         r###"Images (577)"###
@@ -8268,7 +8268,7 @@ bar>)</p>
             r###"My ![foo bar](/path/to/train.jpg  "title"   )
 "###,
             &danger
-        ),
+        )?,
         r###"<p>My <img src="/path/to/train.jpg" alt="foo bar" title="title" /></p>
 "###,
         r###"Images (578)"###
@@ -8279,7 +8279,7 @@ bar>)</p>
             r###"![foo](<url>)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="url" alt="foo" /></p>
 "###,
         r###"Images (579)"###
@@ -8290,7 +8290,7 @@ bar>)</p>
             r###"![](/url)
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="" /></p>
 "###,
         r###"Images (580)"###
@@ -8303,7 +8303,7 @@ bar>)</p>
 [bar]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo" /></p>
 "###,
         r###"Images (581)"###
@@ -8316,7 +8316,7 @@ bar>)</p>
 [BAR]: /url
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo" /></p>
 "###,
         r###"Images (582)"###
@@ -8329,7 +8329,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
         r###"Images (583)"###
@@ -8342,7 +8342,7 @@ bar>)</p>
 [*foo* bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo bar" title="title" /></p>
 "###,
         r###"Images (584)"###
@@ -8355,7 +8355,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="Foo" title="title" /></p>
 "###,
         r###"Images (585)"###
@@ -8369,7 +8369,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo" title="title" />
 []</p>
 "###,
@@ -8383,7 +8383,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
         r###"Images (587)"###
@@ -8396,7 +8396,7 @@ bar>)</p>
 [*foo* bar]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="foo bar" title="title" /></p>
 "###,
         r###"Images (588)"###
@@ -8409,7 +8409,7 @@ bar>)</p>
 [[foo]]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>![[foo]]</p>
 <p>[[foo]]: /url &quot;title&quot;</p>
 "###,
@@ -8423,7 +8423,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p><img src="/url" alt="Foo" title="title" /></p>
 "###,
         r###"Images (590)"###
@@ -8436,7 +8436,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>![foo]</p>
 "###,
         r###"Images (591)"###
@@ -8449,7 +8449,7 @@ bar>)</p>
 [foo]: /url "title"
 "###,
             &danger
-        ),
+        )?,
         r###"<p>!<a href="/url" title="title">foo</a></p>
 "###,
         r###"Images (592)"###
@@ -8460,7 +8460,7 @@ bar>)</p>
             r###"<http://foo.bar.baz>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="http://foo.bar.baz">http://foo.bar.baz</a></p>
 "###,
         r###"Autolinks (593)"###
@@ -8471,7 +8471,7 @@ bar>)</p>
             r###"<http://foo.bar.baz/test?q=hello&id=22&boolean>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean">http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>
 "###,
         r###"Autolinks (594)"###
@@ -8482,7 +8482,7 @@ bar>)</p>
             r###"<irc://foo.bar:2233/baz>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="irc://foo.bar:2233/baz">irc://foo.bar:2233/baz</a></p>
 "###,
         r###"Autolinks (595)"###
@@ -8493,7 +8493,7 @@ bar>)</p>
             r###"<MAILTO:FOO@BAR.BAZ>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="MAILTO:FOO@BAR.BAZ">MAILTO:FOO@BAR.BAZ</a></p>
 "###,
         r###"Autolinks (596)"###
@@ -8504,7 +8504,7 @@ bar>)</p>
             r###"<a+b+c:d>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="a+b+c:d">a+b+c:d</a></p>
 "###,
         r###"Autolinks (597)"###
@@ -8515,7 +8515,7 @@ bar>)</p>
             r###"<made-up-scheme://foo,bar>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="made-up-scheme://foo,bar">made-up-scheme://foo,bar</a></p>
 "###,
         r###"Autolinks (598)"###
@@ -8526,7 +8526,7 @@ bar>)</p>
             r###"<http://../>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="http://../">http://../</a></p>
 "###,
         r###"Autolinks (599)"###
@@ -8537,7 +8537,7 @@ bar>)</p>
             r###"<localhost:5001/foo>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="localhost:5001/foo">localhost:5001/foo</a></p>
 "###,
         r###"Autolinks (600)"###
@@ -8548,7 +8548,7 @@ bar>)</p>
             r###"<http://foo.bar/baz bim>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;http://foo.bar/baz bim&gt;</p>
 "###,
         r###"Autolinks (601)"###
@@ -8559,7 +8559,7 @@ bar>)</p>
             r###"<http://example.com/\[\>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="http://example.com/%5C%5B%5C">http://example.com/\[\</a></p>
 "###,
         r###"Autolinks (602)"###
@@ -8570,7 +8570,7 @@ bar>)</p>
             r###"<foo@bar.example.com>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="mailto:foo@bar.example.com">foo@bar.example.com</a></p>
 "###,
         r###"Autolinks (603)"###
@@ -8581,7 +8581,7 @@ bar>)</p>
             r###"<foo+special@Bar.baz-bar0.com>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="mailto:foo+special@Bar.baz-bar0.com">foo+special@Bar.baz-bar0.com</a></p>
 "###,
         r###"Autolinks (604)"###
@@ -8592,7 +8592,7 @@ bar>)</p>
             r###"<foo\+@bar.example.com>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;foo+@bar.example.com&gt;</p>
 "###,
         r###"Autolinks (605)"###
@@ -8603,7 +8603,7 @@ bar>)</p>
             r###"<>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;&gt;</p>
 "###,
         r###"Autolinks (606)"###
@@ -8614,7 +8614,7 @@ bar>)</p>
             r###"< http://foo.bar >
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt; http://foo.bar &gt;</p>
 "###,
         r###"Autolinks (607)"###
@@ -8625,7 +8625,7 @@ bar>)</p>
             r###"<m:abc>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;m:abc&gt;</p>
 "###,
         r###"Autolinks (608)"###
@@ -8636,7 +8636,7 @@ bar>)</p>
             r###"<foo.bar.baz>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;foo.bar.baz&gt;</p>
 "###,
         r###"Autolinks (609)"###
@@ -8647,7 +8647,7 @@ bar>)</p>
             r###"http://example.com
 "###,
             &danger
-        ),
+        )?,
         r###"<p>http://example.com</p>
 "###,
         r###"Autolinks (610)"###
@@ -8658,7 +8658,7 @@ bar>)</p>
             r###"foo@bar.example.com
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo@bar.example.com</p>
 "###,
         r###"Autolinks (611)"###
@@ -8669,7 +8669,7 @@ bar>)</p>
             r###"<a><bab><c2c>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a><bab><c2c></p>
 "###,
         r###"Raw HTML (612)"###
@@ -8680,7 +8680,7 @@ bar>)</p>
             r###"<a/><b2/>
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a/><b2/></p>
 "###,
         r###"Raw HTML (613)"###
@@ -8692,7 +8692,7 @@ bar>)</p>
 data="foo" >
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a  /><b2
 data="foo" ></p>
 "###,
@@ -8705,7 +8705,7 @@ data="foo" ></p>
 _boolean zoop:33=zoop:33 />
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a foo="bar" bam = 'baz <em>"</em>'
 _boolean zoop:33=zoop:33 /></p>
 "###,
@@ -8717,7 +8717,7 @@ _boolean zoop:33=zoop:33 /></p>
             r###"Foo <responsive-image src="foo.jpg" />
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo <responsive-image src="foo.jpg" /></p>
 "###,
         r###"Raw HTML (616)"###
@@ -8728,7 +8728,7 @@ _boolean zoop:33=zoop:33 /></p>
             r###"<33> <__>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;33&gt; &lt;__&gt;</p>
 "###,
         r###"Raw HTML (617)"###
@@ -8739,7 +8739,7 @@ _boolean zoop:33=zoop:33 /></p>
             r###"<a h*#ref="hi">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;a h*#ref=&quot;hi&quot;&gt;</p>
 "###,
         r###"Raw HTML (618)"###
@@ -8750,7 +8750,7 @@ _boolean zoop:33=zoop:33 /></p>
             r###"<a href="hi'> <a href=hi'>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;a href=&quot;hi'&gt; &lt;a href=hi'&gt;</p>
 "###,
         r###"Raw HTML (619)"###
@@ -8764,7 +8764,7 @@ foo><bar/ >
 bim!bop />
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt; a&gt;&lt;
 foo&gt;&lt;bar/ &gt;
 &lt;foo bar=baz
@@ -8778,7 +8778,7 @@ bim!bop /&gt;</p>
             r###"<a href='bar'title=title>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;a href='bar'title=title&gt;</p>
 "###,
         r###"Raw HTML (621)"###
@@ -8789,7 +8789,7 @@ bim!bop /&gt;</p>
             r###"</a></foo >
 "###,
             &danger
-        ),
+        )?,
         r###"<p></a></foo ></p>
 "###,
         r###"Raw HTML (622)"###
@@ -8800,7 +8800,7 @@ bim!bop /&gt;</p>
             r###"</a href="foo">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;/a href=&quot;foo&quot;&gt;</p>
 "###,
         r###"Raw HTML (623)"###
@@ -8812,7 +8812,7 @@ bim!bop /&gt;</p>
 comment - with hyphen -->
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <!-- this is a
 comment - with hyphen --></p>
 "###,
@@ -8824,7 +8824,7 @@ comment - with hyphen --></p>
             r###"foo <!-- not a comment -- two hyphens -->
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo &lt;!-- not a comment -- two hyphens --&gt;</p>
 "###,
         r###"Raw HTML (625)"###
@@ -8837,7 +8837,7 @@ comment - with hyphen --></p>
 foo <!-- foo--->
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo &lt;!--&gt; foo --&gt;</p>
 <p>foo &lt;!-- foo---&gt;</p>
 "###,
@@ -8849,7 +8849,7 @@ foo <!-- foo--->
             r###"foo <?php echo $a; ?>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <?php echo $a; ?></p>
 "###,
         r###"Raw HTML (627)"###
@@ -8860,7 +8860,7 @@ foo <!-- foo--->
             r###"foo <!ELEMENT br EMPTY>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <!ELEMENT br EMPTY></p>
 "###,
         r###"Raw HTML (628)"###
@@ -8871,7 +8871,7 @@ foo <!-- foo--->
             r###"foo <![CDATA[>&<]]>
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <![CDATA[>&<]]></p>
 "###,
         r###"Raw HTML (629)"###
@@ -8882,7 +8882,7 @@ foo <!-- foo--->
             r###"foo <a href="&ouml;">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <a href="&ouml;"></p>
 "###,
         r###"Raw HTML (630)"###
@@ -8893,7 +8893,7 @@ foo <!-- foo--->
             r###"foo <a href="\*">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo <a href="\*"></p>
 "###,
         r###"Raw HTML (631)"###
@@ -8904,7 +8904,7 @@ foo <!-- foo--->
             r###"<a href="\"">
 "###,
             &danger
-        ),
+        )?,
         r###"<p>&lt;a href=&quot;&quot;&quot;&gt;</p>
 "###,
         r###"Raw HTML (632)"###
@@ -8916,7 +8916,7 @@ foo <!-- foo--->
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<br />
 baz</p>
 "###,
@@ -8929,7 +8929,7 @@ baz</p>
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<br />
 baz</p>
 "###,
@@ -8942,7 +8942,7 @@ baz</p>
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<br />
 baz</p>
 "###,
@@ -8955,7 +8955,7 @@ baz</p>
      bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<br />
 bar</p>
 "###,
@@ -8968,7 +8968,7 @@ bar</p>
      bar
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo<br />
 bar</p>
 "###,
@@ -8981,7 +8981,7 @@ bar</p>
 bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo<br />
 bar</em></p>
 "###,
@@ -8994,7 +8994,7 @@ bar</em></p>
 bar*
 "###,
             &danger
-        ),
+        )?,
         r###"<p><em>foo<br />
 bar</em></p>
 "###,
@@ -9007,7 +9007,7 @@ bar</em></p>
 span`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>code   span</code></p>
 "###,
         r###"Hard line breaks (640)"###
@@ -9019,7 +9019,7 @@ span`
 span`
 "###,
             &danger
-        ),
+        )?,
         r###"<p><code>code\ span</code></p>
 "###,
         r###"Hard line breaks (641)"###
@@ -9031,7 +9031,7 @@ span`
 bar">
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo  
 bar"></p>
 "###,
@@ -9044,7 +9044,7 @@ bar"></p>
 bar">
 "###,
             &danger
-        ),
+        )?,
         r###"<p><a href="foo\
 bar"></p>
 "###,
@@ -9056,7 +9056,7 @@ bar"></p>
             r###"foo\
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo\</p>
 "###,
         r###"Hard line breaks (644)"###
@@ -9067,7 +9067,7 @@ bar"></p>
             r###"foo  
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo</p>
 "###,
         r###"Hard line breaks (645)"###
@@ -9078,7 +9078,7 @@ bar"></p>
             r###"### foo\
 "###,
             &danger
-        ),
+        )?,
         r###"<h3>foo\</h3>
 "###,
         r###"Hard line breaks (646)"###
@@ -9089,7 +9089,7 @@ bar"></p>
             r###"### foo  
 "###,
             &danger
-        ),
+        )?,
         r###"<h3>foo</h3>
 "###,
         r###"Hard line breaks (647)"###
@@ -9101,7 +9101,7 @@ bar"></p>
 baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo
 baz</p>
 "###,
@@ -9114,7 +9114,7 @@ baz</p>
  baz
 "###,
             &danger
-        ),
+        )?,
         r###"<p>foo
 baz</p>
 "###,
@@ -9126,7 +9126,7 @@ baz</p>
             r###"hello $.;'there
 "###,
             &danger
-        ),
+        )?,
         r###"<p>hello $.;'there</p>
 "###,
         r###"Textual content (650)"###
@@ -9137,7 +9137,7 @@ baz</p>
             r###"Foo χρῆν
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Foo χρῆν</p>
 "###,
         r###"Textual content (651)"###
@@ -9148,9 +9148,11 @@ baz</p>
             r###"Multiple     spaces
 "###,
             &danger
-        ),
+        )?,
         r###"<p>Multiple     spaces</p>
 "###,
         r###"Textual content (652)"###
 );
+
+    Ok(())
 }

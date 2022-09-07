@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn link_reference() {
+fn link_reference() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -65,7 +65,7 @@ fn link_reference() {
     );
 
     assert_eq!(
-        micromark_with_options("[ref]: /uri\n\n[foo <bar attr=\"][ref]\">", &danger),
+        micromark_with_options("[ref]: /uri\n\n[foo <bar attr=\"][ref]\">", &danger)?,
         "<p>[foo <bar attr=\"][ref]\"></p>",
         "should prefer HTML over link references"
     );
@@ -394,7 +394,7 @@ fn link_reference() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>[x]()</p>",
         "should support turning off label start (link)"
     );
@@ -409,8 +409,10 @@ fn link_reference() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>[x]()</p>",
         "should support turning off label end"
     );
+
+    Ok(())
 }

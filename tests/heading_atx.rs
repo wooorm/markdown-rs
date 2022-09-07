@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn heading_atx() {
+fn heading_atx() -> Result<(), String> {
     assert_eq!(
         micromark("# foo"),
         "<h1>foo</h1>",
@@ -212,8 +212,10 @@ fn heading_atx() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p># a</p>",
         "should support turning off heading (atx)"
     );
+
+    Ok(())
 }

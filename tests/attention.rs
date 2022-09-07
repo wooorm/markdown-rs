@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn attention() {
+fn attention() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -765,25 +765,25 @@ fn attention() {
     );
 
     assert_eq!(
-        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", &danger),
+        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", &danger)?,
         "<p>*<img src=\"foo\" title=\"*\"/></p>",
         "should not end inside HTML"
     );
 
     assert_eq!(
-        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", &danger),
+        micromark_with_options("*<img src=\"foo\" title=\"*\"/>", &danger)?,
         "<p>*<img src=\"foo\" title=\"*\"/></p>",
         "should not end emphasis inside HTML"
     );
 
     assert_eq!(
-        micromark_with_options("**<a href=\"**\">", &danger),
+        micromark_with_options("**<a href=\"**\">", &danger)?,
         "<p>**<a href=\"**\"></p>",
         "should not end strong inside HTML (1)"
     );
 
     assert_eq!(
-        micromark_with_options("__<a href=\"__\">", &danger),
+        micromark_with_options("__<a href=\"__\">", &danger)?,
         "<p>__<a href=\"__\"></p>",
         "should not end strong inside HTML (2)"
     );
@@ -822,8 +822,10 @@ fn attention() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>*a*</p>",
         "should support turning off attention"
     );
+
+    Ok(())
 }

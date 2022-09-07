@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn character_escape() {
+fn character_escape() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -12,8 +12,7 @@ fn character_escape() {
 
     assert_eq!(
         micromark(
-        "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~"
-        ),
+            "\\!\\\"\\#\\$\\%\\&\\'\\(\\)\\*\\+\\,\\-\\.\\/\\:\\;\\<\\=\\>\\?\\@\\[\\\\\\]\\^\\_\\`\\{\\|\\}\\~"),
         "<p>!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~</p>",
         "should support escaped ascii punctuation"
     );
@@ -26,8 +25,7 @@ fn character_escape() {
 
     assert_eq!(
         micromark(
-            "\\*not emphasized*\n\\<br/> not a tag\n\\[not a link](/foo)\n\\`not code`\n1\\. not a list\n\\* not a list\n\\# not a heading\n\\[foo]: /url \"not a reference\"\n\\&ouml; not a character entity"
-        ),
+            "\\*not emphasized*\n\\<br/> not a tag\n\\[not a link](/foo)\n\\`not code`\n1\\. not a list\n\\* not a list\n\\# not a heading\n\\[foo]: /url \"not a reference\"\n\\&ouml; not a character entity"),
         "<p>*not emphasized*\n&lt;br/&gt; not a tag\n[not a link](/foo)\n`not code`\n1. not a list\n* not a list\n# not a heading\n[foo]: /url &quot;not a reference&quot;\n&amp;ouml; not a character entity</p>",
         "should escape other constructs"
     );
@@ -57,7 +55,7 @@ fn character_escape() {
     );
 
     assert_eq!(
-        micromark_with_options("<a href=\"/bar\\/)\">", &danger),
+        micromark_with_options("<a href=\"/bar\\/)\">", &danger)?,
         "<a href=\"/bar\\/)\">",
         "should not escape in flow html"
     );
@@ -90,8 +88,10 @@ fn character_escape() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>\\&gt; a</p>",
         "should support turning off character escapes"
     );
+
+    Ok(())
 }

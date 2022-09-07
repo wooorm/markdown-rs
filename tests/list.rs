@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn list() {
+fn list() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         ..Options::default()
@@ -11,8 +11,7 @@ fn list() {
 
     assert_eq!(
         micromark(
-            "A paragraph\nwith two lines.\n\n    indented code\n\n> A block quote."
-        ),
+            "A paragraph\nwith two lines.\n\n    indented code\n\n> A block quote."),
         "<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>",
         "should support documents"
     );
@@ -205,40 +204,35 @@ fn list() {
 
     assert_eq!(
         micromark(
-            " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote."
-        ),
+            " 1.  A paragraph\n     with two lines.\n\n         indented code\n\n     > A block quote."),
         "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
         "should support indenting w/ 1 space"
     );
 
     assert_eq!(
         micromark(
-            "  1.  A paragraph\n      with two lines.\n\n          indented code\n\n      > A block quote."
-        ),
+            "  1.  A paragraph\n      with two lines.\n\n          indented code\n\n      > A block quote."),
         "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
         "should support indenting w/ 2 spaces"
     );
 
     assert_eq!(
         micromark(
-            "   1.  A paragraph\n       with two lines.\n\n           indented code\n\n       > A block quote."
-        ),
+            "   1.  A paragraph\n       with two lines.\n\n           indented code\n\n       > A block quote."),
         "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
         "should support indenting w/ 3 spaces"
     );
 
     assert_eq!(
         micromark(
-            "    1.  A paragraph\n        with two lines.\n\n            indented code\n\n        > A block quote."
-        ),
+            "    1.  A paragraph\n        with two lines.\n\n            indented code\n\n        > A block quote."),
         "<pre><code>1.  A paragraph\n    with two lines.\n\n        indented code\n\n    &gt; A block quote.\n</code></pre>",
         "should not support indenting w/ 4 spaces"
     );
 
     assert_eq!(
         micromark(
-            "  1.  A paragraph\nwith two lines.\n\n          indented code\n\n      > A block quote."
-        ),
+            "  1.  A paragraph\nwith two lines.\n\n          indented code\n\n      > A block quote."),
         "<ol>\n<li>\n<p>A paragraph\nwith two lines.</p>\n<pre><code>indented code\n</code></pre>\n<blockquote>\n<p>A block quote.</p>\n</blockquote>\n</li>\n</ol>",
         "should support lazy lines"
     );
@@ -370,13 +364,13 @@ fn list() {
     );
 
     assert_eq!(
-        micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", &danger),
+        micromark_with_options("- foo\n- bar\n\n<!-- -->\n\n- baz\n- bim", &danger)?,
         "<ul>\n<li>foo</li>\n<li>bar</li>\n</ul>\n<!-- -->\n<ul>\n<li>baz</li>\n<li>bim</li>\n</ul>",
         "should support HTML comments between lists"
     );
 
     assert_eq!(
-        micromark_with_options("-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code", &danger),
+        micromark_with_options("-   foo\n\n    notcode\n\n-   foo\n\n<!-- -->\n\n    code", &danger)?,
         "<ul>\n<li>\n<p>foo</p>\n<p>notcode</p>\n</li>\n<li>\n<p>foo</p>\n</li>\n</ul>\n<!-- -->\n<pre><code>code\n</code></pre>",
         "should support HTML comments between lists and indented code"
     );
@@ -498,8 +492,7 @@ fn list() {
 
     assert_eq!(
         micromark(
-            "* a tight item that ends with an html element: `x`\n\nParagraph"
-        ),
+            "* a tight item that ends with an html element: `x`\n\nParagraph"),
         "<ul>\n<li>a tight item that ends with an html element: <code>x</code></li>\n</ul>\n<p>Paragraph</p>",
         "should ignore line endings after tight items ending in tags"
     );
@@ -565,7 +558,7 @@ fn list() {
     );
 
     assert_eq!(
-        micromark_with_options("* a\n\n<!---->\n\n* b", &danger),
+        micromark_with_options("* a\n\n<!---->\n\n* b", &danger)?,
         "<ul>\n<li>a</li>\n</ul>\n<!---->\n<ul>\n<li>b</li>\n</ul>",
         "should support the common list breaking comment method"
     );
@@ -580,8 +573,10 @@ fn list() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>- one</p>\n<p>two</p>",
         "should support turning off lists"
     );
+
+    Ok(())
 }

@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn image() {
+fn image() -> Result<(), String> {
     assert_eq!(
         micromark("[link](/uri \"title\")"),
         "<p><a href=\"/uri\" title=\"title\">link</a></p>",
@@ -202,7 +202,7 @@ fn image() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>!<a href=\"\">x</a></p>",
         "should support turning off label start (image)"
     );
@@ -220,8 +220,10 @@ fn image() {
                 allow_dangerous_protocol: true,
                 ..Options::default()
             }
-        ),
+        )?,
         "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
         "should allow non-http protocols w/ `allowDangerousProtocol`"
     );
+
+    Ok(())
 }

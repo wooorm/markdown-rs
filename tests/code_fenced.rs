@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn code_fenced() {
+fn code_fenced() -> Result<(), String> {
     assert_eq!(
         micromark("```\n<\n >\n```"),
         "<pre><code>&lt;\n &gt;\n</code></pre>",
@@ -267,8 +267,10 @@ fn code_fenced() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>```</p>",
         "should support turning off code (fenced)"
     );
+
+    Ok(())
 }

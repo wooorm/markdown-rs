@@ -2,10 +2,15 @@
 
 use crate::construct;
 use crate::tokenizer::Tokenizer;
+use alloc::string::{String, ToString};
 
 /// Result of a state.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum State {
+    /// Syntax error.
+    ///
+    /// Only used by MDX.
+    Error(String),
     /// Move to [`Name`][] next.
     Next(Name),
     /// Retry in [`Name`][].
@@ -14,6 +19,24 @@ pub enum State {
     Ok,
     /// The state is not successful.
     Nok,
+}
+
+impl State {
+    /// Turn a final state into a result.
+    ///
+    /// This doesn’t work on future states ([`State::Next`], [`State::Retry`]),
+    /// or on an attempt ([`State::Nok`]).
+    ///
+    /// But it turns the final result into an error if crashed.
+    pub fn to_result(&self) -> Result<(), String> {
+        match self {
+            State::Nok | State::Next(_) | State::Retry(_) => {
+                unreachable!("cannot turn intermediate state into result")
+            }
+            State::Ok => Ok(()),
+            State::Error(x) => Err(x.to_string()),
+        }
+    }
 }
 
 /// Names of states to move to.

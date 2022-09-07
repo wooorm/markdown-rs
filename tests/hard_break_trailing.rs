@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn hard_break_trailing() {
+fn hard_break_trailing() -> Result<(), String> {
     assert_eq!(
         micromark("foo  \nbaz"),
         "<p>foo<br />\nbaz</p>",
@@ -116,8 +116,10 @@ fn hard_break_trailing() {
                 },
                 ..Options::default()
             }
-        ),
+        )?,
         "<p>a\nb</p>",
         "should support turning off hard break (trailing)"
     );
+
+    Ok(())
 }

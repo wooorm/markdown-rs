@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn tabs_flow() {
+fn tabs_flow() -> Result<(), String> {
     let danger = &Options {
         allow_dangerous_html: true,
         ..Options::default()
@@ -112,7 +112,7 @@ fn tabs_flow() {
     );
 
     assert_eq!(
-        micromark_with_options("<x\ty\tz\t=\t\"\tx\t\">", danger),
+        micromark_with_options("<x\ty\tz\t=\t\"\tx\t\">", danger)?,
         "<x\ty\tz\t=\t\"\tx\t\">",
         "should support tabs in HTML (if whitespace is allowed)"
     );
@@ -128,10 +128,12 @@ fn tabs_flow() {
         "<hr />",
         "should support arbitrary tabs in thematic breaks"
     );
+
+    Ok(())
 }
 
 #[test]
-fn tabs_text() {
+fn tabs_text() -> Result<(), String> {
     assert_eq!(
         micromark("<http:\t>"),
         "<p>&lt;http:\t&gt;</p>",
@@ -249,10 +251,12 @@ fn tabs_text() {
         "<p><a href=\"y\" title=\"z\">x</a></p>",
         "should support a tab between a link destination and title"
     );
+
+    Ok(())
 }
 
 #[test]
-fn tabs_virtual_spaces() {
+fn tabs_virtual_spaces() -> Result<(), String> {
     assert_eq!(
         micromark("```\n\tx"),
         "<pre><code>\tx\n</code></pre>\n",
@@ -284,4 +288,6 @@ fn tabs_virtual_spaces() {
         // "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
         "should support a part of a tab as a container, and the rest of a tab as flow"
     );
+
+    Ok(())
 }

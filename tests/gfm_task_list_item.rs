@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_task_list_item() {
+fn gfm_task_list_item() -> Result<(), String> {
     let gfm = Options {
         constructs: Constructs::gfm(),
         ..Options::default()
@@ -16,25 +16,25 @@ fn gfm_task_list_item() {
     );
 
     assert_eq!(
-        micromark_with_options("* [x] y.", &gfm),
+        micromark_with_options("* [x] y.", &gfm)?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" checked=\"\" /> y.</li>\n</ul>",
         "should support task list item checks"
     );
 
     assert_eq!(
-        micromark_with_options("* [ ] z.", &gfm),
+        micromark_with_options("* [ ] z.", &gfm)?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" /> z.</li>\n</ul>",
         "should support unchecked task list item checks"
     );
 
     assert_eq!(
-        micromark_with_options("*\n    [x]", &gfm),
+        micromark_with_options("*\n    [x]", &gfm)?,
         "<ul>\n<li>[x]</li>\n</ul>",
         "should not support laziness (1)"
     );
 
     assert_eq!(
-        micromark_with_options("*\n[x]", &gfm),
+        micromark_with_options("*\n[x]", &gfm)?,
         "<ul>\n<li></li>\n</ul>\n<p>[x]</p>",
         "should not support laziness (2)"
     );
@@ -122,7 +122,7 @@ EOL after:
             .replace('␠', " ")
             .replace('␉', "\t"),
             &gfm
-        ),
+        )?,
         r###"<ul>
 <li><input type="checkbox" disabled="" /> foo</li>
 <li><input type="checkbox" disabled="" checked="" /> bar</li>
@@ -239,4 +239,6 @@ Text.</li>
 "###,
         "should handle things like GitHub"
     );
+
+    Ok(())
 }

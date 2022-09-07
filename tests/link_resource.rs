@@ -3,7 +3,7 @@ use micromark::{micromark, micromark_with_options, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn link_resource() {
+fn link_resource() -> Result<(), String> {
     let danger = Options {
         allow_dangerous_html: true,
         allow_dangerous_protocol: true,
@@ -53,7 +53,7 @@ fn link_resource() {
     );
 
     assert_eq!(
-        micromark_with_options("[link](<foo\nbar>)", &danger),
+        micromark_with_options("[link](<foo\nbar>)", &danger)?,
         "<p>[link](<foo\nbar>)</p>",
         "should not support links w/ line endings in enclosed destination"
     );
@@ -71,7 +71,7 @@ fn link_resource() {
     );
 
     assert_eq!(
-        micromark_with_options("[a](<b)c\n[a](<b)c>\n[a](<b>c)", &danger),
+        micromark_with_options("[a](<b)c\n[a](<b)c>\n[a](<b>c)", &danger)?,
         "<p>[a](&lt;b)c\n[a](&lt;b)c&gt;\n[a](<b>c)</p>",
         "should not support links w/ unmatched enclosed destinations"
     );
@@ -101,7 +101,7 @@ fn link_resource() {
     );
 
     assert_eq!(
-        micromark_with_options("[link](foo\\)\\:)", &danger),
+        micromark_with_options("[link](foo\\)\\:)", &danger)?,
         "<p><a href=\"foo):\">link</a></p>",
         "should support links w/ escapes in destinations"
     );
@@ -275,7 +275,7 @@ fn link_resource() {
     );
 
     assert_eq!(
-        micromark_with_options("[foo <bar attr=\"](baz)\">", &danger),
+        micromark_with_options("[foo <bar attr=\"](baz)\">", &danger)?,
         "<p>[foo <bar attr=\"](baz)\"></p>",
         "should prefer HTML over links"
     );
@@ -313,7 +313,7 @@ fn link_resource() {
     );
 
     assert_eq!(
-        micromark_with_options("[a](<b>\"c\")", &danger),
+        micromark_with_options("[a](<b>\"c\")", &danger)?,
         "<p>[a](<b>&quot;c&quot;)</p>",
         "should require whitespace between enclosed destination and title"
     );
@@ -428,16 +428,14 @@ fn link_resource() {
 
     assert_eq!(
         micromark(
-            "[a](1(2(3(4(5(6(7(8(9(10(11(12(13(14(15(16(17(18(19(20(21(22(23(24(25(26(27(28(29(30(31(32()))))))))))))))))))))))))))))))))"
-        ),
+            "[a](1(2(3(4(5(6(7(8(9(10(11(12(13(14(15(16(17(18(19(20(21(22(23(24(25(26(27(28(29(30(31(32()))))))))))))))))))))))))))))))))"),
         "<p><a href=\"1(2(3(4(5(6(7(8(9(10(11(12(13(14(15(16(17(18(19(20(21(22(23(24(25(26(27(28(29(30(31(32())))))))))))))))))))))))))))))))\">a</a></p>",
         "should support 32 sets of parens"
     );
 
     assert_eq!(
         micromark(
-            "[a](1(2(3(4(5(6(7(8(9(10(11(12(13(14(15(16(17(18(19(20(21(22(23(24(25(26(27(28(29(30(31(32(33())))))))))))))))))))))))))))))))))"
-        ),
+            "[a](1(2(3(4(5(6(7(8(9(10(11(12(13(14(15(16(17(18(19(20(21(22(23(24(25(26(27(28(29(30(31(32(33())))))))))))))))))))))))))))))))))"),
         "<p>[a](1(2(3(4(5(6(7(8(9(10(11(12(13(14(15(16(17(18(19(20(21(22(23(24(25(26(27(28(29(30(31(32(33())))))))))))))))))))))))))))))))))</p>",
         "should not support 33 or more sets of parens"
     );
@@ -459,4 +457,6 @@ fn link_resource() {
         "<p><a href=\"%EF%BF%BD\">a</a></p>",
         "should support a single NUL character as a link resource"
     );
+
+    Ok(())
 }
