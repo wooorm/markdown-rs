@@ -95,7 +95,7 @@ Extensions (in this case GFM):
 extern crate micromark;
 use micromark::{micromark_with_options, Constructs, Options};
 
-fn main() {
+fn main() -> Result<(), String> {
     println!(
         "{}",
         micromark_with_options(
@@ -104,8 +104,10 @@ fn main() {
                 constructs: Constructs::gfm(),
                 ..Options::default()
             }
-        )
+        )?
     );
+
+    Ok(())
 }
 ```
 
