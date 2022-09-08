@@ -150,6 +150,7 @@ pub enum Name {
     FlowBeforeCodeIndented,
     FlowBeforeRaw,
     FlowBeforeHtml,
+    FlowBeforeMdxJsx,
     FlowBeforeHeadingAtx,
     FlowBeforeHeadingSetext,
     FlowBeforeThematicBreak,
@@ -400,11 +401,19 @@ pub enum Name {
     TitleInside,
 
     // To do: sort.
+    MdxJsxFlowStart,
+    MdxJsxFlowBefore,
+    MdxJsxFlowAfter,
+    MdxJsxFlowEnd,
+    MdxJsxFlowNok,
     MdxJsxTextStart,
     MdxJsxTextAfter,
     MdxJsxTextNok,
     MdxJsxEsWhitespaceStart,
     MdxJsxEsWhitespaceInside,
+    MdxJsxEsWhitespaceEol,
+    MdxJsxEsWhitespaceEolAfter,
+    MdxJsxEsWhitespaceEolAfterInside,
     MdxJsxStart,
     MdxJsxStartAfter,
     MdxJsxNameBefore,
@@ -435,11 +444,23 @@ pub enum Name {
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     let func = match name {
         // To do: sort.
+        Name::MdxJsxFlowStart => construct::mdx_jsx_flow::start,
+        Name::MdxJsxFlowBefore => construct::mdx_jsx_flow::before,
+        Name::MdxJsxFlowAfter => construct::mdx_jsx_flow::after,
+        Name::MdxJsxFlowEnd => construct::mdx_jsx_flow::end,
+        Name::MdxJsxFlowNok => construct::mdx_jsx_flow::nok,
         Name::MdxJsxTextStart => construct::mdx_jsx_text::start,
         Name::MdxJsxTextAfter => construct::mdx_jsx_text::after,
         Name::MdxJsxTextNok => construct::mdx_jsx_text::nok,
+
         Name::MdxJsxEsWhitespaceStart => construct::partial_mdx_jsx::es_whitespace_start,
         Name::MdxJsxEsWhitespaceInside => construct::partial_mdx_jsx::es_whitespace_inside,
+        Name::MdxJsxEsWhitespaceEol => construct::partial_mdx_jsx::es_whitespace_eol,
+        Name::MdxJsxEsWhitespaceEolAfter => construct::partial_mdx_jsx::es_whitespace_eol_after,
+        Name::MdxJsxEsWhitespaceEolAfterInside => {
+            construct::partial_mdx_jsx::es_whitespace_eol_after_inside
+        }
+
         Name::MdxJsxStart => construct::partial_mdx_jsx::start,
         Name::MdxJsxStartAfter => construct::partial_mdx_jsx::start_after,
         Name::MdxJsxNameBefore => construct::partial_mdx_jsx::name_before,
@@ -463,7 +484,9 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
             construct::partial_mdx_jsx::attribute_local_name_before
         }
         Name::MdxJsxAttributeLocalName => construct::partial_mdx_jsx::attribute_local_name,
-        Name::MdxJsxAttributeLocalNameAfter => construct::partial_mdx_jsx::attribute_local_name_after,
+        Name::MdxJsxAttributeLocalNameAfter => {
+            construct::partial_mdx_jsx::attribute_local_name_after
+        }
         Name::MdxJsxAttributeValueBefore => construct::partial_mdx_jsx::attribute_value_before,
         Name::MdxJsxAttributeValueQuotedStart => {
             construct::partial_mdx_jsx::attribute_value_quoted_start
@@ -585,6 +608,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::FlowBeforeCodeIndented => construct::flow::before_code_indented,
         Name::FlowBeforeRaw => construct::flow::before_raw,
         Name::FlowBeforeHtml => construct::flow::before_html,
+        Name::FlowBeforeMdxJsx => construct::flow::before_mdx_jsx,
         Name::FlowBeforeHeadingAtx => construct::flow::before_heading_atx,
         Name::FlowBeforeHeadingSetext => construct::flow::before_heading_setext,
         Name::FlowBeforeThematicBreak => construct::flow::before_thematic_break,

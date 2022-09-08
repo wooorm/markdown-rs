@@ -64,6 +64,7 @@
 //! *   [gfm table][gfm_table]
 //! *   [gfm task list item check][gfm_task_list_item_check]
 //! *   [mdx jsx (text)][mdx_jsx_text]
+//! *   [mdx jsx (flow)][mdx_jsx_flow]
 //!
 //! There are also several small subroutines typically used in different places:
 //!
@@ -71,7 +72,7 @@
 //! *   [data][partial_data]
 //! *   [destination][partial_destination]
 //! *   [label][partial_label]
-//! *   [jsx text][partial_mdx_jsx]
+//! *   [mdx jsx][partial_mdx_jsx]
 //! *   [non lazy continuation][partial_non_lazy_continuation]
 //! *   [space or tab][partial_space_or_tab]
 //! *   [space or tab, eol][partial_space_or_tab_eol]
@@ -163,6 +164,7 @@ pub mod label_end;
 pub mod label_start_image;
 pub mod label_start_link;
 pub mod list_item;
+pub mod mdx_jsx_flow;
 pub mod mdx_jsx_text;
 pub mod paragraph;
 pub mod partial_bom;

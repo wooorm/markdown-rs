@@ -16,6 +16,7 @@
 //! *   [Heading (atx)][crate::construct::heading_atx]
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
+//! *   [MDX JSX (flow)][crate::construct::mdx_jsx_flow]
 //! *   [Raw (flow)][crate::construct::raw_flow] (code (fenced), math (flow))
 //! *   [Thematic break][crate::construct::thematic_break]
 
@@ -61,7 +62,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'<') => {
             tokenizer.attempt(
                 State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
+                State::Next(StateName::FlowBeforeMdxJsx),
             );
             State::Retry(StateName::HtmlFlowStart)
         }
@@ -123,9 +124,23 @@ pub fn before_raw(tokenizer: &mut Tokenizer) -> State {
 pub fn before_html(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
-        State::Next(StateName::FlowBeforeHeadingAtx),
+        State::Next(StateName::FlowBeforeMdxJsx),
     );
     State::Retry(StateName::HtmlFlowStart)
+}
+
+/// At mdx jsx (flow).
+///
+/// ```markdown
+/// > | <A />
+///     ^
+/// ```
+pub fn before_mdx_jsx(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeHeadingAtx),
+    );
+    State::Retry(StateName::MdxJsxFlowStart)
 }
 
 /// At heading (atx).

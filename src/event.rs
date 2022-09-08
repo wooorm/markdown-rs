@@ -2732,30 +2732,31 @@ pub enum Name {
     ThematicBreakSequence,
 
     // To do: sort.
+    MdxJsxFlowTag,
     MdxJsxTextTag,
-    MdxJsxTextTagMarker,        // void
-    MdxJsxTextEsWhitespace,     // void
-    MdxJsxTextTagClosingMarker, // void
-    MdxJsxTextTagName,
-    MdxJsxTextTagNamePrimary,       // void?
-    MdxJsxTextTagNameMemberMarker,  // void
-    MdxJsxTextTagNamePrefixMarker,  // void
-    MdxJsxTextTagNameMember,        // void
-    MdxJsxTextTagNameLocal,         // void
-    MdxJsxTextTagSelfClosingMarker, // void
-    MdxJsxTextTagAttribute,
-    MdxJsxTextTagAttributeName,
-    MdxJsxTextTagAttributePrimaryName,
-    MdxJsxTextTagAttributeNamePrefixMarker,  // void
-    MdxJsxTextTagAttributeInitializerMarker, // void
-    MdxJsxTextTagAttributeNameLocal,         // void
-    MdxJsxTextTagAttributeValueLiteral,
-    MdxJsxTextTagAttributeValueLiteralMarker, // void
-    MdxJsxTextTagAttributeValueLiteralValue,
+    MdxJsxTagMarker,
+    MdxJsxTagClosingMarker,
+    MdxJsxTagName,
+    MdxJsxTagNamePrimary,
+    MdxJsxTagNameMemberMarker,
+    MdxJsxTagNamePrefixMarker,
+    MdxJsxTagNameMember,
+    MdxJsxTagNameLocal,
+    MdxJsxTagSelfClosingMarker,
+    MdxJsxTagAttribute,
+    MdxJsxTagAttributeName,
+    MdxJsxTagAttributePrimaryName,
+    MdxJsxTagAttributeNamePrefixMarker,
+    MdxJsxTagAttributeInitializerMarker,
+    MdxJsxTagAttributeNameLocal,
+    MdxJsxTagAttributeValueLiteral,
+    MdxJsxTagAttributeValueLiteralMarker,
+    MdxJsxTagAttributeValueLiteralValue,
+    MdxJsxEsWhitespace,
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 60] = [
+pub const VOID_EVENTS: [Name; 73] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -2810,6 +2811,19 @@ pub const VOID_EVENTS: [Name; 60] = [
     Name::MathFlowChunk,
     Name::MathTextData,
     Name::MathTextSequence,
+    Name::MdxJsxTagMarker,
+    Name::MdxJsxTagClosingMarker,
+    Name::MdxJsxTagNamePrimary,
+    Name::MdxJsxTagNameMemberMarker,
+    Name::MdxJsxTagNamePrefixMarker,
+    Name::MdxJsxTagNameMember,
+    Name::MdxJsxTagNameLocal,
+    Name::MdxJsxTagSelfClosingMarker,
+    Name::MdxJsxTagAttributeNamePrefixMarker,
+    Name::MdxJsxTagAttributeInitializerMarker,
+    Name::MdxJsxTagAttributeNameLocal,
+    Name::MdxJsxTagAttributeValueLiteralMarker,
+    Name::MdxJsxEsWhitespace,
     Name::ReferenceMarker,
     Name::ResourceMarker,
     Name::ResourceTitleMarker,

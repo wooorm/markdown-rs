@@ -1,6 +1,5 @@
 //! To do.
 
-use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
@@ -23,10 +22,10 @@ use unicode_id::UnicodeID;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     debug_assert_eq!(tokenizer.current, Some(b'<'));
-    tokenizer.enter(Name::MdxJsxTextTag);
-    tokenizer.enter(Name::MdxJsxTextTagMarker);
+    tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
+    tokenizer.enter(Name::MdxJsxTagMarker);
     tokenizer.consume();
-    tokenizer.exit(Name::MdxJsxTextTagMarker);
+    tokenizer.exit(Name::MdxJsxTagMarker);
     State::Next(StateName::MdxJsxStartAfter)
 }
 
@@ -61,9 +60,9 @@ pub fn name_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Closing tag.
         Some(b'/') => {
-            tokenizer.enter(Name::MdxJsxTextTagClosingMarker);
+            tokenizer.enter(Name::MdxJsxTagClosingMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagClosingMarker);
+            tokenizer.exit(Name::MdxJsxTagClosingMarker);
             tokenizer.attempt(
                 State::Next(StateName::MdxJsxClosingTagNameBefore),
                 State::Nok,
@@ -77,8 +76,8 @@ pub fn name_before(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.parse_state.bytes,
                 tokenizer.point.index,
             )) {
-                tokenizer.enter(Name::MdxJsxTextTagName);
-                tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
+                tokenizer.enter(Name::MdxJsxTagName);
+                tokenizer.enter(Name::MdxJsxTagNamePrimary);
                 tokenizer.consume();
                 State::Next(StateName::MdxJsxPrimaryName)
             } else {
@@ -117,8 +116,8 @@ pub fn closing_tag_name_before(tokenizer: &mut Tokenizer) -> State {
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
-        tokenizer.enter(Name::MdxJsxTextTagName);
-        tokenizer.enter(Name::MdxJsxTextTagNamePrimary);
+        tokenizer.enter(Name::MdxJsxTagName);
+        tokenizer.enter(Name::MdxJsxTagNamePrimary);
         tokenizer.consume();
         State::Next(StateName::MdxJsxPrimaryName)
     } else {
@@ -148,7 +147,7 @@ pub fn primary_name(tokenizer: &mut Tokenizer) -> State {
     if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'.' | b'/' | b':' | b'>' | b'{'))
     {
-        tokenizer.exit(Name::MdxJsxTextTagNamePrimary);
+        tokenizer.exit(Name::MdxJsxTagNamePrimary);
         tokenizer.attempt(State::Next(StateName::MdxJsxPrimaryNameAfter), State::Nok);
         State::Retry(StateName::MdxJsxEsWhitespaceStart)
     }
@@ -190,17 +189,17 @@ pub fn primary_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Start of a member name.
         Some(b'.') => {
-            tokenizer.enter(Name::MdxJsxTextTagNameMemberMarker);
+            tokenizer.enter(Name::MdxJsxTagNameMemberMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagNameMemberMarker);
+            tokenizer.exit(Name::MdxJsxTagNameMemberMarker);
             tokenizer.attempt(State::Next(StateName::MdxJsxMemberNameBefore), State::Nok);
             State::Next(StateName::MdxJsxEsWhitespaceStart)
         }
         // Start of a local name.
         Some(b':') => {
-            tokenizer.enter(Name::MdxJsxTextTagNamePrefixMarker);
+            tokenizer.enter(Name::MdxJsxTagNamePrefixMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagNamePrefixMarker);
+            tokenizer.exit(Name::MdxJsxTagNamePrefixMarker);
             tokenizer.attempt(State::Next(StateName::MdxJsxLocalNameBefore), State::Nok);
             State::Next(StateName::MdxJsxEsWhitespaceStart)
         }
@@ -212,7 +211,7 @@ pub fn primary_name_after(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.point.index,
                 ))
             {
-                tokenizer.exit(Name::MdxJsxTextTagName);
+                tokenizer.exit(Name::MdxJsxTagName);
                 State::Retry(StateName::MdxJsxAttributeBefore)
             } else {
                 crash(
@@ -237,7 +236,7 @@ pub fn member_name_before(tokenizer: &mut Tokenizer) -> State {
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
-        tokenizer.enter(Name::MdxJsxTextTagNameMember);
+        tokenizer.enter(Name::MdxJsxTagNameMember);
         tokenizer.consume();
         State::Next(StateName::MdxJsxMemberName)
     } else {
@@ -261,7 +260,7 @@ pub fn member_name(tokenizer: &mut Tokenizer) -> State {
     if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'.' | b'/' | b'>' | b'{'))
     {
-        tokenizer.exit(Name::MdxJsxTextTagNameMember);
+        tokenizer.exit(Name::MdxJsxTagNameMember);
         tokenizer.attempt(State::Next(StateName::MdxJsxMemberNameAfter), State::Nok);
         State::Retry(StateName::MdxJsxEsWhitespaceStart)
     }
@@ -303,9 +302,9 @@ pub fn member_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Start of another member name.
         Some(b'.') => {
-            tokenizer.enter(Name::MdxJsxTextTagNameMemberMarker);
+            tokenizer.enter(Name::MdxJsxTagNameMemberMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagNameMemberMarker);
+            tokenizer.exit(Name::MdxJsxTagNameMemberMarker);
             tokenizer.attempt(State::Next(StateName::MdxJsxMemberNameBefore), State::Nok);
             State::Next(StateName::MdxJsxEsWhitespaceStart)
         }
@@ -317,7 +316,7 @@ pub fn member_name_after(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.point.index,
                 ))
             {
-                tokenizer.exit(Name::MdxJsxTextTagName);
+                tokenizer.exit(Name::MdxJsxTagName);
                 State::Retry(StateName::MdxJsxAttributeBefore)
             } else {
                 crash(
@@ -342,7 +341,7 @@ pub fn local_name_before(tokenizer: &mut Tokenizer) -> State {
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
-        tokenizer.enter(Name::MdxJsxTextTagNameLocal);
+        tokenizer.enter(Name::MdxJsxTagNameLocal);
         tokenizer.consume();
         State::Next(StateName::MdxJsxLocalName)
     } else {
@@ -372,7 +371,7 @@ pub fn local_name(tokenizer: &mut Tokenizer) -> State {
     if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
     {
-        tokenizer.exit(Name::MdxJsxTextTagNameLocal);
+        tokenizer.exit(Name::MdxJsxTagNameLocal);
         tokenizer.attempt(State::Next(StateName::MdxJsxLocalNameAfter), State::Nok);
         State::Retry(StateName::MdxJsxEsWhitespaceStart)
     }
@@ -414,7 +413,7 @@ pub fn local_name_after(tokenizer: &mut Tokenizer) -> State {
             tokenizer.point.index,
         ))
     {
-        tokenizer.exit(Name::MdxJsxTextTagName);
+        tokenizer.exit(Name::MdxJsxTagName);
         State::Retry(StateName::MdxJsxAttributeBefore)
     } else {
         crash(
@@ -441,9 +440,9 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Self-closing.
         Some(b'/') => {
-            tokenizer.enter(Name::MdxJsxTextTagSelfClosingMarker);
+            tokenizer.enter(Name::MdxJsxTagSelfClosingMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagSelfClosingMarker);
+            tokenizer.exit(Name::MdxJsxTagSelfClosingMarker);
             tokenizer.attempt(State::Next(StateName::MdxJsxSelfClosing), State::Nok);
             State::Next(StateName::MdxJsxEsWhitespaceStart)
         }
@@ -457,9 +456,9 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.parse_state.bytes,
                 tokenizer.point.index,
             )) {
-                tokenizer.enter(Name::MdxJsxTextTagAttribute);
-                tokenizer.enter(Name::MdxJsxTextTagAttributeName);
-                tokenizer.enter(Name::MdxJsxTextTagAttributePrimaryName);
+                tokenizer.enter(Name::MdxJsxTagAttribute);
+                tokenizer.enter(Name::MdxJsxTagAttributeName);
+                tokenizer.enter(Name::MdxJsxTagAttributePrimaryName);
                 tokenizer.consume();
                 State::Next(StateName::MdxJsxAttributePrimaryName)
             } else {
@@ -488,7 +487,7 @@ pub fn attribute_primary_name(tokenizer: &mut Tokenizer) -> State {
     if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'/' | b':' | b'=' | b'>' | b'{'))
     {
-        tokenizer.exit(Name::MdxJsxTextTagAttributePrimaryName);
+        tokenizer.exit(Name::MdxJsxTagAttributePrimaryName);
         tokenizer.attempt(
             State::Next(StateName::MdxJsxAttributePrimaryNameAfter),
             State::Nok,
@@ -528,9 +527,9 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Start of a local name.
         Some(b':') => {
-            tokenizer.enter(Name::MdxJsxTextTagAttributeNamePrefixMarker);
+            tokenizer.enter(Name::MdxJsxTagAttributeNamePrefixMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagAttributeNamePrefixMarker);
+            tokenizer.exit(Name::MdxJsxTagAttributeNamePrefixMarker);
             tokenizer.attempt(
                 State::Next(StateName::MdxJsxAttributeLocalNameBefore),
                 State::Nok,
@@ -539,10 +538,10 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
         }
         // Initializer: start of an attribute value.
         Some(b'=') => {
-            tokenizer.exit(Name::MdxJsxTextTagAttributeName);
-            tokenizer.enter(Name::MdxJsxTextTagAttributeInitializerMarker);
+            tokenizer.exit(Name::MdxJsxTagAttributeName);
+            tokenizer.enter(Name::MdxJsxTagAttributeInitializerMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagAttributeInitializerMarker);
+            tokenizer.exit(Name::MdxJsxTagAttributeInitializerMarker);
             tokenizer.attempt(
                 State::Next(StateName::MdxJsxAttributeValueBefore),
                 State::Nok,
@@ -559,8 +558,8 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.point.index,
                 ))
             {
-                tokenizer.exit(Name::MdxJsxTextTagAttributeName);
-                tokenizer.exit(Name::MdxJsxTextTagAttribute);
+                tokenizer.exit(Name::MdxJsxTagAttributeName);
+                tokenizer.exit(Name::MdxJsxTagAttribute);
                 tokenizer.attempt(State::Next(StateName::MdxJsxAttributeBefore), State::Nok);
                 State::Retry(StateName::MdxJsxEsWhitespaceStart)
             } else {
@@ -586,7 +585,7 @@ pub fn attribute_local_name_before(tokenizer: &mut Tokenizer) -> State {
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
-        tokenizer.enter(Name::MdxJsxTextTagAttributeNameLocal);
+        tokenizer.enter(Name::MdxJsxTagAttributeNameLocal);
         tokenizer.consume();
         State::Next(StateName::MdxJsxAttributeLocalName)
     } else {
@@ -611,8 +610,8 @@ pub fn attribute_local_name(tokenizer: &mut Tokenizer) -> State {
     if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'/' | b'=' | b'>' | b'{'))
     {
-        tokenizer.exit(Name::MdxJsxTextTagAttributeNameLocal);
-        tokenizer.exit(Name::MdxJsxTextTagAttributeName);
+        tokenizer.exit(Name::MdxJsxTagAttributeNameLocal);
+        tokenizer.exit(Name::MdxJsxTagAttributeName);
         tokenizer.attempt(
             State::Next(StateName::MdxJsxAttributeLocalNameAfter),
             State::Nok,
@@ -650,9 +649,9 @@ pub fn attribute_local_name_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         // Start of an attribute value.
         Some(b'=') => {
-            tokenizer.enter(Name::MdxJsxTextTagAttributeInitializerMarker);
+            tokenizer.enter(Name::MdxJsxTagAttributeInitializerMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagAttributeInitializerMarker);
+            tokenizer.exit(Name::MdxJsxTagAttributeInitializerMarker);
             tokenizer.attempt(
                 State::Next(StateName::MdxJsxAttributeValueBefore),
                 State::Nok,
@@ -667,7 +666,7 @@ pub fn attribute_local_name_after(tokenizer: &mut Tokenizer) -> State {
                     tokenizer.point.index,
                 ))
             {
-                tokenizer.exit(Name::MdxJsxTextTagAttribute);
+                tokenizer.exit(Name::MdxJsxTagAttribute);
                 State::Retry(StateName::MdxJsxAttributeBefore)
             } else {
                 crash(
@@ -693,10 +692,10 @@ pub fn attribute_value_before(tokenizer: &mut Tokenizer) -> State {
         // Start of double- or single quoted value.
         Some(b'"' | b'\'') => {
             tokenizer.tokenize_state.marker = tokenizer.current.unwrap();
-            tokenizer.enter(Name::MdxJsxTextTagAttributeValueLiteral);
-            tokenizer.enter(Name::MdxJsxTextTagAttributeValueLiteralMarker);
+            tokenizer.enter(Name::MdxJsxTagAttributeValueLiteral);
+            tokenizer.enter(Name::MdxJsxTagAttributeValueLiteralMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteralMarker);
+            tokenizer.exit(Name::MdxJsxTagAttributeValueLiteralMarker);
             State::Next(StateName::MdxJsxAttributeValueQuotedStart)
         }
         // Attribute value expression.
@@ -726,11 +725,11 @@ pub fn attribute_value_quoted_start(tokenizer: &mut Tokenizer) -> State {
     if let Some(byte) = tokenizer.current {
         if byte == tokenizer.tokenize_state.marker {
             tokenizer.tokenize_state.marker = 0;
-            tokenizer.enter(Name::MdxJsxTextTagAttributeValueLiteralMarker);
+            tokenizer.enter(Name::MdxJsxTagAttributeValueLiteralMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteralMarker);
-            tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteral);
-            tokenizer.exit(Name::MdxJsxTextTagAttribute);
+            tokenizer.exit(Name::MdxJsxTagAttributeValueLiteralMarker);
+            tokenizer.exit(Name::MdxJsxTagAttributeValueLiteral);
+            tokenizer.exit(Name::MdxJsxTagAttribute);
             tokenizer.attempt(State::Next(StateName::MdxJsxAttributeBefore), State::Nok);
             State::Next(StateName::MdxJsxEsWhitespaceStart)
         } else if byte == b'\n' {
@@ -740,7 +739,7 @@ pub fn attribute_value_quoted_start(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::MdxJsxEsWhitespaceStart)
         } else {
-            tokenizer.enter(Name::MdxJsxTextTagAttributeValueLiteralValue);
+            tokenizer.enter(Name::MdxJsxTagAttributeValueLiteralValue);
             State::Retry(StateName::MdxJsxAttributeValueQuoted)
         }
     } else {
@@ -762,14 +761,10 @@ pub fn attribute_value_quoted_start(tokenizer: &mut Tokenizer) -> State {
 ///             ^
 /// ```
 pub fn attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
-    // To do: doesn’t this break for:
-    // ```markdown
-    // a <b c="d"
-    // "f">
     if tokenizer.current == Some(tokenizer.tokenize_state.marker)
         || matches!(tokenizer.current, None | Some(b'\n'))
     {
-        tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteralValue);
+        tokenizer.exit(Name::MdxJsxTagAttributeValueLiteralValue);
         State::Retry(StateName::MdxJsxAttributeValueQuotedStart)
     } else {
         tokenizer.consume();
@@ -810,10 +805,10 @@ pub fn self_closing(tokenizer: &mut Tokenizer) -> State {
 pub fn tag_end(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'>') => {
-            tokenizer.enter(Name::MdxJsxTextTagMarker);
+            tokenizer.enter(Name::MdxJsxTagMarker);
             tokenizer.consume();
-            tokenizer.exit(Name::MdxJsxTextTagMarker);
-            tokenizer.exit(Name::MdxJsxTextTag);
+            tokenizer.exit(Name::MdxJsxTagMarker);
+            tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
             State::Ok
         }
         _ => unreachable!("expected `>`"),
@@ -828,17 +823,12 @@ pub fn tag_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn es_whitespace_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => {
-            // To do: check if this works for blank lines?
-            // To do: `text` allows lazy lines here, flow doesn’t.
-            tokenizer.attempt(State::Next(StateName::MdxJsxEsWhitespaceStart), State::Nok);
-            State::Retry(space_or_tab_eol(tokenizer))
-        }
+        Some(b'\n') => State::Retry(StateName::MdxJsxEsWhitespaceEol),
         _ => {
             if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
             {
-                tokenizer.enter(Name::MdxJsxTextEsWhitespace);
+                tokenizer.enter(Name::MdxJsxEsWhitespace);
                 State::Retry(StateName::MdxJsxEsWhitespaceInside)
             } else {
                 State::Ok
@@ -856,8 +846,8 @@ pub fn es_whitespace_start(tokenizer: &mut Tokenizer) -> State {
 pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
-            tokenizer.exit(Name::MdxJsxTextEsWhitespace);
-            State::Retry(StateName::MdxJsxEsWhitespaceStart)
+            tokenizer.exit(Name::MdxJsxEsWhitespace);
+            State::Retry(StateName::MdxJsxEsWhitespaceEol)
         }
         // Allow continuation bytes.
         Some(0x80..=0xBF) => {
@@ -871,7 +861,55 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.consume();
                 State::Next(StateName::MdxJsxEsWhitespaceInside)
             } else {
-                tokenizer.exit(Name::MdxJsxTextEsWhitespace);
+                tokenizer.exit(Name::MdxJsxEsWhitespace);
+                State::Ok
+            }
+        }
+    }
+}
+
+pub fn es_whitespace_eol(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some(b'\n') => {
+            tokenizer.enter(Name::LineEnding);
+            tokenizer.consume();
+            tokenizer.exit(Name::LineEnding);
+            State::Next(StateName::MdxJsxEsWhitespaceEolAfter)
+        }
+        _ => State::Ok,
+    }
+}
+
+pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.tokenize_state.token_1 == Name::MdxJsxFlowTag && tokenizer.lazy {
+        crash_lazy(tokenizer)
+    } else if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+        == CharacterKind::Whitespace
+    {
+        tokenizer.enter(Name::MdxJsxEsWhitespace);
+        State::Retry(StateName::MdxJsxEsWhitespaceEolAfterInside)
+    } else {
+        State::Ok
+    }
+}
+
+pub fn es_whitespace_eol_after_inside(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        // Not allowed.
+        Some(b'\n') => State::Nok,
+        // Allow continuation bytes.
+        Some(0x80..=0xBF) => {
+            tokenizer.consume();
+            State::Next(StateName::MdxJsxEsWhitespaceEolAfterInside)
+        }
+        _ => {
+            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+                == CharacterKind::Whitespace
+            {
+                tokenizer.consume();
+                State::Next(StateName::MdxJsxEsWhitespaceEolAfterInside)
+            } else {
+                tokenizer.exit(Name::MdxJsxEsWhitespace);
                 State::Ok
             }
         }
@@ -894,8 +932,19 @@ fn id_cont(code: Option<char>) -> bool {
     }
 }
 
+fn crash_lazy(tokenizer: &Tokenizer) -> State {
+    State::Error(format!(
+        "{}:{}: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+        tokenizer.point.line, tokenizer.point.column
+    ))
+}
+
 fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
-    let char = char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index);
+    let char = if tokenizer.current == None {
+        None
+    } else {
+        char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+    };
 
     // To do: externalize this, and the print mechanism in the tokenizer,
     // to one proper formatter.

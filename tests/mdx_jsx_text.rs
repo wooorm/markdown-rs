@@ -812,6 +812,30 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     // );
 
     assert_eq!(
+        micromark_with_options("> a <b\n/> c", &mdx)?,
+        "<blockquote>\n<p>a  c</p>\n</blockquote>",
+        "should support lazy text (1)"
+    );
+
+    assert_eq!(
+        micromark_with_options("> a <b c='\nd'/> e", &mdx)?,
+        "<blockquote>\n<p>a  e</p>\n</blockquote>",
+        "should support lazy text (2)"
+    );
+
+    assert_eq!(
+        micromark_with_options("> a <b c='d\n'/> e", &mdx)?,
+        "<blockquote>\n<p>a  e</p>\n</blockquote>",
+        "should support lazy text (3)"
+    );
+
+    assert_eq!(
+        micromark_with_options("> a <b c='d\ne'/> f", &mdx)?,
+        "<blockquote>\n<p>a  f</p>\n</blockquote>",
+        "should support lazy text (4)"
+    );
+
+    assert_eq!(
         micromark_with_options("1 < 3", &mdx)?,
         "<p>1 &lt; 3</p>",
         "should allow `<` followed by markdown whitespace as text in markdown"
