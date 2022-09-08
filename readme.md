@@ -23,7 +23,7 @@ positional info, concrete tokens, and extensions.
 - [x] **[compliant][commonmark]** (100% to CommonMark)
 - [x] **[extensions][]** (GFM, frontmatter, math)
 - [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
-- [x] **[robust][test]** (1800+ tests, 100% coverage)
+- [x] **[robust][test]** (2300+ tests, 100% coverage)
 
 It’s also `#![no_std]` + `alloc`, has tons of docs, and has a single dependency
 (for optional debug logging).
