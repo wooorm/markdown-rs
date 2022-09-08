@@ -71,6 +71,7 @@
 //! *   [data][partial_data]
 //! *   [destination][partial_destination]
 //! *   [label][partial_label]
+//! *   [jsx text][partial_mdx_jsx]
 //! *   [non lazy continuation][partial_non_lazy_continuation]
 //! *   [space or tab][partial_space_or_tab]
 //! *   [space or tab, eol][partial_space_or_tab_eol]
@@ -168,6 +169,7 @@ pub mod partial_bom;
 pub mod partial_data;
 pub mod partial_destination;
 pub mod partial_label;
+pub mod partial_mdx_jsx;
 pub mod partial_non_lazy_continuation;
 pub mod partial_space_or_tab;
 pub mod partial_space_or_tab_eol;

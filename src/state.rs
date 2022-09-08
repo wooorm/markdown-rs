@@ -400,31 +400,34 @@ pub enum Name {
     TitleInside,
 
     // To do: sort.
-    MdxJsxTextEsWhitespaceStart,
-    MdxJsxTextEsWhitespaceInside,
     MdxJsxTextStart,
-    MdxJsxTextStartAfter,
-    MdxJsxTextNameBefore,
-    MdxJsxTextClosingTagNameBefore,
-    MdxJsxTextTagEnd,
-    MdxJsxTextPrimaryName,
-    MdxJsxTextPrimaryNameAfter,
-    MdxJsxTextMemberNameBefore,
-    MdxJsxTextMemberName,
-    MdxJsxTextMemberNameAfter,
-    MdxJsxTextLocalNameBefore,
-    MdxJsxTextLocalName,
-    MdxJsxTextLocalNameAfter,
-    MdxJsxTextAttributeBefore,
-    MdxJsxTextSelfClosing,
-    MdxJsxTextAttributePrimaryName,
-    MdxJsxTextAttributePrimaryNameAfter,
-    MdxJsxTextAttributeLocalNameBefore,
-    MdxJsxTextAttributeLocalName,
-    MdxJsxTextAttributeLocalNameAfter,
-    MdxJsxTextAttributeValueBefore,
-    MdxJsxTextAttributeValueQuotedStart,
-    MdxJsxTextAttributeValueQuoted,
+    MdxJsxTextAfter,
+    MdxJsxTextNok,
+    MdxJsxEsWhitespaceStart,
+    MdxJsxEsWhitespaceInside,
+    MdxJsxStart,
+    MdxJsxStartAfter,
+    MdxJsxNameBefore,
+    MdxJsxClosingTagNameBefore,
+    MdxJsxTagEnd,
+    MdxJsxPrimaryName,
+    MdxJsxPrimaryNameAfter,
+    MdxJsxMemberNameBefore,
+    MdxJsxMemberName,
+    MdxJsxMemberNameAfter,
+    MdxJsxLocalNameBefore,
+    MdxJsxLocalName,
+    MdxJsxLocalNameAfter,
+    MdxJsxAttributeBefore,
+    MdxJsxSelfClosing,
+    MdxJsxAttributePrimaryName,
+    MdxJsxAttributePrimaryNameAfter,
+    MdxJsxAttributeLocalNameBefore,
+    MdxJsxAttributeLocalName,
+    MdxJsxAttributeLocalNameAfter,
+    MdxJsxAttributeValueBefore,
+    MdxJsxAttributeValueQuotedStart,
+    MdxJsxAttributeValueQuoted,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -432,39 +435,40 @@ pub enum Name {
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     let func = match name {
         // To do: sort.
-        Name::MdxJsxTextEsWhitespaceStart => construct::mdx_jsx_text::es_whitespace_start,
-        Name::MdxJsxTextEsWhitespaceInside => construct::mdx_jsx_text::es_whitespace_inside,
         Name::MdxJsxTextStart => construct::mdx_jsx_text::start,
-        Name::MdxJsxTextStartAfter => construct::mdx_jsx_text::start_after,
-        Name::MdxJsxTextNameBefore => construct::mdx_jsx_text::name_before,
-        Name::MdxJsxTextClosingTagNameBefore => construct::mdx_jsx_text::closing_tag_name_before,
-        Name::MdxJsxTextTagEnd => construct::mdx_jsx_text::tag_end,
-        Name::MdxJsxTextPrimaryName => construct::mdx_jsx_text::primary_name,
-        Name::MdxJsxTextPrimaryNameAfter => construct::mdx_jsx_text::primary_name_after,
-        Name::MdxJsxTextMemberNameBefore => construct::mdx_jsx_text::member_name_before,
-        Name::MdxJsxTextMemberName => construct::mdx_jsx_text::member_name,
-        Name::MdxJsxTextMemberNameAfter => construct::mdx_jsx_text::member_name_after,
-        Name::MdxJsxTextLocalNameBefore => construct::mdx_jsx_text::local_name_before,
-        Name::MdxJsxTextLocalName => construct::mdx_jsx_text::local_name,
-        Name::MdxJsxTextLocalNameAfter => construct::mdx_jsx_text::local_name_after,
-        Name::MdxJsxTextAttributeBefore => construct::mdx_jsx_text::attribute_before,
-        Name::MdxJsxTextSelfClosing => construct::mdx_jsx_text::self_closing,
-        Name::MdxJsxTextAttributePrimaryName => construct::mdx_jsx_text::attribute_primary_name,
-        Name::MdxJsxTextAttributePrimaryNameAfter => {
-            construct::mdx_jsx_text::attribute_primary_name_after
+        Name::MdxJsxTextAfter => construct::mdx_jsx_text::after,
+        Name::MdxJsxTextNok => construct::mdx_jsx_text::nok,
+        Name::MdxJsxEsWhitespaceStart => construct::partial_mdx_jsx::es_whitespace_start,
+        Name::MdxJsxEsWhitespaceInside => construct::partial_mdx_jsx::es_whitespace_inside,
+        Name::MdxJsxStart => construct::partial_mdx_jsx::start,
+        Name::MdxJsxStartAfter => construct::partial_mdx_jsx::start_after,
+        Name::MdxJsxNameBefore => construct::partial_mdx_jsx::name_before,
+        Name::MdxJsxClosingTagNameBefore => construct::partial_mdx_jsx::closing_tag_name_before,
+        Name::MdxJsxTagEnd => construct::partial_mdx_jsx::tag_end,
+        Name::MdxJsxPrimaryName => construct::partial_mdx_jsx::primary_name,
+        Name::MdxJsxPrimaryNameAfter => construct::partial_mdx_jsx::primary_name_after,
+        Name::MdxJsxMemberNameBefore => construct::partial_mdx_jsx::member_name_before,
+        Name::MdxJsxMemberName => construct::partial_mdx_jsx::member_name,
+        Name::MdxJsxMemberNameAfter => construct::partial_mdx_jsx::member_name_after,
+        Name::MdxJsxLocalNameBefore => construct::partial_mdx_jsx::local_name_before,
+        Name::MdxJsxLocalName => construct::partial_mdx_jsx::local_name,
+        Name::MdxJsxLocalNameAfter => construct::partial_mdx_jsx::local_name_after,
+        Name::MdxJsxAttributeBefore => construct::partial_mdx_jsx::attribute_before,
+        Name::MdxJsxSelfClosing => construct::partial_mdx_jsx::self_closing,
+        Name::MdxJsxAttributePrimaryName => construct::partial_mdx_jsx::attribute_primary_name,
+        Name::MdxJsxAttributePrimaryNameAfter => {
+            construct::partial_mdx_jsx::attribute_primary_name_after
         }
-        Name::MdxJsxTextAttributeLocalNameBefore => {
-            construct::mdx_jsx_text::attribute_local_name_before
+        Name::MdxJsxAttributeLocalNameBefore => {
+            construct::partial_mdx_jsx::attribute_local_name_before
         }
-        Name::MdxJsxTextAttributeLocalName => construct::mdx_jsx_text::attribute_local_name,
-        Name::MdxJsxTextAttributeLocalNameAfter => {
-            construct::mdx_jsx_text::attribute_local_name_after
+        Name::MdxJsxAttributeLocalName => construct::partial_mdx_jsx::attribute_local_name,
+        Name::MdxJsxAttributeLocalNameAfter => construct::partial_mdx_jsx::attribute_local_name_after,
+        Name::MdxJsxAttributeValueBefore => construct::partial_mdx_jsx::attribute_value_before,
+        Name::MdxJsxAttributeValueQuotedStart => {
+            construct::partial_mdx_jsx::attribute_value_quoted_start
         }
-        Name::MdxJsxTextAttributeValueBefore => construct::mdx_jsx_text::attribute_value_before,
-        Name::MdxJsxTextAttributeValueQuotedStart => {
-            construct::mdx_jsx_text::attribute_value_quoted_start
-        }
-        Name::MdxJsxTextAttributeValueQuoted => construct::mdx_jsx_text::attribute_value_quoted,
+        Name::MdxJsxAttributeValueQuoted => construct::partial_mdx_jsx::attribute_value_quoted,
 
         Name::AttentionStart => construct::attention::start,
         Name::AttentionInside => construct::attention::inside,
