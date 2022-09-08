@@ -2338,7 +2338,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`MathText`][Name::MathText],
+    ///     [`MathText`][Name::MathText]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -2351,6 +2351,442 @@ pub enum Name {
     ///       ^ ^
     /// ```
     MathTextSequence,
+    /// MDX extension: JSX (flow).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
+    ///     [`MdxJsxTagMarker`][Name::MdxJsxTagMarker],
+    ///     [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker],
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName],
+    ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute],
+    ///     to do: attribute expression,
+    ///     [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
+    /// *   **Construct**:
+    ///     [`mdx_jsx_flow`][crate::construct::mdx_jsx_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | <B />
+    ///     ^^^^^
+    /// ```
+    MdxJsxFlowTag,
+    /// MDX extension: JSX (text).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [text content][crate::construct::text]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
+    ///     [`MdxJsxTagMarker`][Name::MdxJsxTagMarker],
+    ///     [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker],
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName],
+    ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute],
+    ///     to do: attribute expression,
+    ///     [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
+    /// *   **Construct**:
+    ///     [`mdx_jsx_text`][crate::construct::mdx_jsx_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <B /> c
+    ///       ^^^^^
+    /// ```
+    MdxJsxTextTag,
+    /// MDX extension: JSX: ECMAScript whitespace.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag],
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName],
+    ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute],
+    ///     [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <B /> c
+    ///         ^
+    /// ```
+    MdxJsxEsWhitespace,
+    /// MDX extension: JSX: tag marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <B /> c
+    ///       ^   ^
+    /// ```
+    MdxJsxTagMarker,
+    /// MDX extension: JSX: closing tag marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a </B> c
+    ///        ^
+    /// ```
+    MdxJsxTagClosingMarker,
+    /// MDX extension: JSX: tag name.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
+    ///     [`MdxJsxTagNamePrimary`][Name::MdxJsxTagNamePrimary],
+    ///     [`MdxJsxTagNameMember`][Name::MdxJsxTagNameMember],
+    ///     [`MdxJsxTagNameMemberMarker`][Name::MdxJsxTagNameMemberMarker],
+    ///     [`MdxJsxTagNamePrefixMarker`][Name::MdxJsxTagNamePrefixMarker],
+    ///     [`MdxJsxTagNameLocal`][Name::MdxJsxTagNameLocal]
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b> c
+    ///        ^
+    /// > | a <b:c> d
+    ///        ^^^
+    /// > | a <b.c> d
+    ///        ^^^
+    /// ```
+    MdxJsxTagName,
+    /// MDX extension: JSX: primary tag name.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b> c
+    ///        ^
+    /// > | a <b:c> d
+    ///        ^
+    /// > | a <b.c> d
+    ///        ^
+    /// ```
+    MdxJsxTagNamePrimary,
+    /// MDX extension: JSX: tag name member marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b.c> d
+    ///         ^
+    /// ```
+    MdxJsxTagNameMemberMarker,
+    /// MDX extension: JSX: tag name prefix marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b:c> d
+    ///         ^
+    /// ```
+    MdxJsxTagNamePrefixMarker,
+    /// MDX extension: JSX: tag name member.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b.c> d
+    ///          ^
+    /// ```
+    MdxJsxTagNameMember,
+    /// MDX extension: JSX: tag name local.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagName`][Name::MdxJsxTagName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b:c> d
+    ///          ^
+    /// ```
+    MdxJsxTagNameLocal,
+    /// MDX extension: JSX: attribute.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
+    ///     [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName],
+    ///     [`MdxJsxTagAttributeInitializerMarker`][Name::MdxJsxTagAttributeInitializerMarker],
+    ///     [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral],
+    ///     to do: attribute value expression,
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c> d
+    ///          ^
+    /// > | a <b c="d"> e
+    ///          ^^^^^
+    /// > | a <b c={d}> e
+    ///          ^^^^^
+    /// ```
+    MdxJsxTagAttribute,
+    /// MDX extension: JSX: attribute name.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
+    ///     [`MdxJsxTagAttributePrimaryName`][Name::MdxJsxTagAttributePrimaryName],
+    ///     [`MdxJsxTagAttributeNamePrefixMarker`][Name::MdxJsxTagAttributeNamePrefixMarker],
+    ///     [`MdxJsxTagAttributeNameLocal`][Name::MdxJsxTagAttributeNameLocal],
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c> d
+    ///          ^
+    /// > | a <b c:d="e"> f
+    ///          ^^^
+    /// ```
+    MdxJsxTagAttributeName,
+    /// MDX extension: JSX: primary attribute name.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c> d
+    ///          ^
+    /// > | a <b c:d="e"> f
+    ///          ^
+    /// ```
+    MdxJsxTagAttributePrimaryName,
+    /// MDX extension: JSX: attribute name prefix marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c:d="e"> f
+    ///           ^
+    /// ```
+    MdxJsxTagAttributeNamePrefixMarker,
+    /// MDX extension: JSX: local attribute name.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c:d="e"> f
+    ///            ^
+    /// ```
+    MdxJsxTagAttributeNameLocal,
+    /// MDX extension: JSX: attribute initializer marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c="d"> e
+    ///           ^
+    /// ```
+    MdxJsxTagAttributeInitializerMarker,
+    /// MDX extension: JSX: attribute value literal.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
+    ///     [`MdxJsxTagAttributeValueLiteralMarker`][Name::MdxJsxTagAttributeValueLiteralMarker],
+    ///     [`MdxJsxTagAttributeValueLiteralValue`][Name::MdxJsxTagAttributeValueLiteralValue]
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c="d"> e
+    ///            ^^^
+    /// ```
+    MdxJsxTagAttributeValueLiteral,
+    /// MDX extension: JSX: attribute value literal marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c="d"> e
+    ///            ^ ^
+    /// ```
+    MdxJsxTagAttributeValueLiteralMarker,
+    /// MDX extension: JSX: attribute value literal value.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c="d"> e
+    ///             ^
+    /// ```
+    MdxJsxTagAttributeValueLiteralValue,
+    /// MDX extension: JSX: self-closing tag marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b /> c
+    ///          ^
+    /// ```
+    MdxJsxTagSelfClosingMarker,
+
     /// Whole paragraph.
     ///
     /// ## Info
@@ -2730,29 +3166,6 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
-
-    // To do: sort.
-    MdxJsxFlowTag,
-    MdxJsxTextTag,
-    MdxJsxTagMarker,
-    MdxJsxTagClosingMarker,
-    MdxJsxTagName,
-    MdxJsxTagNamePrimary,
-    MdxJsxTagNameMemberMarker,
-    MdxJsxTagNamePrefixMarker,
-    MdxJsxTagNameMember,
-    MdxJsxTagNameLocal,
-    MdxJsxTagSelfClosingMarker,
-    MdxJsxTagAttribute,
-    MdxJsxTagAttributeName,
-    MdxJsxTagAttributePrimaryName,
-    MdxJsxTagAttributeNamePrefixMarker,
-    MdxJsxTagAttributeInitializerMarker,
-    MdxJsxTagAttributeNameLocal,
-    MdxJsxTagAttributeValueLiteral,
-    MdxJsxTagAttributeValueLiteralMarker,
-    MdxJsxTagAttributeValueLiteralValue,
-    MdxJsxEsWhitespace,
 }
 
 /// List of void events, used to make sure everything is working well.
