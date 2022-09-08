@@ -1,7 +1,7 @@
 extern crate micromark;
 use micromark::{micromark, micromark_with_options, Constructs, Options};
 
-fn main() {
+fn main() -> Result<(), String> {
     // Turn on debugging.
     // You can show it with `RUST_LOG=debug cargo run --example lib`
     env_logger::init();
@@ -32,7 +32,7 @@ fn main() {
                 gfm_tagfilter: true,
                 ..Options::default()
             }
-        )
+        )?
     );
 
     // Support other extensions that are not in CommonMark.
@@ -47,6 +47,8 @@ fn main() {
                 },
                 ..Options::default()
             }
-        )
+        )?
     );
+
+    Ok(())
 }

@@ -364,6 +364,7 @@ fn enter(context: &mut CompileContext) {
         | Name::HeadingAtxText
         | Name::HeadingSetextText
         | Name::Label
+        | Name::MdxJsxTextTag
         | Name::ReferenceString
         | Name::ResourceTitleString => on_enter_buffer(context),
 
@@ -401,7 +402,10 @@ fn enter(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit].
 fn exit(context: &mut CompileContext) {
     match context.events[context.index].name {
-        Name::CodeFencedFenceMeta | Name::MathFlowFenceMeta | Name::Resource => {
+        Name::CodeFencedFenceMeta
+        | Name::MathFlowFenceMeta
+        | Name::MdxJsxTextTag
+        | Name::Resource => {
             on_exit_drop(context);
         }
         Name::CharacterEscapeValue | Name::CodeTextData | Name::Data | Name::MathTextData => {

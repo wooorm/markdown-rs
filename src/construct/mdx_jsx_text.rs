@@ -553,7 +553,7 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::MdxJsxTextAttributeLocalNameBefore),
                 State::Nok,
             );
-            State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
+            State::Next(StateName::MdxJsxTextEsWhitespaceStart)
         }
         // Initializer: start of an attribute value.
         Some(b'=') => {
@@ -678,7 +678,7 @@ pub fn attribute_local_name_after(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::MdxJsxTextAttributeValueBefore),
                 State::Nok,
             );
-            State::Retry(StateName::MdxJsxTextEsWhitespaceStart)
+            State::Next(StateName::MdxJsxTextEsWhitespaceStart)
         }
         _ => {
             // End of name.
@@ -750,9 +750,10 @@ pub fn attribute_value_quoted_start(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Name::MdxJsxTextTagAttributeValueLiteralMarker);
             tokenizer.consume();
             tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteralMarker);
-            tokenizer.enter(Name::MdxJsxTextTagAttributeValueLiteral);
+            tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteral);
+            tokenizer.exit(Name::MdxJsxTextTagAttribute);
             tokenizer.attempt(
-                State::Next(StateName::MdxJsxTextAttributeValueBefore),
+                State::Next(StateName::MdxJsxTextAttributeBefore),
                 State::Nok,
             );
             State::Next(StateName::MdxJsxTextEsWhitespaceStart)
@@ -793,7 +794,7 @@ pub fn attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
         || matches!(tokenizer.current, None | Some(b'\n'))
     {
         tokenizer.exit(Name::MdxJsxTextTagAttributeValueLiteralValue);
-        State::Retry(StateName::MdxJsxTextAttributeValueQuoted)
+        State::Retry(StateName::MdxJsxTextAttributeValueQuotedStart)
     } else {
         tokenizer.consume();
         State::Next(StateName::MdxJsxTextAttributeValueQuoted)
@@ -920,11 +921,13 @@ fn id_cont(code: Option<char>) -> bool {
 }
 
 fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
+    let char = char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index);
+
     // To do: externalize this, and the print mechanism in the tokenizer,
     // to one proper formatter.
-    let actual = match tokenizer.current {
+    let actual = match char {
         None => "end of file".to_string(),
-        Some(byte) => format_byte(byte),
+        Some(char) => format!("character {}", format_char(char)),
     };
 
     State::Error(format!(
@@ -933,10 +936,32 @@ fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
     ))
 }
 
+fn format_char(char: char) -> String {
+    let unicode = format!("U+{:>04X}", char as u32);
+    let printable = match char {
+        '`' => Some("`` ` ``".to_string()),
+        ' '..='~' => Some(format!("`{}`", char)),
+        _ => None,
+    };
+
+    if let Some(char) = printable {
+        format!("{} ({})", char, unicode)
+    } else {
+        unicode
+    }
+}
+
 fn format_byte(byte: u8) -> String {
-    match byte {
-        b'`' => "`` ` ``".to_string(),
-        b' '..=b'~' => format!("`{}`", str::from_utf8(&[byte]).unwrap()),
-        _ => format!("character U+{:>04X}", byte),
+    let unicode = format!("U+{:>04X}", byte);
+    let printable = match byte {
+        b'`' => Some("`` ` ``".to_string()),
+        b' '..=b'~' => Some(format!("`{}`", str::from_utf8(&[byte]).unwrap())),
+        _ => None,
+    };
+
+    if let Some(char) = printable {
+        format!("{} ({})", char, unicode)
+    } else {
+        unicode
     }
 }
