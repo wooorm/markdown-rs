@@ -36,13 +36,22 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::MdxExpressionEolAfter)
         },
         Some(b'}') if tokenizer.tokenize_state.size == 0 => {
-            tokenizer.enter(Name::MdxExpressionMarker);
-            tokenizer.consume();
-            tokenizer.exit(Name::MdxExpressionMarker);
-            tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
-            State::Ok
+            if tokenizer.tokenize_state.token_1 == Name::MdxJsxTagAttributeValueExpression && !tokenizer.tokenize_state.seen {
+                State::Error(format!(
+                    "{}:{}: Unexpected empty in expression, expected a value between braces",
+                    tokenizer.point.line, tokenizer.point.column
+                ))
+            } else {
+                tokenizer.tokenize_state.seen = false;
+                tokenizer.enter(Name::MdxExpressionMarker);
+                tokenizer.consume();
+                tokenizer.exit(Name::MdxExpressionMarker);
+                tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
+                State::Ok
+            }
         },
         Some(_) => {
+            tokenizer.tokenize_state.seen = true;
             tokenizer.enter(Name::MdxExpressionData);
             State::Retry(StateName::MdxExpressionInside)
         }
@@ -56,9 +65,11 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Name::MdxExpressionData);
         State::Retry(StateName::MdxExpressionBefore)
     } else {
-        // To do: only count if agnostic.
+        // To do: don’t count if gnostic.
         if tokenizer.current == Some(b'{') {
             tokenizer.tokenize_state.size += 1;
+        } else if tokenizer.current == Some(b'}') {
+            tokenizer.tokenize_state.size -= 1;
         }
 
         tokenizer.consume();
@@ -67,8 +78,11 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 }
 
 pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
-    // Lazy continuation in a flow expression is a syntax error.
-    if tokenizer.tokenize_state.token_1 == Name::MdxFlowExpression && tokenizer.lazy {
+    // Lazy continuation in a flow expression (or in a flow tag) is a syntax error.
+    if (tokenizer.tokenize_state.token_1 == Name::MdxFlowExpression
+        || tokenizer.tokenize_state.token_2 == Name::MdxJsxFlowTag)
+        && tokenizer.lazy
+    {
         State::Error(format!(
             "{}:{}: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
             tokenizer.point.line, tokenizer.point.column

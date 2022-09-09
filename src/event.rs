@@ -3171,6 +3171,8 @@ pub enum Name {
     MdxTextExpression,
     MdxExpressionMarker, // void
     MdxExpressionData,   // void
+    MdxJsxTagAttributeValueExpression,
+    MdxJsxTagAttributeExpression,
 }
 
 /// List of void events, used to make sure everything is working well.

@@ -67,19 +67,17 @@ fn mdx_jsx_text_agnosic() -> Result<(), String> {
         "should support an unclosed element"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {1 + 1} /> c", &mdx)?,
-    //     "<p>a  c</p>",
-    //     "should support an attribute expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {1 + 1} /> c", &mdx)?,
+        "<p>a  c</p>",
+        "should support an attribute expression"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={1 + 1} /> d", &mdx)?,
-    //     "<p>a  d</p>",
-    //     "should support an attribute value expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c={1 + 1} /> d", &mdx)?,
+        "<p>a  d</p>",
+        "should support an attribute value expression"
+    );
 
     Ok(())
 }
@@ -109,85 +107,79 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
         "should support an unclosed element"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...c} /> d", &mdx)?,
-    //     "<p>a  d</p>",
-    //     "should support an attribute expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...c} /> d", &mdx)?,
+        "<p>a  d</p>",
+        "should support an attribute expression"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...{c: 1, d: Infinity, e: false}} /> f", &mdx)?,
-    //     "<p>a  f</p>",
-    //     "should support more complex attribute expression (1)"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...{c: 1, d: Infinity, e: false}} /> f", &mdx)?,
+        "<p>a  f</p>",
+        "should support more complex attribute expression (1)"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...[1, Infinity, false]} /> d", &mdx)?,
-    //     "<p>a  d</p>",
-    //     "should support more complex attribute expression (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...[1, Infinity, false]} /> d", &mdx)?,
+        "<p>a  d</p>",
+        "should support more complex attribute expression (2)"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={1 + 1} /> d", &mdx)?,
-    //     "<p>a  d</p>",
-    //     "should support an attribute value expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c={1 + 1} /> d", &mdx)?,
+        "<p>a  d</p>",
+        "should support an attribute value expression"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={} /> d", &mdx)
-    //         .err()
-    //         .unwrap(),
-    //     "Unexpected empty expression",
-    //     "should crash on an empty attribute value expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c={} /> d", &mdx)
+            .err()
+            .unwrap(),
+        "1:9: Unexpected empty in expression, expected a value between braces",
+        "should crash on an empty attribute value expression"
+    );
 
-    // To do: expressions.
+    // To do: swc.
     // assert_eq!(
-    //     micromark_with_options("a <b {1 + 1} /> c", &mdx)
+    //     micromark_with_options("a <b {1 + 1} /> c", &swc)
     //         .err()
     //         .unwrap(),
     //     "Could not parse expression with acorn: Unexpected token",
     //     "should crash on a non-spread attribute expression"
     // );
 
-    // To do: expressions.
+    // To do: swc.
     // assert_eq!(
-    //     micromark_with_options("a <b c={?} /> d", &mdx)
+    //     micromark_with_options("a <b c={?} /> d", &swc)
     //         .err()
     //         .unwrap(),
     //     "Could not parse expression with acorn: Unexpected token",
     //     "should crash on invalid JS in an attribute value expression"
     // );
 
-    // // To do: expressions.
+    // To do: swc.
     // assert_eq!(
-    //     micromark_with_options("a <b {?} /> c", &mdx)
+    //     micromark_with_options("a <b {?} /> c", &swc)
     //         .err()
     //         .unwrap(),
     //     "Could not parse expression with acorn: Unexpected token",
     //     "should crash on invalid JS in an attribute expression"
     // );
 
-    // // To do: expressions.
+    // To do: swc.
     // assert_eq!(
-    //     micromark_with_options("a <b{c=d}={}/> f", &mdx)
+    //     micromark_with_options("a <b{c=d}={}/> f", &swc)
     //         .err()
     //         .unwrap(),
     //     "Unexpected `ExpressionStatement` in code: expected an object spread",
     //     "should crash on invalid JS in an attribute expression (2)"
     // );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={(2)} d={<e />} /> f", &mdx)?,
-    //     "<p>a  f</p>",
-    //     "should support parenthesized expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c={(2)} d={<e />} /> f", &mdx)?,
+        "<p>a  f</p>",
+        "should support parenthesized expressions"
+    );
 
     Ok(())
 }
@@ -421,61 +413,53 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         "should crash on a nonconforming character after name"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...props} {...rest}>c</b>.", &mdx)?,
-    //     "<p>a c.</p>",
-    //     "should support attribute expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...props} {...rest}>c</b>.", &mdx)?,
+        "<p>a c.</p>",
+        "should support attribute expressions"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...{\"a\": \"b\"}}>c</b>.", &mdx)?,
-    //     "<p>a c.</p>",
-    //     "should support nested balanced braces in attribute expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...{\"a\": \"b\"}}>c</b>.", &mdx)?,
+        "<p>a c.</p>",
+        "should support nested balanced braces in attribute expressions"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("<a{...b}/>.", &mdx)?,
-    //     "<p>.</p>",
-    //     "should support attribute expressions directly after a name"
-    // );
+    assert_eq!(
+        micromark_with_options("<a{...b}/>.", &mdx)?,
+        "<p>.</p>",
+        "should support attribute expressions directly after a name"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("<a.b{...c}/>.", &mdx)?,
-    //     "<p>.</p>",
-    //     "should support attribute expressions directly after a member name"
-    // );
+    assert_eq!(
+        micromark_with_options("<a.b{...c}/>.", &mdx)?,
+        "<p>.</p>",
+        "should support attribute expressions directly after a member name"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("<a:b{...c}/>.", &mdx)?,
-    //     "<p>.</p>",
-    //     "should support attribute expressions directly after a local name"
-    // );
+    assert_eq!(
+        micromark_with_options("<a:b{...c}/>.", &mdx)?,
+        "<p>.</p>",
+        "should support attribute expressions directly after a local name"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c{...d}/>.", &mdx)?,
-    //     "<p>a .</p>",
-    //     "should support attribute expressions directly after boolean attributes"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c{...d}/>.", &mdx)?,
+        "<p>a .</p>",
+        "should support attribute expressions directly after boolean attributes"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c:d{...e}/>.", &mdx)?,
-    //     "<p>a .</p>",
-    //     "should support attribute expressions directly after boolean qualified attributes"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c:d{...e}/>.", &mdx)?,
+        "<p>a .</p>",
+        "should support attribute expressions directly after boolean qualified attributes"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b a {...props} b>c</b>.", &mdx)?,
-    //     "<p>a c.</p>",
-    //     "should support attribute expressions and normal attributes"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b a {...props} b>c</b>.", &mdx)?,
+        "<p>a c.</p>",
+        "should support attribute expressions and normal attributes"
+    );
 
     assert_eq!(
         micromark_with_options("a <b c     d=\"d\"\t\tefg=\"e\">c</b>.", &mdx)?,
@@ -483,23 +467,21 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         "should support attributes"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...p}~>c</b>.", &mdx)
-    //         .err()
-    //         .unwrap(),
-    //     "Unexpected character `~` (U+007E) before attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
-    //     "should crash on a nonconforming character before an attribute name"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...p}~>c</b>.", &mdx)
+            .err()
+            .unwrap(),
+        "1:12: Unexpected character `~` (U+007E) before attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+        "should crash on a nonconforming character before an attribute name"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b {...", &mdx)
-    //         .err()
-    //         .unwrap(),
-    //     "Unexpected end of file in expression, expected a corresponding closing brace for `{`",
-    //     "should crash on a missing closing brace in attribute expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {...", &mdx)
+            .err()
+            .unwrap(),
+        "1:10: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        "should crash on a missing closing brace in attribute expression"
+    );
 
     assert_eq!(
         micromark_with_options("a <a b@> c.", &mdx)
@@ -553,19 +535,17 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         "should crash on a nonconforming character after a local attribute name"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={1 + 1}>c</b>.", &mdx)?,
-    //     "<p>a c.</p>",
-    //     "should support attribute value expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c={1 + 1}>c</b>.", &mdx)?,
+        "<p>a c.</p>",
+        "should support attribute value expressions"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={1 + ({a: 1}).a}>c</b>.", &mdx)?,
-    //     "<p>a c.</p>",
-    //     "should support nested balanced braces in attribute value expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b c={1 + ({a: 1}).a}>c</b>.", &mdx)?,
+        "<p>a c.</p>",
+        "should support nested balanced braces in attribute value expressions"
+    );
 
     assert_eq!(
         micromark_with_options("a <a b=``> c.", &mdx)
@@ -599,14 +579,13 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         "should crash on a missing closing quote in single quoted attribute value"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("a <a b={> c.", &mdx)
-    //         .err()
-    //         .unwrap(),
-    //     "Unexpected end of file in expression, expected a corresponding closing brace for `{`",
-    //     "should crash on a missing closing brace in an attribute value expression"
-    // );
+    assert_eq!(
+        micromark_with_options("a <a b={> c.", &mdx)
+            .err()
+            .unwrap(),
+        "1:13: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        "should crash on a missing closing brace in an attribute value expression"
+    );
 
     assert_eq!(
         micromark_with_options("a <a b=\"\"*> c.", &mdx)
@@ -622,12 +601,11 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         "should support an attribute directly after a value"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("<a{...b}c/>.", &mdx)?,
-    //     "<p>.</p>",
-    //     "should support an attribute directly after an attribute expression"
-    // );
+    assert_eq!(
+        micromark_with_options("<a{...b}c/>.", &mdx)?,
+        "<p>.</p>",
+        "should support an attribute directly after an attribute expression"
+    );
 
     assert_eq!(
         micromark_with_options("a <a/b> c.", &mdx)
@@ -797,19 +775,17 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         "should support line endings in attribute values"
     );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("> a <b c={d\ne} /> f", &mdx)?,
-    //     "<blockquote>\n<p>a  f</p>\n</blockquote>",
-    //     "should support line endings in attribute value expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("> a <b c={d\ne} /> f", &mdx)?,
+        "<blockquote>\n<p>a  f</p>\n</blockquote>",
+        "should support line endings in attribute value expressions"
+    );
 
-    // To do: expressions.
-    // assert_eq!(
-    //     micromark_with_options("> a <b {c\nd} /> e", &mdx)?,
-    //     "<blockquote>\n<p>a  e</p>\n</blockquote>",
-    //     "should support line endings in attribute expressions"
-    // );
+    assert_eq!(
+        micromark_with_options("> a <b {c\nd} /> e", &mdx)?,
+        "<blockquote>\n<p>a  e</p>\n</blockquote>",
+        "should support line endings in attribute expressions"
+    );
 
     assert_eq!(
         micromark_with_options("> a <b\n/> c", &mdx)?,
@@ -833,6 +809,12 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
         micromark_with_options("> a <b c='d\ne'/> f", &mdx)?,
         "<blockquote>\n<p>a  f</p>\n</blockquote>",
         "should support lazy text (4)"
+    );
+
+    assert_eq!(
+        micromark_with_options("> a <b c={d\ne}/> f", &mdx)?,
+        "<blockquote>\n<p>a  f</p>\n</blockquote>",
+        "should support lazy text (5)"
     );
 
     assert_eq!(

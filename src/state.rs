@@ -448,6 +448,8 @@ pub enum Name {
     MdxExpressionBefore,
     MdxExpressionInside,
     MdxExpressionEolAfter,
+    MdxJsxAttributeValueExpressionAfter,
+    MdxJsxAttributeExpressionAfter,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -466,6 +468,13 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::MdxExpressionBefore => construct::partial_mdx_expression::before,
         Name::MdxExpressionInside => construct::partial_mdx_expression::inside,
         Name::MdxExpressionEolAfter => construct::partial_mdx_expression::eol_after,
+
+        Name::MdxJsxAttributeValueExpressionAfter => {
+            construct::partial_mdx_jsx::attribute_value_expression_after
+        }
+        Name::MdxJsxAttributeExpressionAfter => {
+            construct::partial_mdx_jsx::attribute_expression_after
+        }
 
         Name::AttentionStart => construct::attention::start,
         Name::AttentionInside => construct::attention::inside,

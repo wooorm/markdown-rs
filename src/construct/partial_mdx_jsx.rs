@@ -610,7 +610,17 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
         // End of tag.
         Some(b'>') => State::Retry(StateName::MdxJsxTagEnd),
         // Attribute expression.
-        Some(b'{') => unreachable!("to do: attribute expression"),
+        Some(b'{') => {
+            // To do: force `spread: true` if gnostic.
+            // To do: pass `start_point` if gnostic.
+            tokenizer.tokenize_state.token_2 = tokenizer.tokenize_state.token_1.clone();
+            tokenizer.tokenize_state.token_1 = Name::MdxJsxTagAttributeExpression;
+            tokenizer.attempt(
+                State::Next(StateName::MdxJsxAttributeExpressionAfter),
+                State::Nok,
+            );
+            State::Retry(StateName::MdxExpressionStart)
+        }
         _ => {
             // Start of an attribute name.
             if id_start(char_after_index(
@@ -631,6 +641,19 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
             }
         }
     }
+}
+
+/// After attribute expression.
+///
+/// ```markdown
+/// > | a <b {c} d/> e
+///             ^
+/// ```
+pub fn attribute_expression_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = tokenizer.tokenize_state.token_2.clone();
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.attempt(State::Next(StateName::MdxJsxAttributeBefore), State::Nok);
+    State::Retry(StateName::MdxJsxEsWhitespaceStart)
 }
 
 /// In primary attribute name.
@@ -862,7 +885,16 @@ pub fn attribute_value_before(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::MdxJsxAttributeValueQuotedStart)
         }
         // Attribute value expression.
-        Some(b'{') => unreachable!("to do: attribute value expression"),
+        Some(b'{') => {
+            // To do: pass `start_point` if gnostic.
+            tokenizer.tokenize_state.token_2 = tokenizer.tokenize_state.token_1.clone();
+            tokenizer.tokenize_state.token_1 = Name::MdxJsxTagAttributeValueExpression;
+            tokenizer.attempt(
+                State::Next(StateName::MdxJsxAttributeValueExpressionAfter),
+                State::Nok,
+            );
+            State::Retry(StateName::MdxExpressionStart)
+        }
         _ => crash(
             tokenizer,
             "before attribute value",
@@ -876,6 +908,20 @@ pub fn attribute_value_before(tokenizer: &mut Tokenizer) -> State {
             ),
         ),
     }
+}
+
+/// After attribute value expression.
+///
+/// ```markdown
+/// > | a <b c={d} e/> f
+///               ^
+/// ```
+pub fn attribute_value_expression_after(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = tokenizer.tokenize_state.token_2.clone();
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.exit(Name::MdxJsxTagAttribute);
+    tokenizer.attempt(State::Next(StateName::MdxJsxAttributeBefore), State::Nok);
+    State::Retry(StateName::MdxJsxEsWhitespaceStart)
 }
 
 /// Before quoted literal attribute value.
