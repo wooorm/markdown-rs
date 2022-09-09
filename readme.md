@@ -290,7 +290,7 @@ The code example in the markdown as HTML will first look like this:
 </code></pre>
 ```
 
-Opening that page in a browser, we’d see the `<code>` being swapped with:
+Opening that page in a browser, we’d see that being swapped with:
 
 <!-- prettier-ignore -->
 ```html
