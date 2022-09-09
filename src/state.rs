@@ -369,9 +369,7 @@ pub enum Name {
     MdxJsxTextNok,
     MdxJsxEsWhitespaceStart,
     MdxJsxEsWhitespaceInside,
-    MdxJsxEsWhitespaceEol,
     MdxJsxEsWhitespaceEolAfter,
-    MdxJsxEsWhitespaceEolAfterInside,
     MdxJsxStart,
     MdxJsxStartAfter,
     MdxJsxNameBefore,
@@ -858,11 +856,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::MdxJsxAttributeValueQuoted => construct::partial_mdx_jsx::attribute_value_quoted,
         Name::MdxJsxEsWhitespaceStart => construct::partial_mdx_jsx::es_whitespace_start,
         Name::MdxJsxEsWhitespaceInside => construct::partial_mdx_jsx::es_whitespace_inside,
-        Name::MdxJsxEsWhitespaceEol => construct::partial_mdx_jsx::es_whitespace_eol,
         Name::MdxJsxEsWhitespaceEolAfter => construct::partial_mdx_jsx::es_whitespace_eol_after,
-        Name::MdxJsxEsWhitespaceEolAfterInside => {
-            construct::partial_mdx_jsx::es_whitespace_eol_after_inside
-        }
 
         Name::NonLazyContinuationStart => construct::partial_non_lazy_continuation::start,
         Name::NonLazyContinuationAfter => construct::partial_non_lazy_continuation::after,

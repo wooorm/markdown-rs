@@ -986,7 +986,12 @@ pub fn tag_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn es_whitespace_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\n') => State::Retry(StateName::MdxJsxEsWhitespaceEol),
+        Some(b'\n') => {
+            tokenizer.enter(Name::LineEnding);
+            tokenizer.consume();
+            tokenizer.exit(Name::LineEnding);
+            State::Next(StateName::MdxJsxEsWhitespaceEolAfter)
+        }
         _ => {
             if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
@@ -1010,7 +1015,10 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.exit(Name::MdxJsxEsWhitespace);
-            State::Retry(StateName::MdxJsxEsWhitespaceEol)
+            tokenizer.enter(Name::LineEnding);
+            tokenizer.consume();
+            tokenizer.exit(Name::LineEnding);
+            State::Next(StateName::MdxJsxEsWhitespaceEolAfter)
         }
         // Allow continuation bytes.
         Some(0x80..=0xBF) => {
@@ -1031,51 +1039,21 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-pub fn es_whitespace_eol(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'\n') => {
-            tokenizer.enter(Name::LineEnding);
-            tokenizer.consume();
-            tokenizer.exit(Name::LineEnding);
-            State::Next(StateName::MdxJsxEsWhitespaceEolAfter)
-        }
-        _ => State::Ok,
-    }
-}
-
+/// After eol in whitespace.
+///
+/// ```markdown
+/// > | a <a\nb> c
+///          ^
+/// ```
 pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
+    // Lazy continuation in a flow tag is a syntax error.
     if tokenizer.tokenize_state.token_1 == Name::MdxJsxFlowTag && tokenizer.lazy {
-        crash_lazy(tokenizer)
-    } else if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-        == CharacterKind::Whitespace
-    {
-        tokenizer.enter(Name::MdxJsxEsWhitespace);
-        State::Retry(StateName::MdxJsxEsWhitespaceEolAfterInside)
+        State::Error(format!(
+            "{}:{}: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            tokenizer.point.line, tokenizer.point.column
+        ))
     } else {
-        State::Ok
-    }
-}
-
-pub fn es_whitespace_eol_after_inside(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        // Not allowed.
-        Some(b'\n') => State::Nok,
-        // Allow continuation bytes.
-        Some(0x80..=0xBF) => {
-            tokenizer.consume();
-            State::Next(StateName::MdxJsxEsWhitespaceEolAfterInside)
-        }
-        _ => {
-            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-                == CharacterKind::Whitespace
-            {
-                tokenizer.consume();
-                State::Next(StateName::MdxJsxEsWhitespaceEolAfterInside)
-            } else {
-                tokenizer.exit(Name::MdxJsxEsWhitespace);
-                State::Ok
-            }
-        }
+        State::Retry(StateName::MdxJsxEsWhitespaceStart)
     }
 }
 
