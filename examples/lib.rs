@@ -35,6 +35,20 @@ fn main() -> Result<(), String> {
         )?
     );
 
+    // Support MDX extensions.
+    // Note: mdx compiles to nothing, handle it yourself.
+    println!(
+        "{}",
+        micromark_with_options(
+            "# <HelloMessage />, {username}!",
+            &Options {
+                constructs: Constructs::mdx(),
+                gfm_tagfilter: true,
+                ..Options::default()
+            }
+        )?
+    );
+
     // Support other extensions that are not in CommonMark.
     println!(
         "{:?}",
