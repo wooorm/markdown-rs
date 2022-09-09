@@ -135,7 +135,7 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
         micromark_with_options("a <b c={} /> d", &mdx)
             .err()
             .unwrap(),
-        "1:9: Unexpected empty in expression, expected a value between braces",
+        "1:9: Unexpected empty expression, expected a value between braces",
         "should crash on an empty attribute value expression"
     );
 

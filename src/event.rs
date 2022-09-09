@@ -523,7 +523,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`CodeText`][Name::CodeText],
+    ///     [`CodeText`][Name::CodeText]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -541,7 +541,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`CodeText`][Name::CodeText],
+    ///     [`CodeText`][Name::CodeText]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -1692,7 +1692,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`HeadingAtx`][Name::HeadingAtx],
+    ///     [`HeadingAtx`][Name::HeadingAtx]
     /// *   **Content model**:
     ///     [text content][crate::construct::text]
     /// *   **Construct**:
@@ -1791,7 +1791,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`HtmlFlow`][Name::HtmlFlow],
+    ///     [`HtmlFlow`][Name::HtmlFlow]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -2062,7 +2062,7 @@ pub enum Name {
     ///
     /// *   **Context**:
     ///     [`ListOrdered`][Name::ListOrdered],
-    ///     [`ListUnordered`][Name::ListUnordered],
+    ///     [`ListUnordered`][Name::ListUnordered]
     /// *   **Content model**:
     ///     [`ListItemPrefix`][Name::ListItemPrefix],
     ///     [flow content][crate::construct::flow]
@@ -2320,7 +2320,7 @@ pub enum Name {
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [`MathText`][Name::MathText],
+    ///     [`MathText`][Name::MathText]
     /// *   **Content model**:
     ///     void
     /// *   **Construct**:
@@ -2351,6 +2351,90 @@ pub enum Name {
     ///       ^ ^
     /// ```
     MathTextSequence,
+    /// MDX extension: expression marker.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxFlowExpression`][Name::MdxFlowExpression],
+    ///     [`MdxTextExpression`][Name::MdxTextExpression],
+    ///     [`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression],
+    ///     [`MdxJsxTagAttributeValueExpression`][Name::MdxJsxTagAttributeValueExpression]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_expression`][crate::construct::partial_mdx_expression]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | {Math.PI}
+    ///     ^       ^
+    /// ```
+    MdxExpressionMarker,
+    /// MDX extension: expression data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxFlowExpression`][Name::MdxFlowExpression],
+    ///     [`MdxTextExpression`][Name::MdxTextExpression],
+    ///     [`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression],
+    ///     [`MdxJsxTagAttributeValueExpression`][Name::MdxJsxTagAttributeValueExpression]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`partial_mdx_expression`][crate::construct::partial_mdx_expression]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | {Math.PI}
+    ///      ^^^^^^^
+    /// ```
+    MdxExpressionData,
+    /// MDX extension: expression (flow).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab],
+    ///     [`MdxExpressionMarker`][Name::MdxExpressionMarker],
+    ///     [`MdxExpressionData`][Name::MdxExpressionData]
+    /// *   **Construct**:
+    ///     [`mdx_expression_flow`][crate::construct::mdx_expression_flow]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | {Math.PI}
+    ///     ^^^^^^^^^
+    /// ```
+    MdxFlowExpression,
+    /// MDX extension: expression (text).
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab],
+    ///     [`MdxExpressionMarker`][Name::MdxExpressionMarker],
+    ///     [`MdxExpressionData`][Name::MdxExpressionData]
+    /// *   **Construct**:
+    ///     [`mdx_expression_text`][crate::construct::mdx_expression_text]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a {Math.PI} b
+    ///       ^^^^^^^^^
+    /// ```
+    MdxTextExpression,
     /// MDX extension: JSX (flow).
     ///
     /// ## Info
@@ -2364,7 +2448,7 @@ pub enum Name {
     ///     [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker],
     ///     [`MdxJsxTagName`][Name::MdxJsxTagName],
     ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute],
-    ///     to do: attribute expression,
+    ///     [`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression],
     ///     [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
     /// *   **Construct**:
     ///     [`mdx_jsx_flow`][crate::construct::mdx_jsx_flow]
@@ -2389,7 +2473,7 @@ pub enum Name {
     ///     [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker],
     ///     [`MdxJsxTagName`][Name::MdxJsxTagName],
     ///     [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute],
-    ///     to do: attribute expression,
+    ///     [`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression],
     ///     [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
     /// *   **Construct**:
     ///     [`mdx_jsx_text`][crate::construct::mdx_jsx_text]
@@ -2597,7 +2681,7 @@ pub enum Name {
     ///     [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName],
     ///     [`MdxJsxTagAttributeInitializerMarker`][Name::MdxJsxTagAttributeInitializerMarker],
     ///     [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral],
-    ///     to do: attribute value expression,
+    ///     [`MdxJsxTagAttributeValueExpression`][Name::MdxJsxTagAttributeValueExpression]
     /// *   **Construct**:
     ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
     ///
@@ -2612,6 +2696,28 @@ pub enum Name {
     ///          ^^^^^
     /// ```
     MdxJsxTagAttribute,
+    /// MDX extension: JSX tag attribute expression.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab],
+    ///     [`MdxExpressionMarker`][Name::MdxExpressionMarker],
+    ///     [`MdxExpressionData`][Name::MdxExpressionData]
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b {Math.PI} /> c
+    ///          ^^^^^^^^^
+    /// ```
+    MdxJsxTagAttributeExpression,
     /// MDX extension: JSX: attribute name.
     ///
     /// ## Info
@@ -2623,7 +2729,7 @@ pub enum Name {
     ///     [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace],
     ///     [`MdxJsxTagAttributePrimaryName`][Name::MdxJsxTagAttributePrimaryName],
     ///     [`MdxJsxTagAttributeNamePrefixMarker`][Name::MdxJsxTagAttributeNamePrefixMarker],
-    ///     [`MdxJsxTagAttributeNameLocal`][Name::MdxJsxTagAttributeNameLocal],
+    ///     [`MdxJsxTagAttributeNameLocal`][Name::MdxJsxTagAttributeNameLocal]
     /// *   **Construct**:
     ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
     ///
@@ -2710,6 +2816,28 @@ pub enum Name {
     ///           ^
     /// ```
     MdxJsxTagAttributeInitializerMarker,
+    /// MDX extension: JSX tag attribute value expression.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxJsxFlowTag`][Name::MdxJsxFlowTag],
+    ///     [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+    /// *   **Content model**:
+    ///     [`LineEnding`][Name::LineEnding],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab],
+    ///     [`MdxExpressionMarker`][Name::MdxExpressionMarker],
+    ///     [`MdxExpressionData`][Name::MdxExpressionData]
+    /// *   **Construct**:
+    ///     [`partial_mdx_jsx`][crate::construct::partial_mdx_jsx]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | a <b c={Math.PI} /> d
+    ///            ^^^^^^^^^
+    /// ```
+    MdxJsxTagAttributeValueExpression,
     /// MDX extension: JSX: attribute value literal.
     ///
     /// ## Info
@@ -3166,17 +3294,10 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
-
-    MdxFlowExpression,
-    MdxTextExpression,
-    MdxExpressionMarker, // void
-    MdxExpressionData,   // void
-    MdxJsxTagAttributeValueExpression,
-    MdxJsxTagAttributeExpression,
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 73] = [
+pub const VOID_EVENTS: [Name; 75] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -3231,6 +3352,8 @@ pub const VOID_EVENTS: [Name; 73] = [
     Name::MathFlowChunk,
     Name::MathTextData,
     Name::MathTextSequence,
+    Name::MdxExpressionMarker,
+    Name::MdxExpressionData,
     Name::MdxJsxTagMarker,
     Name::MdxJsxTagClosingMarker,
     Name::MdxJsxTagNamePrimary,

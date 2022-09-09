@@ -1,4 +1,38 @@
-//! To do.
+//! MDX expression (flow) occurs in the [flow][] content type.
+//!
+//! ## Grammar
+//!
+//! MDX expression (flow) forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! mdx_expression_flow ::= mdx_expression *space_or_tab
+//!
+//! ; See the `partial_mdx_expression` construct for the BNF of that part.
+//! ```
+//!
+//! As this construct occurs in flow, like all flow constructs, it must be
+//! followed by an eol (line ending) or eof (end of file).
+//!
+//! See [`mdx_expression`][mdx_expression] for more info.
+//!
+//! ## Tokens
+//!
+//! *   [`MdxFlowExpression`][Name::MdxFlowExpression]
+//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! *   see [`mdx_expression`][mdx_expression] for more
+//!
+//! ## Recommendation
+//!
+//! See [`mdx_expression`][mdx_expression] for recommendations.
+//!
+//! ## References
+//!
+//! *   [`syntax.js` in `micromark-extension-mdx-expression`](https://github.com/micromark/micromark-extension-mdx-expression/blob/main/packages/micromark-extension-mdx-expression/dev/lib/syntax.js)
+//! *   [`mdxjs.com`](https://mdxjs.com)
+//!
+//! [flow]: crate::construct::flow
+//! [mdx_expression]: crate::construct::partial_mdx_expression
 
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::Name;
@@ -6,7 +40,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::constant::TAB_SIZE;
 
-/// Start of MDX: expression (flow).
+/// Start of an MDX expression (flow).
 ///
 /// ```markdown
 /// > | {Math.PI}
@@ -35,7 +69,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After optional whitespace, before of MDX expression (flow).
+/// After optional whitespace, before expression.
 ///
 /// ```markdown
 /// > | {Math.PI}
@@ -50,7 +84,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an MDX expression (flow).
+/// After expression.
 ///
 /// ```markdown
 /// > | {Math.PI}
@@ -66,7 +100,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// After an MDX expression (flow), after optional whitespace.
+/// After expression, after optional whitespace.
 ///
 /// ```markdown
 /// > | {Math.PI}␠␊
