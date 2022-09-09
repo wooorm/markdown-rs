@@ -205,6 +205,99 @@ The files in `src/` are as follows:
 
 > 🚧 **To do**.
 
+### Example: syntax highlighting code
+
+This example shows how `micromark-rs` can be used to turn markdown into an HTML
+file.
+When the HTML is opened in a browser, the code examples that were in the
+markdown are then syntax highlighted by client side JavaScript using
+[`starry-night`][starry-night].
+The `starry-night` library matches how GitHub highlights code on their platform.
+
+Say we have this `example.rs`:
+
+```rs
+extern crate micromark;
+use micromark::{micromark_with_options, Constructs, Options};
+use std::fs;
+
+fn main() -> Result<(), String> {
+    let markdown = r###"
+# Hello
+
+…world!
+
+~~~js
+console.log('it works!')
+~~~
+"###;
+
+    let html = micromark_with_options(
+        markdown,
+        &Options {
+            constructs: Constructs::gfm(),
+            ..Options::default()
+        },
+    )?;
+
+    let js = r###"
+import {createStarryNight, common} from 'https://esm.sh/@wooorm/starry-night@1?bundle'
+import {toDom} from 'https://esm.sh/hast-util-to-dom@3?bundle'
+
+const starryNight = await createStarryNight(common)
+const prefix = 'language-'
+
+const nodes = Array.from(document.body.querySelectorAll('code'))
+
+for (const node of nodes) {
+  const className = Array.from(node.classList).find((d) => d.startsWith(prefix))
+  if (!className) continue
+  const scope = starryNight.flagToScope(className.slice(prefix.length))
+  if (!scope) continue
+  const tree = starryNight.highlight(node.textContent, scope)
+  node.replaceChildren(toDom(tree, {fragment: true}))
+}
+"###;
+
+    let html = format!(
+        "<!doctype html>
+<meta charset=utf8>
+<title>Hello</title>
+<link rel=stylesheet href=\"https://esm.sh/@wooorm/starry-night@1/style/both.css\">
+<body>
+{}
+<script type=module>
+{}
+</script>
+</body>
+",
+        html, js
+    );
+
+    match fs::write("index.html", html) {
+        Ok(()) => {}
+        Err(error) => return Err(format!("Could not write `index.html`: {:?}", error)),
+    }
+
+    Ok(())
+}
+```
+
+The code example in the markdown as HTML will first look like this:
+
+```html
+<pre><code class="language-js">console.log('it works!')
+</code></pre>
+```
+
+Opening that page in a browser, we’d see the `<code>` being swapped with:
+
+<!-- prettier-ignore -->
+```html
+<pre><code class="language-js"><span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-s"><span class="pl-pds">'</span>it works!<span class="pl-pds">'</span></span>)
+</code></pre>
+```
+
 ## Markdown
 
 ### CommonMark
@@ -356,6 +449,7 @@ Support this effort and give back by sponsoring:
 [chalker]: https://github.com/ChALkeR
 [license]: https://github.com/micromark/micromark/blob/main/license
 [author]: https://wooorm.com
+[starry-night]: https://github.com/wooorm/starry-night
 [contribute]: #contribute
 [sponsor]: #sponsor
 [commonmark]: #commonmark
