@@ -1057,6 +1057,7 @@ pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
+/// Check if a character can start a JSX identifier.
 fn id_start(code: Option<char>) -> bool {
     if let Some(char) = code {
         UnicodeID::is_id_start(char) || matches!(char, '$' | '_')
@@ -1065,6 +1066,7 @@ fn id_start(code: Option<char>) -> bool {
     }
 }
 
+/// Check if a character can continue a JSX identifier.
 fn id_cont(code: Option<char>) -> bool {
     if let Some(char) = code {
         UnicodeID::is_id_continue(char) || matches!(char, '-' | '\u{200c}' | '\u{200d}')
@@ -1073,25 +1075,18 @@ fn id_cont(code: Option<char>) -> bool {
     }
 }
 
-fn crash_lazy(tokenizer: &Tokenizer) -> State {
-    State::Error(format!(
-        "{}:{}: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
-        tokenizer.point.line, tokenizer.point.column
-    ))
-}
-
+/// Crash because something happened `at`, with info on what was `expect`ed
+/// instead.
 fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
-    let char = if tokenizer.current == None {
-        None
-    } else {
-        char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-    };
-
     State::Error(format!(
         "{}:{}: Unexpected {} {}, expected {}",
         tokenizer.point.line,
         tokenizer.point.column,
-        format_char_opt(char),
+        format_char_opt(if tokenizer.current == None {
+            None
+        } else {
+            char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+        }),
         at,
         expect
     ))
