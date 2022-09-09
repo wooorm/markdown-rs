@@ -21,7 +21,7 @@ positional info, concrete tokens, and extensions.
 ## Feature highlights
 
 - [x] **[compliant][commonmark]** (100% to CommonMark)
-- [x] **[extensions][]** (GFM, MDX, frontmatter, math)
+- [x] **[extensions][]** (100% GFM, 100% MDX, frontmatter, math)
 - [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
 - [x] **[robust][test]** (2300+ tests, 100% coverage)
 
