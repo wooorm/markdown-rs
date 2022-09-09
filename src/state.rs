@@ -150,6 +150,7 @@ pub enum Name {
     FlowBeforeCodeIndented,
     FlowBeforeRaw,
     FlowBeforeHtml,
+    FlowBeforeMdxExpression,
     FlowBeforeMdxJsx,
     FlowBeforeHeadingAtx,
     FlowBeforeHeadingSetext,
@@ -434,12 +435,38 @@ pub enum Name {
     TitleAtBlankLine,
     TitleEscape,
     TitleInside,
+
+    MdxExpressionTextStart,
+    MdxExpressionTextAfter,
+
+    MdxExpressionFlowStart,
+    MdxExpressionFlowBefore,
+    MdxExpressionFlowAfter,
+    MdxExpressionFlowEnd,
+
+    MdxExpressionStart,
+    MdxExpressionBefore,
+    MdxExpressionInside,
+    MdxExpressionEolAfter,
 }
 
 #[allow(clippy::too_many_lines)]
 /// Call the corresponding state for a state name.
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     let func = match name {
+        Name::MdxExpressionTextStart => construct::mdx_expression_text::start,
+        Name::MdxExpressionTextAfter => construct::mdx_expression_text::after,
+
+        Name::MdxExpressionFlowStart => construct::mdx_expression_flow::start,
+        Name::MdxExpressionFlowBefore => construct::mdx_expression_flow::before,
+        Name::MdxExpressionFlowAfter => construct::mdx_expression_flow::after,
+        Name::MdxExpressionFlowEnd => construct::mdx_expression_flow::end,
+
+        Name::MdxExpressionStart => construct::partial_mdx_expression::start,
+        Name::MdxExpressionBefore => construct::partial_mdx_expression::before,
+        Name::MdxExpressionInside => construct::partial_mdx_expression::inside,
+        Name::MdxExpressionEolAfter => construct::partial_mdx_expression::eol_after,
+
         Name::AttentionStart => construct::attention::start,
         Name::AttentionInside => construct::attention::inside,
 
@@ -555,6 +582,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::FlowBeforeCodeIndented => construct::flow::before_code_indented,
         Name::FlowBeforeRaw => construct::flow::before_raw,
         Name::FlowBeforeHtml => construct::flow::before_html,
+        Name::FlowBeforeMdxExpression => construct::flow::before_mdx_expression,
         Name::FlowBeforeMdxJsx => construct::flow::before_mdx_jsx,
         Name::FlowBeforeHeadingAtx => construct::flow::before_heading_atx,
         Name::FlowBeforeHeadingSetext => construct::flow::before_heading_setext,

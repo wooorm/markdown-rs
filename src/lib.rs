@@ -301,6 +301,20 @@ pub struct Constructs {
     ///       ^^^
     /// ```
     pub math_text: bool,
+    /// MDX: expression (flow).
+    ///
+    /// ```markdown
+    /// > | {Math.PI}
+    ///     ^^^^^^^^^
+    /// ```
+    pub mdx_expression_flow: bool,
+    /// MDX: expression (text).
+    ///
+    /// ```markdown
+    /// > | a {Math.PI} c
+    ///       ^^^^^^^^^
+    /// ```
+    pub mdx_expression_text: bool,
     /// MDX: JSX (flow).
     ///
     /// ```markdown
@@ -356,6 +370,8 @@ impl Default for Constructs {
             list_item: true,
             math_flow: false,
             math_text: false,
+            mdx_expression_flow: false,
+            mdx_expression_text: false,
             mdx_jsx_flow: false,
             mdx_jsx_text: false,
             thematic_break: true,
@@ -396,6 +412,8 @@ impl Constructs {
             code_indented: false,
             html_flow: false,
             html_text: false,
+            mdx_expression_flow: true,
+            mdx_expression_text: true,
             mdx_jsx_flow: true,
             mdx_jsx_text: true,
             ..Self::default()

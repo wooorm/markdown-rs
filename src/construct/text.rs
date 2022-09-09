@@ -18,6 +18,7 @@
 //! *   [Label start (image)][crate::construct::label_start_image]
 //! *   [Label start (link)][crate::construct::label_start_link]
 //! *   [Label end][crate::construct::label_end]
+//! *   [MDX: expression (text)][crate::construct::mdx_expression_text]
 //! *   [MDX: JSX (text)][crate::construct::mdx_jsx_text]
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
@@ -30,7 +31,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
 /// Characters that can start something in text.
-const MARKERS: [u8; 15] = [
+const MARKERS: [u8; 16] = [
     b'!',  // `label_start_image`
     b'$',  // `raw_text` (math (text))
     b'&',  // `character_reference`
@@ -45,6 +46,7 @@ const MARKERS: [u8; 15] = [
     b'`',  // `raw_text` (code (text))
     b'h',  // `gfm_autolink_literal` (`protocol` kind)
     b'w',  // `gfm_autolink_literal` (`www.` kind)
+    b'{',  // `mdx_expression_text`
     b'~',  // `attention` (gfm strikethrough)
 ];
 
@@ -152,6 +154,13 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::TextBeforeData),
             );
             State::Retry(StateName::LabelEndStart)
+        }
+        Some(b'{') => {
+            tokenizer.attempt(
+                State::Next(StateName::TextBefore),
+                State::Next(StateName::TextBeforeData),
+            );
+            State::Retry(StateName::MdxExpressionTextStart)
         }
         _ => State::Retry(StateName::TextBeforeData),
     }

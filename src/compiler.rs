@@ -364,8 +364,10 @@ fn enter(context: &mut CompileContext) {
         | Name::HeadingAtxText
         | Name::HeadingSetextText
         | Name::Label
-        | Name::MdxJsxTextTag
+        | Name::MdxFlowExpression
+        | Name::MdxTextExpression
         | Name::MdxJsxFlowTag
+        | Name::MdxJsxTextTag
         | Name::ReferenceString
         | Name::ResourceTitleString => on_enter_buffer(context),
 
@@ -406,9 +408,11 @@ fn exit(context: &mut CompileContext) {
         Name::CodeFencedFenceMeta
         | Name::MathFlowFenceMeta
         | Name::MdxJsxTextTag
+        | Name::MdxTextExpression
         | Name::Resource => {
             on_exit_drop(context);
         }
+        Name::MdxFlowExpression | Name::MdxJsxFlowTag => on_exit_drop_slurp(context),
         Name::CharacterEscapeValue | Name::CodeTextData | Name::Data | Name::MathTextData => {
             on_exit_data(context);
         }
@@ -469,7 +473,6 @@ fn exit(context: &mut CompileContext) {
         Name::ListOrdered | Name::ListUnordered => on_exit_list(context),
         Name::ListItem => on_exit_list_item(context),
         Name::ListItemValue => on_exit_list_item_value(context),
-        Name::MdxJsxFlowTag => on_exit_mdx_jsx_flow_tag(context),
         Name::Paragraph => on_exit_paragraph(context),
         Name::ReferenceString => on_exit_reference_string(context),
         Name::ResourceDestinationString => on_exit_resource_destination_string(context),
@@ -1093,6 +1096,14 @@ fn on_exit_drop(context: &mut CompileContext) {
     context.resume();
 }
 
+/// Handle [`Exit`][Kind::Exit]:*.
+///
+/// Resumes, ignores what was resumed, and slurps the following line ending.
+fn on_exit_drop_slurp(context: &mut CompileContext) {
+    context.resume();
+    context.slurp_one_line_ending = true;
+}
+
 /// Handle [`Exit`][Kind::Exit]:{[`CodeTextData`][Name::CodeTextData],[`Data`][Name::Data],[`CharacterEscapeValue`][Name::CharacterEscapeValue]}.
 fn on_exit_data(context: &mut CompileContext) {
     context.push(&encode(
@@ -1674,12 +1685,6 @@ fn on_exit_media(context: &mut CompileContext) {
             context.push("</a>");
         }
     }
-}
-
-/// Handle [`Exit`][Kind::Exit]:[`MdxJsxFlowTag`][Name::MdxJsxFlowTag].
-fn on_exit_mdx_jsx_flow_tag(context: &mut CompileContext) {
-    context.resume();
-    context.slurp_one_line_ending = true;
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`Paragraph`][Name::Paragraph].

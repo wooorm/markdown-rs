@@ -16,6 +16,7 @@
 //! *   [Heading (atx)][crate::construct::heading_atx]
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
+//! *   [MDX expression (flow)][crate::construct::mdx_expression_flow]
 //! *   [MDX JSX (flow)][crate::construct::mdx_jsx_flow]
 //! *   [Raw (flow)][crate::construct::raw_flow] (code (fenced), math (flow))
 //! *   [Thematic break][crate::construct::thematic_break]
@@ -65,6 +66,13 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::FlowBeforeMdxJsx),
             );
             State::Retry(StateName::HtmlFlowStart)
+        }
+        Some(b'{') => {
+            tokenizer.attempt(
+                State::Next(StateName::FlowAfter),
+                State::Next(StateName::FlowBeforeParagraph),
+            );
+            State::Retry(StateName::MdxExpressionFlowStart)
         }
         // Actual parsing: blank line? Indented code? Indented anything?
         // Tables, setext heading underlines, definitions, and paragraphs are
@@ -181,9 +189,23 @@ pub fn before_heading_setext(tokenizer: &mut Tokenizer) -> State {
 pub fn before_thematic_break(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
-        State::Next(StateName::FlowBeforeGfmTable),
+        State::Next(StateName::FlowBeforeMdxExpression),
     );
     State::Retry(StateName::ThematicBreakStart)
+}
+
+/// At MDX expression (flow).
+///
+/// ```markdown
+/// > | {Math.PI}
+///     ^
+/// ```
+pub fn before_mdx_expression(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.attempt(
+        State::Next(StateName::FlowAfter),
+        State::Next(StateName::FlowBeforeGfmTable),
+    );
+    State::Retry(StateName::MdxExpressionFlowStart)
 }
 
 /// At GFM table.

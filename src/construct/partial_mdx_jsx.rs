@@ -1049,7 +1049,7 @@ pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
     // Lazy continuation in a flow tag is a syntax error.
     if tokenizer.tokenize_state.token_1 == Name::MdxJsxFlowTag && tokenizer.lazy {
         State::Error(format!(
-            "{}:{}: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            "{}:{}: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
             tokenizer.point.line, tokenizer.point.column
         ))
     } else {

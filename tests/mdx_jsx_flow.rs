@@ -84,7 +84,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
 
     assert_eq!(
         micromark_with_options("> <X\n/>", &mdx).err().unwrap(),
-        "2:1: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazy flow (1)"
     );
 
@@ -92,7 +92,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
         micromark_with_options("> a\n> <X\n/>", &mdx)
             .err()
             .unwrap(),
-        "3:1: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+        "3:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazy flow (2)"
     );
 
@@ -100,7 +100,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
         micromark_with_options("> <a b='\nc'/> d", &mdx)
             .err()
             .unwrap(),
-        "2:1: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazy flow (3)"
     );
 
@@ -108,7 +108,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
         micromark_with_options("> <a b='c\n'/> d", &mdx)
             .err()
             .unwrap(),
-        "2:1: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazy flow (4)"
     );
 
@@ -116,7 +116,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
         micromark_with_options("> <a b='c\nd'/> e", &mdx)
             .err()
             .unwrap(),
-        "2:1: Unexpected lazy line in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazy flow (4)"
     );
 

@@ -3166,6 +3166,11 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+
+    MdxFlowExpression,
+    MdxTextExpression,
+    MdxExpressionMarker, // void
+    MdxExpressionData,   // void
 }
 
 /// List of void events, used to make sure everything is working well.
