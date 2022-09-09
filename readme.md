@@ -147,8 +147,8 @@ They are not enabled by default but can be turned on with options.
   - task list item
 - math
 - MDX
-  - JSX (agnostic of JavaScript)
   - expressions (agnostic of JavaScript)
+  - JSX (agnostic of JavaScript)
 
 It’s planned to add support for integrating with SWC for MDX JSX and expressions
 that is aware of JavaScript syntax, and for ESM (import/export).
