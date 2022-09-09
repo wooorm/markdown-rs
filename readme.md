@@ -344,7 +344,7 @@ For more practical examples of how things roughly work in BNF, see the module do
 
 ### Test
 
-micromark is tested with the \~650 CommonMark tests and more than 1.2k extra
+micromark is tested with the \~650 CommonMark tests and more than 1.7k extra
 tests confirmed with CM reference parsers.
 Then there’s even more tests for GFM and other extensions.
 These tests reach all branches in the code, which means that this project has
