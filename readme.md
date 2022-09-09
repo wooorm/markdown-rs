@@ -388,6 +388,14 @@ dangerous protocols are used, as it encodes or drops them.
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
 user-provided markdown opens you up to XSS attacks.
 
+An aspect related to XSS for security is syntax errors: markdown itself has no
+syntax errors.
+Some syntax extensions (specifically, only MDX) do include syntax errors.
+For that reason, `micromark_with_options` returns `Result<(), String>`, of which
+the error is a simple string indicating where the problem happened, what
+occurred, and what was expected instead.
+Make sure to handle your errors when using MDX.
+
 Another security aspect is DDoS attacks.
 For example, an attacker could throw a 100mb file at micromark, in which case
 it’s going to take a long while to finish.
