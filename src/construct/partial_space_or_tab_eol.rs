@@ -64,24 +64,26 @@ pub fn space_or_tab_eol_with_options(tokenizer: &mut Tokenizer, options: Options
 ///   | ␠␠b
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
-        tokenizer.attempt(
-            State::Next(StateName::SpaceOrTabEolAfterFirst),
-            State::Next(StateName::SpaceOrTabEolAtEol),
-        );
+    match tokenizer.current {
+        Some(b'\t' | b' ') => {
+            tokenizer.attempt(
+                State::Next(StateName::SpaceOrTabEolAfterFirst),
+                State::Next(StateName::SpaceOrTabEolAtEol),
+            );
 
-        State::Retry(space_or_tab_with_options(
-            tokenizer,
-            SpaceOrTabOptions {
-                kind: Name::SpaceOrTab,
-                min: 1,
-                max: usize::MAX,
-                content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
-                connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
-            },
-        ))
-    } else {
-        State::Nok
+            State::Retry(space_or_tab_with_options(
+                tokenizer,
+                SpaceOrTabOptions {
+                    kind: Name::SpaceOrTab,
+                    min: 1,
+                    max: usize::MAX,
+                    content: tokenizer.tokenize_state.space_or_tab_eol_content.clone(),
+                    connect: tokenizer.tokenize_state.space_or_tab_eol_connect,
+                },
+            ))
+        }
+        Some(b'\n') => State::Retry(StateName::SpaceOrTabEolAtEol),
+        _ => State::Nok,
     }
 }
 

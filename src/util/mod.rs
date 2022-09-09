@@ -1,6 +1,6 @@
 //! Utilities used when processing markdown.
 
-pub mod classify_character;
+pub mod char;
 pub mod constant;
 pub mod decode_character_reference;
 pub mod edit_map;

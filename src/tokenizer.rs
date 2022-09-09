@@ -12,15 +12,8 @@ use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
 use crate::parser::ParseState;
 use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, State};
-use crate::util::{constant::TAB_SIZE, edit_map::EditMap};
-use alloc::{
-    boxed::Box,
-    format,
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
-use core::str;
+use crate::util::{char::format_byte_opt, constant::TAB_SIZE, edit_map::EditMap};
+use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
 /// Containers.
 ///
@@ -725,14 +718,7 @@ fn push_impl(
                             None
                         };
 
-                    let visible = byte.map(|d| {
-                        if (b' '..=b'~').contains(&d) {
-                            str::from_utf8(&[d]).unwrap().to_string()
-                        } else {
-                            format!("0x{:x}", d)
-                        }
-                    });
-                    log::debug!("feed:    `{:?}` to {:?}", visible, name);
+                    log::debug!("feed:    {} to {:?}", format_byte_opt(byte), name);
                     tokenizer.expect(byte);
                     state = call(tokenizer, name);
                 };

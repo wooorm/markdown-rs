@@ -1,54 +1,9 @@
 //! Deal with bytes.
 
 use crate::event::{Event, Kind, Point};
-use crate::util::{
-    classify_character::{classify_opt, Kind as CharacterKind},
-    constant::TAB_SIZE,
-};
+use crate::util::constant::TAB_SIZE;
 use alloc::string::String;
 use core::str;
-
-/// Get a [`char`][] right before `index` in bytes (`&[u8]`).
-///
-/// In most cases, markdown operates on ASCII bytes.
-/// In a few cases, it is unicode aware, so we need to find an actual char.
-pub fn char_before_index(bytes: &[u8], index: usize) -> Option<char> {
-    let start = if index < 4 { 0 } else { index - 4 };
-    String::from_utf8_lossy(&bytes[start..index]).chars().last()
-}
-
-/// Get a [`char`][] right at `index` in bytes (`&[u8]`).
-///
-/// In most cases, markdown operates on ASCII bytes.
-/// In a few cases, it is unicode aware, so we need to find an actual char.
-pub fn char_after_index(bytes: &[u8], index: usize) -> Option<char> {
-    let end = if index + 4 > bytes.len() {
-        bytes.len()
-    } else {
-        index + 4
-    };
-    String::from_utf8_lossy(&bytes[index..end]).chars().next()
-}
-
-/// Classify a byte (or `char`).
-pub fn byte_to_kind(bytes: &[u8], index: usize) -> CharacterKind {
-    if index == bytes.len() {
-        CharacterKind::Whitespace
-    } else {
-        let byte = bytes[index];
-        if byte.is_ascii_whitespace() {
-            CharacterKind::Whitespace
-        } else if byte.is_ascii_punctuation() {
-            CharacterKind::Punctuation
-        } else if byte.is_ascii_alphanumeric() {
-            CharacterKind::Other
-        } else {
-            // Otherwise: seems to be an ASCII control, so it seems to be a
-            // non-ASCII `char`.
-            classify_opt(char_after_index(bytes, index))
-        }
-    }
-}
 
 /// A range between two points.
 #[derive(Debug)]

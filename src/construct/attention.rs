@@ -80,8 +80,13 @@ use crate::event::{Event, Kind, Name, Point};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::classify_character::{classify_opt, Kind as CharacterKind};
-use crate::util::slice::{char_after_index, char_before_index, Slice};
+use crate::util::{
+    char::{
+        after_index as char_after_index, before_index as char_before_index, classify_opt,
+        Kind as CharacterKind,
+    },
+    slice::Slice,
+};
 use alloc::{vec, vec::Vec};
 
 /// Attentention sequence that we can take markers from.

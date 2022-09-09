@@ -164,14 +164,11 @@
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::{
-    classify_character::Kind as CharacterKind,
-    slice::{byte_to_kind, char_after_index},
+use crate::util::char::{
+    after_index as char_after_index, format_byte, format_opt as format_char_opt, kind_after_index,
+    Kind as CharacterKind,
 };
-use alloc::{
-    format,
-    string::{String, ToString},
-};
+use alloc::format;
 use core::str;
 use unicode_id::UnicodeID;
 
@@ -305,7 +302,8 @@ pub fn closing_tag_name_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn primary_name(tokenizer: &mut Tokenizer) -> State {
     // End of name.
-    if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
+    if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+        == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'.' | b'/' | b':' | b'>' | b'{'))
     {
         tokenizer.exit(Name::MdxJsxTagNamePrimary);
@@ -418,7 +416,8 @@ pub fn member_name_before(tokenizer: &mut Tokenizer) -> State {
 pub fn member_name(tokenizer: &mut Tokenizer) -> State {
     // End of name.
     // Note: no `:` allowed here.
-    if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
+    if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+        == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'.' | b'/' | b'>' | b'{'))
     {
         tokenizer.exit(Name::MdxJsxTagNameMember);
@@ -529,7 +528,8 @@ pub fn local_name_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn local_name(tokenizer: &mut Tokenizer) -> State {
     // End of local name (note that we don’t expect another colon, or a member).
-    if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
+    if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+        == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
     {
         tokenizer.exit(Name::MdxJsxTagNameLocal);
@@ -645,7 +645,8 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn attribute_primary_name(tokenizer: &mut Tokenizer) -> State {
     // End of attribute name or tag.
-    if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
+    if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+        == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'/' | b':' | b'=' | b'>' | b'{'))
     {
         tokenizer.exit(Name::MdxJsxTagAttributePrimaryName);
@@ -711,7 +712,7 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // End of tag / new attribute.
-            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
                 || matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
                 || id_start(char_after_index(
@@ -768,7 +769,8 @@ pub fn attribute_local_name_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn attribute_local_name(tokenizer: &mut Tokenizer) -> State {
     // End of local name (note that we don’t expect another colon).
-    if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index) == CharacterKind::Whitespace
+    if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+        == CharacterKind::Whitespace
         || matches!(tokenizer.current, Some(b'/' | b'=' | b'>' | b'{'))
     {
         tokenizer.exit(Name::MdxJsxTagAttributeNameLocal);
@@ -986,7 +988,7 @@ pub fn es_whitespace_start(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => State::Retry(StateName::MdxJsxEsWhitespaceEol),
         _ => {
-            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
             {
                 tokenizer.enter(Name::MdxJsxEsWhitespace);
@@ -1016,7 +1018,7 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::MdxJsxEsWhitespaceInside)
         }
         _ => {
-            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
             {
                 tokenizer.consume();
@@ -1044,7 +1046,7 @@ pub fn es_whitespace_eol(tokenizer: &mut Tokenizer) -> State {
 pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.tokenize_state.token_1 == Name::MdxJsxFlowTag && tokenizer.lazy {
         crash_lazy(tokenizer)
-    } else if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+    } else if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
         == CharacterKind::Whitespace
     {
         tokenizer.enter(Name::MdxJsxEsWhitespace);
@@ -1064,7 +1066,7 @@ pub fn es_whitespace_eol_after_inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::MdxJsxEsWhitespaceEolAfterInside)
         }
         _ => {
-            if byte_to_kind(tokenizer.parse_state.bytes, tokenizer.point.index)
+            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
             {
                 tokenizer.consume();
@@ -1107,45 +1109,12 @@ fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
         char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
     };
 
-    // To do: externalize this, and the print mechanism in the tokenizer,
-    // to one proper formatter.
-    let actual = match char {
-        None => "end of file".to_string(),
-        Some(char) => format!("character {}", format_char(char)),
-    };
-
     State::Error(format!(
         "{}:{}: Unexpected {} {}, expected {}",
-        tokenizer.point.line, tokenizer.point.column, actual, at, expect
+        tokenizer.point.line,
+        tokenizer.point.column,
+        format_char_opt(char),
+        at,
+        expect
     ))
-}
-
-fn format_char(char: char) -> String {
-    let unicode = format!("U+{:>04X}", char as u32);
-    let printable = match char {
-        '`' => Some("`` ` ``".to_string()),
-        ' '..='~' => Some(format!("`{}`", char)),
-        _ => None,
-    };
-
-    if let Some(char) = printable {
-        format!("{} ({})", char, unicode)
-    } else {
-        unicode
-    }
-}
-
-fn format_byte(byte: u8) -> String {
-    let unicode = format!("U+{:>04X}", byte);
-    let printable = match byte {
-        b'`' => Some("`` ` ``".to_string()),
-        b' '..=b'~' => Some(format!("`{}`", str::from_utf8(&[byte]).unwrap())),
-        _ => None,
-    };
-
-    if let Some(char) = printable {
-        format!("{} ({})", char, unicode)
-    } else {
-        unicode
-    }
 }
