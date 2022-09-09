@@ -1,4 +1,165 @@
-//! To do.
+//! MDX JSX occurs in [MDX JSX (flow)][mdx_jsx_flow] and
+//! [MDX JSX (text)][mdx_jsx_text].
+//!
+//! ## Grammar
+//!
+//! MDX JSX forms with the following BNF
+//! (<small>see [construct][crate::construct] for character groups</small>):
+//!
+//! ```bnf
+//! ; constraint: markdown whitespace (`space_or_tab | eol`) is NOT
+//! ; allowed directly after `<` in order to allow `1 < 3` in markdown.
+//! mdx_jsx ::=
+//!   '<' [closing]
+//!   [*whitespace name [attributes_after_identifier] [closing]]
+//!   *whitespace '>'
+//!
+//! attributes_after_identifier ::=
+//!   1*whitespace (attributes_boolean | attributes_value) |
+//!   *whitespace attributes_expression |
+//! attributes_after_value ::=
+//!   *whitespace (attributes_boolean | attributes_expression | attributes_value)
+//! attributes_boolean ::= key [attributes_after_identifier]
+//! ; Note: in gnostic mode the value of the expression must instead be a single valid ES spread
+//! ; expression
+//! attributes_expression ::= expression [attributes_after_value]
+//! attributes_value ::= key initializer [attributes_after_value]
+//!
+//! closing ::= *whitespace '/'
+//!
+//! name ::= identifier [local | members]
+//! key ::= identifier [local]
+//! local ::= *whitespace ':' *whitespace identifier
+//! members ::= member *member
+//! member ::= *whitespace '.' *whitespace identifier
+//!
+//! identifier ::= identifier_start *identifier_part
+//! initializer ::= *whitespace '=' *whitespace value
+//! value ::= double_quoted | single_quoted | expression
+//! ; Note: in gnostic mode the value must instead be a single valid ES expression
+//! expression ::= '{' *(expression_text | expression) '}'
+//!
+//! double_quoted ::= '"' *double_quoted_text '"'
+//! single_quoted ::= "'" *single_quoted_text "'"
+//!
+//! text ::= char - '<' - '{'
+//! whitespace ::= es_whitespace
+//! double_quoted_text ::= char - '"'
+//! single_quoted_text ::= char - "'"
+//! expression_text ::= char - '{' - '}'
+//! identifier_start ::= es_identifier_start
+//! identifier_part ::= es_identifier_part | '-'
+//!
+//! ; ECMAScript
+//! ; See “Identifier_start”: <https://tc39.es/ecma262/#prod-IdentifierStart>
+//! es_identifier_start ::= ?
+//! ; See “Identifier_part”: <https://tc39.es/ecma262/#prod-IdentifierPart>
+//! es_identifier_part ::= ?
+//! ; See “Whitespace”: <https://tc39.es/ecma262/#prod-WhiteSpace>
+//! es_whitespace ::= ?
+//! ```
+//!
+//! The grammar for JSX in markdown is much stricter than that of HTML in
+//! markdown.
+//! The primary benefit of this is that tags are parsed into tokens, and thus
+//! can be processed.
+//! Another, arguable, benefit of this is that it comes with syntax errors: if
+//! an author types something that is nonsensical, an error is thrown with
+//! information about where it happened, what occurred, and what was expected
+//! instead.
+//!
+//! ## Tokens
+//!
+//! *   [`LineEnding`][Name::LineEnding]
+//! *   [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace]
+//! *   [`MdxJsxTagMarker`][Name::MdxJsxTagMarker]
+//! *   [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker]
+//! *   [`MdxJsxTagName`][Name::MdxJsxTagName]
+//! *   [`MdxJsxTagNamePrimary`][Name::MdxJsxTagNamePrimary]
+//! *   [`MdxJsxTagNameMemberMarker`][Name::MdxJsxTagNameMemberMarker]
+//! *   [`MdxJsxTagNamePrefixMarker`][Name::MdxJsxTagNamePrefixMarker]
+//! *   [`MdxJsxTagNameMember`][Name::MdxJsxTagNameMember]
+//! *   [`MdxJsxTagNameLocal`][Name::MdxJsxTagNameLocal]
+//! *   [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute]
+//! *   [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
+//! *   [`MdxJsxTagAttributePrimaryName`][Name::MdxJsxTagAttributePrimaryName]
+//! *   [`MdxJsxTagAttributeNamePrefixMarker`][Name::MdxJsxTagAttributeNamePrefixMarker]
+//! *   [`MdxJsxTagAttributeNameLocal`][Name::MdxJsxTagAttributeNameLocal]
+//! *   [`MdxJsxTagAttributeInitializerMarker`][Name::MdxJsxTagAttributeInitializerMarker]
+//! *   [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral]
+//! *   [`MdxJsxTagAttributeValueLiteralMarker`][Name::MdxJsxTagAttributeValueLiteralMarker]
+//! *   [`MdxJsxTagAttributeValueLiteralValue`][Name::MdxJsxTagAttributeValueLiteralValue]
+//! *   [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
+//!
+//! ## Recommendation
+//!
+//! When authoring markdown with JSX, keep in mind that MDX is a whitespace
+//! sensitive and line-based language, while JavaScript is insensitive to
+//! whitespace.
+//! This affects how markdown and JSX interleave with eachother in MDX.
+//! For more info on how it works, see [§ Interleaving][interleaving] on the
+//! MDX site.
+//!
+//! ###### Comments inside tags
+//!
+//! JavaScript comments in JSX are not supported.
+//!
+//! Incorrect:
+//!
+//! ```jsx
+//! <hi/*comment!*//>
+//! <hello// comment!
+//! />
+//! ```
+//!
+//! Correct:
+//!
+//! ```jsx
+//! <hi/>
+//! <hello
+//! />
+//! ```
+//!
+//! A PR that adds support for them would be accepted.
+//!
+//! ###### Element or fragment attribute values
+//!
+//! JSX elements or JSX fragments as attribute values are not supported.
+//! The reason for this change is that it would be confusing whether markdown
+//! would work.
+//!
+//! Incorrect:
+//!
+//! ```jsx
+//! <welcome name=<>Venus</> />
+//! <welcome name=<span>Pluto</span> />
+//! ```
+//!
+//! Correct:
+//!
+//! ```jsx
+//! <welcome name='Mars' />
+//! <welcome name={<span>Jupiter</span>} />
+//! ```
+//!
+//! ###### Greater than (`>`) and right curly brace (`}`)
+//!
+//! JSX does not allow U+003E GREATER THAN (`>`) or U+007D RIGHT CURLY BRACE
+//! (`}`) literally in text, they need to be encoded as character references
+//! (or expressions).
+//! There is no good reason for this (some JSX parsers agree with us and don’t
+//! crash either).
+//! Therefore, in MDX, U+003E GREATER THAN (`>`) and U+007D RIGHT CURLY BRACE
+//! (`}`) are fine literally and don’t need to be encoded.
+//!
+//! ## References
+//!
+//! *   [`jsx-flow.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-flow.js)
+//! *   [`mdxjs.com`](https://mdxjs.com)
+//!
+//! [mdx_jsx_flow]: crate::construct::mdx_jsx_flow
+//! [mdx_jsx_text]: crate::construct::mdx_jsx_text
+//! [interleaving]: https://mdxjs.com/docs/what-is-mdx/#interleaving
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
