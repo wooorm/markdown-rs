@@ -21,7 +21,7 @@ positional info, concrete tokens, and extensions.
 ## Feature highlights
 
 - [x] **[compliant][commonmark]** (100% to CommonMark)
-- [x] **[extensions][]** (GFM, frontmatter, math)
+- [x] **[extensions][]** (GFM, MDX, frontmatter, math)
 - [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
 - [x] **[robust][test]** (2300+ tests, 100% coverage)
 
@@ -138,7 +138,7 @@ These extensions are maintained in this project.
 They are not enabled by default but can be turned on with options.
 
 - frontmatter
-- gfm
+- GFM
   - autolink literal
   - footnote
   - strikethrough
@@ -146,6 +146,12 @@ They are not enabled by default but can be turned on with options.
   - tagfilter
   - task list item
 - math
+- MDX
+  - JSX (agnostic of JavaScript)
+  - expressions (agnostic of JavaScript)
+
+It’s planned to add support for integrating with SWC for MDX JSX and expressions
+that is aware of JavaScript syntax, and for ESM (import/export).
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support incredibly common, somewhat standardized,
