@@ -151,7 +151,7 @@ They are not enabled by default but can be turned on with options.
   - JSX (agnostic of JavaScript)
 
 It’s planned to add support for integrating with SWC for MDX JSX and expressions
-that is aware of JavaScript syntax, and for ESM (import/export).
+to make it aware of JavaScript syntax, and for ESM (import/export).
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support incredibly common, somewhat standardized,
