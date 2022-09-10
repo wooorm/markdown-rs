@@ -375,7 +375,7 @@ The following scripts are useful when working on this project:
 - fuzz:
   ```sh
   cargo install cargo-fuzz
-  cargo +nightly fuzz run fuzz_text
+  cargo +nightly fuzz run micromark
   ```
 
 ### Version

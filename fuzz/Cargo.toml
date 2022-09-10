@@ -19,7 +19,7 @@ path = ".."
 members = ["."]
 
 [[bin]]
-name = "fuzz_text"
-path = "fuzz_targets/fuzz_text.rs"
+name = "micromark"
+path = "fuzz_targets/micromark.rs"
 test = false
 doc = false
