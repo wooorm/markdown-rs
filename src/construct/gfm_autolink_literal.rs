@@ -636,14 +636,14 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 let mut replace = Vec::new();
                 let mut point = tokenizer.events[index - 1].point.clone();
                 let start_index = point.index;
-                let mut start = 0;
+                let mut min = 0;
 
                 while byte_index < bytes.len() {
                     if bytes[byte_index] == b'@' {
                         let mut range = (0, 0, Name::GfmAutolinkLiteralEmail);
 
-                        if let Some(start) = peek_bytes_atext(bytes, byte_index) {
-                            let (start, kind) = peek_protocol(bytes, start);
+                        if let Some(start) = peek_bytes_atext(bytes, min, byte_index) {
+                            let (start, kind) = peek_protocol(bytes, min, start);
 
                             if let Some(end) = peek_bytes_email_domain(
                                 bytes,
@@ -658,8 +658,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                             byte_index = range.1;
 
                             // If there is something between the last link
-                            // (or the start) and this link.
-                            if start != range.0 {
+                            // (or `min`) and this link.
+                            if min != range.0 {
                                 replace.push(Event {
                                     kind: Kind::Enter,
                                     name: Name::Data,
@@ -691,7 +691,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 point: point.clone(),
                                 link: None,
                             });
-                            start = range.1;
+                            min = range.1;
                         }
                     }
 
@@ -699,7 +699,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 }
 
                 // If there was a link, and we have more bytes left.
-                if start != 0 && start < bytes.len() {
+                if min != 0 && min < bytes.len() {
                     replace.push(Event {
                         kind: Kind::Enter,
                         name: Name::Data,
@@ -739,13 +739,13 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 ///              ^-- from
 ///       ^-- to
 /// ```
-fn peek_bytes_atext(bytes: &[u8], end: usize) -> Option<usize> {
+fn peek_bytes_atext(bytes: &[u8], min: usize, end: usize) -> Option<usize> {
     let mut index = end;
 
     // Take simplified atext.
     // See `email_atext` in `autolink.rs` for a similar algorithm.
     // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L301>.
-    while index > 0
+    while index > min
         && matches!(bytes[index - 1], b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'_' | b'a'..=b'z')
     {
         index -= 1;
@@ -755,7 +755,7 @@ fn peek_bytes_atext(bytes: &[u8], end: usize) -> Option<usize> {
     // The reference code is a bit weird, but that’s what it results in.
     // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L307>.
     // Other than slash, every preceding character is allowed.
-    if index == end || (index > 0 && bytes[index - 1] == b'/') {
+    if index == end || (index > min && bytes[index - 1] == b'/') {
         None
     } else {
         Some(index)
@@ -772,14 +772,14 @@ fn peek_bytes_atext(bytes: &[u8], end: usize) -> Option<usize> {
 ///              ^-- from
 ///       ^-- to
 /// ```
-fn peek_protocol(bytes: &[u8], end: usize) -> (usize, Name) {
+fn peek_protocol(bytes: &[u8], min: usize, end: usize) -> (usize, Name) {
     let mut index = end;
 
-    if index > 0 && bytes[index - 1] == b':' {
+    if index > min && bytes[index - 1] == b':' {
         index -= 1;
 
         // Take alphanumerical.
-        while index > 0 && matches!(bytes[index - 1], b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') {
+        while index > min && matches!(bytes[index - 1], b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z') {
             index -= 1;
         }
 

@@ -3424,7 +3424,7 @@ impl Point {
     /// point, to `index.`
     pub fn shift_to(&self, bytes: &[u8], index: usize) -> Point {
         let mut next = self.clone();
-        debug_assert!(index > next.index, "expect");
+        debug_assert!(index > next.index, "expected to shift forward");
 
         while next.index < index {
             match bytes[next.index] {
