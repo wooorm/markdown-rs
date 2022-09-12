@@ -567,11 +567,20 @@ fn resolve(tokenizer: &mut Tokenizer) {
 
     child.map.consume(&mut child.events);
 
+    let mut flow_index = skip::to(&tokenizer.events, 0, &[Name::Data]);
+    while flow_index < tokenizer.events.len()
+        // To do: use `!is_some_and()` when that’s stable.
+        && (tokenizer.events[flow_index].link.is_none()
+            || tokenizer.events[flow_index].link.as_ref().unwrap().content != Content::Flow)
+    {
+        flow_index = skip::to(&tokenizer.events, flow_index + 1, &[Name::Data]);
+    }
+
     // Now, add all child events into our parent document tokenizer.
     divide_events(
         &mut tokenizer.map,
         &tokenizer.events,
-        skip::to(&tokenizer.events, 0, &[Name::Data]),
+        flow_index,
         &mut child.events,
     );
 

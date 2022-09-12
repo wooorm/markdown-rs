@@ -21,7 +21,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-a\">
-<p>whatevs <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>whatevs <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -43,7 +43,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Voetnoten</h2>
 <ol>
 <li id=\"user-content-fn-a\">
-<p>dingen <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Terug naar de inhoud\">↩</a></p>
+<p>dingen <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Terug naar de inhoud\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -64,7 +64,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>
 <ol>
 <li id=\"user-content-fn-a\">
-<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -85,7 +85,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-a\">
-<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -106,7 +106,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"fn-a\">
-<p>b <a href=\"#fnref-a\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>b <a href=\"#fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -132,7 +132,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-b\">
-<p>c <a href=\"#user-content-fnref-b\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>c <a href=\"#user-content-fnref-b\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -146,7 +146,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-b\">
-<p>d <a href=\"#user-content-fnref-b\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a> <a href=\"#user-content-fnref-b-2\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩<sup>2</sup></a></p>
+<p>d <a href=\"#user-content-fnref-b\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a> <a href=\"#user-content-fnref-b-2\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩<sup>2</sup></a></p>
 </li>
 </ol>
 </section>
@@ -185,7 +185,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-a%5C+b\">
-<p>y <a href=\"#user-content-fnref-a%5C+b\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>y <a href=\"#user-content-fnref-a%5C+b\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -199,7 +199,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-a&amp;copy;b\">
-<p>y <a href=\"#user-content-fnref-a&amp;copy;b\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>y <a href=\"#user-content-fnref-a&amp;copy;b\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -215,7 +215,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-a%5C%5Db\">
-<p>y <a href=\"#user-content-fnref-a%5C%5Db\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>y <a href=\"#user-content-fnref-a%5C%5Db\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -229,7 +229,7 @@ fn gfm_footnote() -> Result<(), String> {
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-a&amp;#91;b\">
-<p>y <a href=\"#user-content-fnref-a&amp;#91;b\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>y <a href=\"#user-content-fnref-a&amp;#91;b\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -256,7 +256,7 @@ fn gfm_footnote() -> Result<(), String> {
 <ol>
 <li id=\"user-content-fn-1\">
 <p>a
-b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -273,7 +273,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-foot
 <ol>
 <li id=\"user-content-fn-1\">
 <p>a
-b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -290,7 +290,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-foot
 <ol>
 <li id=\"user-content-fn-1\">
 <p>a
-b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -308,7 +308,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-foot
 <blockquote>
 <p>b</p>
 </blockquote>
-<a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a>
+<a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a>
 </li>
 </ol>
 </section>
@@ -325,7 +325,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" class=\"data-foot
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
 <li id=\"user-content-fn-{}\">
-<p>y <a href=\"#user-content-fnref-{}\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"Back to content\">↩</a></p>
+<p>y <a href=\"#user-content-fnref-{}\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
 </li>
 </ol>
 </section>
@@ -365,7 +365,7 @@ a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref=
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>b <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a> <a href="#user-content-fnref-1-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩<sup>2</sup></a></p>
+<p>b <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-1-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩<sup>2</sup></a></p>
 </li>
 </ol>
 </section>
@@ -391,7 +391,7 @@ a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref=
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>b <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>b <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -437,15 +437,83 @@ even another caret.</p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1234567890">
-<p>numbers <a href="#user-content-fnref-1234567890" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>numbers <a href="#user-content-fnref-1234567890" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-%5E">
-<p>caret <a href="#user-content-fnref-%5E" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>caret <a href="#user-content-fnref-%5E" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
 "###,
         "should match calls like GitHub"
+    );
+
+    // Note:
+    // * GH does not support line ending in call.
+    //   See: <https://github.com/github/cmark-gfm/issues/282>
+    //   Here line endings don’t make text disappear.
+    assert_eq!(
+        micromark_with_options(
+            r###"[^a]: # b
+
+[^c d]: # e
+
+[^f	g]: # h
+
+[^i
+j]: # k
+
+[^ l]: # l
+
+[^m ]: # m
+
+xxx[^a], [^c d], [^f	g], [^i
+j], [^ l], [^m ]
+
+---
+
+Some calls.[^ w][^x ][^y][^z]
+
+[^w]: # w
+
+[^x]: # x
+
+[^ y]: # y
+
+[^x ]: # z
+"###,
+            &gfm
+        )?,
+        r###"<p>[^c d]: # e</p>
+<p>[^f	g]: # h</p>
+<p>[^i
+j]: # k</p>
+<p>[^ l]: # l</p>
+<p>[^m ]: # m</p>
+<p>xxx<sup><a href="#user-content-fn-a" id="user-content-fnref-a" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>, [^c d], [^f	g], [^i
+j], [^ l], [^m ]</p>
+<hr />
+<p>Some calls.<sup><a href="#user-content-fn-w" id="user-content-fnref-w" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-x" id="user-content-fnref-x" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup>[^y][^z]</p>
+<p>[^ y]: # y</p>
+<p><sup><a href="#user-content-fn-x" id="user-content-fnref-x-2" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup>: # z</p>
+<section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
+<ol>
+<li id="user-content-fn-a">
+<h1>b</h1>
+<a href="#user-content-fnref-a" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
+</li>
+<li id="user-content-fn-w">
+<h1>w</h1>
+<a href="#user-content-fnref-w" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
+</li>
+<li id="user-content-fn-x">
+<h1>x</h1>
+<a href="#user-content-fnref-x" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-x-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩<sup>2</sup></a>
+</li>
+</ol>
+</section>
+"###,
+        "should match whitespace in calls like GitHub (except for the bugs)"
     );
 
     assert_eq!(
@@ -504,22 +572,22 @@ even another caret.</p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-*emphasis*">
-<p>a <a href="#user-content-fnref-*emphasis*" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-*emphasis*" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-**strong**">
-<p>a <a href="#user-content-fnref-**strong**" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-**strong**" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-%60code%60">
-<p>a <a href="#user-content-fnref-%60code%60" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-%60code%60" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-www.example.com">
-<p>a <a href="#user-content-fnref-www.example.com" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-www.example.com" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-https://example.com">
-<p>a <a href="#user-content-fnref-https://example.com" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-https://example.com" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-://example.com">
-<p>a <a href="#user-content-fnref-://example.com" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-://example.com" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -555,16 +623,16 @@ even another caret.</p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Defined in a block quote. <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Defined in a block quote. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
-<p>Directly after a block quote. <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Directly after a block quote. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>Defined in a list item. <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Defined in a list item. <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>Directly after a list item. <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Directly after a list item. <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -612,21 +680,21 @@ even another caret.</p>
 <ol>
 <li id="user-content-fn-1">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
 <p>Paragraph
 …continuation</p>
 <p>“code”, which is paragraphs…</p>
-<p>…because of the indent! <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>…because of the indent! <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -664,19 +732,19 @@ Lazy!
 <ol>
 <li id="user-content-fn-1">
 <hr />
-<a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-2">
-<p>Paragraph. <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph. <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-4">
-<p>Another blank. <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Another blank. <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-5">
-<a href="#user-content-fnref-5" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 </ol>
 </section>
@@ -717,46 +785,46 @@ Lazy!
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-0">
-<p>alpha <a href="#user-content-fnref-0" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>alpha <a href="#user-content-fnref-0" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-1">
-<p>bravo <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>bravo <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
 <p>charlie
-indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>echo <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>echo <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>foxtrot <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>foxtrot <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-5">
 <blockquote>
 <p>golf</p>
 </blockquote>
-<a href="#user-content-fnref-5" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-6">
 <blockquote>
 <p>hotel</p>
 </blockquote>
-<a href="#user-content-fnref-6" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-6" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-7">
 <blockquote>
 <p>india</p>
 </blockquote>
-<a href="#user-content-fnref-7" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-7" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-8">
 <h1>juliett</h1>
-<a href="#user-content-fnref-8" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-8" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-9">
 <hr />
-<a href="#user-content-fnref-9" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-9" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-10">
 <ul>
@@ -770,7 +838,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 </ul>
 </li>
 </ul>
-<a href="#user-content-fnref-10" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-10" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 </ol>
 </section>
@@ -790,7 +858,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Recursion<sup><a href="#user-content-fn-1" id="user-content-fnref-1-3" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-1" id="user-content-fnref-1-4" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a> <a href="#user-content-fnref-1-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩<sup>2</sup></a> <a href="#user-content-fnref-1-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩<sup>3</sup></a> <a href="#user-content-fnref-1-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩<sup>4</sup></a></p>
+<p>Recursion<sup><a href="#user-content-fn-1" id="user-content-fnref-1-3" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-1" id="user-content-fnref-1-4" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a> <a href="#user-content-fnref-1-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩<sup>2</sup></a> <a href="#user-content-fnref-1-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩<sup>3</sup></a> <a href="#user-content-fnref-1-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩<sup>4</sup></a></p>
 </li>
 </ol>
 </section>
@@ -812,7 +880,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>a <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -858,16 +926,16 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>a <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
-<p>b <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>b <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>d <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>d <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-5">
-<p>e <a href="#user-content-fnref-5" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>e <a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -891,13 +959,13 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>a <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
-<p>b <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>b <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>c <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>c <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -941,28 +1009,28 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <ol>
 <li id="user-content-fn-0">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-0" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-0" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-1">
-<p>Another <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Another <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
 <p>Paragraph
 …continuation
 “code”, which is paragraphs…</p>
-<p>…because of the indent! <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>…because of the indent! <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-5">
 <p>Paragraph
-…continuation <a href="#user-content-fnref-5" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+…continuation <a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -986,13 +1054,13 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>a <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
-<p>b <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>b <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>c <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>c <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -1043,18 +1111,18 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Paragraph <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
 <p>Paragraph</p>
 <p>“code”, which is paragraphs…</p>
-<p>…because of the indent! <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>…because of the indent! <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>Paragraph <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>Paragraph <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -1100,7 +1168,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 <li id="user-content-fn-1">
 <p>Paragraph</p>
 <h1>Heading</h1>
-<a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-2">
 <p>Paragraph</p>
@@ -1109,21 +1177,21 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" class="d
 
 more code
 </code></pre>
-<a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-3">
 <p>Paragraph</p>
 <blockquote>
 <p>block quote</p>
 </blockquote>
-<a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-4">
 <p>Paragraph</p>
 <ul>
 <li>list</li>
 </ul>
-<a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 </ol>
 </section>
@@ -1152,16 +1220,16 @@ more code
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Paragraph <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
-<p>Paragraph <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-4">
-<p>Paragraph <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -1204,18 +1272,18 @@ more code
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Paragraph <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-2">
 <p>Paragraph</p>
 <p>“code”, which is paragraphs…</p>
-<p>…because of the indent! <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>…because of the indent! <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
-<p>Paragraph <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>Paragraph <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Paragraph <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -1253,7 +1321,7 @@ more code
 <li id="user-content-fn-1">
 <p>Paragraph</p>
 <h1>Heading</h1>
-<a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-2">
 <p>Paragraph</p>
@@ -1261,21 +1329,21 @@ more code
 
 more code
 </code></pre>
-<a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-3">
 <p>Paragraph</p>
 <blockquote>
 <p>block quote</p>
 </blockquote>
-<a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-4">
 <p>Paragraph</p>
 <ul>
 <li>list</li>
 </ul>
-<a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 </ol>
 </section>
@@ -1311,7 +1379,7 @@ isn’t indented.</p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-1">
-<p>Here is the footnote. <a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>Here is the footnote. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-longnote">
 <p>Here’s one with multiple blocks.</p>
@@ -1321,7 +1389,7 @@ belong to the previous footnote.</p>
 </code></pre>
 <p>The whole paragraph can be indented, or just the first
 line.  In this way, multi-paragraph footnotes work like
-multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -1384,38 +1452,38 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
 <ol>
 <li id="user-content-fn-3">
-<p>3 <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>3 <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
-<p>2 <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>2 <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-5">
-<p>1 <a href="#user-content-fnref-5" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>1 <a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-6">
-<p>0 <a href="#user-content-fnref-6" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>0 <a href="#user-content-fnref-6" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-7">
 <p>3</p>
-<p>5 <a href="#user-content-fnref-7" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>5 <a href="#user-content-fnref-7" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-8">
 <p>3</p>
-<p>4 <a href="#user-content-fnref-8" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>4 <a href="#user-content-fnref-8" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-9">
-<p>3 <a href="#user-content-fnref-9" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>3 <a href="#user-content-fnref-9" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-10">
 <p>2</p>
-<p>5 <a href="#user-content-fnref-10" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>5 <a href="#user-content-fnref-10" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-11">
 <p>2</p>
-<p>4 <a href="#user-content-fnref-11" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>4 <a href="#user-content-fnref-11" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-12">
-<p>2 <a href="#user-content-fnref-12" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>2 <a href="#user-content-fnref-12" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>
@@ -1476,35 +1544,35 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
 <p>a</p>
 <pre><code>8
 </code></pre>
-<a href="#user-content-fnref-1" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a>
+<a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a>
 </li>
 <li id="user-content-fn-2">
 <p>a</p>
-<p>7 <a href="#user-content-fnref-2" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>7 <a href="#user-content-fnref-2" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-3">
 <p>a</p>
-<p>6 <a href="#user-content-fnref-3" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>6 <a href="#user-content-fnref-3" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-4">
 <p>a</p>
-<p>5 <a href="#user-content-fnref-4" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>5 <a href="#user-content-fnref-4" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-5">
 <p>a</p>
-<p>4 <a href="#user-content-fnref-5" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>4 <a href="#user-content-fnref-5" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-6">
-<p>a <a href="#user-content-fnref-6" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-6" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-7">
-<p>a <a href="#user-content-fnref-7" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-7" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-8">
-<p>a <a href="#user-content-fnref-8" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-8" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 <li id="user-content-fn-9">
-<p>a <a href="#user-content-fnref-9" data-footnote-backref="" class="data-footnote-backref" aria-label="Back to content">↩</a></p>
+<p>a <a href="#user-content-fnref-9" data-footnote-backref="" aria-label="Back to content" class="data-footnote-backref">↩</a></p>
 </li>
 </ol>
 </section>

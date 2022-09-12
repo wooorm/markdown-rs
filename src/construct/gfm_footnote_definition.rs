@@ -127,6 +127,8 @@
 //!     — while `CommonMark` prevents links in links, GitHub does not prevent footnotes (which turn into links) in links
 //! *   [Footnote-like brackets around image, break that image](https://github.com/github/cmark-gfm/issues/275)\
 //!     — images can’t be used in what looks like a footnote call
+//! *   [GFM footnotes: line ending in footnote definition label causes text to disappear](https://github.com/github/cmark-gfm/issues/282)\
+//!     — line endings in footnote definitions cause text to disappear
 //!
 //! ## Tokens
 //!
@@ -164,11 +166,11 @@
 //! [html_sup]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements
 
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
-use crate::event::Name;
+use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
-    constant::TAB_SIZE,
+    constant::{LINK_REFERENCE_SIZE_MAX, TAB_SIZE},
     normalize_identifier::normalize_identifier,
     skip,
     slice::{Position, Slice},
@@ -220,19 +222,101 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn label_before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'[') => {
-            tokenizer.tokenize_state.token_1 = Name::GfmFootnoteDefinitionLabel;
-            tokenizer.tokenize_state.token_2 = Name::GfmFootnoteDefinitionLabelMarker;
-            tokenizer.tokenize_state.token_3 = Name::GfmFootnoteDefinitionLabelString;
-            tokenizer.tokenize_state.token_4 = Name::GfmFootnoteDefinitionMarker;
-            tokenizer.tokenize_state.marker = b'^';
             tokenizer.enter(Name::GfmFootnoteDefinitionPrefix);
-            tokenizer.attempt(
-                State::Next(StateName::GfmFootnoteDefinitionLabelAfter),
-                State::Nok,
-            );
-            State::Retry(StateName::LabelStart)
+            tokenizer.enter(Name::GfmFootnoteDefinitionLabel);
+            tokenizer.enter(Name::GfmFootnoteDefinitionLabelMarker);
+            tokenizer.consume();
+            tokenizer.exit(Name::GfmFootnoteDefinitionLabelMarker);
+            State::Next(StateName::GfmFootnoteDefinitionLabelAtMarker)
         }
         _ => State::Nok,
+    }
+}
+
+/// In label, at caret.
+///
+/// ```markdown
+/// > | [^a]: b
+///      ^
+/// ```
+pub fn label_at_marker(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.current == Some(b'^') {
+        tokenizer.enter(Name::GfmFootnoteDefinitionMarker);
+        tokenizer.consume();
+        tokenizer.exit(Name::GfmFootnoteDefinitionMarker);
+        tokenizer.enter(Name::GfmFootnoteDefinitionLabelString);
+        tokenizer.enter_link(
+            Name::Data,
+            Link {
+                previous: None,
+                next: None,
+                content: Content::String,
+            },
+        );
+        State::Next(StateName::GfmFootnoteDefinitionLabelInside)
+    } else {
+        State::Nok
+    }
+}
+
+/// In label.
+///
+/// > 👉 **Note**: `cmark-gfm` prevents whitespace from occurring in footnote
+/// > definition labels.
+///
+/// ```markdown
+/// > | [^a]: b
+///       ^
+/// ```
+pub fn label_inside(tokenizer: &mut Tokenizer) -> State {
+    // Too long.
+    if tokenizer.tokenize_state.size > LINK_REFERENCE_SIZE_MAX
+        // Space or tab is not supported by GFM for some reason (`\n` and
+        // `[` make sense).
+        || matches!(tokenizer.current, None | Some(b'\t' | b'\n' | b' ' | b'['))
+        // Closing brace with nothing.
+        || (matches!(tokenizer.current, Some(b']')) && tokenizer.tokenize_state.size == 0)
+    {
+        tokenizer.tokenize_state.size = 0;
+        State::Nok
+    } else if matches!(tokenizer.current, Some(b']')) {
+        tokenizer.tokenize_state.size = 0;
+        tokenizer.exit(Name::Data);
+        tokenizer.exit(Name::GfmFootnoteDefinitionLabelString);
+        tokenizer.enter(Name::GfmFootnoteDefinitionLabelMarker);
+        tokenizer.consume();
+        tokenizer.exit(Name::GfmFootnoteDefinitionLabelMarker);
+        tokenizer.exit(Name::GfmFootnoteDefinitionLabel);
+        State::Next(StateName::GfmFootnoteDefinitionLabelAfter)
+    } else {
+        let next = if matches!(tokenizer.current.unwrap(), b'\\') {
+            StateName::GfmFootnoteDefinitionLabelEscape
+        } else {
+            StateName::GfmFootnoteDefinitionLabelInside
+        };
+        tokenizer.consume();
+        tokenizer.tokenize_state.size += 1;
+        State::Next(next)
+    }
+}
+
+/// After `\`, at a special character.
+///
+/// > 👉 **Note**: `cmark-gfm` currently does not support escaped brackets:
+/// > <https://github.com/github/cmark-gfm/issues/240>
+///
+/// ```markdown
+/// > | [^a\*b]: c
+///         ^
+/// ```
+pub fn label_escape(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some(b'[' | b'\\' | b']') => {
+            tokenizer.tokenize_state.size += 1;
+            tokenizer.consume();
+            State::Next(StateName::GfmFootnoteDefinitionLabelInside)
+        }
+        _ => State::Retry(StateName::GfmFootnoteDefinitionLabelInside),
     }
 }
 
@@ -243,12 +327,6 @@ pub fn label_before(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn label_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.token_1 = Name::Data;
-    tokenizer.tokenize_state.token_2 = Name::Data;
-    tokenizer.tokenize_state.token_3 = Name::Data;
-    tokenizer.tokenize_state.token_4 = Name::Data;
-    tokenizer.tokenize_state.marker = 0;
-
     match tokenizer.current {
         Some(b':') => {
             let end = skip::to_back(

@@ -197,6 +197,9 @@ pub enum Name {
 
     GfmFootnoteDefinitionStart,
     GfmFootnoteDefinitionLabelBefore,
+    GfmFootnoteDefinitionLabelAtMarker,
+    GfmFootnoteDefinitionLabelInside,
+    GfmFootnoteDefinitionLabelEscape,
     GfmFootnoteDefinitionLabelAfter,
     GfmFootnoteDefinitionWhitespaceAfter,
     GfmFootnoteDefinitionContStart,
@@ -652,6 +655,11 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
 
         Name::GfmFootnoteDefinitionStart => construct::gfm_footnote_definition::start,
         Name::GfmFootnoteDefinitionLabelBefore => construct::gfm_footnote_definition::label_before,
+        Name::GfmFootnoteDefinitionLabelAtMarker => {
+            construct::gfm_footnote_definition::label_at_marker
+        }
+        Name::GfmFootnoteDefinitionLabelInside => construct::gfm_footnote_definition::label_inside,
+        Name::GfmFootnoteDefinitionLabelEscape => construct::gfm_footnote_definition::label_escape,
         Name::GfmFootnoteDefinitionLabelAfter => construct::gfm_footnote_definition::label_after,
         Name::GfmFootnoteDefinitionWhitespaceAfter => {
             construct::gfm_footnote_definition::whitespace_after

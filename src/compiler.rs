@@ -1828,15 +1828,13 @@ fn generate_footnote_item(context: &mut CompileContext, index: usize) {
             backreferences.push('-');
             backreferences.push_str(&(reference_index + 1).to_string());
         }
-        backreferences.push_str(
-            "\" data-footnote-backref=\"\" class=\"data-footnote-backref\" aria-label=\"",
-        );
+        backreferences.push_str("\" data-footnote-backref=\"\" aria-label=\"");
         if let Some(ref value) = context.options.gfm_footnote_back_label {
             backreferences.push_str(&encode(value, context.encode_html));
         } else {
             backreferences.push_str("Back to content");
         }
-        backreferences.push_str("\">↩");
+        backreferences.push_str("\" class=\"data-footnote-backref\">↩");
         if reference_index != 0 {
             backreferences.push_str("<sup>");
             backreferences.push_str(&(reference_index + 1).to_string());
