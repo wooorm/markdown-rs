@@ -372,6 +372,11 @@ The following scripts are useful when working on this project:
   ```sh
   cargo doc --document-private-items
   ```
+- fuzz:
+  ```sh
+  cargo install cargo-fuzz
+  cargo +nightly fuzz run micromark
+  ```
 
 ### Version
 
