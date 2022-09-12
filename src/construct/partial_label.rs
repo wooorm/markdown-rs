@@ -197,8 +197,9 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
 ///   | b]
 /// ```
 pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.marker = 0;
     tokenizer.tokenize_state.connect = false;
+    tokenizer.tokenize_state.seen = false;
+    tokenizer.tokenize_state.size = 0;
     State::Nok
 }
 
