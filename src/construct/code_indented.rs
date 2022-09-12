@@ -146,7 +146,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///   |     bbb
 /// ```
 pub fn further_start(tokenizer: &mut Tokenizer) -> State {
-    if tokenizer.lazy {
+    if tokenizer.lazy || tokenizer.pierce {
         return State::Nok;
     }
 

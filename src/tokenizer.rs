@@ -372,7 +372,7 @@ impl<'a> Tokenizer<'a> {
             },
             map: EditMap::new(),
             interrupt: false,
-            pierce: true,
+            pierce: false,
             concrete: false,
             lazy: false,
             resolvers: vec![],
