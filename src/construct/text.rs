@@ -28,7 +28,9 @@ use crate::construct::gfm_autolink_literal::resolve as resolve_gfm_autolink_lite
 use crate::construct::partial_whitespace::resolve_whitespace;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
+use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
+use alloc::string::String;
 
 /// Characters that can start something in text.
 const MARKERS: [u8; 16] = [
@@ -242,7 +244,7 @@ pub fn before_data(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve whitespace.
-pub fn resolve(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
     resolve_whitespace(
         tokenizer,
         tokenizer.parse_state.options.constructs.hard_break_trailing,
@@ -257,4 +259,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     {
         resolve_gfm_autolink_literal(tokenizer);
     }
+
+    Ok(None)
 }

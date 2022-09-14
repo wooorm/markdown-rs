@@ -1,7 +1,9 @@
 //! Resolve events.
 
 use crate::construct;
+use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
+use alloc::string::String;
 
 /// Names of resolvers.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -32,8 +34,8 @@ pub enum Name {
     HeadingAtx,
     /// Resolve heading (setext).
     ///
-    /// Heading (setext) is parsed as an underline that is preceded by a
-    /// paragraph, both will form the whole construct.
+    /// Heading (setext) is parsed as an underline that is preceded by content,
+    /// both will form the whole construct.
     HeadingSetext,
     /// Resolve list item.
     ///
@@ -41,12 +43,12 @@ pub enum Name {
     /// They are wrapped into ordered or unordered lists based on whether items
     /// with the same marker occur next to each other.
     ListItem,
-    /// Resolve paragraphs.
+    /// Resolve content.
     ///
-    /// Paragraphs are parsed as single line paragraphs, as what remains if
-    /// other flow constructs don’t match.
+    /// Content is parsed as single lines, as what remains if other flow
+    /// constructs don’t match.
     /// But, when they occur next to each other, they need to be merged.
-    Paragraph,
+    Content,
     /// Resolve data.
     ///
     /// Data is parsed as many small bits, due to many punctuation characters
@@ -61,7 +63,7 @@ pub enum Name {
 }
 
 /// Call the corresponding resolver.
-pub fn call(tokenizer: &mut Tokenizer, name: Name) {
+pub fn call(tokenizer: &mut Tokenizer, name: Name) -> Result<Option<Subresult>, String> {
     let func = match name {
         Name::Label => construct::label_end::resolve,
         Name::Attention => construct::attention::resolve,
@@ -69,11 +71,11 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) {
         Name::HeadingAtx => construct::heading_atx::resolve,
         Name::HeadingSetext => construct::heading_setext::resolve,
         Name::ListItem => construct::list_item::resolve,
-        Name::Paragraph => construct::paragraph::resolve,
+        Name::Content => construct::content::resolve,
         Name::Data => construct::partial_data::resolve,
         Name::String => construct::string::resolve,
         Name::Text => construct::text::resolve,
     };
 
-    func(tokenizer);
+    func(tokenizer)
 }

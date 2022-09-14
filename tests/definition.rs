@@ -441,6 +441,42 @@ fn definition() -> Result<(), String> {
     );
 
     assert_eq!(
+        micromark("[\na\n=\n]: b"),
+        "<h1>[\na</h1>\n<p>]: b</p>",
+        "should prefer setext headings over definition labels"
+    );
+
+    assert_eq!(
+        micromark("[a]: b '\nc\n=\n'"),
+        "<h1>[a]: b '\nc</h1>\n<p>'</p>",
+        "should prefer setext headings over definition titles"
+    );
+
+    assert_eq!(
+        micromark("[\n***\n]: b"),
+        "<p>[</p>\n<hr />\n<p>]: b</p>",
+        "should prefer thematic breaks over definition labels"
+    );
+
+    assert_eq!(
+        micromark("[a]: b '\n***\n'"),
+        "<p>[a]: b '</p>\n<hr />\n<p>'</p>",
+        "should prefer thematic breaks over definition titles"
+    );
+
+    assert_eq!(
+        micromark("[\n```\n]: b"),
+        "<p>[</p>\n<pre><code>]: b\n</code></pre>\n",
+        "should prefer code (fenced) over definition labels"
+    );
+
+    assert_eq!(
+        micromark("[a]: b '\n```\n'"),
+        "<p>[a]: b '</p>\n<pre><code>'\n</code></pre>\n",
+        "should prefer code (fenced) over definition titles"
+    );
+
+    assert_eq!(
         micromark_with_options(
             "[foo]: /url \"title\"",
             &Options {

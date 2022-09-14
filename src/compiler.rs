@@ -463,7 +463,7 @@ fn exit(context: &mut CompileContext) {
         Name::HeadingAtxSequence => on_exit_heading_atx_sequence(context),
         Name::HeadingAtxText => on_exit_heading_atx_text(context),
         Name::HeadingSetextText => on_exit_heading_setext_text(context),
-        Name::HeadingSetextUnderline => on_exit_heading_setext_underline(context),
+        Name::HeadingSetextUnderlineSequence => on_exit_heading_setext_underline_sequence(context),
         Name::HtmlFlow | Name::HtmlText => on_exit_html(context),
         Name::HtmlFlowData | Name::HtmlTextData => on_exit_html_data(context),
         Name::Image | Name::Link => on_exit_media(context),
@@ -1440,8 +1440,8 @@ fn on_exit_heading_setext_text(context: &mut CompileContext) {
     context.slurp_one_line_ending = true;
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`HeadingSetextUnderline`][Name::HeadingSetextUnderline].
-fn on_exit_heading_setext_underline(context: &mut CompileContext) {
+/// Handle [`Exit`][Kind::Exit]:[`HeadingSetextUnderlineSequence`][Name::HeadingSetextUnderlineSequence].
+fn on_exit_heading_setext_underline_sequence(context: &mut CompileContext) {
     let text = context
         .heading_setext_buffer
         .take()

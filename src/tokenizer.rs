@@ -12,6 +12,7 @@ use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
 use crate::parser::ParseState;
 use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, State};
+use crate::subtokenize::Subresult;
 use crate::util::{char::format_byte_opt, constant::TAB_SIZE, edit_map::EditMap};
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
@@ -609,23 +610,35 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Flush.
-    pub fn flush(&mut self, state: State, resolve: bool) -> Result<(), String> {
+    pub fn flush(&mut self, state: State, resolve: bool) -> Result<Subresult, String> {
         let to = (self.point.index, self.point.vs);
         let state = push_impl(self, to, to, state, true);
-        let result = state.to_result();
 
-        if resolve && result.is_ok() {
+        state.to_result()?;
+
+        let mut value = Subresult {
+            done: false,
+            gfm_footnote_definitions: self.tokenize_state.gfm_footnote_definitions.split_off(0),
+            definitions: self.tokenize_state.definitions.split_off(0),
+        };
+
+        if resolve {
             let resolvers = self.resolvers.split_off(0);
             let mut index = 0;
             while index < resolvers.len() {
-                call_resolve(self, resolvers[index]);
+                if let Some(mut result) = call_resolve(self, resolvers[index])? {
+                    value
+                        .gfm_footnote_definitions
+                        .append(&mut result.gfm_footnote_definitions);
+                    value.definitions.append(&mut result.definitions);
+                }
                 index += 1;
             }
 
             self.map.consume(&mut self.events);
         }
 
-        result
+        Ok(value)
     }
 }
 

@@ -24,6 +24,13 @@ use crate::tokenizer::Tokenizer;
 use crate::util::{edit_map::EditMap, skip};
 use alloc::{string::String, vec, vec::Vec};
 
+#[derive(Debug)]
+pub struct Subresult {
+    pub done: bool,
+    pub gfm_footnote_definitions: Vec<String>,
+    pub definitions: Vec<String>,
+}
+
 /// Link two [`Event`][]s.
 ///
 /// Arbitrary (void) events can be linked together.
@@ -69,10 +76,19 @@ pub fn link_to(events: &mut [Event], previous: usize, next: usize) {
 /// Parse linked events.
 ///
 /// Supposed to be called repeatedly, returns `true` when done.
-pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> Result<bool, String> {
+pub fn subtokenize(
+    events: &mut Vec<Event>,
+    parse_state: &ParseState,
+    filter: &Option<Content>,
+) -> Result<Subresult, String> {
     let mut map = EditMap::new();
-    let mut done = true;
     let mut index = 0;
+    let mut value = Subresult {
+        done: true,
+        gfm_footnote_definitions: vec![],
+        definitions: vec![],
+    };
+    let mut acc = (0, 0);
 
     while index < events.len() {
         let event = &events[index];
@@ -82,16 +98,19 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> Result<
             debug_assert_eq!(event.kind, Kind::Enter);
 
             // No need to enter linked events again.
-            if link.previous == None {
+            if link.previous == None
+                && (filter.is_none() || &link.content == filter.as_ref().unwrap())
+            {
                 // Index into `events` pointing to a chunk.
                 let mut link_index = Some(index);
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
                 // Substate.
-                let mut state = State::Next(if link.content == Content::String {
-                    StateName::StringStart
-                } else {
-                    StateName::TextStart
+                let mut state = State::Next(match link.content {
+                    Content::Flow => unreachable!("flow subcontent not implemented yet"),
+                    Content::Content => StateName::ContentDefinitionBefore,
+                    Content::String => StateName::StringStart,
+                    Content::Text => StateName::TextStart,
                 });
 
                 // Check if this is the first paragraph, after zero or more
@@ -143,11 +162,14 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> Result<
                     link_index = link_curr.next;
                 }
 
-                tokenizer.flush(state, true)?;
+                let mut result = tokenizer.flush(state, true)?;
+                value
+                    .gfm_footnote_definitions
+                    .append(&mut result.gfm_footnote_definitions);
+                value.definitions.append(&mut result.definitions);
+                value.done = false;
 
-                divide_events(&mut map, events, index, &mut tokenizer.events);
-
-                done = false;
+                acc = divide_events(&mut map, events, index, &mut tokenizer.events, acc);
             }
         }
 
@@ -156,7 +178,7 @@ pub fn subtokenize(events: &mut Vec<Event>, parse_state: &ParseState) -> Result<
 
     map.consume(events);
 
-    Ok(done)
+    Ok(value)
 }
 
 /// Divide `child_events` over links in `events`, the first of which is at
@@ -166,15 +188,17 @@ pub fn divide_events(
     events: &[Event],
     mut link_index: usize,
     child_events: &mut Vec<Event>,
-) {
+    acc_before: (usize, usize),
+) -> (usize, usize) {
     // Loop through `child_events` to figure out which parts belong where and
     // fix deep links.
     let mut child_index = 0;
     let mut slices = vec![];
     let mut slice_start = 0;
     let mut old_prev: Option<usize> = None;
+    let len = child_events.len();
 
-    while child_index < child_events.len() {
+    while child_index < len {
         let current = &child_events[child_index].point;
         let end = &events[link_index + 1].point;
 
@@ -200,7 +224,8 @@ pub fn divide_events(
                 } else {
                     old_prev + link_index - (slices.len() - 1) * 2
                 };
-                prev_event.link.as_mut().unwrap().next = Some(new_link);
+                prev_event.link.as_mut().unwrap().next =
+                    Some(new_link + acc_before.1 - acc_before.0);
             }
         }
 
@@ -219,7 +244,9 @@ pub fn divide_events(
                     // The `index` in `events` where the current link is,
                     // minus 2 events (the enter and exit) for each removed
                     // link.
-                    .map(|previous| previous + link_index - (slices.len() * 2));
+                    .map(|previous| {
+                        previous + link_index - (slices.len() * 2) + acc_before.1 - acc_before.0
+                    });
             }
         }
 
@@ -245,4 +272,6 @@ pub fn divide_events(
             child_events.split_off(slices[index].1),
         );
     }
+
+    (acc_before.0 + (slices.len() * 2), acc_before.1 + len)
 }

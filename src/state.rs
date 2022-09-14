@@ -75,24 +75,6 @@ pub enum Name {
     CharacterReferenceNumeric,
     CharacterReferenceValue,
 
-    RawFlowStart,
-    RawFlowBeforeSequenceOpen,
-    RawFlowSequenceOpen,
-    RawFlowInfoBefore,
-    RawFlowInfo,
-    RawFlowMetaBefore,
-    RawFlowMeta,
-    RawFlowAtNonLazyBreak,
-    RawFlowCloseStart,
-    RawFlowBeforeSequenceClose,
-    RawFlowSequenceClose,
-    RawFlowAfterSequenceClose,
-    RawFlowContentBefore,
-    RawFlowContentStart,
-    RawFlowBeforeContentChunk,
-    RawFlowContentChunk,
-    RawFlowAfter,
-
     CodeIndentedStart,
     CodeIndentedAtBreak,
     CodeIndentedAfter,
@@ -101,11 +83,10 @@ pub enum Name {
     CodeIndentedFurtherBegin,
     CodeIndentedFurtherAfter,
 
-    RawTextStart,
-    RawTextSequenceOpen,
-    RawTextBetween,
-    RawTextData,
-    RawTextSequenceClose,
+    ContentChunkStart,
+    ContentChunkInside,
+    ContentDefinitionBefore,
+    ContentDefinitionAfter,
 
     DataStart,
     DataInside,
@@ -114,6 +95,7 @@ pub enum Name {
     DefinitionStart,
     DefinitionBefore,
     DefinitionLabelAfter,
+    DefinitionLabelNok,
     DefinitionMarkerAfter,
     DefinitionDestinationBefore,
     DefinitionDestinationAfter,
@@ -155,11 +137,10 @@ pub enum Name {
     FlowBeforeHeadingAtx,
     FlowBeforeHeadingSetext,
     FlowBeforeThematicBreak,
-    FlowBeforeDefinition,
     FlowAfter,
     FlowBlankLineBefore,
     FlowBlankLineAfter,
-    FlowBeforeParagraph,
+    FlowBeforeContent,
 
     FrontmatterStart,
     FrontmatterOpenSequence,
@@ -363,6 +344,21 @@ pub enum Name {
     ListItemContBlank,
     ListItemContFilled,
 
+    MdxExpressionTextStart,
+    MdxExpressionTextAfter,
+
+    MdxExpressionFlowStart,
+    MdxExpressionFlowBefore,
+    MdxExpressionFlowAfter,
+    MdxExpressionFlowEnd,
+
+    MdxExpressionStart,
+    MdxExpressionBefore,
+    MdxExpressionInside,
+    MdxExpressionEolAfter,
+    MdxJsxAttributeValueExpressionAfter,
+    MdxJsxAttributeExpressionAfter,
+
     MdxJsxFlowStart,
     MdxJsxFlowBefore,
     MdxJsxFlowAfter,
@@ -402,7 +398,32 @@ pub enum Name {
     NonLazyContinuationAfter,
 
     ParagraphStart,
+    ParagraphLineStart,
     ParagraphInside,
+
+    RawFlowStart,
+    RawFlowBeforeSequenceOpen,
+    RawFlowSequenceOpen,
+    RawFlowInfoBefore,
+    RawFlowInfo,
+    RawFlowMetaBefore,
+    RawFlowMeta,
+    RawFlowAtNonLazyBreak,
+    RawFlowCloseStart,
+    RawFlowBeforeSequenceClose,
+    RawFlowSequenceClose,
+    RawFlowAfterSequenceClose,
+    RawFlowContentBefore,
+    RawFlowContentStart,
+    RawFlowBeforeContentChunk,
+    RawFlowContentChunk,
+    RawFlowAfter,
+
+    RawTextStart,
+    RawTextSequenceOpen,
+    RawTextBetween,
+    RawTextData,
+    RawTextSequenceClose,
 
     SpaceOrTabStart,
     SpaceOrTabInside,
@@ -438,47 +459,12 @@ pub enum Name {
     TitleAtBlankLine,
     TitleEscape,
     TitleInside,
-
-    MdxExpressionTextStart,
-    MdxExpressionTextAfter,
-
-    MdxExpressionFlowStart,
-    MdxExpressionFlowBefore,
-    MdxExpressionFlowAfter,
-    MdxExpressionFlowEnd,
-
-    MdxExpressionStart,
-    MdxExpressionBefore,
-    MdxExpressionInside,
-    MdxExpressionEolAfter,
-    MdxJsxAttributeValueExpressionAfter,
-    MdxJsxAttributeExpressionAfter,
 }
 
 #[allow(clippy::too_many_lines)]
 /// Call the corresponding state for a state name.
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     let func = match name {
-        Name::MdxExpressionTextStart => construct::mdx_expression_text::start,
-        Name::MdxExpressionTextAfter => construct::mdx_expression_text::after,
-
-        Name::MdxExpressionFlowStart => construct::mdx_expression_flow::start,
-        Name::MdxExpressionFlowBefore => construct::mdx_expression_flow::before,
-        Name::MdxExpressionFlowAfter => construct::mdx_expression_flow::after,
-        Name::MdxExpressionFlowEnd => construct::mdx_expression_flow::end,
-
-        Name::MdxExpressionStart => construct::partial_mdx_expression::start,
-        Name::MdxExpressionBefore => construct::partial_mdx_expression::before,
-        Name::MdxExpressionInside => construct::partial_mdx_expression::inside,
-        Name::MdxExpressionEolAfter => construct::partial_mdx_expression::eol_after,
-
-        Name::MdxJsxAttributeValueExpressionAfter => {
-            construct::partial_mdx_jsx::attribute_value_expression_after
-        }
-        Name::MdxJsxAttributeExpressionAfter => {
-            construct::partial_mdx_jsx::attribute_expression_after
-        }
-
         Name::AttentionStart => construct::attention::start,
         Name::AttentionInside => construct::attention::inside,
 
@@ -511,24 +497,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::CharacterReferenceNumeric => construct::character_reference::numeric,
         Name::CharacterReferenceValue => construct::character_reference::value,
 
-        Name::RawFlowStart => construct::raw_flow::start,
-        Name::RawFlowBeforeSequenceOpen => construct::raw_flow::before_sequence_open,
-        Name::RawFlowSequenceOpen => construct::raw_flow::sequence_open,
-        Name::RawFlowInfoBefore => construct::raw_flow::info_before,
-        Name::RawFlowInfo => construct::raw_flow::info,
-        Name::RawFlowMetaBefore => construct::raw_flow::meta_before,
-        Name::RawFlowMeta => construct::raw_flow::meta,
-        Name::RawFlowAtNonLazyBreak => construct::raw_flow::at_non_lazy_break,
-        Name::RawFlowCloseStart => construct::raw_flow::close_start,
-        Name::RawFlowBeforeSequenceClose => construct::raw_flow::before_sequence_close,
-        Name::RawFlowSequenceClose => construct::raw_flow::sequence_close,
-        Name::RawFlowAfterSequenceClose => construct::raw_flow::sequence_close_after,
-        Name::RawFlowContentBefore => construct::raw_flow::content_before,
-        Name::RawFlowContentStart => construct::raw_flow::content_start,
-        Name::RawFlowBeforeContentChunk => construct::raw_flow::before_content_chunk,
-        Name::RawFlowContentChunk => construct::raw_flow::content_chunk,
-        Name::RawFlowAfter => construct::raw_flow::after,
-
         Name::CodeIndentedStart => construct::code_indented::start,
         Name::CodeIndentedAtBreak => construct::code_indented::at_break,
         Name::CodeIndentedAfter => construct::code_indented::after,
@@ -537,11 +505,10 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::CodeIndentedFurtherBegin => construct::code_indented::further_begin,
         Name::CodeIndentedFurtherAfter => construct::code_indented::further_after,
 
-        Name::RawTextStart => construct::raw_text::start,
-        Name::RawTextSequenceOpen => construct::raw_text::sequence_open,
-        Name::RawTextBetween => construct::raw_text::between,
-        Name::RawTextData => construct::raw_text::data,
-        Name::RawTextSequenceClose => construct::raw_text::sequence_close,
+        Name::ContentChunkStart => construct::content::chunk_start,
+        Name::ContentChunkInside => construct::content::chunk_inside,
+        Name::ContentDefinitionBefore => construct::content::definition_before,
+        Name::ContentDefinitionAfter => construct::content::definition_after,
 
         Name::DataStart => construct::partial_data::start,
         Name::DataInside => construct::partial_data::inside,
@@ -550,6 +517,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DefinitionStart => construct::definition::start,
         Name::DefinitionBefore => construct::definition::before,
         Name::DefinitionLabelAfter => construct::definition::label_after,
+        Name::DefinitionLabelNok => construct::definition::label_nok,
         Name::DefinitionMarkerAfter => construct::definition::marker_after,
         Name::DefinitionDestinationBefore => construct::definition::destination_before,
         Name::DefinitionDestinationAfter => construct::definition::destination_after,
@@ -599,11 +567,10 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::FlowBeforeHeadingAtx => construct::flow::before_heading_atx,
         Name::FlowBeforeHeadingSetext => construct::flow::before_heading_setext,
         Name::FlowBeforeThematicBreak => construct::flow::before_thematic_break,
-        Name::FlowBeforeDefinition => construct::flow::before_definition,
         Name::FlowAfter => construct::flow::after,
         Name::FlowBlankLineBefore => construct::flow::blank_line_before,
         Name::FlowBlankLineAfter => construct::flow::blank_line_after,
-        Name::FlowBeforeParagraph => construct::flow::before_paragraph,
+        Name::FlowBeforeContent => construct::flow::before_content,
 
         Name::FrontmatterStart => construct::frontmatter::start,
         Name::FrontmatterOpenSequence => construct::frontmatter::open_sequence,
@@ -624,7 +591,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::GfmAutolinkLiteralProtocolSlashesInside => {
             construct::gfm_autolink_literal::protocol_slashes_inside
         }
-
         Name::GfmAutolinkLiteralWwwAfter => construct::gfm_autolink_literal::www_after,
         Name::GfmAutolinkLiteralWwwStart => construct::gfm_autolink_literal::www_start,
         Name::GfmAutolinkLiteralWwwPrefixInside => {
@@ -636,7 +602,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
             construct::gfm_autolink_literal::domain_at_punctuation
         }
         Name::GfmAutolinkLiteralDomainAfter => construct::gfm_autolink_literal::domain_after,
-
         Name::GfmAutolinkLiteralPathInside => construct::gfm_autolink_literal::path_inside,
         Name::GfmAutolinkLiteralPathAtPunctuation => {
             construct::gfm_autolink_literal::path_at_punctuation
@@ -671,21 +636,12 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::GfmLabelStartFootnoteStart => construct::gfm_label_start_footnote::start,
         Name::GfmLabelStartFootnoteOpen => construct::gfm_label_start_footnote::open,
 
-        Name::GfmTaskListItemCheckStart => construct::gfm_task_list_item_check::start,
-        Name::GfmTaskListItemCheckInside => construct::gfm_task_list_item_check::inside,
-        Name::GfmTaskListItemCheckClose => construct::gfm_task_list_item_check::close,
-        Name::GfmTaskListItemCheckAfter => construct::gfm_task_list_item_check::after,
-        Name::GfmTaskListItemCheckAfterSpaceOrTab => {
-            construct::gfm_task_list_item_check::after_space_or_tab
-        }
-
         Name::GfmTableStart => construct::gfm_table::start,
         Name::GfmTableHeadRowBefore => construct::gfm_table::head_row_before,
         Name::GfmTableHeadRowStart => construct::gfm_table::head_row_start,
         Name::GfmTableHeadRowBreak => construct::gfm_table::head_row_break,
         Name::GfmTableHeadRowData => construct::gfm_table::head_row_data,
         Name::GfmTableHeadRowEscape => construct::gfm_table::head_row_escape,
-
         Name::GfmTableHeadDelimiterStart => construct::gfm_table::head_delimiter_start,
         Name::GfmTableHeadDelimiterBefore => construct::gfm_table::head_delimiter_before,
         Name::GfmTableHeadDelimiterCellBefore => construct::gfm_table::head_delimiter_cell_before,
@@ -699,12 +655,19 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         }
         Name::GfmTableHeadDelimiterCellAfter => construct::gfm_table::head_delimiter_cell_after,
         Name::GfmTableHeadDelimiterNok => construct::gfm_table::head_delimiter_nok,
-
         Name::GfmTableBodyRowBefore => construct::gfm_table::body_row_before,
         Name::GfmTableBodyRowStart => construct::gfm_table::body_row_start,
         Name::GfmTableBodyRowBreak => construct::gfm_table::body_row_break,
         Name::GfmTableBodyRowData => construct::gfm_table::body_row_data,
         Name::GfmTableBodyRowEscape => construct::gfm_table::body_row_escape,
+
+        Name::GfmTaskListItemCheckStart => construct::gfm_task_list_item_check::start,
+        Name::GfmTaskListItemCheckInside => construct::gfm_task_list_item_check::inside,
+        Name::GfmTaskListItemCheckClose => construct::gfm_task_list_item_check::close,
+        Name::GfmTaskListItemCheckAfter => construct::gfm_task_list_item_check::after,
+        Name::GfmTaskListItemCheckAfterSpaceOrTab => {
+            construct::gfm_task_list_item_check::after_space_or_tab
+        }
 
         Name::HardBreakEscapeStart => construct::hard_break_escape::start,
         Name::HardBreakEscapeAfter => construct::hard_break_escape::after,
@@ -859,11 +822,25 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::ListItemContBlank => construct::list_item::cont_blank,
         Name::ListItemContFilled => construct::list_item::cont_filled,
 
+        Name::MdxExpressionStart => construct::partial_mdx_expression::start,
+        Name::MdxExpressionBefore => construct::partial_mdx_expression::before,
+        Name::MdxExpressionInside => construct::partial_mdx_expression::inside,
+        Name::MdxExpressionEolAfter => construct::partial_mdx_expression::eol_after,
+
+        Name::MdxExpressionFlowStart => construct::mdx_expression_flow::start,
+        Name::MdxExpressionFlowBefore => construct::mdx_expression_flow::before,
+        Name::MdxExpressionFlowAfter => construct::mdx_expression_flow::after,
+        Name::MdxExpressionFlowEnd => construct::mdx_expression_flow::end,
+
+        Name::MdxExpressionTextStart => construct::mdx_expression_text::start,
+        Name::MdxExpressionTextAfter => construct::mdx_expression_text::after,
+
         Name::MdxJsxFlowStart => construct::mdx_jsx_flow::start,
         Name::MdxJsxFlowBefore => construct::mdx_jsx_flow::before,
         Name::MdxJsxFlowAfter => construct::mdx_jsx_flow::after,
         Name::MdxJsxFlowEnd => construct::mdx_jsx_flow::end,
         Name::MdxJsxFlowNok => construct::mdx_jsx_flow::nok,
+
         Name::MdxJsxTextStart => construct::mdx_jsx_text::start,
         Name::MdxJsxTextAfter => construct::mdx_jsx_text::after,
         Name::MdxJsxTextNok => construct::mdx_jsx_text::nok,
@@ -883,6 +860,9 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::MdxJsxLocalNameAfter => construct::partial_mdx_jsx::local_name_after,
         Name::MdxJsxAttributeBefore => construct::partial_mdx_jsx::attribute_before,
         Name::MdxJsxSelfClosing => construct::partial_mdx_jsx::self_closing,
+        Name::MdxJsxAttributeExpressionAfter => {
+            construct::partial_mdx_jsx::attribute_expression_after
+        }
         Name::MdxJsxAttributePrimaryName => construct::partial_mdx_jsx::attribute_primary_name,
         Name::MdxJsxAttributePrimaryNameAfter => {
             construct::partial_mdx_jsx::attribute_primary_name_after
@@ -899,6 +879,9 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
             construct::partial_mdx_jsx::attribute_value_quoted_start
         }
         Name::MdxJsxAttributeValueQuoted => construct::partial_mdx_jsx::attribute_value_quoted,
+        Name::MdxJsxAttributeValueExpressionAfter => {
+            construct::partial_mdx_jsx::attribute_value_expression_after
+        }
         Name::MdxJsxEsWhitespaceStart => construct::partial_mdx_jsx::es_whitespace_start,
         Name::MdxJsxEsWhitespaceInside => construct::partial_mdx_jsx::es_whitespace_inside,
         Name::MdxJsxEsWhitespaceEolAfter => construct::partial_mdx_jsx::es_whitespace_eol_after,
@@ -907,7 +890,32 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::NonLazyContinuationAfter => construct::partial_non_lazy_continuation::after,
 
         Name::ParagraphStart => construct::paragraph::start,
+        Name::ParagraphLineStart => construct::paragraph::line_start,
         Name::ParagraphInside => construct::paragraph::inside,
+
+        Name::RawFlowStart => construct::raw_flow::start,
+        Name::RawFlowBeforeSequenceOpen => construct::raw_flow::before_sequence_open,
+        Name::RawFlowSequenceOpen => construct::raw_flow::sequence_open,
+        Name::RawFlowInfoBefore => construct::raw_flow::info_before,
+        Name::RawFlowInfo => construct::raw_flow::info,
+        Name::RawFlowMetaBefore => construct::raw_flow::meta_before,
+        Name::RawFlowMeta => construct::raw_flow::meta,
+        Name::RawFlowAtNonLazyBreak => construct::raw_flow::at_non_lazy_break,
+        Name::RawFlowCloseStart => construct::raw_flow::close_start,
+        Name::RawFlowBeforeSequenceClose => construct::raw_flow::before_sequence_close,
+        Name::RawFlowSequenceClose => construct::raw_flow::sequence_close,
+        Name::RawFlowAfterSequenceClose => construct::raw_flow::sequence_close_after,
+        Name::RawFlowContentBefore => construct::raw_flow::content_before,
+        Name::RawFlowContentStart => construct::raw_flow::content_start,
+        Name::RawFlowBeforeContentChunk => construct::raw_flow::before_content_chunk,
+        Name::RawFlowContentChunk => construct::raw_flow::content_chunk,
+        Name::RawFlowAfter => construct::raw_flow::after,
+
+        Name::RawTextStart => construct::raw_text::start,
+        Name::RawTextSequenceOpen => construct::raw_text::sequence_open,
+        Name::RawTextBetween => construct::raw_text::between,
+        Name::RawTextData => construct::raw_text::data,
+        Name::RawTextSequenceClose => construct::raw_text::sequence_close,
 
         Name::SpaceOrTabStart => construct::partial_space_or_tab::start,
         Name::SpaceOrTabInside => construct::partial_space_or_tab::inside,

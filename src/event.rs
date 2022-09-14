@@ -554,6 +554,26 @@ pub enum Name {
     ///       ^ ^
     /// ```
     CodeTextSequence,
+    /// Content.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     [content][crate::construct::content]
+    /// *   **Construct**:
+    ///     [`content`][crate::construct::content]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | [a]: b
+    ///     ^^^^^^
+    /// > | c.
+    ///     ^^
+    /// ```
+    Content,
     /// Data.
     ///
     /// ## Info
@@ -1754,7 +1774,8 @@ pub enum Name {
     /// *   **Context**:
     ///     [`HeadingSetext`][Name::HeadingSetext]
     /// *   **Content model**:
-    ///     void
+    ///     [`HeadingSetextUnderlineSequence`][Name::HeadingSetextUnderlineSequence],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab]
     /// *   **Construct**:
     ///     [`heading_setext`][crate::construct::heading_setext]
     ///
@@ -1766,6 +1787,25 @@ pub enum Name {
     ///     ^^^^^
     /// ```
     HeadingSetextUnderline,
+    /// Heading (setext) underline sequence.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`HeadingSetext`][Name::HeadingSetext]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`heading_setext`][crate::construct::heading_setext]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    ///   | alpha
+    /// > | =====
+    ///     ^^^^^
+    /// ```
+    HeadingSetextUnderlineSequence,
     /// Whole html (flow).
     ///
     /// ## Info
@@ -2914,13 +2954,12 @@ pub enum Name {
     ///          ^
     /// ```
     MdxJsxTagSelfClosingMarker,
-
-    /// Whole paragraph.
+    /// Paragraph.
     ///
     /// ## Info
     ///
     /// *   **Context**:
-    ///     [flow content][crate::construct::flow]
+    ///     [content][crate::construct::content]
     /// *   **Content model**:
     ///     [text content][crate::construct::text]
     /// *   **Construct**:
@@ -3340,7 +3379,7 @@ pub const VOID_EVENTS: [Name; 75] = [
     Name::HardBreakEscape,
     Name::HardBreakTrailing,
     Name::HeadingAtxSequence,
-    Name::HeadingSetextUnderline,
+    Name::HeadingSetextUnderlineSequence,
     Name::HtmlFlowData,
     Name::HtmlTextData,
     Name::LabelImageMarker,
@@ -3380,6 +3419,8 @@ pub const VOID_EVENTS: [Name; 75] = [
 pub enum Content {
     /// Represents [flow content][crate::construct::flow].
     Flow,
+    /// Represents [content][crate::construct::content].
+    Content,
     /// Represents [string content][crate::construct::string].
     String,
     /// Represents [text content][crate::construct::text].

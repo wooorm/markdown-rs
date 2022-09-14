@@ -229,9 +229,10 @@ use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max}
 use crate::event::{Content, Event, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
+use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
 use crate::util::{constant::TAB_SIZE, skip::opt_back as skip_opt_back};
-use alloc::vec;
+use alloc::{string::String, vec};
 
 /// Start of a GFM table.
 ///
@@ -771,15 +772,13 @@ pub fn body_row_escape(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve GFM table.
-pub fn resolve(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
     let mut index = 0;
-    // let mut tables = vec![];
     let mut in_first_cell_awaiting_pipe = true;
     let mut in_row = false;
     let mut in_delimiter_row = false;
     let mut last_cell = (0, 0, 0, 0);
     let mut cell = (0, 0, 0, 0);
-
     let mut after_head_awaiting_first_body_row = false;
     let mut last_table_end = 0;
     let mut last_table_has_body = false;
@@ -800,17 +799,14 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 }
 
                 // Inject table start.
-                tokenizer.map.add(
-                    index,
-                    0,
-                    vec![Event {
-                        kind: Kind::Enter,
-                        name: Name::GfmTable,
-                        point: tokenizer.events[index].point.clone(),
-                        link: None,
-                    }],
-                );
-            } else if event.name == Name::GfmTableRow || event.name == Name::GfmTableDelimiterRow {
+                let enter = Event {
+                    kind: Kind::Enter,
+                    name: Name::GfmTable,
+                    point: tokenizer.events[index].point.clone(),
+                    link: None,
+                };
+                tokenizer.map.add(index, 0, vec![enter]);
+            } else if matches!(event.name, Name::GfmTableRow | Name::GfmTableDelimiterRow) {
                 in_delimiter_row = event.name == Name::GfmTableDelimiterRow;
                 in_row = true;
                 in_first_cell_awaiting_pipe = true;
@@ -821,23 +817,21 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 if after_head_awaiting_first_body_row {
                     after_head_awaiting_first_body_row = false;
                     last_table_has_body = true;
-                    tokenizer.map.add(
-                        index,
-                        0,
-                        vec![Event {
-                            kind: Kind::Enter,
-                            name: Name::GfmTableBody,
-                            point: tokenizer.events[index].point.clone(),
-                            link: None,
-                        }],
-                    );
+                    let enter = Event {
+                        kind: Kind::Enter,
+                        name: Name::GfmTableBody,
+                        point: tokenizer.events[index].point.clone(),
+                        link: None,
+                    };
+                    tokenizer.map.add(index, 0, vec![enter]);
                 }
             }
             // Cell data.
             else if in_row
-                && (event.name == Name::Data
-                    || event.name == Name::GfmTableDelimiterMarker
-                    || event.name == Name::GfmTableDelimiterFiller)
+                && matches!(
+                    event.name,
+                    Name::Data | Name::GfmTableDelimiterMarker | Name::GfmTableDelimiterFiller
+                )
             {
                 in_first_cell_awaiting_pipe = false;
 
@@ -868,7 +862,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
         } else if event.name == Name::GfmTableHead {
             after_head_awaiting_first_body_row = true;
             last_table_end = index;
-        } else if event.name == Name::GfmTableRow || event.name == Name::GfmTableDelimiterRow {
+        } else if matches!(event.name, Name::GfmTableRow | Name::GfmTableDelimiterRow) {
             in_row = false;
             last_table_end = index;
             if last_cell.1 != 0 {
@@ -878,9 +872,10 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 flush_cell(tokenizer, cell, in_delimiter_row, Some(index));
             }
         } else if in_row
-            && (event.name == Name::Data
-                || event.name == Name::GfmTableDelimiterMarker
-                || event.name == Name::GfmTableDelimiterFiller)
+            && (matches!(
+                event.name,
+                Name::Data | Name::GfmTableDelimiterMarker | Name::GfmTableDelimiterFiller
+            ))
         {
             cell.3 = index;
         }
@@ -891,6 +886,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     if last_table_end != 0 {
         flush_table_end(tokenizer, last_table_end, last_table_has_body);
     }
+
+    Ok(None)
 }
 
 /// Generate a cell.

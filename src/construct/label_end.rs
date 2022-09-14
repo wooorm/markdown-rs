@@ -183,6 +183,7 @@ use crate::construct::partial_space_or_tab_eol::space_or_tab_eol;
 use crate::event::{Event, Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
+use crate::subtokenize::Subresult;
 use crate::tokenizer::{Label, LabelKind, LabelStart, Tokenizer};
 use crate::util::{
     constant::RESOURCE_DESTINATION_BALANCE_MAX,
@@ -660,7 +661,7 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
 ///
 /// This turns matching label starts and label ends into links, images, and
 /// footnotes, and turns unmatched label starts back into data.
-pub fn resolve(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
     // Inject labels.
     let labels = tokenizer.tokenize_state.labels.split_off(0);
     inject_labels(tokenizer, &labels);
@@ -671,6 +672,8 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
     mark_as_data(tokenizer, &starts);
 
     tokenizer.map.consume(&mut tokenizer.events);
+
+    Ok(None)
 }
 
 /// Inject links/images/footnotes.

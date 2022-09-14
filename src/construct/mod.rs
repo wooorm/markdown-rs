@@ -16,7 +16,7 @@
 //! Content types also have a *rest* thing: after all things are parsed,
 //! there’s something left.
 //! In document, that is [flow][].
-//! In flow, that is a [paragraph][].
+//! In flow, that is [content][].
 //! In string and text, that is [data][partial_data].
 //!
 //! ## Construct
@@ -37,6 +37,7 @@
 //! *   [character escape][character_escape]
 //! *   [character reference][character_reference]
 //! *   [code (indented)][code_indented]
+//! *   [content][]
 //! *   [definition][]
 //! *   [hard break (escape)][hard_break_escape]
 //! *   [heading (atx)][heading_atx]
@@ -149,6 +150,7 @@ pub mod block_quote;
 pub mod character_escape;
 pub mod character_reference;
 pub mod code_indented;
+pub mod content;
 pub mod definition;
 pub mod document;
 pub mod flow;

@@ -413,7 +413,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     while !document_lazy_continuation_current && stack_index > 0 {
         stack_index -= 1;
         let name = &child.stack[stack_index];
-        if name == &Name::Paragraph || name == &Name::Definition || name == &Name::GfmTableHead {
+        if name == &Name::Content || name == &Name::GfmTableHead {
             document_lazy_continuation_current = true;
         }
     }
@@ -423,7 +423,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     if !document_lazy_continuation_current && !child.events.is_empty() {
         let before = skip::opt_back(&child.events, child.events.len() - 1, &[Name::LineEnding]);
         let name = &child.events[before].name;
-        if name == &Name::Paragraph {
+        if name == &Name::Content {
             document_lazy_continuation_current = true;
         }
     }
@@ -582,6 +582,7 @@ fn resolve(tokenizer: &mut Tokenizer) {
         &tokenizer.events,
         flow_index,
         &mut child.events,
+        (0, 0),
     );
 
     // Replace the flow data with actual events.

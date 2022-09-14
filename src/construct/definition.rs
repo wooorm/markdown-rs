@@ -1,4 +1,4 @@
-//! Definition occurs in the [flow] content type.
+//! Definition occurs in the [content] content type.
 //!
 //! ## Grammar
 //!
@@ -12,8 +12,8 @@
 //! ; those parts.
 //! ```
 //!
-//! As this construct occurs in flow, like all flow constructs, it must be
-//! followed by an eol (line ending) or eof (end of file).
+//! This construct must be followed by an eol (line ending) or eof (end of
+//! file), like flow constructs.
 //!
 //! See [`destination`][destination], [`label`][label], and [`title`][title]
 //! for grammar, notes, and recommendations on each part.
@@ -88,7 +88,7 @@
 //! *   [`definition.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/definition.js)
 //! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.30/#link-reference-definitions)
 //!
-//! [flow]: crate::construct::flow
+//! [content]: crate::construct::content
 //! [string]: crate::construct::string
 //! [character_escape]: crate::construct::character_escape
 //! [character_reference]: crate::construct::character_reference
@@ -157,7 +157,10 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_1 = Name::DefinitionLabel;
             tokenizer.tokenize_state.token_2 = Name::DefinitionLabelMarker;
             tokenizer.tokenize_state.token_3 = Name::DefinitionLabelString;
-            tokenizer.attempt(State::Next(StateName::DefinitionLabelAfter), State::Nok);
+            tokenizer.attempt(
+                State::Next(StateName::DefinitionLabelAfter),
+                State::Next(StateName::DefinitionLabelNok),
+            );
             State::Retry(StateName::LabelStart)
         }
         _ => State::Nok,
@@ -190,6 +193,19 @@ pub fn label_after(tokenizer: &mut Tokenizer) -> State {
         }
         _ => State::Nok,
     }
+}
+
+/// At a non-label
+///
+/// ```markdown
+/// > | []
+///     ^
+/// ```
+pub fn label_nok(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
+    State::Nok
 }
 
 /// After marker.

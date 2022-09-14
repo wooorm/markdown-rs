@@ -6,7 +6,7 @@ use pretty_assertions::assert_eq;
 fn fuzz() -> Result<(), String> {
     assert_eq!(
         micromark("[\n~\na\n-\n\n"),
-        "<p>[\n~\na</p>\n<ul>\n<li></li>\n</ul>\n",
+        "<h2>[\n~\na</h2>\n",
         "1: label, blank lines, and code"
     );
 

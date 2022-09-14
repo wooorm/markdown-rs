@@ -12,7 +12,6 @@
 //!
 //! *   [Blank line][crate::construct::blank_line]
 //! *   [Code (indented)][crate::construct::code_indented]
-//! *   [Definition][crate::construct::definition]
 //! *   [Heading (atx)][crate::construct::heading_atx]
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
@@ -40,14 +39,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'#') => {
             tokenizer.attempt(
                 State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
+                State::Next(StateName::FlowBeforeContent),
             );
             State::Retry(StateName::HeadingAtxStart)
         }
         Some(b'$' | b'`' | b'~') => {
             tokenizer.attempt(
                 State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
+                State::Next(StateName::FlowBeforeContent),
             );
             State::Retry(StateName::RawFlowStart)
         }
@@ -56,7 +55,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'*' | b'_') => {
             tokenizer.attempt(
                 State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
+                State::Next(StateName::FlowBeforeContent),
             );
             State::Retry(StateName::ThematicBreakStart)
         }
@@ -70,12 +69,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         Some(b'{') => {
             tokenizer.attempt(
                 State::Next(StateName::FlowAfter),
-                State::Next(StateName::FlowBeforeParagraph),
+                State::Next(StateName::FlowBeforeContent),
             );
             State::Retry(StateName::MdxExpressionFlowStart)
         }
         // Actual parsing: blank line? Indented code? Indented anything?
-        // Tables, setext heading underlines, definitions, and paragraphs are
+        // Tables, setext heading underlines, definitions, and Contents are
         // particularly weird.
         _ => State::Retry(StateName::FlowBlankLineBefore),
     }
@@ -217,34 +216,20 @@ pub fn before_mdx_expression(tokenizer: &mut Tokenizer) -> State {
 pub fn before_gfm_table(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(
         State::Next(StateName::FlowAfter),
-        State::Next(StateName::FlowBeforeDefinition),
+        State::Next(StateName::FlowBeforeContent),
     );
     State::Retry(StateName::GfmTableStart)
 }
 
-/// At definition.
-///
-/// ```markdown
-/// > | [a]: b
-///     ^
-/// ```
-pub fn before_definition(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.attempt(
-        State::Next(StateName::FlowAfter),
-        State::Next(StateName::FlowBeforeParagraph),
-    );
-    State::Retry(StateName::DefinitionStart)
-}
-
-/// At paragraph.
+/// At content.
 ///
 /// ```markdown
 /// > | a
 ///     ^
 /// ```
-pub fn before_paragraph(tokenizer: &mut Tokenizer) -> State {
+pub fn before_content(tokenizer: &mut Tokenizer) -> State {
     tokenizer.attempt(State::Next(StateName::FlowAfter), State::Nok);
-    State::Retry(StateName::ParagraphStart)
+    State::Retry(StateName::ContentChunkStart)
 }
 
 /// After blank line.

@@ -8,8 +8,9 @@
 
 use crate::event::{Kind, Name};
 use crate::state::{Name as StateName, State};
+use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
-use alloc::vec;
+use alloc::{string::String, vec};
 
 /// At beginning of data.
 ///
@@ -72,7 +73,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Merge adjacent data events.
-pub fn resolve(tokenizer: &mut Tokenizer) {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
     let mut index = 0;
 
     // Loop through events and merge adjacent data events.
@@ -103,4 +104,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
 
         index += 1;
     }
+
+    Ok(None)
 }

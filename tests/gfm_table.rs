@@ -338,6 +338,12 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
+        micromark_with_options("[\na\n:-\n]: b", &gfm)?,
+        "<p>[</p>\n<table>\n<thead>\n<tr>\n<th align=\"left\">a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">]: b</td>\n</tr>\n</tbody>\n</table>",
+        "should prefer GFM tables over definitions"
+    );
+
+    assert_eq!(
         micromark_with_options(
             r###"# Align
 

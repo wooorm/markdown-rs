@@ -49,16 +49,25 @@ pub fn parse<'a>(value: &'a str, options: &'a Options) -> Result<(Vec<Event>, &'
         (parse_state.bytes.len(), 0),
         State::Next(StateName::DocumentStart),
     );
-    tokenizer.flush(state, true)?;
-
+    let mut result = tokenizer.flush(state, true)?;
     let mut events = tokenizer.events;
 
-    let footnote = tokenizer.tokenize_state.gfm_footnote_definitions;
-    let normal = tokenizer.tokenize_state.definitions;
-    parse_state.gfm_footnote_definitions = footnote;
-    parse_state.definitions = normal;
+    parse_state
+        .gfm_footnote_definitions
+        .append(&mut result.gfm_footnote_definitions);
+    parse_state.definitions.append(&mut result.definitions);
 
-    while !(subtokenize(&mut events, &parse_state)?) {}
+    loop {
+        let mut result = subtokenize(&mut events, &parse_state, &None)?;
+        parse_state
+            .gfm_footnote_definitions
+            .append(&mut result.gfm_footnote_definitions);
+        parse_state.definitions.append(&mut result.definitions);
+
+        if result.done {
+            break;
+        }
+    }
 
     Ok((events, parse_state.bytes))
 }
