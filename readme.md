@@ -23,7 +23,7 @@ positional info, concrete tokens, and extensions.
 - [x] **[compliant][commonmark]** (100% to CommonMark)
 - [x] **[extensions][]** (100% GFM, 100% MDX, frontmatter, math)
 - [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
-- [x] **[robust][test]** (2300+ tests, 100% coverage)
+- [x] **[robust][test]** (2300+ tests, 100% coverage, fuzz testing)
 
 It’s also `#![no_std]` + `alloc`, has tons of docs, and has a single dependency
 (for optional debug logging).
@@ -347,6 +347,7 @@ tests confirmed with CM reference parsers.
 Then there’s even more tests for GFM and other extensions.
 These tests reach all branches in the code, which means that this project has
 100% code coverage.
+Fuzz testing is used to check for things that might fall through coverage.
 
 The following scripts are useful when working on this project:
 
