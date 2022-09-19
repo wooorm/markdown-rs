@@ -14,7 +14,6 @@
 //! ## Tokens
 //!
 //! *   [`LineEnding`][Name::LineEnding]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
 //! *   [`MdxExpressionMarker`][Name::MdxExpressionMarker]
 //! *   [`MdxExpressionData`][Name::MdxExpressionData]
 //!
@@ -61,7 +60,12 @@ use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use alloc::format;
+use crate::util::{
+    constant::TAB_SIZE,
+    mdx_collect::{collect, place_to_point},
+};
+use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
+use alloc::{format, string::ToString};
 
 /// Start of an MDX expression.
 ///
@@ -75,6 +79,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Name::MdxExpressionMarker);
     tokenizer.consume();
     tokenizer.exit(Name::MdxExpressionMarker);
+    tokenizer.tokenize_state.start = tokenizer.events.len() - 1;
     State::Next(StateName::MdxExpressionBefore)
 }
 
@@ -88,8 +93,10 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
             State::Error(format!(
-                "{}:{}: Unexpected end of file in expression, expected a corresponding closing brace for `{{`",
-                tokenizer.point.line, tokenizer.point.column
+                "{}:{}: {}",
+                tokenizer.point.line, tokenizer.point.column,
+                tokenizer.tokenize_state.mdx_last_parse_error.take()
+                    .unwrap_or_else(|| "Unexpected end of file in expression, expected a corresponding closing brace for `{`".to_string())
             ))
         }
         Some(b'\n') => {
@@ -97,24 +104,26 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(Name::LineEnding);
             State::Next(StateName::MdxExpressionEolAfter)
-        },
+        }
         Some(b'}') if tokenizer.tokenize_state.size == 0 => {
-            if tokenizer.tokenize_state.token_1 == Name::MdxJsxTagAttributeValueExpression && !tokenizer.tokenize_state.seen {
-                State::Error(format!(
-                    "{}:{}: Unexpected empty expression, expected a value between braces",
-                    tokenizer.point.line, tokenizer.point.column
-                ))
+            let state = if let Some(ref parse) = tokenizer.parse_state.options.mdx_expression_parse
+            {
+                parse_expression(tokenizer, parse)
             } else {
-                tokenizer.tokenize_state.seen = false;
+                State::Ok
+            };
+
+            if state == State::Ok {
+                tokenizer.tokenize_state.start = 0;
                 tokenizer.enter(Name::MdxExpressionMarker);
                 tokenizer.consume();
                 tokenizer.exit(Name::MdxExpressionMarker);
                 tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
-                State::Ok
             }
-        },
+
+            state
+        }
         Some(_) => {
-            tokenizer.tokenize_state.seen = true;
             tokenizer.enter(Name::MdxExpressionData);
             State::Retry(StateName::MdxExpressionInside)
         }
@@ -134,8 +143,10 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Name::MdxExpressionData);
         State::Retry(StateName::MdxExpressionBefore)
     } else {
-        // To do: don’t count if gnostic.
-        if tokenizer.current == Some(b'{') {
+        // Don’t count if gnostic.
+        if tokenizer.current == Some(b'{')
+            && tokenizer.parse_state.options.mdx_expression_parse.is_none()
+        {
             tokenizer.tokenize_state.size += 1;
         } else if tokenizer.current == Some(b'}') {
             tokenizer.tokenize_state.size -= 1;
@@ -165,9 +176,60 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         ))
     } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
         tokenizer.attempt(State::Next(StateName::MdxExpressionBefore), State::Nok);
-        // To do: use `start_column` + constants.tabSize for max space to eat.
-        State::Next(space_or_tab_min_max(tokenizer, 0, usize::MAX))
+        // Idea: investigate if we’d need to use more complex stripping.
+        // Take this example:
+        //
+        // ```markdown
+        // >  aaa <b c={`
+        // >      d
+        // >  `} /> eee
+        // ```
+        //
+        // Currently, the “paragraph” starts at `> | aaa`, so for the next line
+        // here we split it into `>␠|␠␠␠␠|␠d` (prefix, this indent here,
+        // expression data).
+        // The intention above is likely for the split to be as `>␠␠|␠␠␠␠|d`,
+        // which is impossible, but we can mimick it with `>␠|␠␠␠␠␠|d`.
+        //
+        // To improve the situation, we could take `tokenizer.line_start` at
+        // the start of the expression and move past whitespace.
+        // For future lines, we’d move at most to
+        // `line_start_shifted.column + 4`.
+        State::Retry(space_or_tab_min_max(tokenizer, 0, TAB_SIZE))
     } else {
         State::Retry(StateName::MdxExpressionBefore)
+    }
+}
+
+/// Parse an expression with a given function.
+fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> State {
+    // Collect the body of the expression and positional info for each run of it.
+    let result = collect(
+        tokenizer,
+        tokenizer.tokenize_state.start,
+        &[Name::MdxExpressionData, Name::LineEnding],
+    );
+
+    // Turn the name of the expression into a kind.
+    let kind = match tokenizer.tokenize_state.token_1 {
+        Name::MdxFlowExpression | Name::MdxTextExpression => MdxExpressionKind::Expression,
+        Name::MdxJsxTagAttributeExpression => MdxExpressionKind::AttributeExpression,
+        Name::MdxJsxTagAttributeValueExpression => MdxExpressionKind::AttributeValueExpression,
+        _ => unreachable!("cannot handle unknown expression name"),
+    };
+
+    // Parse and handle what was signaled back.
+    match parse(&result.value, kind) {
+        MdxSignal::Ok => State::Ok,
+        MdxSignal::Error(message, place) => {
+            let point = place_to_point(&result, place);
+            State::Error(format!("{}:{}: {}", point.line, point.column, message))
+        }
+        MdxSignal::Eof(message) => {
+            tokenizer.tokenize_state.mdx_last_parse_error = Some(message);
+            tokenizer.enter(Name::MdxExpressionData);
+            tokenizer.consume();
+            State::Next(StateName::MdxExpressionInside)
+        }
     }
 }

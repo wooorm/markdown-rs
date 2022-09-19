@@ -30,7 +30,12 @@ fn math_text() -> Result<(), String> {
             "$foo$ $$bar$$",
             &Options {
                 math_text_single_dollar: false,
-                ..math.clone()
+                constructs: Constructs {
+                    math_text: true,
+                    math_flow: true,
+                    ..Constructs::default()
+                },
+                ..Options::default()
             }
         )?,
         "<p>$foo$ <code class=\"language-math math-inline\">bar</code></p>",
@@ -133,7 +138,12 @@ fn math_text() -> Result<(), String> {
             &Options {
                 allow_dangerous_html: true,
                 allow_dangerous_protocol: true,
-                ..math.clone()
+                constructs: Constructs {
+                    math_text: true,
+                    math_flow: true,
+                    ..Constructs::default()
+                },
+                ..Options::default()
             }
         )?,
         "<p><a href=\"$\">$</p>",

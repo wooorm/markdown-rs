@@ -1,6 +1,8 @@
 extern crate micromark;
+mod test_utils;
 use micromark::{micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
+use test_utils::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_jsx_text_core() -> Result<(), String> {
@@ -84,99 +86,97 @@ fn mdx_jsx_text_agnosic() -> Result<(), String> {
 
 #[test]
 fn mdx_jsx_text_gnostic() -> Result<(), String> {
-    let mdx = Options {
+    let swc = Options {
         constructs: Constructs::mdx(),
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
         ..Options::default()
     };
 
     assert_eq!(
-        micromark_with_options("a <b /> c", &mdx)?,
+        micromark_with_options("a <b /> c", &swc)?,
         "<p>a  c</p>",
         "should support a self-closing element"
     );
 
     assert_eq!(
-        micromark_with_options("a <b> c </b> d", &mdx)?,
+        micromark_with_options("a <b> c </b> d", &swc)?,
         "<p>a  c  d</p>",
         "should support a closed element"
     );
 
     assert_eq!(
-        micromark_with_options("a <b> c", &mdx)?,
+        micromark_with_options("a <b> c", &swc)?,
         "<p>a  c</p>",
         "should support an unclosed element"
     );
 
     assert_eq!(
-        micromark_with_options("a <b {...c} /> d", &mdx)?,
+        micromark_with_options("a <b {...c} /> d", &swc)?,
         "<p>a  d</p>",
         "should support an attribute expression"
     );
 
     assert_eq!(
-        micromark_with_options("a <b {...{c: 1, d: Infinity, e: false}} /> f", &mdx)?,
+        micromark_with_options("a <b {...{c: 1, d: Infinity, e: false}} /> f", &swc)?,
         "<p>a  f</p>",
         "should support more complex attribute expression (1)"
     );
 
     assert_eq!(
-        micromark_with_options("a <b {...[1, Infinity, false]} /> d", &mdx)?,
+        micromark_with_options("a <b {...[1, Infinity, false]} /> d", &swc)?,
         "<p>a  d</p>",
         "should support more complex attribute expression (2)"
     );
 
     assert_eq!(
-        micromark_with_options("a <b c={1 + 1} /> d", &mdx)?,
+        micromark_with_options("a <b c={1 + 1} /> d", &swc)?,
         "<p>a  d</p>",
         "should support an attribute value expression"
     );
 
     assert_eq!(
-        micromark_with_options("a <b c={} /> d", &mdx)
+        micromark_with_options("a <b c={} /> d", &swc)
             .err()
             .unwrap(),
-        "1:9: Unexpected empty expression, expected a value between braces",
+        "1:15: Could not parse expression with swc: Unexpected eof",
         "should crash on an empty attribute value expression"
     );
 
-    // To do: swc.
-    // assert_eq!(
-    //     micromark_with_options("a <b {1 + 1} /> c", &swc)
-    //         .err()
-    //         .unwrap(),
-    //     "Could not parse expression with acorn: Unexpected token",
-    //     "should crash on a non-spread attribute expression"
-    // );
-
-    // To do: swc.
-    // assert_eq!(
-    //     micromark_with_options("a <b c={?} /> d", &swc)
-    //         .err()
-    //         .unwrap(),
-    //     "Could not parse expression with acorn: Unexpected token",
-    //     "should crash on invalid JS in an attribute value expression"
-    // );
-
-    // To do: swc.
-    // assert_eq!(
-    //     micromark_with_options("a <b {?} /> c", &swc)
-    //         .err()
-    //         .unwrap(),
-    //     "Could not parse expression with acorn: Unexpected token",
-    //     "should crash on invalid JS in an attribute expression"
-    // );
-
-    // To do: swc.
-    // assert_eq!(
-    //     micromark_with_options("a <b{c=d}={}/> f", &swc)
-    //         .err()
-    //         .unwrap(),
-    //     "Unexpected `ExpressionStatement` in code: expected an object spread",
-    //     "should crash on invalid JS in an attribute expression (2)"
-    // );
+    assert_eq!(
+        micromark_with_options("a <b {1 + 1} /> c", &swc)
+            .err()
+            .unwrap(),
+        "1:18: Could not parse expression with swc: Expected ',', got '}'",
+        "should crash on a non-spread attribute expression"
+    );
 
     assert_eq!(
-        micromark_with_options("a <b c={(2)} d={<e />} /> f", &mdx)?,
+        micromark_with_options("a <b c={?} /> d", &swc)
+            .err()
+            .unwrap(),
+        "1:16: Could not parse expression with swc: Unexpected token `?`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        "should crash on invalid JS in an attribute value expression"
+    );
+
+    assert_eq!(
+        micromark_with_options("a <b {?} /> c", &swc)
+            .err()
+            .unwrap(),
+        "1:14: Could not parse expression with swc: Unexpected token `?`. Expected identifier, string literal, numeric literal or [ for the computed key",
+        "should crash on invalid JS in an attribute expression"
+    );
+
+    assert_eq!(
+        micromark_with_options("a <b{c=d}={}/> f", &swc)
+            .err()
+            .unwrap(),
+        "1:6: Expected a single spread value, such as `...x`",
+        "should crash on invalid JS in an attribute expression (2)"
+    );
+
+    assert_eq!(
+        micromark_with_options("a <b c={(2)} d={<e />} /> f", &swc)?,
         "<p>a  f</p>",
         "should support parenthesized expressions"
     );

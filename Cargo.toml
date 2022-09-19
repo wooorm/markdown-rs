@@ -24,8 +24,11 @@ unicode-id = { version = "0.3", features = ["no_std"] }
 
 [dev-dependencies]
 env_logger = "0.9"
-criterion = "0.3"
+criterion = "0.4"
 pretty_assertions = "1"
+swc_common = "0.28"
+swc_ecma_parser = "0.119"
+swc_ecma_ast = "0.91"
 
 [build-dependencies]
 regex = "1"

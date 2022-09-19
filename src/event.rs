@@ -2391,6 +2391,45 @@ pub enum Name {
     ///       ^ ^
     /// ```
     MathTextSequence,
+    /// MDX extension: ESM.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [flow content][crate::construct::flow]
+    /// *   **Content model**:
+    ///     void
+    ///     [`MdxEsmData`][Name::MdxEsmData],
+    ///     [`SpaceOrTab`][Name::SpaceOrTab],
+    ///     [`LineEnding`][Name::LineEnding]
+    /// *   **Construct**:
+    ///     [`mdx_esm`][crate::construct::mdx_esm]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | import a from 'b'
+    ///     ^^^^^^^^^^^^^^^^^
+    /// ```
+    MdxEsm,
+    /// MDX extension: ESM data.
+    ///
+    /// ## Info
+    ///
+    /// *   **Context**:
+    ///     [`MdxEsm`][Name::MdxEsm]
+    /// *   **Content model**:
+    ///     void
+    /// *   **Construct**:
+    ///     [`mdx_esm`][crate::construct::mdx_esm]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | import a from 'b'
+    ///     ^^^^^^^^^^^^^^^^^
+    /// ```
+    MdxEsmData,
     /// MDX extension: expression marker.
     ///
     /// ## Info
@@ -3336,7 +3375,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 75] = [
+pub const VOID_EVENTS: [Name; 76] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -3391,6 +3430,7 @@ pub const VOID_EVENTS: [Name; 75] = [
     Name::MathFlowChunk,
     Name::MathTextData,
     Name::MathTextSequence,
+    Name::MdxEsmData,
     Name::MdxExpressionMarker,
     Name::MdxExpressionData,
     Name::MdxJsxTagMarker,

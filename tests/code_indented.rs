@@ -167,7 +167,11 @@ fn code_indented() -> Result<(), String> {
             "a <?\n    ?>",
             &Options {
                 allow_dangerous_html: true,
-                ..off.clone()
+                constructs: Constructs {
+                    code_indented: false,
+                    ..Constructs::default()
+                },
+                ..Options::default()
             }
         )?,
         "<p>a <?\n?></p>",

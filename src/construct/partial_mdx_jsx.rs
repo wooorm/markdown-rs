@@ -611,8 +611,6 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
         Some(b'>') => State::Retry(StateName::MdxJsxTagEnd),
         // Attribute expression.
         Some(b'{') => {
-            // To do: force `spread: true` if gnostic.
-            // To do: pass `start_point` if gnostic.
             tokenizer.tokenize_state.token_2 = tokenizer.tokenize_state.token_1.clone();
             tokenizer.tokenize_state.token_1 = Name::MdxJsxTagAttributeExpression;
             tokenizer.attempt(
@@ -886,7 +884,6 @@ pub fn attribute_value_before(tokenizer: &mut Tokenizer) -> State {
         }
         // Attribute value expression.
         Some(b'{') => {
-            // To do: pass `start_point` if gnostic.
             tokenizer.tokenize_state.token_2 = tokenizer.tokenize_state.token_1.clone();
             tokenizer.tokenize_state.token_1 = Name::MdxJsxTagAttributeValueExpression;
             tokenizer.attempt(

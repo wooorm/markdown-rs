@@ -227,6 +227,9 @@ pub struct TokenizeState<'a> {
     /// List of defined GFM footnote definition identifiers.
     pub gfm_footnote_definitions: Vec<String>,
 
+    // Last error message provided at an EOF of an expression.
+    pub mdx_last_parse_error: Option<String>,
+
     /// Whether to connect events.
     pub connect: bool,
     /// Marker.
@@ -343,6 +346,7 @@ impl<'a> Tokenizer<'a> {
                 document_at_first_paragraph_of_list_item: false,
                 definitions: vec![],
                 gfm_footnote_definitions: vec![],
+                mdx_last_parse_error: None,
                 end: 0,
                 label_starts: vec![],
                 label_starts_loose: vec![],

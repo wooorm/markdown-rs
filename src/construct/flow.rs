@@ -15,6 +15,7 @@
 //! *   [Heading (atx)][crate::construct::heading_atx]
 //! *   [Heading (setext)][crate::construct::heading_setext]
 //! *   [HTML (flow)][crate::construct::html_flow]
+//! *   [MDX esm][crate::construct::mdx_esm]
 //! *   [MDX expression (flow)][crate::construct::mdx_expression_flow]
 //! *   [MDX JSX (flow)][crate::construct::mdx_jsx_flow]
 //! *   [Raw (flow)][crate::construct::raw_flow] (code (fenced), math (flow))
@@ -65,6 +66,13 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 State::Next(StateName::FlowBeforeMdxJsx),
             );
             State::Retry(StateName::HtmlFlowStart)
+        }
+        Some(b'e' | b'i') => {
+            tokenizer.attempt(
+                State::Next(StateName::FlowAfter),
+                State::Next(StateName::FlowBeforeContent),
+            );
+            State::Retry(StateName::MdxEsmStart)
         }
         Some(b'{') => {
             tokenizer.attempt(

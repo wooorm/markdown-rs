@@ -344,6 +344,14 @@ pub enum Name {
     ListItemContBlank,
     ListItemContFilled,
 
+    MdxEsmStart,
+    MdxEsmWord,
+    MdxEsmInside,
+    MdxEsmLineStart,
+    MdxEsmBlankLineBefore,
+    MdxEsmContinuationStart,
+    MdxEsmAtEnd,
+
     MdxExpressionTextStart,
     MdxExpressionTextAfter,
 
@@ -356,8 +364,6 @@ pub enum Name {
     MdxExpressionBefore,
     MdxExpressionInside,
     MdxExpressionEolAfter,
-    MdxJsxAttributeValueExpressionAfter,
-    MdxJsxAttributeExpressionAfter,
 
     MdxJsxFlowStart,
     MdxJsxFlowBefore,
@@ -385,6 +391,7 @@ pub enum Name {
     MdxJsxLocalNameAfter,
     MdxJsxAttributeBefore,
     MdxJsxSelfClosing,
+    MdxJsxAttributeExpressionAfter,
     MdxJsxAttributePrimaryName,
     MdxJsxAttributePrimaryNameAfter,
     MdxJsxAttributeLocalNameBefore,
@@ -393,6 +400,7 @@ pub enum Name {
     MdxJsxAttributeValueBefore,
     MdxJsxAttributeValueQuotedStart,
     MdxJsxAttributeValueQuoted,
+    MdxJsxAttributeValueExpressionAfter,
 
     NonLazyContinuationStart,
     NonLazyContinuationAfter,
@@ -821,6 +829,14 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::ListItemContStart => construct::list_item::cont_start,
         Name::ListItemContBlank => construct::list_item::cont_blank,
         Name::ListItemContFilled => construct::list_item::cont_filled,
+
+        Name::MdxEsmStart => construct::mdx_esm::start,
+        Name::MdxEsmWord => construct::mdx_esm::word,
+        Name::MdxEsmInside => construct::mdx_esm::inside,
+        Name::MdxEsmLineStart => construct::mdx_esm::line_start,
+        Name::MdxEsmBlankLineBefore => construct::mdx_esm::blank_line_before,
+        Name::MdxEsmContinuationStart => construct::mdx_esm::continuation_start,
+        Name::MdxEsmAtEnd => construct::mdx_esm::at_end,
 
         Name::MdxExpressionStart => construct::partial_mdx_expression::start,
         Name::MdxExpressionBefore => construct::partial_mdx_expression::before,

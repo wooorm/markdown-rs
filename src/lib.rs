@@ -20,7 +20,7 @@ mod util;
 
 use crate::compiler::compile;
 use crate::parser::parse;
-use alloc::string::String;
+use alloc::{boxed::Box, fmt, string::String};
 
 /// Type of line endings in markdown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -78,6 +78,71 @@ impl LineEnding {
         }
     }
 }
+
+/// Signal used as feedback when parsing MDX esm/expressions.
+#[derive(Clone, Debug)]
+pub enum MdxSignal {
+    /// A syntax error.
+    ///
+    /// `micromark-rs` will crash with error message `String`, and convert the
+    /// `usize` (byte offset into `&str` passed to `MdxExpressionParse` or
+    /// `MdxEsmParse`) to where it happened in the whole document.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust ignore
+    /// MdxSignal::Error("Unexpected `\"`, expected identifier".to_string(), 1)
+    /// ```
+    Error(String, usize),
+    /// An error at the end of the (partial?) expression.
+    ///
+    /// `micromark-rs` will either crash with error message `String` if it
+    /// doesn’t have any more text, or it will try again later when more text
+    /// is available.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust ignore
+    /// MdxSignal::Eof("Unexpected end of file in string literal".to_string())
+    /// ```
+    Eof(String),
+    /// Done, successfully.
+    ///
+    /// `micromark-rs` knows that this is the end of a valid expression/esm and
+    /// continues with markdown.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust ignore
+    /// MdxSignal::Ok
+    /// ```
+    Ok,
+}
+
+/// Expression kind.
+#[derive(Clone, Debug)]
+pub enum MdxExpressionKind {
+    /// Kind of expressions in prose: `# {Math.PI}` and `{Math.PI}`.
+    Expression,
+    /// Kind of expressions as attributes: `<a {...b}>`
+    AttributeExpression,
+    /// Kind of expressions as attribute values: `<a b={c}>`.
+    AttributeValueExpression,
+}
+
+/// Signature of a function that parses expressions.
+///
+/// Can be passed as `mdx_expression_parse` in [`Options`][] to support
+/// expressions according to a certain grammar (typically, a programming
+/// language).
+pub type MdxExpressionParse = dyn Fn(&str, MdxExpressionKind) -> MdxSignal;
+
+/// Signature of a function that parses ESM.
+///
+/// Can be passed as `mdx_esm_parse` in [`Options`][] to support
+/// ESM according to a certain grammar (typically, a programming
+/// language).
+pub type MdxEsmParse = dyn Fn(&str) -> MdxSignal;
 
 /// Control which constructs are enabled.
 ///
@@ -301,12 +366,28 @@ pub struct Constructs {
     ///       ^^^
     /// ```
     pub math_text: bool,
+    /// MDX: ESM.
+    ///
+    /// ```markdown
+    /// > | import a from 'b'
+    ///     ^^^^^^^^^^^^^^^^^
+    /// ```
+    ///
+    /// > 👉 **Note**: you *must* pass [`options.mdx_esm_parse`][MdxEsmParse]
+    /// > too.
+    /// > Otherwise, this option has no affect.
+    pub mdx_esm: bool,
     /// MDX: expression (flow).
     ///
     /// ```markdown
     /// > | {Math.PI}
     ///     ^^^^^^^^^
     /// ```
+    ///
+    /// > 👉 **Note**: you *can* pass
+    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
+    /// > to parse expressions according to a certain grammar (typically, a
+    /// > programming language).
     pub mdx_expression_flow: bool,
     /// MDX: expression (text).
     ///
@@ -314,6 +395,11 @@ pub struct Constructs {
     /// > | a {Math.PI} c
     ///       ^^^^^^^^^
     /// ```
+    ///
+    /// > 👉 **Note**: you *can* pass
+    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
+    /// > to parse expressions according to a certain grammar (typically, a
+    /// > programming language).
     pub mdx_expression_text: bool,
     /// MDX: JSX (flow).
     ///
@@ -321,6 +407,11 @@ pub struct Constructs {
     /// > | <Component />
     ///     ^^^^^^^^^^^^^
     /// ```
+    ///
+    /// > 👉 **Note**: you *can* pass
+    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
+    /// > to parse expressions in JSX according to a certain grammar
+    /// > (typically, a programming language).
     pub mdx_jsx_flow: bool,
     /// MDX: JSX (text).
     ///
@@ -328,6 +419,11 @@ pub struct Constructs {
     /// > | a <Component /> c
     ///       ^^^^^^^^^^^^^
     /// ```
+    ///
+    /// > 👉 **Note**: you *can* pass
+    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
+    /// > to parse expressions in JSX according to a certain grammar
+    /// > (typically, a programming language).
     pub mdx_jsx_text: bool,
     /// Thematic break.
     ///
@@ -370,6 +466,7 @@ impl Default for Constructs {
             list_item: true,
             math_flow: false,
             math_text: false,
+            mdx_esm: false,
             mdx_expression_flow: false,
             mdx_expression_text: false,
             mdx_jsx_flow: false,
@@ -405,6 +502,13 @@ impl Constructs {
     /// This turns on `CommonMark`, turns off some conflicting constructs
     /// (autolinks, code (indented), html), and turns on MDX (JSX,
     /// expressions, ESM).
+    ///
+    /// > 👉 **Note**: you *must* pass [`options.mdx_esm_parse`][MdxEsmParse]
+    /// > to support ESM.
+    /// > You *can* pass
+    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
+    /// > to parse expressions according to a certain grammar (typically, a
+    /// > programming language).
     #[must_use]
     pub fn mdx() -> Self {
         Self {
@@ -412,6 +516,7 @@ impl Constructs {
             code_indented: false,
             html_flow: false,
             html_text: false,
+            mdx_esm: true,
             mdx_expression_flow: true,
             mdx_expression_text: true,
             mdx_jsx_flow: true,
@@ -423,8 +528,8 @@ impl Constructs {
 
 /// Configuration (optional).
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Clone, Debug)]
 pub struct Options {
+    // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
     /// Whether to allow (dangerous) HTML.
     /// The default is `false`, you can turn it on to `true` for trusted
     /// content.
@@ -913,6 +1018,75 @@ pub struct Options {
     /// # }
     /// ```
     pub math_text_single_dollar: bool,
+
+    /// Function to parse expressions with.
+    ///
+    /// This can be used to parse expressions with a parser.
+    /// It can be used to support for arbitrary programming languages within
+    /// expressions.
+    ///
+    /// For an example that adds support for JavaScript with SWC, see
+    /// `tests/test_utils/mod.rs`.
+    pub mdx_expression_parse: Option<Box<MdxExpressionParse>>,
+
+    /// Function to parse ESM with.
+    ///
+    /// This can be used to parse ESM with a parser.
+    /// It can be used to support for arbitrary programming languages within
+    /// ESM, however, the keywords (`export`, `import`) are currently hardcoded
+    /// JavaScript-specific.
+    ///
+    /// For an example that adds support for JavaScript with SWC, see
+    /// `tests/test_utils/mod.rs`.
+    pub mdx_esm_parse: Option<Box<MdxEsmParse>>,
+    // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
+}
+
+impl fmt::Debug for Options {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Options")
+            .field("allow_dangerous_html", &self.allow_dangerous_html)
+            .field("allow_dangerous_protocol", &self.allow_dangerous_protocol)
+            .field("constructs", &self.constructs)
+            .field("default_line_ending", &self.default_line_ending)
+            .field("gfm_footnote_label", &self.gfm_footnote_label)
+            .field(
+                "gfm_footnote_label_tag_name",
+                &self.gfm_footnote_label_tag_name,
+            )
+            .field(
+                "gfm_footnote_label_attributes",
+                &self.gfm_footnote_label_attributes,
+            )
+            .field("gfm_footnote_back_label", &self.gfm_footnote_back_label)
+            .field(
+                "gfm_footnote_clobber_prefix",
+                &self.gfm_footnote_clobber_prefix,
+            )
+            .field(
+                "gfm_strikethrough_single_tilde",
+                &self.gfm_strikethrough_single_tilde,
+            )
+            .field("gfm_tagfilter", &self.gfm_tagfilter)
+            .field("math_text_single_dollar", &self.math_text_single_dollar)
+            .field(
+                "mdx_expression_parse",
+                if self.mdx_expression_parse.is_none() {
+                    &"None"
+                } else {
+                    &"Some([Function])"
+                },
+            )
+            .field(
+                "mdx_esm_parse",
+                if self.mdx_esm_parse.is_none() {
+                    &"None"
+                } else {
+                    &"Some([Function])"
+                },
+            )
+            .finish()
+    }
 }
 
 impl Default for Options {
@@ -931,6 +1105,8 @@ impl Default for Options {
             gfm_strikethrough_single_tilde: true,
             gfm_tagfilter: false,
             math_text_single_dollar: true,
+            mdx_expression_parse: None,
+            mdx_esm_parse: None,
         }
     }
 }

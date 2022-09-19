@@ -66,6 +66,7 @@
 //! *   [gfm task list item check][gfm_task_list_item_check]
 //! *   [mdx expression (flow)][mdx_expression_flow]
 //! *   [mdx expression (text)][mdx_expression_text]
+//! *   [mdx esm][mdx_esm]
 //! *   [mdx jsx (flow)][mdx_jsx_flow]
 //! *   [mdx jsx (text)][mdx_jsx_text]
 //!
@@ -169,6 +170,7 @@ pub mod label_end;
 pub mod label_start_image;
 pub mod label_start_link;
 pub mod list_item;
+pub mod mdx_esm;
 pub mod mdx_expression_flow;
 pub mod mdx_expression_text;
 pub mod mdx_jsx_flow;

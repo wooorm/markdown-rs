@@ -364,6 +364,7 @@ fn enter(context: &mut CompileContext) {
         | Name::HeadingAtxText
         | Name::HeadingSetextText
         | Name::Label
+        | Name::MdxEsm
         | Name::MdxFlowExpression
         | Name::MdxTextExpression
         | Name::MdxJsxFlowTag
@@ -412,7 +413,7 @@ fn exit(context: &mut CompileContext) {
         | Name::Resource => {
             on_exit_drop(context);
         }
-        Name::MdxFlowExpression | Name::MdxJsxFlowTag => on_exit_drop_slurp(context),
+        Name::MdxEsm | Name::MdxFlowExpression | Name::MdxJsxFlowTag => on_exit_drop_slurp(context),
         Name::CharacterEscapeValue | Name::CodeTextData | Name::Data | Name::MathTextData => {
             on_exit_data(context);
         }

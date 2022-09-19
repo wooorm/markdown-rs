@@ -1,6 +1,8 @@
 extern crate micromark;
+mod test_utils;
 use micromark::{micromark_with_options, Constructs, Options};
 use pretty_assertions::assert_eq;
+use test_utils::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_expression_flow_agnostic() -> Result<(), String> {
@@ -82,153 +84,132 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     Ok(())
 }
 
-// To do: swc.
-// #[test]
-// fn mdx_expression_flow_gnostic() -> Result<(), String> {
-//     assert_eq!(
-//         micromark_with_options("{a}", &swc),
-//         "",
-//         "should support an expression"
-//     );
+#[test]
+fn mdx_expression_flow_gnostic() -> Result<(), String> {
+    let swc = Options {
+        constructs: Constructs::mdx(),
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
+        ..Options::default()
+    };
 
-//     assert_eq!(
-//         micromark_with_options("{}", &swc)?,
-//         "",
-//         "should support an empty expression"
-//     );
+    assert_eq!(
+        micromark_with_options("{a}", &swc)?,
+        "",
+        "should support an expression"
+    );
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("{a", &swc);
-//     //     },
-//     //     /Unexpected end of file in expression, expected a corresponding closing brace for `{`/,
-//     //     "should crash if no closing brace is found (1)"
-//     // );
+    assert_eq!(
+        micromark_with_options("{}", &swc)?,
+        "",
+        "should support an empty expression"
+    );
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("{b { c }", &swc);
-//     //     },
-//     //     /Could not parse expression with swc: Unexpected content after expression/,
-//     //     "should crash if no closing brace is found (2)"
-//     // );
+    assert_eq!(
+        micromark_with_options("{a", &swc).err().unwrap(),
+        "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        "should crash if no closing brace is found (1)"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("{\n}\na", &swc)?,
-//         "<p>a</p>",
-//         "should support a line ending in an expression"
-//     );
+    assert_eq!(
+        micromark_with_options("{b { c }", &swc).err().unwrap(),
+        "1:4: Could not parse expression with swc: Unexpected content after expression",
+        "should crash if no closing brace is found (2)"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("{ a } \t\nb", &swc)?,
-//         "<p>b</p>",
-//         "should support expressions followed by spaces"
-//     );
+    assert_eq!(
+        micromark_with_options("{\n}\na", &swc)?,
+        "<p>a</p>",
+        "should support a line ending in an expression"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("  { a }\nb", &swc)?,
-//         "<p>b</p>",
-//         "should support expressions preceded by spaces"
-//     );
+    assert_eq!(
+        micromark_with_options("{ a } \t\nb", &swc)?,
+        "<p>b</p>",
+        "should support expressions followed by spaces"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("  {`\n    a\n  `}", &swc)?,
-//         "",
-//         "should support indented expressions"
-//     );
+    assert_eq!(
+        micromark_with_options("  { a }\nb", &swc)?,
+        "<p>b</p>",
+        "should support expressions preceded by spaces"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("a{(b)}c", &swc)?,
-//         "<p>ac</p>",
-//         "should support expressions padded w/ parens"
-//     );
+    assert_eq!(
+        micromark_with_options("  {`\n    a\n  `}", &swc)?,
+        "",
+        "should support indented expressions"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("a{/* b */ ( (c) /* d */ + (e) )}f", &swc)?,
-//         "<p>af</p>",
-//         "should support expressions padded w/ parens and comments"
-//     );
+    assert_eq!(
+        micromark_with_options("a{(b)}c", &swc)?,
+        "<p>ac</p>",
+        "should support expressions padded w/ parens"
+    );
 
-//     Ok(())
-// }
+    assert_eq!(
+        micromark_with_options("a{/* b */ ( (c) /* d */ + (e) )}f", &swc)?,
+        "<p>af</p>",
+        "should support expressions padded w/ parens and comments"
+    );
 
-// To do: move to JSX, actually test spread in expressions?
-// To do: swc.
-// #[test]
-// fn mdx_expression_spread() -> Result<(), String> {
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("a {b} c", &swc);
-//     //     },
-//     //     /Unexpected `Property` in code: only spread elements are supported/,
-//     //     "should crash if not a spread"
-//     // );
+    Ok(())
+}
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("a {...?} c", &swc);
-//     //     },
-//     //     /Could not parse expression with swc: Unexpected token/,
-//     //     "should crash on an incorrect spread"
-//     // );
+#[test]
+fn mdx_expression_spread() -> Result<(), String> {
+    let swc = Options {
+        constructs: Constructs::mdx(),
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
+        ..Options::default()
+    };
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("a {...b,c} d", &swc);
-//     //     },
-//     //     /Unexpected extra content in spread: only a single spread is supported/,
-//     //     "should crash if a spread and other things"
-//     // );
+    assert_eq!(
+        micromark_with_options("<a {...b} />", &swc)?,
+        "",
+        "should support spreads for attribute expression"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("a {} b", &swc)?,
-//         "<p>a  b</p>",
-//         "should support an empty spread"
-//     );
+    assert_eq!(
+        micromark_with_options("<a {b} />", &swc).err().unwrap(),
+        "1:5: Expected a single spread value, such as `...x`",
+        "should crash if not a spread"
+    );
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("a {} b", &swc);
-//     //     },
-//     //     /Unexpected empty expression/,
-//     //     "should crash on an empty spread w/ `allowEmpty: false`"
-//     // );
+    assert_eq!(
+        micromark_with_options("<a {...?} />", &swc).err().unwrap(),
+        "1:13: Could not parse expression with swc: Unexpected token `?`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        "should crash on an incorrect spread"
+    );
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("{a=b}", &swc);
-//     //     },
-//     //     /Could not parse expression with swc: Shorthand property assignments are valid only in destructuring patterns/,
-//     //     "should crash if not a spread w/ `allowEmpty`"
-//     // );
+    assert_eq!(
+        micromark_with_options("<a {...b,c} d>", &swc)
+            .err()
+            .unwrap(),
+        "1:5: Expected a single spread value, such as `...x`",
+        "should crash if a spread and other things"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("a {/* b */} c", &swc)?,
-//         "<p>a  c</p>",
-//         "should support a comment spread"
-//     );
+    assert_eq!(
+        micromark_with_options("<a {} />", &swc).err().unwrap(),
+        "1:5: Expected a single spread value, such as `...x`",
+        "should crash on an empty spread"
+    );
 
-//     //   To do: errors.
-//     // t.throws(
-//     //     () => {
-//     //     micromark_with_options("a {/* b */} c", &swc);
-//     //     },
-//     //     /Unexpected empty expression/,
-//     //     "should crash on a comment spread w/ `allowEmpty: false`"
-//     // );
+    assert_eq!(
+        micromark_with_options("<a {a=b} />", &swc).err().unwrap(),
+        "1:12: Could not parse expression with swc: assignment property is invalid syntax",
+        "should crash if not an identifier"
+    );
 
-//     assert_eq!(
-//         micromark_with_options("a {...b} c", &swc)?,
-//         "<p>a  c</p>",
-//         "should support a spread"
-//     );
+    assert_eq!(
+        micromark_with_options("<a {/* b */} />", &swc)
+            .err()
+            .unwrap(),
+        "1:5: Expected a single spread value, such as `...x`",
+        "should crash on a comment spread"
+    );
 
-//     Ok(())
-// }
+    Ok(())
+}

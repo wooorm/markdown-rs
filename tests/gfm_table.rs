@@ -1037,7 +1037,8 @@ bar
 "###,
             &Options {
                 allow_dangerous_html: true,
-                ..gfm.clone()
+                constructs: Constructs::gfm(),
+                ..Options::default()
             }
         )?,
         r###"<h1>Grave accents</h1>
@@ -1345,7 +1346,8 @@ b
 "###,
             &Options {
                 allow_dangerous_html: true,
-                ..gfm.clone()
+                constructs: Constructs::gfm(),
+                ..Options::default()
             }
         )?,
         r###"<h2>Blank line</h2>
