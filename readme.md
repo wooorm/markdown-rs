@@ -180,12 +180,12 @@ The files in `src/` are as follows:
   — CommonMark, GFM, and other extension constructs used in micromark
 - `util/*.rs`
   — helpers often needed when parsing markdown
-- `compiler.rs`
-  — turns events into a string of HTML
 - `event.rs`
   — things with meaning happening somewhere
 - `lib.rs`
   — core module
+- `mdast.rs`
+  — syntax tree
 - `parser.rs`
   — turn a string of markdown into events
 - `resolve.rs`
@@ -194,6 +194,10 @@ The files in `src/` are as follows:
   — steps of the state machine
 - `subtokenize.rs`
   — handle content in other content
+- `to_html.rs`
+  — turns events into a string of HTML
+- `to_mdast.rs`
+  — turns events into a syntax tree
 - `tokenizer.rs`
   — glue the states of the state machine together
 

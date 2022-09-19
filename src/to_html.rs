@@ -70,6 +70,7 @@ struct Definition {
 }
 
 /// GFM table: column alignment.
+// To do: share with `mdast`.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum GfmTableAlign {
     /// No alignment.
@@ -242,7 +243,7 @@ impl<'a> CompileContext<'a> {
     }
 }
 
-/// Turn events and codes into a string of HTML.
+/// Turn events and bytes into a string of HTML.
 pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
     let mut index = 0;
     let mut line_ending_inferred = None;
@@ -265,11 +266,8 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
     }
 
     // Figure out which line ending style we’ll use.
-    let line_ending_default = if let Some(value) = line_ending_inferred {
-        value
-    } else {
-        options.default_line_ending.clone()
-    };
+    let line_ending_default =
+        line_ending_inferred.unwrap_or_else(|| options.default_line_ending.clone());
 
     let mut context = CompileContext::new(events, bytes, options, line_ending_default);
     let mut definition_indices = vec![];

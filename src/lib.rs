@@ -1,26 +1,37 @@
 //! Public API of micromark.
 //!
-//! This module exposes [`micromark`][] (and [`micromark_with_options`][]).
-//! `micromark` is a safe way to transform (untrusted?) markdown into HTML.
-//! `micromark_with_options` allows you to configure how markdown is turned into
-//! HTML, such as by allowing dangerous HTML when you trust it.
+//! This module exposes primarily [`micromark`][].
+//! It also exposes [`micromark_with_options`][] and [`micromark_to_mdast`][].
+//!
+//! *   [`micromark`][]
+//!     — safe way to transform (untrusted?) markdown into HTML
+//! *   [`micromark_with_options`][]
+//!     — like `micromark` but lets you configure how markdown is turned into
+//!     HTML, such as allowing dangerous HTML or turning on/off
+//!     different constructs (GFM, MDX, and the like)
+//! *   [`micromark_to_mdast`][]
+//!     — like `micromark_with_options` but compiles to a syntax tree
 #![no_std]
 
 extern crate alloc;
 
-mod compiler;
 mod construct;
 mod event;
+pub mod mdast;
 mod parser;
 mod resolve;
 mod state;
 mod subtokenize;
+mod to_html;
+mod to_mdast;
 mod tokenizer;
 mod util;
 
-use crate::compiler::compile;
-use crate::parser::parse;
 use alloc::{boxed::Box, fmt, string::String};
+use mdast::Root;
+use parser::parse;
+use to_html::compile as to_html;
+use to_mdast::compile as to_mdast;
 
 /// Type of line endings in markdown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -1154,5 +1165,23 @@ pub fn micromark(value: &str) -> String {
 /// ```
 pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, String> {
     let (events, bytes) = parse(value, options)?;
-    Ok(compile(&events, bytes, options))
+    Ok(to_html(&events, bytes, options))
+}
+
+/// Turn markdown into a syntax tree.
+///
+/// ## Errors
+///
+/// `to_mdast` never errors with normal markdown because markdown does not have
+/// syntax errors, so feel free to `unwrap()`.
+/// However, MDX does have syntax errors.
+/// When MDX is turned on, there are several errors that can occur with how
+/// JSX, expressions, or ESM are written.
+///
+/// ## Examples
+///
+/// To do.
+pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Root, String> {
+    let (events, bytes) = parse(value, options)?;
+    Ok(to_mdast(&events, bytes, options))
 }
