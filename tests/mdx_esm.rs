@@ -1,6 +1,9 @@
 extern crate micromark;
 mod test_utils;
-use micromark::{micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{MdxjsEsm, Node, Position, Root},
+    micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 use test_utils::{parse_esm, parse_expression};
 
@@ -236,6 +239,18 @@ fn mdx_esm() -> Result<(), String> {
             case.0
         );
     }
+
+    assert_eq!(
+        micromark_to_mdast("import a from 'b'\nexport {a}", &swc)?,
+        Node::Root(Root {
+            children: vec![Node::MdxjsEsm(MdxjsEsm {
+                value: "import a from 'b'\nexport {a}".to_string(),
+                position: Some(Position::new(1, 1, 0, 2, 11, 28))
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 11, 28))
+        }),
+        "should support mdx esm as `MdxjsEsm`s in mdast"
+    );
 
     Ok(())
 }

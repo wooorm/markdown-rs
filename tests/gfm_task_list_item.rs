@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{List, ListItem, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -238,6 +241,58 @@ Text.</li>
 </blockquote>
 "###,
         "should handle things like GitHub"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("* [x] a\n* [ ] b\n* c", &gfm)?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: false,
+                start: None,
+                children: vec![
+                    Node::ListItem(ListItem {
+                        checked: Some(true),
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "a".to_string(),
+                                position: Some(Position::new(1, 7, 6, 1, 8, 7))
+                            }),],
+                            position: Some(Position::new(1, 7, 6, 1, 8, 7))
+                        })],
+                        position: Some(Position::new(1, 1, 0, 1, 8, 7))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: Some(false),
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "b".to_string(),
+                                position: Some(Position::new(2, 7, 14, 2, 8, 15))
+                            }),],
+                            position: Some(Position::new(2, 7, 14, 2, 8, 15))
+                        })],
+                        position: Some(Position::new(2, 1, 8, 2, 8, 15))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "c".to_string(),
+                                position: Some(Position::new(3, 3, 18, 3, 4, 19))
+                            }),],
+                            position: Some(Position::new(3, 3, 18, 3, 4, 19))
+                        })],
+                        position: Some(Position::new(3, 1, 16, 3, 4, 19))
+                    }),
+                ],
+                position: Some(Position::new(1, 1, 0, 3, 4, 19))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 4, 19))
+        }),
+        "should support task list items as `checked` fields on `ListItem`s in mdast"
     );
 
     Ok(())

@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{BlockQuote, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -209,6 +212,24 @@ fn block_quote() -> Result<(), String> {
         )?,
         "<p>&gt; # a\n&gt; b\n&gt; c</p>",
         "should support turning off block quotes"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("> a", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::BlockQuote(BlockQuote {
+                children: vec![Node::Paragraph(Paragraph {
+                    children: vec![Node::Text(Text {
+                        value: "a".to_string(),
+                        position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                    }),],
+                    position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                })],
+                position: Some(Position::new(1, 1, 0, 1, 4, 3))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 4, 3))
+        }),
+        "should support block quotes as `BlockQuote`s in mdast"
     );
 
     Ok(())

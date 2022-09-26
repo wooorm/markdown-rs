@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Html, Node, Position, Root},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -34,6 +37,18 @@ fn html_flow() -> Result<(), String> {
         )?,
         "<p>&lt;x&gt;</p>",
         "should support turning off html (flow)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<div>\nstuff\n</div>", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Html(Html {
+                value: "<div>\nstuff\n</div>".to_string(),
+                position: Some(Position::new(1, 1, 0, 3, 7, 18))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 7, 18))
+        }),
+        "should support HTML (flow) as `Html`s in mdast"
     );
 
     Ok(())

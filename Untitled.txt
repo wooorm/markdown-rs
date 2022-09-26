@@ -1,3 +1,13 @@
+Rename all the “chunks” (as terms in `Name`s) to data?
+
+Divide parse options from to_html options?
+- constructs
+- gfm_strikethrough_single_tilde
+- mdx_expression_parse
+- mdx_esm_parse
+
+---
+
 micromark.js: unquoted: is `completeAttributeValueUnquoted`s case for `completeAttributeNameAfter` missing a `/`?. I’ve added it here.
 micromark.js: `]` case in cdata_end does not need to consume, it can defer to `cdata_close`, which should save 1 line
 micromark.js: should `tagOpenAttributeValueUnquoted` also support a slash?

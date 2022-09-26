@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Math, Node, Position, Root},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -246,6 +249,19 @@ fn math_flow() -> Result<(), String> {
         micromark_with_options("> $$a\n$$", &math)?,
         "<blockquote>\n<pre><code class=\"language-math math-display\"></code></pre>\n</blockquote>\n<pre><code class=\"language-math math-display\"></code></pre>\n",
         "should not support lazyness (3)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("$$extra\nabc\ndef\n$$", &math)?,
+        Node::Root(Root {
+            children: vec![Node::Math(Math {
+                meta: Some("extra".to_string()),
+                value: "abc\ndef".to_string(),
+                position: Some(Position::new(1, 1, 0, 4, 3, 18))
+            })],
+            position: Some(Position::new(1, 1, 0, 4, 3, 18))
+        }),
+        "should support math (flow) as `Math`s in mdast"
     );
 
     Ok(())

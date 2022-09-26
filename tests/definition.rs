@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Definition, Node, Position, Root},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -489,6 +492,21 @@ fn definition() -> Result<(), String> {
         )?,
         "<p>[foo]: /url &quot;title&quot;</p>",
         "should support turning off definitions"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("[a]: <b> 'c'", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Definition(Definition {
+                url: "b".to_string(),
+                identifier: "a".to_string(),
+                label: Some("a".to_string()),
+                title: Some("c".to_string()),
+                position: Some(Position::new(1, 1, 0, 1, 13, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 13, 12))
+        }),
+        "should support definitions as `Definition`s in mdast"
     );
 
     Ok(())

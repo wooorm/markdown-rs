@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{AlignKind, InlineCode, Node, Position, Root, Table, TableCell, TableRow, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -1782,6 +1785,133 @@ normal escape: <https://github.com/github/cmark-gfm/issues/277>.
 normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://github.com/github/cmark-gfm/issues/277</a>.</p>
 "###,
         "should match loose escapes like GitHub"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "| none | left | right | center |\n| - | :- | -: | :-: |\n| a |\n| b | c | d | e | f |",
+            &gfm
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Table(Table {
+                align: vec![
+                    AlignKind::None,
+                    AlignKind::Left,
+                    AlignKind::Right,
+                    AlignKind::Center
+                ],
+                children: vec![
+                    Node::TableRow(TableRow {
+                        children: vec![
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "none".to_string(),
+                                    position: Some(Position::new(1, 3, 2, 1, 7, 6))
+                                }),],
+                                position: Some(Position::new(1, 1, 0, 1, 8, 7))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "left".to_string(),
+                                    position: Some(Position::new(1, 10, 9, 1, 14, 13))
+                                }),],
+                                position: Some(Position::new(1, 8, 7, 1, 15, 14))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "right".to_string(),
+                                    position: Some(Position::new(1, 17, 16, 1, 22, 21))
+                                }),],
+                                position: Some(Position::new(1, 15, 14, 1, 23, 22))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "center".to_string(),
+                                    position: Some(Position::new(1, 25, 24, 1, 31, 30))
+                                }),],
+                                position: Some(Position::new(1, 23, 22, 1, 33, 32))
+                            }),
+                        ],
+                        position: Some(Position::new(1, 1, 0, 1, 33, 32))
+                    }),
+                    Node::TableRow(TableRow {
+                        children: vec![Node::TableCell(TableCell {
+                            children: vec![Node::Text(Text {
+                                value: "a".to_string(),
+                                position: Some(Position::new(3, 3, 57, 3, 4, 58))
+                            }),],
+                            position: Some(Position::new(3, 1, 55, 3, 6, 60))
+                        }),],
+                        position: Some(Position::new(3, 1, 55, 3, 6, 60))
+                    }),
+                    Node::TableRow(TableRow {
+                        children: vec![
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "b".to_string(),
+                                    position: Some(Position::new(4, 3, 63, 4, 4, 64))
+                                }),],
+                                position: Some(Position::new(4, 1, 61, 4, 5, 65))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "c".to_string(),
+                                    position: Some(Position::new(4, 7, 67, 4, 8, 68))
+                                }),],
+                                position: Some(Position::new(4, 5, 65, 4, 9, 69))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "d".to_string(),
+                                    position: Some(Position::new(4, 11, 71, 4, 12, 72))
+                                }),],
+                                position: Some(Position::new(4, 9, 69, 4, 13, 73))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "e".to_string(),
+                                    position: Some(Position::new(4, 15, 75, 4, 16, 76))
+                                }),],
+                                position: Some(Position::new(4, 13, 73, 4, 17, 77))
+                            }),
+                            Node::TableCell(TableCell {
+                                children: vec![Node::Text(Text {
+                                    value: "f".to_string(),
+                                    position: Some(Position::new(4, 19, 79, 4, 20, 80))
+                                }),],
+                                position: Some(Position::new(4, 17, 77, 4, 22, 82))
+                            }),
+                        ],
+                        position: Some(Position::new(4, 1, 61, 4, 22, 82))
+                    }),
+                ],
+                position: Some(Position::new(1, 1, 0, 4, 22, 82))
+            })],
+            position: Some(Position::new(1, 1, 0, 4, 22, 82))
+        }),
+        "should support GFM tables as `Table`, `TableRow`, `TableCell`s in mdast"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("| `a\\|b` |\n| - |", &gfm)?,
+        Node::Root(Root {
+            children: vec![Node::Table(Table {
+                align: vec![AlignKind::None,],
+                children: vec![Node::TableRow(TableRow {
+                    children: vec![Node::TableCell(TableCell {
+                        children: vec![Node::InlineCode(InlineCode {
+                            value: "a|b".to_string(),
+                            position: Some(Position::new(1, 3, 2, 1, 9, 8))
+                        }),],
+                        position: Some(Position::new(1, 1, 0, 1, 11, 10))
+                    }),],
+                    position: Some(Position::new(1, 1, 0, 1, 11, 10))
+                }),],
+                position: Some(Position::new(1, 1, 0, 2, 6, 16))
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 6, 16))
+        }),
+        "should support weird pipe escapes in code in tables"
     );
 
     Ok(())

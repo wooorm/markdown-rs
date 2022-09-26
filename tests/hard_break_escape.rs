@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Break, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -53,6 +56,30 @@ fn hard_break_escape() -> Result<(), String> {
         )?,
         "<p>a\\\nb</p>",
         "should support turning off hard break (escape)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a\\\nb.", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 2, 1))
+                    }),
+                    Node::Break(Break {
+                        position: Some(Position::new(1, 2, 1, 2, 1, 3))
+                    }),
+                    Node::Text(Text {
+                        value: "b.".to_string(),
+                        position: Some(Position::new(2, 1, 3, 2, 3, 5))
+                    }),
+                ],
+                position: Some(Position::new(1, 1, 0, 2, 3, 5))
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 3, 5))
+        }),
+        "should support hard break (escape) as `Break`s in mdast"
     );
 
     Ok(())

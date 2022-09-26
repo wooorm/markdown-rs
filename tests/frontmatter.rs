@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Node, Position, Root, Toml, Yaml},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -64,6 +67,30 @@ fn frontmatter() -> Result<(), String> {
         micromark_with_options("---\ntitle: Neptune", &frontmatter)?,
         "<hr />\n<p>title: Neptune</p>",
         "should not support a missing closing fence"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("---\na: b\n---", &frontmatter)?,
+        Node::Root(Root {
+            children: vec![Node::Yaml(Yaml {
+                value: "a: b".to_string(),
+                position: Some(Position::new(1, 1, 0, 3, 4, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 4, 12))
+        }),
+        "should support yaml as `Yaml`s in mdast"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("+++\ntitle = \"Jupyter\"\n+++", &frontmatter)?,
+        Node::Root(Root {
+            children: vec![Node::Toml(Toml {
+                value: "title = \"Jupyter\"".to_string(),
+                position: Some(Position::new(1, 1, 0, 3, 4, 25))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 4, 25))
+        }),
+        "should support toml as `Toml`s in mdast"
     );
 
     Ok(())

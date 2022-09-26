@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Html, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -431,6 +434,39 @@ micromark_with_options("<x> a", &danger)?,
         )?,
         "<p>a &lt;x&gt;</p>",
         "should support turning off html (text)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("alpha <i>bravo</b> charlie.", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "alpha ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 7, 6))
+                    }),
+                    Node::Html(Html {
+                        value: "<i>".to_string(),
+                        position: Some(Position::new(1, 7, 6, 1, 10, 9))
+                    }),
+                    Node::Text(Text {
+                        value: "bravo".to_string(),
+                        position: Some(Position::new(1, 10, 9, 1, 15, 14))
+                    }),
+                    Node::Html(Html {
+                        value: "</b>".to_string(),
+                        position: Some(Position::new(1, 15, 14, 1, 19, 18))
+                    }),
+                    Node::Text(Text {
+                        value: " charlie.".to_string(),
+                        position: Some(Position::new(1, 19, 18, 1, 28, 27))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 28, 27))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 28, 27))
+        }),
+        "should support HTML (text) as `Html`s in mdast"
     );
 
     Ok(())

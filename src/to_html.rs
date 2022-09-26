@@ -1,10 +1,12 @@
 //! Turn events into a string of HTML.
 use crate::event::{Event, Kind, Name};
+use crate::mdast::AlignKind;
 use crate::util::{
     constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
     decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
     gfm_tagfilter::gfm_tagfilter,
+    infer::{gfm_table_align, list_loose},
     normalize_identifier::normalize_identifier,
     sanitize_uri::{sanitize, sanitize_with_protocols},
     skip,
@@ -69,107 +71,69 @@ struct Definition {
     title: Option<String>,
 }
 
-/// GFM table: column alignment.
-// To do: share with `mdast`.
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-enum GfmTableAlign {
-    /// No alignment.
-    ///
-    /// ```markdown
-    ///   | | aaa |
-    /// > | | --- |
-    ///       ^^^
-    /// ```
-    None,
-    /// Left alignment.
-    ///
-    /// ```markdown
-    ///   | | aaa |
-    /// > | | :-- |
-    ///       ^^^
-    /// ```
-    Left,
-    /// Center alignment.
-    ///
-    /// ```markdown
-    ///   | | aaa |
-    /// > | | :-: |
-    ///       ^^^
-    /// ```
-    Center,
-    /// Right alignment.
-    ///
-    /// ```markdown
-    ///   | | aaa |
-    /// > | | --: |
-    ///       ^^^
-    /// ```
-    Right,
-}
-
 /// Context used to compile markdown.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug)]
 struct CompileContext<'a> {
     // Static info.
     /// List of events.
-    pub events: &'a [Event],
+    events: &'a [Event],
     /// List of bytes.
-    pub bytes: &'a [u8],
+    bytes: &'a [u8],
     /// Configuration.
-    pub options: &'a Options,
+    options: &'a Options,
     // Fields used by handlers to track the things they need to track to
     // compile markdown.
     /// Rank of heading (atx).
-    pub heading_atx_rank: Option<usize>,
+    heading_atx_rank: Option<usize>,
     /// Buffer of heading (setext) text.
-    pub heading_setext_buffer: Option<String>,
+    heading_setext_buffer: Option<String>,
     /// Whether raw (flow) (code (fenced), math (flow)) or code (indented) contains data.
-    pub raw_flow_seen_data: Option<bool>,
+    raw_flow_seen_data: Option<bool>,
     /// Number of raw (flow) fences.
-    pub raw_flow_fences_count: Option<usize>,
+    raw_flow_fences_count: Option<usize>,
     /// Whether we are in code (text).
-    pub raw_text_inside: bool,
+    raw_text_inside: bool,
     /// Whether we are in image text.
-    pub image_alt_inside: bool,
+    image_alt_inside: bool,
     /// Marker of character reference.
-    pub character_reference_marker: Option<u8>,
+    character_reference_marker: Option<u8>,
     /// Whether we are expecting the first list item marker.
-    pub list_expect_first_marker: Option<bool>,
+    list_expect_first_marker: Option<bool>,
     /// Stack of media (link, image).
-    pub media_stack: Vec<Media>,
+    media_stack: Vec<Media>,
     /// Stack of containers.
-    pub tight_stack: Vec<bool>,
+    tight_stack: Vec<bool>,
     /// List of definitions.
-    pub definitions: Vec<Definition>,
+    definitions: Vec<Definition>,
     /// List of definitions.
-    pub gfm_footnote_definitions: Vec<(String, String)>,
-    pub gfm_footnote_definition_calls: Vec<(String, usize)>,
-    pub gfm_footnote_definition_stack: Vec<(usize, usize)>,
+    gfm_footnote_definitions: Vec<(String, String)>,
+    gfm_footnote_definition_calls: Vec<(String, usize)>,
+    gfm_footnote_definition_stack: Vec<(usize, usize)>,
     /// Whether we are in a GFM table head.
-    pub gfm_table_in_head: bool,
+    gfm_table_in_head: bool,
     /// Current GFM table alignment.
-    pub gfm_table_align: Option<Vec<GfmTableAlign>>,
+    gfm_table_align: Option<Vec<AlignKind>>,
     /// Current GFM table column.
-    pub gfm_table_column: usize,
+    gfm_table_column: usize,
     // Fields used to influance the current compilation.
     /// Ignore the next line ending.
-    pub slurp_one_line_ending: bool,
+    slurp_one_line_ending: bool,
     /// Whether to encode HTML.
-    pub encode_html: bool,
+    encode_html: bool,
     // Configuration
     /// Line ending to use.
-    pub line_ending_default: LineEnding,
+    line_ending_default: LineEnding,
     // Intermediate results.
     /// Stack of buffers.
-    pub buffers: Vec<String>,
+    buffers: Vec<String>,
     /// Current event index.
-    pub index: usize,
+    index: usize,
 }
 
 impl<'a> CompileContext<'a> {
     /// Create a new compile context.
-    pub fn new(
+    fn new(
         events: &'a [Event],
         bytes: &'a [u8],
         options: &'a Options,
@@ -205,17 +169,17 @@ impl<'a> CompileContext<'a> {
     }
 
     /// Push a buffer.
-    pub fn buffer(&mut self) {
+    fn buffer(&mut self) {
         self.buffers.push(String::new());
     }
 
     /// Pop a buffer, returning its value.
-    pub fn resume(&mut self) -> String {
+    fn resume(&mut self) -> String {
         self.buffers.pop().expect("Cannot resume w/o buffer")
     }
 
     /// Push a str to the last buffer.
-    pub fn push(&mut self, value: &str) {
+    fn push(&mut self, value: &str) {
         self.buffers
             .last_mut()
             .expect("Cannot push w/o buffer")
@@ -223,13 +187,13 @@ impl<'a> CompileContext<'a> {
     }
 
     /// Add a line ending.
-    pub fn line_ending(&mut self) {
+    fn line_ending(&mut self) {
         let eol = self.line_ending_default.as_str().to_string();
         self.push(&eol);
     }
 
     /// Add a line ending if needed (as in, there’s no eol/eof already).
-    pub fn line_ending_if_needed(&mut self) {
+    fn line_ending_if_needed(&mut self) {
         let tail = self
             .buffers
             .last()
@@ -306,7 +270,7 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
         index += 1;
     }
 
-    index = 0;
+    let mut index = 0;
     let jump_default = (events.len(), events.len());
     let mut definition_index = 0;
     let mut jump = definition_indices
@@ -586,51 +550,7 @@ fn on_enter_gfm_strikethrough(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`GfmTable`][Name::GfmTable].
 fn on_enter_gfm_table(context: &mut CompileContext) {
-    // Find the alignment.
-    let mut index = context.index;
-    let mut in_delimiter_row = false;
-    let mut align = vec![];
-
-    while index < context.events.len() {
-        let event = &context.events[index];
-
-        if in_delimiter_row {
-            if event.kind == Kind::Enter {
-                // Start of alignment value: set a new column.
-                if event.name == Name::GfmTableDelimiterCellValue {
-                    align.push(
-                        if context.events[index + 1].name == Name::GfmTableDelimiterMarker {
-                            GfmTableAlign::Left
-                        } else {
-                            GfmTableAlign::None
-                        },
-                    );
-                }
-            } else {
-                // End of alignment value: change the column.
-                if event.name == Name::GfmTableDelimiterCellValue {
-                    if context.events[index - 1].name == Name::GfmTableDelimiterMarker {
-                        let align_index = align.len() - 1;
-                        align[align_index] = if align[align_index] == GfmTableAlign::Left {
-                            GfmTableAlign::Center
-                        } else {
-                            GfmTableAlign::Right
-                        }
-                    }
-                }
-                // Done!
-                else if event.name == Name::GfmTableDelimiterRow {
-                    break;
-                }
-            }
-        } else if event.kind == Kind::Enter && event.name == Name::GfmTableDelimiterRow {
-            in_delimiter_row = true;
-        }
-
-        index += 1;
-    }
-
-    // Generate.
+    let align = gfm_table_align(context.events, context.index);
     context.gfm_table_align = Some(align);
     context.line_ending_if_needed();
     context.push("<table>");
@@ -660,10 +580,10 @@ fn on_enter_gfm_table_cell(context: &mut CompileContext) {
         }
 
         match value {
-            GfmTableAlign::Left => context.push(" align=\"left\""),
-            GfmTableAlign::Right => context.push(" align=\"right\""),
-            GfmTableAlign::Center => context.push(" align=\"center\""),
-            GfmTableAlign::None => {}
+            AlignKind::Left => context.push(" align=\"left\""),
+            AlignKind::Right => context.push(" align=\"right\""),
+            AlignKind::Center => context.push(" align=\"center\""),
+            AlignKind::None => {}
         }
 
         context.push(">");
@@ -732,95 +652,12 @@ fn on_enter_link(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:{[`ListOrdered`][Name::ListOrdered],[`ListUnordered`][Name::ListUnordered]}.
 fn on_enter_list(context: &mut CompileContext) {
-    let events = &context.events;
-    let mut index = context.index;
-    let mut balance = 0;
-    let mut loose = false;
-    let name = &events[index].name;
-
-    while index < events.len() {
-        let event = &events[index];
-
-        if event.kind == Kind::Enter {
-            balance += 1;
-        } else {
-            balance -= 1;
-
-            if balance < 3 && event.name == Name::BlankLineEnding {
-                // Blank line directly after a prefix:
-                //
-                // ```markdown
-                // > | -␊
-                //      ^
-                //   |   a
-                // ```
-                let mut at_prefix = false;
-                // Blank line directly after item, which is just a prefix.
-                //
-                // ```markdown
-                // > | -␊
-                //      ^
-                //   | - a
-                // ```
-                let mut at_empty_list_item = false;
-                // Blank line at block quote prefix:
-                //
-                // ```markdown
-                // > | * >␊
-                //        ^
-                //   | * a
-                // ```
-                let mut at_empty_block_quote = false;
-
-                if balance == 1 {
-                    let mut before = index - 2;
-
-                    if events[before].name == Name::ListItem {
-                        before -= 1;
-
-                        if events[before].name == Name::SpaceOrTab {
-                            before -= 2;
-                        }
-
-                        if events[before].name == Name::BlockQuote
-                            && events[before - 1].name == Name::BlockQuotePrefix
-                        {
-                            at_empty_block_quote = true;
-                        } else if events[before].name == Name::ListItemPrefix {
-                            at_empty_list_item = true;
-                        }
-                    }
-                } else {
-                    let mut before = index - 2;
-
-                    if events[before].name == Name::SpaceOrTab {
-                        before -= 2;
-                    }
-
-                    if events[before].name == Name::ListItemPrefix {
-                        at_prefix = true;
-                    }
-                }
-
-                if !at_prefix && !at_empty_list_item && !at_empty_block_quote {
-                    loose = true;
-                    break;
-                }
-            }
-
-            // Done.
-            if balance == 0 && event.name == *name {
-                break;
-            }
-        }
-
-        index += 1;
-    }
-
+    let loose = list_loose(context.events, context.index, true);
     context.tight_stack.push(!loose);
     context.line_ending_if_needed();
+
     // Note: no `>`.
-    context.push(if *name == Name::ListOrdered {
+    context.push(if context.events[context.index].name == Name::ListOrdered {
         "<ol"
     } else {
         "<ul"
@@ -1041,6 +878,7 @@ fn on_exit_raw_flow(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
 fn on_exit_raw_text(context: &mut CompileContext) {
     let result = context.resume();
+    // To do: share with `to_mdast`.
     let mut bytes = result.as_bytes().to_vec();
 
     // If we are in a GFM table, we need to decode escaped pipes.

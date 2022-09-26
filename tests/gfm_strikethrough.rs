@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Delete, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -383,6 +386,34 @@ u ~**xxx**~ zzz
         )?,
         "<p>a <del>b</del> <del>c</del> d</p>",
         "should support strikethrough w/ one tilde if `singleTilde: true`"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a ~~alpha~~ b.", &gfm)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::Delete(Delete {
+                        children: vec![Node::Text(Text {
+                            value: "alpha".to_string(),
+                            position: Some(Position::new(1, 5, 4, 1, 10, 9))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 12, 11))
+                    }),
+                    Node::Text(Text {
+                        value: " b.".to_string(),
+                        position: Some(Position::new(1, 12, 11, 1, 15, 14))
+                    }),
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 15, 14))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 15, 14))
+        }),
+        "should support GFM strikethrough as `Delete`s in mdast"
     );
 
     Ok(())

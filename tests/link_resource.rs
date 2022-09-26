@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
+use micromark::{
+    mdast::{Link, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -456,6 +459,52 @@ fn link_resource() -> Result<(), String> {
         micromark("[a](\0)"),
         "<p><a href=\"%EF%BF%BD\">a</a></p>",
         "should support a single NUL character as a link resource"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "a [alpha]() b [bravo](charlie 'delta') c.",
+            &Options::default()
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::Link(Link {
+                        url: String::new(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "alpha".to_string(),
+                            position: Some(Position::new(1, 4, 3, 1, 9, 8))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 12, 11))
+                    }),
+                    Node::Text(Text {
+                        value: " b ".to_string(),
+                        position: Some(Position::new(1, 12, 11, 1, 15, 14))
+                    }),
+                    Node::Link(Link {
+                        url: "charlie".to_string(),
+                        title: Some("delta".to_string()),
+                        children: vec![Node::Text(Text {
+                            value: "bravo".to_string(),
+                            position: Some(Position::new(1, 16, 15, 1, 21, 20))
+                        }),],
+                        position: Some(Position::new(1, 15, 14, 1, 39, 38))
+                    }),
+                    Node::Text(Text {
+                        value: " c.".to_string(),
+                        position: Some(Position::new(1, 39, 38, 1, 42, 41))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 42, 41))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 42, 41))
+        }),
+        "should support link (resource) as `Link`s in mdast"
     );
 
     Ok(())

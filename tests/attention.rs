@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Emphasis, Node, Paragraph, Position, Root, Strong, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -825,6 +828,45 @@ fn attention() -> Result<(), String> {
         )?,
         "<p>*a*</p>",
         "should support turning off attention"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a *alpha* b **bravo** c.", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::Emphasis(Emphasis {
+                        children: vec![Node::Text(Text {
+                            value: "alpha".to_string(),
+                            position: Some(Position::new(1, 4, 3, 1, 9, 8))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 10, 9))
+                    }),
+                    Node::Text(Text {
+                        value: " b ".to_string(),
+                        position: Some(Position::new(1, 10, 9, 1, 13, 12))
+                    }),
+                    Node::Strong(Strong {
+                        children: vec![Node::Text(Text {
+                            value: "bravo".to_string(),
+                            position: Some(Position::new(1, 15, 14, 1, 20, 19))
+                        }),],
+                        position: Some(Position::new(1, 13, 12, 1, 22, 21))
+                    }),
+                    Node::Text(Text {
+                        value: " c.".to_string(),
+                        position: Some(Position::new(1, 22, 21, 1, 25, 24))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 25, 24))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 25, 24))
+        }),
+        "should support attention as `Emphasis`, `Strong`s in mdast"
     );
 
     Ok(())

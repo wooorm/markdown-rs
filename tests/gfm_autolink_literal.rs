@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Link, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -2733,6 +2736,91 @@ www.a/~
 <p><a href="http://www.a/">www.a/</a>~</p>
 "###,
         "should match www (path start) like GitHub does (except for the bracket bug)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "a https://alpha.com b bravo@charlie.com c www.delta.com d xmpp:echo@foxtrot.com e mailto:golf@hotel.com f.",
+            &gfm
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::Link(Link {
+                        url: "https://alpha.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "https://alpha.com".to_string(),
+                            position: Some(Position::new(1, 3, 2, 1, 20, 19))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 20, 19))
+                    }),
+                    Node::Text(Text {
+                        value: " b ".to_string(),
+                        position: Some(Position::new(1, 20, 19, 1, 23, 22))
+                    }),
+                    Node::Link(Link {
+                        url: "mailto:bravo@charlie.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "bravo@charlie.com".to_string(),
+                            position: Some(Position::new(1, 23, 22, 1, 40, 39))
+                        }),],
+                        position: Some(Position::new(1, 23, 22, 1, 40, 39))
+                    }),
+                    Node::Text(Text {
+                        value: " c ".to_string(),
+                        position: Some(Position::new(1, 40, 39, 1, 43, 42))
+                    }),
+                    Node::Link(Link {
+                        url: "http://www.delta.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "www.delta.com".to_string(),
+                            position: Some(Position::new(1, 43, 42, 1, 56, 55))
+                        }),],
+                        position: Some(Position::new(1, 43, 42, 1, 56, 55))
+                    }),
+                    Node::Text(Text {
+                        value: " d ".to_string(),
+                        position: Some(Position::new(1, 56, 55, 1, 59, 58))
+                    }),
+                    Node::Link(Link {
+                        url: "xmpp:echo@foxtrot.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "xmpp:echo@foxtrot.com".to_string(),
+                            position: Some(Position::new(1, 59, 58, 1, 80, 79))
+                        }),],
+                        position: Some(Position::new(1, 59, 58, 1, 80, 79))
+                    }),
+                    Node::Text(Text {
+                        value: " e ".to_string(),
+                        position: Some(Position::new(1, 80, 79, 1, 83, 82))
+                    }),
+                    Node::Link(Link {
+                        url: "mailto:golf@hotel.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "mailto:golf@hotel.com".to_string(),
+                            position: Some(Position::new(1, 83, 82, 1, 104, 103))
+                        }),],
+                        position: Some(Position::new(1, 83, 82, 1, 104, 103))
+                    }),
+                    Node::Text(Text {
+                        value: " f.".to_string(),
+                        position: Some(Position::new(1, 104, 103, 1, 107, 106))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 107, 106))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 107, 106))
+        }),
+        "should support GFM autolink literals as `Link`s in mdast"
     );
 
     Ok(())

@@ -28,7 +28,7 @@ mod tokenizer;
 mod util;
 
 use alloc::{boxed::Box, fmt, string::String};
-use mdast::Root;
+use mdast::Node;
 use parser::parse;
 use to_html::compile as to_html;
 use to_mdast::compile as to_mdast;
@@ -1082,19 +1082,11 @@ impl fmt::Debug for Options {
             .field("math_text_single_dollar", &self.math_text_single_dollar)
             .field(
                 "mdx_expression_parse",
-                if self.mdx_expression_parse.is_none() {
-                    &"None"
-                } else {
-                    &"Some([Function])"
-                },
+                &self.mdx_expression_parse.as_ref().map(|_d| "[Function]"),
             )
             .field(
                 "mdx_esm_parse",
-                if self.mdx_esm_parse.is_none() {
-                    &"None"
-                } else {
-                    &"Some([Function])"
-                },
+                &self.mdx_esm_parse.as_ref().map(|_d| "[Function]"),
             )
             .finish()
     }
@@ -1180,8 +1172,18 @@ pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, 
 ///
 /// ## Examples
 ///
-/// To do.
-pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Root, String> {
+/// ```
+/// use micromark::{micromark_to_mdast, Options};
+/// # fn main() -> Result<(), String> {
+///
+/// let tree = micromark_to_mdast("# hi!", &Options::default())?;
+///
+/// println!("{:?}", tree);
+/// # Ok(())
+/// # }
+/// ```
+pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Node, String> {
     let (events, bytes) = parse(value, options)?;
-    Ok(to_mdast(&events, bytes, options))
+    let node = to_mdast(&events, bytes)?;
+    Ok(node)
 }

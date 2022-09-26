@@ -2442,13 +2442,13 @@ mod tests {
     fn constants() {
         assert_eq!(
             CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
-            format!("{}", 0x10ffff).len(),
+            format!("{}", 0x0010_ffff).len(),
             "`CHARACTER_REFERENCE_DECIMAL_SIZE_MAX`"
         );
 
         assert_eq!(
             CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
-            format!("{:x}", 0x10ffff).len(),
+            format!("{:x}", 0x0010_ffff).len(),
             "`CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX`"
         );
 

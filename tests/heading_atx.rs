@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Heading, Node, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -215,6 +218,22 @@ fn heading_atx() -> Result<(), String> {
         )?,
         "<p># a</p>",
         "should support turning off heading (atx)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("## alpha #", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Heading(Heading {
+                depth: 2,
+                children: vec![Node::Text(Text {
+                    value: "alpha".to_string(),
+                    position: Some(Position::new(1, 4, 3, 1, 9, 8))
+                }),],
+                position: Some(Position::new(1, 1, 0, 1, 11, 10))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 11, 10))
+        }),
+        "should support heading (atx) as `Heading`s in mdast"
     );
 
     Ok(())

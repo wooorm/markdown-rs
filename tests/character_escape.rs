@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -91,6 +94,21 @@ fn character_escape() -> Result<(), String> {
         )?,
         "<p>\\&gt; a</p>",
         "should support turning off character escapes"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a \\* b", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![Node::Text(Text {
+                    value: "a * b".to_string(),
+                    position: Some(Position::new(1, 1, 0, 1, 7, 6))
+                }),],
+                position: Some(Position::new(1, 1, 0, 1, 7, 6))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 7, 6))
+        }),
+        "should support character escapes as `Text`s in mdast"
     );
 
     Ok(())

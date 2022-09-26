@@ -1,6 +1,9 @@
 extern crate micromark;
 mod test_utils;
-use micromark::{micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{MdxTextExpression, Node, Paragraph, Position, Root, Text},
+    micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 use test_utils::{parse_esm, parse_expression};
 
@@ -189,6 +192,31 @@ fn mdx_expression_text_agnostic() -> Result<(), String> {
         micromark_with_options("{ a } b", &mdx)?,
         "<p> b</p>",
         "should support expressions as the first thing when following by other things"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a {alpha} b.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::MdxTextExpression(MdxTextExpression {
+                        value: "alpha".to_string(),
+                        position: Some(Position::new(1, 3, 2, 1, 10, 9))
+                    }),
+                    Node::Text(Text {
+                        value: " b.".to_string(),
+                        position: Some(Position::new(1, 10, 9, 1, 13, 12))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 13, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 13, 12))
+        }),
+        "should support mdx expressions (text) as `MdxTextExpression`s in mdast"
     );
 
     Ok(())

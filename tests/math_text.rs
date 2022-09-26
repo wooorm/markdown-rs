@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{InlineMath, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -190,6 +193,31 @@ fn math_text() -> Result<(), String> {
         micromark_with_options("\\$$x$", &math)?,
         "<p>$<code class=\"language-math math-inline\">x</code></p>",
         "should support an escaped initial dollar"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a $alpha$ b.", &math)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::InlineMath(InlineMath {
+                        value: "alpha".to_string(),
+                        position: Some(Position::new(1, 3, 2, 1, 10, 9))
+                    }),
+                    Node::Text(Text {
+                        value: " b.".to_string(),
+                        position: Some(Position::new(1, 10, 9, 1, 13, 12))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 13, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 13, 12))
+        }),
+        "should support math (text) as `InlineMath`s in mdast"
     );
 
     Ok(())

@@ -2,13 +2,14 @@
 //!
 //! [mdast]: https://github.com/syntax-tree/mdast
 
-// To do: example.
-// To do: math.
-
-use alloc::{string::String, vec::Vec};
+use alloc::{
+    fmt,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 /// One place in a source file.
-#[derive(Clone, Debug)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Point {
     /// 1-indexed integer representing a line in a source file.
     pub line: usize,
@@ -18,8 +19,25 @@ pub struct Point {
     pub offset: usize,
 }
 
+impl Point {
+    #[must_use]
+    pub fn new(line: usize, column: usize, offset: usize) -> Point {
+        Point {
+            line,
+            column,
+            offset,
+        }
+    }
+}
+
+impl fmt::Debug for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{} ({})", self.line, self.column, self.offset)
+    }
+}
+
 /// Location of a node in a source file.
-#[derive(Clone, Debug)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Position {
     /// Represents the place of the first character of the parsed source region.
     pub start: Point,
@@ -28,8 +46,40 @@ pub struct Position {
     pub end: Point,
 }
 
+impl Position {
+    #[must_use]
+    pub fn new(
+        start_line: usize,
+        start_column: usize,
+        start_offset: usize,
+        end_line: usize,
+        end_column: usize,
+        end_offset: usize,
+    ) -> Position {
+        Position {
+            start: Point::new(start_line, start_column, start_offset),
+            end: Point::new(end_line, end_column, end_offset),
+        }
+    }
+}
+
+impl fmt::Debug for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}:{}-{}:{} ({}-{})",
+            self.start.line,
+            self.start.column,
+            self.end.line,
+            self.end.column,
+            self.start.offset,
+            self.end.offset
+        )
+    }
+}
+
 /// Explicitness of a reference.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ReferenceKind {
     /// The reference is implicit, its identifier inferred from its content.
     Shortcut,
@@ -40,141 +90,88 @@ pub enum ReferenceKind {
 }
 
 /// Represents how phrasing content is aligned.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AlignKind {
+    /// Left alignment.
+    ///
     /// See the `left` value of the `text-align` CSS property.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | :-- |
+    ///       ^^^
+    /// ```
     Left,
+    /// Right alignment.
+    ///
     /// See the `right` value of the `text-align` CSS property.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | --: |
+    ///       ^^^
+    /// ```
     Right,
+    /// Center alignment.
+    ///
     /// See the `center` value of the `text-align` CSS property.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | :-: |
+    ///       ^^^
+    /// ```
     Center,
+    /// No alignment.
+    ///
     /// Phrasing content is aligned as defined by the host environment.
+    ///
+    /// ```markdown
+    ///   | | aaa |
+    /// > | | --- |
+    ///       ^^^
+    /// ```
     None,
 }
 
-/// Node type.
-#[derive(Clone, Debug)]
-pub enum Kind {
-    /// Root node.
-    Root,
-    /// Paragraph node.
-    Paragraph,
-    /// Heading node.
-    Heading,
-    /// Thematic break node.
-    ThematicBreak,
-    /// Block quote node.
-    BlockQuote,
-    /// List node.
-    List,
-    /// List item node.
-    ListItem,
-    /// Html node.
-    Html,
-    /// Code node.
-    Code,
-    /// Definition node.
-    Definition,
-    /// Text node.
-    Text,
-    /// Emphasis node.
-    Emphasis,
-    /// Strong node.
-    Strong,
-    /// Code (inline) node.
-    InlineCode,
-    /// Break node.
-    Break,
-    /// Link node.
-    Link,
-    /// Image node.
-    Image,
-    /// Link reference node.
-    LinkReference,
-    /// Image reference node.
-    ImageReference,
-    /// Footnote definition node.
-    FootnoteDefinition,
-    /// Footnote reference node.
-    FootnoteReference,
-    /// Table node.
-    Table,
-    /// Table row node.
-    TableRow,
-    /// Table cell node.
-    TableCell,
-    /// Strong node.
-    Delete,
-    /// Yaml node.
-    Yaml,
-    /// Toml node.
-    Toml,
-    /// MDX: ESM node.
-    MdxjsEsm,
-    /// MDX: expression (flow).
-    MdxFlowExpression,
-    /// MDX: expression (phrasing).
-    MdxTextExpression,
-    /// MDX: JSX element (flow).
-    MdxJsxFlowElement,
-    /// MDX: JSX element (phrasing).
-    MdxJsxTextElement,
-    /// MDX: JSX attribute expression.
-    MdxJsxExpressionAttribute,
-    /// MDX: JSX attribute.
-    MdxJsxAttribute,
-    /// MDX: JSX attribute value expression.
-    MdxJsxAttributeValueExpression,
-}
+/// Nodes.
+#[derive(Clone, Eq, PartialEq)]
+pub enum Node {
+    // Document:
+    /// Root.
+    Root(Root),
 
-/// Document content.
-#[derive(Clone, Debug)]
-pub enum DocumentContent {
-    /// Container content.
-    Container(ContainerContent),
-    /// Frontmatter content.
-    Frontmatter(FrontmatterContent),
-}
-
-/// Container content.
-#[derive(Clone, Debug)]
-pub enum ContainerContent {
+    // Container:
     /// Block quote.
     BlockQuote(BlockQuote),
-    /// Flow content.
-    Flow(FlowContent),
     /// Footnote definition.
     FootnoteDefinition(FootnoteDefinition),
     /// MDX: JSX element (container).
-    JsxElement(MdxJsxFlowElement),
+    MdxJsxFlowElement(MdxJsxFlowElement),
     /// List.
     List(List),
-}
 
-/// Frontmatter content.
-#[derive(Clone, Debug)]
-pub enum FrontmatterContent {
+    // Frontmatter:
     /// MDX.js ESM.
-    Esm(MdxjsEsm),
+    MdxjsEsm(MdxjsEsm),
     /// Toml.
     Toml(Toml),
     /// Yaml.
     Yaml(Yaml),
-}
 
-/// Phrasing content.
-#[derive(Clone, Debug)]
-pub enum PhrasingContent {
+    // Phrasing:
     /// Break.
     Break(Break),
     /// Code (phrasing).
-    Code(InlineCode),
+    InlineCode(InlineCode),
+    /// Math (phrasing).
+    InlineMath(InlineMath),
     /// Delete.
     Delete(Delete),
     /// Emphasis.
     Emphasis(Emphasis),
     // MDX: expression (text).
-    Expression(MdxTextExpression),
+    MdxTextExpression(MdxTextExpression),
     /// Footnote reference.
     FootnoteReference(FootnoteReference),
     /// Html (phrasing).
@@ -184,7 +181,7 @@ pub enum PhrasingContent {
     /// Image reference.
     ImageReference(ImageReference),
     // MDX: JSX element (text).
-    JsxElement(MdxJsxTextElement),
+    MdxJsxTextElement(MdxJsxTextElement),
     /// Link.
     Link(Link),
     /// Link reference.
@@ -193,72 +190,339 @@ pub enum PhrasingContent {
     Strong(Strong),
     /// Text.
     Text(Text),
-}
 
-/// Flow content.
-#[derive(Clone, Debug)]
-pub enum FlowContent {
+    // Flow:
     /// Code (flow).
     Code(Code),
-    /// Content.
-    Content(ContentContent),
+    /// Math (flow).
+    Math(Math),
     // MDX: expression (flow).
-    Expression(MdxFlowExpression),
+    MdxFlowExpression(MdxFlowExpression),
     /// Heading.
     Heading(Heading),
     /// Html (flow).
-    Html(Html),
+    // Html(Html),
     /// Table.
     Table(Table),
     /// Thematic break.
     ThematicBreak(ThematicBreak),
-}
 
-/// Table content.
-#[derive(Clone, Debug)]
-pub enum TableContent {
+    // Table content.
     /// Table row.
-    Row(TableRow),
-}
+    TableRow(TableRow),
 
-/// Row content.
-#[derive(Clone, Debug)]
-pub enum RowContent {
+    // Row content.
     /// Table cell.
-    Cell(TableCell),
-}
+    TableCell(TableCell),
 
-/// List content.
-#[derive(Clone, Debug)]
-pub enum ListContent {
+    // List content.
     /// List item.
-    Item(ListItem),
-}
+    ListItem(ListItem),
 
-/// Content.
-#[derive(Clone, Debug)]
-pub enum ContentContent {
+    // Content.
     /// Definition.
     Definition(Definition),
     /// Paragraph.
     Paragraph(Paragraph),
 }
 
+impl fmt::Debug for Node {
+    // Debug the wrapped struct.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Node::Root(x) => write!(f, "{:?}", x),
+            Node::BlockQuote(x) => write!(f, "{:?}", x),
+            Node::FootnoteDefinition(x) => write!(f, "{:?}", x),
+            Node::MdxJsxFlowElement(x) => write!(f, "{:?}", x),
+            Node::List(x) => write!(f, "{:?}", x),
+            Node::MdxjsEsm(x) => write!(f, "{:?}", x),
+            Node::Toml(x) => write!(f, "{:?}", x),
+            Node::Yaml(x) => write!(f, "{:?}", x),
+            Node::Break(x) => write!(f, "{:?}", x),
+            Node::InlineCode(x) => write!(f, "{:?}", x),
+            Node::InlineMath(x) => write!(f, "{:?}", x),
+            Node::Delete(x) => write!(f, "{:?}", x),
+            Node::Emphasis(x) => write!(f, "{:?}", x),
+            Node::MdxTextExpression(x) => write!(f, "{:?}", x),
+            Node::FootnoteReference(x) => write!(f, "{:?}", x),
+            Node::Html(x) => write!(f, "{:?}", x),
+            Node::Image(x) => write!(f, "{:?}", x),
+            Node::ImageReference(x) => write!(f, "{:?}", x),
+            Node::MdxJsxTextElement(x) => write!(f, "{:?}", x),
+            Node::Link(x) => write!(f, "{:?}", x),
+            Node::LinkReference(x) => write!(f, "{:?}", x),
+            Node::Strong(x) => write!(f, "{:?}", x),
+            Node::Text(x) => write!(f, "{:?}", x),
+            Node::Code(x) => write!(f, "{:?}", x),
+            Node::Math(x) => write!(f, "{:?}", x),
+            Node::MdxFlowExpression(x) => write!(f, "{:?}", x),
+            Node::Heading(x) => write!(f, "{:?}", x),
+            Node::Table(x) => write!(f, "{:?}", x),
+            Node::ThematicBreak(x) => write!(f, "{:?}", x),
+            Node::TableRow(x) => write!(f, "{:?}", x),
+            Node::TableCell(x) => write!(f, "{:?}", x),
+            Node::ListItem(x) => write!(f, "{:?}", x),
+            Node::Definition(x) => write!(f, "{:?}", x),
+            Node::Paragraph(x) => write!(f, "{:?}", x),
+        }
+    }
+}
+
+fn children_to_string(children: &[Node]) -> String {
+    children.iter().map(ToString::to_string).collect()
+}
+
+impl ToString for Node {
+    fn to_string(&self) -> String {
+        match self {
+            // Parents.
+            Node::Root(x) => children_to_string(&x.children),
+            Node::BlockQuote(x) => children_to_string(&x.children),
+            Node::FootnoteDefinition(x) => children_to_string(&x.children),
+            Node::MdxJsxFlowElement(x) => children_to_string(&x.children),
+            Node::List(x) => children_to_string(&x.children),
+            Node::Delete(x) => children_to_string(&x.children),
+            Node::Emphasis(x) => children_to_string(&x.children),
+            Node::MdxJsxTextElement(x) => children_to_string(&x.children),
+            Node::Link(x) => children_to_string(&x.children),
+            Node::LinkReference(x) => children_to_string(&x.children),
+            Node::Strong(x) => children_to_string(&x.children),
+            Node::Heading(x) => children_to_string(&x.children),
+            Node::Table(x) => children_to_string(&x.children),
+            Node::TableRow(x) => children_to_string(&x.children),
+            Node::TableCell(x) => children_to_string(&x.children),
+            Node::ListItem(x) => children_to_string(&x.children),
+            Node::Paragraph(x) => children_to_string(&x.children),
+
+            // Literals.
+            Node::MdxjsEsm(x) => x.value.clone(),
+            Node::Toml(x) => x.value.clone(),
+            Node::Yaml(x) => x.value.clone(),
+            Node::InlineCode(x) => x.value.clone(),
+            Node::InlineMath(x) => x.value.clone(),
+            Node::MdxTextExpression(x) => x.value.clone(),
+            Node::Html(x) => x.value.clone(),
+            Node::Text(x) => x.value.clone(),
+            Node::Code(x) => x.value.clone(),
+            Node::Math(x) => x.value.clone(),
+            Node::MdxFlowExpression(x) => x.value.clone(),
+
+            // Voids.
+            Node::Break(_)
+            | Node::FootnoteReference(_)
+            | Node::Image(_)
+            | Node::ImageReference(_)
+            | Node::ThematicBreak(_)
+            | Node::Definition(_) => "".to_string(),
+        }
+    }
+}
+
+impl Node {
+    #[must_use]
+    pub fn children(&self) -> Option<&Vec<Node>> {
+        match self {
+            // Parent.
+            Node::Root(x) => Some(&x.children),
+            Node::Paragraph(x) => Some(&x.children),
+            Node::Heading(x) => Some(&x.children),
+            Node::BlockQuote(x) => Some(&x.children),
+            Node::List(x) => Some(&x.children),
+            Node::ListItem(x) => Some(&x.children),
+            Node::Emphasis(x) => Some(&x.children),
+            Node::Strong(x) => Some(&x.children),
+            Node::Link(x) => Some(&x.children),
+            Node::LinkReference(x) => Some(&x.children),
+            Node::FootnoteDefinition(x) => Some(&x.children),
+            Node::Table(x) => Some(&x.children),
+            Node::TableRow(x) => Some(&x.children),
+            Node::TableCell(x) => Some(&x.children),
+            Node::Delete(x) => Some(&x.children),
+            Node::MdxJsxFlowElement(x) => Some(&x.children),
+            Node::MdxJsxTextElement(x) => Some(&x.children),
+            // Non-parent.
+            _ => None,
+        }
+    }
+
+    pub fn children_mut(&mut self) -> Option<&mut Vec<Node>> {
+        match self {
+            // Parent.
+            Node::Root(x) => Some(&mut x.children),
+            Node::Paragraph(x) => Some(&mut x.children),
+            Node::Heading(x) => Some(&mut x.children),
+            Node::BlockQuote(x) => Some(&mut x.children),
+            Node::List(x) => Some(&mut x.children),
+            Node::ListItem(x) => Some(&mut x.children),
+            Node::Emphasis(x) => Some(&mut x.children),
+            Node::Strong(x) => Some(&mut x.children),
+            Node::Link(x) => Some(&mut x.children),
+            Node::LinkReference(x) => Some(&mut x.children),
+            Node::FootnoteDefinition(x) => Some(&mut x.children),
+            Node::Table(x) => Some(&mut x.children),
+            Node::TableRow(x) => Some(&mut x.children),
+            Node::TableCell(x) => Some(&mut x.children),
+            Node::Delete(x) => Some(&mut x.children),
+            Node::MdxJsxFlowElement(x) => Some(&mut x.children),
+            Node::MdxJsxTextElement(x) => Some(&mut x.children),
+            // Non-parent.
+            _ => None,
+        }
+    }
+
+    pub fn position(&mut self) -> Option<&Position> {
+        match self {
+            Node::Root(x) => x.position.as_ref(),
+            Node::BlockQuote(x) => x.position.as_ref(),
+            Node::FootnoteDefinition(x) => x.position.as_ref(),
+            Node::MdxJsxFlowElement(x) => x.position.as_ref(),
+            Node::List(x) => x.position.as_ref(),
+            Node::MdxjsEsm(x) => x.position.as_ref(),
+            Node::Toml(x) => x.position.as_ref(),
+            Node::Yaml(x) => x.position.as_ref(),
+            Node::Break(x) => x.position.as_ref(),
+            Node::InlineCode(x) => x.position.as_ref(),
+            Node::InlineMath(x) => x.position.as_ref(),
+            Node::Delete(x) => x.position.as_ref(),
+            Node::Emphasis(x) => x.position.as_ref(),
+            Node::MdxTextExpression(x) => x.position.as_ref(),
+            Node::FootnoteReference(x) => x.position.as_ref(),
+            Node::Html(x) => x.position.as_ref(),
+            Node::Image(x) => x.position.as_ref(),
+            Node::ImageReference(x) => x.position.as_ref(),
+            Node::MdxJsxTextElement(x) => x.position.as_ref(),
+            Node::Link(x) => x.position.as_ref(),
+            Node::LinkReference(x) => x.position.as_ref(),
+            Node::Strong(x) => x.position.as_ref(),
+            Node::Text(x) => x.position.as_ref(),
+            Node::Code(x) => x.position.as_ref(),
+            Node::Math(x) => x.position.as_ref(),
+            Node::MdxFlowExpression(x) => x.position.as_ref(),
+            Node::Heading(x) => x.position.as_ref(),
+            Node::Table(x) => x.position.as_ref(),
+            Node::ThematicBreak(x) => x.position.as_ref(),
+            Node::TableRow(x) => x.position.as_ref(),
+            Node::TableCell(x) => x.position.as_ref(),
+            Node::ListItem(x) => x.position.as_ref(),
+            Node::Definition(x) => x.position.as_ref(),
+            Node::Paragraph(x) => x.position.as_ref(),
+        }
+    }
+
+    pub fn position_mut(&mut self) -> Option<&mut Position> {
+        match self {
+            Node::Root(x) => x.position.as_mut(),
+            Node::BlockQuote(x) => x.position.as_mut(),
+            Node::FootnoteDefinition(x) => x.position.as_mut(),
+            Node::MdxJsxFlowElement(x) => x.position.as_mut(),
+            Node::List(x) => x.position.as_mut(),
+            Node::MdxjsEsm(x) => x.position.as_mut(),
+            Node::Toml(x) => x.position.as_mut(),
+            Node::Yaml(x) => x.position.as_mut(),
+            Node::Break(x) => x.position.as_mut(),
+            Node::InlineCode(x) => x.position.as_mut(),
+            Node::InlineMath(x) => x.position.as_mut(),
+            Node::Delete(x) => x.position.as_mut(),
+            Node::Emphasis(x) => x.position.as_mut(),
+            Node::MdxTextExpression(x) => x.position.as_mut(),
+            Node::FootnoteReference(x) => x.position.as_mut(),
+            Node::Html(x) => x.position.as_mut(),
+            Node::Image(x) => x.position.as_mut(),
+            Node::ImageReference(x) => x.position.as_mut(),
+            Node::MdxJsxTextElement(x) => x.position.as_mut(),
+            Node::Link(x) => x.position.as_mut(),
+            Node::LinkReference(x) => x.position.as_mut(),
+            Node::Strong(x) => x.position.as_mut(),
+            Node::Text(x) => x.position.as_mut(),
+            Node::Code(x) => x.position.as_mut(),
+            Node::Math(x) => x.position.as_mut(),
+            Node::MdxFlowExpression(x) => x.position.as_mut(),
+            Node::Heading(x) => x.position.as_mut(),
+            Node::Table(x) => x.position.as_mut(),
+            Node::ThematicBreak(x) => x.position.as_mut(),
+            Node::TableRow(x) => x.position.as_mut(),
+            Node::TableCell(x) => x.position.as_mut(),
+            Node::ListItem(x) => x.position.as_mut(),
+            Node::Definition(x) => x.position.as_mut(),
+            Node::Paragraph(x) => x.position.as_mut(),
+        }
+    }
+
+    pub fn position_set(&mut self, position: Option<Position>) {
+        match self {
+            Node::Root(x) => x.position = position,
+            Node::BlockQuote(x) => x.position = position,
+            Node::FootnoteDefinition(x) => x.position = position,
+            Node::MdxJsxFlowElement(x) => x.position = position,
+            Node::List(x) => x.position = position,
+            Node::MdxjsEsm(x) => x.position = position,
+            Node::Toml(x) => x.position = position,
+            Node::Yaml(x) => x.position = position,
+            Node::Break(x) => x.position = position,
+            Node::InlineCode(x) => x.position = position,
+            Node::InlineMath(x) => x.position = position,
+            Node::Delete(x) => x.position = position,
+            Node::Emphasis(x) => x.position = position,
+            Node::MdxTextExpression(x) => x.position = position,
+            Node::FootnoteReference(x) => x.position = position,
+            Node::Html(x) => x.position = position,
+            Node::Image(x) => x.position = position,
+            Node::ImageReference(x) => x.position = position,
+            Node::MdxJsxTextElement(x) => x.position = position,
+            Node::Link(x) => x.position = position,
+            Node::LinkReference(x) => x.position = position,
+            Node::Strong(x) => x.position = position,
+            Node::Text(x) => x.position = position,
+            Node::Code(x) => x.position = position,
+            Node::Math(x) => x.position = position,
+            Node::MdxFlowExpression(x) => x.position = position,
+            Node::Heading(x) => x.position = position,
+            Node::Table(x) => x.position = position,
+            Node::ThematicBreak(x) => x.position = position,
+            Node::TableRow(x) => x.position = position,
+            Node::TableCell(x) => x.position = position,
+            Node::ListItem(x) => x.position = position,
+            Node::Definition(x) => x.position = position,
+            Node::Paragraph(x) => x.position = position,
+        }
+    }
+}
+
 /// MDX: attribute content.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AttributeContent {
-    /// MDX: JSX attribute expression.
-    Expression(MdxJsxExpressionAttribute),
-    /// MDX: JSX attribute.
+    /// JSX expression.
+    ///
+    /// ```markdown
+    /// > | <a {...b} />
+    ///        ^^^^^^
+    /// ```
+    Expression(String),
+    /// JSX property.
+    ///
+    /// ```markdown
+    /// > | <a b />
+    ///        ^
+    /// ```
     Property(MdxJsxAttribute),
 }
 
 /// MDX: attribute value.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AttributeValue {
     /// Expression value.
-    Expression(MdxJsxAttributeValueExpression),
+    ///
+    /// ```markdown
+    /// > | <a b={c} />
+    ///          ^^^
+    /// ```
+    Expression(String),
     /// Static value.
+    ///
+    /// ```markdown
+    /// > | <a b="c" />
+    ///          ^^^
+    /// ```
     Literal(String),
 }
 
@@ -268,13 +532,11 @@ pub enum AttributeValue {
 /// > | a
 ///     ^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Root {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Root`.
     /// Content model.
-    pub children: Vec<DocumentContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -285,13 +547,11 @@ pub struct Root {
 /// > | a
 ///     ^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Paragraph {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Paragraph`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -302,13 +562,11 @@ pub struct Paragraph {
 /// > | # a
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Heading {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Heading`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Extra.
@@ -322,11 +580,9 @@ pub struct Heading {
 /// > | ***
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ThematicBreak {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::ThematicBreak`.
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -337,13 +593,11 @@ pub struct ThematicBreak {
 /// > | > a
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BlockQuote {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::BlockQuote`.
     /// Content model.
-    pub children: Vec<ContainerContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -354,13 +608,11 @@ pub struct BlockQuote {
 /// > | * a
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct List {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::List`.
     /// Content model.
-    pub children: Vec<ListContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Extra.
@@ -380,13 +632,11 @@ pub struct List {
 /// > | * a
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ListItem {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::ListItem`.
     /// Content model.
-    pub children: Vec<ContainerContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Extra.
@@ -404,11 +654,9 @@ pub struct ListItem {
 /// > | <a>
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Html {
     // Text.
-    /// Node type.
-    pub kind: Kind, // `Kind::Html`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -421,15 +669,13 @@ pub struct Html {
 /// > | ~~~
 ///     ^^^
 /// > | a
-///     ^^^
+///     ^
 /// > | ~~~
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Code {
     // Text.
-    /// Node type.
-    pub kind: Kind, // `Kind::Code`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -441,17 +687,37 @@ pub struct Code {
     pub meta: Option<String>,
 }
 
+/// Math (flow).
+///
+/// ```markdown
+/// > | $$
+///     ^^
+/// > | a
+///     ^
+/// > | $$
+///     ^^
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Math {
+    // Text.
+    /// Content model.
+    pub value: String,
+    /// Positional info.
+    pub position: Option<Position>,
+    // Extra.
+    /// Custom info relating to the node.
+    pub meta: Option<String>,
+}
+
 /// Definition.
 ///
 /// ```markdown
 /// > | [a]: b
 ///     ^^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Definition {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::Definition`.
     /// Positional info.
     pub position: Option<Position>,
     // Resource.
@@ -481,11 +747,9 @@ pub struct Definition {
 /// > | a
 ///     ^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Text {
     // Text.
-    /// Node type.
-    pub kind: Kind, // `Kind::Text`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -498,13 +762,11 @@ pub struct Text {
 /// > | *a*
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Emphasis {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Emphasis`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -515,13 +777,11 @@ pub struct Emphasis {
 /// > | **a**
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Strong {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Strong`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -532,11 +792,24 @@ pub struct Strong {
 /// > | `a`
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct InlineCode {
     // Text.
-    /// Node type.
-    pub kind: Kind, // `Kind::InlineCode`.
+    /// Content model.
+    pub value: String,
+    /// Positional info.
+    pub position: Option<Position>,
+}
+
+/// Math (phrasing).
+///
+/// ```markdown
+/// > | $a$
+///     ^^^
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InlineMath {
+    // Text.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -550,11 +823,9 @@ pub struct InlineCode {
 ///      ^
 ///   | b
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Break {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::Break`.
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -565,13 +836,11 @@ pub struct Break {
 /// > | [a](b)
 ///     ^^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Link {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Link`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Resource.
@@ -588,11 +857,9 @@ pub struct Link {
 /// > | ![a](b)
 ///     ^^^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Image {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::Image`.
     /// Positional info.
     pub position: Option<Position>,
     // Alternative.
@@ -613,13 +880,11 @@ pub struct Image {
 /// > | [a]
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LinkReference {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::LinkReference`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Reference.
@@ -646,11 +911,9 @@ pub struct LinkReference {
 /// > | ![a]
 ///     ^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ImageReference {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::ImageReference`.
     /// Positional info.
     pub position: Option<Position>,
     // Alternative.
@@ -681,13 +944,11 @@ pub struct ImageReference {
 /// > | [^a]: b
 ///     ^^^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FootnoteDefinition {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::FootnoteDefinition`.
     /// Content model.
-    pub children: Vec<ContainerContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Association.
@@ -711,11 +972,9 @@ pub struct FootnoteDefinition {
 /// > | [^a]
 ///     ^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FootnoteReference {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::FootnoteReference`.
     /// Positional info.
     pub position: Option<Position>,
     // Association.
@@ -741,13 +1000,11 @@ pub struct FootnoteReference {
 /// > | | - |
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Table {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Table`.
     /// Content model.
-    pub children: Vec<TableContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // Extra.
@@ -761,13 +1018,11 @@ pub struct Table {
 /// > | | a |
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TableRow {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::TableRow`.
     /// Content model.
-    pub children: Vec<RowContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -778,13 +1033,11 @@ pub struct TableRow {
 /// > | | a |
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TableCell {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::TableCell`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -795,13 +1048,11 @@ pub struct TableCell {
 /// > | ~~a~~
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Delete {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::Delete`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
 }
@@ -816,11 +1067,9 @@ pub struct Delete {
 /// > | ---
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Yaml {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::Yaml`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -837,11 +1086,9 @@ pub struct Yaml {
 /// > | +++
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Toml {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::Toml`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -854,11 +1101,9 @@ pub struct Toml {
 /// > | import a from 'b'
 ///     ^^^^^^^^^^^^^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MdxjsEsm {
     // Literal.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxjsEsm`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -871,11 +1116,9 @@ pub struct MdxjsEsm {
 /// > | {a}
 ///     ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MdxFlowExpression {
     // Literal.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxFlowExpression`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -888,11 +1131,9 @@ pub struct MdxFlowExpression {
 /// > | a {b}
 ///       ^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MdxTextExpression {
     // Literal.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxTextExpression`.
     /// Content model.
     pub value: String,
     /// Positional info.
@@ -905,13 +1146,11 @@ pub struct MdxTextExpression {
 /// > | <a />
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MdxJsxFlowElement {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxJsxFlowElement`.
     /// Content model.
-    pub children: Vec<ContainerContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // JSX element.
@@ -929,13 +1168,11 @@ pub struct MdxJsxFlowElement {
 /// > | <a />.
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MdxJsxTextElement {
     // Parent.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxJsxTextElement`.
     /// Content model.
-    pub children: Vec<PhrasingContent>,
+    pub children: Vec<Node>,
     /// Positional info.
     pub position: Option<Position>,
     // JSX element.
@@ -947,57 +1184,21 @@ pub struct MdxJsxTextElement {
     pub attributes: Vec<AttributeContent>,
 }
 
-/// MDX: JSX attribute expression.
-///
-/// ```markdown
-/// > | <a {...b} />
-///        ^^^^^^
-/// ```
-#[derive(Clone, Debug)]
-pub struct MdxJsxExpressionAttribute {
-    // Literal.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxJsxExpressionAttribute`.
-    /// Content model.
-    pub value: String,
-    /// Positional info.
-    pub position: Option<Position>,
-}
-
 /// MDX: JSX attribute.
 ///
 /// ```markdown
 /// > | <a b />
 ///        ^
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MdxJsxAttribute {
     // Void.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxJsxAttribute`.
     /// Positional info.
-    pub position: Option<Position>,
+    // pub position: Option<Position>,
     /// Key.
     pub name: String,
     /// Value.
     pub value: Option<AttributeValue>,
-}
-
-/// MDX: JSX attribute value expression.
-///
-/// ```markdown
-/// > | <a b={c} />
-///          ^^^
-/// ```
-#[derive(Clone, Debug)]
-pub struct MdxJsxAttributeValueExpression {
-    // Literal.
-    /// Node type.
-    pub kind: Kind, // `Kind::MdxJsxAttributeValueExpression`.
-    /// Content model.
-    pub value: String,
-    /// Positional info.
-    pub position: Option<Position>,
 }
 
 #[cfg(test)]
@@ -1008,7 +1209,6 @@ mod tests {
     #[test]
     fn test() {
         let text = Text {
-            kind: Kind::Text,
             value: "a".to_string(),
             position: Some(Position {
                 start: Point {
@@ -1025,8 +1225,7 @@ mod tests {
         };
 
         let paragraph = Paragraph {
-            kind: Kind::Paragraph,
-            children: vec![PhrasingContent::Text(text)],
+            children: vec![Node::Text(text)],
             position: Some(Position {
                 start: Point {
                     line: 1,
@@ -1042,6 +1241,6 @@ mod tests {
         };
 
         assert_eq!(paragraph.children.len(), 1);
-        assert!(matches!(&paragraph.children[0], PhrasingContent::Text(_)));
+        assert!(matches!(&paragraph.children[0], Node::Text(_)));
     }
 }

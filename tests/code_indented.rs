@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Code, Node, Position, Root},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -188,6 +191,23 @@ fn code_indented() -> Result<(), String> {
         micromark_with_options("- Foo\n     ---", &off)?,
         "<ul>\n<li>\n<h2>Foo</h2>\n</li>\n</ul>",
         "should support turning off code (indented, 9)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "\tconsole.log(1)\n    console.log(2)\n",
+            &Options::default()
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Code(Code {
+                lang: None,
+                meta: None,
+                value: "console.log(1)\nconsole.log(2)".to_string(),
+                position: Some(Position::new(1, 1, 0, 2, 19, 34))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 1, 35))
+        }),
+        "should support code (indented) as `Code`s in mdast"
     );
 
     Ok(())

@@ -22,11 +22,11 @@ positional info, concrete tokens, and extensions.
 
 - [x] **[compliant][commonmark]** (100% to CommonMark)
 - [x] **[extensions][]** (100% GFM, 100% MDX, frontmatter, math)
+- [x] **[ast][mdast]** (mdast)
 - [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
 - [x] **[robust][test]** (2300+ tests, 100% coverage, fuzz testing)
 
-It’s also `#![no_std]` + `alloc`, has tons of docs, and has a single dependency
-(for optional debug logging).
+It’s also `#![no_std]` + `alloc` and has tons of docs.
 
 > 🐣 **Note**: coverage is currently within progress.
 
@@ -58,7 +58,6 @@ generate syntax trees or compile to other output formats.
 - [Use](#use)
 - [API](#api)
 - [Extensions](#extensions)
-- [Architecture](#architecture)
 - [Examples](#examples)
 - [Markdown](#markdown)
 - [Project](#project)
@@ -128,6 +127,7 @@ Yields:
 `micromark` exposes
 [`micromark`](https://wooorm.com/micromark-rs/micromark/fn.micromark.html),
 [`micromark_with_options`](https://wooorm.com/micromark-rs/micromark/fn.micromark_with_options.html), and
+[`micromark_to_mdast`](https://wooorm.com/micromark-rs/micromark/fn.micromark_to_mdast.html), and
 [`Options`](https://wooorm.com/micromark-rs/micromark/struct.Options.html).
 See [crate docs][docs] for more info.
 
@@ -154,52 +154,6 @@ They are not enabled by default but can be turned on with options.
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support incredibly common, somewhat standardized,
 extensions.
-
-## Architecture
-
-micromark is maintained as a single monolithic package.
-
-### Overview
-
-The process to parse markdown looks like this:
-
-```txt
-                     micromark
-+------------------------------------------------+
-|            +-------+         +---------+       |
-| -markdown->+ parse +-events->+ compile +-html- |
-|            +-------+         +---------+       |
-+------------------------------------------------+
-```
-
-### File structure
-
-The files in `src/` are as follows:
-
-- `construct/*.rs`
-  — CommonMark, GFM, and other extension constructs used in micromark
-- `util/*.rs`
-  — helpers often needed when parsing markdown
-- `event.rs`
-  — things with meaning happening somewhere
-- `lib.rs`
-  — core module
-- `mdast.rs`
-  — syntax tree
-- `parser.rs`
-  — turn a string of markdown into events
-- `resolve.rs`
-  — steps to process events
-- `state.rs`
-  — steps of the state machine
-- `subtokenize.rs`
-  — handle content in other content
-- `to_html.rs`
-  — turns events into a string of HTML
-- `to_mdast.rs`
-  — turns events into a syntax tree
-- `tokenizer.rs`
-  — glue the states of the state machine together
 
 ## Examples
 
@@ -338,6 +292,50 @@ For more practical examples of how things roughly work in BNF, see the module do
 
 ## Project
 
+micromark is maintained as a single monolithic package.
+
+### Overview
+
+The process to parse markdown looks like this:
+
+```txt
+                     micromark
++-------------------------------------------------+
+|            +-------+         +---------+--html- |
+| -markdown->+ parse +-events->+ compile +        |
+|            +-------+         +---------+-mdast- |
++-------------------------------------------------+
+```
+
+### File structure
+
+The files in `src/` are as follows:
+
+- `construct/*.rs`
+  — CommonMark, GFM, and other extension constructs used in micromark
+- `util/*.rs`
+  — helpers often needed when parsing markdown
+- `event.rs`
+  — things with meaning happening somewhere
+- `lib.rs`
+  — core module
+- `mdast.rs`
+  — syntax tree
+- `parser.rs`
+  — turn a string of markdown into events
+- `resolve.rs`
+  — steps to process events
+- `state.rs`
+  — steps of the state machine
+- `subtokenize.rs`
+  — handle content in other content
+- `to_html.rs`
+  — turns events into a string of HTML
+- `to_mdast.rs`
+  — turns events into a syntax tree
+- `tokenizer.rs`
+  — glue the states of the state machine together
+
 ### Comparison
 
 > 🚧 **To do**.
@@ -465,6 +463,7 @@ Support this effort and give back by sponsoring:
 [chalker]: https://github.com/ChALkeR
 [license]: https://github.com/micromark/micromark/blob/main/license
 [author]: https://wooorm.com
+[mdast]: https://github.com/syntax-tree/mdast
 [starry-night]: https://github.com/wooorm/starry-night
 [contribute]: #contribute
 [sponsor]: #sponsor

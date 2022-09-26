@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{InlineCode, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -168,6 +171,31 @@ fn code_text() -> Result<(), String> {
         )?,
         "<p>`a`</p>",
         "should support turning off code (text)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a `alpha` b.", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::InlineCode(InlineCode {
+                        value: "alpha".to_string(),
+                        position: Some(Position::new(1, 3, 2, 1, 10, 9))
+                    }),
+                    Node::Text(Text {
+                        value: " b.".to_string(),
+                        position: Some(Position::new(1, 10, 9, 1, 13, 12))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 13, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 13, 12))
+        }),
+        "should support code (text) as `InlineCode`s in mdast"
     );
 
     Ok(())

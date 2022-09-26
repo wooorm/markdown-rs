@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{List, ListItem, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -576,6 +579,107 @@ fn list() -> Result<(), String> {
         )?,
         "<p>- one</p>\n<p>two</p>",
         "should support turning off lists"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("* a", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: false,
+                start: None,
+                children: vec![Node::ListItem(ListItem {
+                    checked: None,
+                    spread: false,
+                    children: vec![Node::Paragraph(Paragraph {
+                        children: vec![Node::Text(Text {
+                            value: "a".to_string(),
+                            position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                    })],
+                    position: Some(Position::new(1, 1, 0, 1, 4, 3))
+                })],
+                position: Some(Position::new(1, 1, 0, 1, 4, 3))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 4, 3))
+        }),
+        "should support lists, list items as `List`, `ListItem`s in mdast"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("3. a", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: true,
+                spread: false,
+                start: Some(3),
+                children: vec![Node::ListItem(ListItem {
+                    checked: None,
+                    spread: false,
+                    children: vec![Node::Paragraph(Paragraph {
+                        children: vec![Node::Text(Text {
+                            value: "a".to_string(),
+                            position: Some(Position::new(1, 4, 3, 1, 5, 4))
+                        }),],
+                        position: Some(Position::new(1, 4, 3, 1, 5, 4))
+                    })],
+                    position: Some(Position::new(1, 1, 0, 1, 5, 4))
+                })],
+                position: Some(Position::new(1, 1, 0, 1, 5, 4))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 5, 4))
+        }),
+        "should support `start` fields on `List` w/ `ordered: true` in mdast"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("* a\n\n  b\n* c", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: false,
+                start: None,
+                children: vec![
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: true,
+                        children: vec![
+                            Node::Paragraph(Paragraph {
+                                children: vec![Node::Text(Text {
+                                    value: "a".to_string(),
+                                    position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                                }),],
+                                position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                            }),
+                            Node::Paragraph(Paragraph {
+                                children: vec![Node::Text(Text {
+                                    value: "b".to_string(),
+                                    position: Some(Position::new(3, 3, 7, 3, 4, 8))
+                                }),],
+                                position: Some(Position::new(3, 3, 7, 3, 4, 8))
+                            })
+                        ],
+                        position: Some(Position::new(1, 1, 0, 3, 4, 8))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "c".to_string(),
+                                position: Some(Position::new(4, 3, 11, 4, 4, 12))
+                            }),],
+                            position: Some(Position::new(4, 3, 11, 4, 4, 12))
+                        })],
+                        position: Some(Position::new(4, 1, 9, 4, 4, 12))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 4, 4, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 4, 4, 12))
+        }),
+        "should support `spread` fields on `List`, `ListItem`s in mdast"
     );
 
     Ok(())

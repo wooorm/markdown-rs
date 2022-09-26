@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -1595,6 +1598,46 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
         r###"<p>Here is a short reference,<a href="a">1</a>, a collapsed one,<a href="b">2</a>, and a full <a href="c">one</a>.</p>
 "###,
         "should match references and definitions like GitHub"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &gfm)?,
+        Node::Root(Root {
+            children: vec![
+                Node::FootnoteDefinition(FootnoteDefinition {
+                    children: vec![Node::Paragraph(Paragraph {
+                        children: vec![Node::Text(Text {
+                            value: "b\nc".to_string(),
+                            position: Some(Position::new(1, 7, 6, 2, 6, 10))
+                        })],
+                        position: Some(Position::new(1, 7, 6, 2, 6, 10))
+                    })],
+                    identifier: "a".to_string(),
+                    label: Some("a".to_string()),
+                    position: Some(Position::new(1, 1, 0, 3, 1, 11))
+                }),
+                Node::Paragraph(Paragraph {
+                    children: vec![
+                        Node::Text(Text {
+                            value: "d ".to_string(),
+                            position: Some(Position::new(4, 1, 12, 4, 3, 14))
+                        }),
+                        Node::FootnoteReference(FootnoteReference {
+                            identifier: "a".to_string(),
+                            label: Some("a".to_string()),
+                            position: Some(Position::new(4, 3, 14, 4, 7, 18))
+                        }),
+                        Node::Text(Text {
+                            value: " e.".to_string(),
+                            position: Some(Position::new(4, 7, 18, 4, 10, 21))
+                        })
+                    ],
+                    position: Some(Position::new(4, 1, 12, 4, 10, 21))
+                })
+            ],
+            position: Some(Position::new(1, 1, 0, 4, 10, 21))
+        }),
+        "should support GFM footnotes as `FootnoteDefinition`, `FootnoteReference`s in mdast"
     );
 
     Ok(())

@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Heading, Node, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -282,6 +285,22 @@ fn heading_setext() -> Result<(), String> {
         )?,
         "<p>a\n-</p>",
         "should support turning off setext underlines"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("alpha\nbravo\n==", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Heading(Heading {
+                depth: 1,
+                children: vec![Node::Text(Text {
+                    value: "alpha\nbravo".to_string(),
+                    position: Some(Position::new(1, 1, 0, 2, 6, 11))
+                }),],
+                position: Some(Position::new(1, 1, 0, 3, 3, 14))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 3, 14))
+        }),
+        "should support heading (atx) as `Heading`s in mdast"
     );
 
     Ok(())

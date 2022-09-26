@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Node, Position, Root, ThematicBreak},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -179,6 +182,17 @@ fn thematic_break() -> Result<(), String> {
         )?,
         "<p>***</p>",
         "should support turning off thematic breaks"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("***", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::ThematicBreak(ThematicBreak {
+                position: Some(Position::new(1, 1, 0, 1, 4, 3))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 4, 3))
+        }),
+        "should support thematic breaks as `ThematicBreak`s in mdast"
     );
 
     Ok(())

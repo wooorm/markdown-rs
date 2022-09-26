@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{micromark, micromark_to_mdast, micromark_with_options, Constructs, Options};
 
 fn main() -> Result<(), String> {
     // Turn on debugging.
@@ -35,30 +35,13 @@ fn main() -> Result<(), String> {
         )?
     );
 
-    // Support MDX extensions.
-    // Note: mdx compiles to nothing, handle it yourself.
+    // Access syntax tree and support MDX extensions:
     println!(
-        "{}",
-        micromark_with_options(
+        "{:?}",
+        micromark_to_mdast(
             "# <HelloMessage />, {username}!",
             &Options {
                 constructs: Constructs::mdx(),
-                gfm_tagfilter: true,
-                ..Options::default()
-            }
-        )?
-    );
-
-    // Support other extensions that are not in CommonMark.
-    println!(
-        "{:?}",
-        micromark_with_options(
-            "---\ntitle: Neptune\n---\nSome stuff on the moons of Neptune.",
-            &Options {
-                constructs: Constructs {
-                    frontmatter: true,
-                    ..Constructs::default()
-                },
                 ..Options::default()
             }
         )?

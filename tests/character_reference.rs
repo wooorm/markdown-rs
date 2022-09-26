@@ -1,14 +1,18 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
 fn character_reference() -> Result<(), String> {
     assert_eq!(
-      micromark(
-        "&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;"),
-      "<p>\u{a0} &amp; © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸</p>",
-      "should support named character references"
+        micromark(
+            "&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;"
+        ),
+        "<p>\u{a0} &amp; © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸</p>",
+        "should support named character references"
     );
 
     assert_eq!(
@@ -200,6 +204,21 @@ fn character_reference() -> Result<(), String> {
         )?,
         "<p>&amp;amp;</p>",
         "should support turning off character references"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;", &Options::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![Node::Text(Text {
+                    value: "\u{a0} & © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸".to_string(),
+                    position: Some(Position::new(1, 1, 0, 3, 33, 109))
+                }),],
+                position: Some(Position::new(1, 1, 0, 3, 33, 109))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 33, 109))
+        }),
+        "should support character references as `Text`s in mdast"
     );
 
     Ok(())

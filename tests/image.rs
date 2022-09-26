@@ -1,5 +1,10 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{
+        Definition, Image, ImageReference, Node, Paragraph, Position, ReferenceKind, Root, Text,
+    },
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -225,5 +230,106 @@ fn image() -> Result<(), String> {
         "should allow non-http protocols w/ `allowDangerousProtocol`"
     );
 
+    assert_eq!(
+        micromark_to_mdast(
+            "a ![alpha]() b ![bravo](charlie 'delta') c.",
+            &Options::default()
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::Image(Image {
+                        alt: "alpha".to_string(),
+                        url: String::new(),
+                        title: None,
+                        position: Some(Position::new(1, 3, 2, 1, 13, 12))
+                    }),
+                    Node::Text(Text {
+                        value: " b ".to_string(),
+                        position: Some(Position::new(1, 13, 12, 1, 16, 15))
+                    }),
+                    Node::Image(Image {
+                        alt: "bravo".to_string(),
+                        url: "charlie".to_string(),
+                        title: Some("delta".to_string()),
+                        position: Some(Position::new(1, 16, 15, 1, 41, 40))
+                    }),
+                    Node::Text(Text {
+                        value: " c.".to_string(),
+                        position: Some(Position::new(1, 41, 40, 1, 44, 43))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 44, 43))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 44, 43))
+        }),
+        "should support image (resource) as `Image`s in mdast"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "[x]: y\n\na ![x] b ![x][] c ![d][x] e.",
+            &Options::default()
+        )?,
+        Node::Root(Root {
+            children: vec![
+                Node::Definition(Definition {
+                    identifier: "x".to_string(),
+                    label: Some("x".to_string()),
+                    url: "y".to_string(),
+                    title: None,
+                    position: Some(Position::new(1, 1, 0, 1, 7, 6))
+                }),
+                Node::Paragraph(Paragraph {
+                    children: vec![
+                        Node::Text(Text {
+                            value: "a ".to_string(),
+                            position: Some(Position::new(3, 1, 8, 3, 3, 10))
+                        }),
+                        Node::ImageReference(ImageReference {
+                            reference_kind: ReferenceKind::Shortcut,
+                            identifier: "x".to_string(),
+                            label: Some("x".to_string()),
+                            alt: "x".to_string(),
+                            position: Some(Position::new(3, 3, 10, 3, 7, 14))
+                        }),
+                        Node::Text(Text {
+                            value: " b ".to_string(),
+                            position: Some(Position::new(3, 7, 14, 3, 10, 17))
+                        }),
+                        Node::ImageReference(ImageReference {
+                            reference_kind: ReferenceKind::Collapsed,
+                            identifier: "x".to_string(),
+                            label: Some("x".to_string()),
+                            alt: "x".to_string(),
+                            position: Some(Position::new(3, 10, 17, 3, 16, 23))
+                        }),
+                        Node::Text(Text {
+                            value: " c ".to_string(),
+                            position: Some(Position::new(3, 16, 23, 3, 19, 26))
+                        }),
+                        Node::ImageReference(ImageReference {
+                            reference_kind: ReferenceKind::Full,
+                            identifier: "x".to_string(),
+                            label: Some("x".to_string()),
+                            alt: "d".to_string(),
+                            position: Some(Position::new(3, 19, 26, 3, 26, 33))
+                        }),
+                        Node::Text(Text {
+                            value: " e.".to_string(),
+                            position: Some(Position::new(3, 26, 33, 3, 29, 36))
+                        }),
+                    ],
+                    position: Some(Position::new(3, 1, 8, 3, 29, 36))
+                }),
+            ],
+            position: Some(Position::new(1, 1, 0, 3, 29, 36))
+        }),
+        "should support image (reference) as `ImageReference`s in mdast"
+    );
     Ok(())
 }

@@ -1,6 +1,12 @@
 extern crate micromark;
 mod test_utils;
-use micromark::{micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{
+        AttributeContent, AttributeValue, Emphasis, MdxJsxAttribute, MdxJsxTextElement, Node,
+        Paragraph, Position, Root, Text,
+    },
+    micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 use test_utils::{parse_esm, parse_expression};
 
@@ -39,6 +45,272 @@ fn mdx_jsx_text_core() -> Result<(), String> {
         micromark_with_options("a <b>*b*</b> c.", &mdx)?,
         "<p>a <em>b</em> c.</p>",
         "should support markdown inside elements"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <b /> c.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("b".to_string()),
+                        attributes: vec![],
+                        children: vec![],
+                        position: Some(Position::new(1, 3, 2, 1, 8, 7))
+                    }),
+                    Node::Text(Text {
+                        value: " c.".to_string(),
+                        position: Some(Position::new(1, 8, 7, 1, 11, 10))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 11, 10))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 11, 10))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (self-closing)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <b>*c*</b> d.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("b".to_string()),
+                        attributes: vec![],
+                        children: vec![
+                            Node::Emphasis(Emphasis {
+                                children: vec![
+                                    Node::Text(Text {
+                                        value: "c".to_string(),
+                                        position: Some(Position::new(1, 7, 6, 1, 8, 7))
+                                    }),
+                                ],
+                                position: Some(Position::new(1, 6, 5, 1, 9, 8))
+                            }),
+                        ],
+                        position: Some(Position::new(1, 3, 2, 1, 13, 12))
+                    }),
+                    Node::Text(Text {
+                        value: " d.".to_string(),
+                        position: Some(Position::new(1, 13, 12, 1, 16, 15))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 16, 15))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 16, 15))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (matched open and close tags)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a:b />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a:b".to_string()),
+                        attributes: vec![],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 8, 7))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 8, 7, 1, 9, 8))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 9, 8))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 9, 8))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (namespace in tag name)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a.b.c />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a.b.c".to_string()),
+                        attributes: vec![],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 10, 9))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 10, 9, 1, 11, 10))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 11, 10))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 11, 10))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (members in tag name)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a {...b} />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".to_string()),
+                        attributes: vec![AttributeContent::Expression("...b".to_string())],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 13, 12))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 13, 12, 1, 14, 13))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 14, 13))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 14, 13))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (attribute expression)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a b c:d />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".to_string()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".to_string(),
+                                value: None,
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "c:d".to_string(),
+                                value: None,
+                            })
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 12, 11))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 12, 11, 1, 13, 12))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 13, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 13, 12))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (property names)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a b='c' d=\"e\" f={g} />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".to_string()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".to_string(),
+                                value: Some(AttributeValue::Literal("c".to_string())),
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "d".to_string(),
+                                value: Some(AttributeValue::Literal("e".to_string())),
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "f".to_string(),
+                                value: Some(AttributeValue::Expression("g".to_string())),
+                            }),
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 24, 23))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 24, 23, 1, 25, 24))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 25, 24))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 25, 24))
+        }),
+        "should support mdx jsx (text) as `MdxJsxTextElement`s in mdast (attribute values)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a </b> c", &mdx)
+            .err()
+            .unwrap(),
+        "1:4: Unexpected closing slash `/` in tag, expected an open tag first (mdx-jsx:unexpected-closing-slash)",
+        "should crash when building the ast on a closing tag if none is open"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <b> c </b/> d", &mdx)
+            .err()
+            .unwrap(),
+        "1:12: Unexpected self-closing slash `/` in closing tag, expected the end of the tag (mdx-jsx:unexpected-self-closing-slash)",
+        "should crash when building the ast on a closing tag with a self-closing slash"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <b> c </b d> e", &mdx)
+            .err()
+            .unwrap(),
+        "1:13: Unexpected attribute in closing tag, expected the end of the tag (mdx-jsx:unexpected-attribute)",
+        "should crash when building the ast on a closing tag with an attribute"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <>b</c> d", &mdx)
+            .err()
+            .unwrap(),
+        "1:6: Unexpected closing tag `</c>`, expected corresponding closing tag for `<>` (1:3) (mdx-jsx:end-tag-mismatch)",
+        "should crash when building the ast on mismatched tags (1)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <b>c</> d", &mdx)
+            .err()
+            .unwrap(),
+        "1:7: Unexpected closing tag `</>`, expected corresponding closing tag for `<b>` (1:3) (mdx-jsx:end-tag-mismatch)",
+        "should crash when building the ast on mismatched tags (2)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("*a <b>c* d</b>.", &mdx).err().unwrap(),
+        "1:9: Expected a closing tag for `<b>` (1:4) before the end of `Emphasis` (mdx-jsx:end-tag-mismatch)",
+        "should crash when building the ast on mismatched interleaving (1)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a>b *c</a> d*.", &mdx).err().unwrap(),
+        "1:8: Expected the closing tag `</a>` either before the start of `Emphasis` (1:6), or another opening tag after that start (mdx-jsx:end-tag-mismatch)",
+        "should crash when building the ast on mismatched interleaving (2)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("a <b>.", &mdx).err().unwrap(),
+        "1:7: Expected a closing tag for `<b>` (1:3) before the end of `Paragraph` (mdx-jsx:end-tag-mismatch)",
+        "should crash when building the ast on mismatched interleaving (3)"
+    );
+
+    // Note: this is flow, not text.
+    assert_eq!(
+        micromark_to_mdast("<a>", &mdx).err().unwrap(),
+        "1:4: Expected a closing tag for `<a>` (1:1) (mdx-jsx:end-tag-mismatch)",
+        "should crash when building the ast on mismatched interleaving (4)"
     );
 
     Ok(())

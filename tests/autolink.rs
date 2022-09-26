@@ -1,5 +1,8 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{Link, Node, Paragraph, Position, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -257,6 +260,52 @@ fn autolink() -> Result<(), String> {
         )?,
         "<p>&lt;a@b.co&gt;</p>",
         "should support turning off autolinks"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "a <https://alpha.com> b <bravo@charlie.com> c.",
+            &Options::default()
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::Text(Text {
+                        value: "a ".to_string(),
+                        position: Some(Position::new(1, 1, 0, 1, 3, 2))
+                    }),
+                    Node::Link(Link {
+                        url: "https://alpha.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "https://alpha.com".to_string(),
+                            position: Some(Position::new(1, 4, 3, 1, 21, 20))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 22, 21))
+                    }),
+                    Node::Text(Text {
+                        value: " b ".to_string(),
+                        position: Some(Position::new(1, 22, 21, 1, 25, 24))
+                    }),
+                    Node::Link(Link {
+                        url: "mailto:bravo@charlie.com".to_string(),
+                        title: None,
+                        children: vec![Node::Text(Text {
+                            value: "bravo@charlie.com".to_string(),
+                            position: Some(Position::new(1, 26, 25, 1, 43, 42))
+                        }),],
+                        position: Some(Position::new(1, 25, 24, 1, 44, 43))
+                    }),
+                    Node::Text(Text {
+                        value: " c.".to_string(),
+                        position: Some(Position::new(1, 44, 43, 1, 47, 46))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 47, 46))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 47, 46))
+        }),
+        "should support autolinks as `Link`s in mdast"
     );
 
     Ok(())

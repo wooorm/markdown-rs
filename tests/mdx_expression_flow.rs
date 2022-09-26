@@ -1,6 +1,9 @@
 extern crate micromark;
 mod test_utils;
-use micromark::{micromark_with_options, Constructs, Options};
+use micromark::{
+    mdast::{MdxFlowExpression, Node, Position, Root},
+    micromark_to_mdast, micromark_with_options, Constructs, Options,
+};
 use pretty_assertions::assert_eq;
 use test_utils::{parse_esm, parse_expression};
 
@@ -79,6 +82,18 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
             .unwrap(),
         "3:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazyness (4)"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("{alpha +\nbravo}", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                value: "alpha +\nbravo".to_string(),
+                position: Some(Position::new(1, 1, 0, 2, 7, 15))
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 7, 15))
+        }),
+        "should support mdx expressions (flow) as `MdxFlowExpression`s in mdast"
     );
 
     Ok(())
