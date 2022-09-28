@@ -88,7 +88,6 @@ use crate::util::{
     },
     slice::Slice,
 };
-use alloc::string::String;
 use alloc::{vec, vec::Vec};
 
 /// Attentention sequence that we can take markers from.
@@ -152,7 +151,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve sequences.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     // Find all sequences, gather info about them.
     let mut sequences = get_sequences(tokenizer);
 
@@ -224,7 +223,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
 
     tokenizer.map.consume(&mut tokenizer.events);
 
-    Ok(None)
+    None
 }
 
 /// Get sequences.

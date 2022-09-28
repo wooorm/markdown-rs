@@ -1,11 +1,13 @@
 extern crate micromark;
 mod test_utils;
 use micromark::{
-    mdast::{MdxTextExpression, Node, Paragraph, Position, Root, Text},
-    micromark_to_mdast, micromark_with_options, Constructs, Options,
+    mdast::{MdxTextExpression, Node, Paragraph, Root, Text},
+    micromark_to_mdast, micromark_with_options,
+    unist::Position,
+    Constructs, Options,
 };
 use pretty_assertions::assert_eq;
-use test_utils::{parse_esm, parse_expression};
+use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_expression_text_gnostic_core() -> Result<(), String> {

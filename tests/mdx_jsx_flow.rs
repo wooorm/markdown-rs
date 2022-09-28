@@ -1,7 +1,9 @@
 extern crate micromark;
 use micromark::{
-    mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Position, Root, Text},
-    micromark_to_mdast, micromark_with_options, Constructs, Options,
+    mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
+    micromark_to_mdast, micromark_with_options,
+    unist::Position,
+    Constructs, Options,
 };
 use pretty_assertions::assert_eq;
 

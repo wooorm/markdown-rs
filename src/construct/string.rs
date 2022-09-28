@@ -17,7 +17,6 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
-use alloc::string::String;
 
 /// Characters that can start something in string.
 const MARKERS: [u8; 2] = [b'&', b'\\'];
@@ -76,8 +75,7 @@ pub fn before_data(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve whitespace in string.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     resolve_whitespace(tokenizer, false, false);
-
-    Ok(None)
+    None
 }

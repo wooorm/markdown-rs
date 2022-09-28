@@ -1,7 +1,9 @@
 extern crate micromark;
 use micromark::{
-    mdast::{Break, Node, Paragraph, Position, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+    mdast::{Break, Node, Paragraph, Root, Text},
+    micromark, micromark_to_mdast, micromark_with_options,
+    unist::Position,
+    Constructs, Options,
 };
 use pretty_assertions::assert_eq;
 

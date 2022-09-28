@@ -1,11 +1,13 @@
 extern crate micromark;
 mod test_utils;
 use micromark::{
-    mdast::{MdxFlowExpression, Node, Position, Root},
-    micromark_to_mdast, micromark_with_options, Constructs, Options,
+    mdast::{MdxFlowExpression, Node, Root},
+    micromark_to_mdast, micromark_with_options,
+    unist::Position,
+    Constructs, Options,
 };
 use pretty_assertions::assert_eq;
-use test_utils::{parse_esm, parse_expression};
+use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_expression_flow_agnostic() -> Result<(), String> {

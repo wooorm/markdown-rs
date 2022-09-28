@@ -661,7 +661,7 @@ pub fn reference_collapsed_open(tokenizer: &mut Tokenizer) -> State {
 ///
 /// This turns matching label starts and label ends into links, images, and
 /// footnotes, and turns unmatched label starts back into data.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     // Inject labels.
     let labels = tokenizer.tokenize_state.labels.split_off(0);
     inject_labels(tokenizer, &labels);
@@ -673,7 +673,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
 
     tokenizer.map.consume(&mut tokenizer.events);
 
-    Ok(None)
+    None
 }
 
 /// Inject links/images/footnotes.

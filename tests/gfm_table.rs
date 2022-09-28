@@ -1,7 +1,9 @@
 extern crate micromark;
 use micromark::{
-    mdast::{AlignKind, InlineCode, Node, Position, Root, Table, TableCell, TableRow, Text},
-    micromark, micromark_to_mdast, micromark_with_options, Constructs, Options,
+    mdast::{AlignKind, InlineCode, Node, Root, Table, TableCell, TableRow, Text},
+    micromark, micromark_to_mdast, micromark_with_options,
+    unist::Position,
+    Constructs, Options,
 };
 use pretty_assertions::assert_eq;
 

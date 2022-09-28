@@ -133,7 +133,7 @@ fn tabs_flow() -> Result<(), String> {
 }
 
 #[test]
-fn tabs_text() -> Result<(), String> {
+fn tabs_text() {
     assert_eq!(
         micromark("<http:\t>"),
         "<p>&lt;http:\t&gt;</p>",
@@ -251,12 +251,10 @@ fn tabs_text() -> Result<(), String> {
         "<p><a href=\"y\" title=\"z\">x</a></p>",
         "should support a tab between a link destination and title"
     );
-
-    Ok(())
 }
 
 #[test]
-fn tabs_virtual_spaces() -> Result<(), String> {
+fn tabs_virtual_spaces() {
     assert_eq!(
         micromark("```\n\tx"),
         "<pre><code>\tx\n</code></pre>\n",
@@ -288,6 +286,4 @@ fn tabs_virtual_spaces() -> Result<(), String> {
         // "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
         "should support a part of a tab as a container, and the rest of a tab as flow"
     );
-
-    Ok(())
 }

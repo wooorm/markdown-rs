@@ -3,7 +3,7 @@ use micromark::micromark;
 use pretty_assertions::assert_eq;
 
 #[test]
-fn soft_break() -> Result<(), String> {
+fn soft_break() {
     assert_eq!(
         micromark("foo\nbaz"),
         "<p>foo\nbaz</p>",
@@ -15,6 +15,4 @@ fn soft_break() -> Result<(), String> {
         "<p>foo\nbaz</p>",
         "should trim spaces around line endings"
     );
-
-    Ok(())
 }

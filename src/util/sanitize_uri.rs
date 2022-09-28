@@ -26,6 +26,7 @@ use alloc::{
 /// ## References
 ///
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
+#[must_use]
 pub fn sanitize(value: &str) -> String {
     encode(&*normalize(value), true)
 }

@@ -3,12 +3,14 @@ mod test_utils;
 use micromark::{
     mdast::{
         AttributeContent, AttributeValue, Emphasis, MdxJsxAttribute, MdxJsxTextElement, Node,
-        Paragraph, Position, Root, Text,
+        Paragraph, Root, Text,
     },
-    micromark_to_mdast, micromark_with_options, Constructs, Options,
+    micromark_to_mdast, micromark_with_options,
+    unist::Position,
+    Constructs, Options,
 };
 use pretty_assertions::assert_eq;
-use test_utils::{parse_esm, parse_expression};
+use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_jsx_text_core() -> Result<(), String> {

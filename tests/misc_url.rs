@@ -3,7 +3,7 @@ use micromark::micromark;
 use pretty_assertions::assert_eq;
 
 #[test]
-fn url() -> Result<(), String> {
+fn url() {
     assert_eq!(
         micromark("<https://%>"),
         "<p><a href=\"https://%25\">https://%</a></p>",
@@ -145,6 +145,4 @@ fn url() -> Result<(), String> {
         format!("<p><a href=\"{}\"></a></p>", ascii_out),
         "should support ascii characters"
     );
-
-    Ok(())
 }

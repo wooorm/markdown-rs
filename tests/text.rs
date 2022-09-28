@@ -3,7 +3,7 @@ use micromark::micromark;
 use pretty_assertions::assert_eq;
 
 #[test]
-fn text() -> Result<(), String> {
+fn text() {
     assert_eq!(
         micromark("hello $.;'there"),
         "<p>hello $.;'there</p>",
@@ -21,6 +21,4 @@ fn text() -> Result<(), String> {
         "<p>Multiple     spaces</p>",
         "should preserve internal spaces verbatim"
     );
-
-    Ok(())
 }

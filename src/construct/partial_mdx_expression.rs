@@ -219,7 +219,7 @@ fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> St
     };
 
     // Parse and handle what was signaled back.
-    match parse(&result.value, kind) {
+    match parse(&result.value, &kind) {
         MdxSignal::Ok => State::Ok,
         MdxSignal::Error(message, place) => {
             let point = place_to_point(&result, place);

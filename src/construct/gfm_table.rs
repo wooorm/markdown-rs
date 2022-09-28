@@ -232,7 +232,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
 use crate::util::{constant::TAB_SIZE, skip::opt_back as skip_opt_back};
-use alloc::{string::String, vec};
+use alloc::vec;
 
 /// Start of a GFM table.
 ///
@@ -772,7 +772,7 @@ pub fn body_row_escape(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve GFM table.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     let mut index = 0;
     let mut in_first_cell_awaiting_pipe = true;
     let mut in_row = false;
@@ -887,7 +887,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
         flush_table_end(tokenizer, last_table_end, last_table_has_body);
     }
 
-    Ok(None)
+    None
 }
 
 /// Generate a cell.

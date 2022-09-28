@@ -5,10 +5,10 @@ use crate::mdast::{
     AttributeContent, AttributeValue, BlockQuote, Break, Code, Definition, Delete, Emphasis,
     FootnoteDefinition, FootnoteReference, Heading, Html, Image, ImageReference, InlineCode,
     InlineMath, Link, LinkReference, List, ListItem, Math, MdxFlowExpression, MdxJsxAttribute,
-    MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression, MdxjsEsm, Node, Paragraph, Point,
-    Position, ReferenceKind, Root, Strong, Table, TableCell, TableRow, Text, ThematicBreak, Toml,
-    Yaml,
+    MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression, MdxjsEsm, Node, Paragraph,
+    ReferenceKind, Root, Strong, Table, TableCell, TableRow, Text, ThematicBreak, Toml, Yaml,
 };
+use crate::unist::{Point, Position};
 use crate::util::{
     decode_character_reference::{decode_named, decode_numeric},
     infer::{gfm_table_align, list_item_loose, list_loose},

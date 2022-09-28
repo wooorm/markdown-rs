@@ -69,7 +69,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
 use crate::util::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
-use alloc::{string::String, vec};
+use alloc::vec;
 
 /// Start of a heading (atx).
 ///
@@ -223,7 +223,7 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve heading (atx).
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     let mut index = 0;
     let mut heading_inside = false;
     let mut data_start: Option<usize> = None;
@@ -283,5 +283,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
         index += 1;
     }
 
-    Ok(None)
+    None
 }

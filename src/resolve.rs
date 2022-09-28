@@ -64,18 +64,18 @@ pub enum Name {
 
 /// Call the corresponding resolver.
 pub fn call(tokenizer: &mut Tokenizer, name: Name) -> Result<Option<Subresult>, String> {
-    let func = match name {
-        Name::Label => construct::label_end::resolve,
-        Name::Attention => construct::attention::resolve,
-        Name::GfmTable => construct::gfm_table::resolve,
-        Name::HeadingAtx => construct::heading_atx::resolve,
-        Name::HeadingSetext => construct::heading_setext::resolve,
-        Name::ListItem => construct::list_item::resolve,
-        Name::Content => construct::content::resolve,
-        Name::Data => construct::partial_data::resolve,
-        Name::String => construct::string::resolve,
-        Name::Text => construct::text::resolve,
+    let result = match name {
+        Name::Label => construct::label_end::resolve(tokenizer),
+        Name::Attention => construct::attention::resolve(tokenizer),
+        Name::GfmTable => construct::gfm_table::resolve(tokenizer),
+        Name::HeadingAtx => construct::heading_atx::resolve(tokenizer),
+        Name::HeadingSetext => construct::heading_setext::resolve(tokenizer),
+        Name::ListItem => construct::list_item::resolve(tokenizer),
+        Name::Content => construct::content::resolve(tokenizer)?,
+        Name::Data => construct::partial_data::resolve(tokenizer),
+        Name::String => construct::string::resolve(tokenizer),
+        Name::Text => construct::text::resolve(tokenizer),
     };
 
-    func(tokenizer)
+    Ok(result)
 }

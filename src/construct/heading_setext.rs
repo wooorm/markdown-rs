@@ -77,7 +77,7 @@ use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
 use crate::util::{constant::TAB_SIZE, skip};
-use alloc::{string::String, vec};
+use alloc::vec;
 
 /// At start of heading (setext) underline.
 ///
@@ -184,7 +184,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Resolve heading (setext).
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     tokenizer.map.consume(&mut tokenizer.events);
 
     let mut enter = skip::to(&tokenizer.events, 0, &[Name::HeadingSetextUnderline]);
@@ -281,5 +281,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
 
     tokenizer.map.consume(&mut tokenizer.events);
 
-    Ok(None)
+    None
 }

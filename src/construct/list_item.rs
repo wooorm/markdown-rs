@@ -69,7 +69,7 @@ use crate::util::{
     skip,
     slice::{Position, Slice},
 };
-use alloc::{string::String, vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 
 /// Start of list item.
 ///
@@ -371,7 +371,7 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Find adjacent list items with the same marker.
-pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
+pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     let mut lists_wip: Vec<(u8, usize, usize, usize)> = vec![];
     let mut lists: Vec<(u8, usize, usize, usize)> = vec![];
     let mut index = 0;
@@ -474,5 +474,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, String> {
         index += 1;
     }
 
-    Ok(None)
+    None
 }

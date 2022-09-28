@@ -3,7 +3,7 @@ use micromark::micromark;
 use pretty_assertions::assert_eq;
 
 #[test]
-fn dangerous_protocol_autolink() -> Result<(), String> {
+fn dangerous_protocol_autolink() {
     assert_eq!(
         micromark("<javascript:alert(1)>"),
         "<p><a href=\"\">javascript:alert(1)</a></p>",
@@ -33,12 +33,10 @@ fn dangerous_protocol_autolink() -> Result<(), String> {
         "<p><a href=\"mailto:a\">mailto:a</a></p>",
         "should allow `mailto:`"
     );
-
-    Ok(())
 }
 
 #[test]
-fn dangerous_protocol_image() -> Result<(), String> {
+fn dangerous_protocol_image() {
     assert_eq!(
         micromark("![](javascript:alert(1))"),
         "<p><img src=\"\" alt=\"\" /></p>",
@@ -116,12 +114,10 @@ fn dangerous_protocol_image() -> Result<(), String> {
         "<p><img src=\"a/b:c\" alt=\"\" /></p>",
         "should allow a colon in a path"
     );
-
-    Ok(())
 }
 
 #[test]
-fn dangerous_protocol_link() -> Result<(), String> {
+fn dangerous_protocol_link() {
     assert_eq!(
         micromark("[](javascript:alert(1))"),
         "<p><a href=\"\"></a></p>",
@@ -199,6 +195,4 @@ fn dangerous_protocol_link() -> Result<(), String> {
         "<p><a href=\"a/b:c\"></a></p>",
         "should allow a colon in a path"
     );
-
-    Ok(())
 }

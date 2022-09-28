@@ -17,7 +17,7 @@ extern crate alloc;
 
 mod construct;
 mod event;
-pub mod mdast;
+pub mod mdast; // To do: externalize?
 mod parser;
 mod resolve;
 mod state;
@@ -25,6 +25,7 @@ mod subtokenize;
 mod to_html;
 mod to_mdast;
 mod tokenizer;
+pub mod unist; // To do: externalize.
 mod util;
 
 use alloc::{boxed::Box, fmt, string::String};
@@ -32,6 +33,7 @@ use mdast::Node;
 use parser::parse;
 use to_html::compile as to_html;
 use to_mdast::compile as to_mdast;
+use util::sanitize_uri::sanitize;
 
 /// Type of line endings in markdown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -146,7 +148,7 @@ pub enum MdxExpressionKind {
 /// Can be passed as `mdx_expression_parse` in [`Options`][] to support
 /// expressions according to a certain grammar (typically, a programming
 /// language).
-pub type MdxExpressionParse = dyn Fn(&str, MdxExpressionKind) -> MdxSignal;
+pub type MdxExpressionParse = dyn Fn(&str, &MdxExpressionKind) -> MdxSignal;
 
 /// Signature of a function that parses ESM.
 ///
@@ -1186,4 +1188,10 @@ pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Node, String
     let (events, bytes) = parse(value, options)?;
     let node = to_mdast(&events, bytes)?;
     Ok(node)
+}
+
+/// Do not use: exported for quick prototyping, will be removed.
+#[must_use]
+pub fn sanitize_(value: &str) -> String {
+    sanitize(value)
 }
