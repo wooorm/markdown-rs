@@ -9,6 +9,10 @@ use swc_ecma_parser::{
     error::Error as SwcError, parse_file_as_expr, parse_file_as_module, EsConfig, Syntax,
 };
 
+// To do:
+// Use lexer in the future:
+// <https://docs.rs/swc_ecma_parser/0.99.1/swc_ecma_parser/lexer/index.html>
+
 /// Parse ESM in MDX with SWC.
 #[allow(dead_code)]
 pub fn parse_esm(value: &str) -> MdxSignal {
