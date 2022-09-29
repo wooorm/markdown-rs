@@ -12,6 +12,9 @@
 //! *   [`micromark_to_mdast`][]
 //!     — like `micromark_with_options` but compiles to a syntax tree
 #![no_std]
+#![deny(clippy::pedantic)]
+#![allow(clippy::doc_link_with_quotes)]
+#![allow(clippy::too_many_lines)]
 
 extern crate alloc;
 

@@ -363,8 +363,7 @@ The following scripts are useful when working on this project:
   ```
 - lint:
   ```sh
-  cargo fmt --check &&\
-  cargo clippy --examples --tests --benches -- -D clippy::pedantic -A clippy::doc_link_with_quotes -A clippy::too_many_lines
+  cargo fmt --check && cargo clippy --examples --tests --benches
   ```
 - test:
   ```sh
