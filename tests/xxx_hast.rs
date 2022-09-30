@@ -57,9 +57,7 @@ fn hast() {
                 tag_name: "code".into(),
                 properties: vec![(
                     "className".into(),
-                    hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                        "language-b".into()
-                    )]),
+                    hast::PropertyValue::SpaceSeparated(vec!["language-b".into()]),
                 ),],
                 children: vec![hast::Node::Text(hast::Text {
                     value: "a\n".into(),
@@ -210,9 +208,7 @@ fn hast() {
                         ("dataFootnotes".into(), hast::PropertyValue::Boolean(true),),
                         (
                             "className".into(),
-                            hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                                "footnotes".into()
-                            ),]),
+                            hast::PropertyValue::SpaceSeparated(vec!["footnotes".into()]),
                         ),
                     ],
                     children: vec![
@@ -225,9 +221,7 @@ fn hast() {
                                 ),
                                 (
                                     "className".into(),
-                                    hast::PropertyValue::SpaceSeparated(vec![
-                                        hast::PropertyItem::String("sr-only".into()),
-                                    ]),
+                                    hast::PropertyValue::SpaceSeparated(vec!["sr-only".into(),]),
                                 ),
                             ],
                             children: vec![hast::Node::Text(hast::Text {
@@ -289,9 +283,7 @@ fn hast() {
                                                         (
                                                             "className".into(),
                                                             hast::PropertyValue::SpaceSeparated(
-                                                                vec![hast::PropertyItem::String(
-                                                                    "data-footnote-backref".into()
-                                                                ),]
+                                                                vec!["data-footnote-backref".into()]
                                                             ),
                                                         )
                                                     ],
@@ -433,9 +425,7 @@ fn hast() {
                         ("dataFootnotes".into(), hast::PropertyValue::Boolean(true),),
                         (
                             "className".into(),
-                            hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                                "footnotes".into()
-                            ),]),
+                            hast::PropertyValue::SpaceSeparated(vec!["footnotes".into()]),
                         ),
                     ],
                     children: vec![
@@ -448,9 +438,7 @@ fn hast() {
                                 ),
                                 (
                                     "className".into(),
-                                    hast::PropertyValue::SpaceSeparated(vec![
-                                        hast::PropertyItem::String("sr-only".into()),
-                                    ]),
+                                    hast::PropertyValue::SpaceSeparated(vec!["sr-only".into(),]),
                                 ),
                             ],
                             children: vec![hast::Node::Text(hast::Text {
@@ -512,9 +500,7 @@ fn hast() {
                                                         (
                                                             "className".into(),
                                                             hast::PropertyValue::SpaceSeparated(
-                                                                vec![hast::PropertyItem::String(
-                                                                    "data-footnote-backref".into()
-                                                                ),]
+                                                                vec!["data-footnote-backref".into()]
                                                             ),
                                                         )
                                                     ],
@@ -550,9 +536,7 @@ fn hast() {
                                                         (
                                                             "className".into(),
                                                             hast::PropertyValue::SpaceSeparated(
-                                                                vec![hast::PropertyItem::String(
-                                                                    "data-footnote-backref".into()
-                                                                ),]
+                                                                vec!["data-footnote-backref".into()]
                                                             ),
                                                         )
                                                     ],
@@ -731,8 +715,8 @@ fn hast() {
             properties: vec![(
                 "className".into(),
                 hast::PropertyValue::SpaceSeparated(vec![
-                    hast::PropertyItem::String("language-math".into()),
-                    hast::PropertyItem::String("math-inline".into())
+                    "language-math".into(),
+                    "math-inline".into()
                 ]),
             ),],
             children: vec![hast::Node::Text(hast::Text {
@@ -904,9 +888,7 @@ fn hast() {
                 tag_name: "li".into(),
                 properties: vec![(
                     "className".into(),
-                    hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                        "task-list-item".into()
-                    )])
+                    hast::PropertyValue::SpaceSeparated(vec!["task-list-item".into()])
                 )],
                 children: vec![hast::Node::Element(hast::Element {
                     tag_name: "input".into(),
@@ -949,9 +931,7 @@ fn hast() {
                 tag_name: "li".into(),
                 properties: vec![(
                     "className".into(),
-                    hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                        "task-list-item".into()
-                    )])
+                    hast::PropertyValue::SpaceSeparated(vec!["task-list-item".into()])
                 )],
                 children: vec![
                     hast::Node::Element(hast::Element {
@@ -1039,7 +1019,7 @@ fn hast() {
         })),
         hast::Node::Element(hast::Element {
             tag_name: "ol".into(),
-            properties: vec![("start".into(), hast::PropertyValue::Number(123.0),),],
+            properties: vec![("start".into(), hast::PropertyValue::String("123".into()),),],
             children: vec![hast::Node::Text(hast::Text {
                 value: "\n".into(),
                 position: None
@@ -1086,9 +1066,7 @@ fn hast() {
             tag_name: "ul".into(),
             properties: vec![(
                 "className".into(),
-                hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                    "contains-task-list".into()
-                )])
+                hast::PropertyValue::SpaceSeparated(vec!["contains-task-list".into()])
             )],
             children: vec![
                 hast::Node::Text(hast::Text {
@@ -1099,9 +1077,7 @@ fn hast() {
                     tag_name: "li".into(),
                     properties: vec![(
                         "className".into(),
-                        hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                            "task-list-item".into()
-                        )])
+                        hast::PropertyValue::SpaceSeparated(vec!["task-list-item".into()])
                     )],
                     children: vec![hast::Node::Element(hast::Element {
                         tag_name: "input".into(),
@@ -1142,8 +1118,8 @@ fn hast() {
                 properties: vec![(
                     "className".into(),
                     hast::PropertyValue::SpaceSeparated(vec![
-                        hast::PropertyItem::String("language-math".into()),
-                        hast::PropertyItem::String("math-display".into())
+                        "language-math".into(),
+                        "math-display".into()
                     ]),
                 ),],
                 children: vec![hast::Node::Text(hast::Text {

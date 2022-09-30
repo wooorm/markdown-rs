@@ -1426,17 +1426,10 @@ fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), String> {
         };
 
         context.tail_push(node);
-
-        //     this.enter(
-        //     node,
-        //     token,
-        //     onErrorRightIsTag
-        //   )
     }
 
     if tag.self_closing || tag.close {
         context.tail_pop()?;
-        //   this.exit(token, onErrorLeftIsTag)
     } else {
         context.jsx_tag_stack.push(tag);
     }

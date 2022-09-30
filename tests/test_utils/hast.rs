@@ -9,10 +9,11 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use micromark::{mdast::AttributeContent, unist::Position};
+pub use micromark::mdast::{AttributeContent, AttributeValue, MdxJsxAttribute};
+use micromark::unist::Position;
 
 /// Nodes.
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Node {
     /// Root.
     Root(Root),
@@ -142,7 +143,7 @@ impl Node {
 /// > | a
 ///     ^
 /// ```
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Root {
     // Parent.
     /// Content model.
@@ -157,8 +158,7 @@ pub struct Root {
 /// > | <!doctype html>
 ///     ^^^^^^^^^^^^^^^
 /// ```
-// To do: clone.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Element {
     pub tag_name: String,
     pub properties: Vec<(String, PropertyValue)>,
@@ -168,19 +168,12 @@ pub struct Element {
     pub position: Option<Position>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum PropertyItem {
-    Number(f32),
-    String(String),
-}
-
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PropertyValue {
-    Number(f32),
     Boolean(bool),
     String(String),
-    CommaSeparated(Vec<PropertyItem>),
-    SpaceSeparated(Vec<PropertyItem>),
+    CommaSeparated(Vec<String>),
+    SpaceSeparated(Vec<String>),
 }
 
 /// Document type.
@@ -232,7 +225,7 @@ pub struct Text {
 /// > | <a />
 ///     ^^^^^
 /// ```
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MdxJsxElement {
     // Parent.
     /// Content model.

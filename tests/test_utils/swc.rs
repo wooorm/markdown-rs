@@ -13,7 +13,7 @@ use swc_ecma_parser::{
 // Use lexer in the future:
 // <https://docs.rs/swc_ecma_parser/0.99.1/swc_ecma_parser/lexer/index.html>
 
-/// Parse ESM in MDX with SWC.
+/// Lex ESM in MDX with SWC.
 #[allow(dead_code)]
 pub fn parse_esm(value: &str) -> MdxSignal {
     let (file, syntax, version) = create_config(value.to_string());
@@ -35,7 +35,31 @@ pub fn parse_esm(value: &str) -> MdxSignal {
     }
 }
 
-/// Parse expressions in MDX with SWC.
+/// Parse ESM in MDX with SWC.
+/// To do: figure out how to fix positional info.
+#[allow(dead_code)]
+pub fn parse_esm_to_tree(value: &str) -> Result<swc_ecma_ast::Module, String> {
+    let (file, syntax, version) = create_config(value.to_string());
+    let mut errors = vec![];
+
+    let result = parse_file_as_module(&file, syntax, version, None, &mut errors);
+
+    match result {
+        Err(error) => Err(swc_error_to_string(&error)),
+        Ok(module) => {
+            if errors.is_empty() {
+                Ok(module)
+            } else {
+                if errors.len() > 1 {
+                    println!("parse_esm_to_tree: todo: multiple errors? {:?}", errors);
+                }
+                Err(swc_error_to_string(&errors[0]))
+            }
+        }
+    }
+}
+
+/// Lex expressions in MDX with SWC.
 #[allow(dead_code)]
 pub fn parse_expression(value: &str, kind: &MdxExpressionKind) -> MdxSignal {
     // Empty expressions are OK.
@@ -74,6 +98,67 @@ pub fn parse_expression(value: &str, kind: &MdxExpressionKind) -> MdxSignal {
                     unreachable!("parse_expression: todo: multiple errors? {:?}", errors);
                 }
                 swc_error_to_signal(&errors[0], value.len(), prefix.len(), "expression")
+            }
+        }
+    }
+}
+
+/// Parse ESM in MDX with SWC.
+/// To do: figure out how to fix positional info.
+#[allow(dead_code)]
+pub fn parse_expression_to_tree(
+    value: &str,
+    kind: &MdxExpressionKind,
+) -> Result<Box<swc_ecma_ast::Expr>, String> {
+    // For attribute expression, a spread is needed, for which we have to prefix
+    // and suffix the input.
+    // See `check_expression_ast` for how the AST is verified.
+    let (prefix, suffix) = if matches!(kind, MdxExpressionKind::AttributeExpression) {
+        ("({", "})")
+    } else {
+        ("", "")
+    };
+
+    let (file, syntax, version) = create_config(format!("{}{}{}", prefix, value, suffix));
+    let mut errors = vec![];
+    let result = parse_file_as_expr(&file, syntax, version, None, &mut errors);
+
+    match result {
+        Err(error) => Err(swc_error_to_string(&error)),
+        Ok(expr) => {
+            if errors.is_empty() {
+                if matches!(kind, MdxExpressionKind::AttributeExpression) {
+                    let mut obj = None;
+
+                    if let swc_ecma_ast::Expr::Paren(d) = *expr {
+                        if let swc_ecma_ast::Expr::Object(d) = *d.expr {
+                            obj = Some(d)
+                        }
+                    };
+
+                    if let Some(mut obj) = obj {
+                        if obj.props.len() > 1 {
+                            Err("Unexpected extra content in spread: only a single spread is supported".into())
+                        } else if let Some(swc_ecma_ast::PropOrSpread::Spread(d)) = obj.props.pop()
+                        {
+                            Ok(d.expr)
+                        } else {
+                            Err("Unexpected prop in spread: only a spread is supported".into())
+                        }
+                    } else {
+                        Err("Expected an object spread (`{...spread}`)".into())
+                    }
+                } else {
+                    Ok(expr)
+                }
+            } else {
+                if errors.len() > 1 {
+                    println!(
+                        "parse_expression_to_tree: todo: multiple errors? {:?}",
+                        errors
+                    );
+                }
+                Err(swc_error_to_string(&errors[0]))
             }
         }
     }
@@ -138,15 +223,23 @@ fn swc_error_to_signal(
     prefix_len: usize,
     name: &str,
 ) -> MdxSignal {
-    let message = error.kind().msg().to_string();
     let place = fix_swc_position(error.span().hi.to_usize(), prefix_len);
-    let message = format!("Could not parse {} with swc: {}", name, message);
+    let message = format!(
+        "Could not parse {} with swc: {}",
+        name,
+        swc_error_to_string(error)
+    );
 
     if place >= value_len {
         MdxSignal::Eof(message)
     } else {
         MdxSignal::Error(message, place)
     }
+}
+
+/// Turn an SWC error into a string.
+fn swc_error_to_string(error: &SwcError) -> String {
+    error.kind().msg().into()
 }
 
 /// Move past JavaScript whitespace (well, actually ASCII whitespace) and

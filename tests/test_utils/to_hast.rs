@@ -39,10 +39,6 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
         }
     });
 
-    // - footnoteById: Record<string, Node>
-    // - footnoteOrder: Vec<string>
-    // - footnoteCounts: Record<string, usize>
-
     let (result, mut state) = one(
         mdast,
         None,
@@ -153,9 +149,9 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
                         ),
                         (
                             "className".into(),
-                            hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                                "data-footnote-backref".into(),
-                            )]),
+                            hast::PropertyValue::SpaceSeparated(vec![
+                                "data-footnote-backref".into()
+                            ]),
                         ),
                     ],
                     children: backref_children,
@@ -212,9 +208,7 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
                 ("dataFootnotes".into(), hast::PropertyValue::Boolean(true)),
                 (
                     "className".into(),
-                    hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                        "footnotes".into(),
-                    )]),
+                    hast::PropertyValue::SpaceSeparated(vec!["footnotes".into()]),
                 ),
             ],
             children: vec![
@@ -227,9 +221,7 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
                         ),
                         (
                             "className".into(),
-                            hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                                "sr-only".into(),
-                            )]),
+                            hast::PropertyValue::SpaceSeparated(vec!["sr-only".into()]),
                         ),
                     ],
                     children: vec![hast::Node::Text(hast::Text {
@@ -360,7 +352,6 @@ fn transform_code(node: &mdast::Node, state: State) -> (Result, State) {
         if let Some(lang) = code.lang.as_ref() {
             let mut value = "language-".to_string();
             value.push_str(lang);
-            let value = hast::PropertyItem::String(value);
             properties.push((
                 "className".into(),
                 hast::PropertyValue::SpaceSeparated(vec![value]),
@@ -650,8 +641,8 @@ fn transform_inline_math(node: &mdast::Node, state: State) -> (Result, State) {
                     properties: vec![(
                         "className".into(),
                         hast::PropertyValue::SpaceSeparated(vec![
-                            hast::PropertyItem::String("language-math".into()),
-                            hast::PropertyItem::String("math-inline".into()),
+                            "language-math".into(),
+                            "math-inline".into(),
                         ]),
                     )],
                     children: vec![hast::Node::Text(hast::Text {
@@ -762,9 +753,7 @@ fn transform_list_item(
             // See: <https://github.com/sindresorhus/github-markdown-css>.
             properties.push((
                 "className".into(),
-                hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                    "task-list-item".into(),
-                )]),
+                hast::PropertyValue::SpaceSeparated(vec!["task-list-item".into()]),
             ));
 
             let mut input = Some(hast::Node::Element(hast::Element {
@@ -898,7 +887,10 @@ fn transform_list(node: &mdast::Node, state: State) -> (Result, State) {
         // Add start.
         if let Some(start) = list.start {
             if list.ordered && start != 1 {
-                properties.push(("start".into(), hast::PropertyValue::Number(start.into())));
+                properties.push((
+                    "start".into(),
+                    hast::PropertyValue::String(start.to_string()),
+                ));
             }
         }
 
@@ -906,9 +898,7 @@ fn transform_list(node: &mdast::Node, state: State) -> (Result, State) {
         if contains_task_list {
             properties.push((
                 "className".into(),
-                hast::PropertyValue::SpaceSeparated(vec![hast::PropertyItem::String(
-                    "contains-task-list".into(),
-                )]),
+                hast::PropertyValue::SpaceSeparated(vec!["contains-task-list".into()]),
             ));
         }
 
@@ -950,8 +940,8 @@ fn transform_math(node: &mdast::Node, state: State) -> (Result, State) {
                             properties: vec![(
                                 "className".into(),
                                 hast::PropertyValue::SpaceSeparated(vec![
-                                    hast::PropertyItem::String("language-math".into()),
-                                    hast::PropertyItem::String("math-display".into()),
+                                    "language-math".into(),
+                                    "math-display".into(),
                                 ]),
                             )],
                             children: vec![hast::Node::Text(hast::Text {
@@ -1158,12 +1148,6 @@ fn transform_table_row(
 fn transform_table(node: &mdast::Node, mut state: State) -> (Result, State) {
     if let mdast::Node::Table(table) = node {
         let mut rows = vec![];
-        // let body = hast::Element {
-        //     tag_name: "tbody".into(),
-        //     properties: vec![],
-        //     children: vec![],
-        //     position: None,
-        // };
         let mut index = 0;
 
         while index < table.children.len() {
