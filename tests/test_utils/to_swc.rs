@@ -345,11 +345,44 @@ fn transform_root(
     node: &hast::Node,
     _root: &hast::Root,
 ) -> Result<Option<swc_ecma_ast::JSXElementChild>, String> {
-    let children = all(context, node)?;
+    let mut children = all(context, node)?;
+    let mut queue = vec![];
+    let mut nodes = vec![];
+    let mut seen = false;
+
+    children.reverse();
+
+    // Remove initial/final whitespace.
+    while let Some(child) = children.pop() {
+        let mut stash = false;
+
+        if let swc_ecma_ast::JSXElementChild::JSXExprContainer(container) = &child {
+            if let swc_ecma_ast::JSXExpr::Expr(expr) = &container.expr {
+                if let swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(str)) = (*expr).as_ref() {
+                    if inter_element_whitespace(str.value.as_ref()) {
+                        stash = true;
+                    }
+                }
+            }
+        }
+
+        if stash {
+            if seen {
+                queue.push(child);
+            }
+        } else {
+            if !queue.is_empty() {
+                nodes.append(&mut queue);
+            }
+            nodes.push(child);
+            seen = true;
+        }
+    }
+
     // To do: remove whitespace?
     // To do: return a single child if there is one?
     Ok(Some(swc_ecma_ast::JSXElementChild::JSXFragment(
-        create_fragment(children, node),
+        create_fragment(nodes, node),
     )))
 }
 
@@ -491,6 +524,22 @@ fn position_to_span(position: Option<&Position>) -> swc_common::Span {
         hi: swc_common::BytePos(d.end.offset as u32),
         ctxt: swc_common::SyntaxContext::empty(),
     })
+}
+
+fn inter_element_whitespace(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match bytes[index] {
+            // To do: form feed.
+            b'\t' | b'\r' | b'\n' | b' ' => {}
+            _ => return false,
+        }
+        index += 1;
+    }
+
+    true
 }
 
 /// Different kinds of JSX names.

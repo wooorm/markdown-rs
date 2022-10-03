@@ -11,6 +11,7 @@ use test_utils::{
     to_swc::{to_swc, Program},
 };
 
+// To do: share with `xxx_document`.
 fn serialize(program: &Program) -> String {
     let mut buf = vec![];
     let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
