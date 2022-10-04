@@ -3,8 +3,11 @@ extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_parser;
 use micromark::{MdxExpressionKind, MdxSignal};
-use swc_common::{source_map::Pos, BytePos, FileName, SourceFile, Spanned};
+use swc_common::{
+    source_map::Pos, sync::Lrc, BytePos, FileName, FilePathMapping, SourceFile, SourceMap, Spanned,
+};
 use swc_ecma_ast::{EsVersion, Expr, Module};
+use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{
     error::Error as SwcError, parse_file_as_expr, parse_file_as_module, EsConfig, Syntax,
 };
@@ -162,6 +165,30 @@ pub fn parse_expression_to_tree(
             }
         }
     }
+}
+
+/// Serialize an SWC module.
+/// To do: support comments.
+#[allow(dead_code)]
+pub fn serialize(module: &Module) -> String {
+    let mut buf = vec![];
+    let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
+    // let comm = &program.comments as &dyn swc_common::comments::Comments;
+    {
+        let mut emitter = Emitter {
+            cfg: swc_ecma_codegen::Config {
+                ..Default::default()
+            },
+            cm: cm.clone(),
+            // To do: figure out how to pass them.
+            comments: None,
+            wr: JsWriter::new(cm, "\n", &mut buf, None),
+        };
+
+        emitter.emit_module(module).unwrap();
+    }
+
+    String::from_utf8_lossy(&buf).to_string()
 }
 
 /// Check that the resulting AST of ESM is OK.

@@ -379,8 +379,6 @@ fn transform_root(
         }
     }
 
-    // To do: remove whitespace?
-    // To do: return a single child if there is one?
     Ok(Some(swc_ecma_ast::JSXElementChild::JSXFragment(
         create_fragment(nodes, node),
     )))

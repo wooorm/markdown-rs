@@ -5,36 +5,12 @@ extern crate swc_ecma_codegen;
 mod test_utils;
 use micromark::{micromark_to_mdast, Constructs, Options};
 use pretty_assertions::assert_eq;
-use swc_common::{sync::Lrc, FilePathMapping, SourceMap};
-use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use test_utils::{
-    swc::{parse_esm, parse_expression},
+    swc::{parse_esm, parse_expression, serialize},
     to_document::{to_document, Options as DocumentOptions},
     to_hast::to_hast,
-    to_swc::{to_swc, Program},
+    to_swc::to_swc,
 };
-
-// To do: share with `xxx_swc`.
-fn serialize(program: &Program) -> String {
-    let mut buf = vec![];
-    let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
-    // let comm = &program.comments as &dyn swc_common::comments::Comments;
-    {
-        let mut emitter = Emitter {
-            cfg: swc_ecma_codegen::Config {
-                ..Default::default()
-            },
-            cm: cm.clone(),
-            // To do: figure out how to pass them.
-            comments: None,
-            wr: JsWriter::new(cm, "\n", &mut buf, None),
-        };
-
-        emitter.emit_module(&program.module).unwrap();
-    }
-
-    String::from_utf8_lossy(&buf).to_string()
-}
 
 fn from_markdown(value: &str) -> Result<String, String> {
     let mdast = micromark_to_mdast(
@@ -48,7 +24,7 @@ fn from_markdown(value: &str) -> Result<String, String> {
     )?;
     let hast = to_hast(&mdast);
     let program = to_document(to_swc(&hast)?, &DocumentOptions::default())?;
-    let value = serialize(&program);
+    let value = serialize(&program.module);
     Ok(value)
 }
 

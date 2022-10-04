@@ -4,34 +4,11 @@ extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;
 mod test_utils;
 use pretty_assertions::assert_eq;
-use swc_common::{sync::Lrc, FilePathMapping, SourceMap};
-use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use test_utils::{
     hast,
+    swc::serialize,
     to_swc::{to_swc, Program},
 };
-
-// To do: share with `xxx_document`.
-fn serialize(program: &Program) -> String {
-    let mut buf = vec![];
-    let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
-    // let comm = &program.comments as &dyn swc_common::comments::Comments;
-    {
-        let mut emitter = Emitter {
-            cfg: swc_ecma_codegen::Config {
-                ..Default::default()
-            },
-            cm: cm.clone(),
-            // To do: figure out how to pass them.
-            comments: None,
-            wr: JsWriter::new(cm, "\n", &mut buf, None),
-        };
-
-        emitter.emit_module(&program.module).unwrap();
-    }
-
-    String::from_utf8_lossy(&buf).to_string()
-}
 
 #[test]
 fn swc() -> Result<(), String> {
@@ -83,7 +60,7 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&comment_ast),
+        serialize(&comment_ast.module),
         // To do: comment should be in this.
         "<>{}</>;\n",
         "should support a `Comment` (serialize)",
@@ -155,98 +132,119 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&element_ast),
+        serialize(&element_ast.module),
         "<a className=\"b\"/>;\n",
         "should support an `Element` (serialize)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![],
-            children: vec![hast::Node::Text(hast::Text {
-                value: "a".into(),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![],
+                children: vec![hast::Node::Text(hast::Text {
+                    value: "a".into(),
+                    position: None,
+                })],
                 position: None,
-            })],
-            position: None,
-        }))?),
+            }))?
+            .module
+        ),
         "<a >{\"a\"}</a>;\n",
         "should support an `Element` w/ children",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![("b".into(), hast::PropertyValue::String("c".into()),)],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![("b".into(), hast::PropertyValue::String("c".into()),)],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a b=\"c\"/>;\n",
         "should support an `Element` w/ a string attribute",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![("b".into(), hast::PropertyValue::Boolean(true),)],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![("b".into(), hast::PropertyValue::Boolean(true),)],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a b/>;\n",
         "should support an `Element` w/ a boolean (true) attribute",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![("b".into(), hast::PropertyValue::Boolean(false),)],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![("b".into(), hast::PropertyValue::Boolean(false),)],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a />;\n",
         "should support an `Element` w/ a boolean (false) attribute",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![(
-                "b".into(),
-                hast::PropertyValue::CommaSeparated(vec!["c".into(), "d".into()]),
-            )],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![(
+                    "b".into(),
+                    hast::PropertyValue::CommaSeparated(vec!["c".into(), "d".into()]),
+                )],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a b=\"c, d\"/>;\n",
         "should support an `Element` w/ a comma-separated attribute",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![
-                ("data123".into(), hast::PropertyValue::Boolean(true),),
-                ("dataFoo".into(), hast::PropertyValue::Boolean(true),),
-                ("dataBAR".into(), hast::PropertyValue::Boolean(true),)
-            ],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![
+                    ("data123".into(), hast::PropertyValue::Boolean(true),),
+                    ("dataFoo".into(), hast::PropertyValue::Boolean(true),),
+                    ("dataBAR".into(), hast::PropertyValue::Boolean(true),)
+                ],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a data-123 data-foo data-b-a-r/>;\n",
         "should support an `Element` w/ data attributes",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::Element(hast::Element {
-            tag_name: "a".into(),
-            properties: vec![
-                ("role".into(), hast::PropertyValue::Boolean(true),),
-                ("ariaValueNow".into(), hast::PropertyValue::Boolean(true),),
-                ("ariaDescribedBy".into(), hast::PropertyValue::Boolean(true),)
-            ],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::Element(hast::Element {
+                tag_name: "a".into(),
+                properties: vec![
+                    ("role".into(), hast::PropertyValue::Boolean(true),),
+                    ("ariaValueNow".into(), hast::PropertyValue::Boolean(true),),
+                    ("ariaDescribedBy".into(), hast::PropertyValue::Boolean(true),)
+                ],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a role aria-valuenow aria-describedby/>;\n",
         "should support an `Element` w/ aria attributes",
     );
@@ -288,107 +286,131 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&mdx_element_ast),
+        serialize(&mdx_element_ast.module),
         "<></>;\n",
         "should support an `MdxElement` (fragment, serialize)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a".into()),
-            attributes: vec![],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a".into()),
+                attributes: vec![],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a />;\n",
         "should support an `MdxElement` (element, no children)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a:b".into()),
-            attributes: vec![],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a:b".into()),
+                attributes: vec![],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a:b />;\n",
         "should support an `MdxElement` (element, namespace id)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a.b.c".into()),
-            attributes: vec![],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a.b.c".into()),
+                attributes: vec![],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a.b.c />;\n",
         "should support an `MdxElement` (element, member expression)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a".into()),
-            attributes: vec![],
-            children: vec![hast::Node::Text(hast::Text {
-                value: "b".into(),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a".into()),
+                attributes: vec![],
+                children: vec![hast::Node::Text(hast::Text {
+                    value: "b".into(),
+                    position: None,
+                })],
                 position: None,
-            })],
-            position: None,
-        }))?),
+            }))?
+            .module
+        ),
         "<a >{\"b\"}</a>;\n",
         "should support an `MdxElement` (element, children)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a".into()),
-            attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
-                name: "b".into(),
-                value: None
-            })],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a".into()),
+                attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
+                    name: "b".into(),
+                    value: None
+                })],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a b/>;\n",
         "should support an `MdxElement` (element, boolean attribute)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a".into()),
-            attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
-                name: "b".into(),
-                value: Some(hast::AttributeValue::Literal("c".into()))
-            })],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a".into()),
+                attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
+                    name: "b".into(),
+                    value: Some(hast::AttributeValue::Literal("c".into()))
+                })],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a b=\"c\"/>;\n",
         "should support an `MdxElement` (element, attribute w/ literal value)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a".into()),
-            attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
-                name: "b".into(),
-                value: Some(hast::AttributeValue::Expression("c".into()))
-            })],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a".into()),
+                attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
+                    name: "b".into(),
+                    value: Some(hast::AttributeValue::Expression("c".into()))
+                })],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a b={c}/>;\n",
         "should support an `MdxElement` (element, attribute w/ expression value)",
     );
 
     assert_eq!(
-        serialize(&to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-            name: Some("a".into()),
-            attributes: vec![hast::AttributeContent::Expression("...c".into())],
-            children: vec![],
-            position: None,
-        }))?),
+        serialize(
+            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                name: Some("a".into()),
+                attributes: vec![hast::AttributeContent::Expression("...c".into())],
+                children: vec![],
+                position: None,
+            }))?
+            .module
+        ),
         "<a {...c}/>;\n",
         "should support an `MdxElement` (element, expression attribute)",
     );
@@ -444,7 +466,7 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&mdx_expression_ast),
+        serialize(&mdx_expression_ast.module),
         "<>{a}</>;\n",
         "should support an `MdxExpression` (serialize)",
     );
@@ -509,7 +531,7 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&mdxjs_esm_ast),
+        serialize(&mdxjs_esm_ast.module),
         "import a from 'b';\n",
         "should support an `MdxjsEsm` (serialize)",
     );
@@ -565,7 +587,7 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&root_ast),
+        serialize(&root_ast.module),
         "<>{\"a\"}</>;\n",
         "should support a `Root` (serialize)",
     );
@@ -618,7 +640,7 @@ fn swc() -> Result<(), String> {
     );
 
     assert_eq!(
-        serialize(&text_ast),
+        serialize(&text_ast.module),
         "<>{\"a\"}</>;\n",
         "should support a `Text` (serialize)",
     );

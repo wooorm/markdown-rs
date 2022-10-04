@@ -186,8 +186,10 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                     swc_ecma_ast::DefaultDecl::Fn(func) => swc_ecma_ast::Expr::Fn(func),
                     swc_ecma_ast::DefaultDecl::TsInterfaceDecl(_) => {
                         // To do: improved error? Not sure what a real example of this is?
-                        unreachable!("Cannot use TypeScript interface declarations as default export in MDX")
-                    },
+                        unreachable!(
+                            "Cannot use TypeScript interface declarations as default export in MDX"
+                        )
+                    }
                 }));
             }
             swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDefaultExpr(
@@ -206,7 +208,9 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
             // export {a, b as c} from 'd'
             // export {a, b as c}
             // ```
-            swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportNamed(mut named_export)) => {
+            swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportNamed(
+                mut named_export,
+            )) => {
                 // SWC is currently crashing when generating code, w/o source
                 // map, if an actual location is set on this node.
                 named_export.span = swc_common::DUMMY_SP;
@@ -220,8 +224,11 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                     // branch of this looks interesting, but as far as I
                     // understand it *is not* valid ES.
                     // `export a from 'b'` is a syntax error, even in SWC.
-                    if let swc_ecma_ast::ExportSpecifier::Named(named) = &named_export.specifiers[index] {
-                        if let Some(swc_ecma_ast::ModuleExportName::Ident(ident)) = &named.exported {
+                    if let swc_ecma_ast::ExportSpecifier::Named(named) =
+                        &named_export.specifiers[index]
+                    {
+                        if let Some(swc_ecma_ast::ModuleExportName::Ident(ident)) = &named.exported
+                        {
                             if ident.sym.as_ref() == "default" {
                                 // For some reason the AST supports strings
                                 // instead of identifiers.
@@ -254,29 +261,33 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                     // If there was just a default export, we can drop the original node.
                     if !named_export.specifiers.is_empty() {
                         // Pass through.
-                        replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportNamed(named_export)));
+                        replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(
+                            swc_ecma_ast::ModuleDecl::ExportNamed(named_export),
+                        ));
                     }
 
                     // It’s an `export {x} from 'y'`, so generate an import.
                     if let Some(source) = source {
-                        replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::Import(swc_ecma_ast::ImportDecl {
-                            specifiers: vec![swc_ecma_ast::ImportSpecifier::Named(
-                                swc_ecma_ast::ImportNamedSpecifier {
-                                    local: swc_ecma_ast::Ident {
-                                        sym: "MDXLayout".into(),
-                                        optional: false,
+                        replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(
+                            swc_ecma_ast::ModuleDecl::Import(swc_ecma_ast::ImportDecl {
+                                specifiers: vec![swc_ecma_ast::ImportSpecifier::Named(
+                                    swc_ecma_ast::ImportNamedSpecifier {
+                                        local: swc_ecma_ast::Ident {
+                                            sym: "MDXLayout".into(),
+                                            optional: false,
+                                            span: swc_common::DUMMY_SP,
+                                        },
+                                        imported: Some(swc_ecma_ast::ModuleExportName::Ident(id)),
                                         span: swc_common::DUMMY_SP,
+                                        is_type_only: false,
                                     },
-                                    imported: Some(swc_ecma_ast::ModuleExportName::Ident( id)),
-                                    span: swc_common::DUMMY_SP,
-                                    is_type_only: false,
-                                },
-                            )],
-                            src: source,
-                            type_only: false,
-                            asserts: None,
-                            span: swc_common::DUMMY_SP,
-                        })))
+                                )],
+                                src: source,
+                                type_only: false,
+                                asserts: None,
+                                span: swc_common::DUMMY_SP,
+                            }),
+                        ))
                     }
                     // It’s an `export {x}`, so generate a variable declaration.
                     else {
@@ -284,13 +295,14 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                     }
                 } else {
                     // Pass through.
-                    replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportNamed(named_export)));
+                    replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(
+                        swc_ecma_ast::ModuleDecl::ExportNamed(named_export),
+                    ));
                 }
             }
             swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::Import(_))
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDecl(_))
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportAll(_))
-            // To do: handle TS things?
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::TsImportEquals(_))
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::TsExportAssignment(
                 _,
