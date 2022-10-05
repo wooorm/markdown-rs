@@ -530,8 +530,7 @@ fn inter_element_whitespace(value: &str) -> bool {
 
     while index < bytes.len() {
         match bytes[index] {
-            // To do: form feed.
-            b'\t' | b'\r' | b'\n' | b' ' => {}
+            b'\t' | 0x0C | b'\r' | b'\n' | b' ' => {}
             _ => return false,
         }
         index += 1;
