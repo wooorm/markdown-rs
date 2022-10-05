@@ -40,6 +40,7 @@ pub fn parse_esm(value: &str) -> MdxSignal {
 
 /// Parse ESM in MDX with SWC.
 /// To do: figure out how to fix positional info.
+/// See `drop_span` in `swc_ecma_utils` for inspiration?
 #[allow(dead_code)]
 pub fn parse_esm_to_tree(value: &str) -> Result<swc_ecma_ast::Module, String> {
     let (file, syntax, version) = create_config(value.to_string());
@@ -108,6 +109,7 @@ pub fn parse_expression(value: &str, kind: &MdxExpressionKind) -> MdxSignal {
 
 /// Parse ESM in MDX with SWC.
 /// To do: figure out how to fix positional info.
+/// See `drop_span` in `swc_ecma_utils` for inspiration?
 #[allow(dead_code)]
 pub fn parse_expression_to_tree(
     value: &str,

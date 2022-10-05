@@ -300,8 +300,16 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                     ));
                 }
             }
-            swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::Import(_))
-            | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDecl(_))
+            swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::Import(mut x)) => {
+                // SWC is currently crashing when generating code, w/o source
+                // map, if an actual location is set on this node.
+                x.span = swc_common::DUMMY_SP;
+                // Pass through.
+                replacements.push(swc_ecma_ast::ModuleItem::ModuleDecl(
+                    swc_ecma_ast::ModuleDecl::Import(x),
+                ));
+            }
+            swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDecl(_))
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportAll(_))
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::TsImportEquals(_))
             | swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::TsExportAssignment(

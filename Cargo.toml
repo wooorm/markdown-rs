@@ -28,8 +28,9 @@ criterion = "0.4"
 pretty_assertions = "1"
 swc_ecma_codegen = "0.127"
 swc_common = "0.29"
-swc_ecma_parser = "0.122"
 swc_ecma_ast = "0.94"
+swc_ecma_parser = "0.122"
+swc_ecma_visit = "0.80"
 
 [build-dependencies]
 regex = "1"
