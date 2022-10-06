@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Node, Root, ThematicBreak},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -175,9 +175,12 @@ fn thematic_break() -> Result<(), String> {
         micromark_with_options(
             "***",
             &Options {
-                constructs: Constructs {
-                    thematic_break: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        thematic_break: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -187,7 +190,7 @@ fn thematic_break() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("***", &Options::default())?,
+        micromark_to_mdast("***", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::ThematicBreak(ThematicBreak {
                 position: Some(Position::new(1, 1, 0, 1, 4, 3))

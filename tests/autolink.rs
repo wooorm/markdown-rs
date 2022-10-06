@@ -3,15 +3,18 @@ use micromark::{
     mdast::{Link, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn autolink() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
-        allow_dangerous_protocol: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -253,9 +256,12 @@ fn autolink() -> Result<(), String> {
         micromark_with_options(
             "<a@b.co>",
             &Options {
-                constructs: Constructs {
-                    autolink: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        autolink: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -267,7 +273,7 @@ fn autolink() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "a <https://alpha.com> b <bravo@charlie.com> c.",
-            &Options::default()
+            &ParseOptions::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

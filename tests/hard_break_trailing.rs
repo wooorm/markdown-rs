@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Break, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -115,9 +115,12 @@ fn hard_break_trailing() -> Result<(), String> {
         micromark_with_options(
             "a  \nb",
             &Options {
-                constructs: Constructs {
-                    hard_break_trailing: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        hard_break_trailing: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -127,7 +130,7 @@ fn hard_break_trailing() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a  \nb.", &Options::default())?,
+        micromark_to_mdast("a  \nb.", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

@@ -3,15 +3,18 @@ use micromark::{
     mdast::{Definition, LinkReference, Node, Paragraph, ReferenceKind, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn link_reference() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
-        allow_dangerous_protocol: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -393,9 +396,12 @@ fn link_reference() -> Result<(), String> {
         micromark_with_options(
             "[x]()",
             &Options {
-                constructs: Constructs {
-                    label_start_link: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        label_start_link: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -408,9 +414,12 @@ fn link_reference() -> Result<(), String> {
         micromark_with_options(
             "[x]()",
             &Options {
-                constructs: Constructs {
-                    label_end: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        label_end: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -420,7 +429,10 @@ fn link_reference() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("[x]: y\n\na [x] b [x][] c [d][x] e.", &Options::default())?,
+        micromark_to_mdast(
+            "[x]: y\n\na [x] b [x][] c [d][x] e.",
+            &ParseOptions::default()
+        )?,
         Node::Root(Root {
             children: vec![
                 Node::Definition(Definition {

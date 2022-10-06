@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Code, Node, Root},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -266,9 +266,12 @@ fn code_fenced() -> Result<(), String> {
         micromark_with_options(
             "```",
             &Options {
-                constructs: Constructs {
-                    code_fenced: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        code_fenced: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -280,7 +283,7 @@ fn code_fenced() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "```js extra\nconsole.log(1)\nconsole.log(2)\n```",
-            &Options::default()
+            &ParseOptions::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
@@ -295,7 +298,7 @@ fn code_fenced() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("```\nasd", &Options::default())?,
+        micromark_to_mdast("```\nasd", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
                 lang: None,

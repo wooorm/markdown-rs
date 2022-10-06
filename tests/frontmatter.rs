@@ -3,16 +3,19 @@ use micromark::{
     mdast::{Node, Root, Toml, Yaml},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn frontmatter() -> Result<(), String> {
     let frontmatter = Options {
-        constructs: Constructs {
-            frontmatter: true,
-            ..Constructs::default()
+        parse: ParseOptions {
+            constructs: Constructs {
+                frontmatter: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
         },
         ..Options::default()
     };
@@ -72,7 +75,7 @@ fn frontmatter() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("---\na: b\n---", &frontmatter)?,
+        micromark_to_mdast("---\na: b\n---", &frontmatter.parse)?,
         Node::Root(Root {
             children: vec![Node::Yaml(Yaml {
                 value: "a: b".to_string(),
@@ -84,7 +87,7 @@ fn frontmatter() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("+++\ntitle = \"Jupyter\"\n+++", &frontmatter)?,
+        micromark_to_mdast("+++\ntitle = \"Jupyter\"\n+++", &frontmatter.parse)?,
         Node::Root(Root {
             children: vec![Node::Toml(Toml {
                 value: "title = \"Jupyter\"".to_string(),

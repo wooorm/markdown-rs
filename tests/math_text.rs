@@ -3,17 +3,20 @@ use micromark::{
     mdast::{InlineMath, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn math_text() -> Result<(), String> {
     let math = Options {
-        constructs: Constructs {
-            math_text: true,
-            math_flow: true,
-            ..Constructs::default()
+        parse: ParseOptions {
+            constructs: Constructs {
+                math_text: true,
+                math_flow: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
         },
         ..Options::default()
     };
@@ -34,11 +37,14 @@ fn math_text() -> Result<(), String> {
         micromark_with_options(
             "$foo$ $$bar$$",
             &Options {
-                math_text_single_dollar: false,
-                constructs: Constructs {
-                    math_text: true,
-                    math_flow: true,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        math_text: true,
+                        math_flow: true,
+                        ..Constructs::default()
+                    },
+                    math_text_single_dollar: false,
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -141,14 +147,19 @@ fn math_text() -> Result<(), String> {
         micromark_with_options(
             "<a href=\"$\">$",
             &Options {
-                allow_dangerous_html: true,
-                allow_dangerous_protocol: true,
-                constructs: Constructs {
-                    math_text: true,
-                    math_flow: true,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        math_text: true,
+                        math_flow: true,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
-                ..Options::default()
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p><a href=\"$\">$</p>",
@@ -198,7 +209,7 @@ fn math_text() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a $alpha$ b.", &math)?,
+        micromark_to_mdast("a $alpha$ b.", &math.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

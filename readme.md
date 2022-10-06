@@ -92,17 +92,14 @@ Extensions (in this case GFM):
 
 ```rs
 extern crate micromark;
-use micromark::{micromark_with_options, Constructs, Options};
+use micromark::{micromark_with_options, Options};
 
 fn main() -> Result<(), String> {
     println!(
         "{}",
         micromark_with_options(
             "* [x] contact@example.com ~~strikethrough~~",
-            &Options {
-                constructs: Constructs::gfm(),
-                ..Options::default()
-            }
+            &Options::gfm()
         )?
     );
 
@@ -120,6 +117,29 @@ Yields:
     <del>strikethrough</del>
   </li>
 </ul>
+```
+
+Syntax tree:
+
+```rs
+extern crate micromark;
+use micromark::{micromark_to_mdast, ParseOptions};
+
+fn main() -> Result<(), String> {
+    println!(
+        "{:?}",
+        micromark_to_mdast("# Hey, *you*!", &ParseOptions::default())?
+    );
+
+    Ok(())
+}
+```
+
+Yields:
+
+```text
+Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3-1:8 (2-7)) }, Emphasis { children: [Text { value: "you", position: Some(1:9-1:12 (8-11)) }], position: Some(1:8-1:13 (7-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
+
 ```
 
 ## API

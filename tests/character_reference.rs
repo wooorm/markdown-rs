@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -52,7 +52,11 @@ fn character_reference() -> Result<(), String> {
         micromark_with_options(
             "<a href=\"&ouml;&ouml;.html\">",
             &Options {
-                allow_dangerous_html: true,
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -197,9 +201,12 @@ fn character_reference() -> Result<(), String> {
         micromark_with_options(
             "&amp;",
             &Options {
-                constructs: Constructs {
-                    character_reference: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        character_reference: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -209,7 +216,7 @@ fn character_reference() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;", &Options::default())?,
+        micromark_to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::Text(Text {

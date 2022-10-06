@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::{micromark_with_options, Options};
+use micromark::{micromark_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -8,7 +8,10 @@ fn gfm_tagfilter() -> Result<(), String> {
         micromark_with_options(
             "<iframe>",
             &Options {
-                allow_dangerous_html: true,
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -20,7 +23,10 @@ fn gfm_tagfilter() -> Result<(), String> {
         micromark_with_options(
             "a <i>\n<script>",
             &Options {
-                gfm_tagfilter: true,
+                compile: CompileOptions {
+                    gfm_tagfilter: true,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -32,8 +38,11 @@ fn gfm_tagfilter() -> Result<(), String> {
         micromark_with_options(
             "<iframe>",
             &Options {
-                gfm_tagfilter: true,
-                allow_dangerous_html: true,
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    gfm_tagfilter: true,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -87,8 +96,11 @@ javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onm
 <STYLE>@import'http://xss.rocks/xss.css';</STYLE>
 "###,
             &Options {
-                gfm_tagfilter: true,
-                allow_dangerous_html: true,
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    gfm_tagfilter: true,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,

@@ -12,7 +12,7 @@ use crate::util::{
     skip,
     slice::{Position, Slice},
 };
-use crate::{LineEnding, Options};
+use crate::{CompileOptions, LineEnding};
 use alloc::{
     format,
     string::{String, ToString},
@@ -81,7 +81,7 @@ struct CompileContext<'a> {
     /// List of bytes.
     bytes: &'a [u8],
     /// Configuration.
-    options: &'a Options,
+    options: &'a CompileOptions,
     // Fields used by handlers to track the things they need to track to
     // compile markdown.
     /// Rank of heading (atx).
@@ -136,7 +136,7 @@ impl<'a> CompileContext<'a> {
     fn new(
         events: &'a [Event],
         bytes: &'a [u8],
-        options: &'a Options,
+        options: &'a CompileOptions,
         line_ending: LineEnding,
     ) -> CompileContext<'a> {
         CompileContext {
@@ -208,7 +208,7 @@ impl<'a> CompileContext<'a> {
 }
 
 /// Turn events and bytes into a string of HTML.
-pub fn compile(events: &[Event], bytes: &[u8], options: &Options) -> String {
+pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> String {
     let mut index = 0;
     let mut line_ending_inferred = None;
 

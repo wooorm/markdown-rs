@@ -3,14 +3,17 @@ use micromark::{
     mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
     micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn mdx_jsx_flow_agnostic() -> Result<(), String> {
     let mdx = Options {
-        constructs: Constructs::mdx(),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -52,7 +55,10 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
 #[test]
 fn mdx_jsx_flow_essence() -> Result<(), String> {
     let mdx = Options {
-        constructs: Constructs::mdx(),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -147,7 +153,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<>\n  * a\n</>", &mdx)?,
+        micromark_to_mdast("<>\n  * a\n</>", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxJsxFlowElement(MdxJsxFlowElement {
                 name: None,

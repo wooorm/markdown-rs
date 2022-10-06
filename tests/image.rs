@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Definition, Image, ImageReference, Node, Paragraph, ReferenceKind, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -201,9 +201,12 @@ fn image() -> Result<(), String> {
         micromark_with_options(
             "![x]()",
             &Options {
-                constructs: Constructs {
-                    label_start_image: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        label_start_image: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -222,7 +225,10 @@ fn image() -> Result<(), String> {
         micromark_with_options(
             "![](javascript:alert(1))",
             &Options {
-                allow_dangerous_protocol: true,
+                compile: CompileOptions {
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -233,7 +239,7 @@ fn image() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "a ![alpha]() b ![bravo](charlie 'delta') c.",
-            &Options::default()
+            &ParseOptions::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
@@ -273,7 +279,7 @@ fn image() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "[x]: y\n\na ![x] b ![x][] c ![d][x] e.",
-            &Options::default()
+            &ParseOptions::default()
         )?,
         Node::Root(Root {
             children: vec![

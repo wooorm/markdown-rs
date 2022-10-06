@@ -3,15 +3,18 @@ use micromark::{
     mdast::{Definition, Node, Root},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn definition() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
-        allow_dangerous_protocol: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -485,9 +488,12 @@ fn definition() -> Result<(), String> {
         micromark_with_options(
             "[foo]: /url \"title\"",
             &Options {
-                constructs: Constructs {
-                    definition: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        definition: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -497,7 +503,7 @@ fn definition() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("[a]: <b> 'c'", &Options::default())?,
+        micromark_to_mdast("[a]: <b> 'c'", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Definition(Definition {
                 url: "b".to_string(),

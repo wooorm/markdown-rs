@@ -4,7 +4,7 @@ use micromark::{
     mdast::{MdxjsEsm, Node, Root},
     micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
@@ -12,9 +12,12 @@ use test_utils::swc::{parse_esm, parse_expression};
 #[test]
 fn mdx_esm() -> Result<(), String> {
     let swc = Options {
-        constructs: Constructs::mdx(),
-        mdx_esm_parse: Some(Box::new(parse_esm)),
-        mdx_expression_parse: Some(Box::new(parse_expression)),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            mdx_esm_parse: Some(Box::new(parse_esm)),
+            mdx_expression_parse: Some(Box::new(parse_expression)),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -243,7 +246,7 @@ fn mdx_esm() -> Result<(), String> {
     }
 
     assert_eq!(
-        micromark_to_mdast("import a from 'b'\nexport {a}", &swc)?,
+        micromark_to_mdast("import a from 'b'\nexport {a}", &swc.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxjsEsm(MdxjsEsm {
                 value: "import a from 'b'\nexport {a}".to_string(),

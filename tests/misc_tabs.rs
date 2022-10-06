@@ -1,11 +1,15 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Options};
+use micromark::{micromark, micromark_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
 fn tabs_flow() -> Result<(), String> {
     let danger = &Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 

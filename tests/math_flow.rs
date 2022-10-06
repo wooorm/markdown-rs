@@ -3,17 +3,20 @@ use micromark::{
     mdast::{Math, Node, Root},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn math_flow() -> Result<(), String> {
     let math = Options {
-        constructs: Constructs {
-            math_text: true,
-            math_flow: true,
-            ..Constructs::default()
+        parse: ParseOptions {
+            constructs: Constructs {
+                math_text: true,
+                math_flow: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
         },
         ..Options::default()
     };
@@ -254,7 +257,7 @@ fn math_flow() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("$$extra\nabc\ndef\n$$", &math)?,
+        micromark_to_mdast("$$extra\nabc\ndef\n$$", &math.parse)?,
         Node::Root(Root {
             children: vec![Node::Math(Math {
                 meta: Some("extra".to_string()),

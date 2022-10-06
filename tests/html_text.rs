@@ -3,14 +3,18 @@ use micromark::{
     mdast::{Html, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn html_text() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -427,9 +431,12 @@ micromark_with_options("<x> a", &danger)?,
         micromark_with_options(
             "a <x>",
             &Options {
-                constructs: Constructs {
-                    html_text: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        html_text: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -439,7 +446,7 @@ micromark_with_options("<x> a", &danger)?,
     );
 
     assert_eq!(
-        micromark_to_mdast("alpha <i>bravo</b> charlie.", &Options::default())?,
+        micromark_to_mdast("alpha <i>bravo</b> charlie.", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

@@ -3,15 +3,18 @@ use micromark::{
     mdast::{Emphasis, Node, Paragraph, Root, Strong, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn attention() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
-        allow_dangerous_protocol: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -821,9 +824,12 @@ fn attention() -> Result<(), String> {
         micromark_with_options(
             "*a*",
             &Options {
-                constructs: Constructs {
-                    attention: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        attention: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -833,7 +839,7 @@ fn attention() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a *alpha* b **bravo** c.", &Options::default())?,
+        micromark_to_mdast("a *alpha* b **bravo** c.", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

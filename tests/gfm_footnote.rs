@@ -3,14 +3,17 @@ use micromark::{
     mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_footnote() -> Result<(), String> {
     let gfm = Options {
-        constructs: Constructs::gfm(),
+        parse: ParseOptions {
+            constructs: Constructs::gfm(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -38,10 +41,15 @@ fn gfm_footnote() -> Result<(), String> {
         micromark_with_options(
             "Noot.[^a]\n\n[^a]: dingen",
             &Options {
-                constructs: Constructs::gfm(),
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
                 gfm_footnote_label: Some("Voetnoten".to_string()),
                 gfm_footnote_back_label: Some("Terug naar de inhoud".to_string()),
-                ..Options::default()
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p>Noot.<sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
@@ -60,9 +68,14 @@ fn gfm_footnote() -> Result<(), String> {
         micromark_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
-                constructs: Constructs::gfm(),
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
                 gfm_footnote_label_tag_name: Some("h1".to_string()),
-                ..Options::default()
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
@@ -81,9 +94,14 @@ fn gfm_footnote() -> Result<(), String> {
         micromark_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
-                constructs: Constructs::gfm(),
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
                 gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".to_string()),
-                ..Options::default()
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
@@ -102,9 +120,14 @@ fn gfm_footnote() -> Result<(), String> {
         micromark_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
-                constructs: Constructs::gfm(),
-                gfm_footnote_clobber_prefix: Some("".to_string()),
-                ..Options::default()
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    gfm_footnote_clobber_prefix: Some("".to_string()),
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p><sup><a href=\"#fn-a\" id=\"fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
@@ -1603,7 +1626,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
     );
 
     assert_eq!(
-        micromark_to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &gfm)?,
+        micromark_to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &gfm.parse)?,
         Node::Root(Root {
             children: vec![
                 Node::FootnoteDefinition(FootnoteDefinition {

@@ -3,14 +3,18 @@ use micromark::{
     mdast::{Html, Node, Root},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn html_flow() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -30,9 +34,12 @@ fn html_flow() -> Result<(), String> {
         micromark_with_options(
             "<x>",
             &Options {
-                constructs: Constructs {
-                    html_flow: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        html_flow: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -42,7 +49,7 @@ fn html_flow() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<div>\nstuff\n</div>", &Options::default())?,
+        micromark_to_mdast("<div>\nstuff\n</div>", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Html(Html {
                 value: "<div>\nstuff\n</div>".to_string(),
@@ -59,7 +66,11 @@ fn html_flow() -> Result<(), String> {
 #[test]
 fn html_flow_1_raw() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -221,7 +232,11 @@ p {color:blue;}
 #[test]
 fn html_flow_2_comment() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -326,7 +341,11 @@ fn html_flow_2_comment() -> Result<(), String> {
 #[test]
 fn html_flow_3_instruction() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -379,7 +398,11 @@ fn html_flow_3_instruction() -> Result<(), String> {
 #[test]
 fn html_flow_4_declaration() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -440,7 +463,11 @@ fn html_flow_4_declaration() -> Result<(), String> {
 #[test]
 fn html_flow_5_cdata() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -510,7 +537,11 @@ fn html_flow_5_cdata() -> Result<(), String> {
 #[test]
 fn html_flow_6_basic() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -793,7 +824,11 @@ okay.",
 #[test]
 fn html_flow_7_complete() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 

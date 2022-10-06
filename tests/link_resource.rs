@@ -3,15 +3,18 @@ use micromark::{
     mdast::{Link, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Options,
+    CompileOptions, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn link_resource() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
-        allow_dangerous_protocol: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -466,7 +469,7 @@ fn link_resource() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "a [alpha]() b [bravo](charlie 'delta') c.",
-            &Options::default()
+            &ParseOptions::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

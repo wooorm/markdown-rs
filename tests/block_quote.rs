@@ -3,7 +3,7 @@ use micromark::{
     mdast::{BlockQuote, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -205,9 +205,12 @@ fn block_quote() -> Result<(), String> {
         micromark_with_options(
             "> # a\n> b\n> c",
             &Options {
-                constructs: Constructs {
-                    block_quote: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        block_quote: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -217,7 +220,7 @@ fn block_quote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("> a", &Options::default())?,
+        micromark_to_mdast("> a", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::BlockQuote(BlockQuote {
                 children: vec![Node::Paragraph(Paragraph {

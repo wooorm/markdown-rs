@@ -3,14 +3,17 @@ use micromark::{
     mdast::{AlignKind, InlineCode, Node, Root, Table, TableCell, TableRow, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_table() -> Result<(), String> {
     let gfm = Options {
-        constructs: Constructs::gfm(),
+        parse: ParseOptions {
+            constructs: Constructs::gfm(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -202,12 +205,15 @@ fn gfm_table() -> Result<(), String> {
 
     assert_eq!(
         micromark_with_options("| a |\n    | - |", &Options {
-            constructs: Constructs {
-                code_indented: false,
-                ..Constructs::gfm()
-            },
-            ..Options::default()
-        })?,
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        code_indented: false,
+                        ..Constructs::gfm()
+                    },
+                    ..ParseOptions::default()
+                },
+                ..Options::default()
+            })?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should form a table if the delimiter row is indented w/ 4 spaces and indented code is turned off"
     );
@@ -240,9 +246,15 @@ fn gfm_table() -> Result<(), String> {
         micromark_with_options(
             "| a |\n| - |\n<!-- HTML? -->",
             &Options {
-                allow_dangerous_html: true,
-                constructs: Constructs::gfm(),
-                ..Options::default()
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<!-- HTML? -->",
@@ -251,20 +263,32 @@ fn gfm_table() -> Result<(), String> {
 
     assert_eq!(
         micromark_with_options("| a |\n| - |\n\tcode?", &Options {
-            allow_dangerous_html: true,
-            constructs: Constructs::gfm(),
-            ..Options::default()
-        })?,
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
+            })?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<pre><code>code?\n</code></pre>",
         "should be interrupted by code (indented)"
     );
 
     assert_eq!(
         micromark_with_options("| a |\n| - |\n```js\ncode?", &Options {
-            allow_dangerous_html: true,
-            constructs: Constructs::gfm(),
-            ..Options::default()
-        })?,
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
+            })?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<pre><code class=\"language-js\">code?\n</code></pre>\n",
         "should be interrupted by code (fenced)"
     );
@@ -273,9 +297,15 @@ fn gfm_table() -> Result<(), String> {
         micromark_with_options(
             "| a |\n| - |\n***",
             &Options {
-                allow_dangerous_html: true,
-                constructs: Constructs::gfm(),
-                ..Options::default()
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<hr />",
@@ -1041,9 +1071,15 @@ bar
 `\|\\`
 "###,
             &Options {
-                allow_dangerous_html: true,
-                constructs: Constructs::gfm(),
-                ..Options::default()
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         r###"<h1>Grave accents</h1>
@@ -1350,9 +1386,15 @@ b
 ***
 "###,
             &Options {
-                allow_dangerous_html: true,
-                constructs: Constructs::gfm(),
-                ..Options::default()
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         r###"<h2>Blank line</h2>
@@ -1792,7 +1834,7 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
     assert_eq!(
         micromark_to_mdast(
             "| none | left | right | center |\n| - | :- | -: | :-: |\n| a |\n| b | c | d | e | f |",
-            &gfm
+            &gfm.parse
         )?,
         Node::Root(Root {
             children: vec![Node::Table(Table {
@@ -1895,7 +1937,7 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
     );
 
     assert_eq!(
-        micromark_to_mdast("| `a\\|b` |\n| - |", &gfm)?,
+        micromark_to_mdast("| `a\\|b` |\n| - |", &gfm.parse)?,
         Node::Root(Root {
             children: vec![Node::Table(Table {
                 align: vec![AlignKind::None,],

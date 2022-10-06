@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Heading, Node, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -211,9 +211,12 @@ fn heading_atx() -> Result<(), String> {
         micromark_with_options(
             "# a",
             &Options {
-                constructs: Constructs {
-                    heading_atx: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        heading_atx: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -223,7 +226,7 @@ fn heading_atx() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("## alpha #", &Options::default())?,
+        micromark_to_mdast("## alpha #", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Heading(Heading {
                 depth: 2,

@@ -3,7 +3,7 @@ use micromark::{
     mdast::{Code, Node, Root},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -124,9 +124,12 @@ fn code_indented() -> Result<(), String> {
     );
 
     let off = Options {
-        constructs: Constructs {
-            code_indented: false,
-            ..Constructs::default()
+        parse: ParseOptions {
+            constructs: Constructs {
+                code_indented: false,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
         },
         ..Options::default()
     };
@@ -171,12 +174,17 @@ fn code_indented() -> Result<(), String> {
         micromark_with_options(
             "a <?\n    ?>",
             &Options {
-                allow_dangerous_html: true,
-                constructs: Constructs {
-                    code_indented: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        code_indented: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
-                ..Options::default()
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p>a <?\n?></p>",
@@ -198,7 +206,7 @@ fn code_indented() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "\tconsole.log(1)\n    console.log(2)\n",
-            &Options::default()
+            &ParseOptions::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Code(Code {

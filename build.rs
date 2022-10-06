@@ -68,15 +68,18 @@ async fn commonmark() {
 // > It is generate from the latest CommonMark website.
 
 extern crate micromark;
-use micromark::{{micromark_with_options, Options}};
+use micromark::{{micromark_with_options, CompileOptions, Options}};
 use pretty_assertions::assert_eq;
 
 #[rustfmt::skip]
 #[test]
 fn commonmark() -> Result<(), String> {{
     let danger = Options {{
-        allow_dangerous_html: true,
-        allow_dangerous_protocol: true,
+        compile: CompileOptions {{
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        }},
         ..Options::default()
     }};
 

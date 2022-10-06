@@ -7,7 +7,7 @@ use micromark::{
     },
     micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
@@ -15,7 +15,10 @@ use test_utils::swc::{parse_esm, parse_expression};
 #[test]
 fn mdx_jsx_text_core() -> Result<(), String> {
     let mdx = Options {
-        constructs: Constructs::mdx(),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -50,7 +53,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a <b /> c.", &mdx)?,
+        micromark_to_mdast("a <b /> c.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -77,7 +80,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a <b>*c*</b> d.", &mdx)?,
+        micromark_to_mdast("a <b>*c*</b> d.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -114,7 +117,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a:b />.", &mdx)?,
+        micromark_to_mdast("<a:b />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -137,7 +140,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a.b.c />.", &mdx)?,
+        micromark_to_mdast("<a.b.c />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -160,7 +163,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a {...b} />.", &mdx)?,
+        micromark_to_mdast("<a {...b} />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -183,7 +186,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a b c:d />.", &mdx)?,
+        micromark_to_mdast("<a b c:d />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -215,7 +218,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a b='c' d=\"e\" f={g} />.", &mdx)?,
+        micromark_to_mdast("<a b='c' d=\"e\" f={g} />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -251,7 +254,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a b='&nbsp; &amp; &copy; &AElig; &Dcaron; &frac34; &HilbertSpace; &DifferentialD; &ClockwiseContourIntegral; &ngE;' />.", &mdx)?,
+        micromark_to_mdast("<a b='&nbsp; &amp; &copy; &AElig; &Dcaron; &frac34; &HilbertSpace; &DifferentialD; &ClockwiseContourIntegral; &ngE;' />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -281,7 +284,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     assert_eq!(
         micromark_to_mdast(
             "<a b='&#35; &#1234; &#992; &#0;' c='&#X22; &#XD06; &#xcab;' />.",
-            &mdx
+            &mdx.parse
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
@@ -314,7 +317,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("<a b='&nbsp &x; &#; &#x; &#987654321; &#abcdef0; &ThisIsNotDefined; &hi?;' />.", &mdx)?,
+        micromark_to_mdast("<a b='&nbsp &x; &#; &#x; &#987654321; &#abcdef0; &ThisIsNotDefined; &hi?;' />.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -342,7 +345,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a </b> c", &mdx)
+        micromark_to_mdast("a </b> c", &mdx.parse)
             .err()
             .unwrap(),
         "1:4: Unexpected closing slash `/` in tag, expected an open tag first (mdx-jsx:unexpected-closing-slash)",
@@ -350,7 +353,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a <b> c </b/> d", &mdx)
+        micromark_to_mdast("a <b> c </b/> d", &mdx.parse)
             .err()
             .unwrap(),
         "1:12: Unexpected self-closing slash `/` in closing tag, expected the end of the tag (mdx-jsx:unexpected-self-closing-slash)",
@@ -358,7 +361,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a <b> c </b d> e", &mdx)
+        micromark_to_mdast("a <b> c </b d> e", &mdx.parse)
             .err()
             .unwrap(),
         "1:13: Unexpected attribute in closing tag, expected the end of the tag (mdx-jsx:unexpected-attribute)",
@@ -366,7 +369,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a <>b</c> d", &mdx)
+        micromark_to_mdast("a <>b</c> d", &mdx.parse)
             .err()
             .unwrap(),
         "1:6: Unexpected closing tag `</c>`, expected corresponding closing tag for `<>` (1:3) (mdx-jsx:end-tag-mismatch)",
@@ -374,7 +377,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a <b>c</> d", &mdx)
+        micromark_to_mdast("a <b>c</> d", &mdx.parse)
             .err()
             .unwrap(),
         "1:7: Unexpected closing tag `</>`, expected corresponding closing tag for `<b>` (1:3) (mdx-jsx:end-tag-mismatch)",
@@ -382,26 +385,26 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("*a <b>c* d</b>.", &mdx).err().unwrap(),
+        micromark_to_mdast("*a <b>c* d</b>.", &mdx.parse).err().unwrap(),
         "1:9: Expected a closing tag for `<b>` (1:4) before the end of `Emphasis` (mdx-jsx:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (1)"
     );
 
     assert_eq!(
-        micromark_to_mdast("<a>b *c</a> d*.", &mdx).err().unwrap(),
+        micromark_to_mdast("<a>b *c</a> d*.", &mdx.parse).err().unwrap(),
         "1:8: Expected the closing tag `</a>` either before the start of `Emphasis` (1:6), or another opening tag after that start (mdx-jsx:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (2)"
     );
 
     assert_eq!(
-        micromark_to_mdast("a <b>.", &mdx).err().unwrap(),
+        micromark_to_mdast("a <b>.", &mdx.parse).err().unwrap(),
         "1:7: Expected a closing tag for `<b>` (1:3) before the end of `Paragraph` (mdx-jsx:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (3)"
     );
 
     // Note: this is flow, not text.
     assert_eq!(
-        micromark_to_mdast("<a>", &mdx).err().unwrap(),
+        micromark_to_mdast("<a>", &mdx.parse).err().unwrap(),
         "1:4: Expected a closing tag for `<a>` (1:1) (mdx-jsx:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (4)"
     );
@@ -412,7 +415,10 @@ fn mdx_jsx_text_core() -> Result<(), String> {
 #[test]
 fn mdx_jsx_text_agnosic() -> Result<(), String> {
     let mdx = Options {
-        constructs: Constructs::mdx(),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -452,9 +458,12 @@ fn mdx_jsx_text_agnosic() -> Result<(), String> {
 #[test]
 fn mdx_jsx_text_gnostic() -> Result<(), String> {
     let swc = Options {
-        constructs: Constructs::mdx(),
-        mdx_esm_parse: Some(Box::new(parse_esm)),
-        mdx_expression_parse: Some(Box::new(parse_expression)),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            mdx_esm_parse: Some(Box::new(parse_esm)),
+            mdx_expression_parse: Some(Box::new(parse_expression)),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -552,7 +561,10 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
 #[test]
 fn mdx_jsx_text_complete() -> Result<(), String> {
     let mdx = Options {
-        constructs: Constructs::mdx(),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 

@@ -3,7 +3,7 @@ extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;
 mod test_utils;
-use micromark::{micromark_to_mdast, Constructs, Options};
+use micromark::{micromark_to_mdast, Constructs, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
     swc::{parse_esm, parse_expression, serialize},
@@ -15,11 +15,11 @@ use test_utils::{
 fn from_markdown(value: &str) -> Result<String, String> {
     let mdast = micromark_to_mdast(
         value,
-        &Options {
+        &ParseOptions {
             constructs: Constructs::mdx(),
             mdx_esm_parse: Some(Box::new(parse_esm)),
             mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Options::default()
+            ..ParseOptions::default()
         },
     )?;
     let hast = to_hast(&mdast);

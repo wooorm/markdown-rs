@@ -3,14 +3,17 @@ use micromark::{
     mdast::{Delete, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_strikethrough() -> Result<(), String> {
     let gfm = Options {
-        constructs: Constructs::gfm(),
+        parse: ParseOptions {
+            constructs: Constructs::gfm(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -368,8 +371,11 @@ u ~**xxx**~ zzz
         micromark_with_options(
             "a ~b~ ~~c~~ d",
             &Options {
-                constructs: Constructs::gfm(),
-                gfm_strikethrough_single_tilde: false,
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    gfm_strikethrough_single_tilde: false,
+                    ..ParseOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -381,8 +387,11 @@ u ~**xxx**~ zzz
         micromark_with_options(
             "a ~b~ ~~c~~ d",
             &Options {
-                constructs: Constructs::gfm(),
-                gfm_strikethrough_single_tilde: true,
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    gfm_strikethrough_single_tilde: true,
+                    ..ParseOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -391,7 +400,7 @@ u ~**xxx**~ zzz
     );
 
     assert_eq!(
-        micromark_to_mdast("a ~~alpha~~ b.", &gfm)?,
+        micromark_to_mdast("a ~~alpha~~ b.", &gfm.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

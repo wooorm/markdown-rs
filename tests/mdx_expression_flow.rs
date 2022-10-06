@@ -4,7 +4,7 @@ use micromark::{
     mdast::{MdxFlowExpression, Node, Root},
     micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
@@ -12,7 +12,10 @@ use test_utils::swc::{parse_esm, parse_expression};
 #[test]
 fn mdx_expression_flow_agnostic() -> Result<(), String> {
     let mdx = Options {
-        constructs: Constructs::mdx(),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -87,7 +90,7 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("{alpha +\nbravo}", &mdx)?,
+        micromark_to_mdast("{alpha +\nbravo}", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxFlowExpression(MdxFlowExpression {
                 value: "alpha +\nbravo".to_string(),
@@ -104,9 +107,12 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
 #[test]
 fn mdx_expression_flow_gnostic() -> Result<(), String> {
     let swc = Options {
-        constructs: Constructs::mdx(),
-        mdx_esm_parse: Some(Box::new(parse_esm)),
-        mdx_expression_parse: Some(Box::new(parse_expression)),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            mdx_esm_parse: Some(Box::new(parse_esm)),
+            mdx_expression_parse: Some(Box::new(parse_expression)),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -176,9 +182,12 @@ fn mdx_expression_flow_gnostic() -> Result<(), String> {
 #[test]
 fn mdx_expression_spread() -> Result<(), String> {
     let swc = Options {
-        constructs: Constructs::mdx(),
-        mdx_esm_parse: Some(Box::new(parse_esm)),
-        mdx_expression_parse: Some(Box::new(parse_expression)),
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            mdx_esm_parse: Some(Box::new(parse_esm)),
+            mdx_expression_parse: Some(Box::new(parse_expression)),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 

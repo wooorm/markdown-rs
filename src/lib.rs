@@ -168,7 +168,7 @@ pub type MdxEsmParse = dyn Fn(&str) -> MdxSignal;
 /// Not all constructs can be configured.
 /// Notably, blank lines and paragraphs cannot be turned off.
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Constructs {
     /// Attention.
     ///
@@ -392,9 +392,9 @@ pub struct Constructs {
     ///     ^^^^^^^^^^^^^^^^^
     /// ```
     ///
-    /// > 👉 **Note**: you *must* pass [`options.mdx_esm_parse`][MdxEsmParse]
-    /// > too.
-    /// > Otherwise, this option has no affect.
+    /// > 👉 **Note**: you *must* pass [`mdx_esm_parse`][MdxEsmParse]
+    /// > in [`ParseOptions`][] too.
+    /// > Otherwise, this option has no effect.
     pub mdx_esm: bool,
     /// MDX: expression (flow).
     ///
@@ -522,10 +522,10 @@ impl Constructs {
     /// (autolinks, code (indented), html), and turns on MDX (JSX,
     /// expressions, ESM).
     ///
-    /// > 👉 **Note**: you *must* pass [`options.mdx_esm_parse`][MdxEsmParse]
-    /// > to support ESM.
+    /// > 👉 **Note**: you *must* pass [`mdx_esm_parse`][MdxEsmParse]
+    /// > in [`ParseOptions`][] too to support ESM.
     /// > You *can* pass
-    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
+    /// > [`mdx_expression_parse`][MdxExpressionParse]
     /// > to parse expressions according to a certain grammar (typically, a
     /// > programming language).
     #[must_use]
@@ -545,10 +545,10 @@ impl Constructs {
     }
 }
 
-/// Configuration (optional).
+/// Configuration that describes how to compile to HTML.
 #[allow(clippy::struct_excessive_bools)]
-pub struct Options {
-    // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
+#[derive(Clone, Debug, Default)]
+pub struct CompileOptions {
     /// Whether to allow (dangerous) HTML.
     /// The default is `false`, you can turn it on to `true` for trusted
     /// content.
@@ -556,7 +556,7 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options};
     /// # fn main() -> Result<(), String> {
     ///
     /// // micromark is safe by default:
@@ -570,7 +570,10 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "Hi, <i>venus</i>!",
     ///         &Options {
-    ///             allow_dangerous_html: true,
+    ///             compile: CompileOptions {
+    ///               allow_dangerous_html: true,
+    ///               ..CompileOptions::default()
+    ///             },
     ///             ..Options::default()
     ///         }
     ///     )?,
@@ -588,7 +591,7 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options};
     /// # fn main() -> Result<(), String> {
     ///
     /// // micromark is safe by default:
@@ -602,7 +605,10 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "<javascript:alert(1)>",
     ///         &Options {
-    ///             allow_dangerous_protocol: true,
+    ///             compile: CompileOptions {
+    ///               allow_dangerous_protocol: true,
+    ///               ..CompileOptions::default()
+    ///             },
     ///             ..Options::default()
     ///         }
     ///     )?,
@@ -613,41 +619,8 @@ pub struct Options {
     /// ```
     pub allow_dangerous_protocol: bool,
 
-    /// Which constructs to enable and disable.
-    /// The default is to follow `CommonMark`.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
-    /// # fn main() -> Result<(), String> {
-    ///
-    /// // micromark follows CommonMark by default:
-    /// assert_eq!(
-    ///     micromark("    indented code?"),
-    ///     "<pre><code>indented code?\n</code></pre>"
-    /// );
-    ///
-    /// // Pass `constructs` to choose what to enable and disable:
-    /// assert_eq!(
-    ///     micromark_with_options(
-    ///         "    indented code?",
-    ///         &Options {
-    ///             constructs: Constructs {
-    ///                 code_indented: false,
-    ///                 ..Constructs::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
-    ///     )?,
-    ///     "<p>indented code?</p>"
-    /// );
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub constructs: Constructs,
-
-    /// Default line ending to use, for line endings not in `value`.
+    /// Default line ending to use when compiling to HTML, for line endings not
+    /// in `value`.
     ///
     /// Generally, micromark copies line endings (`\r`, `\n`, `\r\n`) in the
     /// markdown document over to the compiled HTML.
@@ -662,7 +635,7 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, LineEnding};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, LineEnding, Options};
     /// # fn main() -> Result<(), String> {
     ///
     /// // micromark uses `\n` by default:
@@ -676,7 +649,10 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "> a",
     ///         &Options {
-    ///             default_line_ending: LineEnding::CarriageReturnLineFeed,
+    ///             compile: CompileOptions {
+    ///               default_line_ending: LineEnding::CarriageReturnLineFeed,
+    ///               ..CompileOptions::default()
+    ///             },
     ///             ..Options::default()
     ///         }
     ///     )?,
@@ -696,17 +672,14 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"Footnotes"` is used by default:
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
-    ///         }
+    ///         &Options::gfm()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
@@ -716,9 +689,11 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_footnote_label: Some("Notes de bas de page".to_string()),
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_label: Some("Notes de bas de page".to_string()),
+    ///               ..CompileOptions::gfm()
+    ///             }
     ///         }
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Notes de bas de page</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
@@ -735,17 +710,14 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"h2"` is used by default:
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
-    ///         }
+    ///         &Options::gfm()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
@@ -755,9 +727,11 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_footnote_label_tag_name: Some("h1".to_string()),
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_label_tag_name: Some("h1".to_string()),
+    ///               ..CompileOptions::gfm()
+    ///             }
     ///         }
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
@@ -780,17 +754,14 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"class=\"sr-only\""` is used by default:
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
-    ///         }
+    ///         &Options::gfm()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
@@ -800,9 +771,11 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".to_string()),
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".to_string()),
+    ///               ..CompileOptions::gfm()
+    ///             }
     ///         }
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
@@ -820,17 +793,14 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"Back to content"` is used by default:
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
-    ///         }
+    ///         &Options::gfm()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
@@ -840,9 +810,11 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_footnote_back_label: Some("Arrière".to_string()),
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_back_label: Some("Arrière".to_string()),
+    ///               ..CompileOptions::gfm()
+    ///             }
     ///         }
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Arrière\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
@@ -870,17 +842,14 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"user-content-"` is used by default:
     /// assert_eq!(
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
-    ///         }
+    ///         &Options::gfm()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
@@ -890,9 +859,11 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_footnote_clobber_prefix: Some("".to_string()),
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_clobber_prefix: Some("".to_string()),
+    ///               ..CompileOptions::gfm()
+    ///             }
     ///         }
     ///     )?,
     ///     "<p><sup><a href=\"#fn-a\" id=\"fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"fn-a\">\n<p>b <a href=\"#fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
@@ -901,46 +872,6 @@ pub struct Options {
     /// # }
     /// ```
     pub gfm_footnote_clobber_prefix: Option<String>,
-
-    /// Whether to support GFM strikethrough (if enabled in `constructs`) with
-    /// a single tilde (default: `true`).
-    ///
-    /// Single tildes work on github.com but are technically prohibited by GFM.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
-    /// # fn main() -> Result<(), String> {
-    ///
-    /// // micromark supports single tildes by default:
-    /// assert_eq!(
-    ///     micromark_with_options(
-    ///         "~a~",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
-    ///         }
-    ///     )?,
-    ///     "<p><del>a</del></p>"
-    /// );
-    ///
-    /// // Pass `gfm_strikethrough_single_tilde: false` to turn that off:
-    /// assert_eq!(
-    ///     micromark_with_options(
-    ///         "~a~",
-    ///         &Options {
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_strikethrough_single_tilde: false,
-    ///             ..Options::default()
-    ///         }
-    ///     )?,
-    ///     "<p>~a~</p>"
-    /// );
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub gfm_strikethrough_single_tilde: bool,
 
     /// Whether to support the GFM tagfilter, when `allow_dangerous_html` is on
     /// (default: `false`).
@@ -952,7 +883,7 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // With `allow_dangerous_html`, micromark passes HTML through untouched:
@@ -960,9 +891,11 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "<iframe>",
     ///         &Options {
-    ///             allow_dangerous_html: true,
-    ///             constructs: Constructs::gfm(),
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               allow_dangerous_html: true,
+    ///               ..CompileOptions::default()
+    ///             }
     ///         }
     ///     )?,
     ///     "<iframe>"
@@ -973,10 +906,12 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "<iframe>",
     ///         &Options {
-    ///             allow_dangerous_html: true,
-    ///             constructs: Constructs::gfm(),
-    ///             gfm_tagfilter: true,
-    ///             ..Options::default()
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               allow_dangerous_html: true,
+    ///               gfm_tagfilter: true,
+    ///               ..CompileOptions::default()
+    ///             }
     ///         }
     ///     )?,
     ///     "&lt;iframe>"
@@ -990,6 +925,109 @@ pub struct Options {
     /// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
     /// *   [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
     pub gfm_tagfilter: bool,
+}
+
+impl CompileOptions {
+    /// GFM.
+    ///
+    /// <https://github.github.com/gfm/>
+    ///
+    /// This turns on the GFM tag filter (which is pretty useless).
+    #[must_use]
+    pub fn gfm() -> Self {
+        Self {
+            gfm_tagfilter: true,
+            ..Self::default()
+        }
+    }
+}
+
+/// Configuration that describes how to parse from markdown.
+#[allow(clippy::struct_excessive_bools)]
+pub struct ParseOptions {
+    // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
+    /// Which constructs to enable and disable.
+    /// The default is to follow `CommonMark`.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use micromark::{micromark, micromark_with_options, Constructs, Options, ParseOptions};
+    /// # fn main() -> Result<(), String> {
+    ///
+    /// // micromark follows CommonMark by default:
+    /// assert_eq!(
+    ///     micromark("    indented code?"),
+    ///     "<pre><code>indented code?\n</code></pre>"
+    /// );
+    ///
+    /// // Pass `constructs` to choose what to enable and disable:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "    indented code?",
+    ///         &Options {
+    ///             parse: ParseOptions {
+    ///               constructs: Constructs {
+    ///                 code_indented: false,
+    ///                 ..Constructs::default()
+    ///               },
+    ///               ..ParseOptions::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     )?,
+    ///     "<p>indented code?</p>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub constructs: Constructs,
+
+    /// Whether to support GFM strikethrough (if enabled in `constructs`) with
+    /// a single tilde (default: `true`).
+    ///
+    /// Single tildes work on github.com but are technically prohibited by GFM.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use micromark::{micromark, micromark_with_options, Constructs, Options, ParseOptions};
+    /// # fn main() -> Result<(), String> {
+    ///
+    /// // micromark supports single tildes by default:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "~a~",
+    ///         &Options {
+    ///             parse: ParseOptions {
+    ///               constructs: Constructs::gfm(),
+    ///               ..ParseOptions::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     )?,
+    ///     "<p><del>a</del></p>"
+    /// );
+    ///
+    /// // Pass `gfm_strikethrough_single_tilde: false` to turn that off:
+    /// assert_eq!(
+    ///     micromark_with_options(
+    ///         "~a~",
+    ///         &Options {
+    ///             parse: ParseOptions {
+    ///               constructs: Constructs::gfm(),
+    ///               gfm_strikethrough_single_tilde: false,
+    ///               ..ParseOptions::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     )?,
+    ///     "<p>~a~</p>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub gfm_strikethrough_single_tilde: bool,
 
     /// Whether to support math (text) (if enabled in `constructs`) with a
     /// single dollar (default: `true`).
@@ -1000,7 +1038,7 @@ pub struct Options {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Options, Constructs};
+    /// use micromark::{micromark, micromark_with_options, Constructs, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // micromark supports single dollars by default:
@@ -1008,9 +1046,12 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "$a$",
     ///         &Options {
-    ///             constructs: Constructs {
+    ///             parse: ParseOptions {
+    ///               constructs: Constructs {
     ///                 math_text: true,
     ///                 ..Constructs::default()
+    ///               },
+    ///               ..ParseOptions::default()
     ///             },
     ///             ..Options::default()
     ///         }
@@ -1023,11 +1064,14 @@ pub struct Options {
     ///     micromark_with_options(
     ///         "$a$",
     ///         &Options {
-    ///             constructs: Constructs {
+    ///             parse: ParseOptions {
+    ///               constructs: Constructs {
     ///                 math_text: true,
     ///                 ..Constructs::default()
+    ///               },
+    ///               math_text_single_dollar: false,
+    ///               ..ParseOptions::default()
     ///             },
-    ///             math_text_single_dollar: false,
     ///             ..Options::default()
     ///         }
     ///     )?,
@@ -1040,6 +1084,9 @@ pub struct Options {
 
     /// Function to parse expressions with.
     ///
+    /// It only makes sense to pass this when compiling to a syntax tree
+    /// with [`micromark_to_mdast`][].
+    ///
     /// This can be used to parse expressions with a parser.
     /// It can be used to support for arbitrary programming languages within
     /// expressions.
@@ -1049,6 +1096,9 @@ pub struct Options {
     pub mdx_expression_parse: Option<Box<MdxExpressionParse>>,
 
     /// Function to parse ESM with.
+    ///
+    /// It only makes sense to pass this when compiling to a syntax tree
+    /// with [`micromark_to_mdast`][].
     ///
     /// This can be used to parse ESM with a parser.
     /// It can be used to support for arbitrary programming languages within
@@ -1061,32 +1111,14 @@ pub struct Options {
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
 }
 
-impl fmt::Debug for Options {
+impl fmt::Debug for ParseOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Options")
-            .field("allow_dangerous_html", &self.allow_dangerous_html)
-            .field("allow_dangerous_protocol", &self.allow_dangerous_protocol)
+        f.debug_struct("ParseOptions")
             .field("constructs", &self.constructs)
-            .field("default_line_ending", &self.default_line_ending)
-            .field("gfm_footnote_label", &self.gfm_footnote_label)
-            .field(
-                "gfm_footnote_label_tag_name",
-                &self.gfm_footnote_label_tag_name,
-            )
-            .field(
-                "gfm_footnote_label_attributes",
-                &self.gfm_footnote_label_attributes,
-            )
-            .field("gfm_footnote_back_label", &self.gfm_footnote_back_label)
-            .field(
-                "gfm_footnote_clobber_prefix",
-                &self.gfm_footnote_clobber_prefix,
-            )
             .field(
                 "gfm_strikethrough_single_tilde",
                 &self.gfm_strikethrough_single_tilde,
             )
-            .field("gfm_tagfilter", &self.gfm_tagfilter)
             .field("math_text_single_dollar", &self.math_text_single_dollar)
             .field(
                 "mdx_expression_parse",
@@ -1100,24 +1132,77 @@ impl fmt::Debug for Options {
     }
 }
 
-impl Default for Options {
-    /// Safe `CommonMark` defaults.
+impl Default for ParseOptions {
+    /// `CommonMark` defaults.
     fn default() -> Self {
         Self {
-            allow_dangerous_html: false,
-            allow_dangerous_protocol: false,
             constructs: Constructs::default(),
-            default_line_ending: LineEnding::default(),
-            gfm_footnote_label: None,
-            gfm_footnote_label_tag_name: None,
-            gfm_footnote_label_attributes: None,
-            gfm_footnote_back_label: None,
-            gfm_footnote_clobber_prefix: None,
             gfm_strikethrough_single_tilde: true,
-            gfm_tagfilter: false,
             math_text_single_dollar: true,
             mdx_expression_parse: None,
             mdx_esm_parse: None,
+        }
+    }
+}
+
+impl ParseOptions {
+    /// GFM.
+    ///
+    /// <https://github.github.com/gfm/>
+    ///
+    /// This turns on `CommonMark` + GFM.
+    #[must_use]
+    pub fn gfm() -> Self {
+        Self {
+            constructs: Constructs::gfm(),
+            ..Self::default()
+        }
+    }
+
+    /// MDX.
+    ///
+    /// <https://mdxjs.com>
+    ///
+    /// This turns on `CommonMark`, turns off some conflicting constructs
+    /// (autolinks, code (indented), html), and turns on MDX (JSX,
+    /// expressions, ESM).
+    ///
+    /// > 👉 **Note**: you *must* pass [`mdx_esm_parse`][MdxEsmParse]
+    /// > too to support ESM.
+    /// > You *can* pass
+    /// > [`mdx_expression_parse`][MdxExpressionParse]
+    /// > to parse expressions according to a certain grammar (typically, a
+    /// > programming language).
+    #[must_use]
+    pub fn mdx() -> Self {
+        Self {
+            constructs: Constructs::mdx(),
+            ..Self::default()
+        }
+    }
+}
+
+/// Configuration (optional).
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Debug, Default)]
+pub struct Options {
+    /// Configuration that describes how to parse from markdown.
+    pub parse: ParseOptions,
+    /// Configuration that describes how to compile to HTML.
+    pub compile: CompileOptions,
+}
+
+impl Options {
+    /// GFM.
+    ///
+    /// <https://github.github.com/gfm/>
+    ///
+    /// This turns on `CommonMark` + GFM.
+    #[must_use]
+    pub fn gfm() -> Self {
+        Self {
+            parse: ParseOptions::gfm(),
+            compile: CompileOptions::gfm(),
         }
     }
 }
@@ -1150,12 +1235,15 @@ pub fn micromark(value: &str) -> String {
 /// ## Examples
 ///
 /// ```
-/// use micromark::{micromark_with_options, Options};
+/// use micromark::{micromark_with_options, CompileOptions, Options};
 /// # fn main() -> Result<(), String> {
 ///
 /// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
-///     allow_dangerous_html: true,
-///     allow_dangerous_protocol: true,
+///     compile: CompileOptions {
+///       allow_dangerous_html: true,
+///       allow_dangerous_protocol: true,
+///       ..CompileOptions::default()
+///     },
 ///     ..Options::default()
 /// })?;
 ///
@@ -1164,8 +1252,8 @@ pub fn micromark(value: &str) -> String {
 /// # }
 /// ```
 pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, String> {
-    let (events, bytes) = parse(value, options)?;
-    Ok(to_html(&events, bytes, options))
+    let (events, bytes) = parse(value, &options.parse)?;
+    Ok(to_html(&events, bytes, &options.compile))
 }
 
 /// Turn markdown into a syntax tree.
@@ -1181,16 +1269,16 @@ pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, 
 /// ## Examples
 ///
 /// ```
-/// use micromark::{micromark_to_mdast, Options};
+/// use micromark::{micromark_to_mdast, ParseOptions};
 /// # fn main() -> Result<(), String> {
 ///
-/// let tree = micromark_to_mdast("# hi!", &Options::default())?;
+/// let tree = micromark_to_mdast("# hi!", &ParseOptions::default())?;
 ///
 /// println!("{:?}", tree);
 /// # Ok(())
 /// # }
 /// ```
-pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Node, String> {
+pub fn micromark_to_mdast(value: &str, options: &ParseOptions) -> Result<Node, String> {
     let (events, bytes) = parse(value, options)?;
     let node = to_mdast(&events, bytes)?;
     Ok(node)
@@ -1198,18 +1286,21 @@ pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Node, String
 
 /// Do not use: exported for quick prototyping, will be removed.
 #[must_use]
+#[doc(hidden)]
 pub fn sanitize_(value: &str) -> String {
     sanitize(value)
 }
 
 /// Do not use: exported for quick prototyping, will be removed.
 #[must_use]
+#[doc(hidden)]
 pub fn id_start_(char: char) -> bool {
     id_start(char)
 }
 
 /// Do not use: exported for quick prototyping, will be removed.
 #[must_use]
+#[doc(hidden)]
 pub fn id_cont_(char: char, jsx: bool) -> bool {
     id_cont(char, jsx)
 }

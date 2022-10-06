@@ -1,5 +1,5 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, LineEnding, Options};
+use micromark::{micromark, micromark_with_options, CompileOptions, LineEnding, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -32,7 +32,10 @@ fn default_line_ending() -> Result<(), String> {
         micromark_with_options(
             "> a",
             &Options {
-                default_line_ending: LineEnding::CarriageReturn,
+                compile: CompileOptions {
+                    default_line_ending: LineEnding::CarriageReturn,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,
@@ -44,7 +47,10 @@ fn default_line_ending() -> Result<(), String> {
         micromark_with_options(
             "> a\n",
             &Options {
-                default_line_ending: LineEnding::CarriageReturn,
+                compile: CompileOptions {
+                    default_line_ending: LineEnding::CarriageReturn,
+                    ..CompileOptions::default()
+                },
                 ..Options::default()
             }
         )?,

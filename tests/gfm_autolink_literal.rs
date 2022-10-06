@@ -3,14 +3,17 @@ use micromark::{
     mdast::{Link, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_autolink_literal() -> Result<(), String> {
     let gfm = Options {
-        constructs: Constructs::gfm(),
+        parse: ParseOptions {
+            constructs: Constructs::gfm(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -2743,7 +2746,7 @@ www.a/~
     assert_eq!(
         micromark_to_mdast(
             "a https://alpha.com b bravo@charlie.com c www.delta.com d xmpp:echo@foxtrot.com e mailto:golf@hotel.com f.",
-            &gfm
+            &gfm.parse
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

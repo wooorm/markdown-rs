@@ -3,14 +3,17 @@ use micromark::{
     mdast::{List, ListItem, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_task_list_item() -> Result<(), String> {
     let gfm = Options {
-        constructs: Constructs::gfm(),
+        parse: ParseOptions {
+            constructs: Constructs::gfm(),
+            ..ParseOptions::default()
+        },
         ..Options::default()
     };
 
@@ -246,7 +249,7 @@ Text.</li>
     );
 
     assert_eq!(
-        micromark_to_mdast("* [x] a\n* [ ] b\n* c", &gfm)?,
+        micromark_to_mdast("* [x] a\n* [ ] b\n* c", &gfm.parse)?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,

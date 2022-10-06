@@ -1,5 +1,7 @@
 extern crate micromark;
-use micromark::{micromark, micromark_with_options, Constructs, Options};
+use micromark::{
+    micromark, micromark_with_options, CompileOptions, Constructs, Options, ParseOptions,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -16,9 +18,14 @@ fn fuzz() -> Result<(), String> {
         micromark_with_options(
             "a@b.c+d@e.f",
             &Options {
-                constructs: Constructs::gfm(),
-                gfm_tagfilter: true,
-                ..Options::default()
+                parse: ParseOptions {
+                    constructs: Constructs::gfm(),
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    gfm_tagfilter: true,
+                    ..CompileOptions::default()
+                }
             }
         )?,
         "<p><a href=\"mailto:a@b.c\">a@b.c</a><a href=\"mailto:+d@e.f\">+d@e.f</a></p>",

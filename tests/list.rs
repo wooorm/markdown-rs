@@ -3,14 +3,18 @@ use micromark::{
     mdast::{List, ListItem, Node, Paragraph, Root, Text},
     micromark, micromark_to_mdast, micromark_with_options,
     unist::Position,
-    Constructs, Options,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn list() -> Result<(), String> {
     let danger = Options {
-        allow_dangerous_html: true,
+        compile: CompileOptions {
+            allow_dangerous_html: true,
+            allow_dangerous_protocol: true,
+            ..CompileOptions::default()
+        },
         ..Options::default()
     };
 
@@ -572,9 +576,12 @@ fn list() -> Result<(), String> {
         micromark_with_options(
             "- one\n\n two",
             &Options {
-                constructs: Constructs {
-                    list_item: false,
-                    ..Constructs::default()
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        list_item: false,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
                 },
                 ..Options::default()
             }
@@ -584,7 +591,7 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("* a", &Options::default())?,
+        micromark_to_mdast("* a", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,
@@ -610,7 +617,7 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("3. a", &Options::default())?,
+        micromark_to_mdast("3. a", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: true,
@@ -636,7 +643,7 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("* a\n\n  b\n* c", &Options::default())?,
+        micromark_to_mdast("* a\n\n  b\n* c", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,
