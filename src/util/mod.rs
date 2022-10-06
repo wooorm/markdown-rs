@@ -1,8 +1,8 @@
 //! Utilities used when processing markdown.
 
 pub mod char;
+pub mod character_reference;
 pub mod constant;
-pub mod decode_character_reference;
 pub mod edit_map;
 pub mod encode;
 pub mod gfm_tagfilter;

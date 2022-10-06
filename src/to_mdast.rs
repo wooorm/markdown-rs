@@ -10,7 +10,9 @@ use crate::mdast::{
 };
 use crate::unist::{Point, Position};
 use crate::util::{
-    decode_character_reference::{decode_named, decode_numeric},
+    character_reference::{
+        decode as decode_character_reference, parse as parse_character_reference,
+    },
     infer::{gfm_table_align, list_item_loose, list_loose},
     normalize_identifier::normalize_identifier,
     slice::{Position as SlicePosition, Slice},
@@ -892,14 +894,9 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
         context.bytes,
         &SlicePosition::from_exit_event(context.events, context.index),
     );
-    let value = slice.as_str();
-
-    let value = match context.character_reference_marker {
-        b'#' => decode_numeric(value, 10),
-        b'x' => decode_numeric(value, 16),
-        b'&' => decode_named(value),
-        _ => panic!("impossible"),
-    };
+    let value =
+        decode_character_reference(slice.as_str(), context.character_reference_marker, true)
+            .expect("expected to parse only valid named references");
 
     if let Node::Text(node) = context.tail_mut() {
         node.value.push_str(value.as_str());
@@ -1558,8 +1555,9 @@ fn on_exit_mdx_jsx_tag_attribute_value_literal(context: &mut CompileContext) {
         .attributes
         .last_mut()
     {
-        // To do: character references.
-        node.value = Some(AttributeValue::Literal(value.to_string()));
+        node.value = Some(AttributeValue::Literal(parse_character_reference(
+            &value.to_string(),
+        )));
     } else {
         unreachable!("expected property")
     }

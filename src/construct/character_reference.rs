@@ -64,7 +64,7 @@
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text
 //! [character_escape]: crate::construct::character_reference
-//! [decode_numeric]: crate::util::decode_character_reference::decode_numeric
+//! [decode_numeric]: crate::util::character_reference::decode_numeric
 //! [character_references]: crate::util::constant::CHARACTER_REFERENCES
 //! [html]: https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
 
@@ -72,10 +72,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
-    constant::{
-        CHARACTER_REFERENCES, CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
-        CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
-    },
+    character_reference::{decode_named, value_max, value_test},
     slice::Slice,
 };
 
@@ -173,9 +170,8 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
                 tokenizer.point.index - tokenizer.tokenize_state.size,
                 tokenizer.point.index,
             );
-            let name = slice.as_str();
 
-            if !CHARACTER_REFERENCES.iter().any(|d| d.0 == name) {
+            if decode_named(slice.as_str(), true).is_none() {
                 tokenizer.tokenize_state.marker = 0;
                 tokenizer.tokenize_state.size = 0;
                 return State::Nok;
@@ -192,21 +188,10 @@ pub fn value(tokenizer: &mut Tokenizer) -> State {
         return State::Ok;
     }
 
-    let max = match tokenizer.tokenize_state.marker {
-        b'&' => CHARACTER_REFERENCE_NAMED_SIZE_MAX,
-        b'x' => CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX,
-        b'#' => CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
-        _ => unreachable!("Unexpected marker `{}`", tokenizer.tokenize_state.marker),
-    };
-    let test = match tokenizer.tokenize_state.marker {
-        b'&' => u8::is_ascii_alphanumeric,
-        b'x' => u8::is_ascii_hexdigit,
-        b'#' => u8::is_ascii_digit,
-        _ => unreachable!("Unexpected marker `{}`", tokenizer.tokenize_state.marker),
-    };
-
     if let Some(byte) = tokenizer.current {
-        if tokenizer.tokenize_state.size < max && test(&byte) {
+        if tokenizer.tokenize_state.size < value_max(tokenizer.tokenize_state.marker)
+            && value_test(tokenizer.tokenize_state.marker)(&byte)
+        {
             tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
             return State::Next(StateName::CharacterReferenceValue);

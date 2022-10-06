@@ -2,8 +2,8 @@
 use crate::event::{Event, Kind, Name};
 use crate::mdast::AlignKind;
 use crate::util::{
+    character_reference::decode as decode_character_reference,
     constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
-    decode_character_reference::{decode_named, decode_numeric},
     encode::encode,
     gfm_tagfilter::gfm_tagfilter,
     infer::{gfm_table_align, list_loose},
@@ -783,14 +783,8 @@ fn on_exit_character_reference_value(context: &mut CompileContext) {
         context.bytes,
         &Position::from_exit_event(context.events, context.index),
     );
-    let value = slice.as_str();
-
-    let value = match marker {
-        b'#' => decode_numeric(value, 10),
-        b'x' => decode_numeric(value, 16),
-        b'&' => decode_named(value),
-        _ => panic!("impossible"),
-    };
+    let value = decode_character_reference(slice.as_str(), marker, true)
+        .expect("expected to parse only valid named references");
 
     context.push(&encode(&value, context.encode_html));
 }

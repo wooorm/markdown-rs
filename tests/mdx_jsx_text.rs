@@ -251,6 +251,97 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
+        micromark_to_mdast("<a b='&nbsp; &amp; &copy; &AElig; &Dcaron; &frac34; &HilbertSpace; &DifferentialD; &ClockwiseContourIntegral; &ngE;' />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".to_string()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".to_string(),
+                                value: Some(AttributeValue::Literal("\u{a0} & © Æ &Dcaron; ¾ &HilbertSpace; &DifferentialD; &ClockwiseContourIntegral; &ngE;".into())),
+                            }),
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 120, 119))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 120, 119, 1, 121, 120))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 121, 120))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 121, 120))
+        }),
+        "should support character references (HTML 4, named) in JSX attribute values"
+    );
+
+    assert_eq!(
+        micromark_to_mdast(
+            "<a b='&#35; &#1234; &#992; &#0;' c='&#X22; &#XD06; &#xcab;' />.",
+            &mdx
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".to_string()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".to_string(),
+                                value: Some(AttributeValue::Literal("# Ӓ Ϡ �".into())),
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "c".to_string(),
+                                value: Some(AttributeValue::Literal("\" ആ ಫ".into())),
+                            }),
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 63, 62))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 63, 62, 1, 64, 63))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 64, 63))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 64, 63))
+        }),
+        "should support character references (numeric) in JSX attribute values"
+    );
+
+    assert_eq!(
+        micromark_to_mdast("<a b='&nbsp &x; &#; &#x; &#987654321; &#abcdef0; &ThisIsNotDefined; &hi?;' />.", &mdx)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".to_string()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".to_string(),
+                                value: Some(AttributeValue::Literal("&nbsp &x; &#; &#x; &#987654321; &#abcdef0; &ThisIsNotDefined; &hi?;".into())),
+                            })
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 78, 77))
+                    }),
+                    Node::Text(Text {
+                        value: ".".to_string(),
+                        position: Some(Position::new(1, 78, 77, 1, 79, 78))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 79, 78))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 79, 78))
+        }),
+        "should not support things that look like character references but aren’t"
+    );
+
+    assert_eq!(
         micromark_to_mdast("a </b> c", &mdx)
             .err()
             .unwrap(),
