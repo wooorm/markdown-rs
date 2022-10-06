@@ -6,6 +6,7 @@ pub mod constant;
 pub mod edit_map;
 pub mod encode;
 pub mod gfm_tagfilter;
+pub mod identifier;
 pub mod infer;
 pub mod mdx_collect;
 pub mod normalize_identifier;

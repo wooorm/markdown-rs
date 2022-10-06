@@ -36,7 +36,10 @@ use mdast::Node;
 use parser::parse;
 use to_html::compile as to_html;
 use to_mdast::compile as to_mdast;
-use util::sanitize_uri::sanitize;
+use util::{
+    identifier::{id_cont, id_start},
+    sanitize_uri::sanitize,
+};
 
 /// Type of line endings in markdown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -1197,4 +1200,16 @@ pub fn micromark_to_mdast(value: &str, options: &Options) -> Result<Node, String
 #[must_use]
 pub fn sanitize_(value: &str) -> String {
     sanitize(value)
+}
+
+/// Do not use: exported for quick prototyping, will be removed.
+#[must_use]
+pub fn id_start_(char: char) -> bool {
+    id_start(char)
+}
+
+/// Do not use: exported for quick prototyping, will be removed.
+#[must_use]
+pub fn id_cont_(char: char, jsx: bool) -> bool {
+    id_cont(char, jsx)
 }

@@ -1,8 +1,10 @@
 extern crate swc_common;
 extern crate swc_ecma_ast;
-use crate::test_utils::to_swc::Program;
+use crate::{
+    micromark::{id_cont_ as id_cont, id_start_ as id_start},
+    test_utils::to_swc::Program,
+};
 use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith};
-use unicode_id::UnicodeID;
 
 /// Configuration.
 #[derive(Debug, Default, Clone)]
@@ -1159,23 +1161,11 @@ fn is_identifier_name(name: &str) -> bool {
         if if index == 0 {
             !id_start(char)
         } else {
-            !id_cont(char)
+            !id_cont(char, false)
         } {
             return false;
         }
     }
 
     true
-}
-
-// To do: share with `partial_mdx_jsx`.
-/// Check if a character can start a JS identifier.
-fn id_start(char: char) -> bool {
-    UnicodeID::is_id_start(char) || matches!(char, '$' | '_')
-}
-
-// To do: share with `partial_mdx_jsx`.
-/// Check if a character can continue a JS identifier.
-fn id_cont(char: char) -> bool {
-    UnicodeID::is_id_continue(char) || matches!(char, '\u{200c}' | '\u{200d}')
 }

@@ -164,13 +164,15 @@
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::char::{
-    after_index as char_after_index, format_byte, format_opt as format_char_opt, kind_after_index,
-    Kind as CharacterKind,
+use crate::util::{
+    char::{
+        after_index as char_after_index, format_byte, format_opt as format_char_opt,
+        kind_after_index, Kind as CharacterKind,
+    },
+    identifier::{id_cont, id_start},
 };
 use alloc::format;
 use core::str;
-use unicode_id::UnicodeID;
 
 /// Start of MDX: JSX.
 ///
@@ -230,7 +232,7 @@ pub fn name_before(tokenizer: &mut Tokenizer) -> State {
         // Fragment opening tag.
         Some(b'>') => State::Retry(StateName::MdxJsxTagEnd),
         _ => {
-            if id_start(char_after_index(
+            if id_start_opt(char_after_index(
                 tokenizer.parse_state.bytes,
                 tokenizer.point.index,
             )) {
@@ -270,7 +272,7 @@ pub fn closing_tag_name_before(tokenizer: &mut Tokenizer) -> State {
         State::Retry(StateName::MdxJsxTagEnd)
     }
     // Start of a closing tag name.
-    else if id_start(char_after_index(
+    else if id_start_opt(char_after_index(
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
@@ -313,7 +315,7 @@ pub fn primary_name(tokenizer: &mut Tokenizer) -> State {
     // Continuation of name: remain.
     // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
-        || id_cont(char_after_index(
+        || id_cont_opt(char_after_index(
             tokenizer.parse_state.bytes,
             tokenizer.point.index,
         ))
@@ -365,7 +367,7 @@ pub fn primary_name_after(tokenizer: &mut Tokenizer) -> State {
         // End of name.
         _ => {
             if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
-                || id_start(char_after_index(
+                || id_start_opt(char_after_index(
                     tokenizer.parse_state.bytes,
                     tokenizer.point.index,
                 ))
@@ -391,7 +393,7 @@ pub fn primary_name_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn member_name_before(tokenizer: &mut Tokenizer) -> State {
     // Start of a member name.
-    if id_start(char_after_index(
+    if id_start_opt(char_after_index(
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
@@ -427,7 +429,7 @@ pub fn member_name(tokenizer: &mut Tokenizer) -> State {
     // Continuation of name: remain.
     // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
-        || id_cont(char_after_index(
+        || id_cont_opt(char_after_index(
             tokenizer.parse_state.bytes,
             tokenizer.point.index,
         ))
@@ -471,7 +473,7 @@ pub fn member_name_after(tokenizer: &mut Tokenizer) -> State {
         // End of name.
         _ => {
             if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
-                || id_start(char_after_index(
+                || id_start_opt(char_after_index(
                     tokenizer.parse_state.bytes,
                     tokenizer.point.index,
                 ))
@@ -497,7 +499,7 @@ pub fn member_name_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn local_name_before(tokenizer: &mut Tokenizer) -> State {
     // Start of a local name.
-    if id_start(char_after_index(
+    if id_start_opt(char_after_index(
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
@@ -539,7 +541,7 @@ pub fn local_name(tokenizer: &mut Tokenizer) -> State {
     // Continuation of name: remain.
     // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
-        || id_cont(char_after_index(
+        || id_cont_opt(char_after_index(
             tokenizer.parse_state.bytes,
             tokenizer.point.index,
         ))
@@ -569,7 +571,7 @@ pub fn local_name(tokenizer: &mut Tokenizer) -> State {
 pub fn local_name_after(tokenizer: &mut Tokenizer) -> State {
     // End of name.
     if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
-        || id_start(char_after_index(
+        || id_start_opt(char_after_index(
             tokenizer.parse_state.bytes,
             tokenizer.point.index,
         ))
@@ -621,7 +623,7 @@ pub fn attribute_before(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // Start of an attribute name.
-            if id_start(char_after_index(
+            if id_start_opt(char_after_index(
                 tokenizer.parse_state.bytes,
                 tokenizer.point.index,
             )) {
@@ -680,7 +682,7 @@ pub fn attribute_primary_name(tokenizer: &mut Tokenizer) -> State {
     // Continuation of name: remain.
     // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
-        || id_cont(char_after_index(
+        || id_cont_opt(char_after_index(
             tokenizer.parse_state.bytes,
             tokenizer.point.index,
         ))
@@ -736,7 +738,7 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
             if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
                 == CharacterKind::Whitespace
                 || matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
-                || id_start(char_after_index(
+                || id_start_opt(char_after_index(
                     tokenizer.parse_state.bytes,
                     tokenizer.point.index,
                 ))
@@ -764,7 +766,7 @@ pub fn attribute_primary_name_after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn attribute_local_name_before(tokenizer: &mut Tokenizer) -> State {
     // Start of a local name.
-    if id_start(char_after_index(
+    if id_start_opt(char_after_index(
         tokenizer.parse_state.bytes,
         tokenizer.point.index,
     )) {
@@ -805,7 +807,7 @@ pub fn attribute_local_name(tokenizer: &mut Tokenizer) -> State {
     // Continuation of name: remain.
     // Allow continuation bytes.
     else if matches!(tokenizer.current, Some(0x80..=0xBF))
-        || id_cont(char_after_index(
+        || id_cont_opt(char_after_index(
             tokenizer.parse_state.bytes,
             tokenizer.point.index,
         ))
@@ -845,7 +847,7 @@ pub fn attribute_local_name_after(tokenizer: &mut Tokenizer) -> State {
         _ => {
             // End of name.
             if matches!(tokenizer.current, Some(b'/' | b'>' | b'{'))
-                || id_start(char_after_index(
+                || id_start_opt(char_after_index(
                     tokenizer.parse_state.bytes,
                     tokenizer.point.index,
                 ))
@@ -1101,18 +1103,18 @@ pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Check if a character can start a JSX identifier.
-fn id_start(code: Option<char>) -> bool {
+fn id_start_opt(code: Option<char>) -> bool {
     if let Some(char) = code {
-        UnicodeID::is_id_start(char) || matches!(char, '$' | '_')
+        id_start(char)
     } else {
         false
     }
 }
 
 /// Check if a character can continue a JSX identifier.
-fn id_cont(code: Option<char>) -> bool {
+fn id_cont_opt(code: Option<char>) -> bool {
     if let Some(char) = code {
-        UnicodeID::is_id_continue(char) || matches!(char, '-' | '\u{200c}' | '\u{200d}')
+        id_cont(char, true)
     } else {
         false
     }
