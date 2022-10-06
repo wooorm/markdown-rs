@@ -181,16 +181,20 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
 
                 // To do: set positional info.
                 layout = true;
-                replacements.push(create_layout_decl(match decl.decl {
-                    swc_ecma_ast::DefaultDecl::Class(cls) => swc_ecma_ast::Expr::Class(cls),
-                    swc_ecma_ast::DefaultDecl::Fn(func) => swc_ecma_ast::Expr::Fn(func),
+                match decl.decl {
+                    swc_ecma_ast::DefaultDecl::Class(cls) => {
+                        replacements.push(create_layout_decl(swc_ecma_ast::Expr::Class(cls)))
+                    }
+                    swc_ecma_ast::DefaultDecl::Fn(func) => {
+                        replacements.push(create_layout_decl(swc_ecma_ast::Expr::Fn(func)))
+                    }
                     swc_ecma_ast::DefaultDecl::TsInterfaceDecl(_) => {
-                        // To do: improved error? Not sure what a real example of this is?
-                        unreachable!(
-                            "Cannot use TypeScript interface declarations as default export in MDX"
+                        return Err(
+                            "Cannot use TypeScript interface declarations as default export in MDX files. The default export is reserved for a layout, which must be a component"
+                                .into(),
                         )
                     }
-                }));
+                }
             }
             swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDefaultExpr(
                 expr,

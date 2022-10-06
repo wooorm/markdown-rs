@@ -1,9 +1,23 @@
 use crate::test_utils::hast;
 use micromark::{mdast, sanitize_, unist::Position};
 
-// Options?
-// - dangerous: raw? No
-// - clobberPrefix / footnoteLabel / footnoteLabelTagName / footnoteLabelProperties / footnoteBacklabel? Later
+// To do: support these compile options:
+// ```
+// pub gfm_footnote_label: Option<String>,
+// pub gfm_footnote_label_tag_name: Option<String>,
+// pub gfm_footnote_label_attributes: Option<String>,
+// pub gfm_footnote_back_label: Option<String>,
+// pub gfm_footnote_clobber_prefix: Option<String>,
+// ```
+//
+// Maybe also:
+// * option to persist `meta`?
+// * option to generate a `style` attribute instead of `align`?
+// * support `Raw` nodes for HTML?
+//
+// To do:
+// * revert references when undefined?
+//   <https://github.com/syntax-tree/mdast-util-to-hast/blob/c393d0a/lib/revert.js>
 
 #[derive(Debug)]
 struct State {
@@ -39,15 +53,13 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
         }
     });
 
-    let (result, mut state) = one(
-        mdast,
-        None,
-        State {
-            definitions,
-            footnote_definitions: vec![],
-            footnote_calls: vec![],
-        },
-    );
+    let mut state = State {
+        definitions,
+        footnote_definitions: vec![],
+        footnote_calls: vec![],
+    };
+
+    let result = one(&mut state, mdast, None);
 
     if state.footnote_calls.is_empty() {
         if let Result::Node(node) = result {
@@ -187,7 +199,6 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
 
             items.push(hast::Node::Element(hast::Element {
                 tag_name: "li".into(),
-                // To do: support clobber prefix.
                 properties: vec![(
                     "id".into(),
                     hast::PropertyValue::String(format!("#fn-{}", safe_id)),
@@ -256,821 +267,640 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
     hast::Node::Root(root)
 }
 
-fn one(node: &mdast::Node, parent: Option<&mdast::Node>, state: State) -> (Result, State) {
+fn one(state: &mut State, node: &mdast::Node, parent: Option<&mdast::Node>) -> Result {
     match node {
-        mdast::Node::BlockQuote(_) => transform_block_quote(node, state),
-        mdast::Node::Break(_) => transform_break(node, state),
-        mdast::Node::Code(_) => transform_code(node, state),
-        mdast::Node::Delete(_) => transform_delete(node, state),
-        mdast::Node::Emphasis(_) => transform_emphasis(node, state),
-        mdast::Node::FootnoteDefinition(_) => transform_footnote_definition(node, state),
-        mdast::Node::FootnoteReference(_) => transform_footnote_reference(node, state),
-        mdast::Node::Heading(_) => transform_heading(node, state),
-        mdast::Node::Image(_) => transform_image(node, state),
-        mdast::Node::ImageReference(_) => transform_image_reference(node, state),
-        mdast::Node::InlineCode(_) => transform_inline_code(node, state),
-        mdast::Node::InlineMath(_) => transform_inline_math(node, state),
-        mdast::Node::Link(_) => transform_link(node, state),
-        mdast::Node::LinkReference(_) => transform_link_reference(node, state),
-        mdast::Node::ListItem(_) => transform_list_item(node, parent, state),
-        mdast::Node::List(_) => transform_list(node, state),
-        mdast::Node::Math(_) => transform_math(node, state),
+        mdast::Node::BlockQuote(d) => transform_block_quote(state, node, d),
+        mdast::Node::Break(d) => transform_break(state, node, d),
+        mdast::Node::Code(d) => transform_code(state, node, d),
+        mdast::Node::Delete(d) => transform_delete(state, node, d),
+        mdast::Node::Emphasis(d) => transform_emphasis(state, node, d),
+        mdast::Node::FootnoteDefinition(d) => transform_footnote_definition(state, node, d),
+        mdast::Node::FootnoteReference(d) => transform_footnote_reference(state, node, d),
+        mdast::Node::Heading(d) => transform_heading(state, node, d),
+        mdast::Node::Image(d) => transform_image(state, node, d),
+        mdast::Node::ImageReference(d) => transform_image_reference(state, node, d),
+        mdast::Node::InlineCode(d) => transform_inline_code(state, node, d),
+        mdast::Node::InlineMath(d) => transform_inline_math(state, node, d),
+        mdast::Node::Link(d) => transform_link(state, node, d),
+        mdast::Node::LinkReference(d) => transform_link_reference(state, node, d),
+        mdast::Node::ListItem(d) => transform_list_item(state, node, parent, d),
+        mdast::Node::List(d) => transform_list(state, node, d),
+        mdast::Node::Math(d) => transform_math(state, node, d),
         mdast::Node::MdxFlowExpression(_) | mdast::Node::MdxTextExpression(_) => {
-            transform_mdx_expression(node, state)
+            transform_mdx_expression(state, node)
         }
         mdast::Node::MdxJsxFlowElement(_) | mdast::Node::MdxJsxTextElement(_) => {
-            transform_mdx_jsx_element(node, state)
+            transform_mdx_jsx_element(state, node)
         }
-        mdast::Node::MdxjsEsm(_) => transform_mdxjs_esm(node, state),
-        mdast::Node::Paragraph(_) => transform_paragraph(node, state),
-        mdast::Node::Root(_) => transform_root(node, state),
-        mdast::Node::Strong(_) => transform_strong(node, state),
+        mdast::Node::MdxjsEsm(d) => transform_mdxjs_esm(state, node, d),
+        mdast::Node::Paragraph(d) => transform_paragraph(state, node, d),
+        mdast::Node::Root(d) => transform_root(state, node, d),
+        mdast::Node::Strong(d) => transform_strong(state, node, d),
         // Note: this is only called here if there is a single cell passed, not when one is found in a table.
-        mdast::Node::TableCell(_) => {
-            transform_table_cell(node, false, mdast::AlignKind::None, state)
+        mdast::Node::TableCell(d) => {
+            transform_table_cell(state, node, false, mdast::AlignKind::None, d)
         }
         // Note: this is only called here if there is a single row passed, not when one is found in a table.
-        mdast::Node::TableRow(_) => transform_table_row(node, false, None, state),
-        mdast::Node::Table(_) => transform_table(node, state),
-        mdast::Node::Text(_) => transform_text(node, state),
-        mdast::Node::ThematicBreak(_) => transform_thematic_break(node, state),
+        mdast::Node::TableRow(d) => transform_table_row(state, node, false, None, d),
+        mdast::Node::Table(d) => transform_table(state, node, d),
+        mdast::Node::Text(d) => transform_text(state, node, d),
+        mdast::Node::ThematicBreak(d) => transform_thematic_break(state, node, d),
         // Ignore.
-        // Idea: support `Raw` nodes for HTML, optionally?
         mdast::Node::Definition(_)
         | mdast::Node::Html(_)
         | mdast::Node::Yaml(_)
-        | mdast::Node::Toml(_) => (Result::None, state),
+        | mdast::Node::Toml(_) => Result::None,
     }
 }
 
 /// [`BlockQuote`][mdast::BlockQuote].
-fn transform_block_quote(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: "blockquote".into(),
-                properties: vec![],
-                children: wrap(children, true),
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_block_quote(
+    state: &mut State,
+    node: &mdast::Node,
+    block_quote: &mdast::BlockQuote,
+) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "blockquote".into(),
+        properties: vec![],
+        children: wrap(all(state, node), true),
+        position: block_quote.position.clone(),
+    }))
 }
 
 /// [`Break`][mdast::Break].
-fn transform_break(node: &mdast::Node, state: State) -> (Result, State) {
-    (
-        Result::Fragment(vec![
-            augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "br".into(),
-                    properties: vec![],
-                    children: vec![],
-                    position: None,
-                }),
-            ),
-            hast::Node::Text(hast::Text {
-                value: "\n".into(),
-                position: None,
-            }),
-        ]),
-        state,
-    )
+fn transform_break(_state: &mut State, _node: &mdast::Node, break_: &mdast::Break) -> Result {
+    Result::Fragment(vec![
+        hast::Node::Element(hast::Element {
+            tag_name: "br".into(),
+            properties: vec![],
+            children: vec![],
+            position: break_.position.clone(),
+        }),
+        hast::Node::Text(hast::Text {
+            value: "\n".into(),
+            position: None,
+        }),
+    ])
 }
 
 /// [`Code`][mdast::Code].
-fn transform_code(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::Code(code) = node {
-        let mut value = code.value.clone();
-        value.push('\n');
-        let mut properties = vec![];
+fn transform_code(_state: &mut State, _node: &mdast::Node, code: &mdast::Code) -> Result {
+    let mut value = code.value.clone();
+    value.push('\n');
+    let mut properties = vec![];
 
-        if let Some(lang) = code.lang.as_ref() {
-            let mut value = "language-".to_string();
-            value.push_str(lang);
-            properties.push((
-                "className".into(),
-                hast::PropertyValue::SpaceSeparated(vec![value]),
-            ));
-        }
-
-        // To do: option to persist `meta`?
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "pre".into(),
-                    properties: vec![],
-                    children: vec![augment_node(
-                        node,
-                        hast::Node::Element(hast::Element {
-                            tag_name: "code".into(),
-                            properties,
-                            children: vec![hast::Node::Text(hast::Text {
-                                value,
-                                position: None,
-                            })],
-                            position: None,
-                        }),
-                    )],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `Code`")
+    if let Some(lang) = code.lang.as_ref() {
+        properties.push((
+            "className".into(),
+            hast::PropertyValue::SpaceSeparated(vec![format!("language-{}", lang)]),
+        ));
     }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "pre".into(),
+        properties: vec![],
+        children: vec![hast::Node::Element(hast::Element {
+            tag_name: "code".into(),
+            properties,
+            children: vec![hast::Node::Text(hast::Text {
+                value,
+                position: None,
+            })],
+            position: code.position.clone(),
+        })],
+        position: code.position.clone(),
+    }))
 }
 
 /// [`Delete`][mdast::Delete].
-fn transform_delete(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: "del".into(),
-                properties: vec![],
-                children,
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_delete(state: &mut State, node: &mdast::Node, delete: &mdast::Delete) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "del".into(),
+        properties: vec![],
+        children: all(state, node),
+        position: delete.position.clone(),
+    }))
 }
 
 /// [`Emphasis`][mdast::Emphasis].
-fn transform_emphasis(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: "em".into(),
-                properties: vec![],
-                children,
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_emphasis(state: &mut State, node: &mdast::Node, emphasis: &mdast::Emphasis) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "em".into(),
+        properties: vec![],
+        children: all(state, node),
+        position: emphasis.position.clone(),
+    }))
 }
 
 /// [`FootnoteDefinition`][mdast::FootnoteDefinition].
-fn transform_footnote_definition(node: &mdast::Node, mut state: State) -> (Result, State) {
-    if let mdast::Node::FootnoteDefinition(definition) = node {
-        let result = all(node, state);
-        let children = result.0;
-        state = result.1;
-        // Set aside.
-        state
-            .footnote_definitions
-            .push((definition.identifier.clone(), children));
-        (Result::None, state)
-    } else {
-        unreachable!("expected `FootnoteDefinition`")
-    }
+fn transform_footnote_definition(
+    state: &mut State,
+    node: &mdast::Node,
+    footnote_definition: &mdast::FootnoteDefinition,
+) -> Result {
+    let children = all(state, node);
+    // Set aside.
+    state
+        .footnote_definitions
+        .push((footnote_definition.identifier.clone(), children));
+    Result::None
 }
 
 /// [`FootnoteReference`][mdast::FootnoteReference].
-fn transform_footnote_reference(node: &mdast::Node, mut state: State) -> (Result, State) {
-    if let mdast::Node::FootnoteReference(reference) = node {
-        let safe_id = sanitize_(&reference.identifier.to_lowercase());
-        let mut call_index = 0;
+fn transform_footnote_reference(
+    state: &mut State,
+    _node: &mdast::Node,
+    footnote_reference: &mdast::FootnoteReference,
+) -> Result {
+    let safe_id = sanitize_(&footnote_reference.identifier.to_lowercase());
+    let mut call_index = 0;
 
-        // See if this has been called before.
-        while call_index < state.footnote_calls.len() {
-            if state.footnote_calls[call_index].0 == reference.identifier {
-                break;
-            }
-            call_index += 1;
+    // See if this has been called before.
+    while call_index < state.footnote_calls.len() {
+        if state.footnote_calls[call_index].0 == footnote_reference.identifier {
+            break;
         }
-
-        // New.
-        if call_index == state.footnote_calls.len() {
-            state.footnote_calls.push((reference.identifier.clone(), 0));
-        }
-
-        // Increment.
-        state.footnote_calls[call_index].1 += 1;
-
-        let reuse_counter = state.footnote_calls[call_index].1;
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "sup".into(),
-                    properties: vec![],
-                    children: vec![hast::Node::Element(hast::Element {
-                        tag_name: "a".into(),
-                        // To do: support clobber prefix.
-                        properties: vec![
-                            (
-                                "href".into(),
-                                hast::PropertyValue::String(format!("#fn-{}", safe_id)),
-                            ),
-                            (
-                                "id".into(),
-                                hast::PropertyValue::String(format!(
-                                    "fnref-{}{}",
-                                    safe_id,
-                                    if reuse_counter > 1 {
-                                        format!("-{}", reuse_counter)
-                                    } else {
-                                        "".into()
-                                    }
-                                )),
-                            ),
-                            ("dataFootnoteRef".into(), hast::PropertyValue::Boolean(true)),
-                            (
-                                "ariaDescribedBy".into(),
-                                hast::PropertyValue::String("footnote-label".into()),
-                            ),
-                        ],
-                        children: vec![hast::Node::Text(hast::Text {
-                            value: (call_index + 1).to_string(),
-                            position: None,
-                        })],
-                        position: None,
-                    })],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `FootnoteReference`")
+        call_index += 1;
     }
+
+    // New.
+    if call_index == state.footnote_calls.len() {
+        state
+            .footnote_calls
+            .push((footnote_reference.identifier.clone(), 0));
+    }
+
+    // Increment.
+    state.footnote_calls[call_index].1 += 1;
+
+    let reuse_counter = state.footnote_calls[call_index].1;
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "sup".into(),
+        properties: vec![],
+        children: vec![hast::Node::Element(hast::Element {
+            tag_name: "a".into(),
+            properties: vec![
+                (
+                    "href".into(),
+                    hast::PropertyValue::String(format!("#fn-{}", safe_id)),
+                ),
+                (
+                    "id".into(),
+                    hast::PropertyValue::String(format!(
+                        "fnref-{}{}",
+                        safe_id,
+                        if reuse_counter > 1 {
+                            format!("-{}", reuse_counter)
+                        } else {
+                            "".into()
+                        }
+                    )),
+                ),
+                ("dataFootnoteRef".into(), hast::PropertyValue::Boolean(true)),
+                (
+                    "ariaDescribedBy".into(),
+                    hast::PropertyValue::String("footnote-label".into()),
+                ),
+            ],
+            children: vec![hast::Node::Text(hast::Text {
+                value: (call_index + 1).to_string(),
+                position: None,
+            })],
+            position: None,
+        })],
+        position: footnote_reference.position.clone(),
+    }))
 }
 
 /// [`Heading`][mdast::Heading].
-fn transform_heading(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::Heading(heading) = node {
-        let (children, state) = all(node, state);
-        let tag_name = format!("h{}", heading.depth);
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name,
-                    properties: vec![],
-                    children,
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `Heading`")
-    }
+fn transform_heading(state: &mut State, node: &mdast::Node, heading: &mdast::Heading) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: format!("h{}", heading.depth),
+        properties: vec![],
+        children: all(state, node),
+        position: heading.position.clone(),
+    }))
 }
 
 /// [`Image`][mdast::Image].
-fn transform_image(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::Image(image) = node {
-        let mut properties = vec![];
+fn transform_image(_state: &mut State, _node: &mdast::Node, image: &mdast::Image) -> Result {
+    let mut properties = vec![];
 
-        properties.push((
-            "src".into(),
-            hast::PropertyValue::String(sanitize_(&image.url)),
-        ));
+    properties.push((
+        "src".into(),
+        hast::PropertyValue::String(sanitize_(&image.url)),
+    ));
 
-        properties.push(("alt".into(), hast::PropertyValue::String(image.alt.clone())));
+    properties.push(("alt".into(), hast::PropertyValue::String(image.alt.clone())));
 
-        if let Some(value) = image.title.as_ref() {
-            properties.push(("title".into(), hast::PropertyValue::String(value.into())));
-        }
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "img".into(),
-                    properties,
-                    children: vec![],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `Image`")
+    if let Some(value) = image.title.as_ref() {
+        properties.push(("title".into(), hast::PropertyValue::String(value.into())));
     }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "img".into(),
+        properties,
+        children: vec![],
+        position: image.position.clone(),
+    }))
 }
 
 /// [`ImageReference`][mdast::ImageReference].
-fn transform_image_reference(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::ImageReference(reference) = node {
-        let mut properties = vec![];
+fn transform_image_reference(
+    state: &mut State,
+    _node: &mdast::Node,
+    image_reference: &mdast::ImageReference,
+) -> Result {
+    let mut properties = vec![];
 
-        let definition = state
-            .definitions
-            .iter()
-            .find(|d| d.0 == reference.identifier);
+    let definition = state
+        .definitions
+        .iter()
+        .find(|d| d.0 == image_reference.identifier);
 
-        // To do: revert when undefined? <https://github.com/syntax-tree/mdast-util-to-hast/blob/c393d0a60941d8936135e05a5cc78734d87578ba/lib/revert.js>
-        let (_, url, title) =
-            definition.expect("expected reference to have a corresponding definition");
+    let (_, url, title) =
+        definition.expect("expected reference to have a corresponding definition");
 
-        properties.push(("src".into(), hast::PropertyValue::String(sanitize_(url))));
+    properties.push(("src".into(), hast::PropertyValue::String(sanitize_(url))));
 
-        properties.push((
-            "alt".into(),
-            hast::PropertyValue::String(reference.alt.clone()),
-        ));
+    properties.push((
+        "alt".into(),
+        hast::PropertyValue::String(image_reference.alt.clone()),
+    ));
 
-        if let Some(value) = title {
-            properties.push(("title".into(), hast::PropertyValue::String(value.into())));
-        }
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "img".into(),
-                    properties,
-                    children: vec![],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `ImageReference`")
+    if let Some(value) = title {
+        properties.push(("title".into(), hast::PropertyValue::String(value.into())));
     }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "img".into(),
+        properties,
+        children: vec![],
+        position: image_reference.position.clone(),
+    }))
 }
 
 /// [`InlineCode`][mdast::InlineCode].
-fn transform_inline_code(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::InlineCode(code) = node {
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "code".into(),
-                    properties: vec![],
-                    children: vec![hast::Node::Text(hast::Text {
-                        value: replace_eols_with_spaces(&code.value),
-                        position: None,
-                    })],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `InlineCode`")
-    }
+fn transform_inline_code(
+    _state: &mut State,
+    _node: &mdast::Node,
+    inline_code: &mdast::InlineCode,
+) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "code".into(),
+        properties: vec![],
+        children: vec![hast::Node::Text(hast::Text {
+            value: replace_eols_with_spaces(&inline_code.value),
+            position: None,
+        })],
+        position: inline_code.position.clone(),
+    }))
 }
 
 /// [`InlineMath`][mdast::InlineMath].
-fn transform_inline_math(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::InlineMath(math) = node {
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "code".into(),
-                    properties: vec![(
-                        "className".into(),
-                        hast::PropertyValue::SpaceSeparated(vec![
-                            "language-math".into(),
-                            "math-inline".into(),
-                        ]),
-                    )],
-                    children: vec![hast::Node::Text(hast::Text {
-                        value: replace_eols_with_spaces(&math.value),
-                        position: None,
-                    })],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `InlineMath`")
-    }
+fn transform_inline_math(
+    _state: &mut State,
+    _node: &mdast::Node,
+    inline_math: &mdast::InlineMath,
+) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "code".into(),
+        properties: vec![(
+            "className".into(),
+            hast::PropertyValue::SpaceSeparated(vec!["language-math".into(), "math-inline".into()]),
+        )],
+        children: vec![hast::Node::Text(hast::Text {
+            value: replace_eols_with_spaces(&inline_math.value),
+            position: None,
+        })],
+        position: inline_math.position.clone(),
+    }))
 }
 
 /// [`Link`][mdast::Link].
-fn transform_link(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::Link(link) = node {
-        let mut properties = vec![];
+fn transform_link(state: &mut State, node: &mdast::Node, link: &mdast::Link) -> Result {
+    let mut properties = vec![];
 
-        properties.push((
-            "href".into(),
-            hast::PropertyValue::String(sanitize_(&link.url)),
-        ));
+    properties.push((
+        "href".into(),
+        hast::PropertyValue::String(sanitize_(&link.url)),
+    ));
 
-        if let Some(value) = link.title.as_ref() {
-            properties.push(("title".into(), hast::PropertyValue::String(value.into())));
-        }
-
-        let (children, state) = all(node, state);
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "a".into(),
-                    properties,
-                    children,
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `Link`")
+    if let Some(value) = link.title.as_ref() {
+        properties.push(("title".into(), hast::PropertyValue::String(value.into())));
     }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "a".into(),
+        properties,
+        children: all(state, node),
+        position: link.position.clone(),
+    }))
 }
 
 /// [`LinkReference`][mdast::LinkReference].
-fn transform_link_reference(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::LinkReference(reference) = node {
-        let mut properties = vec![];
+fn transform_link_reference(
+    state: &mut State,
+    node: &mdast::Node,
+    link_reference: &mdast::LinkReference,
+) -> Result {
+    let mut properties = vec![];
 
-        let definition = state
-            .definitions
-            .iter()
-            .find(|d| d.0 == reference.identifier);
+    let definition = state
+        .definitions
+        .iter()
+        .find(|d| d.0 == link_reference.identifier);
 
-        // To do: revert when undefined? <https://github.com/syntax-tree/mdast-util-to-hast/blob/c393d0a60941d8936135e05a5cc78734d87578ba/lib/revert.js>
-        let (_, url, title) =
-            definition.expect("expected reference to have a corresponding definition");
+    let (_, url, title) =
+        definition.expect("expected reference to have a corresponding definition");
 
-        properties.push(("href".into(), hast::PropertyValue::String(sanitize_(url))));
+    properties.push(("href".into(), hast::PropertyValue::String(sanitize_(url))));
 
-        if let Some(value) = title {
-            properties.push(("title".into(), hast::PropertyValue::String(value.into())));
-        }
-
-        let (children, state) = all(node, state);
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "a".into(),
-                    properties,
-                    children,
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `LinkReference`")
+    if let Some(value) = title {
+        properties.push(("title".into(), hast::PropertyValue::String(value.into())));
     }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "a".into(),
+        properties,
+        children: all(state, node),
+        position: link_reference.position.clone(),
+    }))
 }
 
 /// [`ListItem`][mdast::ListItem].
 fn transform_list_item(
+    state: &mut State,
     node: &mdast::Node,
     parent: Option<&mdast::Node>,
-    state: State,
-) -> (Result, State) {
-    if let mdast::Node::ListItem(item) = node {
-        let (mut children, state) = all(node, state);
-        let mut loose = list_item_loose(node);
+    list_item: &mdast::ListItem,
+) -> Result {
+    let mut children = all(state, node);
+    let mut loose = list_item_loose(node);
 
-        if let Some(parent) = parent {
-            if matches!(parent, mdast::Node::List(_)) {
-                loose = list_loose(parent);
-            }
-        };
+    if let Some(parent) = parent {
+        if matches!(parent, mdast::Node::List(_)) {
+            loose = list_loose(parent);
+        }
+    };
 
-        let mut properties = vec![];
+    let mut properties = vec![];
 
-        // Inject a checkbox.
-        if let Some(checked) = item.checked {
-            // According to github-markdown-css, this class hides bullet.
-            // See: <https://github.com/sindresorhus/github-markdown-css>.
-            properties.push((
-                "className".into(),
-                hast::PropertyValue::SpaceSeparated(vec!["task-list-item".into()]),
-            ));
+    // Inject a checkbox.
+    if let Some(checked) = list_item.checked {
+        // According to github-markdown-css, this class hides bullet.
+        // See: <https://github.com/sindresorhus/github-markdown-css>.
+        properties.push((
+            "className".into(),
+            hast::PropertyValue::SpaceSeparated(vec!["task-list-item".into()]),
+        ));
 
-            let mut input = Some(hast::Node::Element(hast::Element {
-                tag_name: "input".into(),
-                properties: vec![
-                    (
-                        "type".into(),
-                        hast::PropertyValue::String("checkbox".into()),
-                    ),
-                    ("checked".into(), hast::PropertyValue::Boolean(checked)),
-                    ("disabled".into(), hast::PropertyValue::Boolean(true)),
-                ],
-                children: vec![],
-                position: None,
-            }));
+        let mut input = Some(hast::Node::Element(hast::Element {
+            tag_name: "input".into(),
+            properties: vec![
+                (
+                    "type".into(),
+                    hast::PropertyValue::String("checkbox".into()),
+                ),
+                ("checked".into(), hast::PropertyValue::Boolean(checked)),
+                ("disabled".into(), hast::PropertyValue::Boolean(true)),
+            ],
+            children: vec![],
+            position: None,
+        }));
 
-            if let Some(hast::Node::Element(x)) = children.first_mut() {
-                if x.tag_name == "p" {
-                    if !x.children.is_empty() {
-                        x.children.insert(
-                            0,
-                            hast::Node::Text(hast::Text {
-                                value: " ".into(),
-                                position: None,
-                            }),
-                        );
-                    }
-
-                    x.children.insert(0, input.take().unwrap());
+        if let Some(hast::Node::Element(x)) = children.first_mut() {
+            if x.tag_name == "p" {
+                if !x.children.is_empty() {
+                    x.children.insert(
+                        0,
+                        hast::Node::Text(hast::Text {
+                            value: " ".into(),
+                            position: None,
+                        }),
+                    );
                 }
-            }
 
-            // If the input wasn‘t injected yet, inject a paragraph.
-            if let Some(input) = input {
-                children.insert(
-                    0,
-                    hast::Node::Element(hast::Element {
-                        tag_name: "p".into(),
-                        properties: vec![],
-                        children: vec![input],
-                        position: None,
-                    }),
-                );
+                x.children.insert(0, input.take().unwrap());
             }
         }
 
-        children.reverse();
-        let mut result = vec![];
-        let mut head = true;
-        let empty = children.is_empty();
-        let mut tail_p = false;
-
-        while let Some(child) = children.pop() {
-            let mut is_p = false;
-            if let hast::Node::Element(el) = &child {
-                if el.tag_name == "p" {
-                    is_p = true;
-                }
-            }
-
-            // Add eols before nodes, except if this is a tight, first paragraph.
-            if loose || !head || !is_p {
-                result.push(hast::Node::Text(hast::Text {
-                    value: "\n".into(),
+        // If the input wasn‘t injected yet, inject a paragraph.
+        if let Some(input) = input {
+            children.insert(
+                0,
+                hast::Node::Element(hast::Element {
+                    tag_name: "p".into(),
+                    properties: vec![],
+                    children: vec![input],
                     position: None,
-                }));
-            }
+                }),
+            );
+        }
+    }
 
-            if is_p && !loose {
-                // Unwrap the paragraph.
-                if let hast::Node::Element(mut el) = child {
-                    result.append(&mut el.children);
-                }
-            } else {
-                result.push(child);
-            }
+    children.reverse();
+    let mut result = vec![];
+    let mut head = true;
+    let empty = children.is_empty();
+    let mut tail_p = false;
 
-            head = false;
-            tail_p = is_p;
+    while let Some(child) = children.pop() {
+        let mut is_p = false;
+        if let hast::Node::Element(el) = &child {
+            if el.tag_name == "p" {
+                is_p = true;
+            }
         }
 
-        // Add eol after last node, except if it is tight or a paragraph.
-        if !empty && (loose || !tail_p) {
+        // Add eols before nodes, except if this is a tight, first paragraph.
+        if loose || !head || !is_p {
             result.push(hast::Node::Text(hast::Text {
                 value: "\n".into(),
                 position: None,
             }));
         }
 
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "li".into(),
-                    properties,
-                    children: result,
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `ListItem`")
+        if is_p && !loose {
+            // Unwrap the paragraph.
+            if let hast::Node::Element(mut el) = child {
+                result.append(&mut el.children);
+            }
+        } else {
+            result.push(child);
+        }
+
+        head = false;
+        tail_p = is_p;
     }
+
+    // Add eol after last node, except if it is tight or a paragraph.
+    if !empty && (loose || !tail_p) {
+        result.push(hast::Node::Text(hast::Text {
+            value: "\n".into(),
+            position: None,
+        }));
+    }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "li".into(),
+        properties,
+        children: result,
+        position: list_item.position.clone(),
+    }))
 }
 
 /// [`List`][mdast::List].
-fn transform_list(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::List(list) = node {
-        let mut contains_task_list = false;
-        let mut index = 0;
+fn transform_list(state: &mut State, node: &mdast::Node, list: &mdast::List) -> Result {
+    let mut contains_task_list = false;
+    let mut index = 0;
 
-        while index < list.children.len() {
-            if let mdast::Node::ListItem(item) = &list.children[index] {
-                if item.checked.is_some() {
-                    contains_task_list = true;
-                }
+    while index < list.children.len() {
+        if let mdast::Node::ListItem(item) = &list.children[index] {
+            if item.checked.is_some() {
+                contains_task_list = true;
             }
-
-            index += 1;
         }
 
-        let (children, state) = all(node, state);
-        let mut properties = vec![];
-        let tag_name = if list.ordered {
+        index += 1;
+    }
+
+    let mut properties = vec![];
+
+    // Add start.
+    if let Some(start) = list.start {
+        if list.ordered && start != 1 {
+            properties.push((
+                "start".into(),
+                hast::PropertyValue::String(start.to_string()),
+            ));
+        }
+    }
+
+    // Like GitHub, add a class for custom styling.
+    if contains_task_list {
+        properties.push((
+            "className".into(),
+            hast::PropertyValue::SpaceSeparated(vec!["contains-task-list".into()]),
+        ));
+    }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: if list.ordered {
             "ol".into()
         } else {
             "ul".into()
-        };
-
-        // Add start.
-        if let Some(start) = list.start {
-            if list.ordered && start != 1 {
-                properties.push((
-                    "start".into(),
-                    hast::PropertyValue::String(start.to_string()),
-                ));
-            }
-        }
-
-        // Like GitHub, add a class for custom styling.
-        if contains_task_list {
-            properties.push((
-                "className".into(),
-                hast::PropertyValue::SpaceSeparated(vec!["contains-task-list".into()]),
-            ));
-        }
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name,
-                    properties,
-                    children: wrap(children, true),
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `List`")
-    }
+        },
+        properties,
+        children: wrap(all(state, node), true),
+        position: list.position.clone(),
+    }))
 }
 
 /// [`Math`][mdast::Math].
-fn transform_math(node: &mdast::Node, state: State) -> (Result, State) {
-    if let mdast::Node::Math(math) = node {
-        let mut value = math.value.clone();
-        value.push('\n');
+fn transform_math(_state: &mut State, _node: &mdast::Node, math: &mdast::Math) -> Result {
+    let mut value = math.value.clone();
+    value.push('\n');
 
-        // To do: option to persist `meta`?
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "pre".into(),
-                    properties: vec![],
-                    children: vec![augment_node(
-                        node,
-                        hast::Node::Element(hast::Element {
-                            tag_name: "code".into(),
-                            properties: vec![(
-                                "className".into(),
-                                hast::PropertyValue::SpaceSeparated(vec![
-                                    "language-math".into(),
-                                    "math-display".into(),
-                                ]),
-                            )],
-                            children: vec![hast::Node::Text(hast::Text {
-                                value,
-                                position: None,
-                            })],
-                            position: None,
-                        }),
-                    )],
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `Math`")
-    }
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "pre".into(),
+        properties: vec![],
+        children: vec![hast::Node::Element(hast::Element {
+            tag_name: "code".into(),
+            properties: vec![(
+                "className".into(),
+                hast::PropertyValue::SpaceSeparated(vec![
+                    "language-math".into(),
+                    "math-display".into(),
+                ]),
+            )],
+            children: vec![hast::Node::Text(hast::Text {
+                value,
+                position: None,
+            })],
+            position: math.position.clone(),
+        })],
+        position: math.position.clone(),
+    }))
 }
 
 /// [`MdxFlowExpression`][mdast::MdxFlowExpression],[`MdxTextExpression`][mdast::MdxTextExpression].
-fn transform_mdx_expression(node: &mdast::Node, state: State) -> (Result, State) {
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::MdxExpression(hast::MdxExpression {
-                value: node.to_string(),
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_mdx_expression(_state: &mut State, node: &mdast::Node) -> Result {
+    Result::Node(hast::Node::MdxExpression(hast::MdxExpression {
+        value: node.to_string(),
+        position: node.position().cloned(),
+    }))
 }
 
 /// [`MdxJsxFlowElement`][mdast::MdxJsxFlowElement],[`MdxJsxTextElement`][mdast::MdxJsxTextElement].
-fn transform_mdx_jsx_element(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-
+fn transform_mdx_jsx_element(state: &mut State, node: &mdast::Node) -> Result {
     let (name, attributes) = match node {
         mdast::Node::MdxJsxFlowElement(n) => (&n.name, &n.attributes),
         mdast::Node::MdxJsxTextElement(n) => (&n.name, &n.attributes),
         _ => unreachable!("expected mdx jsx element"),
     };
 
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: name.clone(),
-                attributes: attributes.clone(),
-                children,
-                position: None,
-            }),
-        )),
-        state,
-    )
+    Result::Node(hast::Node::MdxJsxElement(hast::MdxJsxElement {
+        name: name.clone(),
+        attributes: attributes.clone(),
+        children: all(state, node),
+        position: node.position().cloned(),
+    }))
 }
 
 /// [`MdxjsEsm`][mdast::MdxjsEsm].
-fn transform_mdxjs_esm(node: &mdast::Node, state: State) -> (Result, State) {
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::MdxjsEsm(hast::MdxjsEsm {
-                value: node.to_string(),
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_mdxjs_esm(
+    _state: &mut State,
+    _node: &mdast::Node,
+    mdxjs_esm: &mdast::MdxjsEsm,
+) -> Result {
+    Result::Node(hast::Node::MdxjsEsm(hast::MdxjsEsm {
+        value: mdxjs_esm.value.clone(),
+        position: mdxjs_esm.position.clone(),
+    }))
 }
 
 /// [`Paragraph`][mdast::Paragraph].
-fn transform_paragraph(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: "p".into(),
-                properties: vec![],
-                children,
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_paragraph(
+    state: &mut State,
+    node: &mdast::Node,
+    paragraph: &mdast::Paragraph,
+) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "p".into(),
+        properties: vec![],
+        children: all(state, node),
+        position: paragraph.position.clone(),
+    }))
 }
 
 /// [`Root`][mdast::Root].
-fn transform_root(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Root(hast::Root {
-                children: wrap(children, false),
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_root(state: &mut State, node: &mdast::Node, root: &mdast::Root) -> Result {
+    Result::Node(hast::Node::Root(hast::Root {
+        children: wrap(all(state, node), false),
+        position: root.position.clone(),
+    }))
 }
 
 /// [`Strong`][mdast::Strong].
-fn transform_strong(node: &mdast::Node, state: State) -> (Result, State) {
-    let (children, state) = all(node, state);
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: "strong".into(),
-                properties: vec![],
-                children,
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_strong(state: &mut State, node: &mdast::Node, strong: &mdast::Strong) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "strong".into(),
+        properties: vec![],
+        children: all(state, node),
+        position: strong.position.clone(),
+    }))
 }
 
 /// [`TableCell`][mdast::TableCell].
 fn transform_table_cell(
+    state: &mut State,
     node: &mdast::Node,
     head: bool,
     align: mdast::AlignKind,
-    state: State,
-) -> (Result, State) {
-    let (children, state) = all(node, state);
-    // To do: option to generate a `style` instead?
+    table_cell: &mdast::TableCell,
+) -> Result {
     let align_value = match align {
         mdast::AlignKind::None => None,
         mdast::AlignKind::Left => Some("left"),
@@ -1084,180 +914,157 @@ fn transform_table_cell(
         properties.push(("align".into(), hast::PropertyValue::String(value.into())));
     }
 
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: if head { "th".into() } else { "td".into() },
-                properties,
-                children,
-                position: None,
-            }),
-        )),
-        state,
-    )
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: if head { "th".into() } else { "td".into() },
+        properties,
+        children: all(state, node),
+        position: table_cell.position.clone(),
+    }))
 }
 
 /// [`TableRow`][mdast::TableRow].
 fn transform_table_row(
-    node: &mdast::Node,
+    state: &mut State,
+    _node: &mdast::Node,
     head: bool,
     align: Option<&[mdast::AlignKind]>,
-    mut state: State,
-) -> (Result, State) {
-    if let mdast::Node::TableRow(row) = node {
-        let mut children = vec![];
-        let mut index = 0;
-        #[allow(clippy::redundant_closure_for_method_calls)]
-        let len = align.map_or(row.children.len(), |d| d.len());
-        let empty_cell = mdast::Node::TableCell(mdast::TableCell {
-            children: vec![],
-            position: None,
-        });
+    table_row: &mdast::TableRow,
+) -> Result {
+    let mut children = vec![];
+    let mut index = 0;
+    #[allow(clippy::redundant_closure_for_method_calls)]
+    let len = align.map_or(table_row.children.len(), |d| d.len());
+    let empty_cell = mdast::Node::TableCell(mdast::TableCell {
+        children: vec![],
+        position: None,
+    });
 
-        while index < len {
-            let align_value = align
-                .and_then(|d| d.get(index))
-                .unwrap_or(&mdast::AlignKind::None);
+    while index < len {
+        let align_value = align
+            .and_then(|d| d.get(index))
+            .unwrap_or(&mdast::AlignKind::None);
 
-            let child = row.children.get(index).unwrap_or(&empty_cell);
-            let tuple = transform_table_cell(child, head, *align_value, state);
-            append_result(&mut children, tuple.0);
-            state = tuple.1;
-            index += 1;
-        }
+        let child = table_row.children.get(index).unwrap_or(&empty_cell);
 
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "tr".into(),
-                    properties: vec![],
-                    children: wrap(children, true),
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `TableRow`")
+        let result = if let mdast::Node::TableCell(table_cell) = child {
+            transform_table_cell(state, child, head, *align_value, table_cell)
+        } else {
+            unreachable!("expected tale cell in table row")
+        };
+
+        append_result(&mut children, result);
+        index += 1;
     }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "tr".into(),
+        properties: vec![],
+        children: wrap(children, true),
+        position: table_row.position.clone(),
+    }))
 }
 
 /// [`Table`][mdast::Table].
-fn transform_table(node: &mdast::Node, mut state: State) -> (Result, State) {
-    if let mdast::Node::Table(table) = node {
-        let mut rows = vec![];
-        let mut index = 0;
+fn transform_table(state: &mut State, _node: &mdast::Node, table: &mdast::Table) -> Result {
+    let mut rows = vec![];
+    let mut index = 0;
 
-        while index < table.children.len() {
-            let tuple = transform_table_row(
+    while index < table.children.len() {
+        let child = &table.children[index];
+        let result = if let mdast::Node::TableRow(table_row) = child {
+            transform_table_row(
+                state,
                 &table.children[index],
                 index == 0,
                 Some(&table.align),
-                state,
-            );
-            append_result(&mut rows, tuple.0);
-            state = tuple.1;
-            index += 1;
-        }
+                table_row,
+            )
+        } else {
+            unreachable!("expected table row as child of table")
+        };
 
-        let body_rows = rows.split_off(1);
-        let head_row = rows.pop();
-        let mut children = vec![];
-
-        if let Some(row) = head_row {
-            let position = row.position().cloned();
-            children.push(hast::Node::Element(hast::Element {
-                tag_name: "thead".into(),
-                properties: vec![],
-                children: wrap(vec![row], true),
-                position,
-            }));
-        }
-
-        if !body_rows.is_empty() {
-            let mut position = None;
-
-            if let Some(position_start) = body_rows.first().and_then(hast::Node::position) {
-                if let Some(position_end) = body_rows.last().and_then(hast::Node::position) {
-                    position = Some(Position {
-                        start: position_start.start.clone(),
-                        end: position_end.end.clone(),
-                    });
-                }
-            }
-
-            children.push(hast::Node::Element(hast::Element {
-                tag_name: "tbody".into(),
-                properties: vec![],
-                children: wrap(body_rows, true),
-                position,
-            }));
-        }
-
-        (
-            Result::Node(augment_node(
-                node,
-                hast::Node::Element(hast::Element {
-                    tag_name: "table".into(),
-                    properties: vec![],
-                    children: wrap(children, true),
-                    position: None,
-                }),
-            )),
-            state,
-        )
-    } else {
-        unreachable!("expected `Table`")
+        append_result(&mut rows, result);
+        index += 1;
     }
+
+    let body_rows = rows.split_off(1);
+    let head_row = rows.pop();
+    let mut children = vec![];
+
+    if let Some(row) = head_row {
+        let position = row.position().cloned();
+        children.push(hast::Node::Element(hast::Element {
+            tag_name: "thead".into(),
+            properties: vec![],
+            children: wrap(vec![row], true),
+            position,
+        }));
+    }
+
+    if !body_rows.is_empty() {
+        let mut position = None;
+
+        if let Some(position_start) = body_rows.first().and_then(hast::Node::position) {
+            if let Some(position_end) = body_rows.last().and_then(hast::Node::position) {
+                position = Some(Position {
+                    start: position_start.start.clone(),
+                    end: position_end.end.clone(),
+                });
+            }
+        }
+
+        children.push(hast::Node::Element(hast::Element {
+            tag_name: "tbody".into(),
+            properties: vec![],
+            children: wrap(body_rows, true),
+            position,
+        }));
+    }
+
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "table".into(),
+        properties: vec![],
+        children: wrap(children, true),
+        position: table.position.clone(),
+    }))
 }
 
 /// [`Text`][mdast::Text].
-fn transform_text(node: &mdast::Node, state: State) -> (Result, State) {
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Text(hast::Text {
-                value: node.to_string(),
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_text(_state: &mut State, _node: &mdast::Node, text: &mdast::Text) -> Result {
+    Result::Node(hast::Node::Text(hast::Text {
+        value: text.value.clone(),
+        position: text.position.clone(),
+    }))
 }
 
 /// [`ThematicBreak`][mdast::ThematicBreak].
-fn transform_thematic_break(node: &mdast::Node, state: State) -> (Result, State) {
-    (
-        Result::Node(augment_node(
-            node,
-            hast::Node::Element(hast::Element {
-                tag_name: "hr".into(),
-                properties: vec![],
-                children: vec![],
-                position: None,
-            }),
-        )),
-        state,
-    )
+fn transform_thematic_break(
+    _state: &mut State,
+    _node: &mdast::Node,
+    thematic_break: &mdast::ThematicBreak,
+) -> Result {
+    Result::Node(hast::Node::Element(hast::Element {
+        tag_name: "hr".into(),
+        properties: vec![],
+        children: vec![],
+        position: thematic_break.position.clone(),
+    }))
 }
 
 // Transform children of `parent`.
-fn all(parent: &mdast::Node, mut state: State) -> (Vec<hast::Node>, State) {
-    let mut result = vec![];
+fn all(state: &mut State, parent: &mdast::Node) -> Vec<hast::Node> {
+    let mut nodes = vec![];
     if let Some(children) = parent.children() {
         let mut index = 0;
         while index < children.len() {
             let child = &children[index];
-            let tuple = one(child, Some(parent), state);
-            append_result(&mut result, tuple.0);
-            state = tuple.1;
+            let result = one(state, child, Some(parent));
+            append_result(&mut nodes, result);
             index += 1;
         }
     }
 
-    (result, state)
+    nodes
 }
 
 /// Wrap `nodes` with line feeds between each entry.
@@ -1296,21 +1103,6 @@ fn wrap(mut nodes: Vec<hast::Node>, loose: bool) -> Vec<hast::Node> {
     }
 
     result
-}
-
-/// Patch a position from the node `left` onto `right`.
-fn augment_node(left: &mdast::Node, right: hast::Node) -> hast::Node {
-    if let Some(position) = left.position() {
-        augment_position(position, right)
-    } else {
-        right
-    }
-}
-
-/// Patch a position from `left` onto `right`.
-fn augment_position(left: &Position, mut right: hast::Node) -> hast::Node {
-    right.position_set(Some(left.clone()));
-    right
 }
 
 /// Visit.
