@@ -7,10 +7,9 @@ fuzz_target!(|data: &[u8]| {
         let _ = micromark::micromark(s);
         let _ = micromark::micromark_with_options(
             s,
-            &micromark::Options {
-                constructs: micromark::Constructs::gfm(),
-                ..micromark::Options::default()
-            },
+            &micromark::Options::gfm()
         );
+        let _ = micromark::micromark_to_mdast(s, &micromark::ParseOptions::default());
+        let _ = micromark::micromark_to_mdast(s, &micromark::ParseOptions::gfm());
     }
 });
