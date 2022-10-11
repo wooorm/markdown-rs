@@ -1,6 +1,9 @@
-#![allow(dead_code)]
+//! HTML syntax tree: [hast][].
+//!
+//! [hast]: https://github.com/syntax-tree/hast
 
-// ^-- To do: fix later
+#![allow(dead_code)]
+// ^-- To do: externalize.
 
 extern crate alloc;
 extern crate micromark;

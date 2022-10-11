@@ -6,10 +6,10 @@ mod test_utils;
 use micromark::{micromark_to_mdast, Constructs, Location, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
+    hast_util_to_swc::hast_util_to_swc,
+    mdast_util_to_hast::mdast_util_to_hast,
+    mdx_plugin_recma_document::{mdx_plugin_recma_document, Options as DocumentOptions},
     swc::{parse_esm, parse_expression, serialize},
-    to_document::{to_document, Options as DocumentOptions},
-    to_hast::to_hast,
-    to_swc::to_swc,
 };
 
 fn from_markdown(value: &str) -> Result<String, String> {
@@ -23,15 +23,15 @@ fn from_markdown(value: &str) -> Result<String, String> {
             ..ParseOptions::default()
         },
     )?;
-    let hast = to_hast(&mdast);
-    let swc_tree = to_swc(&hast, None, Some(&location))?;
-    let program = to_document(swc_tree, &DocumentOptions::default(), Some(&location))?;
+    let hast = mdast_util_to_hast(&mdast);
+    let program = hast_util_to_swc(&hast, None, Some(&location))?;
+    let program = mdx_plugin_recma_document(program, &DocumentOptions::default(), Some(&location))?;
     let value = serialize(&program.module);
     Ok(value)
 }
 
 #[test]
-fn document() -> Result<(), String> {
+fn mdx_plugin_recma_document_test() -> Result<(), String> {
     assert_eq!(
         from_markdown("# hi\n\nAlpha *bravo* **charlie**.")?,
         "function _createMdxContent(props) {

@@ -1,7 +1,12 @@
+//! Turn a JavaScript AST, coming from MD(X), into a component.
+//!
+//! Port of <https://github.com/mdx-js/mdx/blob/main/packages/mdx/lib/plugin/recma-document.js>,
+//! by the same author.
+
 extern crate swc_ecma_ast;
 use crate::test_utils::{
-    micromark_swc_utils::{bytepos_to_point, prefix_error_with_point, span_to_position},
-    to_swc::Program,
+    hast_util_to_swc::Program,
+    swc_utils::{bytepos_to_point, prefix_error_with_point, span_to_position},
 };
 use micromark::{
     unist::{Point, Position},
@@ -66,7 +71,7 @@ impl Default for Options {
 }
 
 #[allow(dead_code)]
-pub fn to_document(
+pub fn mdx_plugin_recma_document(
     mut program: Program,
     options: &Options,
     location: Option<&Location>,

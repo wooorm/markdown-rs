@@ -6,11 +6,11 @@ mod test_utils;
 use micromark::{micromark_to_mdast, Constructs, Location, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
-    jsx_rewrite::{jsx_rewrite, Options as RewriteOptions},
+    hast_util_to_swc::hast_util_to_swc,
+    mdast_util_to_hast::mdast_util_to_hast,
+    mdx_plugin_recma_document::{mdx_plugin_recma_document, Options as DocumentOptions},
+    mdx_plugin_recma_jsx_rewrite::{mdx_plugin_recma_jsx_rewrite, Options as RewriteOptions},
     swc::{parse_esm, parse_expression, serialize},
-    to_document::{to_document, Options as DocumentOptions},
-    to_hast::to_hast,
-    to_swc::to_swc,
 };
 
 fn from_markdown(value: &str, options: &RewriteOptions) -> Result<String, String> {
@@ -24,16 +24,16 @@ fn from_markdown(value: &str, options: &RewriteOptions) -> Result<String, String
             ..ParseOptions::default()
         },
     )?;
-    let hast = to_hast(&mdast);
-    let swc_tree = to_swc(&hast, Some("example.mdx".into()), Some(&location))?;
-    let program = to_document(swc_tree, &DocumentOptions::default(), Some(&location))?;
-    let program = jsx_rewrite(program, options, Some(&location));
+    let hast = mdast_util_to_hast(&mdast);
+    let program = hast_util_to_swc(&hast, Some("example.mdx".into()), Some(&location))?;
+    let program = mdx_plugin_recma_document(program, &DocumentOptions::default(), Some(&location))?;
+    let program = mdx_plugin_recma_jsx_rewrite(program, options, Some(&location));
     let value = serialize(&program.module);
     Ok(value)
 }
 
 #[test]
-fn rewrite() -> Result<(), String> {
+fn mdx_plugin_recma_jsx_rewrite_test() -> Result<(), String> {
     assert_eq!(
         from_markdown("", &Default::default())?,
         "function _createMdxContent(props) {

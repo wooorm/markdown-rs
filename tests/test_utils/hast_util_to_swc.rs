@@ -1,10 +1,37 @@
+//! Turn an HTML AST into a JavaScript AST.
+//!
+//! Port of <https://github.com/syntax-tree/hast-util-to-estree>, by the same
+//! author:
+//!
+//! (The MIT License)
+//!
+//! Copyright (c) 2016 Titus Wormer <tituswormer@gmail.com>
+//!
+//! Permission is hereby granted, free of charge, to any person obtaining
+//! a copy of this software and associated documentation files (the
+//! 'Software'), to deal in the Software without restriction, including
+//! without limitation the rights to use, copy, modify, merge, publish,
+//! distribute, sublicense, and/or sell copies of the Software, and to
+//! permit persons to whom the Software is furnished to do so, subject to
+//! the following conditions:
+//!
+//! The above copyright notice and this permission notice shall be
+//! included in all copies or substantial portions of the Software.
+//!
+//! THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+//! EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+//! MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+//! IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+//! CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+//! TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+//! SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 extern crate swc_common;
 extern crate swc_ecma_ast;
 use crate::test_utils::{
     hast,
-    micromark_swc_utils::position_to_span,
     swc::{parse_esm_to_tree, parse_expression_to_tree},
-    swc_utils::create_ident,
+    swc_utils::{create_ident, position_to_span},
 };
 use core::str;
 use micromark::{Location, MdxExpressionKind};
@@ -41,7 +68,7 @@ struct Context<'a> {
 }
 
 #[allow(dead_code)]
-pub fn to_swc(
+pub fn hast_util_to_swc(
     tree: &hast::Node,
     path: Option<String>,
     location: Option<&Location>,

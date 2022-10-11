@@ -2,12 +2,12 @@ extern crate micromark;
 mod test_utils;
 use micromark::mdast;
 use pretty_assertions::assert_eq;
-use test_utils::{hast, to_hast::to_hast};
+use test_utils::{hast, mdast_util_to_hast::mdast_util_to_hast};
 
 #[test]
-fn hast() {
+fn mdast_util_to_hast_test() {
     assert_eq!(
-        to_hast(&mdast::Node::BlockQuote(mdast::BlockQuote {
+        mdast_util_to_hast(&mdast::Node::BlockQuote(mdast::BlockQuote {
             children: vec![],
             position: None,
         })),
@@ -24,7 +24,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Break(mdast::Break { position: None })),
+        mdast_util_to_hast(&mdast::Node::Break(mdast::Break { position: None })),
         hast::Node::Root(hast::Root {
             children: vec![
                 hast::Node::Element(hast::Element {
@@ -44,7 +44,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Code(mdast::Code {
+        mdast_util_to_hast(&mdast::Node::Code(mdast::Code {
             lang: Some("b".into()),
             meta: None,
             value: "a".into(),
@@ -71,7 +71,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Definition(mdast::Definition {
+        mdast_util_to_hast(&mdast::Node::Definition(mdast::Definition {
             url: "b".into(),
             title: None,
             identifier: "a".into(),
@@ -86,7 +86,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Delete(mdast::Delete {
+        mdast_util_to_hast(&mdast::Node::Delete(mdast::Delete {
             children: vec![mdast::Node::Text(mdast::Text {
                 value: "a".into(),
                 position: None
@@ -106,7 +106,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Emphasis(mdast::Emphasis {
+        mdast_util_to_hast(&mdast::Node::Emphasis(mdast::Emphasis {
             children: vec![mdast::Node::Text(mdast::Text {
                 value: "a".into(),
                 position: None
@@ -126,7 +126,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::FootnoteDefinition(
+        mdast_util_to_hast(&mdast::Node::FootnoteDefinition(
             mdast::FootnoteDefinition {
                 identifier: "a".into(),
                 label: None,
@@ -142,7 +142,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![
                 mdast::Node::FootnoteDefinition(mdast::FootnoteDefinition {
                     children: vec![mdast::Node::Paragraph(mdast::Paragraph {
@@ -328,7 +328,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![
                 mdast::Node::FootnoteDefinition(mdast::FootnoteDefinition {
                     children: vec![mdast::Node::Paragraph(mdast::Paragraph {
@@ -594,7 +594,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Heading(mdast::Heading {
+        mdast_util_to_hast(&mdast::Node::Heading(mdast::Heading {
             depth: 1,
             children: vec![mdast::Node::Text(mdast::Text {
                 value: "a".into(),
@@ -615,7 +615,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Html(mdast::Html {
+        mdast_util_to_hast(&mdast::Node::Html(mdast::Html {
             value: "<div>".into(),
             position: None,
         })),
@@ -627,7 +627,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Image(mdast::Image {
+        mdast_util_to_hast(&mdast::Node::Image(mdast::Image {
             url: "a".into(),
             alt: "b".into(),
             title: None,
@@ -646,7 +646,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![
                 mdast::Node::Definition(mdast::Definition {
                     url: "b".into(),
@@ -689,7 +689,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::InlineCode(mdast::InlineCode {
+        mdast_util_to_hast(&mdast::Node::InlineCode(mdast::InlineCode {
             value: "a\nb".into(),
             position: None,
         })),
@@ -706,7 +706,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::InlineMath(mdast::InlineMath {
+        mdast_util_to_hast(&mdast::Node::InlineMath(mdast::InlineMath {
             value: "a\nb".into(),
             position: None,
         })),
@@ -729,7 +729,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Link(mdast::Link {
+        mdast_util_to_hast(&mdast::Node::Link(mdast::Link {
             url: "a".into(),
             title: None,
             children: vec![mdast::Node::Text(mdast::Text {
@@ -751,7 +751,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![
                 mdast::Node::Definition(mdast::Definition {
                     url: "b".into(),
@@ -797,7 +797,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![mdast::Node::ListItem(mdast::ListItem {
                 spread: false,
                 checked: None,
@@ -828,7 +828,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![mdast::Node::ListItem(mdast::ListItem {
                 spread: true,
                 checked: None,
@@ -874,7 +874,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![mdast::Node::ListItem(mdast::ListItem {
                 spread: false,
                 checked: Some(true),
@@ -911,7 +911,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![mdast::Node::ListItem(mdast::ListItem {
                 spread: false,
                 checked: Some(false),
@@ -964,7 +964,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::List(mdast::List {
+        mdast_util_to_hast(&mdast::Node::List(mdast::List {
             ordered: true,
             start: Some(1),
             spread: false,
@@ -1010,7 +1010,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::List(mdast::List {
+        mdast_util_to_hast(&mdast::Node::List(mdast::List {
             ordered: true,
             start: Some(123),
             spread: false,
@@ -1030,7 +1030,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::List(mdast::List {
+        mdast_util_to_hast(&mdast::Node::List(mdast::List {
             ordered: false,
             start: None,
             spread: false,
@@ -1050,7 +1050,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::List(mdast::List {
+        mdast_util_to_hast(&mdast::Node::List(mdast::List {
             ordered: false,
             start: None,
             spread: false,
@@ -1105,7 +1105,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Math(mdast::Math {
+        mdast_util_to_hast(&mdast::Node::Math(mdast::Math {
             meta: None,
             value: "a".into(),
             position: None,
@@ -1134,7 +1134,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::MdxFlowExpression(mdast::MdxFlowExpression {
+        mdast_util_to_hast(&mdast::Node::MdxFlowExpression(mdast::MdxFlowExpression {
             value: "a".into(),
             position: None,
             stops: vec![]
@@ -1148,7 +1148,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::MdxTextExpression(mdast::MdxTextExpression {
+        mdast_util_to_hast(&mdast::Node::MdxTextExpression(mdast::MdxTextExpression {
             value: "a".into(),
             position: None,
             stops: vec![]
@@ -1162,7 +1162,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::MdxJsxFlowElement(mdast::MdxJsxFlowElement {
+        mdast_util_to_hast(&mdast::Node::MdxJsxFlowElement(mdast::MdxJsxFlowElement {
             name: None,
             attributes: vec![],
             children: vec![],
@@ -1178,7 +1178,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::MdxJsxTextElement(mdast::MdxJsxTextElement {
+        mdast_util_to_hast(&mdast::Node::MdxJsxTextElement(mdast::MdxJsxTextElement {
             name: None,
             attributes: vec![],
             children: vec![],
@@ -1194,7 +1194,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::MdxjsEsm(mdast::MdxjsEsm {
+        mdast_util_to_hast(&mdast::Node::MdxjsEsm(mdast::MdxjsEsm {
             value: "a".into(),
             position: None,
             stops: vec![]
@@ -1208,7 +1208,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Paragraph(mdast::Paragraph {
+        mdast_util_to_hast(&mdast::Node::Paragraph(mdast::Paragraph {
             children: vec![mdast::Node::Text(mdast::Text {
                 value: "a".into(),
                 position: None
@@ -1228,7 +1228,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Root(mdast::Root {
+        mdast_util_to_hast(&mdast::Node::Root(mdast::Root {
             children: vec![],
             position: None,
         })),
@@ -1240,7 +1240,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Strong(mdast::Strong {
+        mdast_util_to_hast(&mdast::Node::Strong(mdast::Strong {
             children: vec![mdast::Node::Text(mdast::Text {
                 value: "a".into(),
                 position: None
@@ -1260,7 +1260,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::TableCell(mdast::TableCell {
+        mdast_util_to_hast(&mdast::Node::TableCell(mdast::TableCell {
             children: vec![mdast::Node::Text(mdast::Text {
                 value: "a".into(),
                 position: None
@@ -1280,7 +1280,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::TableRow(mdast::TableRow {
+        mdast_util_to_hast(&mdast::Node::TableRow(mdast::TableRow {
             children: vec![
                 mdast::Node::TableCell(mdast::TableCell {
                     children: vec![mdast::Node::Text(mdast::Text {
@@ -1340,7 +1340,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Table(mdast::Table {
+        mdast_util_to_hast(&mdast::Node::Table(mdast::Table {
             align: vec![mdast::AlignKind::Left, mdast::AlignKind::None],
             children: vec![
                 mdast::Node::TableRow(mdast::TableRow {
@@ -1517,7 +1517,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Text(mdast::Text {
+        mdast_util_to_hast(&mdast::Node::Text(mdast::Text {
             value: "a".into(),
             position: None,
         })),
@@ -1529,7 +1529,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::ThematicBreak(mdast::ThematicBreak {
+        mdast_util_to_hast(&mdast::Node::ThematicBreak(mdast::ThematicBreak {
             position: None
         })),
         hast::Node::Element(hast::Element {
@@ -1542,7 +1542,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Yaml(mdast::Yaml {
+        mdast_util_to_hast(&mdast::Node::Yaml(mdast::Yaml {
             value: "a".into(),
             position: None
         })),
@@ -1554,7 +1554,7 @@ fn hast() {
     );
 
     assert_eq!(
-        to_hast(&mdast::Node::Toml(mdast::Toml {
+        mdast_util_to_hast(&mdast::Node::Toml(mdast::Toml {
             value: "a".into(),
             position: None
         })),

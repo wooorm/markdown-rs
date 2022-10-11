@@ -1,11 +1,16 @@
+//! Rewrite JSX tags to accept them from props and an optional provider.
+//!
+//! Port of <https://github.com/mdx-js/mdx/blob/main/packages/mdx/lib/plugin/recma-jsx-rewrite.js>,
+//! by the same author.
+
 extern crate swc_common;
 extern crate swc_ecma_ast;
 use crate::test_utils::{
-    micromark_swc_utils::{position_to_string, span_to_position},
+    hast_util_to_swc::Program,
     swc_utils::{
         create_binary_expression, create_ident, create_ident_expression, create_member_expression,
+        position_to_string, span_to_position,
     },
-    to_swc::Program,
 };
 use micromark::{id_cont, id_start, unist::Position, Location};
 use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith};
@@ -25,7 +30,7 @@ pub struct Options {
 
 /// Rewrite JSX in an MDX file so that components can be passed in and provided.
 #[allow(dead_code)]
-pub fn jsx_rewrite(
+pub fn mdx_plugin_recma_jsx_rewrite(
     mut program: Program,
     options: &Options,
     location: Option<&Location>,
