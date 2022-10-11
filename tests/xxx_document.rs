@@ -3,7 +3,7 @@ extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;
 mod test_utils;
-use micromark::{micromark_to_mdast, Constructs, ParseOptions};
+use micromark::{micromark_to_mdast, Constructs, Location, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
     swc::{parse_esm, parse_expression, serialize},
@@ -13,6 +13,7 @@ use test_utils::{
 };
 
 fn from_markdown(value: &str) -> Result<String, String> {
+    let location = Location::new(value.as_bytes());
     let mdast = micromark_to_mdast(
         value,
         &ParseOptions {
@@ -23,7 +24,8 @@ fn from_markdown(value: &str) -> Result<String, String> {
         },
     )?;
     let hast = to_hast(&mdast);
-    let program = to_document(to_swc(&hast)?, &DocumentOptions::default())?;
+    let swc_tree = to_swc(&hast, None, Some(&location))?;
+    let program = to_document(swc_tree, &DocumentOptions::default(), Some(&location))?;
     let value = serialize(&program.module);
     Ok(value)
 }
@@ -156,8 +158,6 @@ export default MDXContent;
         "should support a named export w/o source, w/o a specifiers",
     );
 
-    // ...........
-
     assert_eq!(
         from_markdown("export {a, b as default} from 'c'")?,
         "export { a } from 'c';
@@ -199,6 +199,14 @@ function MDXContent(props = {}) {
 export default MDXContent;
 ",
         "should support a named export w/ source, w/o a specifiers",
+    );
+
+    assert_eq!(
+        from_markdown("export default a = 1\n\nexport default b = 2")
+            .err()
+            .unwrap(),
+        "3:1: Cannot specify multiple layouts (previous: 1:1-1:21 (0-20))",
+        "should crash on a comment spread"
     );
 
     Ok(())

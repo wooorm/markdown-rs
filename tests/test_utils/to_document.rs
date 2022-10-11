@@ -1,6 +1,12 @@
-extern crate swc_common;
 extern crate swc_ecma_ast;
-use crate::test_utils::to_swc::Program;
+use crate::test_utils::{
+    micromark_swc_utils::{bytepos_to_point, prefix_error_with_point, span_to_position},
+    to_swc::Program,
+};
+use micromark::{
+    unist::{Point, Position},
+    Location,
+};
 
 /// JSX runtimes.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -60,7 +66,11 @@ impl Default for Options {
 }
 
 #[allow(dead_code)]
-pub fn to_document(mut program: Program, options: &Options) -> Result<Program, String> {
+pub fn to_document(
+    mut program: Program,
+    options: &Options,
+    location: Option<&Location>,
+) -> Result<Program, String> {
     // New body children.
     let mut replacements = vec![];
 
@@ -158,8 +168,8 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
     // is.
     let mut input = program.module.body.split_off(0);
     input.reverse();
-    // To do: place position in this.
     let mut layout = false;
+    let mut layout_position = None;
     let content = true;
 
     while let Some(module_item) = input.pop() {
@@ -174,13 +184,15 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
             swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDefaultDecl(
                 decl,
             )) => {
-                // To do: use positional info.
                 if layout {
-                    return Err("Cannot specify multiple layouts".into());
+                    return Err(create_double_layout_message(
+                        bytepos_to_point(&decl.span.lo, location).as_ref(),
+                        layout_position.as_ref(),
+                    ));
                 }
 
-                // To do: set positional info.
                 layout = true;
+                layout_position = span_to_position(&decl.span, location);
                 match decl.decl {
                     swc_ecma_ast::DefaultDecl::Class(cls) => {
                         replacements.push(create_layout_decl(swc_ecma_ast::Expr::Class(cls)))
@@ -190,22 +202,26 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                     }
                     swc_ecma_ast::DefaultDecl::TsInterfaceDecl(_) => {
                         return Err(
-                            "Cannot use TypeScript interface declarations as default export in MDX files. The default export is reserved for a layout, which must be a component"
-                                .into(),
-                        )
+                            prefix_error_with_point(
+                                "Cannot use TypeScript interface declarations as default export in MDX files. The default export is reserved for a layout, which must be a component".into(),
+                                bytepos_to_point(&decl.span.lo, location).as_ref()
+                            )
+                        );
                     }
                 }
             }
             swc_ecma_ast::ModuleItem::ModuleDecl(swc_ecma_ast::ModuleDecl::ExportDefaultExpr(
                 expr,
             )) => {
-                // To do: use positional info.
                 if layout {
-                    return Err("Cannot specify multiple layouts".into());
+                    return Err(create_double_layout_message(
+                        bytepos_to_point(&expr.span.lo, location).as_ref(),
+                        layout_position.as_ref(),
+                    ));
                 }
 
-                // To do: set positional info.
                 layout = true;
+                layout_position = span_to_position(&expr.span, location);
                 replacements.push(create_layout_decl(*expr.expr));
             }
             // ```js
@@ -239,12 +255,14 @@ pub fn to_document(mut program: Program, options: &Options) -> Result<Program, S
                                 // Looks like some TC39 proposal. Ignore for now
                                 // and only do things if this is an ID.
                                 if let swc_ecma_ast::ModuleExportName::Ident(ident) = &named.orig {
-                                    // To do: use positional info.
                                     if layout {
-                                        return Err("Cannot specify multiple layouts".into());
+                                        return Err(create_double_layout_message(
+                                            bytepos_to_point(&ident.span.lo, location).as_ref(),
+                                            layout_position.as_ref(),
+                                        ));
                                     }
-                                    // To do: set positional info.
                                     layout = true;
+                                    layout_position = span_to_position(&ident.span, location);
                                     take = true;
                                     id = Some(ident.clone());
                                 }
@@ -622,4 +640,19 @@ fn create_layout_decl(expr: swc_ecma_ast::Expr) -> swc_ecma_ast::ModuleItem {
             span: swc_common::DUMMY_SP,
         },
     ))))
+}
+
+/// Create an error message about multiple layouts.
+fn create_double_layout_message(at: Option<&Point>, previous: Option<&Position>) -> String {
+    prefix_error_with_point(
+        format!(
+            "Cannot specify multiple layouts{}",
+            if let Some(previous) = previous {
+                format!(" (previous: {:?})", previous)
+            } else {
+                "".into()
+            }
+        ),
+        at,
+    )
 }

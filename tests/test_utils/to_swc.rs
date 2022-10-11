@@ -1,13 +1,18 @@
 extern crate swc_common;
 extern crate swc_ecma_ast;
-use crate::test_utils::hast;
-use crate::test_utils::swc::{parse_esm_to_tree, parse_expression_to_tree};
+use crate::test_utils::{
+    hast,
+    micromark_swc_utils::position_to_span,
+    swc::{parse_esm_to_tree, parse_expression_to_tree},
+    swc_utils::create_ident,
+};
 use core::str;
-use micromark::{unist::Position, MdxExpressionKind};
+use micromark::{Location, MdxExpressionKind};
 
 /// Result.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Program {
+    pub path: Option<String>,
     /// JS AST.
     pub module: swc_ecma_ast::Module,
     /// Comments relating to AST.
@@ -22,7 +27,7 @@ enum Space {
 }
 
 #[derive(Debug)]
-struct Context {
+struct Context<'a> {
     /// Whether we’re in HTML or SVG.
     ///
     /// Not used yet, likely useful in the future.
@@ -31,22 +36,22 @@ struct Context {
     comments: Vec<swc_common::comments::Comment>,
     /// Declarations and stuff.
     esm: Vec<swc_ecma_ast::ModuleItem>,
-}
-
-impl Context {
-    /// Create a new context.
-    fn new() -> Context {
-        Context {
-            space: Space::Html,
-            comments: vec![],
-            esm: vec![],
-        }
-    }
+    /// Optional way to turn relative positions into points.
+    location: Option<&'a Location>,
 }
 
 #[allow(dead_code)]
-pub fn to_swc(tree: &hast::Node) -> Result<Program, String> {
-    let mut context = Context::new();
+pub fn to_swc(
+    tree: &hast::Node,
+    path: Option<String>,
+    location: Option<&Location>,
+) -> Result<Program, String> {
+    let mut context = Context {
+        space: Space::Html,
+        comments: vec![],
+        esm: vec![],
+        location,
+    };
     let expr = match one(&mut context, tree)? {
         Some(swc_ecma_ast::JSXElementChild::JSXFragment(x)) => {
             Some(swc_ecma_ast::Expr::JSXFragment(x))
@@ -81,6 +86,7 @@ pub fn to_swc(tree: &hast::Node) -> Result<Program, String> {
     }
 
     Ok(Program {
+        path,
         module,
         comments: context.comments,
     })
@@ -260,12 +266,14 @@ fn transform_mdx_jsx_element(
                             },
                         )))
                     }
-                    Some(hast::AttributeValue::Expression(value)) => {
+                    Some(hast::AttributeValue::Expression(value, stops)) => {
                         Some(swc_ecma_ast::JSXAttrValue::JSXExprContainer(
                             swc_ecma_ast::JSXExprContainer {
                                 expr: swc_ecma_ast::JSXExpr::Expr(parse_expression_to_tree(
                                     value,
                                     &MdxExpressionKind::AttributeValueExpression,
+                                    stops,
+                                    context.location,
                                 )?),
                                 span: swc_common::DUMMY_SP,
                             },
@@ -280,9 +288,13 @@ fn transform_mdx_jsx_element(
                     value,
                 })
             }
-            hast::AttributeContent::Expression(value) => {
-                let expr =
-                    parse_expression_to_tree(value, &MdxExpressionKind::AttributeExpression)?;
+            hast::AttributeContent::Expression(value, stops) => {
+                let expr = parse_expression_to_tree(
+                    value,
+                    &MdxExpressionKind::AttributeExpression,
+                    stops,
+                    context.location,
+                )?;
                 swc_ecma_ast::JSXAttrOrSpread::SpreadElement(swc_ecma_ast::SpreadElement {
                     dot3_token: swc_common::DUMMY_SP,
                     expr,
@@ -303,7 +315,7 @@ fn transform_mdx_jsx_element(
 
 /// [`MdxExpression`][hast::MdxExpression].
 fn transform_mdx_expression(
-    _context: &mut Context,
+    context: &mut Context,
     node: &hast::Node,
     expression: &hast::MdxExpression,
 ) -> Result<Option<swc_ecma_ast::JSXElementChild>, String> {
@@ -312,6 +324,8 @@ fn transform_mdx_expression(
             expr: swc_ecma_ast::JSXExpr::Expr(parse_expression_to_tree(
                 &expression.value,
                 &MdxExpressionKind::Expression,
+                &expression.stops,
+                context.location,
             )?),
             span: position_to_span(node.position()),
         },
@@ -324,7 +338,7 @@ fn transform_mdxjs_esm(
     _node: &hast::Node,
     esm: &hast::MdxjsEsm,
 ) -> Result<Option<swc_ecma_ast::JSXElementChild>, String> {
-    let mut module = parse_esm_to_tree(&esm.value)?;
+    let mut module = parse_esm_to_tree(&esm.value, &esm.stops, context.location)?;
     let mut index = 0;
 
     // To do: check that identifiers are not duplicated across esm blocks.
@@ -455,15 +469,6 @@ fn create_fragment(
     }
 }
 
-/// Create an ident.
-fn create_ident(sym: &str) -> swc_ecma_ast::Ident {
-    swc_ecma_ast::Ident {
-        sym: sym.into(),
-        optional: false,
-        span: swc_common::DUMMY_SP,
-    }
-}
-
 /// Create a JSX element name.
 fn create_jsx_name(name: &str) -> swc_ecma_ast::JSXElementName {
     match parse_jsx_name(name) {
@@ -513,15 +518,6 @@ fn create_jsx_attr_name(name: &str) -> swc_ecma_ast::JSXAttrName {
         // `<a b />`
         JsxName::Normal(name) => swc_ecma_ast::JSXAttrName::Ident(create_ident(name)),
     }
-}
-
-/// Turn a unist positions into an SWC span.
-fn position_to_span(position: Option<&Position>) -> swc_common::Span {
-    position.map_or(swc_common::DUMMY_SP, |d| swc_common::Span {
-        lo: swc_common::BytePos(d.start.offset as u32),
-        hi: swc_common::BytePos(d.end.offset as u32),
-        ctxt: swc_common::SyntaxContext::empty(),
-    })
 }
 
 fn inter_element_whitespace(value: &str) -> bool {

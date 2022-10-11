@@ -1,6 +1,6 @@
 //! Turn events into a syntax tree.
 
-use crate::event::{Event, Kind, Name};
+use crate::event::{Event, Kind, Name, Point as EventPoint};
 use crate::mdast::{
     AttributeContent, AttributeValue, BlockQuote, Break, Code, Definition, Delete, Emphasis,
     FootnoteDefinition, FootnoteReference, Heading, Html, Image, ImageReference, InlineCode,
@@ -14,6 +14,7 @@ use crate::util::{
         decode as decode_character_reference, parse as parse_character_reference,
     },
     infer::{gfm_table_align, list_item_loose, list_loose},
+    mdx_collect::collect,
     normalize_identifier::normalize_identifier,
     slice::{Position as SlicePosition, Slice},
 };
@@ -255,8 +256,6 @@ fn enter(context: &mut CompileContext) -> Result<(), String> {
         | Name::HtmlTextData
         | Name::MathFlowChunk
         | Name::MathTextData
-        | Name::MdxExpressionData
-        | Name::MdxEsmData
         | Name::MdxJsxTagAttributeValueLiteralValue => on_enter_data(context),
         Name::CodeFencedFenceInfo
         | Name::CodeFencedFenceMeta
@@ -267,7 +266,6 @@ fn enter(context: &mut CompileContext) -> Result<(), String> {
         | Name::LabelText
         | Name::MathFlowFenceMeta
         | Name::MdxJsxTagAttributeValueLiteral
-        | Name::MdxJsxTagAttributeValueExpression
         | Name::ReferenceString
         | Name::ResourceDestinationString
         | Name::ResourceTitleString => on_enter_buffer(context),
@@ -306,6 +304,9 @@ fn enter(context: &mut CompileContext) -> Result<(), String> {
         Name::MdxJsxTagClosingMarker => on_enter_mdx_jsx_tag_closing_marker(context)?,
         Name::MdxJsxTagAttribute => on_enter_mdx_jsx_tag_attribute(context)?,
         Name::MdxJsxTagAttributeExpression => on_enter_mdx_jsx_tag_attribute_expression(context)?,
+        Name::MdxJsxTagAttributeValueExpression => {
+            on_enter_mdx_jsx_tag_attribute_value_expression(context);
+        }
         Name::MdxJsxTagSelfClosingMarker => on_enter_mdx_jsx_tag_self_closing_marker(context)?,
         Name::Paragraph => on_enter_paragraph(context),
         Name::Reference => on_enter_reference(context),
@@ -347,10 +348,11 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         | Name::HtmlTextData
         | Name::MathFlowChunk
         | Name::MathTextData
-        | Name::MdxExpressionData
-        | Name::MdxEsmData
         | Name::MdxJsxTagAttributeValueLiteralValue => {
             on_exit_data(context)?;
+        }
+        Name::MdxJsxTagAttributeExpression | Name::MdxJsxTagAttributeValueExpression => {
+            on_exit_drop(context);
         }
         Name::AutolinkProtocol => on_exit_autolink_protocol(context)?,
         Name::AutolinkEmail => on_exit_autolink_email(context)?,
@@ -391,27 +393,22 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         Name::HeadingSetext => on_exit_heading_setext(context)?,
         Name::HeadingSetextUnderlineSequence => on_exit_heading_setext_underline_sequence(context),
         Name::HeadingSetextText => on_exit_heading_setext_text(context),
-        Name::HtmlFlow
-        | Name::HtmlText
-        | Name::MdxEsm
-        | Name::MdxFlowExpression
-        | Name::MdxTextExpression => on_exit_literal(context)?,
+        Name::HtmlFlow | Name::HtmlText => on_exit_html(context)?,
         Name::LabelText => on_exit_label_text(context),
         Name::LineEnding => on_exit_line_ending(context)?,
         Name::ListItemValue => on_exit_list_item_value(context),
+        Name::MdxEsm | Name::MdxFlowExpression | Name::MdxTextExpression => {
+            on_exit_mdx_esm_or_expression(context)?;
+        }
         Name::MdxJsxFlowTag | Name::MdxJsxTextTag => on_exit_mdx_jsx_tag(context)?,
         Name::MdxJsxTagClosingMarker => on_exit_mdx_jsx_tag_closing_marker(context),
         Name::MdxJsxTagNamePrimary => on_exit_mdx_jsx_tag_name_primary(context),
         Name::MdxJsxTagNameMember => on_exit_mdx_jsx_tag_name_member(context),
         Name::MdxJsxTagNameLocal => on_exit_mdx_jsx_tag_name_local(context),
-        Name::MdxJsxTagAttributeExpression => on_exit_mdx_jsx_tag_attribute_expression(context),
         Name::MdxJsxTagAttributePrimaryName => on_exit_mdx_jsx_tag_attribute_primary_name(context),
         Name::MdxJsxTagAttributeNameLocal => on_exit_mdx_jsx_tag_attribute_name_local(context),
         Name::MdxJsxTagAttributeValueLiteral => {
             on_exit_mdx_jsx_tag_attribute_value_literal(context);
-        }
-        Name::MdxJsxTagAttributeValueExpression => {
-            on_exit_mdx_jsx_tag_attribute_value_expression(context);
         }
         Name::MdxJsxTagSelfClosingMarker => on_exit_mdx_jsx_tag_self_closing_marker(context),
 
@@ -499,27 +496,51 @@ fn on_enter_math_text(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxEsm`][Name::MdxEsm].
 fn on_enter_mdx_esm(context: &mut CompileContext) {
+    let result = collect(
+        context.events,
+        context.bytes,
+        context.index,
+        &[Name::MdxEsmData, Name::LineEnding],
+        &[Name::MdxEsm],
+    );
     context.tail_push(Node::MdxjsEsm(MdxjsEsm {
-        value: String::new(),
+        value: result.value,
         position: None,
+        stops: result.stops,
     }));
     context.buffer();
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxFlowExpression`][Name::MdxFlowExpression].
 fn on_enter_mdx_flow_expression(context: &mut CompileContext) {
+    let result = collect(
+        context.events,
+        context.bytes,
+        context.index,
+        &[Name::MdxExpressionData, Name::LineEnding],
+        &[Name::MdxFlowExpression],
+    );
     context.tail_push(Node::MdxFlowExpression(MdxFlowExpression {
-        value: String::new(),
+        value: result.value,
         position: None,
+        stops: result.stops,
     }));
     context.buffer();
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxTextExpression`][Name::MdxTextExpression].
 fn on_enter_mdx_text_expression(context: &mut CompileContext) {
+    let result = collect(
+        context.events,
+        context.bytes,
+        context.index,
+        &[Name::MdxExpressionData, Name::LineEnding],
+        &[Name::MdxTextExpression],
+    );
     context.tail_push(Node::MdxTextExpression(MdxTextExpression {
-        value: String::new(),
+        value: result.value,
         position: None,
+        stops: result.stops,
     }));
     context.buffer();
 }
@@ -801,16 +822,48 @@ fn on_enter_mdx_jsx_tag_attribute(context: &mut CompileContext) -> Result<(), St
 fn on_enter_mdx_jsx_tag_attribute_expression(context: &mut CompileContext) -> Result<(), String> {
     on_enter_mdx_jsx_tag_any_attribute(context)?;
 
+    let result = collect(
+        context.events,
+        context.bytes,
+        context.index,
+        &[Name::MdxExpressionData, Name::LineEnding],
+        &[Name::MdxJsxTagAttributeExpression],
+    );
     context
         .jsx_tag
         .as_mut()
         .expect("expected tag")
         .attributes
-        .push(AttributeContent::Expression(String::new()));
+        .push(AttributeContent::Expression(result.value, result.stops));
 
     context.buffer();
 
     Ok(())
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagAttributeValueExpression`][Name::MdxJsxTagAttributeValueExpression].
+fn on_enter_mdx_jsx_tag_attribute_value_expression(context: &mut CompileContext) {
+    let result = collect(
+        context.events,
+        context.bytes,
+        context.index,
+        &[Name::MdxExpressionData, Name::LineEnding],
+        &[Name::MdxJsxTagAttributeValueExpression],
+    );
+
+    if let Some(AttributeContent::Property(node)) = context
+        .jsx_tag
+        .as_mut()
+        .expect("expected tag")
+        .attributes
+        .last_mut()
+    {
+        node.value = Some(AttributeValue::Expression(result.value, result.stops));
+    } else {
+        unreachable!("expected property")
+    }
+
+    context.buffer();
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker].
@@ -1086,6 +1139,11 @@ fn on_exit_definition_title_string(context: &mut CompileContext) {
     }
 }
 
+/// Handle [`Exit`][Kind::Exit]:*, by dropping the current buffer.
+fn on_exit_drop(context: &mut CompileContext) {
+    context.resume();
+}
+
 /// Handle [`Exit`][Kind::Exit]:[`Frontmatter`][Name::Frontmatter].
 fn on_exit_frontmatter(context: &mut CompileContext) -> Result<(), String> {
     let value = trim_eol(context.resume().to_string(), true, true);
@@ -1280,20 +1338,16 @@ fn on_exit_line_ending(context: &mut CompileContext) -> Result<(), String> {
     Ok(())
 }
 
-/// Handle [`Exit`][Kind::Exit]:{[`HtmlFlow`][Name::HtmlFlow],[`MdxFlowExpression`][Name::MdxFlowExpression],etc}.
-fn on_exit_literal(context: &mut CompileContext) -> Result<(), String> {
+/// Handle [`Exit`][Kind::Exit]:{[`HtmlFlow`][Name::HtmlFlow],[`HtmlText`][Name::HtmlText]}.
+fn on_exit_html(context: &mut CompileContext) -> Result<(), String> {
     let value = context.resume().to_string();
 
     match context.tail_mut() {
         Node::Html(node) => node.value = value,
-        Node::MdxFlowExpression(node) => node.value = value,
-        Node::MdxTextExpression(node) => node.value = value,
-        Node::MdxjsEsm(node) => node.value = value,
-        _ => unreachable!("expected html, mdx expression, etc on stack for value"),
+        _ => unreachable!("expected html on stack for value"),
     }
 
     on_exit(context)?;
-
     Ok(())
 }
 
@@ -1483,25 +1537,12 @@ fn on_exit_mdx_jsx_tag_name_local(context: &mut CompileContext) {
     name.push_str(slice.as_str());
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression].
-fn on_exit_mdx_jsx_tag_attribute_expression(context: &mut CompileContext) {
-    let value = context.resume();
-
-    if let Some(AttributeContent::Expression(expression)) = context
-        .jsx_tag
-        .as_mut()
-        .expect("expected tag")
-        .attributes
-        .last_mut()
-    {
-        expression.push_str(value.to_string().as_str());
-    } else {
-        unreachable!("expected expression")
-    }
+/// Handle [`Exit`][Kind::Exit]:{[`MdxEsm`][Name::MdxEsm],[`MdxFlowExpression`][Name::MdxFlowExpression],[`MdxTextExpression`][Name::MdxTextExpression]}.
+fn on_exit_mdx_esm_or_expression(context: &mut CompileContext) -> Result<(), String> {
+    on_exit_drop(context);
+    context.tail_pop()?;
+    Ok(())
 }
-
-// Name:: => (context),
-// Name:: => (context),
 
 /// Handle [`Exit`][Kind::Exit]:[`MdxJsxTagAttributePrimaryName`][Name::MdxJsxTagAttributePrimaryName].
 fn on_exit_mdx_jsx_tag_attribute_primary_name(context: &mut CompileContext) {
@@ -1563,23 +1604,6 @@ fn on_exit_mdx_jsx_tag_attribute_value_literal(context: &mut CompileContext) {
     }
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`MdxJsxTagAttributeValueExpression`][Name::MdxJsxTagAttributeValueExpression].
-fn on_exit_mdx_jsx_tag_attribute_value_expression(context: &mut CompileContext) {
-    let value = context.resume();
-
-    if let Some(AttributeContent::Property(node)) = context
-        .jsx_tag
-        .as_mut()
-        .expect("expected tag")
-        .attributes
-        .last_mut()
-    {
-        node.value = Some(AttributeValue::Expression(value.to_string()));
-    } else {
-        unreachable!("expected property")
-    }
-}
-
 /// Handle [`Exit`][Kind::Exit]:[`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker].
 fn on_exit_mdx_jsx_tag_self_closing_marker(context: &mut CompileContext) {
     context.jsx_tag.as_mut().expect("expected tag").self_closing = true;
@@ -1625,8 +1649,13 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
 }
 
 // Create a point from an event.
+fn point_from_event_point(point: &EventPoint) -> Point {
+    Point::new(point.line, point.column, point.index)
+}
+
+// Create a point from an event.
 fn point_from_event(event: &Event) -> Point {
-    Point::new(event.point.line, event.point.column, event.point.index)
+    point_from_event_point(&event.point)
 }
 
 // Create a position from an event.

@@ -2,7 +2,10 @@ extern crate micromark;
 extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_parser;
-use micromark::{MdxExpressionKind, MdxSignal};
+use crate::test_utils::micromark_swc_utils::{
+    bytepos_to_point, prefix_error_with_point, RewriteContext,
+};
+use micromark::{mdast::Stop, unist::Point, Location, MdxExpressionKind, MdxSignal};
 use swc_common::{
     source_map::Pos, sync::Lrc, BytePos, FileName, FilePathMapping, SourceFile, SourceMap, Spanned,
 };
@@ -11,10 +14,7 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{
     error::Error as SwcError, parse_file_as_expr, parse_file_as_module, EsConfig, Syntax,
 };
-
-// To do:
-// Use lexer in the future:
-// <https://docs.rs/swc_ecma_parser/0.99.1/swc_ecma_parser/lexer/index.html>
+use swc_ecma_visit::VisitMutWith;
 
 /// Lex ESM in MDX with SWC.
 #[allow(dead_code)]
@@ -24,40 +24,42 @@ pub fn parse_esm(value: &str) -> MdxSignal {
     let result = parse_file_as_module(&file, syntax, version, None, &mut errors);
 
     match result {
-        Err(error) => swc_error_to_signal(&error, value.len(), 0, "esm"),
+        Err(error) => swc_error_to_signal(&error, "esm", value.len(), 0),
         Ok(tree) => {
             if errors.is_empty() {
                 check_esm_ast(&tree)
             } else {
-                if errors.len() > 1 {
-                    println!("parse_esm: todo: multiple errors? {:?}", errors);
-                }
-                swc_error_to_signal(&errors[0], value.len(), 0, "esm")
+                swc_error_to_signal(&errors[0], "esm", value.len(), 0)
             }
         }
     }
 }
 
 /// Parse ESM in MDX with SWC.
-/// To do: figure out how to fix positional info.
 /// See `drop_span` in `swc_ecma_utils` for inspiration?
 #[allow(dead_code)]
-pub fn parse_esm_to_tree(value: &str) -> Result<swc_ecma_ast::Module, String> {
+pub fn parse_esm_to_tree(
+    value: &str,
+    stops: &[Stop],
+    location: Option<&Location>,
+) -> Result<swc_ecma_ast::Module, String> {
     let (file, syntax, version) = create_config(value.to_string());
     let mut errors = vec![];
-
     let result = parse_file_as_module(&file, syntax, version, None, &mut errors);
+    let mut rewrite_context = RewriteContext {
+        stops,
+        location,
+        prefix_len: 0,
+    };
 
     match result {
-        Err(error) => Err(swc_error_to_string(&error)),
-        Ok(module) => {
+        Err(error) => Err(swc_error_to_error(&error, "esm", &rewrite_context)),
+        Ok(mut module) => {
             if errors.is_empty() {
+                module.visit_mut_with(&mut rewrite_context);
                 Ok(module)
             } else {
-                if errors.len() > 1 {
-                    println!("parse_esm_to_tree: todo: multiple errors? {:?}", errors);
-                }
-                Err(swc_error_to_string(&errors[0]))
+                Err(swc_error_to_error(&errors[0], "esm", &rewrite_context))
             }
         }
     }
@@ -87,33 +89,31 @@ pub fn parse_expression(value: &str, kind: &MdxExpressionKind) -> MdxSignal {
     let result = parse_file_as_expr(&file, syntax, version, None, &mut errors);
 
     match result {
-        Err(error) => swc_error_to_signal(&error, value.len(), prefix.len(), "expression"),
+        Err(error) => swc_error_to_signal(&error, "expression", value.len(), prefix.len()),
         Ok(tree) => {
             if errors.is_empty() {
-                let place = fix_swc_position(tree.span().hi.to_usize(), prefix.len());
+                let expression_end = fix_swc_position(tree.span().hi.to_usize(), prefix.len());
                 let result = check_expression_ast(&tree, kind);
                 if matches!(result, MdxSignal::Ok) {
-                    whitespace_and_comments(place, value)
+                    whitespace_and_comments(expression_end, value)
                 } else {
                     result
                 }
             } else {
-                if errors.len() > 1 {
-                    unreachable!("parse_expression: todo: multiple errors? {:?}", errors);
-                }
-                swc_error_to_signal(&errors[0], value.len(), prefix.len(), "expression")
+                swc_error_to_signal(&errors[0], "expression", value.len(), prefix.len())
             }
         }
     }
 }
 
 /// Parse ESM in MDX with SWC.
-/// To do: figure out how to fix positional info.
 /// See `drop_span` in `swc_ecma_utils` for inspiration?
 #[allow(dead_code)]
 pub fn parse_expression_to_tree(
     value: &str,
     kind: &MdxExpressionKind,
+    stops: &[Stop],
+    location: Option<&Location>,
 ) -> Result<Box<swc_ecma_ast::Expr>, String> {
     // For attribute expression, a spread is needed, for which we have to prefix
     // and suffix the input.
@@ -127,11 +127,21 @@ pub fn parse_expression_to_tree(
     let (file, syntax, version) = create_config(format!("{}{}{}", prefix, value, suffix));
     let mut errors = vec![];
     let result = parse_file_as_expr(&file, syntax, version, None, &mut errors);
+    let mut rewrite_context = RewriteContext {
+        stops,
+        location,
+        prefix_len: prefix.len(),
+    };
 
     match result {
-        Err(error) => Err(swc_error_to_string(&error)),
-        Ok(expr) => {
+        Err(error) => Err(swc_error_to_error(&error, "expression", &rewrite_context)),
+        Ok(mut expr) => {
             if errors.is_empty() {
+                // Fix positions.
+                expr.visit_mut_with(&mut rewrite_context);
+
+                let expr_bytepos = expr.span().lo;
+
                 if matches!(kind, MdxExpressionKind::AttributeExpression) {
                     let mut obj = None;
 
@@ -143,27 +153,37 @@ pub fn parse_expression_to_tree(
 
                     if let Some(mut obj) = obj {
                         if obj.props.len() > 1 {
-                            Err("Unexpected extra content in spread: only a single spread is supported".into())
+                            Err(create_error_message(
+                                "Unexpected extra content in spread: only a single spread is supported",
+                                "expression",
+                                bytepos_to_point(&obj.span.lo, location).as_ref()
+                            ))
                         } else if let Some(swc_ecma_ast::PropOrSpread::Spread(d)) = obj.props.pop()
                         {
                             Ok(d.expr)
                         } else {
-                            Err("Unexpected prop in spread: only a spread is supported".into())
+                            Err(create_error_message(
+                                "Unexpected prop in spread: only a spread is supported",
+                                "expression",
+                                bytepos_to_point(&obj.span.lo, location).as_ref(),
+                            ))
                         }
                     } else {
-                        Err("Expected an object spread (`{...spread}`)".into())
+                        Err(create_error_message(
+                            "Expected an object spread (`{...spread}`)",
+                            "expression",
+                            bytepos_to_point(&expr_bytepos, location).as_ref(),
+                        ))
                     }
                 } else {
                     Ok(expr)
                 }
             } else {
-                if errors.len() > 1 {
-                    println!(
-                        "parse_expression_to_tree: todo: multiple errors? {:?}",
-                        errors
-                    );
-                }
-                Err(swc_error_to_string(&errors[0]))
+                Err(swc_error_to_error(
+                    &errors[0],
+                    "expression",
+                    &rewrite_context,
+                ))
             }
         }
     }
@@ -203,10 +223,10 @@ fn check_esm_ast(tree: &Module) -> MdxSignal {
         let node = &tree.body[index];
 
         if !node.is_module_decl() {
-            let place = fix_swc_position(node.span().hi.to_usize(), 0);
+            let relative = fix_swc_position(node.span().lo.to_usize(), 0);
             return MdxSignal::Error(
                 "Unexpected statement in code: only import/exports are supported".to_string(),
-                place,
+                relative,
             );
         }
 
@@ -248,22 +268,45 @@ fn check_expression_ast(tree: &Expr, kind: &MdxExpressionKind) -> MdxSignal {
 /// * Else, yields `MdxSignal::Error`.
 fn swc_error_to_signal(
     error: &SwcError,
+    name: &str,
     value_len: usize,
     prefix_len: usize,
-    name: &str,
 ) -> MdxSignal {
-    let place = fix_swc_position(error.span().hi.to_usize(), prefix_len);
-    let message = format!(
-        "Could not parse {} with swc: {}",
-        name,
-        swc_error_to_string(error)
-    );
+    let reason = create_error_reason(&swc_error_to_string(error), name);
+    let error_end = fix_swc_position(error.span().hi.to_usize(), prefix_len);
 
-    if place >= value_len {
-        MdxSignal::Eof(message)
+    if error_end >= value_len {
+        MdxSignal::Eof(reason)
     } else {
-        MdxSignal::Error(message, place)
+        MdxSignal::Error(
+            reason,
+            fix_swc_position(error.span().lo.to_usize(), prefix_len),
+        )
     }
+}
+
+fn swc_error_to_error(error: &SwcError, name: &str, context: &RewriteContext) -> String {
+    create_error_message(
+        &swc_error_to_string(error),
+        name,
+        context
+            .location
+            .and_then(|location| {
+                location.relative_to_point(
+                    context.stops,
+                    fix_swc_position(error.span().lo.to_usize(), context.prefix_len),
+                )
+            })
+            .as_ref(),
+    )
+}
+
+fn create_error_message(reason: &str, name: &str, point: Option<&Point>) -> String {
+    prefix_error_with_point(create_error_reason(name, reason), point)
+}
+
+fn create_error_reason(reason: &str, name: &str) -> String {
+    format!("Could not parse {} with swc: {}", name, reason)
 }
 
 /// Turn an SWC error into a string.

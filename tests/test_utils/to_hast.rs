@@ -827,10 +827,23 @@ fn transform_math(_state: &mut State, _node: &mdast::Node, math: &mdast::Math) -
 
 /// [`MdxFlowExpression`][mdast::MdxFlowExpression],[`MdxTextExpression`][mdast::MdxTextExpression].
 fn transform_mdx_expression(_state: &mut State, node: &mdast::Node) -> Result {
-    Result::Node(hast::Node::MdxExpression(hast::MdxExpression {
-        value: node.to_string(),
-        position: node.position().cloned(),
-    }))
+    match node {
+        mdast::Node::MdxFlowExpression(node) => {
+            Result::Node(hast::Node::MdxExpression(hast::MdxExpression {
+                value: node.value.clone(),
+                position: node.position.clone(),
+                stops: node.stops.clone(),
+            }))
+        }
+        mdast::Node::MdxTextExpression(node) => {
+            Result::Node(hast::Node::MdxExpression(hast::MdxExpression {
+                value: node.value.clone(),
+                position: node.position.clone(),
+                stops: node.stops.clone(),
+            }))
+        }
+        _ => unreachable!("expected expression"),
+    }
 }
 
 /// [`MdxJsxFlowElement`][mdast::MdxJsxFlowElement],[`MdxJsxTextElement`][mdast::MdxJsxTextElement].
@@ -858,6 +871,7 @@ fn transform_mdxjs_esm(
     Result::Node(hast::Node::MdxjsEsm(hast::MdxjsEsm {
         value: mdxjs_esm.value.clone(),
         position: mdxjs_esm.position.clone(),
+        stops: mdxjs_esm.stops.clone(),
     }))
 }
 

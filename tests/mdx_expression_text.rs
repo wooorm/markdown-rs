@@ -119,7 +119,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
 
     assert_eq!(
         micromark_with_options("a {var b = \"c\"} d", &swc).err().unwrap(),
-        "1:7: Could not parse expression with swc: Unexpected token `var`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        "1:4: Could not parse expression with swc: Unexpected token `var`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
         "should crash on non-expressions"
     );
 
@@ -213,7 +213,8 @@ fn mdx_expression_text_agnostic() -> Result<(), String> {
                     }),
                     Node::MdxTextExpression(MdxTextExpression {
                         value: "alpha".to_string(),
-                        position: Some(Position::new(1, 3, 2, 1, 10, 9))
+                        position: Some(Position::new(1, 3, 2, 1, 10, 9)),
+                        stops: vec![(0, 3)]
                     }),
                     Node::Text(Text {
                         value: " b.".to_string(),

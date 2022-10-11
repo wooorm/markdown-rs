@@ -1137,10 +1137,12 @@ fn hast() {
         to_hast(&mdast::Node::MdxFlowExpression(mdast::MdxFlowExpression {
             value: "a".into(),
             position: None,
+            stops: vec![]
         })),
         hast::Node::MdxExpression(hast::MdxExpression {
             value: "a".into(),
-            position: None
+            position: None,
+            stops: vec![]
         }),
         "should support an `MdxFlowExpression`",
     );
@@ -1149,10 +1151,12 @@ fn hast() {
         to_hast(&mdast::Node::MdxTextExpression(mdast::MdxTextExpression {
             value: "a".into(),
             position: None,
+            stops: vec![]
         })),
         hast::Node::MdxExpression(hast::MdxExpression {
             value: "a".into(),
-            position: None
+            position: None,
+            stops: vec![]
         }),
         "should support an `MdxTextExpression`",
     );
@@ -1193,10 +1197,12 @@ fn hast() {
         to_hast(&mdast::Node::MdxjsEsm(mdast::MdxjsEsm {
             value: "a".into(),
             position: None,
+            stops: vec![]
         })),
         hast::Node::MdxjsEsm(hast::MdxjsEsm {
             value: "a".into(),
-            position: None
+            position: None,
+            stops: vec![]
         }),
         "should support an `MdxjsEsm`",
     );

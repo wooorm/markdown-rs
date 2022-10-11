@@ -41,6 +41,9 @@ use util::{
     sanitize_uri::sanitize,
 };
 
+#[doc(hidden)]
+pub use util::location::Location;
+
 /// Type of line endings in markdown.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum LineEnding {
@@ -1252,8 +1255,8 @@ pub fn micromark(value: &str) -> String {
 /// # }
 /// ```
 pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, String> {
-    let (events, bytes) = parse(value, &options.parse)?;
-    Ok(to_html(&events, bytes, &options.compile))
+    let (events, parse_state) = parse(value, &options.parse)?;
+    Ok(to_html(&events, parse_state.bytes, &options.compile))
 }
 
 /// Turn markdown into a syntax tree.
@@ -1279,8 +1282,8 @@ pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, 
 /// # }
 /// ```
 pub fn micromark_to_mdast(value: &str, options: &ParseOptions) -> Result<Node, String> {
-    let (events, bytes) = parse(value, options)?;
-    let node = to_mdast(&events, bytes)?;
+    let (events, parse_state) = parse(value, options)?;
+    let node = to_mdast(&events, parse_state.bytes)?;
     Ok(node)
 }
 

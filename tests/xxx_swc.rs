@@ -12,14 +12,19 @@ use test_utils::{
 
 #[test]
 fn swc() -> Result<(), String> {
-    let comment_ast = to_swc(&hast::Node::Comment(hast::Comment {
-        value: "a".into(),
-        position: None,
-    }))?;
+    let comment_ast = to_swc(
+        &hast::Node::Comment(hast::Comment {
+            value: "a".into(),
+            position: None,
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         comment_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Expr(
@@ -66,19 +71,24 @@ fn swc() -> Result<(), String> {
         "should support a `Comment` (serialize)",
     );
 
-    let element_ast = to_swc(&hast::Node::Element(hast::Element {
-        tag_name: "a".into(),
-        properties: vec![(
-            "className".into(),
-            hast::PropertyValue::SpaceSeparated(vec!["b".into()]),
-        )],
-        children: vec![],
-        position: None,
-    }))?;
+    let element_ast = to_swc(
+        &hast::Node::Element(hast::Element {
+            tag_name: "a".into(),
+            properties: vec![(
+                "className".into(),
+                hast::PropertyValue::SpaceSeparated(vec!["b".into()]),
+            )],
+            children: vec![],
+            position: None,
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         element_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Expr(
@@ -139,15 +149,19 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![],
-                children: vec![hast::Node::Text(hast::Text {
-                    value: "a".into(),
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![],
+                    children: vec![hast::Node::Text(hast::Text {
+                        value: "a".into(),
+                        position: None,
+                    })],
                     position: None,
-                })],
-                position: None,
-            }))?
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a >{\"a\"}</a>;\n",
@@ -156,12 +170,16 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![("b".into(), hast::PropertyValue::String("c".into()),)],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![("b".into(), hast::PropertyValue::String("c".into()),)],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a b=\"c\"/>;\n",
@@ -170,12 +188,16 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![("b".into(), hast::PropertyValue::Boolean(true),)],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![("b".into(), hast::PropertyValue::Boolean(true),)],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a b/>;\n",
@@ -184,12 +206,16 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![("b".into(), hast::PropertyValue::Boolean(false),)],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![("b".into(), hast::PropertyValue::Boolean(false),)],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a />;\n",
@@ -198,15 +224,19 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![(
-                    "b".into(),
-                    hast::PropertyValue::CommaSeparated(vec!["c".into(), "d".into()]),
-                )],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![(
+                        "b".into(),
+                        hast::PropertyValue::CommaSeparated(vec!["c".into(), "d".into()]),
+                    )],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a b=\"c, d\"/>;\n",
@@ -215,16 +245,20 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![
-                    ("data123".into(), hast::PropertyValue::Boolean(true),),
-                    ("dataFoo".into(), hast::PropertyValue::Boolean(true),),
-                    ("dataBAR".into(), hast::PropertyValue::Boolean(true),)
-                ],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![
+                        ("data123".into(), hast::PropertyValue::Boolean(true),),
+                        ("dataFoo".into(), hast::PropertyValue::Boolean(true),),
+                        ("dataBAR".into(), hast::PropertyValue::Boolean(true),)
+                    ],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a data-123 data-foo data-b-a-r/>;\n",
@@ -233,32 +267,41 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::Element(hast::Element {
-                tag_name: "a".into(),
-                properties: vec![
-                    ("role".into(), hast::PropertyValue::Boolean(true),),
-                    ("ariaValueNow".into(), hast::PropertyValue::Boolean(true),),
-                    ("ariaDescribedBy".into(), hast::PropertyValue::Boolean(true),)
-                ],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::Element(hast::Element {
+                    tag_name: "a".into(),
+                    properties: vec![
+                        ("role".into(), hast::PropertyValue::Boolean(true),),
+                        ("ariaValueNow".into(), hast::PropertyValue::Boolean(true),),
+                        ("ariaDescribedBy".into(), hast::PropertyValue::Boolean(true),)
+                    ],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a role aria-valuenow aria-describedby/>;\n",
         "should support an `Element` w/ aria attributes",
     );
 
-    let mdx_element_ast = to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-        name: None,
-        attributes: vec![],
-        children: vec![],
-        position: None,
-    }))?;
+    let mdx_element_ast = to_swc(
+        &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+            name: None,
+            attributes: vec![],
+            children: vec![],
+            position: None,
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         mdx_element_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Expr(
@@ -293,12 +336,16 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a".into()),
-                attributes: vec![],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a".into()),
+                    attributes: vec![],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a />;\n",
@@ -307,12 +354,16 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a:b".into()),
-                attributes: vec![],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a:b".into()),
+                    attributes: vec![],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a:b />;\n",
@@ -321,12 +372,16 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a.b.c".into()),
-                attributes: vec![],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a.b.c".into()),
+                    attributes: vec![],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a.b.c />;\n",
@@ -335,15 +390,19 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a".into()),
-                attributes: vec![],
-                children: vec![hast::Node::Text(hast::Text {
-                    value: "b".into(),
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a".into()),
+                    attributes: vec![],
+                    children: vec![hast::Node::Text(hast::Text {
+                        value: "b".into(),
+                        position: None,
+                    })],
                     position: None,
-                })],
-                position: None,
-            }))?
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a >{\"b\"}</a>;\n",
@@ -352,15 +411,19 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a".into()),
-                attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
-                    name: "b".into(),
-                    value: None
-                })],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a".into()),
+                    attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
+                        name: "b".into(),
+                        value: None
+                    })],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a b/>;\n",
@@ -369,15 +432,19 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a".into()),
-                attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
-                    name: "b".into(),
-                    value: Some(hast::AttributeValue::Literal("c".into()))
-                })],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a".into()),
+                    attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
+                        name: "b".into(),
+                        value: Some(hast::AttributeValue::Literal("c".into()))
+                    })],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a b=\"c\"/>;\n",
@@ -386,15 +453,19 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a".into()),
-                attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
-                    name: "b".into(),
-                    value: Some(hast::AttributeValue::Expression("c".into()))
-                })],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a".into()),
+                    attributes: vec![hast::AttributeContent::Property(hast::MdxJsxAttribute {
+                        name: "b".into(),
+                        value: Some(hast::AttributeValue::Expression("c".into(), vec![]))
+                    })],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a b={c}/>;\n",
@@ -403,26 +474,36 @@ fn swc() -> Result<(), String> {
 
     assert_eq!(
         serialize(
-            &to_swc(&hast::Node::MdxJsxElement(hast::MdxJsxElement {
-                name: Some("a".into()),
-                attributes: vec![hast::AttributeContent::Expression("...c".into())],
-                children: vec![],
-                position: None,
-            }))?
+            &to_swc(
+                &hast::Node::MdxJsxElement(hast::MdxJsxElement {
+                    name: Some("a".into()),
+                    attributes: vec![hast::AttributeContent::Expression("...c".into(), vec![])],
+                    children: vec![],
+                    position: None,
+                }),
+                None,
+                None
+            )?
             .module
         ),
         "<a {...c}/>;\n",
         "should support an `MdxElement` (element, expression attribute)",
     );
 
-    let mdx_expression_ast = to_swc(&hast::Node::MdxExpression(hast::MdxExpression {
-        value: "a".into(),
-        position: None,
-    }))?;
+    let mdx_expression_ast = to_swc(
+        &hast::Node::MdxExpression(hast::MdxExpression {
+            value: "a".into(),
+            position: None,
+            stops: vec![],
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         mdx_expression_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Expr(
@@ -439,13 +520,8 @@ fn swc() -> Result<(), String> {
                                     swc_ecma_ast::JSXExprContainer {
                                         expr: swc_ecma_ast::JSXExpr::Expr(Box::new(
                                             swc_ecma_ast::Expr::Ident(swc_ecma_ast::Ident {
-                                                // To do: fix positions.
-                                                span: swc_common::Span {
-                                                    lo: swc_common::BytePos(1),
-                                                    hi: swc_common::BytePos(2),
-                                                    ctxt: swc_common::SyntaxContext::empty(),
-                                                },
                                                 sym: "a".into(),
+                                                span: swc_common::DUMMY_SP,
                                                 optional: false,
                                             })
                                         )),
@@ -471,14 +547,20 @@ fn swc() -> Result<(), String> {
         "should support an `MdxExpression` (serialize)",
     );
 
-    let mdxjs_esm_ast = to_swc(&hast::Node::MdxjsEsm(hast::MdxjsEsm {
-        value: "import a from 'b'".into(),
-        position: None,
-    }))?;
+    let mdxjs_esm_ast = to_swc(
+        &hast::Node::MdxjsEsm(hast::MdxjsEsm {
+            value: "import a from 'b'".into(),
+            position: None,
+            stops: vec![],
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         mdxjs_esm_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::ModuleDecl(
@@ -488,39 +570,19 @@ fn swc() -> Result<(), String> {
                                 local: swc_ecma_ast::Ident {
                                     sym: "a".into(),
                                     optional: false,
-                                    // To do: fix positions.
-                                    span: swc_common::Span {
-                                        lo: swc_common::BytePos(8),
-                                        hi: swc_common::BytePos(9),
-                                        ctxt: swc_common::SyntaxContext::empty(),
-                                    },
+                                    span: swc_common::DUMMY_SP,
                                 },
-                                // To do: fix positions.
-                                span: swc_common::Span {
-                                    lo: swc_common::BytePos(8),
-                                    hi: swc_common::BytePos(9),
-                                    ctxt: swc_common::SyntaxContext::empty(),
-                                },
+                                span: swc_common::DUMMY_SP,
                             }
                         )],
                         src: Box::new(swc_ecma_ast::Str {
                             value: "b".into(),
-                            // To do: fix positions.
-                            span: swc_common::Span {
-                                lo: swc_common::BytePos(15),
-                                hi: swc_common::BytePos(18),
-                                ctxt: swc_common::SyntaxContext::empty(),
-                            },
+                            span: swc_common::DUMMY_SP,
                             raw: Some("\'b\'".into()),
                         }),
                         type_only: false,
                         asserts: None,
-                        // To do: fix positions.
-                        span: swc_common::Span {
-                            lo: swc_common::BytePos(1),
-                            hi: swc_common::BytePos(18),
-                            ctxt: swc_common::SyntaxContext::empty(),
-                        },
+                        span: swc_common::DUMMY_SP,
                     })
                 )],
                 span: swc_common::DUMMY_SP,
@@ -536,17 +598,22 @@ fn swc() -> Result<(), String> {
         "should support an `MdxjsEsm` (serialize)",
     );
 
-    let root_ast = to_swc(&hast::Node::Root(hast::Root {
-        children: vec![hast::Node::Text(hast::Text {
-            value: "a".into(),
+    let root_ast = to_swc(
+        &hast::Node::Root(hast::Root {
+            children: vec![hast::Node::Text(hast::Text {
+                value: "a".into(),
+                position: None,
+            })],
             position: None,
-        })],
-        position: None,
-    }))?;
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         root_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Expr(
@@ -592,14 +659,19 @@ fn swc() -> Result<(), String> {
         "should support a `Root` (serialize)",
     );
 
-    let text_ast = to_swc(&hast::Node::Text(hast::Text {
-        value: "a".into(),
-        position: None,
-    }))?;
+    let text_ast = to_swc(
+        &hast::Node::Text(hast::Text {
+            value: "a".into(),
+            position: None,
+        }),
+        None,
+        None,
+    )?;
 
     assert_eq!(
         text_ast,
         Program {
+            path: None,
             module: swc_ecma_ast::Module {
                 shebang: None,
                 body: vec![swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Expr(

@@ -1,9 +1,13 @@
 extern crate swc_common;
 extern crate swc_ecma_ast;
-use crate::{
-    micromark::{id_cont_ as id_cont, id_start_ as id_start},
-    test_utils::to_swc::Program,
+use crate::test_utils::{
+    micromark_swc_utils::{position_to_string, span_to_position},
+    swc_utils::{
+        create_binary_expression, create_ident, create_ident_expression, create_member_expression,
+    },
+    to_swc::Program,
 };
+use micromark::{id_cont_ as id_cont, id_start_ as id_start, unist::Position, Location};
 use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith};
 
 /// Configuration.
@@ -21,10 +25,17 @@ pub struct Options {
 
 /// Rewrite JSX in an MDX file so that components can be passed in and provided.
 #[allow(dead_code)]
-pub fn jsx_rewrite(mut program: Program, options: &Options) -> Program {
+pub fn jsx_rewrite(
+    mut program: Program,
+    options: &Options,
+    location: Option<&Location>,
+) -> Program {
     let mut state = State {
         scopes: vec![],
+        location,
         provider: options.provider_import_source.is_some(),
+        path: program.path.clone(),
+        development: options.development,
         create_provider_import: false,
         create_error_helper: false,
     };
@@ -44,7 +55,10 @@ pub fn jsx_rewrite(mut program: Program, options: &Options) -> Program {
     // If potentially missing components are used, add the helper used for
     // errors.
     if state.create_error_helper {
-        program.module.body.push(create_error_helper());
+        program
+            .module
+            .body
+            .push(create_error_helper(state.development, state.path));
     }
 
     program
@@ -88,8 +102,7 @@ struct Info {
     /// ```
     /// vec![("a".into(), false), ("a.b".into(), true)]
     /// ```
-    // To do: add positional info later.
-    references: Vec<(String, bool)>,
+    references: Vec<(String, bool, Option<Position>)>,
 }
 
 /// Scope (block or function/global).
@@ -103,9 +116,14 @@ struct Scope {
 
 /// Context.
 #[derive(Debug, Default, Clone)]
-struct State {
+struct State<'a> {
+    location: Option<&'a Location>,
+    /// Path to file.
+    path: Option<String>,
     /// List of current scopes.
     scopes: Vec<Scope>,
+    /// Whether the user is in development mode.
+    development: bool,
     /// Whether the user uses a provider.
     provider: bool,
     /// Whether a provider is referenced.
@@ -117,7 +135,7 @@ struct State {
     create_error_helper: bool,
 }
 
-impl State {
+impl<'a> State<'a> {
     /// Open a new scope.
     fn enter(&mut self, info: Option<Info>) {
         self.scopes.push(Scope {
@@ -432,8 +450,47 @@ impl State {
         // if (!a) _missingMdxReference("a", false);
         // if (!a.b) _missingMdxReference("a.b", true);
         // ```
-        for (id, component) in info.references {
+        for (id, component, position) in info.references {
             self.create_error_helper = true;
+
+            let mut args = vec![
+                swc_ecma_ast::ExprOrSpread {
+                    spread: None,
+                    expr: Box::new(swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(
+                        swc_ecma_ast::Str {
+                            value: id.clone().into(),
+                            span: swc_common::DUMMY_SP,
+                            raw: None,
+                        },
+                    ))),
+                },
+                swc_ecma_ast::ExprOrSpread {
+                    spread: None,
+                    expr: Box::new(swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Bool(
+                        swc_ecma_ast::Bool {
+                            value: component,
+                            span: swc_common::DUMMY_SP,
+                        },
+                    ))),
+                },
+            ];
+
+            // Add the source location if it exists and if `development` is on.
+            if let Some(position) = position.as_ref() {
+                if self.development {
+                    args.push(swc_ecma_ast::ExprOrSpread {
+                        spread: None,
+                        expr: Box::new(swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(
+                            swc_ecma_ast::Str {
+                                value: position_to_string(position).into(),
+                                span: swc_common::DUMMY_SP,
+                                raw: None,
+                            },
+                        ))),
+                    })
+                }
+            }
+
             statements.push(swc_ecma_ast::Stmt::If(swc_ecma_ast::IfStmt {
                 test: Box::new(swc_ecma_ast::Expr::Unary(swc_ecma_ast::UnaryExpr {
                     op: swc_ecma_ast::UnaryOp::Bang,
@@ -446,27 +503,7 @@ impl State {
                         callee: swc_ecma_ast::Callee::Expr(Box::new(create_ident_expression(
                             "_missingMdxReference",
                         ))),
-                        args: vec![
-                            swc_ecma_ast::ExprOrSpread {
-                                spread: None,
-                                expr: Box::new(swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(
-                                    swc_ecma_ast::Str {
-                                        value: id.into(),
-                                        span: swc_common::DUMMY_SP,
-                                        raw: None,
-                                    },
-                                ))),
-                            },
-                            swc_ecma_ast::ExprOrSpread {
-                                spread: None,
-                                expr: Box::new(swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Bool(
-                                    swc_ecma_ast::Bool {
-                                        value: component,
-                                        span: swc_common::DUMMY_SP,
-                                    },
-                                ))),
-                            },
-                        ],
+                        args,
                         type_args: None,
                         span: swc_common::DUMMY_SP,
                     })),
@@ -545,6 +582,7 @@ impl State {
             None
         }
     }
+
     /// Get the top-level scope’s info, mutably.
     fn current_top_level_info_mut(&mut self) -> Option<&mut Info> {
         if let Some(scope) = self.scopes.get_mut(1) {
@@ -623,7 +661,7 @@ impl State {
     }
 }
 
-impl VisitMut for State {
+impl<'a> VisitMut for State<'a> {
     noop_visit_mut_type!();
 
     /// Rewrite JSX identifiers.
@@ -632,6 +670,7 @@ impl VisitMut for State {
         if let Some(info) = self.current_top_level_info() {
             // Rewrite only if we can rewrite.
             if is_props_receiving_fn(&info.name) || self.provider {
+                let position = span_to_position(&node.span, self.location);
                 match &node.opening.name {
                     // `<x.y>`, `<Foo.Bar>`, `<x.y.z>`.
                     swc_ecma_ast::JSXElementName::JSXMemberExpr(d) => {
@@ -656,7 +695,6 @@ impl VisitMut for State {
                         if !in_scope {
                             let info_mut = self.current_top_level_info_mut().unwrap();
 
-                            // To do: add positional info.
                             let mut index = 1;
                             while index <= ids.len() {
                                 let full_id = ids[0..index].join(".");
@@ -668,7 +706,9 @@ impl VisitMut for State {
                                         reference.1 = true;
                                     }
                                 } else {
-                                    info_mut.references.push((full_id, component))
+                                    info_mut
+                                        .references
+                                        .push((full_id, component, position.clone()))
                                 }
                                 index += 1;
                             }
@@ -749,7 +789,7 @@ impl VisitMut for State {
                                     {
                                         reference.1 = true;
                                     } else {
-                                        info_mut.references.push((id.clone(), true))
+                                        info_mut.references.push((id.clone(), true, position))
                                     }
                                 }
 
@@ -948,8 +988,8 @@ fn create_import_provider(source: &str) -> swc_ecma_ast::ModuleItem {
 ///   throw new Error("Expected " + (component ? "component" : "object") + " `" + id + "` to be defined: you likely forgot to import, pass, or provide it.");
 /// }
 /// ```
-fn create_error_helper() -> swc_ecma_ast::ModuleItem {
-    let parameters = vec![
+fn create_error_helper(development: bool, path: Option<String>) -> swc_ecma_ast::ModuleItem {
+    let mut parameters = vec![
         swc_ecma_ast::Param {
             pat: swc_ecma_ast::Pat::Ident(swc_ecma_ast::BindingIdent {
                 id: create_ident("id"),
@@ -968,7 +1008,19 @@ fn create_error_helper() -> swc_ecma_ast::ModuleItem {
         },
     ];
 
-    let message = vec![
+    // Accept a source location (which might be undefiend).
+    if development {
+        parameters.push(swc_ecma_ast::Param {
+            pat: swc_ecma_ast::Pat::Ident(swc_ecma_ast::BindingIdent {
+                id: create_ident("place"),
+                type_ann: None,
+            }),
+            decorators: vec![],
+            span: swc_common::DUMMY_SP,
+        })
+    }
+
+    let mut message = vec![
         swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(swc_ecma_ast::Str {
             value: "Expected ".into(),
             span: swc_common::DUMMY_SP,
@@ -1009,8 +1061,43 @@ fn create_error_helper() -> swc_ecma_ast::ModuleItem {
         })),
     ];
 
-    // To do: in development, add `place` param, and use the positional info.
-    // Also, then, add file path.
+    // `place ? "\nIt’s referenced in your code at `" + place+ "`" : ""`
+    if development {
+        message.push(swc_ecma_ast::Expr::Paren(swc_ecma_ast::ParenExpr {
+            expr: Box::new(swc_ecma_ast::Expr::Cond(swc_ecma_ast::CondExpr {
+                test: Box::new(create_ident_expression("place")),
+                cons: Box::new(create_binary_expression(
+                    vec![
+                        swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(swc_ecma_ast::Str {
+                            value: "\nIt’s referenced in your code at `".into(),
+                            span: swc_common::DUMMY_SP,
+                            raw: None,
+                        })),
+                        create_ident_expression("place"),
+                        swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(swc_ecma_ast::Str {
+                            value: if let Some(path) = path {
+                                format!("` in `{}`", path).into()
+                            } else {
+                                "`".into()
+                            },
+                            span: swc_common::DUMMY_SP,
+                            raw: None,
+                        })),
+                    ],
+                    swc_ecma_ast::BinaryOp::Add,
+                )),
+                alt: Box::new(swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(
+                    swc_ecma_ast::Str {
+                        value: "".into(),
+                        span: swc_common::DUMMY_SP,
+                        raw: None,
+                    },
+                ))),
+                span: swc_common::DUMMY_SP,
+            })),
+            span: swc_common::DUMMY_SP,
+        }))
+    }
 
     swc_ecma_ast::ModuleItem::Stmt(swc_ecma_ast::Stmt::Decl(swc_ecma_ast::Decl::Fn(
         swc_ecma_ast::FnDecl {
@@ -1045,100 +1132,6 @@ fn create_error_helper() -> swc_ecma_ast::ModuleItem {
             }),
         },
     )))
-}
-
-/// Generate a binary expression.
-///
-/// ```js
-/// a + b + c
-/// a || b
-/// ```
-fn create_binary_expression(
-    mut exprs: Vec<swc_ecma_ast::Expr>,
-    op: swc_ecma_ast::BinaryOp,
-) -> swc_ecma_ast::Expr {
-    exprs.reverse();
-
-    let mut left = None;
-
-    while let Some(right_expr) = exprs.pop() {
-        left = Some(if let Some(left_expr) = left {
-            swc_ecma_ast::Expr::Bin(swc_ecma_ast::BinExpr {
-                left: Box::new(left_expr),
-                right: Box::new(right_expr),
-                op,
-                span: swc_common::DUMMY_SP,
-            })
-        } else {
-            right_expr
-        });
-    }
-
-    left.expect("expected one or more expressions")
-}
-
-/// Generate a member expression.
-///
-/// ```js
-/// a.b
-/// a
-/// ```
-fn create_member_expression(name: &str) -> swc_ecma_ast::Expr {
-    let bytes = name.as_bytes();
-    let mut index = 0;
-    let mut start = 0;
-    let mut parts = vec![];
-
-    while index < bytes.len() {
-        if bytes[index] == b'.' {
-            parts.push(&name[start..index]);
-            start = index + 1;
-        }
-
-        index += 1;
-    }
-
-    if parts.len() > 1 {
-        let mut member = swc_ecma_ast::MemberExpr {
-            obj: Box::new(create_ident_expression(parts[0])),
-            prop: swc_ecma_ast::MemberProp::Ident(create_ident(parts[1])),
-            span: swc_common::DUMMY_SP,
-        };
-        let mut index = 2;
-        while index < parts.len() {
-            member = swc_ecma_ast::MemberExpr {
-                obj: Box::new(swc_ecma_ast::Expr::Member(member)),
-                prop: swc_ecma_ast::MemberProp::Ident(create_ident(parts[1])),
-                span: swc_common::DUMMY_SP,
-            };
-            index += 1;
-        }
-        swc_ecma_ast::Expr::Member(member)
-    } else {
-        create_ident_expression(name)
-    }
-}
-
-/// Generate an ident expression.
-///
-/// ```js
-/// a
-/// ```
-fn create_ident_expression(sym: &str) -> swc_ecma_ast::Expr {
-    swc_ecma_ast::Expr::Ident(create_ident(sym))
-}
-
-/// Generate an ident.
-///
-/// ```js
-/// a
-/// ```
-fn create_ident(sym: &str) -> swc_ecma_ast::Ident {
-    swc_ecma_ast::Ident {
-        sym: sym.into(),
-        optional: false,
-        span: swc_common::DUMMY_SP,
-    }
 }
 
 /// Check if this function is a props receiving component: it’s one of ours.

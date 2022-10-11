@@ -60,10 +60,7 @@ use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::{
-    constant::TAB_SIZE,
-    mdx_collect::{collect, place_to_point},
-};
+use crate::util::{constant::TAB_SIZE, mdx_collect::collect};
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
 use alloc::{format, string::ToString};
 
@@ -205,9 +202,11 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
 fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> State {
     // Collect the body of the expression and positional info for each run of it.
     let result = collect(
-        tokenizer,
+        &tokenizer.events,
+        tokenizer.parse_state.bytes,
         tokenizer.tokenize_state.start,
         &[Name::MdxExpressionData, Name::LineEnding],
+        &[],
     );
 
     // Turn the name of the expression into a kind.
@@ -221,9 +220,18 @@ fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> St
     // Parse and handle what was signaled back.
     match parse(&result.value, &kind) {
         MdxSignal::Ok => State::Ok,
-        MdxSignal::Error(message, place) => {
-            let point = place_to_point(&result, place);
-            State::Error(format!("{}:{}: {}", point.line, point.column, message))
+        MdxSignal::Error(message, relative) => {
+            let point = tokenizer
+                .parse_state
+                .location
+                .as_ref()
+                .expect("expected location index if aware mdx is on")
+                .relative_to_point(&result.stops, relative)
+                .map_or((tokenizer.point.line, tokenizer.point.column), |d| {
+                    (d.line, d.column)
+                });
+
+            State::Error(format!("{}:{}: {}", point.0, point.1, message))
         }
         MdxSignal::Eof(message) => {
             tokenizer.tokenize_state.mdx_last_parse_error = Some(message);

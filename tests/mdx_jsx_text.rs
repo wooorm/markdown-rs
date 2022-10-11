@@ -169,7 +169,10 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
                         name: Some("a".to_string()),
-                        attributes: vec![AttributeContent::Expression("...b".to_string())],
+                        attributes: vec![AttributeContent::Expression(
+                            "...b".to_string(),
+                            vec![(0, 4)]
+                        )],
                         children: vec![],
                         position: Some(Position::new(1, 1, 0, 1, 13, 12))
                     }),
@@ -235,7 +238,10 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                             }),
                             AttributeContent::Property(MdxJsxAttribute {
                                 name: "f".to_string(),
-                                value: Some(AttributeValue::Expression("g".to_string())),
+                                value: Some(AttributeValue::Expression(
+                                    "g".to_string(),
+                                    vec![(0, 18)]
+                                )),
                             }),
                         ],
                         children: vec![],

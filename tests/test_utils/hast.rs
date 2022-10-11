@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-// ^-- fix later
+// ^-- To do: fix later
 
 extern crate alloc;
 extern crate micromark;
@@ -9,7 +9,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-pub use micromark::mdast::{AttributeContent, AttributeValue, MdxJsxAttribute};
+pub use micromark::mdast::{AttributeContent, AttributeValue, MdxJsxAttribute, Stop};
 use micromark::unist::Position;
 
 /// Nodes.
@@ -254,6 +254,9 @@ pub struct MdxExpression {
     pub value: String,
     /// Positional info.
     pub position: Option<Position>,
+
+    // Custom data on where each slice of `value` came from.
+    pub stops: Vec<Stop>,
 }
 
 /// MDX: ESM.
@@ -269,4 +272,7 @@ pub struct MdxjsEsm {
     pub value: String,
     /// Positional info.
     pub position: Option<Position>,
+
+    // Custom data on where each slice of `value` came from.
+    pub stops: Vec<Stop>,
 }

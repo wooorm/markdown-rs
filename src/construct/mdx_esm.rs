@@ -31,10 +31,7 @@
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::{
-    mdx_collect::{collect, place_to_point},
-    slice::Slice,
-};
+use crate::util::{mdx_collect::collect, slice::Slice};
 use crate::MdxSignal;
 use alloc::format;
 
@@ -197,16 +194,24 @@ fn parse_esm(tokenizer: &mut Tokenizer) -> State {
 
     // Collect the body of the ESM and positional info for each run of it.
     let result = collect(
-        tokenizer,
+        &tokenizer.events,
+        tokenizer.parse_state.bytes,
         tokenizer.tokenize_state.start,
         &[Name::MdxEsmData, Name::LineEnding],
+        &[],
     );
 
     // Parse and handle what was signaled back.
     match parse(&result.value) {
         MdxSignal::Ok => State::Ok,
-        MdxSignal::Error(message, place) => {
-            let point = place_to_point(&result, place);
+        MdxSignal::Error(message, relative) => {
+            let point = tokenizer
+                .parse_state
+                .location
+                .as_ref()
+                .expect("expected location index if aware mdx is on")
+                .relative_to_point(&result.stops, relative)
+                .expect("expected non-empty string");
             State::Error(format!("{}:{}: {}", point.line, point.column, message))
         }
         MdxSignal::Eof(message) => {

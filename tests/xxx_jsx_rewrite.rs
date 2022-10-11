@@ -3,7 +3,7 @@ extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;
 mod test_utils;
-use micromark::{micromark_to_mdast, Constructs, ParseOptions};
+use micromark::{micromark_to_mdast, Constructs, Location, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
     jsx_rewrite::{jsx_rewrite, Options as RewriteOptions},
@@ -14,6 +14,7 @@ use test_utils::{
 };
 
 fn from_markdown(value: &str, options: &RewriteOptions) -> Result<String, String> {
+    let location = Location::new(value.as_bytes());
     let mdast = micromark_to_mdast(
         value,
         &ParseOptions {
@@ -24,8 +25,9 @@ fn from_markdown(value: &str, options: &RewriteOptions) -> Result<String, String
         },
     )?;
     let hast = to_hast(&mdast);
-    let program = to_document(to_swc(&hast)?, &DocumentOptions::default())?;
-    let program = jsx_rewrite(program, options);
+    let swc_tree = to_swc(&hast, Some("example.mdx".into()), Some(&location))?;
+    let program = to_document(swc_tree, &DocumentOptions::default(), Some(&location))?;
+    let program = jsx_rewrite(program, options, Some(&location));
     let value = serialize(&program.module);
     Ok(value)
 }
@@ -349,6 +351,30 @@ function _missingMdxReference(id, component) {
 }
 ",
         "should support providing components with JSX identifiers that are not JS identifiers in locally defined components",
+    );
+
+    assert_eq!(
+        from_markdown("# <Hi />", &RewriteOptions {
+            development: true,
+            ..Default::default()
+        })?,
+        "function _createMdxContent(props) {
+    const _components = Object.assign({
+        h1: \"h1\"
+    }, props.components), { Hi  } = _components;
+    if (!Hi) _missingMdxReference(\"Hi\", true, \"1:3-1:9\");
+    return <_components.h1 ><Hi /></_components.h1>;
+}
+function MDXContent(props = {}) {
+    const { wrapper: MDXLayout  } = props.components || {};
+    return MDXLayout ? <MDXLayout {...props}><_createMdxContent {...props}/></MDXLayout> : _createMdxContent(props);
+}
+export default MDXContent;
+function _missingMdxReference(id, component, place) {
+    throw new Error(\"Expected \" + (component ? \"component\" : \"object\") + \" `\" + id + \"` to be defined: you likely forgot to import, pass, or provide it.\" + (place ? \"\\nIt’s referenced in your code at `\" + place + \"` in `example.mdx`\" : \"\"));
+}
+",
+        "should create missing reference helpers w/o positional info in `development` mode",
     );
 
     Ok(())

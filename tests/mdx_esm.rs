@@ -101,7 +101,7 @@ fn mdx_esm() -> Result<(), String> {
 
     assert_eq!(
         micromark_with_options("import 1/1", &swc).err().unwrap(),
-        "1:9: Could not parse esm with swc: Expected 'from', got 'numeric literal (1, 1)'",
+        "1:8: Could not parse esm with swc: Expected 'from', got 'numeric literal (1, 1)'",
         "should crash on invalid import/exports (2)"
     );
 
@@ -250,7 +250,8 @@ fn mdx_esm() -> Result<(), String> {
         Node::Root(Root {
             children: vec![Node::MdxjsEsm(MdxjsEsm {
                 value: "import a from 'b'\nexport {a}".to_string(),
-                position: Some(Position::new(1, 1, 0, 2, 11, 28))
+                position: Some(Position::new(1, 1, 0, 2, 11, 28)),
+                stops: vec![(0, 0), (17, 17), (18, 18)]
             })],
             position: Some(Position::new(1, 1, 0, 2, 11, 28))
         }),

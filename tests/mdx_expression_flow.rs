@@ -94,7 +94,8 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
         Node::Root(Root {
             children: vec![Node::MdxFlowExpression(MdxFlowExpression {
                 value: "alpha +\nbravo".to_string(),
-                position: Some(Position::new(1, 1, 0, 2, 7, 15))
+                position: Some(Position::new(1, 1, 0, 2, 7, 15)),
+                stops: vec![(0, 1), (7, 8), (8, 9)]
             })],
             position: Some(Position::new(1, 1, 0, 2, 7, 15))
         }),

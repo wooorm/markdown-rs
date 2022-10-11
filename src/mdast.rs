@@ -9,6 +9,10 @@ use alloc::{
     vec::Vec,
 };
 
+/// Relative byte index into a string, to an absolute byte index into the
+/// whole document.
+pub type Stop = (usize, usize);
+
 /// Explicitness of a reference.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ReferenceKind {
@@ -429,7 +433,7 @@ pub enum AttributeContent {
     /// > | <a {...b} />
     ///        ^^^^^^
     /// ```
-    Expression(String),
+    Expression(String, Vec<Stop>),
     /// JSX property.
     ///
     /// ```markdown
@@ -448,7 +452,7 @@ pub enum AttributeValue {
     /// > | <a b={c} />
     ///          ^^^
     /// ```
-    Expression(String),
+    Expression(String, Vec<Stop>),
     /// Static value.
     ///
     /// ```markdown
@@ -1040,6 +1044,9 @@ pub struct MdxjsEsm {
     pub value: String,
     /// Positional info.
     pub position: Option<Position>,
+
+    // Custom data on where each slice of `value` came from.
+    pub stops: Vec<Stop>,
 }
 
 /// MDX: expression (flow).
@@ -1055,6 +1062,9 @@ pub struct MdxFlowExpression {
     pub value: String,
     /// Positional info.
     pub position: Option<Position>,
+
+    // Custom data on where each slice of `value` came from.
+    pub stops: Vec<Stop>,
 }
 
 /// MDX: expression (text).
@@ -1070,6 +1080,9 @@ pub struct MdxTextExpression {
     pub value: String,
     /// Positional info.
     pub position: Option<Position>,
+
+    // Custom data on where each slice of `value` came from.
+    pub stops: Vec<Stop>,
 }
 
 /// MDX: JSX element (container).
