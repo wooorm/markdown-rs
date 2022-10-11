@@ -10,7 +10,7 @@
 //!     HTML, such as allowing dangerous HTML or turning on/off
 //!     different constructs (GFM, MDX, and the like)
 //! *   [`micromark_to_mdast`][]
-//!     — like `micromark_with_options` but compiles to a syntax tree
+//!     — turn markdown into a syntax tree
 #![no_std]
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]
@@ -45,6 +45,20 @@ use util::{
 pub use util::location::Location;
 
 /// Type of line endings in markdown.
+///
+/// Particularly when working with Windows, you might want to use
+/// `LineEnding::CarriageReturnLineFeed`.
+///
+/// ## Examples
+///
+/// ```
+/// use micromark::LineEnding;
+/// # fn main() {
+///
+/// // Use a CR + LF combination:
+/// let crlf = LineEnding::CarriageReturnLineFeed;
+/// # }
+/// ```
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum LineEnding {
     /// Both a carriage return (`\r`) and a line feed (`\n`).
@@ -101,7 +115,7 @@ impl LineEnding {
     }
 }
 
-/// Signal used as feedback when parsing MDX esm/expressions.
+/// Signal used as feedback when parsing MDX ESM/expressions.
 #[derive(Clone, Debug)]
 pub enum MdxSignal {
     /// A syntax error.
@@ -113,7 +127,7 @@ pub enum MdxSignal {
     /// ## Examples
     ///
     /// ```rust ignore
-    /// MdxSignal::Error("Unexpected `\"`, expected identifier".to_string(), 1)
+    /// MdxSignal::Error("Unexpected `\"`, expected identifier".into(), 1)
     /// ```
     Error(String, usize),
     /// An error at the end of the (partial?) expression.
@@ -125,7 +139,7 @@ pub enum MdxSignal {
     /// ## Examples
     ///
     /// ```rust ignore
-    /// MdxSignal::Eof("Unexpected end of file in string literal".to_string())
+    /// MdxSignal::Eof("Unexpected end of file in string literal".into())
     /// ```
     Eof(String),
     /// Done, successfully.
@@ -141,35 +155,73 @@ pub enum MdxSignal {
     Ok,
 }
 
+/// Signature of a function that parses MDX ESM.
+///
+/// Can be passed as `mdx_esm_parse` in [`ParseOptions`][] to support
+/// ESM according to a certain grammar (typically, a programming language).
+pub type MdxEsmParse = dyn Fn(&str) -> MdxSignal;
+
 /// Expression kind.
 #[derive(Clone, Debug)]
 pub enum MdxExpressionKind {
-    /// Kind of expressions in prose: `# {Math.PI}` and `{Math.PI}`.
+    /// Kind of expressions in prose.
+    ///
+    /// ```mdx
+    /// > | # {Math.PI}
+    ///       ^^^^^^^^^
+    ///   |
+    /// > | {Math.PI}
+    ///     ^^^^^^^^^
+    /// ```
     Expression,
-    /// Kind of expressions as attributes: `<a {...b}>`
+    /// Kind of expressions as attributes.
+    ///
+    /// ```mdx
+    /// > | <a {...b}>
+    ///        ^^^^^^
+    /// ```
     AttributeExpression,
-    /// Kind of expressions as attribute values: `<a b={c}>`.
+    /// Kind of expressions as attribute values.
+    ///
+    /// ```mdx
+    /// > | <a b={c}>
+    ///          ^^^
+    /// ```
     AttributeValueExpression,
 }
 
-/// Signature of a function that parses expressions.
+/// Signature of a function that parses MDX expressions.
 ///
-/// Can be passed as `mdx_expression_parse` in [`Options`][] to support
+/// Can be passed as `mdx_expression_parse` in [`ParseOptions`][] to support
 /// expressions according to a certain grammar (typically, a programming
 /// language).
 pub type MdxExpressionParse = dyn Fn(&str, &MdxExpressionKind) -> MdxSignal;
-
-/// Signature of a function that parses ESM.
-///
-/// Can be passed as `mdx_esm_parse` in [`Options`][] to support
-/// ESM according to a certain grammar (typically, a programming
-/// language).
-pub type MdxEsmParse = dyn Fn(&str) -> MdxSignal;
 
 /// Control which constructs are enabled.
 ///
 /// Not all constructs can be configured.
 /// Notably, blank lines and paragraphs cannot be turned off.
+///
+/// ## Examples
+///
+/// ```
+/// use micromark::Constructs;
+/// # fn main() {
+///
+/// // Use the default trait to get `CommonMark` constructs:
+/// let commonmark = Constructs::default();
+///
+/// // To turn on all of GFM, use the `gfm` method:
+/// let gfm = Constructs::gfm();
+///
+/// // Or, mix and match:
+/// let custom = Constructs {
+///   math_flow: true,
+///   math_text: true,
+///   ..Constructs::gfm()
+/// };
+/// # }
+/// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Constructs {
@@ -395,9 +447,9 @@ pub struct Constructs {
     ///     ^^^^^^^^^^^^^^^^^
     /// ```
     ///
-    /// > 👉 **Note**: you *must* pass [`mdx_esm_parse`][MdxEsmParse]
-    /// > in [`ParseOptions`][] too.
-    /// > Otherwise, this option has no effect.
+    /// > 👉 **Note**: to support ESM, you *must* pass
+    /// > [`mdx_esm_parse`][MdxEsmParse] in [`ParseOptions`][] too.
+    /// > Otherwise, ESM is treated as normal markdown.
     pub mdx_esm: bool,
     /// MDX: expression (flow).
     ///
@@ -406,10 +458,12 @@ pub struct Constructs {
     ///     ^^^^^^^^^
     /// ```
     ///
-    /// > 👉 **Note**: you *can* pass
-    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
-    /// > to parse expressions according to a certain grammar (typically, a
-    /// > programming language).
+    /// > 👉 **Note**: You *can* pass
+    /// > [`mdx_expression_parse`][MdxExpressionParse] in [`ParseOptions`][]
+    /// > too, to parse expressions according to a certain grammar (typically,
+    /// > a programming language).
+    /// > Otherwise, expressions are parsed with a basic algorithm that only
+    /// > cares about braces.
     pub mdx_expression_flow: bool,
     /// MDX: expression (text).
     ///
@@ -418,10 +472,12 @@ pub struct Constructs {
     ///       ^^^^^^^^^
     /// ```
     ///
-    /// > 👉 **Note**: you *can* pass
-    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
-    /// > to parse expressions according to a certain grammar (typically, a
-    /// > programming language).
+    /// > 👉 **Note**: You *can* pass
+    /// > [`mdx_expression_parse`][MdxExpressionParse] in [`ParseOptions`][]
+    /// > too, to parse expressions according to a certain grammar (typically,
+    /// > a programming language).
+    /// > Otherwise, expressions are parsed with a basic algorithm that only
+    /// > cares about braces.
     pub mdx_expression_text: bool,
     /// MDX: JSX (flow).
     ///
@@ -430,10 +486,12 @@ pub struct Constructs {
     ///     ^^^^^^^^^^^^^
     /// ```
     ///
-    /// > 👉 **Note**: you *can* pass
-    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
-    /// > to parse expressions in JSX according to a certain grammar
+    /// > 👉 **Note**: You *can* pass
+    /// > [`mdx_expression_parse`][MdxExpressionParse] in [`ParseOptions`][]
+    /// > too, to parse expressions in JSX according to a certain grammar
     /// > (typically, a programming language).
+    /// > Otherwise, expressions are parsed with a basic algorithm that only
+    /// > cares about braces.
     pub mdx_jsx_flow: bool,
     /// MDX: JSX (text).
     ///
@@ -442,10 +500,12 @@ pub struct Constructs {
     ///       ^^^^^^^^^^^^^
     /// ```
     ///
-    /// > 👉 **Note**: you *can* pass
-    /// > [`options.mdx_expression_parse`][MdxExpressionParse]
-    /// > to parse expressions in JSX according to a certain grammar
+    /// > 👉 **Note**: You *can* pass
+    /// > [`mdx_expression_parse`][MdxExpressionParse] in [`ParseOptions`][]
+    /// > too, to parse expressions in JSX according to a certain grammar
     /// > (typically, a programming language).
+    /// > Otherwise, expressions are parsed with a basic algorithm that only
+    /// > cares about braces.
     pub mdx_jsx_text: bool,
     /// Thematic break.
     ///
@@ -458,6 +518,13 @@ pub struct Constructs {
 
 impl Default for Constructs {
     /// `CommonMark`.
+    ///
+    /// `CommonMark` is a relatively strong specification of how markdown
+    /// works.
+    /// Most markdown parsers try to follow it.
+    ///
+    /// For more information, see the `CommonMark` specification:
+    /// <https://spec.commonmark.org>.
     fn default() -> Self {
         Self {
             attention: true,
@@ -501,9 +568,12 @@ impl Default for Constructs {
 impl Constructs {
     /// GFM.
     ///
-    /// <https://github.github.com/gfm/>
+    /// GFM stands for **GitHub flavored markdown**.
+    /// GFM extends `CommonMark` and adds support for autolink literals,
+    /// footnotes, strikethrough, tables, and tasklists.
     ///
-    /// This turns on `CommonMark` + GFM.
+    /// For more information, see the GFM specification:
+    /// <https://github.github.com/gfm/>.
     #[must_use]
     pub fn gfm() -> Self {
         Self {
@@ -519,18 +589,23 @@ impl Constructs {
 
     /// MDX.
     ///
-    /// <https://mdxjs.com>
-    ///
     /// This turns on `CommonMark`, turns off some conflicting constructs
-    /// (autolinks, code (indented), html), and turns on MDX (JSX,
-    /// expressions, ESM).
+    /// (autolinks, code (indented), and HTML), and turns on MDX (ESM,
+    /// expressions, and JSX).
     ///
-    /// > 👉 **Note**: you *must* pass [`mdx_esm_parse`][MdxEsmParse]
-    /// > in [`ParseOptions`][] too to support ESM.
+    /// For more information, see the MDX website:
+    /// <https://mdxjs.com>.
+    ///
+    /// > 👉 **Note**: to support ESM, you *must* pass
+    /// > [`mdx_esm_parse`][MdxEsmParse] in [`ParseOptions`][] too.
+    /// > Otherwise, ESM is treated as normal markdown.
+    /// >
     /// > You *can* pass
     /// > [`mdx_expression_parse`][MdxExpressionParse]
     /// > to parse expressions according to a certain grammar (typically, a
     /// > programming language).
+    /// > Otherwise, expressions are parsed with a basic algorithm that only
+    /// > cares about braces.
     #[must_use]
     pub fn mdx() -> Self {
         Self {
@@ -549,12 +624,45 @@ impl Constructs {
 }
 
 /// Configuration that describes how to compile to HTML.
+///
+/// You likely either want to turn on the dangerous options
+/// (`allow_dangerous_html`, `allow_dangerous_protocol`) when dealing with
+/// input you trust, or want to customize how GFM footnotes are compiled
+/// (typically because the input markdown is not in English).
+///
+/// ## Examples
+///
+/// ```
+/// use micromark::CompileOptions;
+/// # fn main() {
+///
+/// // Use the default trait to get safe defaults:
+/// let safe = CompileOptions::default();
+///
+/// // Live dangerously / trust the author:
+/// let danger = CompileOptions {
+///   allow_dangerous_html: true,
+///   allow_dangerous_protocol: true,
+///   ..CompileOptions::default()
+/// };
+///
+/// // In French:
+/// let enFrançais = CompileOptions {
+///   gfm_footnote_label: Some("Notes de bas de page".into()),
+///   gfm_footnote_back_label: Some("Arrière".into()),
+///   ..CompileOptions::default()
+/// };
+/// # }
+/// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Default)]
 pub struct CompileOptions {
     /// Whether to allow (dangerous) HTML.
-    /// The default is `false`, you can turn it on to `true` for trusted
-    /// content.
+    ///
+    /// The default is `false`, which still parses the HTML according to
+    /// `CommonMark` but shows the HTML as text instead of as elements.
+    ///
+    /// Pass `true` for trusted content to get actual HTML elements.
     ///
     /// ## Examples
     ///
@@ -587,9 +695,18 @@ pub struct CompileOptions {
     /// ```
     pub allow_dangerous_html: bool,
 
-    /// Whether to allow (dangerous) protocols in links and images.
-    /// The default is `false`, you can turn it on to `true` for trusted
-    /// content.
+    /// Whether to allow dangerous protocols in links and images.
+    ///
+    /// The default is `false`, which drops URLs in links and images that use
+    /// dangerous protocols.
+    ///
+    /// Pass `true` for trusted content to support all protocols.
+    ///
+    /// URLs that have no protocol (which means it’s relative to the current
+    /// page, such as `./some/page.html`) and URLs that have a safe protocol
+    /// (for images: `http`, `https`; for links: `http`, `https`, `irc`,
+    /// `ircs`, `mailto`, `xmpp`), are safe.
+    /// All other URLs are dangerous and dropped.
     ///
     /// ## Examples
     ///
@@ -666,11 +783,16 @@ pub struct CompileOptions {
     /// ```
     pub default_line_ending: LineEnding,
 
-    /// Label to use for the footnotes section.
+    /// Textual label to use for the footnotes section.
     ///
+    /// The default value is `"Footnotes"`.
     /// Change it when the markdown is not in English.
-    /// Typically affects screen readers (change `gfm_footnote_label_attributes`
-    /// to make it visible).
+    ///
+    /// This label is typically hidden visually (assuming a `sr-only` CSS class
+    /// is defined that does that), and thus affects screen readers only.
+    /// If you do have such a class, but want to show this section to everyone,
+    /// pass different attributes with the `gfm_footnote_label_attributes`
+    /// option.
     ///
     /// ## Examples
     ///
@@ -694,7 +816,7 @@ pub struct CompileOptions {
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
     ///             compile: CompileOptions {
-    ///               gfm_footnote_label: Some("Notes de bas de page".to_string()),
+    ///               gfm_footnote_label: Some("Notes de bas de page".into()),
     ///               ..CompileOptions::gfm()
     ///             }
     ///         }
@@ -706,9 +828,16 @@ pub struct CompileOptions {
     /// ```
     pub gfm_footnote_label: Option<String>,
 
-    /// HTML tag to use for the footnote label.
+    /// HTML tag name to use for the footnote label element.
     ///
-    /// Change it to match your document structure and play well with your CSS.
+    /// The default value is `"h2"`.
+    /// Change it to match your document structure.
+    ///
+    /// This label is typically hidden visually (assuming a `sr-only` CSS class
+    /// is defined that does that), and thus affects screen readers only.
+    /// If you do have such a class, but want to show this section to everyone,
+    /// pass different attributes with the `gfm_footnote_label_attributes`
+    /// option.
     ///
     /// ## Examples
     ///
@@ -732,7 +861,7 @@ pub struct CompileOptions {
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
     ///             compile: CompileOptions {
-    ///               gfm_footnote_label_tag_name: Some("h1".to_string()),
+    ///               gfm_footnote_label_tag_name: Some("h1".into()),
     ///               ..CompileOptions::gfm()
     ///             }
     ///         }
@@ -746,13 +875,17 @@ pub struct CompileOptions {
 
     /// Attributes to use on the footnote label.
     ///
+    /// The default value is `"class=\"sr-only\""`.
+    /// Change it to show the label and add other attributes.
+    ///
+    /// This label is typically hidden visually (assuming a `sr-only` CSS class
+    /// is defined that does that), and thus affects screen readers only.
+    /// If you do have such a class, but want to show this section to everyone,
+    /// pass an empty string.
+    /// You can also add different attributes.
+    ///
     /// > 👉 **Note**: `id="footnote-label"` is always added, because footnote
     /// > calls use it with `aria-describedby` to provide an accessible label.
-    ///
-    /// A `class="sr-only"` is added by default to hide the label from sighted
-    /// users.
-    /// Change it to make the label visible, or add other classes or other
-    /// attributes.
     ///
     /// ## Examples
     ///
@@ -776,7 +909,7 @@ pub struct CompileOptions {
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
     ///             compile: CompileOptions {
-    ///               gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".to_string()),
+    ///               gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
     ///               ..CompileOptions::gfm()
     ///             }
     ///         }
@@ -788,10 +921,14 @@ pub struct CompileOptions {
     /// ```
     pub gfm_footnote_label_attributes: Option<String>,
 
-    /// Label to use from backreferences back to their footnote call.
+    /// Textual label to describe the backreference back to footnote calls.
     ///
+    /// The default value is `"Back to content"`.
     /// Change it when the markdown is not in English.
-    /// Affects screen readers.
+    ///
+    /// This label is used in the `aria-label` attribute on each backreference
+    /// (the `↩` links).
+    /// It affects users of assistive technology.
     ///
     /// ## Examples
     ///
@@ -815,7 +952,7 @@ pub struct CompileOptions {
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
     ///             compile: CompileOptions {
-    ///               gfm_footnote_back_label: Some("Arrière".to_string()),
+    ///               gfm_footnote_back_label: Some("Arrière".into()),
     ///               ..CompileOptions::gfm()
     ///             }
     ///         }
@@ -830,17 +967,24 @@ pub struct CompileOptions {
     /// Prefix to use before the `id` attribute on footnotes to prevent them
     /// from *clobbering*.
     ///
+    /// The default is `"user-content-"`.
+    /// Pass `Some("".into())` for trusted markdown and when you are careful
+    /// with polyfilling.
+    /// You could pass a different prefix.
+    ///
     /// DOM clobbering is this:
     ///
     /// ```html
-    /// <p id=x></p>
-    /// <script>alert(x) // `x` now refers to the DOM `p#x` element</script>
+    /// <p id="x"></p>
+    /// <script>alert(x) // `x` now refers to the `p#x` DOM element</script>
     /// ```
     ///
     /// The above example shows that elements are made available by browsers,
-    /// by their ID, on the `window` object, which is a security risk because
-    /// you might be expecting some other variable at that place.
-    /// Using a prefix solves this problem.
+    /// by their ID, on the `window` object.
+    /// This is a security risk because you might be expecting some other
+    /// variable at that place.
+    /// It can also break polyfills.
+    /// Using a prefix solves these problems.
     ///
     /// ## Examples
     ///
@@ -864,7 +1008,7 @@ pub struct CompileOptions {
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
     ///             compile: CompileOptions {
-    ///               gfm_footnote_clobber_prefix: Some("".to_string()),
+    ///               gfm_footnote_clobber_prefix: Some("".into()),
     ///               ..CompileOptions::gfm()
     ///             }
     ///         }
@@ -876,12 +1020,15 @@ pub struct CompileOptions {
     /// ```
     pub gfm_footnote_clobber_prefix: Option<String>,
 
-    /// Whether to support the GFM tagfilter, when `allow_dangerous_html` is on
-    /// (default: `false`).
+    /// Whether to support the GFM tagfilter.
+    ///
+    /// This option does nothing if `allow_dangerous_html` is not turned on.
+    /// The default is `false`, which does not apply the GFM tagfilter to HTML.
+    /// Pass `true` for output that is a bit closer to GitHub’s actual output.
     ///
     /// The tagfilter is kinda weird and kinda useless.
     /// The tag filter is a naïve attempt at XSS protection.
-    /// You should use a proper HTML sanitizing algorithm.
+    /// You should use a proper HTML sanitizing algorithm instead.
     ///
     /// ## Examples
     ///
@@ -933,9 +1080,13 @@ pub struct CompileOptions {
 impl CompileOptions {
     /// GFM.
     ///
-    /// <https://github.github.com/gfm/>
+    /// GFM stands for **GitHub flavored markdown**.
+    /// On the compilation side, GFM turns on the GFM tag filter.
+    /// The tagfilter is useless, but it’s included here for consistency, and
+    /// this method exists for parity to parse options.
     ///
-    /// This turns on the GFM tag filter (which is pretty useless).
+    /// For more information, see the GFM specification:
+    /// <https://github.github.com/gfm/>.
     #[must_use]
     pub fn gfm() -> Self {
         Self {
@@ -946,10 +1097,33 @@ impl CompileOptions {
 }
 
 /// Configuration that describes how to parse from markdown.
+///
+/// You can use this:
+///
+/// *   To control what markdown constructs are turned on and off
+/// *   To control some of those constructs
+/// *   To add support for certain programming languages when parsing MDX
+///
+/// In most cases, you will want to use the default trait or `gfm` method.
+///
+/// ## Examples
+///
+/// ```
+/// use micromark::ParseOptions;
+/// # fn main() {
+///
+/// // Use the default trait to parse markdown according to `CommonMark`:
+/// let commonmark = ParseOptions::default();
+///
+/// // Use the `gfm` method to parse markdown according to GFM:
+/// let gfm = ParseOptions::gfm();
+/// # }
+/// ```
 #[allow(clippy::struct_excessive_bools)]
 pub struct ParseOptions {
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
     /// Which constructs to enable and disable.
+    ///
     /// The default is to follow `CommonMark`.
     ///
     /// ## Examples
@@ -986,10 +1160,16 @@ pub struct ParseOptions {
     /// ```
     pub constructs: Constructs,
 
-    /// Whether to support GFM strikethrough (if enabled in `constructs`) with
-    /// a single tilde (default: `true`).
+    /// Whether to support GFM strikethrough with a single tilde
     ///
-    /// Single tildes work on github.com but are technically prohibited by GFM.
+    /// This option does nothing if `gfm_strikethrough` is not turned on in
+    /// `constructs`.
+    /// This option does not affect strikethrough with double tildes.
+    ///
+    /// The default is `true`, which follows how markdown on `github.com`
+    /// works, as strikethrough with single tildes is supported.
+    /// Pass `false`, to follow the GFM spec more strictly, by not allowing
+    /// strikethrough with single tildes.
     ///
     /// ## Examples
     ///
@@ -1032,11 +1212,17 @@ pub struct ParseOptions {
     /// ```
     pub gfm_strikethrough_single_tilde: bool,
 
-    /// Whether to support math (text) (if enabled in `constructs`) with a
-    /// single dollar (default: `true`).
+    /// Whether to support math (text) with a single dollar
     ///
-    /// Single dollars work in Pandoc and many other places, but often
-    /// interfere with “normal” dollars in text.
+    /// This option does nothing if `math_text` is not turned on in
+    /// `constructs`.
+    /// This option does not affect math (text) with two or more dollars.
+    ///
+    /// The default is `true`, which is more close to how code (text) and
+    /// Pandoc work, as it allows math with a single dollar to form.
+    /// However, single dollars can interfere with “normal” dollars in text.
+    /// Pass `false`, to only allow math (text) to form when two or more
+    /// dollars are used.
     ///
     /// ## Examples
     ///
@@ -1087,12 +1273,11 @@ pub struct ParseOptions {
 
     /// Function to parse expressions with.
     ///
+    /// This function can be used to add support for arbitrary programming
+    /// languages within expressions.
+    ///
     /// It only makes sense to pass this when compiling to a syntax tree
     /// with [`micromark_to_mdast`][].
-    ///
-    /// This can be used to parse expressions with a parser.
-    /// It can be used to support for arbitrary programming languages within
-    /// expressions.
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
@@ -1100,13 +1285,15 @@ pub struct ParseOptions {
 
     /// Function to parse ESM with.
     ///
+    /// This function can be used to add support for arbitrary programming
+    /// languages within ESM blocks, however, the keywords (`export`,
+    /// `import`) are currently hardcoded JavaScript-specific.
+    ///
+    /// > 👉 **Note**: please raise an issue if you’re interested in working on
+    /// > MDX that is aware of, say, Rust, or other programming languages.
+    ///
     /// It only makes sense to pass this when compiling to a syntax tree
     /// with [`micromark_to_mdast`][].
-    ///
-    /// This can be used to parse ESM with a parser.
-    /// It can be used to support for arbitrary programming languages within
-    /// ESM, however, the keywords (`export`, `import`) are currently hardcoded
-    /// JavaScript-specific.
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
@@ -1151,9 +1338,12 @@ impl Default for ParseOptions {
 impl ParseOptions {
     /// GFM.
     ///
-    /// <https://github.github.com/gfm/>
+    /// GFM stands for GitHub flavored markdown.
+    /// GFM extends `CommonMark` and adds support for autolink literals,
+    /// footnotes, strikethrough, tables, and tasklists.
     ///
-    /// This turns on `CommonMark` + GFM.
+    /// For more information, see the GFM specification:
+    /// <https://github.github.com/gfm/>
     #[must_use]
     pub fn gfm() -> Self {
         Self {
@@ -1164,18 +1354,23 @@ impl ParseOptions {
 
     /// MDX.
     ///
-    /// <https://mdxjs.com>
-    ///
     /// This turns on `CommonMark`, turns off some conflicting constructs
-    /// (autolinks, code (indented), html), and turns on MDX (JSX,
-    /// expressions, ESM).
+    /// (autolinks, code (indented), and HTML), and turns on MDX (ESM,
+    /// expressions, and JSX).
     ///
-    /// > 👉 **Note**: you *must* pass [`mdx_esm_parse`][MdxEsmParse]
-    /// > too to support ESM.
+    /// For more information, see the MDX website:
+    /// <https://mdxjs.com>.
+    ///
+    /// > 👉 **Note**: to support ESM, you *must* pass
+    /// > [`mdx_esm_parse`][MdxEsmParse] in [`ParseOptions`][] too.
+    /// > Otherwise, ESM is treated as normal markdown.
+    /// >
     /// > You *can* pass
     /// > [`mdx_expression_parse`][MdxExpressionParse]
     /// > to parse expressions according to a certain grammar (typically, a
     /// > programming language).
+    /// > Otherwise, expressions are parsed with a basic algorithm that only
+    /// > cares about braces.
     #[must_use]
     pub fn mdx() -> Self {
         Self {
@@ -1185,7 +1380,24 @@ impl ParseOptions {
     }
 }
 
-/// Configuration (optional).
+/// Configuration that describes how to parse from markdown and compile to
+/// HTML.
+///
+/// In most cases, you will want to use the default trait or `gfm` method.
+///
+/// ## Examples
+///
+/// ```
+/// use micromark::Options;
+/// # fn main() {
+///
+/// // Use the default trait to compile markdown to HTML according to `CommonMark`:
+/// let commonmark = Options::default();
+///
+/// // Use the `gfm` method to compile markdown to HTML according to GFM:
+/// let gfm = Options::gfm();
+/// # }
+/// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default)]
 pub struct Options {
@@ -1198,9 +1410,14 @@ pub struct Options {
 impl Options {
     /// GFM.
     ///
-    /// <https://github.github.com/gfm/>
+    /// GFM stands for GitHub flavored markdown.
+    /// GFM extends `CommonMark` and adds support for autolink literals,
+    /// footnotes, strikethrough, tables, and tasklists.
+    /// On the compilation side, GFM turns on the GFM tag filter.
+    /// The tagfilter is useless, but it’s included here for consistency.
     ///
-    /// This turns on `CommonMark` + GFM.
+    /// For more information, see the GFM specification:
+    /// <https://github.github.com/gfm/>
     #[must_use]
     pub fn gfm() -> Self {
         Self {
@@ -1211,6 +1428,10 @@ impl Options {
 }
 
 /// Turn markdown into HTML.
+///
+/// Compiles markdown to HTML according to `CommonMark`.
+/// Use [`micromark_with_options`][] to configure how markdown is turned into
+/// HTML.
 ///
 /// ## Examples
 ///
@@ -1233,7 +1454,7 @@ pub fn micromark(value: &str) -> String {
 /// does not have syntax errors, so feel free to `unwrap()`.
 /// However, MDX does have syntax errors.
 /// When MDX is turned on, there are several errors that can occur with how
-/// JSX, expressions, or ESM are written.
+/// expressions, ESM, and JSX are written.
 ///
 /// ## Examples
 ///
@@ -1241,6 +1462,12 @@ pub fn micromark(value: &str) -> String {
 /// use micromark::{micromark_with_options, CompileOptions, Options};
 /// # fn main() -> Result<(), String> {
 ///
+/// // Use GFM:
+/// let result = micromark_with_options("~hi~hello!", &Options::gfm())?;
+///
+/// assert_eq!(result, "<p><del>hi</del>hello!</p>");
+///
+/// // Live dangerously / trust the author:
 /// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
 ///     compile: CompileOptions {
 ///       allow_dangerous_html: true,
@@ -1275,9 +1502,10 @@ pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, 
 /// use micromark::{micromark_to_mdast, ParseOptions};
 /// # fn main() -> Result<(), String> {
 ///
-/// let tree = micromark_to_mdast("# hi!", &ParseOptions::default())?;
+/// let tree = micromark_to_mdast("# Hey, *you*!", &ParseOptions::default())?;
 ///
 /// println!("{:?}", tree);
+/// // => Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3-1:8 (2-7)) }, Emphasis { children: [Text { value: "you", position: Some(1:9-1:12 (8-11)) }], position: Some(1:8-1:13 (7-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
 /// # Ok(())
 /// # }
 /// ```

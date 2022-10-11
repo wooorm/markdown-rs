@@ -9,7 +9,7 @@ use alloc::{
     vec::Vec,
 };
 
-/// Relative byte index into a string, to an absolute byte index into the
+/// MDX: relative byte index into a string, to an absolute byte index into the
 /// whole document.
 pub type Stop = (usize, usize);
 
@@ -24,7 +24,9 @@ pub enum ReferenceKind {
     Full,
 }
 
-/// Represents how phrasing content is aligned.
+/// GFM: alignment of phrasing content.
+///
+/// Used to align the contents of table cells within a table.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum AlignKind {
     /// Left alignment.
@@ -874,7 +876,7 @@ pub struct ImageReference {
     pub label: Option<String>,
 }
 
-/// Footnote definition (GFM).
+/// GFM: footnote definition.
 ///
 /// ```markdown
 /// > | [^a]: b
@@ -902,7 +904,7 @@ pub struct FootnoteDefinition {
     pub label: Option<String>,
 }
 
-/// Footnote reference (GFM).
+/// GFM: footnote reference.
 ///
 /// ```markdown
 /// > | [^a]
@@ -928,7 +930,7 @@ pub struct FootnoteReference {
     pub label: Option<String>,
 }
 
-/// Table (GFM).
+/// GFM: table.
 ///
 /// ```markdown
 /// > | | a |
@@ -948,7 +950,7 @@ pub struct Table {
     pub align: Vec<AlignKind>,
 }
 
-/// Table row (GFM).
+/// GFM: table row.
 ///
 /// ```markdown
 /// > | | a |
@@ -963,7 +965,7 @@ pub struct TableRow {
     pub position: Option<Position>,
 }
 
-/// Table cell (GFM).
+/// GFM: table cell.
 ///
 /// ```markdown
 /// > | | a |
@@ -978,7 +980,7 @@ pub struct TableCell {
     pub position: Option<Position>,
 }
 
-/// Delete (GFM).
+/// GFM: delete.
 ///
 /// ```markdown
 /// > | ~~a~~
@@ -993,7 +995,7 @@ pub struct Delete {
     pub position: Option<Position>,
 }
 
-/// Yaml (frontmatter).
+/// Frontmatter: yaml.
 ///
 /// ```markdown
 /// > | ---
@@ -1012,7 +1014,7 @@ pub struct Yaml {
     pub position: Option<Position>,
 }
 
-/// Toml (frontmatter).
+/// Frontmatter: toml.
 ///
 /// ```markdown
 /// > | +++
