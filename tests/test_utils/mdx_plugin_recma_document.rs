@@ -72,10 +72,10 @@ impl Default for Options {
 
 #[allow(dead_code)]
 pub fn mdx_plugin_recma_document(
-    mut program: Program,
+    program: &mut Program,
     options: &Options,
     location: Option<&Location>,
-) -> Result<Program, String> {
+) -> Result<(), String> {
     // New body children.
     let mut replacements = vec![];
 
@@ -412,7 +412,7 @@ pub fn mdx_plugin_recma_document(
 
     program.module.body = replacements;
 
-    Ok(program)
+    Ok(())
 }
 
 /// Create a content component.

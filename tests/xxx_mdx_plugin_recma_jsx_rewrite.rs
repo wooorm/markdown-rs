@@ -25,11 +25,10 @@ fn from_markdown(value: &str, options: &RewriteOptions) -> Result<String, String
         },
     )?;
     let hast = mdast_util_to_hast(&mdast);
-    let program = hast_util_to_swc(&hast, Some("example.mdx".into()), Some(&location))?;
-    let program = mdx_plugin_recma_document(program, &DocumentOptions::default(), Some(&location))?;
-    let program = mdx_plugin_recma_jsx_rewrite(program, options, Some(&location));
-    let value = serialize(&program.module);
-    Ok(value)
+    let mut program = hast_util_to_swc(&hast, Some("example.mdx".into()), Some(&location))?;
+    mdx_plugin_recma_document(&mut program, &DocumentOptions::default(), Some(&location))?;
+    mdx_plugin_recma_jsx_rewrite(&mut program, options, Some(&location));
+    Ok(serialize(&program.module))
 }
 
 #[test]

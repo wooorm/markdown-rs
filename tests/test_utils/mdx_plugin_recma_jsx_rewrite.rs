@@ -31,10 +31,10 @@ pub struct Options {
 /// Rewrite JSX in an MDX file so that components can be passed in and provided.
 #[allow(dead_code)]
 pub fn mdx_plugin_recma_jsx_rewrite(
-    mut program: Program,
+    program: &mut Program,
     options: &Options,
     location: Option<&Location>,
-) -> Program {
+) {
     let mut state = State {
         scopes: vec![],
         location,
@@ -65,8 +65,6 @@ pub fn mdx_plugin_recma_jsx_rewrite(
             .body
             .push(create_error_helper(state.development, state.path));
     }
-
-    program
 }
 
 /// Collection of different SWC functions.
