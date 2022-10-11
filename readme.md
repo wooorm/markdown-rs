@@ -119,7 +119,7 @@ Yields:
 </ul>
 ```
 
-Syntax tree:
+Syntax tree ([mdast][]):
 
 ```rs
 extern crate micromark;
@@ -145,14 +145,15 @@ Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3
 
 `micromark` exposes
 [`micromark`](https://wooorm.com/micromark-rs/micromark/fn.micromark.html),
-[`micromark_with_options`](https://wooorm.com/micromark-rs/micromark/fn.micromark_with_options.html), and
-[`micromark_to_mdast`](https://wooorm.com/micromark-rs/micromark/fn.micromark_to_mdast.html), and
-[`Options`](https://wooorm.com/micromark-rs/micromark/struct.Options.html).
-See [crate docs][docs] for more info.
+[`micromark_with_options`](https://wooorm.com/micromark-rs/micromark/fn.micromark_with_options.html),
+[`micromark_to_mdast`](https://wooorm.com/micromark-rs/micromark/fn.micromark_to_mdast.html),
+[`Options`](https://wooorm.com/micromark-rs/micromark/struct.Options.html),
+and a few other structs and enums.
+See the [crate docs][docs] for more info.
 
 ## Extensions
 
-micromark supports extensions.
+micromark supports extensions to `CommonMark`.
 These extensions are maintained in this project.
 They are not enabled by default but can be turned on with options.
 
@@ -354,6 +355,8 @@ The files in `src/` are as follows:
   — turns events into a syntax tree
 - `tokenizer.rs`
   — glue the states of the state machine together
+- `unist.rs`
+  — point and position, used in mdast
 
 ### Comparison
 
@@ -363,7 +366,7 @@ The files in `src/` are as follows:
 
 ### Test
 
-micromark is tested with the \~650 CommonMark tests and more than 1.7k extra
+micromark is tested with the \~650 CommonMark tests and more than 1k extra
 tests confirmed with CM reference parsers.
 Then there’s even more tests for GFM and other extensions.
 These tests reach all branches in the code, which means that this project has
