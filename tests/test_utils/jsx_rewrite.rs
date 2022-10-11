@@ -7,7 +7,7 @@ use crate::test_utils::{
     },
     to_swc::Program,
 };
-use micromark::{id_cont_ as id_cont, id_start_ as id_start, unist::Position, Location};
+use micromark::{id_cont, id_start, unist::Position, Location};
 use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith};
 
 /// Configuration.

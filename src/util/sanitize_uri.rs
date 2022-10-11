@@ -10,9 +10,9 @@ use alloc::{
 /// Make a value safe for injection as a URL.
 ///
 /// This encodes unsafe characters with percent-encoding and skips already
-/// encoded sequences (see [`normalize`][] below).
+/// encoded sequences (see `normalize` below).
 /// Further unsafe characters are encoded as character references (see
-/// [`encode`][]).
+/// `encode`).
 ///
 /// ## Examples
 ///

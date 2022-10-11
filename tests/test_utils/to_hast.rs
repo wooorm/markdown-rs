@@ -1,5 +1,5 @@
 use crate::test_utils::hast;
-use micromark::{mdast, sanitize_, unist::Position};
+use micromark::{mdast, sanitize, unist::Position};
 
 // To do: support these compile options:
 // ```
@@ -92,7 +92,7 @@ pub fn to_hast(mdast: &mdast::Node) -> hast::Node {
         let mut index = 0;
         while index < state.footnote_calls.len() {
             let (id, count) = &state.footnote_calls[index];
-            let safe_id = sanitize_(&id.to_lowercase());
+            let safe_id = sanitize(&id.to_lowercase());
 
             // Find definition: we’ll always find it.
             let mut definition_index = 0;
@@ -412,7 +412,7 @@ fn transform_footnote_reference(
     _node: &mdast::Node,
     footnote_reference: &mdast::FootnoteReference,
 ) -> Result {
-    let safe_id = sanitize_(&footnote_reference.identifier.to_lowercase());
+    let safe_id = sanitize(&footnote_reference.identifier.to_lowercase());
     let mut call_index = 0;
 
     // See if this has been called before.
@@ -489,7 +489,7 @@ fn transform_image(_state: &mut State, _node: &mdast::Node, image: &mdast::Image
 
     properties.push((
         "src".into(),
-        hast::PropertyValue::String(sanitize_(&image.url)),
+        hast::PropertyValue::String(sanitize(&image.url)),
     ));
 
     properties.push(("alt".into(), hast::PropertyValue::String(image.alt.clone())));
@@ -522,7 +522,7 @@ fn transform_image_reference(
     let (_, url, title) =
         definition.expect("expected reference to have a corresponding definition");
 
-    properties.push(("src".into(), hast::PropertyValue::String(sanitize_(url))));
+    properties.push(("src".into(), hast::PropertyValue::String(sanitize(url))));
 
     properties.push((
         "alt".into(),
@@ -584,7 +584,7 @@ fn transform_link(state: &mut State, node: &mdast::Node, link: &mdast::Link) -> 
 
     properties.push((
         "href".into(),
-        hast::PropertyValue::String(sanitize_(&link.url)),
+        hast::PropertyValue::String(sanitize(&link.url)),
     ));
 
     if let Some(value) = link.title.as_ref() {
@@ -615,7 +615,7 @@ fn transform_link_reference(
     let (_, url, title) =
         definition.expect("expected reference to have a corresponding definition");
 
-    properties.push(("href".into(), hast::PropertyValue::String(sanitize_(url))));
+    properties.push(("href".into(), hast::PropertyValue::String(sanitize(url))));
 
     if let Some(value) = title {
         properties.push(("title".into(), hast::PropertyValue::String(value.into())));

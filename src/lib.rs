@@ -36,12 +36,17 @@ use mdast::Node;
 use parser::parse;
 use to_html::compile as to_html;
 use to_mdast::compile as to_mdast;
-use util::{
-    identifier::{id_cont, id_start},
-    sanitize_uri::sanitize,
-};
 
 #[doc(hidden)]
+// Do not use: exported for quick prototyping, will be removed.
+pub use util::identifier::{id_cont, id_start};
+
+#[doc(hidden)]
+// Do not use: exported for quick prototyping, will be removed.
+pub use util::sanitize_uri::sanitize;
+
+#[doc(hidden)]
+// Do not use: exported for quick prototyping, will be removed.
 pub use util::location::Location;
 
 /// Type of line endings in markdown.
@@ -1513,25 +1518,4 @@ pub fn micromark_to_mdast(value: &str, options: &ParseOptions) -> Result<Node, S
     let (events, parse_state) = parse(value, options)?;
     let node = to_mdast(&events, parse_state.bytes)?;
     Ok(node)
-}
-
-/// Do not use: exported for quick prototyping, will be removed.
-#[must_use]
-#[doc(hidden)]
-pub fn sanitize_(value: &str) -> String {
-    sanitize(value)
-}
-
-/// Do not use: exported for quick prototyping, will be removed.
-#[must_use]
-#[doc(hidden)]
-pub fn id_start_(char: char) -> bool {
-    id_start(char)
-}
-
-/// Do not use: exported for quick prototyping, will be removed.
-#[must_use]
-#[doc(hidden)]
-pub fn id_cont_(char: char, jsx: bool) -> bool {
-    id_cont(char, jsx)
 }
