@@ -26,6 +26,7 @@ use alloc::{
 };
 use core::str;
 
+/// A reference to something.
 #[derive(Debug)]
 struct Reference {
     reference_kind: Option<ReferenceKind>,
@@ -33,13 +34,35 @@ struct Reference {
     label: String,
 }
 
+/// Info on a tag.
+///
+/// JSX tags are parsed on their own.
+/// They’re matched together here.
 #[derive(Debug, Clone)]
 struct JsxTag {
+    /// Optional tag name.
+    ///
+    /// `None` means that it’s a fragment.
     name: Option<String>,
+    /// List of attributes.
     attributes: Vec<AttributeContent>,
+    /// Whether this is a closing tag.
+    ///
+    /// ```markdown
+    /// > | </a>
+    ///      ^
+    /// ```
     close: bool,
+    /// Whether this is a self-closing tag.
+    ///
+    /// ```markdown
+    /// > | <a/>
+    ///       ^
+    /// ```
     self_closing: bool,
+    /// Starting point.
     start: Point,
+    /// Ending point.
     end: Point,
 }
 
@@ -1422,7 +1445,7 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
     }
 }
 
-/// Handle [`Enter`][Kind::Enter]:{[`MdxJsxFlowTag`][Name::MdxJsxFlowTag],[`MdxJsxTextTag`][Name::MdxJsxTextTag]}.
+/// Handle [`Exit`][Kind::Exit]:{[`MdxJsxFlowTag`][Name::MdxJsxFlowTag],[`MdxJsxTextTag`][Name::MdxJsxTextTag]}.
 fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), String> {
     let mut tag = context.jsx_tag.as_ref().expect("expected tag").clone();
 
@@ -1648,17 +1671,17 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
     }
 }
 
-// Create a point from an event.
+/// Create a point from an event.
 fn point_from_event_point(point: &EventPoint) -> Point {
     Point::new(point.line, point.column, point.index)
 }
 
-// Create a point from an event.
+/// Create a point from an event.
 fn point_from_event(event: &Event) -> Point {
     point_from_event_point(&event.point)
 }
 
-// Create a position from an event.
+/// Create a position from an event.
 fn position_from_event(event: &Event) -> Position {
     let end = Point::new(event.point.line, event.point.column, event.point.index);
     Position {
@@ -1667,6 +1690,7 @@ fn position_from_event(event: &Event) -> Position {
     }
 }
 
+/// Resolve the current stack on the tree.
 fn delve_mut<'tree>(mut node: &'tree mut Node, stack: &'tree [usize]) -> &'tree mut Node {
     let mut stack_index = 0;
     while stack_index < stack.len() {
@@ -1677,6 +1701,7 @@ fn delve_mut<'tree>(mut node: &'tree mut Node, stack: &'tree [usize]) -> &'tree 
     node
 }
 
+/// Remove initial/final EOLs.
 fn trim_eol(value: String, at_start: bool, at_end: bool) -> String {
     let bytes = value.as_bytes();
     let mut start = 0;
@@ -1711,6 +1736,9 @@ fn trim_eol(value: String, at_start: bool, at_end: bool) -> String {
     }
 }
 
+/// Handle a mismatch.
+///
+/// Mismatches can occur with MDX JSX tags.
 fn on_mismatch_error(
     context: &mut CompileContext,
     left: Option<&Event>,
@@ -1759,6 +1787,7 @@ fn on_mismatch_error(
     }
 }
 
+/// Format a JSX tag, ignoring its attributes.
 fn serialize_abbreviated_tag(tag: &JsxTag) -> String {
     format!(
         "<{}{}>",

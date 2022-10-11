@@ -1,4 +1,4 @@
-//! Deal with byte and chars and kinds.
+//! Deal with bytes, chars, and kinds.
 
 use crate::util::unicode::PUNCTUATION;
 use alloc::{

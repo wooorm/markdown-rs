@@ -15,6 +15,10 @@ use core::str;
 /// [`CHARACTER_REFERENCES`][] (or [`CHARACTER_REFERENCES_HTML_4`][]) and then
 /// takes the corresponding value from `1`.
 ///
+/// The `html5` boolean us used for named character references, and specifier
+/// whether the 2125 names from HTML 5 or the 252 names from HTML 4 are
+/// supported.
+///
 /// The result is `String` instead of `char` because named character references
 /// can expand into multiple characters.
 ///
@@ -27,14 +31,6 @@ use core::str;
 /// assert_eq!(decode_named("AElig", true), "Æ");
 /// assert_eq!(decode_named("aelig", true), "æ");
 /// ```
-///
-/// ## Panics
-///
-/// This function panics if a name not in [`CHARACTER_REFERENCES`][] is
-/// given.
-/// It is expected that figuring out whether a name is allowed is handled in
-/// the parser.
-/// When `micromark` is used, this function never panics.
 ///
 /// ## References
 ///
@@ -100,6 +96,21 @@ pub fn decode_numeric(value: &str, radix: u32) -> String {
     char::REPLACEMENT_CHARACTER.to_string()
 }
 
+/// Decode a character reference.
+///
+/// This turns the number (in string form as either hexadecimal or decimal) or
+/// name from a character reference into a string.
+///
+/// The marker specifies the format: `#` for hexadecimal, `x` for decimal, and
+/// `&` for named.
+///
+/// The `html5` boolean us used for named character references, and specifier
+/// whether the 2125 names from HTML 5 or the 252 names from HTML 4 are
+/// supported.
+///
+/// ## Panics
+///
+/// Panics if `marker` is not `b'&'`, `b'x'`, or `b'#'`.
 pub fn decode(value: &str, marker: u8, html5: bool) -> Option<String> {
     match marker {
         b'#' => Some(decode_numeric(value, 10)),
@@ -144,11 +155,11 @@ pub fn value_test(marker: u8) -> fn(&u8) -> bool {
 
 /// Decode character references in a string.
 ///
-/// Note: this currently only supports HTML 4 references, as it’s only used for
-/// them.
-///
-/// If it’s ever needed to support HTML 5 (which is what normal markdown uses),
-/// a boolean parameter can be added here.
+/// > 👉 **Note**: this currently only supports the 252 named character
+/// > references from HTML 4, as it’s only used for JSX.
+/// >
+/// > If it’s ever needed to support HTML 5 (which is what normal markdown
+/// > uses), a boolean parameter can be added here.
 pub fn parse(value: &str) -> String {
     let bytes = value.as_bytes();
     let mut index = 0;

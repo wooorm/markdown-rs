@@ -37,7 +37,7 @@
 //! There are some small differences in whether sequences can open and/or close
 //! based on whether they are formed with asterisks or underscores.
 //! Because underscores also frequently occur in natural language inside words,
-//! while asterisks typically never do, `CommonMark` prohobits underscore
+//! while asterisks typically never do, `CommonMark` prohibits underscore
 //! sequences from opening or closing when *inside* a word.
 //!
 //! Because asterisks can be used to form the most markdown constructs, using

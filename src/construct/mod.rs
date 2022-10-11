@@ -1,7 +1,7 @@
 //! Constructs found in markdown.
 //!
 //! Constructs are grouped by content type.
-//! Which content type is allowed somewhere, defines which constructs are
+//! Which content type is allowed somewhere, prescribes which constructs are
 //! allowed there.
 //!
 //! ## Content type
@@ -24,11 +24,15 @@
 //! There are several *things* found when parsing markdown, such as, say, a
 //! thematic break.
 //! These things are called constructs here.
+//!
 //! Sometimes, there are several constructs that result in an equivalent thing.
 //! For example, [code (fenced)][raw_flow] and
 //! [code (indented)][code_indented] are considered different constructs.
+//! Sometimes, constructs on their own don’t result in anything.
+//! For example, a `*` is parsed as an attention sequence, but later when we
+//! didn’t find another sequence, it’s turned back into plain data.
 //!
-//! The following constructs are found in markdown (CommonMark):
+//! The following constructs are found in markdown (`CommonMark`):
 //!
 //! *   [attention][attention] (strong, emphasis, extension: GFM strikethrough)
 //! *   [autolink][]
@@ -64,9 +68,9 @@
 //! *   [gfm label start footnote][gfm_label_start_footnote]
 //! *   [gfm table][gfm_table]
 //! *   [gfm task list item check][gfm_task_list_item_check]
+//! *   [mdx esm][mdx_esm]
 //! *   [mdx expression (flow)][mdx_expression_flow]
 //! *   [mdx expression (text)][mdx_expression_text]
-//! *   [mdx esm][mdx_esm]
 //! *   [mdx jsx (flow)][mdx_jsx_flow]
 //! *   [mdx jsx (text)][mdx_jsx_text]
 //!
