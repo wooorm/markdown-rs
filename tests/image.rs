@@ -245,27 +245,27 @@ fn image() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::Image(Image {
-                        alt: "alpha".to_string(),
+                        alt: "alpha".into(),
                         url: String::new(),
                         title: None,
                         position: Some(Position::new(1, 3, 2, 1, 13, 12))
                     }),
                     Node::Text(Text {
-                        value: " b ".to_string(),
+                        value: " b ".into(),
                         position: Some(Position::new(1, 13, 12, 1, 16, 15))
                     }),
                     Node::Image(Image {
-                        alt: "bravo".to_string(),
-                        url: "charlie".to_string(),
-                        title: Some("delta".to_string()),
+                        alt: "bravo".into(),
+                        url: "charlie".into(),
+                        title: Some("delta".into()),
                         position: Some(Position::new(1, 16, 15, 1, 41, 40))
                     }),
                     Node::Text(Text {
-                        value: " c.".to_string(),
+                        value: " c.".into(),
                         position: Some(Position::new(1, 41, 40, 1, 44, 43))
                     })
                 ],
@@ -284,49 +284,49 @@ fn image() -> Result<(), String> {
         Node::Root(Root {
             children: vec![
                 Node::Definition(Definition {
-                    identifier: "x".to_string(),
-                    label: Some("x".to_string()),
-                    url: "y".to_string(),
+                    identifier: "x".into(),
+                    label: Some("x".into()),
+                    url: "y".into(),
                     title: None,
                     position: Some(Position::new(1, 1, 0, 1, 7, 6))
                 }),
                 Node::Paragraph(Paragraph {
                     children: vec![
                         Node::Text(Text {
-                            value: "a ".to_string(),
+                            value: "a ".into(),
                             position: Some(Position::new(3, 1, 8, 3, 3, 10))
                         }),
                         Node::ImageReference(ImageReference {
                             reference_kind: ReferenceKind::Shortcut,
-                            identifier: "x".to_string(),
-                            label: Some("x".to_string()),
-                            alt: "x".to_string(),
+                            identifier: "x".into(),
+                            label: Some("x".into()),
+                            alt: "x".into(),
                             position: Some(Position::new(3, 3, 10, 3, 7, 14))
                         }),
                         Node::Text(Text {
-                            value: " b ".to_string(),
+                            value: " b ".into(),
                             position: Some(Position::new(3, 7, 14, 3, 10, 17))
                         }),
                         Node::ImageReference(ImageReference {
                             reference_kind: ReferenceKind::Collapsed,
-                            identifier: "x".to_string(),
-                            label: Some("x".to_string()),
-                            alt: "x".to_string(),
+                            identifier: "x".into(),
+                            label: Some("x".into()),
+                            alt: "x".into(),
                             position: Some(Position::new(3, 10, 17, 3, 16, 23))
                         }),
                         Node::Text(Text {
-                            value: " c ".to_string(),
+                            value: " c ".into(),
                             position: Some(Position::new(3, 16, 23, 3, 19, 26))
                         }),
                         Node::ImageReference(ImageReference {
                             reference_kind: ReferenceKind::Full,
-                            identifier: "x".to_string(),
-                            label: Some("x".to_string()),
-                            alt: "d".to_string(),
+                            identifier: "x".into(),
+                            label: Some("x".into()),
+                            alt: "d".into(),
                             position: Some(Position::new(3, 19, 26, 3, 26, 33))
                         }),
                         Node::Text(Text {
-                            value: " e.".to_string(),
+                            value: " e.".into(),
                             position: Some(Position::new(3, 26, 33, 3, 29, 36))
                         }),
                     ],

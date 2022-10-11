@@ -261,7 +261,7 @@ Text.</li>
                         spread: false,
                         children: vec![Node::Paragraph(Paragraph {
                             children: vec![Node::Text(Text {
-                                value: "a".to_string(),
+                                value: "a".into(),
                                 position: Some(Position::new(1, 7, 6, 1, 8, 7))
                             }),],
                             position: Some(Position::new(1, 7, 6, 1, 8, 7))
@@ -273,7 +273,7 @@ Text.</li>
                         spread: false,
                         children: vec![Node::Paragraph(Paragraph {
                             children: vec![Node::Text(Text {
-                                value: "b".to_string(),
+                                value: "b".into(),
                                 position: Some(Position::new(2, 7, 14, 2, 8, 15))
                             }),],
                             position: Some(Position::new(2, 7, 14, 2, 8, 15))
@@ -285,7 +285,7 @@ Text.</li>
                         spread: false,
                         children: vec![Node::Paragraph(Paragraph {
                             children: vec![Node::Text(Text {
-                                value: "c".to_string(),
+                                value: "c".into(),
                                 position: Some(Position::new(3, 3, 18, 3, 4, 19))
                             }),],
                             position: Some(Position::new(3, 3, 18, 3, 4, 19))

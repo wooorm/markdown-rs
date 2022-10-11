@@ -300,7 +300,7 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> Stri
         .buffers
         .get(0)
         .expect("expected 1 final buffer")
-        .to_string()
+        .into()
 }
 
 /// Handle the event at `index`.
@@ -690,7 +690,7 @@ fn on_enter_paragraph(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`Resource`][Name::Resource].
 fn on_enter_resource(context: &mut CompileContext) {
     context.buffer(); // We can have line endings in the resource, ignore them.
-    context.media_stack.last_mut().unwrap().destination = Some("".to_string());
+    context.media_stack.last_mut().unwrap().destination = Some("".into());
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`ResourceDestinationString`][Name::ResourceDestinationString].
@@ -1733,7 +1733,7 @@ fn generate_autolink(
         let url = if let Some(protocol) = protocol {
             format!("{}{}", protocol, value)
         } else {
-            value.to_string()
+            value.into()
         };
 
         let url = if context.options.allow_dangerous_protocol {

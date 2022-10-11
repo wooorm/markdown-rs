@@ -62,7 +62,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{constant::TAB_SIZE, mdx_collect::collect};
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
-use alloc::{format, string::ToString};
+use alloc::format;
 
 /// Start of an MDX expression.
 ///
@@ -93,7 +93,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
                 "{}:{}: {}",
                 tokenizer.point.line, tokenizer.point.column,
                 tokenizer.tokenize_state.mdx_last_parse_error.take()
-                    .unwrap_or_else(|| "Unexpected end of file in expression, expected a corresponding closing brace for `{`".to_string())
+                    .unwrap_or_else(|| "Unexpected end of file in expression, expected a corresponding closing brace for `{`".into())
             ))
         }
         Some(b'\n') => {

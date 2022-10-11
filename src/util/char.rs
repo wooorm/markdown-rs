@@ -1,10 +1,7 @@
 //! Deal with bytes, chars, and kinds.
 
 use crate::util::unicode::PUNCTUATION;
-use alloc::{
-    format,
-    string::{String, ToString},
-};
+use alloc::{format, string::String};
 use core::str;
 
 /// Character kinds.
@@ -119,7 +116,7 @@ pub fn classify_opt(char_opt: Option<char>) -> Kind {
 /// Format an optional `char` (`none` means eof).
 pub fn format_opt(char: Option<char>) -> String {
     match char {
-        None => "end of file".to_string(),
+        None => "end of file".into(),
         Some(char) => format!("character {}", format(char)),
     }
 }
@@ -127,7 +124,7 @@ pub fn format_opt(char: Option<char>) -> String {
 /// Format an optional `byte` (`none` means eof).
 pub fn format_byte_opt(byte: Option<u8>) -> String {
     match byte {
-        None => "end of file".to_string(),
+        None => "end of file".into(),
         Some(byte) => format!("byte {}", format_byte(byte)),
     }
 }
@@ -136,7 +133,7 @@ pub fn format_byte_opt(byte: Option<u8>) -> String {
 pub fn format(char: char) -> String {
     let representation = format!("U+{:>04X}", char as u32);
     let printable = match char {
-        '`' => Some("`` ` ``".to_string()),
+        '`' => Some("`` ` ``".into()),
         '!'..='~' => Some(format!("`{}`", char)),
         _ => None,
     };
@@ -152,7 +149,7 @@ pub fn format(char: char) -> String {
 pub fn format_byte(byte: u8) -> String {
     let representation = format!("U+{:>04X}", byte);
     let printable = match byte {
-        b'`' => Some("`` ` ``".to_string()),
+        b'`' => Some("`` ` ``".into()),
         b'!'..=b'~' => Some(format!("`{}`", str::from_utf8(&[byte]).unwrap())),
         _ => None,
     };

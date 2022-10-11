@@ -78,7 +78,7 @@ fn frontmatter() -> Result<(), String> {
         micromark_to_mdast("---\na: b\n---", &frontmatter.parse)?,
         Node::Root(Root {
             children: vec![Node::Yaml(Yaml {
-                value: "a: b".to_string(),
+                value: "a: b".into(),
                 position: Some(Position::new(1, 1, 0, 3, 4, 12))
             })],
             position: Some(Position::new(1, 1, 0, 3, 4, 12))
@@ -90,7 +90,7 @@ fn frontmatter() -> Result<(), String> {
         micromark_to_mdast("+++\ntitle = \"Jupyter\"\n+++", &frontmatter.parse)?,
         Node::Root(Root {
             children: vec![Node::Toml(Toml {
-                value: "title = \"Jupyter\"".to_string(),
+                value: "title = \"Jupyter\"".into(),
                 position: Some(Position::new(1, 1, 0, 3, 4, 25))
             })],
             position: Some(Position::new(1, 1, 0, 3, 4, 25))

@@ -451,23 +451,23 @@ micromark_with_options("<x> a", &danger)?,
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "alpha ".to_string(),
+                        value: "alpha ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 7, 6))
                     }),
                     Node::Html(Html {
-                        value: "<i>".to_string(),
+                        value: "<i>".into(),
                         position: Some(Position::new(1, 7, 6, 1, 10, 9))
                     }),
                     Node::Text(Text {
-                        value: "bravo".to_string(),
+                        value: "bravo".into(),
                         position: Some(Position::new(1, 10, 9, 1, 15, 14))
                     }),
                     Node::Html(Html {
-                        value: "</b>".to_string(),
+                        value: "</b>".into(),
                         position: Some(Position::new(1, 15, 14, 1, 19, 18))
                     }),
                     Node::Text(Text {
-                        value: " charlie.".to_string(),
+                        value: " charlie.".into(),
                         position: Some(Position::new(1, 19, 18, 1, 28, 27))
                     })
                 ],

@@ -48,7 +48,7 @@ async fn commonmark() {
             let parts = re_in_out.split(&case).collect::<Vec<_>>();
             let input = format!("{}\n", parts[0]);
             let output = if parts[1].is_empty() {
-                "".to_string()
+                "".into()
             } else {
                 format!("{}\n", parts[1])
             };

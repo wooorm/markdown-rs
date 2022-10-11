@@ -844,29 +844,29 @@ fn attention() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::Emphasis(Emphasis {
                         children: vec![Node::Text(Text {
-                            value: "alpha".to_string(),
+                            value: "alpha".into(),
                             position: Some(Position::new(1, 4, 3, 1, 9, 8))
                         }),],
                         position: Some(Position::new(1, 3, 2, 1, 10, 9))
                     }),
                     Node::Text(Text {
-                        value: " b ".to_string(),
+                        value: " b ".into(),
                         position: Some(Position::new(1, 10, 9, 1, 13, 12))
                     }),
                     Node::Strong(Strong {
                         children: vec![Node::Text(Text {
-                            value: "bravo".to_string(),
+                            value: "bravo".into(),
                             position: Some(Position::new(1, 15, 14, 1, 20, 19))
                         }),],
                         position: Some(Position::new(1, 13, 12, 1, 22, 21))
                     }),
                     Node::Text(Text {
-                        value: " c.".to_string(),
+                        value: " c.".into(),
                         position: Some(Position::new(1, 22, 21, 1, 25, 24))
                     })
                 ],

@@ -135,14 +135,14 @@ fn hard_break_trailing() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a".to_string(),
+                        value: "a".into(),
                         position: Some(Position::new(1, 1, 0, 1, 2, 1))
                     }),
                     Node::Break(Break {
                         position: Some(Position::new(1, 2, 1, 2, 1, 4))
                     }),
                     Node::Text(Text {
-                        value: "b.".to_string(),
+                        value: "b.".into(),
                         position: Some(Position::new(2, 1, 4, 2, 3, 6))
                     }),
                 ],

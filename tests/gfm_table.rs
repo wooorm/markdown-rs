@@ -1849,28 +1849,28 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
                         children: vec![
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "none".to_string(),
+                                    value: "none".into(),
                                     position: Some(Position::new(1, 3, 2, 1, 7, 6))
                                 }),],
                                 position: Some(Position::new(1, 1, 0, 1, 8, 7))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "left".to_string(),
+                                    value: "left".into(),
                                     position: Some(Position::new(1, 10, 9, 1, 14, 13))
                                 }),],
                                 position: Some(Position::new(1, 8, 7, 1, 15, 14))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "right".to_string(),
+                                    value: "right".into(),
                                     position: Some(Position::new(1, 17, 16, 1, 22, 21))
                                 }),],
                                 position: Some(Position::new(1, 15, 14, 1, 23, 22))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "center".to_string(),
+                                    value: "center".into(),
                                     position: Some(Position::new(1, 25, 24, 1, 31, 30))
                                 }),],
                                 position: Some(Position::new(1, 23, 22, 1, 33, 32))
@@ -1881,7 +1881,7 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
                     Node::TableRow(TableRow {
                         children: vec![Node::TableCell(TableCell {
                             children: vec![Node::Text(Text {
-                                value: "a".to_string(),
+                                value: "a".into(),
                                 position: Some(Position::new(3, 3, 57, 3, 4, 58))
                             }),],
                             position: Some(Position::new(3, 1, 55, 3, 6, 60))
@@ -1892,35 +1892,35 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
                         children: vec![
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "b".to_string(),
+                                    value: "b".into(),
                                     position: Some(Position::new(4, 3, 63, 4, 4, 64))
                                 }),],
                                 position: Some(Position::new(4, 1, 61, 4, 5, 65))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "c".to_string(),
+                                    value: "c".into(),
                                     position: Some(Position::new(4, 7, 67, 4, 8, 68))
                                 }),],
                                 position: Some(Position::new(4, 5, 65, 4, 9, 69))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "d".to_string(),
+                                    value: "d".into(),
                                     position: Some(Position::new(4, 11, 71, 4, 12, 72))
                                 }),],
                                 position: Some(Position::new(4, 9, 69, 4, 13, 73))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "e".to_string(),
+                                    value: "e".into(),
                                     position: Some(Position::new(4, 15, 75, 4, 16, 76))
                                 }),],
                                 position: Some(Position::new(4, 13, 73, 4, 17, 77))
                             }),
                             Node::TableCell(TableCell {
                                 children: vec![Node::Text(Text {
-                                    value: "f".to_string(),
+                                    value: "f".into(),
                                     position: Some(Position::new(4, 19, 79, 4, 20, 80))
                                 }),],
                                 position: Some(Position::new(4, 17, 77, 4, 22, 82))
@@ -1944,7 +1944,7 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
                 children: vec![Node::TableRow(TableRow {
                     children: vec![Node::TableCell(TableCell {
                         children: vec![Node::InlineCode(InlineCode {
-                            value: "a|b".to_string(),
+                            value: "a|b".into(),
                             position: Some(Position::new(1, 3, 2, 1, 9, 8))
                         }),],
                         position: Some(Position::new(1, 1, 0, 1, 11, 10))

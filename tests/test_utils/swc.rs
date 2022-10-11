@@ -19,7 +19,7 @@ use swc_ecma_visit::VisitMutWith;
 /// Lex ESM in MDX with SWC.
 #[allow(dead_code)]
 pub fn parse_esm(value: &str) -> MdxSignal {
-    let (file, syntax, version) = create_config(value.to_string());
+    let (file, syntax, version) = create_config(value.into());
     let mut errors = vec![];
     let result = parse_file_as_module(&file, syntax, version, None, &mut errors);
 
@@ -43,7 +43,7 @@ pub fn parse_esm_to_tree(
     stops: &[Stop],
     location: Option<&Location>,
 ) -> Result<swc_ecma_ast::Module, String> {
-    let (file, syntax, version) = create_config(value.to_string());
+    let (file, syntax, version) = create_config(value.into());
     let mut errors = vec![];
     let result = parse_file_as_module(&file, syntax, version, None, &mut errors);
     let mut rewrite_context = RewriteContext {
@@ -210,7 +210,7 @@ pub fn serialize(module: &Module) -> String {
         emitter.emit_module(module).unwrap();
     }
 
-    String::from_utf8_lossy(&buf).to_string()
+    String::from_utf8_lossy(&buf).into()
 }
 
 /// Check that the resulting AST of ESM is OK.
@@ -225,7 +225,7 @@ fn check_esm_ast(tree: &Module) -> MdxSignal {
         if !node.is_module_decl() {
             let relative = fix_swc_position(node.span().lo.to_usize(), 0);
             return MdxSignal::Error(
-                "Unexpected statement in code: only import/exports are supported".to_string(),
+                "Unexpected statement in code: only import/exports are supported".into(),
                 relative,
             );
         }
@@ -253,10 +253,7 @@ fn check_expression_ast(tree: &Expr, kind: &MdxExpressionKind) -> MdxSignal {
             })
             .is_none()
     {
-        MdxSignal::Error(
-            "Expected a single spread value, such as `...x`".to_string(),
-            0,
-        )
+        MdxSignal::Error("Expected a single spread value, such as `...x`".into(), 0)
     } else {
         MdxSignal::Ok
     }
@@ -360,8 +357,7 @@ fn whitespace_and_comments(mut index: usize, value: &str) -> MdxSignal {
         // Outside comment, not whitespace.
         else {
             return MdxSignal::Error(
-                "Could not parse expression with swc: Unexpected content after expression"
-                    .to_string(),
+                "Could not parse expression with swc: Unexpected content after expression".into(),
                 index,
             );
         }
@@ -371,14 +367,14 @@ fn whitespace_and_comments(mut index: usize, value: &str) -> MdxSignal {
 
     if in_multiline {
         MdxSignal::Error(
-            "Could not parse expression with swc: Unexpected unclosed multiline comment, expected closing: `*/`".to_string(),
+            "Could not parse expression with swc: Unexpected unclosed multiline comment, expected closing: `*/`".into(),
             index,
         )
     } else if in_line {
         // EOF instead of EOL is specifically not allowed, because that would
         // mean the closing brace is on the commented-out line
         MdxSignal::Error(
-            "Could not parse expression with swc: Unexpected unclosed line comment, expected line ending: `\\n`".to_string(),
+            "Could not parse expression with swc: Unexpected unclosed line comment, expected line ending: `\\n`".into(),
             index,
         )
     } else {

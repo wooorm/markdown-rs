@@ -225,7 +225,7 @@ fn block_quote() -> Result<(), String> {
             children: vec![Node::BlockQuote(BlockQuote {
                 children: vec![Node::Paragraph(Paragraph {
                     children: vec![Node::Text(Text {
-                        value: "a".to_string(),
+                        value: "a".into(),
                         position: Some(Position::new(1, 3, 2, 1, 4, 3))
                     }),],
                     position: Some(Position::new(1, 3, 2, 1, 4, 3))

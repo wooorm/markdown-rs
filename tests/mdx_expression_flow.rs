@@ -93,7 +93,7 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
         micromark_to_mdast("{alpha +\nbravo}", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxFlowExpression(MdxFlowExpression {
-                value: "alpha +\nbravo".to_string(),
+                value: "alpha +\nbravo".into(),
                 position: Some(Position::new(1, 1, 0, 2, 7, 15)),
                 stops: vec![(0, 1), (7, 8), (8, 9)]
             })],

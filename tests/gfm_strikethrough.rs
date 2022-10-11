@@ -405,18 +405,18 @@ u ~**xxx**~ zzz
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::Delete(Delete {
                         children: vec![Node::Text(Text {
-                            value: "alpha".to_string(),
+                            value: "alpha".into(),
                             position: Some(Position::new(1, 5, 4, 1, 10, 9))
                         }),],
                         position: Some(Position::new(1, 3, 2, 1, 12, 11))
                     }),
                     Node::Text(Text {
-                        value: " b.".to_string(),
+                        value: " b.".into(),
                         position: Some(Position::new(1, 12, 11, 1, 15, 14))
                     }),
                 ],

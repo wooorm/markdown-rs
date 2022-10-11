@@ -602,7 +602,7 @@ fn list() -> Result<(), String> {
                     spread: false,
                     children: vec![Node::Paragraph(Paragraph {
                         children: vec![Node::Text(Text {
-                            value: "a".to_string(),
+                            value: "a".into(),
                             position: Some(Position::new(1, 3, 2, 1, 4, 3))
                         }),],
                         position: Some(Position::new(1, 3, 2, 1, 4, 3))
@@ -628,7 +628,7 @@ fn list() -> Result<(), String> {
                     spread: false,
                     children: vec![Node::Paragraph(Paragraph {
                         children: vec![Node::Text(Text {
-                            value: "a".to_string(),
+                            value: "a".into(),
                             position: Some(Position::new(1, 4, 3, 1, 5, 4))
                         }),],
                         position: Some(Position::new(1, 4, 3, 1, 5, 4))
@@ -656,14 +656,14 @@ fn list() -> Result<(), String> {
                         children: vec![
                             Node::Paragraph(Paragraph {
                                 children: vec![Node::Text(Text {
-                                    value: "a".to_string(),
+                                    value: "a".into(),
                                     position: Some(Position::new(1, 3, 2, 1, 4, 3))
                                 }),],
                                 position: Some(Position::new(1, 3, 2, 1, 4, 3))
                             }),
                             Node::Paragraph(Paragraph {
                                 children: vec![Node::Text(Text {
-                                    value: "b".to_string(),
+                                    value: "b".into(),
                                     position: Some(Position::new(3, 3, 7, 3, 4, 8))
                                 }),],
                                 position: Some(Position::new(3, 3, 7, 3, 4, 8))
@@ -676,7 +676,7 @@ fn list() -> Result<(), String> {
                         spread: false,
                         children: vec![Node::Paragraph(Paragraph {
                             children: vec![Node::Text(Text {
-                                value: "c".to_string(),
+                                value: "c".into(),
                                 position: Some(Position::new(4, 3, 11, 4, 4, 12))
                             }),],
                             position: Some(Position::new(4, 3, 11, 4, 4, 12))

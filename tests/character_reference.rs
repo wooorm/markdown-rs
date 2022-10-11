@@ -220,7 +220,7 @@ fn character_reference() -> Result<(), String> {
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::Text(Text {
-                    value: "\u{a0} & © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸".to_string(),
+                    value: "\u{a0} & © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸".into(),
                     position: Some(Position::new(1, 1, 0, 3, 33, 109))
                 }),],
                 position: Some(Position::new(1, 1, 0, 3, 33, 109))

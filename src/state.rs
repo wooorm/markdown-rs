@@ -2,7 +2,7 @@
 
 use crate::construct;
 use crate::tokenizer::Tokenizer;
-use alloc::string::{String, ToString};
+use alloc::string::String;
 
 /// Result of a state.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -34,7 +34,7 @@ impl State {
                 unreachable!("cannot turn intermediate state into result")
             }
             State::Ok => Ok(()),
-            State::Error(x) => Err(x.to_string()),
+            State::Error(x) => Err(x.into()),
         }
     }
 }

@@ -436,58 +436,58 @@ fn link_reference() -> Result<(), String> {
         Node::Root(Root {
             children: vec![
                 Node::Definition(Definition {
-                    identifier: "x".to_string(),
-                    label: Some("x".to_string()),
-                    url: "y".to_string(),
+                    identifier: "x".into(),
+                    label: Some("x".into()),
+                    url: "y".into(),
                     title: None,
                     position: Some(Position::new(1, 1, 0, 1, 7, 6))
                 }),
                 Node::Paragraph(Paragraph {
                     children: vec![
                         Node::Text(Text {
-                            value: "a ".to_string(),
+                            value: "a ".into(),
                             position: Some(Position::new(3, 1, 8, 3, 3, 10))
                         }),
                         Node::LinkReference(LinkReference {
                             reference_kind: ReferenceKind::Shortcut,
-                            identifier: "x".to_string(),
-                            label: Some("x".to_string()),
+                            identifier: "x".into(),
+                            label: Some("x".into()),
                             children: vec![Node::Text(Text {
-                                value: "x".to_string(),
+                                value: "x".into(),
                                 position: Some(Position::new(3, 4, 11, 3, 5, 12))
                             }),],
                             position: Some(Position::new(3, 3, 10, 3, 6, 13))
                         }),
                         Node::Text(Text {
-                            value: " b ".to_string(),
+                            value: " b ".into(),
                             position: Some(Position::new(3, 6, 13, 3, 9, 16))
                         }),
                         Node::LinkReference(LinkReference {
                             reference_kind: ReferenceKind::Collapsed,
-                            identifier: "x".to_string(),
-                            label: Some("x".to_string()),
+                            identifier: "x".into(),
+                            label: Some("x".into()),
                             children: vec![Node::Text(Text {
-                                value: "x".to_string(),
+                                value: "x".into(),
                                 position: Some(Position::new(3, 10, 17, 3, 11, 18))
                             }),],
                             position: Some(Position::new(3, 9, 16, 3, 14, 21))
                         }),
                         Node::Text(Text {
-                            value: " c ".to_string(),
+                            value: " c ".into(),
                             position: Some(Position::new(3, 14, 21, 3, 17, 24))
                         }),
                         Node::LinkReference(LinkReference {
                             reference_kind: ReferenceKind::Full,
-                            identifier: "x".to_string(),
-                            label: Some("x".to_string()),
+                            identifier: "x".into(),
+                            label: Some("x".into()),
                             children: vec![Node::Text(Text {
-                                value: "d".to_string(),
+                                value: "d".into(),
                                 position: Some(Position::new(3, 18, 25, 3, 19, 26))
                             }),],
                             position: Some(Position::new(3, 17, 24, 3, 23, 30))
                         }),
                         Node::Text(Text {
-                            value: " e.".to_string(),
+                            value: " e.".into(),
                             position: Some(Position::new(3, 23, 30, 3, 26, 33))
                         }),
                     ],

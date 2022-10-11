@@ -475,33 +475,33 @@ fn link_resource() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::Link(Link {
                         url: String::new(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "alpha".to_string(),
+                            value: "alpha".into(),
                             position: Some(Position::new(1, 4, 3, 1, 9, 8))
                         }),],
                         position: Some(Position::new(1, 3, 2, 1, 12, 11))
                     }),
                     Node::Text(Text {
-                        value: " b ".to_string(),
+                        value: " b ".into(),
                         position: Some(Position::new(1, 12, 11, 1, 15, 14))
                     }),
                     Node::Link(Link {
-                        url: "charlie".to_string(),
-                        title: Some("delta".to_string()),
+                        url: "charlie".into(),
+                        title: Some("delta".into()),
                         children: vec![Node::Text(Text {
-                            value: "bravo".to_string(),
+                            value: "bravo".into(),
                             position: Some(Position::new(1, 16, 15, 1, 21, 20))
                         }),],
                         position: Some(Position::new(1, 15, 14, 1, 39, 38))
                     }),
                     Node::Text(Text {
-                        value: " c.".to_string(),
+                        value: " c.".into(),
                         position: Some(Position::new(1, 39, 38, 1, 42, 41))
                     })
                 ],

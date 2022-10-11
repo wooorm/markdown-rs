@@ -58,17 +58,17 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("b".to_string()),
+                        name: Some("b".into()),
                         attributes: vec![],
                         children: vec![],
                         position: Some(Position::new(1, 3, 2, 1, 8, 7))
                     }),
                     Node::Text(Text {
-                        value: " c.".to_string(),
+                        value: " c.".into(),
                         position: Some(Position::new(1, 8, 7, 1, 11, 10))
                     })
                 ],
@@ -85,17 +85,17 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("b".to_string()),
+                        name: Some("b".into()),
                         attributes: vec![],
                         children: vec![
                             Node::Emphasis(Emphasis {
                                 children: vec![
                                     Node::Text(Text {
-                                        value: "c".to_string(),
+                                        value: "c".into(),
                                         position: Some(Position::new(1, 7, 6, 1, 8, 7))
                                     }),
                                 ],
@@ -105,7 +105,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                         position: Some(Position::new(1, 3, 2, 1, 13, 12))
                     }),
                     Node::Text(Text {
-                        value: " d.".to_string(),
+                        value: " d.".into(),
                         position: Some(Position::new(1, 13, 12, 1, 16, 15))
                     })
                 ],
@@ -122,13 +122,13 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a:b".to_string()),
+                        name: Some("a:b".into()),
                         attributes: vec![],
                         children: vec![],
                         position: Some(Position::new(1, 1, 0, 1, 8, 7))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 8, 7, 1, 9, 8))
                     })
                 ],
@@ -145,13 +145,13 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a.b.c".to_string()),
+                        name: Some("a.b.c".into()),
                         attributes: vec![],
                         children: vec![],
                         position: Some(Position::new(1, 1, 0, 1, 10, 9))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 10, 9, 1, 11, 10))
                     })
                 ],
@@ -168,16 +168,13 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a".to_string()),
-                        attributes: vec![AttributeContent::Expression(
-                            "...b".to_string(),
-                            vec![(0, 4)]
-                        )],
+                        name: Some("a".into()),
+                        attributes: vec![AttributeContent::Expression("...b".into(), vec![(0, 4)])],
                         children: vec![],
                         position: Some(Position::new(1, 1, 0, 1, 13, 12))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 13, 12, 1, 14, 13))
                     })
                 ],
@@ -194,14 +191,14 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a".to_string()),
+                        name: Some("a".into()),
                         attributes: vec![
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "b".to_string(),
+                                name: "b".into(),
                                 value: None,
                             }),
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "c:d".to_string(),
+                                name: "c:d".into(),
                                 value: None,
                             })
                         ],
@@ -209,7 +206,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                         position: Some(Position::new(1, 1, 0, 1, 12, 11))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 12, 11, 1, 13, 12))
                     })
                 ],
@@ -226,29 +223,26 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a".to_string()),
+                        name: Some("a".into()),
                         attributes: vec![
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "b".to_string(),
-                                value: Some(AttributeValue::Literal("c".to_string())),
+                                name: "b".into(),
+                                value: Some(AttributeValue::Literal("c".into())),
                             }),
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "d".to_string(),
-                                value: Some(AttributeValue::Literal("e".to_string())),
+                                name: "d".into(),
+                                value: Some(AttributeValue::Literal("e".into())),
                             }),
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "f".to_string(),
-                                value: Some(AttributeValue::Expression(
-                                    "g".to_string(),
-                                    vec![(0, 18)]
-                                )),
+                                name: "f".into(),
+                                value: Some(AttributeValue::Expression("g".into(), vec![(0, 18)])),
                             }),
                         ],
                         children: vec![],
                         position: Some(Position::new(1, 1, 0, 1, 24, 23))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 24, 23, 1, 25, 24))
                     })
                 ],
@@ -265,10 +259,10 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a".to_string()),
+                        name: Some("a".into()),
                         attributes: vec![
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "b".to_string(),
+                                name: "b".into(),
                                 value: Some(AttributeValue::Literal("\u{a0} & © Æ &Dcaron; ¾ &HilbertSpace; &DifferentialD; &ClockwiseContourIntegral; &ngE;".into())),
                             }),
                         ],
@@ -276,7 +270,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                         position: Some(Position::new(1, 1, 0, 1, 120, 119))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 120, 119, 1, 121, 120))
                     })
                 ],
@@ -296,14 +290,14 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a".to_string()),
+                        name: Some("a".into()),
                         attributes: vec![
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "b".to_string(),
+                                name: "b".into(),
                                 value: Some(AttributeValue::Literal("# Ӓ Ϡ �".into())),
                             }),
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "c".to_string(),
+                                name: "c".into(),
                                 value: Some(AttributeValue::Literal("\" ആ ಫ".into())),
                             }),
                         ],
@@ -311,7 +305,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                         position: Some(Position::new(1, 1, 0, 1, 63, 62))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 63, 62, 1, 64, 63))
                     })
                 ],
@@ -328,10 +322,10 @@ fn mdx_jsx_text_core() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
-                        name: Some("a".to_string()),
+                        name: Some("a".into()),
                         attributes: vec![
                             AttributeContent::Property(MdxJsxAttribute {
-                                name: "b".to_string(),
+                                name: "b".into(),
                                 value: Some(AttributeValue::Literal("&nbsp &x; &#; &#x; &#987654321; &#abcdef0; &ThisIsNotDefined; &hi?;".into())),
                             })
                         ],
@@ -339,7 +333,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                         position: Some(Position::new(1, 1, 0, 1, 78, 77))
                     }),
                     Node::Text(Text {
-                        value: ".".to_string(),
+                        value: ".".into(),
                         position: Some(Position::new(1, 78, 77, 1, 79, 78))
                     })
                 ],

@@ -250,7 +250,7 @@ impl ToString for Node {
             | Node::Image(_)
             | Node::ImageReference(_)
             | Node::ThematicBreak(_)
-            | Node::Definition(_) => "".to_string(),
+            | Node::Definition(_) => "".into(),
         }
     }
 }
@@ -1152,12 +1152,12 @@ pub struct MdxJsxAttribute {
 mod tests {
     use super::*;
     use crate::unist::{Point, Position};
-    use alloc::{string::ToString, vec};
+    use alloc::vec;
 
     #[test]
     fn test() {
         let text = Text {
-            value: "a".to_string(),
+            value: "a".into(),
             position: Some(Position {
                 start: Point {
                     line: 1,

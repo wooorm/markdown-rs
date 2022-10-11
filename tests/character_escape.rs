@@ -109,7 +109,7 @@ fn character_escape() -> Result<(), String> {
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::Text(Text {
-                    value: "a * b".to_string(),
+                    value: "a * b".into(),
                     position: Some(Position::new(1, 1, 0, 1, 7, 6))
                 }),],
                 position: Some(Position::new(1, 1, 0, 1, 7, 6))

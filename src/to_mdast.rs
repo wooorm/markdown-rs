@@ -1068,7 +1068,7 @@ fn on_exit_raw_text(context: &mut CompileContext) -> Result<(), String> {
         }
 
         if replace {
-            value = str::from_utf8(&bytes).unwrap().to_string();
+            value = str::from_utf8(&bytes).unwrap().into();
         }
     }
 
@@ -1730,7 +1730,7 @@ fn trim_eol(value: String, at_start: bool, at_end: bool) -> String {
     }
 
     if start > 0 || end < bytes.len() {
-        str::from_utf8(&bytes[start..end]).unwrap().to_string()
+        str::from_utf8(&bytes[start..end]).unwrap().into()
     } else {
         value
     }
@@ -1762,7 +1762,7 @@ fn on_mismatch_error(
             if let Some(left) = left {
                 format!(" before the end of `{:?}`", left.name)
             } else {
-                "".to_string()
+                "".into()
             }
         ));
     }

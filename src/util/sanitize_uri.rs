@@ -1,11 +1,7 @@
 //! Make urls safe.
 
 use crate::util::encode::encode;
-use alloc::{
-    format,
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{format, string::String, vec::Vec};
 
 /// Make a value safe for injection as a URL.
 ///
@@ -75,7 +71,7 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
         // If it is a protocol, it should be allowed.
         let protocol = value[0..colon].to_lowercase();
         if !protocols.contains(&protocol.as_str()) {
-            return "".to_string();
+            return "".into();
         }
     }
 

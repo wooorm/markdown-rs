@@ -2752,72 +2752,72 @@ www.a/~
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::Link(Link {
-                        url: "https://alpha.com".to_string(),
+                        url: "https://alpha.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "https://alpha.com".to_string(),
+                            value: "https://alpha.com".into(),
                             position: Some(Position::new(1, 3, 2, 1, 20, 19))
                         }),],
                         position: Some(Position::new(1, 3, 2, 1, 20, 19))
                     }),
                     Node::Text(Text {
-                        value: " b ".to_string(),
+                        value: " b ".into(),
                         position: Some(Position::new(1, 20, 19, 1, 23, 22))
                     }),
                     Node::Link(Link {
-                        url: "mailto:bravo@charlie.com".to_string(),
+                        url: "mailto:bravo@charlie.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "bravo@charlie.com".to_string(),
+                            value: "bravo@charlie.com".into(),
                             position: Some(Position::new(1, 23, 22, 1, 40, 39))
                         }),],
                         position: Some(Position::new(1, 23, 22, 1, 40, 39))
                     }),
                     Node::Text(Text {
-                        value: " c ".to_string(),
+                        value: " c ".into(),
                         position: Some(Position::new(1, 40, 39, 1, 43, 42))
                     }),
                     Node::Link(Link {
-                        url: "http://www.delta.com".to_string(),
+                        url: "http://www.delta.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "www.delta.com".to_string(),
+                            value: "www.delta.com".into(),
                             position: Some(Position::new(1, 43, 42, 1, 56, 55))
                         }),],
                         position: Some(Position::new(1, 43, 42, 1, 56, 55))
                     }),
                     Node::Text(Text {
-                        value: " d ".to_string(),
+                        value: " d ".into(),
                         position: Some(Position::new(1, 56, 55, 1, 59, 58))
                     }),
                     Node::Link(Link {
-                        url: "xmpp:echo@foxtrot.com".to_string(),
+                        url: "xmpp:echo@foxtrot.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "xmpp:echo@foxtrot.com".to_string(),
+                            value: "xmpp:echo@foxtrot.com".into(),
                             position: Some(Position::new(1, 59, 58, 1, 80, 79))
                         }),],
                         position: Some(Position::new(1, 59, 58, 1, 80, 79))
                     }),
                     Node::Text(Text {
-                        value: " e ".to_string(),
+                        value: " e ".into(),
                         position: Some(Position::new(1, 80, 79, 1, 83, 82))
                     }),
                     Node::Link(Link {
-                        url: "mailto:golf@hotel.com".to_string(),
+                        url: "mailto:golf@hotel.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "mailto:golf@hotel.com".to_string(),
+                            value: "mailto:golf@hotel.com".into(),
                             position: Some(Position::new(1, 83, 82, 1, 104, 103))
                         }),],
                         position: Some(Position::new(1, 83, 82, 1, 104, 103))
                     }),
                     Node::Text(Text {
-                        value: " f.".to_string(),
+                        value: " f.".into(),
                         position: Some(Position::new(1, 104, 103, 1, 107, 106))
                     })
                 ],

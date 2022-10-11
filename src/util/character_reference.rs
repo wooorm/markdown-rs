@@ -4,7 +4,7 @@ use crate::util::constant::{
     CHARACTER_REFERENCES, CHARACTER_REFERENCES_HTML_4, CHARACTER_REFERENCE_DECIMAL_SIZE_MAX,
     CHARACTER_REFERENCE_HEXADECIMAL_SIZE_MAX, CHARACTER_REFERENCE_NAMED_SIZE_MAX,
 };
-use alloc::string::{String, ToString};
+use alloc::string::String;
 use core::str;
 
 /// Decode named character references.
@@ -89,11 +89,11 @@ pub fn decode_numeric(value: &str, radix: u32) -> String {
             // Lone surrogates, noncharacters, and out of range are handled by
             // Rust.
         ) {
-            return char.to_string();
+            return char.into();
         }
     }
 
-    char::REPLACEMENT_CHARACTER.to_string()
+    char::REPLACEMENT_CHARACTER.into()
 }
 
 /// Decode a character reference.

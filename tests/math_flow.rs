@@ -260,8 +260,8 @@ fn math_flow() -> Result<(), String> {
         micromark_to_mdast("$$extra\nabc\ndef\n$$", &math.parse)?,
         Node::Root(Root {
             children: vec![Node::Math(Math {
-                meta: Some("extra".to_string()),
-                value: "abc\ndef".to_string(),
+                meta: Some("extra".into()),
+                value: "abc\ndef".into(),
                 position: Some(Position::new(1, 1, 0, 4, 3, 18))
             })],
             position: Some(Position::new(1, 1, 0, 4, 3, 18))

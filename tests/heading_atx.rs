@@ -231,7 +231,7 @@ fn heading_atx() -> Result<(), String> {
             children: vec![Node::Heading(Heading {
                 depth: 2,
                 children: vec![Node::Text(Text {
-                    value: "alpha".to_string(),
+                    value: "alpha".into(),
                     position: Some(Position::new(1, 4, 3, 1, 9, 8))
                 }),],
                 position: Some(Position::new(1, 1, 0, 1, 11, 10))

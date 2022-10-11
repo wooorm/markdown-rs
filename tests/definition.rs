@@ -506,10 +506,10 @@ fn definition() -> Result<(), String> {
         micromark_to_mdast("[a]: <b> 'c'", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Definition(Definition {
-                url: "b".to_string(),
-                identifier: "a".to_string(),
-                label: Some("a".to_string()),
-                title: Some("c".to_string()),
+                url: "b".into(),
+                identifier: "a".into(),
+                label: Some("a".into()),
+                title: Some("c".into()),
                 position: Some(Position::new(1, 1, 0, 1, 13, 12))
             })],
             position: Some(Position::new(1, 1, 0, 1, 13, 12))

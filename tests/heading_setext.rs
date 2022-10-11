@@ -298,7 +298,7 @@ fn heading_setext() -> Result<(), String> {
             children: vec![Node::Heading(Heading {
                 depth: 1,
                 children: vec![Node::Text(Text {
-                    value: "alpha\nbravo".to_string(),
+                    value: "alpha\nbravo".into(),
                     position: Some(Position::new(1, 1, 0, 2, 6, 11))
                 }),],
                 position: Some(Position::new(1, 1, 0, 3, 3, 14))

@@ -52,7 +52,7 @@ fn html_flow() -> Result<(), String> {
         micromark_to_mdast("<div>\nstuff\n</div>", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Html(Html {
-                value: "<div>\nstuff\n</div>".to_string(),
+                value: "<div>\nstuff\n</div>".into(),
                 position: Some(Position::new(1, 1, 0, 3, 7, 18))
             })],
             position: Some(Position::new(1, 1, 0, 3, 7, 18))

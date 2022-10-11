@@ -279,33 +279,33 @@ fn autolink() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::Link(Link {
-                        url: "https://alpha.com".to_string(),
+                        url: "https://alpha.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "https://alpha.com".to_string(),
+                            value: "https://alpha.com".into(),
                             position: Some(Position::new(1, 4, 3, 1, 21, 20))
                         }),],
                         position: Some(Position::new(1, 3, 2, 1, 22, 21))
                     }),
                     Node::Text(Text {
-                        value: " b ".to_string(),
+                        value: " b ".into(),
                         position: Some(Position::new(1, 22, 21, 1, 25, 24))
                     }),
                     Node::Link(Link {
-                        url: "mailto:bravo@charlie.com".to_string(),
+                        url: "mailto:bravo@charlie.com".into(),
                         title: None,
                         children: vec![Node::Text(Text {
-                            value: "bravo@charlie.com".to_string(),
+                            value: "bravo@charlie.com".into(),
                             position: Some(Position::new(1, 26, 25, 1, 43, 42))
                         }),],
                         position: Some(Position::new(1, 25, 24, 1, 44, 43))
                     }),
                     Node::Text(Text {
-                        value: " c.".to_string(),
+                        value: " c.".into(),
                         position: Some(Position::new(1, 44, 43, 1, 47, 46))
                     })
                 ],

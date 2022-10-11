@@ -249,7 +249,7 @@ fn mdx_esm() -> Result<(), String> {
         micromark_to_mdast("import a from 'b'\nexport {a}", &swc.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxjsEsm(MdxjsEsm {
-                value: "import a from 'b'\nexport {a}".to_string(),
+                value: "import a from 'b'\nexport {a}".into(),
                 position: Some(Position::new(1, 1, 0, 2, 11, 28)),
                 stops: vec![(0, 0), (17, 17), (18, 18)]
             })],

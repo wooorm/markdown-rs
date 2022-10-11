@@ -167,7 +167,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
                         spread: false,
                         children: vec![Node::Paragraph(Paragraph {
                             children: vec![Node::Text(Text {
-                                value: "a".to_string(),
+                                value: "a".into(),
                                 position: Some(Position::new(2, 5, 7, 2, 6, 8))
                             }),],
                             position: Some(Position::new(2, 5, 7, 2, 6, 8))

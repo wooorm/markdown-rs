@@ -212,7 +212,7 @@ fn code_indented() -> Result<(), String> {
             children: vec![Node::Code(Code {
                 lang: None,
                 meta: None,
-                value: "console.log(1)\nconsole.log(2)".to_string(),
+                value: "console.log(1)\nconsole.log(2)".into(),
                 position: Some(Position::new(1, 1, 0, 2, 19, 34))
             })],
             position: Some(Position::new(1, 1, 0, 3, 1, 35))

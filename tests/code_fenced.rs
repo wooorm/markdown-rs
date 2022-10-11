@@ -287,9 +287,9 @@ fn code_fenced() -> Result<(), String> {
         )?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
-                lang: Some("js".to_string()),
-                meta: Some("extra".to_string()),
-                value: "console.log(1)\nconsole.log(2)".to_string(),
+                lang: Some("js".into()),
+                meta: Some("extra".into()),
+                value: "console.log(1)\nconsole.log(2)".into(),
                 position: Some(Position::new(1, 1, 0, 4, 4, 45))
             })],
             position: Some(Position::new(1, 1, 0, 4, 4, 45))
@@ -303,7 +303,7 @@ fn code_fenced() -> Result<(), String> {
             children: vec![Node::Code(Code {
                 lang: None,
                 meta: None,
-                value: "asd".to_string(),
+                value: "asd".into(),
                 position: Some(Position::new(1, 1, 0, 2, 4, 7))
             })],
             position: Some(Position::new(1, 1, 0, 2, 4, 7))

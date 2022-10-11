@@ -46,8 +46,8 @@ fn gfm_footnote() -> Result<(), String> {
                     ..ParseOptions::default()
                 },
                 compile: CompileOptions {
-                gfm_footnote_label: Some("Voetnoten".to_string()),
-                gfm_footnote_back_label: Some("Terug naar de inhoud".to_string()),
+                gfm_footnote_label: Some("Voetnoten".into()),
+                gfm_footnote_back_label: Some("Terug naar de inhoud".into()),
                     ..CompileOptions::default()
                 }
             }
@@ -73,7 +73,7 @@ fn gfm_footnote() -> Result<(), String> {
                     ..ParseOptions::default()
                 },
                 compile: CompileOptions {
-                gfm_footnote_label_tag_name: Some("h1".to_string()),
+                gfm_footnote_label_tag_name: Some("h1".into()),
                     ..CompileOptions::default()
                 }
             }
@@ -99,7 +99,7 @@ fn gfm_footnote() -> Result<(), String> {
                     ..ParseOptions::default()
                 },
                 compile: CompileOptions {
-                gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".to_string()),
+                gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
                     ..CompileOptions::default()
                 }
             }
@@ -125,7 +125,7 @@ fn gfm_footnote() -> Result<(), String> {
                     ..ParseOptions::default()
                 },
                 compile: CompileOptions {
-                    gfm_footnote_clobber_prefix: Some("".to_string()),
+                    gfm_footnote_clobber_prefix: Some("".into()),
                     ..CompileOptions::default()
                 }
             }
@@ -1632,28 +1632,28 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
                 Node::FootnoteDefinition(FootnoteDefinition {
                     children: vec![Node::Paragraph(Paragraph {
                         children: vec![Node::Text(Text {
-                            value: "b\nc".to_string(),
+                            value: "b\nc".into(),
                             position: Some(Position::new(1, 7, 6, 2, 6, 10))
                         })],
                         position: Some(Position::new(1, 7, 6, 2, 6, 10))
                     })],
-                    identifier: "a".to_string(),
-                    label: Some("a".to_string()),
+                    identifier: "a".into(),
+                    label: Some("a".into()),
                     position: Some(Position::new(1, 1, 0, 3, 1, 11))
                 }),
                 Node::Paragraph(Paragraph {
                     children: vec![
                         Node::Text(Text {
-                            value: "d ".to_string(),
+                            value: "d ".into(),
                             position: Some(Position::new(4, 1, 12, 4, 3, 14))
                         }),
                         Node::FootnoteReference(FootnoteReference {
-                            identifier: "a".to_string(),
-                            label: Some("a".to_string()),
+                            identifier: "a".into(),
+                            label: Some("a".into()),
                             position: Some(Position::new(4, 3, 14, 4, 7, 18))
                         }),
                         Node::Text(Text {
-                            value: " e.".to_string(),
+                            value: " e.".into(),
                             position: Some(Position::new(4, 7, 18, 4, 10, 21))
                         })
                     ],

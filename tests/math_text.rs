@@ -214,15 +214,15 @@ fn math_text() -> Result<(), String> {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
                     Node::Text(Text {
-                        value: "a ".to_string(),
+                        value: "a ".into(),
                         position: Some(Position::new(1, 1, 0, 1, 3, 2))
                     }),
                     Node::InlineMath(InlineMath {
-                        value: "alpha".to_string(),
+                        value: "alpha".into(),
                         position: Some(Position::new(1, 3, 2, 1, 10, 9))
                     }),
                     Node::Text(Text {
-                        value: " b.".to_string(),
+                        value: " b.".into(),
                         position: Some(Position::new(1, 10, 9, 1, 13, 12))
                     })
                 ],
