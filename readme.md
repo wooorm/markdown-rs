@@ -285,8 +285,8 @@ user-provided markdown opens you up to XSS attacks.
 An aspect related to XSS for security is syntax errors: markdown itself has no
 syntax errors.
 Some syntax extensions (specifically, only MDX) do include syntax errors.
-For that reason, `micromark_with_options` returns `Result<(), String>`, of which
-the error is a simple string indicating where the problem happened, what
+For that reason, `micromark_with_options` returns `Result<String, String>`, of
+which the error is a simple string indicating where the problem happened, what
 occurred, and what was expected instead.
 Make sure to handle your errors when using MDX.
 
