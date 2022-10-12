@@ -13,7 +13,7 @@ use micromark::{
     Location,
 };
 
-/// JSX runtimes.
+/// JSX runtimes (default: `JsxRuntime: Automatic`).
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum JsxRuntime {
     /// Automatic runtime.
