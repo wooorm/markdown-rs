@@ -59,11 +59,6 @@ to markdown such as MDX, math, and frontmatter.
 *   [Use](#use)
 *   [API](#api)
 *   [Extensions](#extensions)
-*   [Examples](#examples)
-    *   [Example: syntax highlighting code](#example-syntax-highlighting-code)
-*   [Markdown](#markdown)
-    *   [CommonMark](#commonmark)
-    *   [Grammar](#grammar)
 *   [Project](#project)
     *   [Overview](#overview)
     *   [File structure](#file-structure)
@@ -186,144 +181,9 @@ They are not enabled by default but can be turned on with options.
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support very common and mostly standardized extensions.
 
-## Examples
-
-<!-- To do: math example; syntax highlighting in Rust -->
-
-### Example: syntax highlighting code
-
-This example shows how `micromark-rs` can be used to turn markdown into an HTML
-file.
-When the HTML is opened in a browser, the code examples that were in the
-markdown are then syntax highlighted by client side JavaScript using
-[`starry-night`][starry-night].
-The `starry-night` library matches how GitHub highlights code on their platform.
-
-Say we have this `example.rs`:
-
-```rs
-extern crate micromark;
-use micromark::{micromark_with_options, Constructs, Options};
-use std::fs;
-
-fn main() -> Result<(), String> {
-    let markdown = r###"
-# Hello
-
-…world!
-
-~~~js
-console.log('it works!')
-~~~
-"###;
-
-    let html = micromark_with_options(
-        markdown,
-        &Options {
-            constructs: Constructs::gfm(),
-            ..Options::default()
-        },
-    )?;
-
-    let js = r###"
-import {createStarryNight, common} from 'https://esm.sh/@wooorm/starry-night@1?bundle'
-import {toDom} from 'https://esm.sh/hast-util-to-dom@3?bundle'
-
-const starryNight = await createStarryNight(common)
-const prefix = 'language-'
-
-const nodes = Array.from(document.body.querySelectorAll('code'))
-
-for (const node of nodes) {
-  const className = Array.from(node.classList).find((d) => d.startsWith(prefix))
-  if (!className) continue
-  const scope = starryNight.flagToScope(className.slice(prefix.length))
-  if (!scope) continue
-  const tree = starryNight.highlight(node.textContent, scope)
-  node.replaceChildren(toDom(tree, {fragment: true}))
-}
-"###;
-
-    let html = format!(
-        "<!doctype html>
-<meta charset=utf8>
-<title>Hello</title>
-<link rel=stylesheet href=\"https://esm.sh/@wooorm/starry-night@1/style/both.css\">
-<body>
-{}
-<script type=module>
-{}
-</script>
-</body>
-",
-        html, js
-    );
-
-    match fs::write("index.html", html) {
-        Ok(()) => {}
-        Err(error) => return Err(format!("Could not write `index.html`: {:?}", error)),
-    }
-
-    Ok(())
-}
-```
-
-The code example in the markdown as HTML will first look like this:
-
-```html
-<pre><code class="language-js">console.log('it works!')
-</code></pre>
-```
-
-Opening the document in a browser, we’d see it being swapped with:
-
-<!-- prettier-ignore -->
-
-```html
-<pre><code class="language-js"><span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-s"><span class="pl-pds">'</span>it works!<span class="pl-pds">'</span></span>)
-</code></pre>
-```
-
-## Markdown
-
-### CommonMark
-
-The first definition of “Markdown” gave several examples of how it worked,
-showing input Markdown and output HTML, and came with a reference implementation
-(`Markdown.pl`).
-When new implementations followed, they mostly followed the first definition,
-but deviated from the first implementation, and added extensions, thus making
-the format a family of formats.
-
-Some years later, an attempt was made to standardize the differences between
-implementations, by specifying how several edge cases should be handled, through
-more input and output examples.
-This is known as [CommonMark][commonmark-spec], and many implementations now
-work towards some degree of CommonMark compliancy.
-Still, CommonMark describes what the output in HTML should be given some
-input, which leaves many edge cases up for debate, and does not answer what
-should happen for other output formats.
-
-micromark passes all tests from CommonMark and has many more tests to match the
-CommonMark reference parsers.
-
-### Grammar
-
-The syntax of markdown can be described in Backus–Naur form (BNF) as:
-
-```bnf
-markdown = .*
-```
-
-No, that’s [not a typo](http://trevorjim.com/a-specification-for-markdown/):
-markdown has no syntax errors; anything thrown at it renders *something*.
-
-For more practical examples of how things roughly work in BNF, see the module
-docs of each `src/construct`.
-
 ## Project
 
-micromark is maintained as a single monolithic package.
+micromark is maintained as a single monolithic crate.
 
 ### Overview
 
@@ -483,7 +343,7 @@ Support this effort and give back by sponsoring:
 
 [chat]: https://github.com/wooorm/micromark-rs/discussions
 
-[commonmark-spec]: https://spec.commonmark.org
+[commonmark]: https://spec.commonmark.org
 
 [cheat]: https://commonmark.org/help/
 
@@ -501,13 +361,9 @@ Support this effort and give back by sponsoring:
 
 [mdast]: https://github.com/syntax-tree/mdast
 
-[starry-night]: https://github.com/wooorm/starry-night
-
 [contribute]: #contribute
 
 [sponsor]: #sponsor
-
-[commonmark]: #commonmark
 
 [extensions]: #extensions
 
