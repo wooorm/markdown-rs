@@ -1,0 +1,43 @@
+<svg width="127" height="127" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wheel: -->
+  <path fill="#773912" filter="url(#a)" d="M60.834 5.762c1.088-2.275 4.326-2.275 5.414 0l4.447 9.304a3 3 0 0 0 4.713.937l7.669-6.893c1.875-1.686 4.867-.447 5.001 2.071l.549 10.298a3 3 0 0 0 3.995 2.669l9.723-3.434c2.378-.84 4.668 1.45 3.828 3.828l-3.434 9.724a3 3 0 0 0 2.669 3.994l10.298.549c2.518.134 3.757 3.126 2.072 5.001l-6.894 7.67a3 3 0 0 0 .937 4.712l9.304 4.447c2.275 1.088 2.275 4.326 0 5.414l-9.304 4.447a3 3 0 0 0-.937 4.712l6.894 7.67c1.685 1.875.446 4.867-2.072 5l-10.298.55a3 3 0 0 0-2.669 3.994l3.434 9.724c.84 2.378-1.45 4.667-3.828 3.828l-9.724-3.434a3 3 0 0 0-3.994 2.669l-.549 10.298c-.134 2.518-3.126 3.757-5.001 2.071l-7.67-6.893a3 3 0 0 0-4.712.937l-4.447 9.304c-1.088 2.275-4.326 2.275-5.414 0l-4.447-9.304a3 3 0 0 0-4.712-.937l-7.67 6.893c-1.875 1.686-4.867.447-5-2.071l-.55-10.298a3 3 0 0 0-3.994-2.669l-9.724 3.434c-2.377.839-4.667-1.45-3.828-3.828l3.434-9.724a3 3 0 0 0-2.669-3.994l-10.298-.55c-2.517-.133-3.757-3.125-2.071-5l6.893-7.67a3 3 0 0 0-.937-4.712l-9.304-4.447c-2.275-1.088-2.275-4.326 0-5.414l9.304-4.447a3 3 0 0 0 .937-4.712l-6.893-7.67c-1.686-1.875-.446-4.867 2.071-5.001l10.298-.549a3 3 0 0 0 2.67-3.994l-3.435-9.724c-.84-2.378 1.45-4.668 3.828-3.828l9.724 3.434a3 3 0 0 0 3.995-2.67l.548-10.297c.134-2.518 3.126-3.757 5.001-2.071l7.67 6.893a3 3 0 0 0 4.712-.937l4.447-9.304Z"/>
+  <!-- `m`: -->
+  <path fill="#42200B" filter="url(#b)" d="m43.146 40.84-4.24 3.445-.28.219 1.897 1.842 1.897 1.832-.01 16.807v16.808l-2.571 3.07-2.571 3.07 3.918.031c2.157.01 5.691.01 7.868 0l3.95-.03-2.602-3.04-2.602-3.049.02-12.562.032-12.561 6.313 10.376C57.638 72.8 60.49 77.463 60.5 77.453c.01-.02 2.84-4.642 6.272-10.282 3.431-5.641 6.282-10.293 6.334-10.356.051-.051.093 5.277.093 12.448v12.55l-1.472 1.76a478.01 478.01 0 0 1-2.592 3.08l-1.12 1.332h9.9c5.443 0 9.9-.02 9.9-.041 0-.032-1.14-1.416-2.54-3.08l-2.539-3.03V46.794l2.54-3.028c1.4-1.665 2.54-3.06 2.54-3.08 0-.032-4.458-.053-9.9-.053h-9.89l2.695 3.227c1.483 1.78 2.675 3.257 2.654 3.309-.02.042-2.322 3.85-5.11 8.482-3.815 6.317-5.09 8.367-5.173 8.263-.052-.083-3.65-6.025-7.983-13.217-4.333-7.191-7.91-13.082-7.94-13.082-.031 0-1.846 1.447-4.022 3.226Z"/>
+  <!-- Circle line: -->
+  <circle fill="transparent" stroke="#642700" stroke-width="3" filter="url(#c)" cx="63.541" cy="64.2" r="40.403"/>
+  <defs>
+    <!-- Shadow on wheel: -->
+    <filter id="a" x="0" y="0" width="127" height="127" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="e"/>
+      <feBlend in="SourceGraphic" in2="e" result="f"/>
+      <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="g"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="2.5"/>
+      <feComposite in2="g" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend in2="f" result="d"/>
+    </filter>
+    <!-- Shadow on `M`: -->
+    <filter id="b" x="0" y="0" width="127" height="127" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="e"/>
+      <feBlend in="SourceGraphic" in2="e" result="f"/>
+      <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="g"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="1.75"/>
+      <feComposite in2="g" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend in2="f" result="d"/>
+    </filter>
+    <!-- Shadow on circle line: -->
+    <filter id="c" x="0" y="0" width="127" height="127" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="e"/>
+      <feBlend in="SourceGraphic" in2="e" result="f"/>
+      <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="g"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="1"/>
+      <feComposite in2="g" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+      <feBlend in2="f" result="d"/>
+    </filter>
+  </defs>
+</svg>
