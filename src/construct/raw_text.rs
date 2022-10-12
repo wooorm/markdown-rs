@@ -86,9 +86,9 @@
 //! Notably, GitHub currently has a really weird crappy client-side regex-based
 //! thing.
 //! But on your own (math-heavy?) site it can be great!
-//! You can set `options.math_text_single_dollar: false` to improve this, as it
-//! prevents single dollars from being seen as math, and thus prevents normal
-//! dollars in text from being seen as math.
+//! You can set [`parse_options.math_text_single_dollar: false`][parse_options]
+//! to improve this, as it prevents single dollars from being seen as math, and
+//! thus prevents normal dollars in text from being seen as math.
 //!
 //! ## Tokens
 //!
@@ -113,6 +113,7 @@
 //! [code_indented]: crate::construct::code_indented
 //! [raw_flow]: crate::construct::raw_flow
 //! [html_code]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-code-element
+//! [parse_options]: crate::ParseOptions
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};

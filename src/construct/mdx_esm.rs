@@ -13,7 +13,7 @@
 //!
 //! This construct must be followed by a blank line or eof (end of file).
 //! It can include blank lines if [`MdxEsmParse`][crate::MdxEsmParse] passed in
-//! `options.mdx_esm_parse` allows it.
+//! [`ParseOptions`][parse_options] allows it.
 //!
 //! ## Tokens
 //!
@@ -27,6 +27,7 @@
 //! *   [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [flow]: crate::construct::flow
+//! [parse_options]: crate::ParseOptions
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};

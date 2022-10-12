@@ -27,7 +27,7 @@
 //!
 //! The grammar for autolinks is quite strict and prohibits the use of ASCII control
 //! characters or spaces.
-//! To use non-ascii characters and otherwise impossible characters, in URLs,
+//! To use non-ascii characters and otherwise impossible characters in URLs,
 //! you can use percent encoding:
 //!
 //! ```markdown

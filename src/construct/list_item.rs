@@ -7,7 +7,7 @@
 //!
 //! ```bnf
 //! ; Restriction: if there is no space after the marker, the start must be followed by an `eol`.
-//! ; Restriction: if the first line after the marker is not blank and starts with `5( space_or_tab )`,
+//! ; Restriction: if the first line after the marker is not blank and starts with `5(space_or_tab)`,
 //! ; only the first `space_or_tab` is part of the start.
 //! list_item_start ::= '*' | '+' | '-' | 1*9(ascii_decimal) ('.' | ')') [1*4 space_or_tab]
 //!
@@ -18,7 +18,7 @@
 //!
 //! Further lines that are not prefixed with `list_item_cont` cause the list
 //! item to be exited, except when those lines are lazy continuation or blank.
-//! Like so many things in markdown, list items too, are complex.
+//! Like so many things in markdown, list items too are complex.
 //! See [*§ Phase 1: block structure* in `CommonMark`][commonmark_block] for
 //! more on parsing details.
 //!

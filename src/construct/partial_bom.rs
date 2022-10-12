@@ -25,6 +25,7 @@ use crate::event::Name;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 
+/// Bytes of a BOM.
 const BOM: [u8; 3] = [0xEF, 0xBB, 0xBF];
 
 /// Before BOM.

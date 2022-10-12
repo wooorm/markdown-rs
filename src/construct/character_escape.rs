@@ -11,11 +11,10 @@
 //!
 //! Like much of markdown, there are no “invalid” character escapes: just a
 //! slash, or a slash followed by anything other than an ASCII punctuation
-//! character, is exactly that: just a slash.
+//! character, is just a slash.
 //!
-//! To escape (almost all) arbitrary characters instead of only ASCII
-//! punctuation, use a [character reference][character_reference] instead
-//! (as in, `&amp;`, `&#123;`, or say `&#x9;`).
+//! To escape other characters, use a [character reference][character_reference]
+//! instead (as in, `&amp;`, `&#123;`, or say `&#x9;`).
 //!
 //! It is also possible to escape a line ending in text with a similar
 //! construct: a [hard break (escape)][hard_break_escape] is a backslash followed

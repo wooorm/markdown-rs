@@ -30,7 +30,7 @@
 //! As this construct occurs in flow, like all flow constructs, it must be
 //! followed by an eol (line ending) or eof (end of file).
 //!
-//! The grammar for HTML in markdown does not resemble the rules of parsing
+//! The grammar for HTML in markdown does not follow the rules of parsing
 //! HTML according to the [*§ 13.2 Parsing HTML documents* in the HTML
 //! spec][html_parsing].
 //! As such, HTML in markdown *resembles* HTML, but is instead a (naïve?)
@@ -52,11 +52,11 @@
 //! For example:
 //!
 //! ```markdown
-//! <div>This is a <code>div</code> but *this* is not emphasis.</div>
+//! <div>This is <code>code</code> but this is not *emphasis*.</div>
 //!
 //! <div>
 //!
-//! This is a paragraph in a `div` and *this* is emphasis.
+//! This is a paragraph in a `div` and with `code` and *emphasis*.
 //!
 //! </div>
 //! ```

@@ -23,7 +23,7 @@
 //! attribute_value ::= '"' *(byte - '"') '"' | "'" *(byte - "'")  "'" | 1*(text - '"' - "'" - '/' - '<' - '=' - '>' - '`')
 //! ```
 //!
-//! The grammar for HTML in markdown does not resemble the rules of parsing
+//! The grammar for HTML in markdown does not follow the rules of parsing
 //! HTML according to the [*§ 13.2 Parsing HTML documents* in the HTML
 //! spec][html_parsing].
 //! See the related flow construct [HTML (flow)][html_flow] for more info.

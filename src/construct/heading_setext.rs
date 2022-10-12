@@ -6,7 +6,7 @@
 //! (<small>see [construct][crate::construct] for character groups</small>):
 //!
 //! ```bnf
-//! heading_setext ::= paragraph eol *space_or_tab (1*'-' | 1*'=')  *space_or_tab
+//! heading_setext ::= paragraph eol *space_or_tab (1*'-' | 1*'=') *space_or_tab
 //!
 //! ; See the `paragraph` construct for the BNF of that part.
 //! ```

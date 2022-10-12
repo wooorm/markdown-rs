@@ -12,7 +12,7 @@
 //!
 //! Further lines that are not prefixed with `block_quote_cont` cause the block
 //! quote to be exited, except when those lines are lazy continuation.
-//! Like so many things in markdown, block quotes too, are complex.
+//! Like so many things in markdown, block quotes too are complex.
 //! See [*§ Phase 1: block structure* in `CommonMark`][commonmark-block] for
 //! more on parsing details.
 //!

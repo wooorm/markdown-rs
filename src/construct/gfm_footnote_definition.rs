@@ -7,7 +7,7 @@
 //!
 //! ```bnf
 //! ; Restriction: `label` must start with `^` (and not be empty after it).
-//! ; See the `label` construct for the BNF of that parts.
+//! ; See the `label` construct for the BNF of that part.
 //! gfm_footnote_definition_start ::= label ':' *space_or_tab
 //!
 //! ; Restriction: blank line allowed.
@@ -17,7 +17,7 @@
 //! Further lines that are not prefixed with `gfm_footnote_definition_cont`
 //! cause the footnote definition to be exited, except when those lines are
 //! lazy continuation or blank.
-//! Like so many things in markdown, footnote definition too, are complex.
+//! Like so many things in markdown, footnote definition too are complex.
 //! See [*§ Phase 1: block structure* in `CommonMark`][commonmark_block] for
 //! more on parsing details.
 //!
