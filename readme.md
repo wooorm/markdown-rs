@@ -5,63 +5,74 @@
 <!-- <img align="right" width="106" height="106" alt="" src="https://raw.githubusercontent.com/wooorm/micromark-rs/14f1ad0/logo.svg?sanitize=true"> -->
 
 <!-- To do: enable badges when repo is public/published -->
+
 <!-- To do: link `Downloads`/`crate-badge` to `crate` instead of temporary site. -->
 
 <!-- [![Build][build-badge]][build] -->
+
 <!-- [![Downloads][crate-badge]][docs] -->
+
 <!-- [![Coverage][coverage-badge]][coverage] -->
 
-[![Sponsors][sponsors-badge]][opencollective]
-[![Backers][backers-badge]][opencollective]
 [![Chat][chat-badge]][chat]
 
-A [`CommonMark`][commonmark-spec] compliant markdown parser in [Rust][] with
-positional info, concrete tokens, and extensions.
+CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
 ## Feature highlights
 
-- [x] **[compliant][commonmark]** (100% to CommonMark)
-- [x] **[extensions][]** (100% GFM, 100% MDX, frontmatter, math)
-- [x] **[ast][mdast]** (mdast)
-- [x] **[safe][security]** (100% safe rust, also 100% safe HTML by default)
-- [x] **[robust][test]** (2300+ tests, 100% coverage, fuzz testing)
+*   [x] **[compliant][commonmark]** (100% to CommonMark)
+*   [x] **[extensions][]** (100% GFM, 100% MDX, frontmatter, math)
+*   [x] **[safe][security]** (100% safe Rust, also 100% safe HTML by default)
+*   [x] **[robust][test]** (2300+ tests, 100% coverage, fuzz testing)
+*   [x] **[ast][mdast]** (mdast)
 
-It’s also `#![no_std]` + `alloc` and has tons of docs.
+## When should I use this?
 
-> 🐣 **Note**: coverage is currently within progress.
+*   If you *just* want to turn markdown into HTML (with maybe a few extensions)
+*   If you want to do *really complex things* with markdown
 
-## When to use this
+## What is this?
 
-- If you _just_ want to turn markdown into HTML (with maybe a few extensions)
-- If you want to do _really complex things_ with markdown
+micromark is an open source markdown parser written in Rust.
+It’s implemented as a state machine (`#![no_std]` + `alloc`) that emits
+concrete tokens, so that every byte is accounted for, with positional info.
+The API then exposes this information as an AST, which is easier to work with,
+or it compiles directly to HTML.
 
-See [§ Comparison][comparison] for more info
+While most markdown parsers work towards compliancy with CommonMark (or GFM),
+this project goes further by following how the reference parsers (`cmark`,
+`cmark-gfm`) work, which is confirmed with thousands of extra tests.
 
-## Intro
+Other than CommonMark and GFM, this project also supports common extensions
+to markdown such as MDX, math, and frontmatter.
 
-micromark is markdown parser in Rust.
-It uses a state machine to parse the entirety of markdown into concrete
-tokens.
-Its API compiles to HTML, but its parts are made to be used separately, so as to
-generate syntax trees or compile to other output formats.
-`micromark-rs` has a sibling in JavaScript, [`micromark-js`][micromark-js].
+## Questions
 
-<!-- To do: link to unified etc if this repo gets moved there? -->
-
-- to learn markdown, see this [cheatsheet and tutorial][cheat]
-- for questions, see [Discussions][chat]
-- to help, see [contribute][] or [sponsor][] below
+*   to learn markdown, see this [cheatsheet and tutorial][cheat]
+*   for the API, see the [crate docs][docs]
+*   for questions, see [Discussions][chat]
+*   to help, see [contribute][] or [sponsor][] below
 
 ## Contents
 
-- [Install](#install)
-- [Use](#use)
-- [API](#api)
-- [Extensions](#extensions)
-- [Examples](#examples)
-- [Markdown](#markdown)
-- [Project](#project)
-- [License](#license)
+*   [Install](#install)
+*   [Use](#use)
+*   [API](#api)
+*   [Extensions](#extensions)
+*   [Examples](#examples)
+    *   [Example: syntax highlighting code](#example-syntax-highlighting-code)
+*   [Markdown](#markdown)
+    *   [CommonMark](#commonmark)
+    *   [Grammar](#grammar)
+*   [Project](#project)
+    *   [Overview](#overview)
+    *   [File structure](#file-structure)
+    *   [Test](#test)
+    *   [Version](#version)
+    *   [Security](#security)
+    *   [Contribute](#contribute)
+    *   [Sponsor](#sponsor)
+*   [License](#license)
 
 ## Install
 
@@ -149,6 +160,7 @@ Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3
 [`micromark_to_mdast`](https://wooorm.com/micromark-rs/micromark/fn.micromark_to_mdast.html),
 [`Options`](https://wooorm.com/micromark-rs/micromark/struct.Options.html),
 and a few other structs and enums.
+
 See the [crate docs][docs] for more info.
 
 ## Extensions
@@ -157,29 +169,26 @@ micromark supports extensions to `CommonMark`.
 These extensions are maintained in this project.
 They are not enabled by default but can be turned on with options.
 
-- frontmatter
-- GFM
-  - autolink literal
-  - footnote
-  - strikethrough
-  - table
-  - tagfilter
-  - task list item
-- math
-- MDX
-  - ESM
-  - expressions
-  - JSX
+*   frontmatter
+*   GFM
+    *   autolink literal
+    *   footnote
+    *   strikethrough
+    *   table
+    *   tagfilter
+    *   task list item
+*   math
+*   MDX
+    *   ESM
+    *   expressions
+    *   JSX
 
 It is not a goal of this project to support lots of different extensions.
-It’s instead a goal to support incredibly common, somewhat standardized,
-extensions.
+It’s instead a goal to support very common and mostly standardized extensions.
 
 ## Examples
 
-<!-- To do: example section with more full-fledged examples, on GFM, math, frontmatter, etc. -->
-
-> 🚧 **To do**.
+<!-- To do: math example; syntax highlighting in Rust -->
 
 ### Example: syntax highlighting code
 
@@ -266,9 +275,10 @@ The code example in the markdown as HTML will first look like this:
 </code></pre>
 ```
 
-Opening that page in a browser, we’d see that being swapped with:
+Opening the document in a browser, we’d see it being swapped with:
 
 <!-- prettier-ignore -->
+
 ```html
 <pre><code class="language-js"><span class="pl-en">console</span>.<span class="pl-c1">log</span>(<span class="pl-s"><span class="pl-pds">'</span>it works!<span class="pl-pds">'</span></span>)
 </code></pre>
@@ -306,9 +316,10 @@ markdown = .*
 ```
 
 No, that’s [not a typo](http://trevorjim.com/a-specification-for-markdown/):
-markdown has no syntax errors; anything thrown at it renders _something_.
+markdown has no syntax errors; anything thrown at it renders *something*.
 
-For more practical examples of how things roughly work in BNF, see the module docs of each `src/construct`.
+For more practical examples of how things roughly work in BNF, see the module
+docs of each `src/construct`.
 
 ## Project
 
@@ -331,38 +342,32 @@ The process to parse markdown looks like this:
 
 The files in `src/` are as follows:
 
-- `construct/*.rs`
-  — CommonMark, GFM, and other extension constructs used in micromark
-- `util/*.rs`
-  — helpers often needed when parsing markdown
-- `event.rs`
-  — things with meaning happening somewhere
-- `lib.rs`
-  — core module
-- `mdast.rs`
-  — syntax tree
-- `parser.rs`
-  — turn a string of markdown into events
-- `resolve.rs`
-  — steps to process events
-- `state.rs`
-  — steps of the state machine
-- `subtokenize.rs`
-  — handle content in other content
-- `to_html.rs`
-  — turns events into a string of HTML
-- `to_mdast.rs`
-  — turns events into a syntax tree
-- `tokenizer.rs`
-  — glue the states of the state machine together
-- `unist.rs`
-  — point and position, used in mdast
-
-### Comparison
-
-> 🚧 **To do**.
-
-<!-- To do. -->
+*   `construct/*.rs`
+    — CommonMark, GFM, and other extension constructs used in micromark
+*   `util/*.rs`
+    — helpers often needed when parsing markdown
+*   `event.rs`
+    — things with meaning happening somewhere
+*   `lib.rs`
+    — public API
+*   `mdast.rs`
+    — syntax tree
+*   `parser.rs`
+    — turn a string of markdown into events
+*   `resolve.rs`
+    — steps to process events
+*   `state.rs`
+    — steps of the state machine
+*   `subtokenize.rs`
+    — handle content in other content
+*   `to_html.rs`
+    — turns events into a string of HTML
+*   `to_mdast.rs`
+    — turns events into a syntax tree
+*   `tokenizer.rs`
+    — glue the states of the state machine together
+*   `unist.rs`
+    — point and position, used in mdast
 
 ### Test
 
@@ -373,37 +378,37 @@ These tests reach all branches in the code, which means that this project has
 100% code coverage.
 Fuzz testing is used to check for things that might fall through coverage.
 
-The following scripts are useful when working on this project:
+The following bash scripts are useful when working on this project:
 
-- run examples:
-  ```sh
-  RUST_BACKTRACE=1 RUST_LOG=debug cargo run --example lib
-  ```
-- format:
-  ```sh
-  cargo fmt
-  ```
-- lint:
-  ```sh
-  cargo fmt --check && cargo clippy --examples --tests --benches
-  ```
-- test:
-  ```sh
-  RUST_BACKTRACE=1 cargo test
-  ```
-- docs:
-  ```sh
-  cargo doc --document-private-items
-  ```
-- fuzz:
-  ```sh
-  cargo install cargo-fuzz
-  cargo +nightly fuzz run micromark
-  ```
+*   run examples:
+    ```sh
+    RUST_BACKTRACE=1 RUST_LOG=debug cargo run --example lib
+    ```
+*   format:
+    ```sh
+    cargo fmt
+    ```
+*   lint:
+    ```sh
+    cargo fmt --check && cargo clippy --examples --tests --benches
+    ```
+*   test:
+    ```sh
+    RUST_BACKTRACE=1 cargo test
+    ```
+*   docs:
+    ```sh
+    cargo doc --document-private-items
+    ```
+*   fuzz:
+    ```sh
+    cargo install cargo-fuzz
+    cargo +nightly fuzz run micromark
+    ```
 
 ### Version
 
-micromark adheres to [SemVer](https://semver.org).
+micromark follows [SemVer](https://semver.org).
 
 ### Security
 
@@ -439,8 +444,8 @@ For more information on markdown sanitation, see
 
 See [`contributing.md`][contributing] for ways to help.
 See [`support.md`][support] for ways to get help.
-
-<!-- To do: CoC. -->
+See [`code-of-conduct.md`][coc] for how to communicate in and around this
+project.
 
 ### Sponsor
 
@@ -450,11 +455,11 @@ See [`support.md`][support] for ways to get help.
 
 Support this effort and give back by sponsoring:
 
-- [GitHub Sponsors](https://github.com/sponsors/wooorm)
-  (personal; monthly or one-time)
-- [OpenCollective](https://opencollective.com/unified) or
-  [GitHub Sponsors](https://github.com/sponsors/unifiedjs)
-  (unified; monthly or one-time)
+*   [GitHub Sponsors](https://github.com/sponsors/wooorm)
+    (personal; monthly or one-time)
+*   [OpenCollective](https://opencollective.com/unified) or
+    [GitHub Sponsors](https://github.com/sponsors/unifiedjs)
+    (unified; monthly or one-time)
 
 <!-- To do: origin story -->
 
@@ -463,36 +468,55 @@ Support this effort and give back by sponsoring:
 [MIT][license] © [Titus Wormer][author]
 
 <!-- To do: public/publish -->
+
 <!-- [build-badge]: https://github.com/wooorm/micromark-rs/workflows/main/badge.svg -->
+
 <!-- [build]: https://github.com/wooorm/micromark-rs/actions -->
+
 <!-- [crate-badge]: https://img.shields.io/crates/d/micromark.svg -->
+
 <!-- [crate]: https://crates.io/crates/micromark -->
 
-[sponsors-badge]: https://opencollective.com/unified/sponsors/badge.svg
-[backers-badge]: https://opencollective.com/unified/backers/badge.svg
-[opencollective]: https://opencollective.com/unified
 [docs]: https://wooorm.com/micromark-rs/micromark/
+
 [chat-badge]: https://img.shields.io/badge/chat-discussions-success.svg
+
 [chat]: https://github.com/wooorm/micromark-rs/discussions
+
 [commonmark-spec]: https://spec.commonmark.org
+
 [cheat]: https://commonmark.org/help/
-[gfm-spec]: https://github.github.com/gfm/
+
 [rust]: https://www.rust-lang.org
-[cmsm]: https://github.com/micromark/common-markup-state-machine
-[micromark-js]: https://github.com/micromark/micromark
+
 [xss]: https://en.wikipedia.org/wiki/Cross-site_scripting
+
 [improper]: https://github.com/ChALkeR/notes/blob/master/Improper-markup-sanitization.md
+
 [chalker]: https://github.com/ChALkeR
+
 [license]: https://github.com/micromark/micromark/blob/main/license
+
 [author]: https://wooorm.com
+
 [mdast]: https://github.com/syntax-tree/mdast
+
 [starry-night]: https://github.com/wooorm/starry-night
+
 [contribute]: #contribute
+
 [sponsor]: #sponsor
+
 [commonmark]: #commonmark
+
 [extensions]: #extensions
+
 [security]: #security
+
 [test]: #test
-[comparison]: #comparison
+
 [contributing]: .github/contribute.md
+
 [support]: .github/support.md
+
+[coc]: .github/code-of-conduct.md
