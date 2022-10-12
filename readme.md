@@ -67,6 +67,7 @@ to markdown such as MDX, math, and frontmatter.
     *   [Security](#security)
     *   [Contribute](#contribute)
     *   [Sponsor](#sponsor)
+    *   [Thanks](#thanks)
 *   [License](#license)
 
 ## Install
@@ -309,10 +310,6 @@ project.
 
 ### Sponsor
 
-> 🚧 **To do**.
-
-<!-- To do: mention Vercel. -->
-
 Support this effort and give back by sponsoring:
 
 *   [GitHub Sponsors](https://github.com/sponsors/wooorm)
@@ -321,7 +318,12 @@ Support this effort and give back by sponsoring:
     [GitHub Sponsors](https://github.com/sponsors/unifiedjs)
     (unified; monthly or one-time)
 
-<!-- To do: origin story -->
+### Thanks
+
+Special thanks go out to:
+
+*   [Vercel][] for sponsoring the initial development
+*   [@Murderlon][murderlon] for the design of the logo
 
 ## License
 
@@ -360,6 +362,10 @@ Support this effort and give back by sponsoring:
 [author]: https://wooorm.com
 
 [mdast]: https://github.com/syntax-tree/mdast
+
+[vercel]: https://vercel.com
+
+[murderlon]: https://github.com/murderlon
 
 [contribute]: #contribute
 
