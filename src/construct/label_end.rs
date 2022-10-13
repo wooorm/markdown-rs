@@ -624,16 +624,13 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 pub fn reference_collapsed(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'[') => {
-            tokenizer.enter(Name::Reference);
-            tokenizer.enter(Name::ReferenceMarker);
-            tokenizer.consume();
-            tokenizer.exit(Name::ReferenceMarker);
-            State::Next(StateName::LabelEndReferenceCollapsedOpen)
-        }
-        _ => State::Nok,
-    }
+    // We only attempt a collapsed label if there’s a `[`.
+    debug_assert_eq!(tokenizer.current, Some(b'['), "expected opening bracket");
+    tokenizer.enter(Name::Reference);
+    tokenizer.enter(Name::ReferenceMarker);
+    tokenizer.consume();
+    tokenizer.exit(Name::ReferenceMarker);
+    State::Next(StateName::LabelEndReferenceCollapsedOpen)
 }
 
 /// In reference (collapsed), at `]`.

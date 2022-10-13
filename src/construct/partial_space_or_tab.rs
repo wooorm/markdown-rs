@@ -96,7 +96,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         if tokenizer.tokenize_state.space_or_tab_connect {
             let index = tokenizer.events.len() - 1;
             link(&mut tokenizer.events, index);
-        } else if tokenizer.tokenize_state.space_or_tab_content.is_some() {
+        } else {
             tokenizer.tokenize_state.space_or_tab_connect = true;
         }
 

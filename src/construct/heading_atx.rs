@@ -127,20 +127,17 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
         State::Next(StateName::HeadingAtxSequenceOpen)
-    } else if tokenizer.tokenize_state.size > 0 {
-        if matches!(tokenizer.current, None | Some(b'\n')) {
-            tokenizer.tokenize_state.size = 0;
-            tokenizer.exit(Name::HeadingAtxSequence);
-            State::Retry(StateName::HeadingAtxAtBreak)
-        } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
-            tokenizer.tokenize_state.size = 0;
-            tokenizer.exit(Name::HeadingAtxSequence);
-            tokenizer.attempt(State::Next(StateName::HeadingAtxAtBreak), State::Nok);
-            State::Retry(space_or_tab(tokenizer))
-        } else {
-            tokenizer.tokenize_state.size = 0;
-            State::Nok
-        }
+    }
+    // Always at least one `#`.
+    else if matches!(tokenizer.current, None | Some(b'\n')) {
+        tokenizer.tokenize_state.size = 0;
+        tokenizer.exit(Name::HeadingAtxSequence);
+        State::Retry(StateName::HeadingAtxAtBreak)
+    } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
+        tokenizer.tokenize_state.size = 0;
+        tokenizer.exit(Name::HeadingAtxSequence);
+        tokenizer.attempt(State::Next(StateName::HeadingAtxAtBreak), State::Nok);
+        State::Retry(space_or_tab(tokenizer))
     } else {
         tokenizer.tokenize_state.size = 0;
         State::Nok
