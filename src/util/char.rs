@@ -104,29 +104,21 @@ pub fn classify(char: char) -> Kind {
 
 /// Like [`classify`], but supports eof as whitespace.
 pub fn classify_opt(char_opt: Option<char>) -> Kind {
-    if let Some(char) = char_opt {
-        classify(char)
-    }
-    // EOF.
-    else {
-        Kind::Whitespace
-    }
+    char_opt.map_or(Kind::Whitespace, classify)
 }
 
 /// Format an optional `char` (`none` means eof).
 pub fn format_opt(char: Option<char>) -> String {
-    match char {
-        None => "end of file".into(),
-        Some(char) => format!("character {}", format(char)),
-    }
+    char.map_or("end of file".into(), |char| {
+        format!("character {}", format(char))
+    })
 }
 
 /// Format an optional `byte` (`none` means eof).
 pub fn format_byte_opt(byte: Option<u8>) -> String {
-    match byte {
-        None => "end of file".into(),
-        Some(byte) => format!("byte {}", format_byte(byte)),
-    }
+    byte.map_or("end of file".into(), |byte| {
+        format!("byte {}", format_byte(byte))
+    })
 }
 
 /// Format a `char`.
@@ -158,5 +150,100 @@ pub fn format_byte(byte: u8) -> String {
         format!("{} ({})", char, representation)
     } else {
         representation
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::string::ToString;
+
+    #[test]
+    fn test_classify() {
+        assert_eq!(
+            classify(' '),
+            Kind::Whitespace,
+            "should classify whitespace"
+        );
+
+        assert_eq!(
+            classify('.'),
+            Kind::Punctuation,
+            "should classify punctuation"
+        );
+
+        assert_eq!(classify('a'), Kind::Other, "should classify other");
+    }
+
+    #[test]
+    fn test_format_opt() {
+        assert_eq!(
+            format_opt(None),
+            "end of file".to_string(),
+            "should format an optional char: none -> eof"
+        );
+
+        assert_eq!(
+            format_opt(Some('!')),
+            "character `!` (U+0021)".to_string(),
+            "should format an optional char: char -> pretty"
+        );
+    }
+
+    #[test]
+    fn test_format_byte_opt() {
+        assert_eq!(
+            format_byte_opt(None),
+            "end of file".to_string(),
+            "should format an optional byte: none -> eof"
+        );
+
+        assert_eq!(
+            format_byte_opt(Some(b'!')),
+            "byte `!` (U+0021)".to_string(),
+            "should format an optional byte: char -> pretty"
+        );
+    }
+
+    #[test]
+    fn test_format() {
+        assert_eq!(
+            format('`'),
+            "`` ` `` (U+0060)".to_string(),
+            "should format a char: grave accent"
+        );
+
+        assert_eq!(
+            format('!'),
+            "`!` (U+0021)".to_string(),
+            "should format a char: regular"
+        );
+
+        assert_eq!(
+            format(' '),
+            "U+0020".to_string(),
+            "should format a char: unprintable"
+        );
+    }
+
+    #[test]
+    fn test_format_byte() {
+        assert_eq!(
+            format_byte(b'`'),
+            "`` ` `` (U+0060)".to_string(),
+            "should format a byte: grave accent"
+        );
+
+        assert_eq!(
+            format_byte(b'!'),
+            "`!` (U+0021)".to_string(),
+            "should format a byte: regular"
+        );
+
+        assert_eq!(
+            format_byte(b' '),
+            "U+0020".to_string(),
+            "should format a byte: unprintable"
+        );
     }
 }
