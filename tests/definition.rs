@@ -212,9 +212,15 @@ fn definition() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html("[a]: b\n="),
+        "<p>=</p>",
+        "should not support setext heading underlines after definitions (1)"
+    );
+
+    assert_eq!(
         to_html("[foo]: /url\n===\n[foo]"),
         "<p>===\n<a href=\"/url\">foo</a></p>",
-        "should not support setext heading underlines after definitions"
+        "should not support setext heading underlines after definitions (2)"
     );
 
     assert_eq!(
