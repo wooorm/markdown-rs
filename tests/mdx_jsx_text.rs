@@ -345,6 +345,78 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_mdast("<a\u{3000}b \u{3000}c\u{3000} d\u{3000}/>.", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".into()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".into(),
+                                value: None,
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "c".into(),
+                                value: None,
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "d".into(),
+                                value: None,
+                            })
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 22, 21))
+                    }),
+                    Node::Text(Text {
+                        value: ".".into(),
+                        position: Some(Position::new(1, 22, 21, 1, 23, 22))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 23, 22))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 23, 22))
+        }),
+        "should support unicode whitespace in a lot of places"
+    );
+
+    assert_eq!(
+        to_mdast("<a\nb \nc\n d\n/>.", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".into()),
+                        attributes: vec![
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "b".into(),
+                                value: None,
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "c".into(),
+                                value: None,
+                            }),
+                            AttributeContent::Property(MdxJsxAttribute {
+                                name: "d".into(),
+                                value: None,
+                            })
+                        ],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 5, 3, 13))
+                    }),
+                    Node::Text(Text {
+                        value: ".".into(),
+                        position: Some(Position::new(5, 3, 13, 5, 4, 14))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 5, 4, 14))
+            })],
+            position: Some(Position::new(1, 1, 0, 5, 4, 14))
+        }),
+        "should support line endings in a lot of places"
+    );
+
+    assert_eq!(
         to_mdast("a </b> c", &mdx.parse)
             .err()
             .unwrap(),

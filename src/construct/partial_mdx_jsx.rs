@@ -1104,20 +1104,12 @@ pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
 
 /// Check if a character can start a JSX identifier.
 fn id_start_opt(code: Option<char>) -> bool {
-    if let Some(char) = code {
-        id_start(char)
-    } else {
-        false
-    }
+    code.map_or(false, id_start)
 }
 
 /// Check if a character can continue a JSX identifier.
 fn id_cont_opt(code: Option<char>) -> bool {
-    if let Some(char) = code {
-        id_cont(char, true)
-    } else {
-        false
-    }
+    code.map_or(false, |c| id_cont(c, true))
 }
 
 /// Crash because something happened `at`, with info on what was `expect`ed
