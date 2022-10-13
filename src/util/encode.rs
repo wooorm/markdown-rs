@@ -39,8 +39,8 @@ pub fn encode(value: &str, encode_html: bool) -> String {
                 b'&' => "&amp;",
                 b'"' => "&quot;",
                 b'<' => "&lt;",
-                b'>' => "&gt;",
-                _ => panic!("impossible"),
+                // `b'>'`
+                _ => "&gt;",
             });
 
             start = index + 1;

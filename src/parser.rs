@@ -70,11 +70,9 @@ pub fn parse<'a>(
         defs.append(&mut result.definitions);
 
         if result.done {
-            break;
+            return Ok((events, parse_state));
         }
 
         result = subtokenize(&mut events, &parse_state, &None)?;
     }
-
-    Ok((events, parse_state))
 }
