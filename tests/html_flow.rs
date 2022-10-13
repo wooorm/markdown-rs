@@ -209,6 +209,12 @@ p {color:blue;}
     );
 
     assert_eq!(
+        to_html_with_options("<script>a</script\nb", &danger)?,
+        "<script>a</script\nb",
+        "should not support stopping raw if the closing tag does not have a `>`"
+    );
+
+    assert_eq!(
         to_html_with_options("<script>\n  \n  \n</script>", &danger)?,
         "<script>\n  \n  \n</script>",
         "should support blank lines in raw"
