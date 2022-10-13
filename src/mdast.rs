@@ -1950,6 +1950,38 @@ mod tests {
     }
 
     #[test]
+    fn link_reference() {
+        let mut node = Node::LinkReference(LinkReference {
+            position: None,
+            identifier: "a".into(),
+            label: None,
+            reference_kind: ReferenceKind::Full,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "LinkReference { children: [], position: None, reference_kind: Full, identifier: \"a\", label: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "LinkReference { children: [], position: Some(1:1-1:2 (0-1)), reference_kind: Full, identifier: \"a\", label: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
     fn link() {
         let mut node = Node::Link(Link {
             position: None,
