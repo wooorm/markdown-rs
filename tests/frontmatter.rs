@@ -45,9 +45,57 @@ fn frontmatter() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options("--\n---", &frontmatter)?,
+        "<h2>--</h2>",
+        "should not support 2 markers in an opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("----\n---", &frontmatter)?,
+        "<hr />\n<hr />",
+        "should not support 4 markers in an opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\n--", &frontmatter)?,
+        "<hr />\n<p>--</p>",
+        "should not support 2 markers in a closing fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\n----", &frontmatter)?,
+        "<hr />\n<hr />",
+        "should not support 4 markers in a closing fence"
+    );
+
+    assert_eq!(
         to_html_with_options("---\n---\n## Neptune", &frontmatter)?,
         "<h2>Neptune</h2>",
         "should support content after frontmatter"
+    );
+
+    assert_eq!(
+        to_html_with_options("--- \t\n---", &frontmatter)?,
+        "",
+        "should support spaces and tabs after opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\n---\t ", &frontmatter)?,
+        "",
+        "should support spaces and tabs after closing fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("--- a\n---", &frontmatter)?,
+        "<h2>--- a</h2>",
+        "should not support content after opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\n--- b", &frontmatter)?,
+        "<hr />\n<p>--- b</p>",
+        "should not support content after closing fence"
     );
 
     assert_eq!(
@@ -72,6 +120,12 @@ fn frontmatter() -> Result<(), String> {
         to_html_with_options("---\ntitle: Neptune", &frontmatter)?,
         "<hr />\n<p>title: Neptune</p>",
         "should not support a missing closing fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\na\n\nb\n \t\nc\n---", &frontmatter)?,
+        "",
+        "should support blank lines in frontmatter"
     );
 
     assert_eq!(

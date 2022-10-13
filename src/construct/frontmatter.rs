@@ -281,13 +281,10 @@ pub fn content_end(tokenizer: &mut Tokenizer) -> State {
 ///        ^
 /// ```
 pub fn after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.marker = 0;
-
-    match tokenizer.current {
-        None | Some(b'\n') => {
-            tokenizer.exit(Name::Frontmatter);
-            State::Ok
-        }
-        _ => State::Nok,
-    }
+    debug_assert!(
+        matches!(tokenizer.current, None | Some(b'\n')),
+        "expected eol/eof after closing fence"
+    );
+    tokenizer.exit(Name::Frontmatter);
+    State::Ok
 }
