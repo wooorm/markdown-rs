@@ -521,9 +521,7 @@ impl<'a> Tokenizer<'a> {
         if VOID_EVENTS.iter().any(|d| d == &name) {
             debug_assert!(
                 current == previous.name,
-                "expected event to be void (`{:?}`), instead of including `{:?}`",
-                current,
-                previous.name
+                "expected event to be void, instead of including something"
             );
         }
 
@@ -536,12 +534,13 @@ impl<'a> Tokenizer<'a> {
         }
 
         log::debug!("exit:    `{:?}`", name);
-        self.events.push(Event {
+        let event = Event {
             kind: Kind::Exit,
             name,
             point,
             link: None,
-        });
+        };
+        self.events.push(event);
     }
 
     /// Capture the tokenizer progress.
@@ -579,13 +578,13 @@ impl<'a> Tokenizer<'a> {
         // No need to capture (and restore) when `nok` is `State::Nok`, because the
         // parent attempt will do it.
         let progress = Some(self.capture());
-
-        self.attempts.push(Attempt {
+        let attempt = Attempt {
             kind: AttemptKind::Check,
             progress,
             ok,
             nok,
-        });
+        };
+        self.attempts.push(attempt);
     }
 
     /// Stack an attempt, moving to `ok` on [`State::Ok`][] and `nok` on
@@ -600,12 +599,13 @@ impl<'a> Tokenizer<'a> {
             Some(self.capture())
         };
 
-        self.attempts.push(Attempt {
+        let attempt = Attempt {
             kind: AttemptKind::Attempt,
             progress,
             ok,
             nok,
-        });
+        };
+        self.attempts.push(attempt);
     }
 
     /// Tokenize.
@@ -629,12 +629,12 @@ impl<'a> Tokenizer<'a> {
         if resolve {
             let resolvers = self.resolvers.split_off(0);
             let mut index = 0;
+            let defs = &mut value.definitions;
+            let fn_defs = &mut value.gfm_footnote_definitions;
             while index < resolvers.len() {
                 if let Some(mut result) = call_resolve(self, resolvers[index])? {
-                    value
-                        .gfm_footnote_definitions
-                        .append(&mut result.gfm_footnote_definitions);
-                    value.definitions.append(&mut result.definitions);
+                    fn_defs.append(&mut result.gfm_footnote_definitions);
+                    defs.append(&mut result.definitions);
                 }
                 index += 1;
             }

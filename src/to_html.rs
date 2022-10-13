@@ -180,10 +180,9 @@ impl<'a> CompileContext<'a> {
 
     /// Push a str to the last buffer.
     fn push(&mut self, value: &str) {
-        self.buffers
-            .last_mut()
-            .expect("Cannot push w/o buffer")
-            .push_str(value);
+        let last_buf_opt = self.buffers.last_mut();
+        let last_buf = last_buf_opt.expect("at least one buffer should exist");
+        last_buf.push_str(value);
     }
 
     /// Add a line ending.
@@ -194,14 +193,11 @@ impl<'a> CompileContext<'a> {
 
     /// Add a line ending if needed (as in, there’s no eol/eof already).
     fn line_ending_if_needed(&mut self) {
-        let tail = self
-            .buffers
-            .last()
-            .expect("at least one buffer should exist")
-            .as_bytes()
-            .last();
+        let last_buf_opt = self.buffers.last();
+        let last_buf = last_buf_opt.expect("at least one buffer should exist");
+        let last_byte = last_buf.as_bytes().last();
 
-        if !matches!(tail, None | Some(b'\n' | b'\r')) {
+        if !matches!(last_byte, None | Some(b'\n' | b'\r')) {
             self.line_ending();
         }
     }
@@ -805,11 +801,9 @@ fn on_exit_raw_flow_chunk(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:{[`CodeFencedFence`][Name::CodeFencedFence],[`MathFlowFence`][Name::MathFlowFence]}.
 fn on_exit_raw_flow_fence(context: &mut CompileContext) {
-    let count = if let Some(count) = context.raw_flow_fences_count {
-        count
-    } else {
-        0
-    };
+    let count = context
+        .raw_flow_fences_count
+        .expect("expected `raw_flow_fences_count`");
 
     if count == 0 {
         context.push(">");
@@ -1432,18 +1426,18 @@ fn on_exit_media(context: &mut CompileContext) {
     });
 
     let definition_index = if media.destination.is_none() {
-        id.and_then(|id| {
+        id.map(|id| {
             let mut index = 0;
 
-            while index < context.definitions.len() {
-                if context.definitions[index].id == id {
-                    return Some(index);
-                }
-
+            while index < context.definitions.len() && context.definitions[index].id != id {
                 index += 1;
             }
 
-            None
+            debug_assert!(
+                index < context.definitions.len(),
+                "expected defined definition"
+            );
+            index
         })
     } else {
         None

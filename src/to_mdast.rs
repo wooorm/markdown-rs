@@ -208,22 +208,14 @@ impl<'a> CompileContext<'a> {
         let end = point_from_event(ev);
         let (tree, stack, event_stack) = self.trees.last_mut().expect("Cannot get tail w/o tree");
         let node = delve_mut(tree, stack);
-        node.position_mut()
-            .expect("Cannot pop manually added node")
-            .end = end;
+        let pos = node.position_mut().expect("Cannot pop manually added node");
+        pos.end = end;
 
         stack.pop().unwrap();
-
-        if let Some(left_index) = event_stack.pop() {
-            let left = &self.events[left_index];
-            if left.name != ev.name {
-                on_mismatch_error(self, Some(ev), left)?;
-            }
-        } else {
-            return Err(format!(
-                "{}:{}: Cannot close `{:?}`, it’s not open",
-                ev.point.line, ev.point.column, ev.name
-            ));
+        let left_index = event_stack.pop().unwrap();
+        let left = &self.events[left_index];
+        if left.name != ev.name {
+            on_mismatch_error(self, Some(ev), left)?;
         }
 
         Ok(())

@@ -47,15 +47,13 @@ pub fn parse<'a>(
         gfm_footnote_definitions: vec![],
     };
 
-    let mut tokenizer = Tokenizer::new(
-        Point {
-            line: 1,
-            column: 1,
-            index: 0,
-            vs: 0,
-        },
-        &parse_state,
-    );
+    let start = Point {
+        line: 1,
+        column: 1,
+        index: 0,
+        vs: 0,
+    };
+    let mut tokenizer = Tokenizer::new(start, &parse_state);
 
     let state = tokenizer.push(
         (0, 0),
@@ -65,21 +63,17 @@ pub fn parse<'a>(
     let mut result = tokenizer.flush(state, true)?;
     let mut events = tokenizer.events;
 
-    parse_state
-        .gfm_footnote_definitions
-        .append(&mut result.gfm_footnote_definitions);
-    parse_state.definitions.append(&mut result.definitions);
-
     loop {
-        let mut result = subtokenize(&mut events, &parse_state, &None)?;
-        parse_state
-            .gfm_footnote_definitions
-            .append(&mut result.gfm_footnote_definitions);
-        parse_state.definitions.append(&mut result.definitions);
+        let fn_defs = &mut parse_state.gfm_footnote_definitions;
+        let defs = &mut parse_state.definitions;
+        fn_defs.append(&mut result.gfm_footnote_definitions);
+        defs.append(&mut result.definitions);
 
         if result.done {
             break;
         }
+
+        result = subtokenize(&mut events, &parse_state, &None)?;
     }
 
     Ok((events, parse_state))

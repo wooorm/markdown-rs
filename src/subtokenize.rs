@@ -45,16 +45,14 @@ pub fn link_to(events: &mut [Event], previous: usize, next: usize) {
     debug_assert_eq!(events[previous].kind, Kind::Enter);
     debug_assert!(
         VOID_EVENTS.iter().any(|d| d == &events[previous].name),
-        "expected `{:?}` to be void",
-        events[previous].name
+        "expected event to be void"
     );
     debug_assert_eq!(events[previous + 1].kind, Kind::Exit);
     debug_assert_eq!(events[previous].name, events[previous + 1].name);
     debug_assert_eq!(events[next].kind, Kind::Enter);
     debug_assert!(
         VOID_EVENTS.iter().any(|d| d == &events[next].name),
-        "expected `{:?}` to be void",
-        events[next].name
+        "expected event to be void"
     );
     // Note: the exit of this event may not exist, so don’t check for that.
 
@@ -105,12 +103,15 @@ pub fn subtokenize(
                 let mut link_index = Some(index);
                 // Subtokenizer.
                 let mut tokenizer = Tokenizer::new(event.point.clone(), parse_state);
+                debug_assert!(
+                    !matches!(link.content, Content::Flow),
+                    "cannot use flow as subcontent yet"
+                );
                 // Substate.
                 let mut state = State::Next(match link.content {
-                    Content::Flow => unreachable!("flow subcontent not implemented yet"),
                     Content::Content => StateName::ContentDefinitionBefore,
                     Content::String => StateName::StringStart,
-                    Content::Text => StateName::TextStart,
+                    _ => StateName::TextStart,
                 });
 
                 // Check if this is the first paragraph, after zero or more
@@ -262,15 +263,11 @@ pub fn divide_events(
 
     while index > 0 {
         index -= 1;
-        map.add(
-            slices[index].0,
-            if slices[index].0 == events.len() {
-                0
-            } else {
-                2
-            },
-            child_events.split_off(slices[index].1),
+        debug_assert!(
+            slices[index].0 < events.len(),
+            "expected slice start in bounds"
         );
+        map.add(slices[index].0, 2, child_events.split_off(slices[index].1));
     }
 
     (acc_before.0 + (slices.len() * 2), acc_before.1 + len)
