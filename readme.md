@@ -8,13 +8,12 @@
 
 # markdown-rs
 
-<!-- To do: enable badges when repo is public/published -->
-
-<!-- To do: link `Downloads`/`crate-badge` to `crate` instead of temporary site. -->
-
 [![Build][build-badge]][build]
-[![Downloads][crate-badge]][docs]
-[![Chat][chat-badge]][chat]
+[![GitHub][repo-badge]][repo]
+[![docs.rs][docs-badge]][docs]
+[![crates.io][crate-badge]][crate]
+
+<!-- To do: coverage -->
 
 <!-- [![Coverage][coverage-badge]][coverage] -->
 
@@ -332,19 +331,23 @@ Special thanks go out to:
 
 [MIT][license] © [Titus Wormer][author]
 
+<!-- To do: link `docs` to `docs.rs` instead of temporary site. -->
+
 [build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 
 [build]: https://github.com/wooorm/markdown-rs/actions
 
-[crate-badge]: https://img.shields.io/crates/d/markdown.svg
+[repo-badge]: https://img.shields.io/badge/GitHub-wooorm%2Fmarkdown--rs-brightgreen
 
-[crate]: https://crates.io/crates/markdown
+[repo]: https://github.com/wooorm/markdown-rs
+
+[docs-badge]: https://img.shields.io/docsrs/markdown
 
 [docs]: https://wooorm.com/markdown-rs/markdown/
 
-[chat-badge]: https://img.shields.io/badge/chat-discussions-success.svg
+[crate-badge]: https://img.shields.io/crates/v/markdown
 
-[chat]: https://github.com/wooorm/markdown-rs/discussions
+[crate]: https://crates.io/crates/markdown
 
 [commonmark]: https://spec.commonmark.org
 
