@@ -46,6 +46,9 @@ this project goes further by following how the reference parsers (`cmark`,
 Other than CommonMark and GFM, this project also supports common extensions
 to markdown such as MDX, math, and frontmatter.
 
+This Rust crate has a sibling project in JavaScript: [`micromark`][micromark]
+(and [`mdast-util-from-markdown`][mdast-util-from-markdown] for the AST).
+
 ## Questions
 
 *   to learn markdown, see this [cheatsheet and tutorial][cheat]
@@ -360,6 +363,10 @@ Special thanks go out to:
 [author]: https://wooorm.com
 
 [mdast]: https://github.com/syntax-tree/mdast
+
+[micromark]: https://github.com/micromark/micromark
+
+[mdast-util-from-markdown]: https://github.com/syntax-tree/mdast-util-from-markdown
 
 [vercel]: https://vercel.com
 
