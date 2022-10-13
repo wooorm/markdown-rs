@@ -12,13 +12,11 @@
 
 <!-- To do: link `Downloads`/`crate-badge` to `crate` instead of temporary site. -->
 
-<!-- [![Build][build-badge]][build] -->
-
-<!-- [![Downloads][crate-badge]][docs] -->
+[![Build][build-badge]][build]
+[![Downloads][crate-badge]][docs]
+[![Chat][chat-badge]][chat]
 
 <!-- [![Coverage][coverage-badge]][coverage] -->
-
-[![Chat][chat-badge]][chat]
 
 CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
@@ -334,15 +332,13 @@ Special thanks go out to:
 
 [MIT][license] © [Titus Wormer][author]
 
-<!-- To do: public/publish -->
+[build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 
-<!-- [build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg -->
+[build]: https://github.com/wooorm/markdown-rs/actions
 
-<!-- [build]: https://github.com/wooorm/markdown-rs/actions -->
+[crate-badge]: https://img.shields.io/crates/d/markdown.svg
 
-<!-- [crate-badge]: https://img.shields.io/crates/d/markdown.svg -->
-
-<!-- [crate]: https://crates.io/crates/markdown -->
+[crate]: https://crates.io/crates/markdown
 
 [docs]: https://wooorm.com/markdown-rs/markdown/
 
