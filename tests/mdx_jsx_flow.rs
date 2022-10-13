@@ -111,6 +111,15 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
         "should support tags after tags"
     );
 
+    // This is to make sure `document` passes errors through properly.
+    assert_eq!(
+        to_html_with_options("* <!a>\n1. b", &mdx)
+            .err()
+            .unwrap(),
+        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`)",
+        "should handle crash in containers gracefully"
+    );
+
     assert_eq!(
         to_html_with_options("> <X\n/>", &mdx).err().unwrap(),
         "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -146,7 +155,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
-        "should not support lazy flow (4)"
+        "should not support lazy flow (5)"
     );
 
     assert_eq!(
@@ -154,7 +163,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
-        "should not support lazy flow (5)"
+        "should not support lazy flow (6)"
     );
 
     assert_eq!(
@@ -162,13 +171,13 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
-        "should not support lazy flow (6)"
+        "should not support lazy flow (7)"
     );
 
     assert_eq!(
         to_html_with_options("> a\n<X />", &mdx)?,
         "<blockquote>\n<p>a</p>\n</blockquote>\n",
-        "should not support lazy flow (7)"
+        "should not support lazy flow (8)"
     );
 
     assert_eq!(
