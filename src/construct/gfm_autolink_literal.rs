@@ -650,7 +650,15 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 byte_index + 1,
                                 kind == Name::GfmAutolinkLiteralXmpp,
                             ) {
-                                range = (start, peek_bytes_truncate(bytes, start, end), kind);
+                                // Note: normally we’d truncate trailing
+                                // punctuation from the link.
+                                // However, email autolink literals cannot
+                                // contain any of those markers, except for
+                                // `.`, but that can only occur if it isn’t
+                                // trailing.
+                                // So we can ignore truncating while
+                                // postprocessing!
+                                range = (start, end, kind);
                             }
                         }
 
@@ -837,94 +845,4 @@ fn peek_bytes_email_domain(bytes: &[u8], start: usize, xmpp: bool) -> Option<usi
     } else {
         None
     }
-}
-
-/// Move back past punctuation.
-///
-/// Moving back is only used when post processing text: so for the email address
-/// algorithm.
-///
-/// This is much more complex that needed, because GH allows a lot of
-/// punctuation in the protocol and www algorithms.
-/// However, those aren’t implemented like the email algo.
-///
-/// ```markdown
-/// > | a contact@example.org”) b
-///                           ^-- from
-///                         ^-- to
-/// ```
-fn peek_bytes_truncate(bytes: &[u8], start: usize, mut end: usize) -> usize {
-    let mut index = start;
-
-    // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L42>
-    while index < end {
-        if bytes[index] == b'<' {
-            end = index;
-            break;
-        }
-        index += 1;
-    }
-
-    let mut split = end;
-
-    // Move before trailing punctuation.
-    while split > start {
-        match bytes[split - 1] {
-            b'!' | b'"' | b'&' | b'\'' | b')' | b',' | b'.' | b':' | b'<' | b'>' | b'?' | b']'
-            | b'}' => {}
-            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L61>.
-            // Note: we can’t move across actual references, because those have been parsed already.
-            b';' => {
-                let mut new_split = split - 1;
-                // Move back past alphabeticals.
-                while new_split > start && matches!(bytes[new_split - 1], b'A'..=b'Z' | b'a'..=b'z')
-                {
-                    new_split -= 1;
-                }
-
-                // Nonempty character reference:
-                if new_split > start && bytes[new_split - 1] == b'&' && new_split < split - 1 {
-                    split = new_split - 1;
-                    continue;
-                }
-
-                // Otherwise it’s just a `;`.
-            }
-            _ => break,
-        }
-        split -= 1;
-    }
-
-    // If there was trailing punctuation, try to balance parens.
-    if split != end {
-        let mut open = 0;
-        let mut close = 0;
-        let mut paren_index = start;
-
-        // Count parens in `url` (not in trail).
-        while paren_index < split {
-            match bytes[paren_index] {
-                b'(' => open += 1,
-                b')' => close += 1,
-                _ => {}
-            }
-
-            paren_index += 1;
-        }
-
-        let mut trail_index = split;
-
-        // If there are more opening than closing parens, try to balance them
-        // from the trail.
-        while open > close && trail_index < end {
-            if bytes[trail_index] == b')' {
-                split = trail_index;
-                close += 1;
-            }
-
-            trail_index += 1;
-        }
-    }
-
-    split
 }
