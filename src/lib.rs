@@ -15,9 +15,10 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]
 #![allow(clippy::too_many_lines)]
-
-// To do: set this when public.
-// #![doc(html_logo_url = "https://xxx")]
+// Would be nice to use `logo-chromatic`, but that looks horrible on Safari at relatively small sizes currently. 😢
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/wooorm/markdown-rs/8924580/media/logo-monochromatic.svg?sanitize=true"
+)]
 
 extern crate alloc;
 
