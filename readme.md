@@ -319,8 +319,9 @@ Support this effort and give back by sponsoring:
 
 Special thanks go out to:
 
-*   [Vercel][] for sponsoring the initial development
-*   [@Murderlon][murderlon] for the design of the logo
+*   [Vercel][] for funding the initial development
+*   [**@Murderlon**][murderlon] for the design of the logo
+*   [**@johannhof**][johannhof] for the crate name
 
 ## License
 
@@ -363,6 +364,8 @@ Special thanks go out to:
 [vercel]: https://vercel.com
 
 [murderlon]: https://github.com/murderlon
+
+[johannhof]: https://github.com/johannhof
 
 [contribute]: #contribute
 
