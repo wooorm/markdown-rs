@@ -23,6 +23,25 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
         "should support a self-closing element"
     );
 
+    // Note: in MDX, indented code is turned off:
+    assert_eq!(
+        to_html_with_options(
+            "    <a />",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        mdx_jsx_flow: true,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
+                },
+                ..Options::default()
+            }
+        )?,
+        "<pre><code>&lt;a /&gt;\n</code></pre>",
+        "should prefer indented code over jsx if it’s enabled"
+    );
+
     assert_eq!(
         to_html_with_options("<a></a>", &mdx)?,
         "",

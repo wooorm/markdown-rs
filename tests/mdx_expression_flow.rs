@@ -31,6 +31,25 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
         "should support an empty expression"
     );
 
+    // Note: in MDX, indented code is turned off:
+    assert_eq!(
+        to_html_with_options(
+            "    {}",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        mdx_expression_flow: true,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
+                },
+                ..Options::default()
+            }
+        )?,
+        "<pre><code>{}\n</code></pre>",
+        "should prefer indented code over expressions if it’s enabled"
+    );
+
     assert_eq!(
         to_html_with_options("{a", &mdx).err().unwrap(),
         "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
