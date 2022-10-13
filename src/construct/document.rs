@@ -442,9 +442,11 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.tokenize_state.document_continued
         != tokenizer.tokenize_state.document_container_stack.len()
     {
-        if let Err(message) = exit_containers(tokenizer, &Phase::After) {
-            return State::Error(message);
-        }
+        let result = exit_containers(tokenizer, &Phase::After);
+        // `Phase::After` doesn’t deal with flow: it only generates exits for
+        // containers.
+        // And that never errors.
+        debug_assert!(result.is_ok(), "did not expect error when exiting");
     }
 
     match tokenizer.current {
@@ -523,11 +525,11 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) -> Result<(), Strin
             debug_assert!(found, "expected to find container event to exit");
         }
 
-        if let Some(ref mut list) = tokenizer.tokenize_state.document_exits[index] {
-            list.append(&mut exits);
-        } else {
-            tokenizer.tokenize_state.document_exits[index] = Some(exits);
-        }
+        debug_assert!(
+            tokenizer.tokenize_state.document_exits[index].is_none(),
+            "expected no exits yet"
+        );
+        tokenizer.tokenize_state.document_exits[index] = Some(exits);
     }
 
     child.interrupt = false;
