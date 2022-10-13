@@ -216,16 +216,16 @@ fn character_reference() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;", &ParseOptions::default())?,
+        to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;\n&#35; &#1234; &#992; &#0;\n&#X22; &#XD06; &#xcab;", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::Text(Text {
-                    value: "\u{a0} & © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸".into(),
-                    position: Some(Position::new(1, 1, 0, 3, 33, 109))
+                    value: "\u{a0} & © Æ Ď\n¾ ℋ ⅆ\n∲ ≧̸\n# Ӓ Ϡ �\n\" ആ ಫ".into(),
+                    position: Some(Position::new(1, 1, 0, 5, 23, 158))
                 }),],
-                position: Some(Position::new(1, 1, 0, 3, 33, 109))
+                position: Some(Position::new(1, 1, 0, 5, 23, 158))
             })],
-            position: Some(Position::new(1, 1, 0, 3, 33, 109))
+            position: Some(Position::new(1, 1, 0, 5, 23, 158))
         }),
         "should support character references as `Text`s in mdast"
     );
