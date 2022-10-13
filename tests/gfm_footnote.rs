@@ -372,6 +372,23 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
 
     assert_eq!(
         to_html_with_options(
+            "[^a]\n\n[^a]: b\n  \n    c",
+            &gfm
+        )?,
+        "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
+<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
+<ol>
+<li id=\"user-content-fn-a\">
+<p>b</p>
+<p>c <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>
+</li>
+</ol>
+</section>\n",
+        "should support blank lines in footnote definitions"
+    );
+
+    assert_eq!(
+        to_html_with_options(
             r###"a![i](#)
 a\![i](#)
 a![i][]
