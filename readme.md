@@ -1,8 +1,12 @@
+<p align="center">
+  <br>
+  <img width="192" src="media/logo-chromatic.svg" alt="">
+  <br>
+  <br>
+  <br>
+</p>
+
 # markdown-rs
-
-<!-- To do: enable image when repo is public. -->
-
-<!-- <img align="right" width="106" height="106" alt="" src="https://raw.githubusercontent.com/wooorm/markdown-rs/14f1ad0/logo.svg?sanitize=true"> -->
 
 <!-- To do: enable badges when repo is public/published -->
 
