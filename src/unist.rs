@@ -80,14 +80,17 @@ mod tests {
     use alloc::format;
 
     #[test]
-    fn unist_test() {
+    fn point() {
         let point = Point::new(1, 1, 0);
         assert_eq!(
             format!("{:?}", point),
             "1:1 (0)",
             "should support `Debug` on unist points"
         );
+    }
 
+    #[test]
+    fn position() {
         let position = Position::new(1, 1, 0, 1, 3, 2);
         assert_eq!(
             format!("{:?}", position),

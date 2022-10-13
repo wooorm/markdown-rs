@@ -1151,44 +1151,925 @@ pub struct MdxJsxAttribute {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::unist::{Point, Position};
-    use alloc::vec;
+    use crate::unist::Position;
+    use alloc::{format, string::ToString, vec};
+
+    // Literals.
 
     #[test]
-    fn test() {
-        let text = Text {
+    fn text() {
+        let mut node = Node::Text(Text {
             value: "a".into(),
-            position: Some(Position {
-                start: Point {
-                    line: 1,
-                    column: 1,
-                    offset: 0,
-                },
-                end: Point {
-                    line: 1,
-                    column: 2,
-                    offset: 1,
-                },
-            }),
-        };
+            position: None,
+        });
 
-        let paragraph = Paragraph {
-            children: vec![Node::Text(text)],
-            position: Some(Position {
-                start: Point {
-                    line: 1,
-                    column: 1,
-                    offset: 0,
-                },
-                end: Point {
-                    line: 1,
-                    column: 2,
-                    offset: 1,
-                },
-            }),
-        };
+        assert_eq!(
+            format!("{:?}", node),
+            "Text { value: \"a\", position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Text { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
 
-        assert_eq!(paragraph.children.len(), 1);
-        assert!(matches!(&paragraph.children[0], Node::Text(_)));
+    #[test]
+    fn inline_code() {
+        let mut node = Node::InlineCode(InlineCode {
+            value: "a".into(),
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "InlineCode { value: \"a\", position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "InlineCode { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn code() {
+        let mut node = Node::Code(Code {
+            value: "a".into(),
+            position: None,
+            lang: None,
+            meta: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Code { value: \"a\", position: None, lang: None, meta: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Code { value: \"a\", position: Some(1:1-1:2 (0-1)), lang: None, meta: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn inline_math() {
+        let mut node = Node::InlineMath(InlineMath {
+            value: "a".into(),
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "InlineMath { value: \"a\", position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "InlineMath { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn math() {
+        let mut node = Node::Math(Math {
+            value: "a".into(),
+            position: None,
+            meta: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Math { value: \"a\", position: None, meta: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Math { value: \"a\", position: Some(1:1-1:2 (0-1)), meta: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn html() {
+        let mut node = Node::Html(Html {
+            value: "a".into(),
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Html { value: \"a\", position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Html { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn mdx_text_expression() {
+        let mut node = Node::MdxTextExpression(MdxTextExpression {
+            value: "a".into(),
+            stops: vec![],
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxTextExpression { value: \"a\", position: None, stops: [] }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxTextExpression { value: \"a\", position: Some(1:1-1:2 (0-1)), stops: [] }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn mdx_flow_expression() {
+        let mut node = Node::MdxFlowExpression(MdxFlowExpression {
+            value: "a".into(),
+            stops: vec![],
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxFlowExpression { value: \"a\", position: None, stops: [] }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxFlowExpression { value: \"a\", position: Some(1:1-1:2 (0-1)), stops: [] }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn mdxjs_esm() {
+        let mut node = Node::MdxjsEsm(MdxjsEsm {
+            value: "a".into(),
+            stops: vec![],
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxjsEsm { value: \"a\", position: None, stops: [] }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxjsEsm { value: \"a\", position: Some(1:1-1:2 (0-1)), stops: [] }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn toml() {
+        let mut node = Node::Toml(Toml {
+            value: "a".into(),
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Toml { value: \"a\", position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Toml { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn yaml() {
+        let mut node = Node::Yaml(Yaml {
+            value: "a".into(),
+            position: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Yaml { value: \"a\", position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "a", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Yaml { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    // Voids.
+
+    #[test]
+    fn break_node() {
+        let mut node = Node::Break(Break { position: None });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Break { position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Break { position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn thematic_break() {
+        let mut node = Node::ThematicBreak(ThematicBreak { position: None });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "ThematicBreak { position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "ThematicBreak { position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn footnote_reference() {
+        let mut node = Node::FootnoteReference(FootnoteReference {
+            position: None,
+            identifier: "a".into(),
+            label: Some("b".into()),
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "FootnoteReference { position: None, identifier: \"a\", label: Some(\"b\") }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "FootnoteReference { position: Some(1:1-1:2 (0-1)), identifier: \"a\", label: Some(\"b\") }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn image_reference() {
+        let mut node = Node::ImageReference(ImageReference {
+            position: None,
+            alt: "a".into(),
+            identifier: "b".into(),
+            label: Some("c".into()),
+            reference_kind: ReferenceKind::Full,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "ImageReference { position: None, alt: \"a\", reference_kind: Full, identifier: \"b\", label: Some(\"c\") }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "ImageReference { position: Some(1:1-1:2 (0-1)), alt: \"a\", reference_kind: Full, identifier: \"b\", label: Some(\"c\") }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn image() {
+        let mut node = Node::Image(Image {
+            position: None,
+            alt: "a".into(),
+            url: "b".into(),
+            title: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Image { position: None, alt: \"a\", url: \"b\", title: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Image { position: Some(1:1-1:2 (0-1)), alt: \"a\", url: \"b\", title: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn definition() {
+        let mut node = Node::Definition(Definition {
+            position: None,
+            identifier: "a".into(),
+            label: None,
+            url: "b".into(),
+            title: None,
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Definition { position: None, url: \"b\", title: None, identifier: \"a\", label: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(node.children_mut(), None, "should support `children_mut`");
+        assert_eq!(node.children(), None, "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Definition { position: Some(1:1-1:2 (0-1)), url: \"b\", title: None, identifier: \"a\", label: None }",
+            "should support `position_set`"
+        );
+    }
+
+    // Parents.
+
+    #[test]
+    fn root() {
+        let mut node = Node::Root(Root {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Root { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Root { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn block_quote() {
+        let mut node = Node::BlockQuote(BlockQuote {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "BlockQuote { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "BlockQuote { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn delete() {
+        let mut node = Node::Delete(Delete {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Delete { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Delete { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn emphasis() {
+        let mut node = Node::Emphasis(Emphasis {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Emphasis { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Emphasis { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn strong() {
+        let mut node = Node::Strong(Strong {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Strong { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Strong { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn paragraph() {
+        let mut node = Node::Paragraph(Paragraph {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Paragraph { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Paragraph { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn table_row() {
+        let mut node = Node::TableRow(TableRow {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "TableRow { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "TableRow { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn table_cell() {
+        let mut node = Node::TableCell(TableCell {
+            position: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "TableCell { children: [], position: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "TableCell { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn heading() {
+        let mut node = Node::Heading(Heading {
+            position: None,
+            depth: 1,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Heading { children: [], position: None, depth: 1 }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Heading { children: [], position: Some(1:1-1:2 (0-1)), depth: 1 }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn table() {
+        let mut node = Node::Table(Table {
+            position: None,
+            align: vec![],
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Table { children: [], position: None, align: [] }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Table { children: [], position: Some(1:1-1:2 (0-1)), align: [] }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn list_item() {
+        let mut node = Node::ListItem(ListItem {
+            position: None,
+            spread: false,
+            checked: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "ListItem { children: [], position: None, spread: false, checked: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "ListItem { children: [], position: Some(1:1-1:2 (0-1)), spread: false, checked: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn list() {
+        let mut node = Node::List(List {
+            position: None,
+            spread: false,
+            ordered: false,
+            start: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "List { children: [], position: None, ordered: false, start: None, spread: false }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "List { children: [], position: Some(1:1-1:2 (0-1)), ordered: false, start: None, spread: false }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn link() {
+        let mut node = Node::Link(Link {
+            position: None,
+            url: "a".into(),
+            title: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "Link { children: [], position: None, url: \"a\", title: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "Link { children: [], position: Some(1:1-1:2 (0-1)), url: \"a\", title: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn footnote_definition() {
+        let mut node = Node::FootnoteDefinition(FootnoteDefinition {
+            position: None,
+            identifier: "a".into(),
+            label: None,
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "FootnoteDefinition { children: [], position: None, identifier: \"a\", label: None }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "FootnoteDefinition { children: [], position: Some(1:1-1:2 (0-1)), identifier: \"a\", label: None }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn mdx_jsx_flow_element() {
+        let mut node = Node::MdxJsxFlowElement(MdxJsxFlowElement {
+            position: None,
+            name: None,
+            attributes: vec![],
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxJsxFlowElement { children: [], position: None, name: None, attributes: [] }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxJsxFlowElement { children: [], position: Some(1:1-1:2 (0-1)), name: None, attributes: [] }",
+            "should support `position_set`"
+        );
+    }
+
+    #[test]
+    fn mdx_jsx_text_element() {
+        let mut node = Node::MdxJsxTextElement(MdxJsxTextElement {
+            position: None,
+            name: None,
+            attributes: vec![],
+            children: vec![],
+        });
+
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxJsxTextElement { children: [], position: None, name: None, attributes: [] }",
+            "should support `Debug`"
+        );
+        assert_eq!(node.to_string(), "", "should support `ToString`");
+        assert_eq!(
+            node.children_mut(),
+            Some(&mut vec![]),
+            "should support `children_mut`"
+        );
+        assert_eq!(node.children(), Some(&vec![]), "should support `children`");
+        assert_eq!(node.position(), None, "should support `position`");
+        assert_eq!(node.position_mut(), None, "should support `position`");
+        node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
+        assert_eq!(
+            format!("{:?}", node),
+            "MdxJsxTextElement { children: [], position: Some(1:1-1:2 (0-1)), name: None, attributes: [] }",
+            "should support `position_set`"
+        );
     }
 }
