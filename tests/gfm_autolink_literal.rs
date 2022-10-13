@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{Link, Node, Paragraph, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -18,181 +18,181 @@ fn gfm_autolink_literal() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("https://example.com"),
+        to_html("https://example.com"),
         "<p>https://example.com</p>",
         "should ignore protocol urls by default"
     );
     assert_eq!(
-        micromark("www.example.com"),
+        to_html("www.example.com"),
         "<p>www.example.com</p>",
         "should ignore www urls by default"
     );
     assert_eq!(
-        micromark("user@example.com"),
+        to_html("user@example.com"),
         "<p>user@example.com</p>",
         "should ignore email urls by default"
     );
 
     assert_eq!(
-        micromark_with_options("https://example.com", &gfm)?,
+        to_html_with_options("https://example.com", &gfm)?,
         "<p><a href=\"https://example.com\">https://example.com</a></p>",
         "should support protocol urls if enabled"
     );
     assert_eq!(
-        micromark_with_options("www.example.com", &gfm)?,
+        to_html_with_options("www.example.com", &gfm)?,
         "<p><a href=\"http://www.example.com\">www.example.com</a></p>",
         "should support www urls if enabled"
     );
     assert_eq!(
-        micromark_with_options("user@example.com", &gfm)?,
+        to_html_with_options("user@example.com", &gfm)?,
         "<p><a href=\"mailto:user@example.com\">user@example.com</a></p>",
         "should support email urls if enabled"
     );
 
     assert_eq!(
-        micromark_with_options("[https://example.com](xxx)", &gfm)?,
+        to_html_with_options("[https://example.com](xxx)", &gfm)?,
         "<p><a href=\"xxx\">https://example.com</a></p>",
         "should not link protocol urls in links"
     );
     assert_eq!(
-        micromark_with_options("[www.example.com](xxx)", &gfm)?,
+        to_html_with_options("[www.example.com](xxx)", &gfm)?,
         "<p><a href=\"xxx\">www.example.com</a></p>",
         "should not link www urls in links"
     );
     assert_eq!(
-        micromark_with_options("[user@example.com](xxx)", &gfm)?,
+        to_html_with_options("[user@example.com](xxx)", &gfm)?,
         "<p><a href=\"xxx\">user@example.com</a></p>",
         "should not link email urls in links"
     );
 
     assert_eq!(
-        micromark_with_options("user@example.com", &gfm)?,
+        to_html_with_options("user@example.com", &gfm)?,
         "<p><a href=\"mailto:user@example.com\">user@example.com</a></p>",
         "should support a closing paren at TLD (email)"
     );
 
     assert_eq!(
-        micromark_with_options("www.a.)", &gfm)?,
+        to_html_with_options("www.a.)", &gfm)?,
         "<p><a href=\"http://www.a\">www.a</a>.)</p>",
         "should support a closing paren at TLD (www)"
     );
 
     assert_eq!(
-        micromark_with_options("www.a b", &gfm)?,
+        to_html_with_options("www.a b", &gfm)?,
         "<p><a href=\"http://www.a\">www.a</a> b</p>",
         "should support no TLD"
     );
 
     assert_eq!(
-        micromark_with_options("www.a/b c", &gfm)?,
+        to_html_with_options("www.a/b c", &gfm)?,
         "<p><a href=\"http://www.a/b\">www.a/b</a> c</p>",
         "should support a path instead of TLD"
     );
 
     assert_eq!(
-        micromark_with_options("www.�a", &gfm)?,
+        to_html_with_options("www.�a", &gfm)?,
         "<p><a href=\"http://www.%EF%BF%BDa\">www.�a</a></p>",
         "should support a replacement character in a domain"
     );
 
     assert_eq!(
-        micromark_with_options("http://點看.com", &gfm)?,
+        to_html_with_options("http://點看.com", &gfm)?,
         "<p><a href=\"http://%E9%BB%9E%E7%9C%8B.com\">http://點看.com</a></p>",
         "should support non-ascii characters in a domain (http)"
     );
 
     assert_eq!(
-        micromark_with_options("www.點看.com", &gfm)?,
+        to_html_with_options("www.點看.com", &gfm)?,
         "<p><a href=\"http://www.%E9%BB%9E%E7%9C%8B.com\">www.點看.com</a></p>",
         "should support non-ascii characters in a domain (www)"
     );
 
     assert_eq!(
-        micromark_with_options("點看@example.com", &gfm)?,
+        to_html_with_options("點看@example.com", &gfm)?,
         "<p>點看@example.com</p>",
         "should *not* support non-ascii characters in atext (email)"
     );
 
     assert_eq!(
-        micromark_with_options("example@點看.com", &gfm)?,
+        to_html_with_options("example@點看.com", &gfm)?,
         "<p>example@點看.com</p>",
         "should *not* support non-ascii characters in a domain (email)"
     );
 
     assert_eq!(
-        micromark_with_options("www.a.com/點看", &gfm)?,
+        to_html_with_options("www.a.com/點看", &gfm)?,
         "<p><a href=\"http://www.a.com/%E9%BB%9E%E7%9C%8B\">www.a.com/點看</a></p>",
         "should support non-ascii characters in a path"
     );
 
     assert_eq!(
-        micromark_with_options("www.-a.b", &gfm)?,
+        to_html_with_options("www.-a.b", &gfm)?,
         "<p><a href=\"http://www.-a.b\">www.-a.b</a></p>",
         "should support a dash to start a domain"
     );
 
     assert_eq!(
-        micromark_with_options("www.$", &gfm)?,
+        to_html_with_options("www.$", &gfm)?,
         "<p><a href=\"http://www.$\">www.$</a></p>",
         "should support a dollar as a domain name"
     );
 
     assert_eq!(
-        micromark_with_options("www.a..b.c", &gfm)?,
+        to_html_with_options("www.a..b.c", &gfm)?,
         "<p><a href=\"http://www.a..b.c\">www.a..b.c</a></p>",
         "should support adjacent dots in a domain name"
     );
 
     assert_eq!(
-        micromark_with_options("www.a&a;", &gfm)?,
+        to_html_with_options("www.a&a;", &gfm)?,
         "<p><a href=\"http://www.a\">www.a</a>&amp;a;</p>",
         "should support named character references in domains"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc/d/e/).", &gfm)?,
+        to_html_with_options("https://a.bc/d/e/).", &gfm)?,
         "<p><a href=\"https://a.bc/d/e/\">https://a.bc/d/e/</a>).</p>",
         "should support a closing paren and period after a path"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc/d/e/.)", &gfm)?,
+        to_html_with_options("https://a.bc/d/e/.)", &gfm)?,
         "<p><a href=\"https://a.bc/d/e/\">https://a.bc/d/e/</a>.)</p>",
         "should support a period and closing paren after a path"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc).", &gfm)?,
+        to_html_with_options("https://a.bc).", &gfm)?,
         "<p><a href=\"https://a.bc\">https://a.bc</a>).</p>",
         "should support a closing paren and period after a domain"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc.)", &gfm)?,
+        to_html_with_options("https://a.bc.)", &gfm)?,
         "<p><a href=\"https://a.bc\">https://a.bc</a>.)</p>",
         "should support a period and closing paren after a domain"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc).d", &gfm)?,
+        to_html_with_options("https://a.bc).d", &gfm)?,
         "<p><a href=\"https://a.bc).d\">https://a.bc).d</a></p>",
         "should support a closing paren and period in a path"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc.)d", &gfm)?,
+        to_html_with_options("https://a.bc.)d", &gfm)?,
         "<p><a href=\"https://a.bc.)d\">https://a.bc.)d</a></p>",
         "should support a period and closing paren in a path"
     );
 
     assert_eq!(
-        micromark_with_options("https://a.bc/))d", &gfm)?,
+        to_html_with_options("https://a.bc/))d", &gfm)?,
         "<p><a href=\"https://a.bc/))d\">https://a.bc/))d</a></p>",
         "should support two closing parens in a path"
     );
 
     assert_eq!(
-        micromark_with_options("ftp://a/b/c.txt", &gfm)?,
+        to_html_with_options("ftp://a/b/c.txt", &gfm)?,
         "<p>ftp://a/b/c.txt</p>",
         "should not support ftp links"
     );
@@ -201,25 +201,25 @@ fn gfm_autolink_literal() -> Result<(), String> {
     // Fixing it would mean deviating from `cmark-gfm`:
     // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
     // assert_eq!(
-    //     micromark_with_options("，www.example.com", &gfm)?,
+    //     to_html_with_options("，www.example.com", &gfm)?,
     //     "<p>，<a href=\"http://www.example.com\">www.example.com</a></p>",
     //     "should support www links after Unicode punctuation",
     // );
 
     assert_eq!(
-        micromark_with_options("，https://example.com", &gfm)?,
+        to_html_with_options("，https://example.com", &gfm)?,
         "<p>，<a href=\"https://example.com\">https://example.com</a></p>",
         "should support http links after Unicode punctuation"
     );
 
     assert_eq!(
-        micromark_with_options("，example@example.com", &gfm)?,
+        to_html_with_options("，example@example.com", &gfm)?,
         "<p>，<a href=\"mailto:example@example.com\">example@example.com</a></p>",
         "should support email links after Unicode punctuation"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "http&#x3A;//user:password@host:port/path?key=value#fragment",
             &gfm
         )?,
@@ -228,13 +228,13 @@ fn gfm_autolink_literal() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("http://example.com/ab<cd", &gfm)?,
+        to_html_with_options("http://example.com/ab<cd", &gfm)?,
         "<p><a href=\"http://example.com/ab\">http://example.com/ab</a>&lt;cd</p>",
         "should stop domains/paths at `<`"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 mailto:scyther@pokemon.com
 
@@ -277,7 +277,7 @@ Email me at:scyther@pokemon.com"###,
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 a www.example.com&xxx;b c
 
@@ -326,7 +326,7 @@ a www.example.com& b
 
     // Note: this deviates from GFM, as <https://github.com/github/cmark-gfm/issues/278> is fixed.
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 [ www.example.com
 
@@ -371,7 +371,7 @@ a www.example.com& b
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 www.example.com/?=a(b)cccccc
 
@@ -422,7 +422,7 @@ www.example.com/?q=a(business)))
     // Here, the following issues are fixed:
     // - <https://github.com/github/cmark-gfm/issues/280>
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 # Literal autolinks
 
@@ -611,7 +611,7 @@ Can contain an underscore followed by a period: aaa@a.b_.c
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"H0.
 
 [https://a.com&copy;b
@@ -673,7 +673,7 @@ H5.
     );
 
     assert_eq!(
-        micromark_with_options(r###"Image start.
+        to_html_with_options(r###"Image start.
 
 ![https://a.com
 
@@ -755,7 +755,7 @@ Autolink literal after image.
     );
 
     assert_eq!(
-        micromark_with_options(r###"Link start.
+        to_html_with_options(r###"Link start.
 
 [https://a.com
 
@@ -927,7 +927,7 @@ Autolink literal after link.
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# “character reference”
 
 www.a&b (space)
@@ -1040,7 +1040,7 @@ www.a&b~
     );
 
     assert_eq!(
-        micromark_with_options(r###"# “character reference”
+        to_html_with_options(r###"# “character reference”
 
 www.a&#35 (space)
 
@@ -1150,7 +1150,7 @@ www.a&#35~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"a@0.0
 
 a@0.b
@@ -1203,7 +1203,7 @@ react@0.0.0-experimental-aae83a4b9
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# httpshhh? (2)
 
 http://a (space)
@@ -1316,7 +1316,7 @@ http://a~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# httpshhh? (1)
 
 http:// (space)
@@ -1429,7 +1429,7 @@ http://~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# httpshhh? (4)
 
 http://a/b (space)
@@ -1542,7 +1542,7 @@ http://a/b~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# httpshhh? (3)
 
 http://a/ (space)
@@ -1655,7 +1655,7 @@ http://a/~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[www.example.com/a&copy;](#)
 
 www.example.com/a&copy;
@@ -1681,7 +1681,7 @@ www.example.com/a\.
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# “character reference”
 
 www.a/b&c (space)
@@ -1794,7 +1794,7 @@ www.a/b&c~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# “character reference”
 
 www.a/b&#35 (space)
@@ -1907,7 +1907,7 @@ www.a/b&#35~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"In autolink literal path or link end?
 
 [https://a.com/d]()
@@ -1978,7 +1978,7 @@ www.a.com#d]()
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Last non-markdown ASCII whitespace (FF): noreply@example.com, http://example.com, https://example.com, www.example.com
 
 Last non-whitespace ASCII control (US): noreply@example.com, http://example.com, https://example.com, www.example.com
@@ -2052,7 +2052,7 @@ Some more non-ascii: 🤷‍noreply@example.com, 🤷‍http://example.com, 🤷
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# HTTP
 
 https://a.b can start after EOF
@@ -2179,7 +2179,7 @@ github.com: !<a href="mailto:a@b.c">a@b.c</a>, &quot;<a href="mailto:a@b.c">a@b.
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# wwwtf 2?
 
 www.a (space)
@@ -2292,7 +2292,7 @@ www.a~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# wwwtf 5?
 
 www.a. (space)
@@ -2405,7 +2405,7 @@ www.a.~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# wwwtf?
 
 www. (space)
@@ -2518,7 +2518,7 @@ www.~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# wwwtf? (4)
 
 www.a/b (space)
@@ -2631,7 +2631,7 @@ www.a/b~
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# wwwtf? (3)
 
 www.a/ (space)
@@ -2744,7 +2744,7 @@ www.a/~
     );
 
     assert_eq!(
-        micromark_to_mdast(
+        to_mdast(
             "a https://alpha.com b bravo@charlie.com c www.delta.com d xmpp:echo@foxtrot.com e mailto:golf@hotel.com f.",
             &gfm.parse
         )?,

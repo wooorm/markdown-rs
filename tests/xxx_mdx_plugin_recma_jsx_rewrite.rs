@@ -1,9 +1,9 @@
-extern crate micromark;
+extern crate markdown;
 extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;
 mod test_utils;
-use micromark::{micromark_to_mdast, Constructs, Location, ParseOptions};
+use markdown::{to_mdast, Constructs, Location, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
     hast_util_to_swc::hast_util_to_swc,
@@ -15,7 +15,7 @@ use test_utils::{
 
 fn from_markdown(value: &str, options: &RewriteOptions) -> Result<String, String> {
     let location = Location::new(value.as_bytes());
-    let mdast = micromark_to_mdast(
+    let mdast = to_mdast(
         value,
         &ParseOptions {
             constructs: Constructs::mdx(),

@@ -1,5 +1,5 @@
-extern crate micromark;
-use micromark::{micromark, micromark_with_options, CompileOptions, Options};
+extern crate markdown;
+use markdown::{to_html, to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -14,19 +14,19 @@ fn dangerous_html() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("<x>"),
+        to_html("<x>"),
         "&lt;x&gt;",
         "should be safe by default for flow"
     );
 
     assert_eq!(
-        micromark("a<b>"),
+        to_html("a<b>"),
         "<p>a&lt;b&gt;</p>",
         "should be safe by default for text"
     );
 
     assert_eq!(
-        micromark_with_options("<x>", danger)?,
+        to_html_with_options("<x>", danger)?,
         "<x>",
         "should be unsafe w/ `allowDangerousHtml`"
     );

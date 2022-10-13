@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{InlineCode, Node, Paragraph, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
@@ -19,152 +19,152 @@ fn code_text() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("`foo`"),
+        to_html("`foo`"),
         "<p><code>foo</code></p>",
         "should support code"
     );
 
     assert_eq!(
-        micromark("`` foo ` bar ``"),
+        to_html("`` foo ` bar ``"),
         "<p><code>foo ` bar</code></p>",
         "should support code w/ more accents"
     );
 
     assert_eq!(
-        micromark("` `` `"),
+        to_html("` `` `"),
         "<p><code>``</code></p>",
         "should support code w/ fences inside, and padding"
     );
 
     assert_eq!(
-        micromark("`  ``  `"),
+        to_html("`  ``  `"),
         "<p><code> `` </code></p>",
         "should support code w/ extra padding"
     );
 
     assert_eq!(
-        micromark("` a`"),
+        to_html("` a`"),
         "<p><code> a</code></p>",
         "should support code w/ unbalanced padding"
     );
 
     assert_eq!(
-        micromark("`\u{a0}b\u{a0}`"),
+        to_html("`\u{a0}b\u{a0}`"),
         "<p><code>\u{a0}b\u{a0}</code></p>",
         "should support code w/ non-padding whitespace"
     );
 
     assert_eq!(
-        micromark("` `\n`  `"),
+        to_html("` `\n`  `"),
         "<p><code> </code>\n<code>  </code></p>",
         "should support code w/o data"
     );
 
     assert_eq!(
-        micromark("``\nfoo\nbar  \nbaz\n``"),
+        to_html("``\nfoo\nbar  \nbaz\n``"),
         "<p><code>foo bar   baz</code></p>",
         "should support code w/o line endings (1)"
     );
 
     assert_eq!(
-        micromark("``\nfoo \n``"),
+        to_html("``\nfoo \n``"),
         "<p><code>foo </code></p>",
         "should support code w/o line endings (2)"
     );
 
     assert_eq!(
-        micromark("`foo   bar \nbaz`"),
+        to_html("`foo   bar \nbaz`"),
         "<p><code>foo   bar  baz</code></p>",
         "should not support whitespace collapsing"
     );
 
     assert_eq!(
-        micromark("`foo\\`bar`"),
+        to_html("`foo\\`bar`"),
         "<p><code>foo\\</code>bar`</p>",
         "should not support character escapes"
     );
 
     assert_eq!(
-        micromark("``foo`bar``"),
+        to_html("``foo`bar``"),
         "<p><code>foo`bar</code></p>",
         "should support more accents"
     );
 
     assert_eq!(
-        micromark("` foo `` bar `"),
+        to_html("` foo `` bar `"),
         "<p><code>foo `` bar</code></p>",
         "should support less accents"
     );
 
     assert_eq!(
-        micromark("*foo`*`"),
+        to_html("*foo`*`"),
         "<p>*foo<code>*</code></p>",
         "should precede over emphasis"
     );
 
     assert_eq!(
-        micromark("[not a `link](/foo`)"),
+        to_html("[not a `link](/foo`)"),
         "<p>[not a <code>link](/foo</code>)</p>",
         "should precede over links"
     );
 
     assert_eq!(
-        micromark("`<a href=\"`\">`"),
+        to_html("`<a href=\"`\">`"),
         "<p><code>&lt;a href=&quot;</code>&quot;&gt;`</p>",
         "should have same precedence as HTML (1)"
     );
 
     assert_eq!(
-        micromark_with_options("<a href=\"`\">`", &danger)?,
+        to_html_with_options("<a href=\"`\">`", &danger)?,
         "<p><a href=\"`\">`</p>",
         "should have same precedence as HTML (2)"
     );
 
     assert_eq!(
-        micromark("`<http://foo.bar.`baz>`"),
+        to_html("`<http://foo.bar.`baz>`"),
         "<p><code>&lt;http://foo.bar.</code>baz&gt;`</p>",
         "should have same precedence as autolinks (1)"
     );
 
     assert_eq!(
-        micromark("<http://foo.bar.`baz>`"),
+        to_html("<http://foo.bar.`baz>`"),
         "<p><a href=\"http://foo.bar.%60baz\">http://foo.bar.`baz</a>`</p>",
         "should have same precedence as autolinks (2)"
     );
 
     assert_eq!(
-        micromark("```foo``"),
+        to_html("```foo``"),
         "<p>```foo``</p>",
         "should not support more accents before a fence"
     );
 
     assert_eq!(
-        micromark("`foo"),
+        to_html("`foo"),
         "<p>`foo</p>",
         "should not support no closing fence (1)"
     );
 
     assert_eq!(
-        micromark("`foo``bar``"),
+        to_html("`foo``bar``"),
         "<p>`foo<code>bar</code></p>",
         "should not support no closing fence (2)"
     );
 
     // Extra:
     assert_eq!(
-        micromark("`foo\t\tbar`"),
+        to_html("`foo\t\tbar`"),
         "<p><code>foo\t\tbar</code></p>",
         "should support tabs in code"
     );
 
     assert_eq!(
-        micromark("\\``x`"),
+        to_html("\\``x`"),
         "<p>`<code>x</code></p>",
         "should support an escaped initial grave accent"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "`a`",
             &Options {
                 parse: ParseOptions {
@@ -182,7 +182,7 @@ fn code_text() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a `alpha` b.", &ParseOptions::default())?,
+        to_mdast("a `alpha` b.", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

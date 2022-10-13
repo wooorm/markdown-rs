@@ -25,7 +25,7 @@ use core::str;
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::decode_character_reference::decode_named;
+/// use markdown::util::decode_character_reference::decode_named;
 ///
 /// assert_eq!(decode_named("amp", true), "&");
 /// assert_eq!(decode_named("AElig", true), "Æ");
@@ -60,7 +60,7 @@ pub fn decode_named(value: &str, html5: bool) -> Option<String> {
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::decode_character_reference::decode_numeric;
+/// use markdown::util::decode_character_reference::decode_numeric;
 ///
 /// assert_eq!(decode_numeric("123", 10), "{");
 /// assert_eq!(decode_numeric("9", 16), "\t");
@@ -73,7 +73,7 @@ pub fn decode_named(value: &str, html5: bool) -> Option<String> {
 /// is given.
 /// It is expected that figuring out whether a number is allowed is handled in
 /// the parser.
-/// When `micromark` is used, this function never panics.
+/// When `markdown-rs` is used, this function never panics.
 ///
 /// ## References
 ///

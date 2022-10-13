@@ -1,8 +1,8 @@
-# micromark-rs
+# markdown-rs
 
 <!-- To do: enable image when repo is public. -->
 
-<!-- <img align="right" width="106" height="106" alt="" src="https://raw.githubusercontent.com/wooorm/micromark-rs/14f1ad0/logo.svg?sanitize=true"> -->
+<!-- <img align="right" width="106" height="106" alt="" src="https://raw.githubusercontent.com/wooorm/markdown-rs/14f1ad0/logo.svg?sanitize=true"> -->
 
 <!-- To do: enable badges when repo is public/published -->
 
@@ -33,7 +33,7 @@ CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
 ## What is this?
 
-micromark is an open source markdown parser written in Rust.
+`markdown-rs` is an open source markdown parser written in Rust.
 It’s implemented as a state machine (`#![no_std]` + `alloc`) that emits
 concrete tokens, so that every byte is accounted for, with positional info.
 The API then exposes this information as an AST, which is easier to work with,
@@ -75,17 +75,16 @@ to markdown such as MDX, math, and frontmatter.
 With [Rust][] (rust edition 2018+, ±version 1.56+), install with `cargo`:
 
 ```sh
-cargo install micromark
+cargo install markdown
 ```
 
 ## Use
 
 ```rs
-extern crate micromark;
-use micromark::micromark;
+extern crate markdown;
 
 fn main() {
-    println!("{}", micromark("## Hello, *world*!"));
+    println!("{}", markdown::to_html("## Hello, *world*!"));
 }
 ```
 
@@ -98,15 +97,14 @@ Yields:
 Extensions (in this case GFM):
 
 ```rs
-extern crate micromark;
-use micromark::{micromark_with_options, Options};
+extern crate markdown;
 
 fn main() -> Result<(), String> {
     println!(
         "{}",
-        micromark_with_options(
+        markdown::to_html_with_options(
             "* [x] contact@example.com ~~strikethrough~~",
-            &Options::gfm()
+            &markdown::Options::gfm()
         )?
     );
 
@@ -129,13 +127,12 @@ Yields:
 Syntax tree ([mdast][]):
 
 ```rs
-extern crate micromark;
-use micromark::{micromark_to_mdast, ParseOptions};
+extern crate markdown;
 
 fn main() -> Result<(), String> {
     println!(
         "{:?}",
-        micromark_to_mdast("# Hey, *you*!", &ParseOptions::default())?
+        markdown::to_mdast("# Hey, *you*!", &markdown::ParseOptions::default())?
     );
 
     Ok(())
@@ -150,18 +147,18 @@ Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3
 
 ## API
 
-`micromark` exposes
-[`micromark`](https://wooorm.com/micromark-rs/micromark/fn.micromark.html),
-[`micromark_with_options`](https://wooorm.com/micromark-rs/micromark/fn.micromark_with_options.html),
-[`micromark_to_mdast`](https://wooorm.com/micromark-rs/micromark/fn.micromark_to_mdast.html),
-[`Options`](https://wooorm.com/micromark-rs/micromark/struct.Options.html),
+`markdown-rs` exposes
+[`to_html`](https://wooorm.com/markdown-rs/markdown/fn.to_html.html),
+[`to_html_with_options`](https://wooorm.com/markdown-rs/markdown/fn.to_html_with_options.html),
+[`to_mdast`](https://wooorm.com/markdown-rs/markdown/fn.to_mdast.html),
+[`Options`](https://wooorm.com/markdown-rs/markdown/struct.Options.html),
 and a few other structs and enums.
 
 See the [crate docs][docs] for more info.
 
 ## Extensions
 
-micromark supports extensions to `CommonMark`.
+`markdown-rs` supports extensions to `CommonMark`.
 These extensions are maintained in this project.
 They are not enabled by default but can be turned on with options.
 
@@ -184,14 +181,14 @@ It’s instead a goal to support very common and mostly standardized extensions.
 
 ## Project
 
-micromark is maintained as a single monolithic crate.
+`markdown-rs` is maintained as a single monolithic crate.
 
 ### Overview
 
 The process to parse markdown looks like this:
 
 ```txt
-                     micromark
+                    markdown-rs
 +-------------------------------------------------+
 |            +-------+         +---------+--html- |
 | -markdown->+ parse +-events->+ compile +        |
@@ -204,7 +201,7 @@ The process to parse markdown looks like this:
 The files in `src/` are as follows:
 
 *   `construct/*.rs`
-    — CommonMark, GFM, and other extension constructs used in micromark
+    — CommonMark, GFM, and other extension constructs used in markdown
 *   `util/*.rs`
     — helpers often needed when parsing markdown
 *   `event.rs`
@@ -232,7 +229,7 @@ The files in `src/` are as follows:
 
 ### Test
 
-micromark is tested with the \~650 CommonMark tests and more than 1k extra
+`markdown-rs` is tested with the \~650 CommonMark tests and more than 1k extra
 tests confirmed with CM reference parsers.
 Then there’s even more tests for GFM and other extensions.
 These tests reach all branches in the code, which means that this project has
@@ -264,12 +261,12 @@ The following bash scripts are useful when working on this project:
 *   fuzz:
     ```sh
     cargo install cargo-fuzz
-    cargo +nightly fuzz run micromark
+    cargo +nightly fuzz run markdown
     ```
 
 ### Version
 
-micromark follows [SemVer](https://semver.org).
+`markdown-rs` follows [SemVer](https://semver.org).
 
 ### Security
 
@@ -277,7 +274,7 @@ The typical security aspect discussed for markdown is [cross-site scripting
 (XSS)][xss] attacks.
 Markdown itself is safe if it does not include embedded HTML or dangerous
 protocols in links/images (such as `javascript:` or `data:`).
-micromark makes any markdown safe by default, even if HTML is embedded or
+`markdown-rs` makes any markdown safe by default, even if HTML is embedded or
 dangerous protocols are used, as it encodes or drops them.
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
 user-provided markdown opens you up to XSS attacks.
@@ -285,15 +282,15 @@ user-provided markdown opens you up to XSS attacks.
 An aspect related to XSS for security is syntax errors: markdown itself has no
 syntax errors.
 Some syntax extensions (specifically, only MDX) do include syntax errors.
-For that reason, `micromark_with_options` returns `Result<String, String>`, of
+For that reason, `to_html_with_options` returns `Result<String, String>`, of
 which the error is a simple string indicating where the problem happened, what
 occurred, and what was expected instead.
 Make sure to handle your errors when using MDX.
 
 Another security aspect is DDoS attacks.
-For example, an attacker could throw a 100mb file at micromark, in which case
-it’s going to take a long while to finish.
-It is also possible to crash micromark with smaller payloads, notably when
+For example, an attacker could throw a 100mb file at `markdown-rs`, in which
+case it’s going to take a long while to finish.
+It is also possible to crash `markdown-rs` with smaller payloads, notably when
 thousands of links, images, emphasis, or strong are opened but not closed.
 It is wise to cap the accepted size of input (500kb can hold a big book) and to
 process content in a different thread so that it can be stopped when needed.
@@ -331,19 +328,19 @@ Special thanks go out to:
 
 <!-- To do: public/publish -->
 
-<!-- [build-badge]: https://github.com/wooorm/micromark-rs/workflows/main/badge.svg -->
+<!-- [build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg -->
 
-<!-- [build]: https://github.com/wooorm/micromark-rs/actions -->
+<!-- [build]: https://github.com/wooorm/markdown-rs/actions -->
 
-<!-- [crate-badge]: https://img.shields.io/crates/d/micromark.svg -->
+<!-- [crate-badge]: https://img.shields.io/crates/d/markdown.svg -->
 
-<!-- [crate]: https://crates.io/crates/micromark -->
+<!-- [crate]: https://crates.io/crates/markdown -->
 
-[docs]: https://wooorm.com/micromark-rs/micromark/
+[docs]: https://wooorm.com/markdown-rs/markdown/
 
 [chat-badge]: https://img.shields.io/badge/chat-discussions-success.svg
 
-[chat]: https://github.com/wooorm/micromark-rs/discussions
+[chat]: https://github.com/wooorm/markdown-rs/discussions
 
 [commonmark]: https://spec.commonmark.org
 
@@ -357,7 +354,7 @@ Special thanks go out to:
 
 [chalker]: https://github.com/ChALkeR
 
-[license]: https://github.com/micromark/micromark/blob/main/license
+[license]: license
 
 [author]: https://wooorm.com
 

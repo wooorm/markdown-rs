@@ -27,7 +27,7 @@
 //! SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use crate::test_utils::hast;
-use micromark::{mdast, sanitize, unist::Position};
+use markdown::{mdast, sanitize, unist::Position};
 
 // To do: support these compile options:
 // ```

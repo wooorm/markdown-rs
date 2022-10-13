@@ -5,7 +5,7 @@ use crate::test_utils::{
     mdx_plugin_recma_jsx_rewrite::{mdx_plugin_recma_jsx_rewrite, Options as RewriteOptions},
     swc::{parse_esm, parse_expression, serialize},
 };
-use micromark::{micromark_to_mdast, Constructs, Location, ParseOptions};
+use markdown::{to_mdast, Constructs, Location, ParseOptions};
 
 pub use super::mdx_plugin_recma_document::JsxRuntime;
 
@@ -181,7 +181,7 @@ pub fn mdx(value: &str, filepath: Option<String>, options: &Options) -> Result<S
     };
 
     let location = Location::new(value.as_bytes());
-    let mdast = micromark_to_mdast(value, &parse_options)?;
+    let mdast = to_mdast(value, &parse_options)?;
     let hast = mdast_util_to_hast(&mdast);
     let mut program = hast_util_to_swc(&hast, filepath, Some(&location))?;
     mdx_plugin_recma_document(&mut program, &document_options, Some(&location))?;

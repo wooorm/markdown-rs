@@ -1,4 +1,4 @@
-extern crate micromark;
+extern crate markdown;
 extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;

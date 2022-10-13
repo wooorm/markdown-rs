@@ -1,15 +1,15 @@
-//! Public API of micromark.
+//! Public API of `markdown-rs`.
 //!
-//! This module exposes primarily [`micromark`][].
-//! It also exposes [`micromark_with_options`][] and [`micromark_to_mdast`][].
+//! This module exposes primarily [`to_html()`][].
+//! It also exposes [`to_html_with_options()`][] and [`to_mdast()`][].
 //!
-//! *   [`micromark`][]
+//! *   [`to_html()`][]
 //!     — safe way to transform (untrusted?) markdown into HTML
-//! *   [`micromark_with_options`][]
-//!     — like `micromark` but lets you configure how markdown is turned into
-//!     HTML, such as allowing dangerous HTML or turning on/off
-//!     different constructs (GFM, MDX, and the like)
-//! *   [`micromark_to_mdast`][]
+//! *   [`to_html_with_options()`][]
+//!     — like `to_html` but lets you configure how markdown is turned into
+//!     HTML, such as allowing dangerous HTML or turning on/off different
+//!     constructs (GFM, MDX, and the like)
+//! *   [`to_mdast()`][]
 //!     — turn markdown into a syntax tree
 #![no_std]
 #![deny(clippy::pedantic)]
@@ -37,8 +37,6 @@ mod util;
 use alloc::{boxed::Box, fmt, string::String};
 use mdast::Node;
 use parser::parse;
-use to_html::compile as to_html;
-use to_mdast::compile as to_mdast;
 
 #[doc(hidden)]
 // Do not use: exported for quick prototyping, will be removed.
@@ -60,7 +58,7 @@ pub use util::location::Location;
 /// ## Examples
 ///
 /// ```
-/// use micromark::LineEnding;
+/// use markdown::LineEnding;
 /// # fn main() {
 ///
 /// // Use a CR + LF combination:
@@ -128,7 +126,7 @@ impl LineEnding {
 pub enum MdxSignal {
     /// A syntax error.
     ///
-    /// `micromark-rs` will crash with error message `String`, and convert the
+    /// `markdown-rs` will crash with error message `String`, and convert the
     /// `usize` (byte offset into `&str` passed to `MdxExpressionParse` or
     /// `MdxEsmParse`) to where it happened in the whole document.
     ///
@@ -140,7 +138,7 @@ pub enum MdxSignal {
     Error(String, usize),
     /// An error at the end of the (partial?) expression.
     ///
-    /// `micromark-rs` will either crash with error message `String` if it
+    /// `markdown-rs` will either crash with error message `String` if it
     /// doesn’t have any more text, or it will try again later when more text
     /// is available.
     ///
@@ -152,7 +150,7 @@ pub enum MdxSignal {
     Eof(String),
     /// Done, successfully.
     ///
-    /// `micromark-rs` knows that this is the end of a valid expression/esm and
+    /// `markdown-rs` knows that this is the end of a valid expression/esm and
     /// continues with markdown.
     ///
     /// ## Examples
@@ -213,7 +211,7 @@ pub type MdxExpressionParse = dyn Fn(&str, &MdxExpressionKind) -> MdxSignal;
 /// ## Examples
 ///
 /// ```
-/// use micromark::Constructs;
+/// use markdown::Constructs;
 /// # fn main() {
 ///
 /// // Use the default trait to get `CommonMark` constructs:
@@ -641,7 +639,7 @@ impl Constructs {
 /// ## Examples
 ///
 /// ```
-/// use micromark::CompileOptions;
+/// use markdown::CompileOptions;
 /// # fn main() {
 ///
 /// // Use the default trait to get safe defaults:
@@ -675,18 +673,18 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options};
+    /// use markdown::{to_html, to_html_with_options, CompileOptions, Options};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // micromark is safe by default:
+    /// // `markdown-rs` is safe by default:
     /// assert_eq!(
-    ///     micromark("Hi, <i>venus</i>!"),
+    ///     to_html("Hi, <i>venus</i>!"),
     ///     "<p>Hi, &lt;i&gt;venus&lt;/i&gt;!</p>"
     /// );
     ///
     /// // Turn `allow_dangerous_html` on to allow potentially dangerous HTML:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "Hi, <i>venus</i>!",
     ///         &Options {
     ///             compile: CompileOptions {
@@ -719,18 +717,18 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options};
+    /// use markdown::{to_html, to_html_with_options, CompileOptions, Options};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // micromark is safe by default:
+    /// // `markdown-rs` is safe by default:
     /// assert_eq!(
-    ///     micromark("<javascript:alert(1)>"),
+    ///     to_html("<javascript:alert(1)>"),
     ///     "<p><a href=\"\">javascript:alert(1)</a></p>"
     /// );
     ///
     /// // Turn `allow_dangerous_protocol` on to allow potentially dangerous protocols:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "<javascript:alert(1)>",
     ///         &Options {
     ///             compile: CompileOptions {
@@ -750,8 +748,8 @@ pub struct CompileOptions {
     /// Default line ending to use when compiling to HTML, for line endings not
     /// in `value`.
     ///
-    /// Generally, micromark copies line endings (`\r`, `\n`, `\r\n`) in the
-    /// markdown document over to the compiled HTML.
+    /// Generally, `markdown-rs` copies line endings (`\r`, `\n`, `\r\n`) in
+    /// the markdown document over to the compiled HTML.
     /// In some cases, such as `> a`, CommonMark requires that extra line
     /// endings are added: `<blockquote>\n<p>a</p>\n</blockquote>`.
     ///
@@ -763,18 +761,18 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, LineEnding, Options};
+    /// use markdown::{to_html, to_html_with_options, CompileOptions, LineEnding, Options};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // micromark uses `\n` by default:
+    /// // `markdown-rs` uses `\n` by default:
     /// assert_eq!(
-    ///     micromark("> a"),
+    ///     to_html("> a"),
     ///     "<blockquote>\n<p>a</p>\n</blockquote>"
     /// );
     ///
     /// // Define `default_line_ending` to configure the default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "> a",
     ///         &Options {
     ///             compile: CompileOptions {
@@ -805,12 +803,12 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"Footnotes"` is used by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options::gfm()
     ///     )?,
@@ -819,7 +817,7 @@ pub struct CompileOptions {
     ///
     /// // Pass `gfm_footnote_label` to use something else:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -850,12 +848,12 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"h2"` is used by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options::gfm()
     ///     )?,
@@ -864,7 +862,7 @@ pub struct CompileOptions {
     ///
     /// // Pass `gfm_footnote_label_tag_name` to use something else:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -898,12 +896,12 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"class=\"sr-only\""` is used by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options::gfm()
     ///     )?,
@@ -912,7 +910,7 @@ pub struct CompileOptions {
     ///
     /// // Pass `gfm_footnote_label_attributes` to use something else:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -941,12 +939,12 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"Back to content"` is used by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options::gfm()
     ///     )?,
@@ -955,7 +953,7 @@ pub struct CompileOptions {
     ///
     /// // Pass `gfm_footnote_back_label` to use something else:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -997,12 +995,12 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"user-content-"` is used by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options::gfm()
     ///     )?,
@@ -1011,7 +1009,7 @@ pub struct CompileOptions {
     ///
     /// // Pass `gfm_footnote_clobber_prefix` to use something else:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -1041,12 +1039,12 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // With `allow_dangerous_html`, micromark passes HTML through untouched:
+    /// // With `allow_dangerous_html`, `markdown-rs` passes HTML through untouched:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "<iframe>",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -1061,7 +1059,7 @@ pub struct CompileOptions {
     ///
     /// // Pass `gfm_tagfilter: true` to make some of that safe:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "<iframe>",
     ///         &Options {
     ///             parse: ParseOptions::gfm(),
@@ -1117,7 +1115,7 @@ impl CompileOptions {
 /// ## Examples
 ///
 /// ```
-/// use micromark::ParseOptions;
+/// use markdown::ParseOptions;
 /// # fn main() {
 ///
 /// // Use the default trait to parse markdown according to `CommonMark`:
@@ -1137,18 +1135,18 @@ pub struct ParseOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Constructs, Options, ParseOptions};
+    /// use markdown::{to_html, to_html_with_options, Constructs, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // micromark follows CommonMark by default:
+    /// // `markdown-rs` follows CommonMark by default:
     /// assert_eq!(
-    ///     micromark("    indented code?"),
+    ///     to_html("    indented code?"),
     ///     "<pre><code>indented code?\n</code></pre>"
     /// );
     ///
     /// // Pass `constructs` to choose what to enable and disable:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "    indented code?",
     ///         &Options {
     ///             parse: ParseOptions {
@@ -1182,12 +1180,12 @@ pub struct ParseOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Constructs, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // micromark supports single tildes by default:
+    /// // `markdown-rs` supports single tildes by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "~a~",
     ///         &Options {
     ///             parse: ParseOptions {
@@ -1202,7 +1200,7 @@ pub struct ParseOptions {
     ///
     /// // Pass `gfm_strikethrough_single_tilde: false` to turn that off:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "~a~",
     ///         &Options {
     ///             parse: ParseOptions {
@@ -1235,12 +1233,12 @@ pub struct ParseOptions {
     /// ## Examples
     ///
     /// ```
-    /// use micromark::{micromark, micromark_with_options, Constructs, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
-    /// // micromark supports single dollars by default:
+    /// // `markdown-rs` supports single dollars by default:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "$a$",
     ///         &Options {
     ///             parse: ParseOptions {
@@ -1258,7 +1256,7 @@ pub struct ParseOptions {
     ///
     /// // Pass `math_text_single_dollar: false` to turn that off:
     /// assert_eq!(
-    ///     micromark_with_options(
+    ///     to_html_with_options(
     ///         "$a$",
     ///         &Options {
     ///             parse: ParseOptions {
@@ -1285,7 +1283,7 @@ pub struct ParseOptions {
     /// languages within expressions.
     ///
     /// It only makes sense to pass this when compiling to a syntax tree
-    /// with [`micromark_to_mdast`][].
+    /// with [`to_mdast()`][].
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
@@ -1301,7 +1299,7 @@ pub struct ParseOptions {
     /// > MDX that is aware of, say, Rust, or other programming languages.
     ///
     /// It only makes sense to pass this when compiling to a syntax tree
-    /// with [`micromark_to_mdast`][].
+    /// with [`to_mdast()`][].
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
@@ -1396,7 +1394,7 @@ impl ParseOptions {
 /// ## Examples
 ///
 /// ```
-/// use micromark::Options;
+/// use markdown::Options;
 /// # fn main() {
 ///
 /// // Use the default trait to compile markdown to HTML according to `CommonMark`:
@@ -1438,27 +1436,27 @@ impl Options {
 /// Turn markdown into HTML.
 ///
 /// Compiles markdown to HTML according to `CommonMark`.
-/// Use [`micromark_with_options`][] to configure how markdown is turned into
+/// Use [`to_html_with_options()`][] to configure how markdown is turned into
 /// HTML.
 ///
 /// ## Examples
 ///
 /// ```
-/// use micromark::micromark;
+/// use markdown::to_html;
 ///
-/// assert_eq!(micromark("# Hello, world!"), "<h1>Hello, world!</h1>");
+/// assert_eq!(to_html("# Hello, world!"), "<h1>Hello, world!</h1>");
 /// ```
 #[must_use]
 #[allow(clippy::missing_panics_doc)]
-pub fn micromark(value: &str) -> String {
-    micromark_with_options(value, &Options::default()).unwrap()
+pub fn to_html(value: &str) -> String {
+    to_html_with_options(value, &Options::default()).unwrap()
 }
 
 /// Turn markdown into HTML, with configuration.
 ///
 /// ## Errors
 ///
-/// `micromark_with_options` never errors with normal markdown because markdown
+/// `to_html_with_options()` never errors with normal markdown because markdown
 /// does not have syntax errors, so feel free to `unwrap()`.
 /// However, MDX does have syntax errors.
 /// When MDX is turned on, there are several errors that can occur with how
@@ -1467,16 +1465,16 @@ pub fn micromark(value: &str) -> String {
 /// ## Examples
 ///
 /// ```
-/// use micromark::{micromark_with_options, CompileOptions, Options};
+/// use markdown::{to_html_with_options, CompileOptions, Options};
 /// # fn main() -> Result<(), String> {
 ///
 /// // Use GFM:
-/// let result = micromark_with_options("~hi~hello!", &Options::gfm())?;
+/// let result = to_html_with_options("~hi~hello!", &Options::gfm())?;
 ///
 /// assert_eq!(result, "<p><del>hi</del>hello!</p>");
 ///
 /// // Live dangerously / trust the author:
-/// let result = micromark_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
+/// let result = to_html_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
 ///     compile: CompileOptions {
 ///       allow_dangerous_html: true,
 ///       allow_dangerous_protocol: true,
@@ -1489,17 +1487,21 @@ pub fn micromark(value: &str) -> String {
 /// # Ok(())
 /// # }
 /// ```
-pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, String> {
+pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, String> {
     let (events, parse_state) = parse(value, &options.parse)?;
-    Ok(to_html(&events, parse_state.bytes, &options.compile))
+    Ok(to_html::compile(
+        &events,
+        parse_state.bytes,
+        &options.compile,
+    ))
 }
 
 /// Turn markdown into a syntax tree.
 ///
 /// ## Errors
 ///
-/// `to_mdast` never errors with normal markdown because markdown does not have
-/// syntax errors, so feel free to `unwrap()`.
+/// `to_mdast()` never errors with normal markdown because markdown does not
+/// have syntax errors, so feel free to `unwrap()`.
 /// However, MDX does have syntax errors.
 /// When MDX is turned on, there are several errors that can occur with how
 /// JSX, expressions, or ESM are written.
@@ -1507,18 +1509,18 @@ pub fn micromark_with_options(value: &str, options: &Options) -> Result<String, 
 /// ## Examples
 ///
 /// ```
-/// use micromark::{micromark_to_mdast, ParseOptions};
+/// use markdown::{to_mdast, ParseOptions};
 /// # fn main() -> Result<(), String> {
 ///
-/// let tree = micromark_to_mdast("# Hey, *you*!", &ParseOptions::default())?;
+/// let tree = to_mdast("# Hey, *you*!", &ParseOptions::default())?;
 ///
 /// println!("{:?}", tree);
 /// // => Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3-1:8 (2-7)) }, Emphasis { children: [Text { value: "you", position: Some(1:9-1:12 (8-11)) }], position: Some(1:8-1:13 (7-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
 /// # Ok(())
 /// # }
 /// ```
-pub fn micromark_to_mdast(value: &str, options: &ParseOptions) -> Result<Node, String> {
+pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<Node, String> {
     let (events, parse_state) = parse(value, options)?;
-    let node = to_mdast(&events, parse_state.bytes)?;
+    let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)
 }

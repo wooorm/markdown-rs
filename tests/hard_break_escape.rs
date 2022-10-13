@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{Break, Node, Paragraph, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -10,43 +10,43 @@ use pretty_assertions::assert_eq;
 #[test]
 fn hard_break_escape() -> Result<(), String> {
     assert_eq!(
-        micromark("foo\\\nbaz"),
+        to_html("foo\\\nbaz"),
         "<p>foo<br />\nbaz</p>",
         "should support a backslash to form a hard break"
     );
 
     assert_eq!(
-        micromark("foo\\\n     bar"),
+        to_html("foo\\\n     bar"),
         "<p>foo<br />\nbar</p>",
         "should support leading spaces after an escape hard break"
     );
 
     assert_eq!(
-        micromark("*foo\\\nbar*"),
+        to_html("*foo\\\nbar*"),
         "<p><em>foo<br />\nbar</em></p>",
         "should support escape hard breaks in emphasis"
     );
 
     assert_eq!(
-        micromark("``code\\\ntext``"),
+        to_html("``code\\\ntext``"),
         "<p><code>code\\ text</code></p>",
         "should not support escape hard breaks in code"
     );
 
     assert_eq!(
-        micromark("foo\\"),
+        to_html("foo\\"),
         "<p>foo\\</p>",
         "should not support escape hard breaks at the end of a paragraph"
     );
 
     assert_eq!(
-        micromark("### foo\\"),
+        to_html("### foo\\"),
         "<h3>foo\\</h3>",
         "should not support escape hard breaks at the end of a heading"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "a\\\nb",
             &Options {
                 parse: ParseOptions {
@@ -64,7 +64,7 @@ fn hard_break_escape() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_to_mdast("a\\\nb.", &ParseOptions::default())?,
+        to_mdast("a\\\nb.", &ParseOptions::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

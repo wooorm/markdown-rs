@@ -12,7 +12,7 @@ use crate::test_utils::{
         position_to_string, span_to_position,
     },
 };
-use micromark::{id_cont, id_start, unist::Position, Location};
+use markdown::{id_cont, id_start, unist::Position, Location};
 use swc_ecma_visit::{noop_visit_mut_type, VisitMut, VisitMutWith};
 
 /// Configuration.

@@ -1,6 +1,6 @@
-extern crate micromark;
+extern crate markdown;
 mod test_utils;
-use micromark::mdast;
+use markdown::mdast;
 use pretty_assertions::assert_eq;
 use test_utils::{hast, mdast_util_to_hast::mdast_util_to_hast};
 

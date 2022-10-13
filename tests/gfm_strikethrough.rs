@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{Delete, Node, Paragraph, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -18,61 +18,61 @@ fn gfm_strikethrough() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("a ~b~ c"),
+        to_html("a ~b~ c"),
         "<p>a ~b~ c</p>",
         "should ignore strikethrough by default"
     );
 
     assert_eq!(
-        micromark_with_options("a ~b~", &gfm)?,
+        to_html_with_options("a ~b~", &gfm)?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ one tilde"
     );
 
     assert_eq!(
-        micromark_with_options("a ~~b~~", &gfm)?,
+        to_html_with_options("a ~~b~~", &gfm)?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ two tildes"
     );
 
     assert_eq!(
-        micromark_with_options("a ~~~b~~~", &gfm)?,
+        to_html_with_options("a ~~~b~~~", &gfm)?,
         "<p>a ~~~b~~~</p>",
         "should not support strikethrough w/ three tildes"
     );
 
     assert_eq!(
-        micromark_with_options("a \\~~~b~~ c", &gfm)?,
+        to_html_with_options("a \\~~~b~~ c", &gfm)?,
         "<p>a ~<del>b</del> c</p>",
         "should support strikethrough after an escaped tilde"
     );
 
     assert_eq!(
-        micromark_with_options("a ~~b ~~c~~ d~~ e", &gfm)?,
+        to_html_with_options("a ~~b ~~c~~ d~~ e", &gfm)?,
         "<p>a <del>b <del>c</del> d</del> e</p>",
         "should support nested strikethrough"
     );
 
     assert_eq!(
-        micromark_with_options("a ~-1~ b", &gfm)?,
+        to_html_with_options("a ~-1~ b", &gfm)?,
         "<p>a <del>-1</del> b</p>",
         "should open if preceded by whitespace and followed by punctuation"
     );
 
     assert_eq!(
-        micromark_with_options("a ~b.~ c", &gfm)?,
+        to_html_with_options("a ~b.~ c", &gfm)?,
         "<p>a <del>b.</del> c</p>",
         "should close if preceded by punctuation and followed by whitespace"
     );
 
     assert_eq!(
-        micromark_with_options("~b.~.", &gfm)?,
+        to_html_with_options("~b.~.", &gfm)?,
         "<p><del>b.</del>.</p>",
         "should close if preceded and followed by punctuation"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 # Balanced
 
@@ -165,7 +165,7 @@ a ~~two b two~~ c one~ d
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 # Flank
 
@@ -222,7 +222,7 @@ a ~~twoLeft b ~~twoLeft c ~~twoLeft d
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 # Interlpay
 
@@ -368,7 +368,7 @@ u ~**xxx**~ zzz
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "a ~b~ ~~c~~ d",
             &Options {
                 parse: ParseOptions {
@@ -384,7 +384,7 @@ u ~**xxx**~ zzz
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "a ~b~ ~~c~~ d",
             &Options {
                 parse: ParseOptions {
@@ -400,7 +400,7 @@ u ~**xxx**~ zzz
     );
 
     assert_eq!(
-        micromark_to_mdast("a ~~alpha~~ b.", &gfm.parse)?,
+        to_mdast("a ~~alpha~~ b.", &gfm.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

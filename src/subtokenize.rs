@@ -1,6 +1,6 @@
 //! Deal with content in other content.
 //!
-//! To deal with content in content, *you* (a `micromark-rs` contributor) add
+//! To deal with content in content, *you* (a `markdown-rs` contributor) add
 //! info on events.
 //! Events are a flat list, but they can be connected to each other with a
 //! [`Link`][crate::event::Link].

@@ -1,13 +1,11 @@
-extern crate micromark;
-use micromark::{
-    micromark, micromark_with_options, CompileOptions, Constructs, Options, ParseOptions,
-};
+extern crate markdown;
+use markdown::{to_html, to_html_with_options, CompileOptions, Constructs, Options, ParseOptions};
 use pretty_assertions::assert_eq;
 
 #[test]
 fn fuzz() -> Result<(), String> {
     assert_eq!(
-        micromark("[\n~\na\n-\n\n"),
+        to_html("[\n~\na\n-\n\n"),
         "<h2>[\n~\na</h2>\n",
         "1: label, blank lines, and code"
     );
@@ -15,7 +13,7 @@ fn fuzz() -> Result<(), String> {
     // The first link is stopped by the `+` (so it’s `a@b.c`), but the next
     // link overlaps it (`b.c+d@e.f`).
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "a@b.c+d@e.f",
             &Options {
                 parse: ParseOptions {
@@ -33,13 +31,13 @@ fn fuzz() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark("    x\n*    "),
+        to_html("    x\n*    "),
         "<pre><code>x\n</code></pre>\n<ul>\n<li></li>\n</ul>",
         "3-a: containers should not pierce into indented code"
     );
 
     assert_eq!(
-        micromark("    a\n*     b"),
+        to_html("    a\n*     b"),
         "<pre><code>a\n</code></pre>\n<ul>\n<li>\n<pre><code>b\n</code></pre>\n</li>\n</ul>",
         "3-b: containers should not pierce into indented code"
     );

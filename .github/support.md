@@ -49,7 +49,7 @@ See [`contribute.md`][contribute] on how to contribute.
 
 [xy]: https://meta.stackexchange.com/questions/66377/what-is-the-xy-problem/66378#66378
 
-[chat]: https://github.com/wooorm/micromark-rs/discussions
+[chat]: https://github.com/wooorm/markdown-rs/discussions
 
 [contribute]: contribute.md
 

@@ -1,7 +1,4 @@
-extern crate micromark;
-use micromark::{
-    micromark, micromark_to_mdast, micromark_with_options, CompileOptions, Options, ParseOptions,
-};
+extern crate markdown;
 
 fn main() -> Result<(), String> {
     // Turn on debugging.
@@ -9,20 +6,20 @@ fn main() -> Result<(), String> {
     env_logger::init();
 
     // Safely turn (untrusted?) markdown into HTML.
-    println!("{:?}", micromark("## Hello, *world*!"));
+    println!("{:?}", markdown::to_html("## Hello, *world*!"));
 
     // Turn trusted markdown into HTML.
     println!(
         "{:?}",
-        micromark_with_options(
+        markdown::to_html_with_options(
             "<div style=\"color: tomato\">\n\n# Hello, tomato!\n\n</div>",
-            &Options {
-                compile: CompileOptions {
+            &markdown::Options {
+                compile: markdown::CompileOptions {
                     allow_dangerous_html: true,
                     allow_dangerous_protocol: true,
-                    ..CompileOptions::default()
+                    ..markdown::CompileOptions::default()
                 },
-                ..Options::default()
+                ..markdown::Options::default()
             }
         )
     );
@@ -30,16 +27,19 @@ fn main() -> Result<(), String> {
     // Support GFM extensions.
     println!(
         "{}",
-        micromark_with_options(
+        markdown::to_html_with_options(
             "* [x] contact@example.com ~~strikethrough~~",
-            &Options::gfm()
+            &markdown::Options::gfm()
         )?
     );
 
     // Access syntax tree and support MDX extensions:
     println!(
         "{:?}",
-        micromark_to_mdast("# <HelloMessage />, {username}!", &ParseOptions::mdx())?
+        markdown::to_mdast(
+            "# <HelloMessage />, {username}!",
+            &markdown::ParseOptions::mdx()
+        )?
     );
 
     Ok(())

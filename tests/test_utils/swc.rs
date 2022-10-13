@@ -1,10 +1,10 @@
-//! Bridge between `micromark` and SWC.
-extern crate micromark;
+//! Bridge between `markdown-rs` and SWC.
+extern crate markdown;
 extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_parser;
 use crate::test_utils::swc_utils::{bytepos_to_point, prefix_error_with_point, RewriteContext};
-use micromark::{mdast::Stop, unist::Point, Location, MdxExpressionKind, MdxSignal};
+use markdown::{mdast::Stop, unist::Point, Location, MdxExpressionKind, MdxSignal};
 use swc_common::{
     source_map::Pos, sync::Lrc, BytePos, FileName, FilePathMapping, SourceFile, SourceMap, Spanned,
 };

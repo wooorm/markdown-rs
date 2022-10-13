@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
@@ -18,13 +18,13 @@ fn gfm_footnote() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("A call.[^a]\n\n[^a]: whatevs"),
+        to_html("A call.[^a]\n\n[^a]: whatevs"),
         "<p>A call.<a href=\"whatevs\">^a</a></p>\n",
         "should ignore footnotes by default"
     );
 
     assert_eq!(
-        micromark_with_options("A call.[^a]\n\n[^a]: whatevs", &gfm)?,
+        to_html_with_options("A call.[^a]\n\n[^a]: whatevs", &gfm)?,
         "<p>A call.<sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -38,7 +38,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "Noot.[^a]\n\n[^a]: dingen",
             &Options {
                 parse: ParseOptions {
@@ -65,7 +65,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
                 parse: ParseOptions {
@@ -91,7 +91,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
                 parse: ParseOptions {
@@ -117,7 +117,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
                 parse: ParseOptions {
@@ -143,19 +143,19 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("A paragraph.\n\n[^a]: whatevs", &gfm)?,
+        to_html_with_options("A paragraph.\n\n[^a]: whatevs", &gfm)?,
         "<p>A paragraph.</p>\n",
         "should ignore definitions w/o calls"
     );
 
     assert_eq!(
-        micromark_with_options("a[^b]", &gfm)?,
+        to_html_with_options("a[^b]", &gfm)?,
         "<p>a[^b]</p>",
         "should ignore calls w/o definitions"
     );
 
     assert_eq!(
-        micromark_with_options("a[^b]\n\n[^b]: c\n[^b]: d", &gfm)?,
+        to_html_with_options("a[^b]\n\n[^b]: c\n[^b]: d", &gfm)?,
         "<p>a<sup><a href=\"#user-content-fn-b\" id=\"user-content-fnref-b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -169,7 +169,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("a[^b], c[^b]\n\n[^b]: d", &gfm)?,
+        to_html_with_options("a[^b], c[^b]\n\n[^b]: d", &gfm)?,
         "<p>a<sup><a href=\"#user-content-fn-b\" id=\"user-content-fnref-b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>, c<sup><a href=\"#user-content-fn-b\" id=\"user-content-fnref-b-2\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -183,32 +183,32 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("![^a](b)", &gfm)?,
+        to_html_with_options("![^a](b)", &gfm)?,
         "<p>!<a href=\"b\">^a</a></p>",
         "should not support images starting w/ `^` (but see it as a link?!, 1)"
     );
 
     assert_eq!(
-        micromark_with_options("![^a][b]\n\n[b]: c", &gfm)?,
+        to_html_with_options("![^a][b]\n\n[b]: c", &gfm)?,
         "<p>!<a href=\"c\">^a</a></p>\n",
         "should not support images starting w/ `^` (but see it as a link?!, 2)"
     );
 
     assert_eq!(
-        micromark_with_options("[^]()", &gfm)?,
+        to_html_with_options("[^]()", &gfm)?,
         "<p><a href=\"\">^</a></p>",
         "should support an empty link with caret"
     );
 
     assert_eq!(
-        micromark_with_options("![^]()", &gfm)?,
+        to_html_with_options("![^]()", &gfm)?,
         "<p>!<a href=\"\">^</a></p>",
         "should support an empty image with caret (as link)"
     );
 
     // <https://github.com/github/cmark-gfm/issues/239>
     assert_eq!(
-        micromark_with_options("Call.[^a\\+b].\n\n[^a\\+b]: y", &gfm)?,
+        to_html_with_options("Call.[^a\\+b].\n\n[^a\\+b]: y", &gfm)?,
         "<p>Call.<sup><a href=\"#user-content-fn-a%5C+b\" id=\"user-content-fnref-a%5C+b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -222,7 +222,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("Call.[^a&copy;b].\n\n[^a&copy;b]: y", &gfm)?,
+        to_html_with_options("Call.[^a&copy;b].\n\n[^a&copy;b]: y", &gfm)?,
         "<p>Call.<sup><a href=\"#user-content-fn-a&amp;copy;b\" id=\"user-content-fnref-a&amp;copy;b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -238,7 +238,7 @@ fn gfm_footnote() -> Result<(), String> {
     // <https://github.com/github/cmark-gfm/issues/239>
     // <https://github.com/github/cmark-gfm/issues/240>
     assert_eq!(
-        micromark_with_options("Call.[^a\\]b].\n\n[^a\\]b]: y", &gfm)?,
+        to_html_with_options("Call.[^a\\]b].\n\n[^a\\]b]: y", &gfm)?,
         "<p>Call.<sup><a href=\"#user-content-fn-a%5C%5Db\" id=\"user-content-fnref-a%5C%5Db\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -252,7 +252,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("Call.[^a&#91;b].\n\n[^a&#91;b]: y", &gfm)?,
+        to_html_with_options("Call.[^a&#91;b].\n\n[^a&#91;b]: y", &gfm)?,
         "<p>Call.<sup><a href=\"#user-content-fn-a&amp;#91;b\" id=\"user-content-fnref-a&amp;#91;b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -266,19 +266,19 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("Call.[^a\\+b].\n\n[^a+b]: y", &gfm)?,
+        to_html_with_options("Call.[^a\\+b].\n\n[^a+b]: y", &gfm)?,
         "<p>Call.[^a+b].</p>\n",
         "should match calls to definitions on the source of the label, not on resolved escapes"
     );
 
     assert_eq!(
-        micromark_with_options("Call.[^a&#91;b].\n\n[^a\\[b]: y", &gfm)?,
+        to_html_with_options("Call.[^a&#91;b].\n\n[^a\\[b]: y", &gfm)?,
         "<p>Call.[^a[b].</p>\n",
         "should match calls to definitions on the source of the label, not on resolved references"
     );
 
     assert_eq!(
-        micromark_with_options("[^1].\n\n[^1]: a\nb", &gfm)?,
+        to_html_with_options("[^1].\n\n[^1]: a\nb", &gfm)?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -293,7 +293,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        micromark_with_options("[^1].\n\n> [^1]: a\nb", &gfm)?,
+        to_html_with_options("[^1].\n\n> [^1]: a\nb", &gfm)?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <blockquote>
 </blockquote>
@@ -310,7 +310,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        micromark_with_options("[^1].\n\n> [^1]: a\n> b", &gfm)?,
+        to_html_with_options("[^1].\n\n> [^1]: a\n> b", &gfm)?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <blockquote>
 </blockquote>
@@ -327,7 +327,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        micromark_with_options("[^1].\n\n[^1]: a\n\n    > b", &gfm)?,
+        to_html_with_options("[^1].\n\n[^1]: a\n\n    > b", &gfm)?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -348,7 +348,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     let max = "x".repeat(999);
 
     assert_eq!(
-        micromark_with_options(format!("Call.[^{}].\n\n[^{}]: y", max, max).as_str(), &gfm)?,
+        to_html_with_options(format!("Call.[^{}].\n\n[^{}]: y", max, max).as_str(), &gfm)?,
         format!("<p>Call.<sup><a href=\"#user-content-fn-{}\" id=\"user-content-fnref-{}\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -362,7 +362,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             format!("Call.[^a{}].\n\n[^a{}]: y", max, max).as_str(),
             &gfm
         )?,
@@ -371,7 +371,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"a![i](#)
 a\![i](#)
 a![i][]
@@ -402,13 +402,13 @@ a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref=
     );
 
     assert_eq!(
-        micromark_with_options("a![^1]", &gfm)?,
+        to_html_with_options("a![^1]", &gfm)?,
         "<p>a![^1]</p>",
         "should match bang/caret interplay (undefined) like GitHub"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"a![^1]
 
 [^1]: b
@@ -428,7 +428,7 @@ a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref=
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Calls may not be empty: [^].
 
 Calls cannot contain whitespace only: [^ ].
@@ -481,7 +481,7 @@ even another caret.</p>
     //   See: <https://github.com/github/cmark-gfm/issues/282>
     //   Here line endings don’t make text disappear.
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^a]: # b
 
 [^c d]: # e
@@ -545,7 +545,7 @@ j], [^ l], [^m ]</p>
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^*emphasis*]
 
 [^**strong**]
@@ -624,7 +624,7 @@ j], [^ l], [^m ]</p>
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Call[^1][^2][^3][^4]
 
 > [^1]: Defined in a block quote.
@@ -669,7 +669,7 @@ j], [^ l], [^m ]</p>
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^1][^2][^3][^4]
 
 [^1]: Paragraph
@@ -731,7 +731,7 @@ j], [^ l], [^m ]</p>
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Call[^1][^2][^3][^4][^5].
 
 [^1]:
@@ -781,7 +781,7 @@ Lazy!
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Note![^0][^1][^2][^3][^4][^5][^6][^7][^8][^9][^10]
 
 [^0]: alpha
@@ -875,7 +875,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Call[^1][^1]
 
 [^1]: Recursion[^1][^1]
@@ -895,7 +895,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Call[^1]
 
 [^1]: a
@@ -923,7 +923,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     //   CommonMark has mechanisms in place to prevent links in links.
     //   These mechanisms are in place here too.
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"*emphasis[^1]*
 
 **strong[^2]**
@@ -972,7 +972,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"What are these![^1], ![^2][], and ![this][^3].
 
 [^1]: a
@@ -1002,7 +1002,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^0][^1][^2][^3][^4][^5]
 
 [^0]: Paragraph
@@ -1067,7 +1067,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"What are these[^1], [^2][], and [this][^3].
 
 [^1]: a
@@ -1097,7 +1097,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^1][^2][^3][^4]
 
 [^1]: Paragraph
@@ -1159,7 +1159,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^1][^2][^3][^4]
 
 [^1]: Paragraph
@@ -1228,7 +1228,7 @@ more code
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Note![^1][^2][^3][^4]
 
 - [^1]: Paragraph
@@ -1266,7 +1266,7 @@ more code
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^1][^2][^3][^4]
 
 [^1]: Paragraph
@@ -1320,7 +1320,7 @@ more code
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"[^1][^2][^3][^4]
 
 [^1]: Paragraph
@@ -1380,7 +1380,7 @@ more code
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Here is a footnote reference,[^1] and another.[^longnote]
 
 [^1]: Here is the footnote.
@@ -1426,7 +1426,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Call[^1][^2][^3][^4][^5][^6][^7][^8][^9][^10][^11][^12].
 
      [^1]: 5
@@ -1520,7 +1520,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Call[^1][^2][^3][^4][^5][^6][^7][^8][^9].
 
 [^1]: a
@@ -1609,7 +1609,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"Here is a short reference,[1], a collapsed one,[2][], and a full [one][3].
 
 [1]: a
@@ -1626,7 +1626,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
     );
 
     assert_eq!(
-        micromark_to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &gfm.parse)?,
+        to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &gfm.parse)?,
         Node::Root(Root {
             children: vec![
                 Node::FootnoteDefinition(FootnoteDefinition {

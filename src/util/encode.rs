@@ -15,7 +15,7 @@ use alloc::string::String;
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::encode;
+/// use markdown::util::encode;
 ///
 /// assert_eq!(encode("I <3 🦀"), "I &lt;3 🦀");
 /// ```

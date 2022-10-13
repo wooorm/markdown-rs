@@ -23,7 +23,7 @@ impl<'a> Position<'a> {
     /// ## Panics
     ///
     /// This function panics if an enter event is given.
-    /// When `micromark` is used, this function never panics.
+    /// When `markdown-rs` is used, this function never panics.
     pub fn from_exit_event(events: &'a [Event], index: usize) -> Position<'a> {
         let exit = &events[index];
         debug_assert_eq!(

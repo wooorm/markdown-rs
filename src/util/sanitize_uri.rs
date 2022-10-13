@@ -13,7 +13,7 @@ use alloc::{format, string::String, vec::Vec};
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::sanitize_uri::sanitize;
+/// use markdown::util::sanitize_uri::sanitize;
 ///
 /// assert_eq!(sanitize("javascript:alert(1)"), "javascript:alert(1)");
 /// assert_eq!(sanitize("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");
@@ -41,7 +41,7 @@ pub fn sanitize(value: &str) -> String {
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::sanitize_uri::sanitize_with_protocols;
+/// use markdown::util::sanitize_uri::sanitize_with_protocols;
 ///
 /// assert_eq!(sanitize_with_protocols("javascript:alert(1)", &["http", "https"]), "");
 /// assert_eq!(sanitize_with_protocols("https://example.com", &["http", "https"]), "https://example.com");
@@ -87,7 +87,7 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::sanitize_uri::normalize;
+/// use markdown::util::sanitize_uri::normalize;
 ///
 /// assert_eq!(sanitize_uri("https://example.com"), "https://example.com");
 /// assert_eq!(sanitize_uri("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");

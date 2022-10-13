@@ -82,6 +82,6 @@ See [Project][] for more info.
 
 [coc]: code-of-conduct.md
 
-[sponsor]: https://github.com/wooorm/micromark-rs/#sponsor
+[sponsor]: https://github.com/wooorm/markdown-rs/#sponsor
 
-[project]: https://github.com/wooorm/micromark-rs/#project
+[project]: https://github.com/wooorm/markdown-rs/#project

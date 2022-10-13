@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
-    micromark_to_mdast, micromark_with_options,
+    to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -18,31 +18,31 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark_with_options("<a />", &mdx)?,
+        to_html_with_options("<a />", &mdx)?,
         "",
         "should support a self-closing element"
     );
 
     assert_eq!(
-        micromark_with_options("<a></a>", &mdx)?,
+        to_html_with_options("<a></a>", &mdx)?,
         "",
         "should support a closed element"
     );
 
     assert_eq!(
-        micromark_with_options("<a>\nb\n</a>", &mdx)?,
+        to_html_with_options("<a>\nb\n</a>", &mdx)?,
         "<p>b</p>\n",
         "should support an element w/ content"
     );
 
     assert_eq!(
-        micromark_with_options("<a>\n- b\n</a>", &mdx)?,
+        to_html_with_options("<a>\n- b\n</a>", &mdx)?,
         "<ul>\n<li>b</li>\n</ul>\n",
         "should support an element w/ containers as content"
     );
 
     assert_eq!(
-        micromark_with_options("<a b c:d e=\"\" f={/* g */} {...h} />", &mdx)?,
+        to_html_with_options("<a b c:d e=\"\" f={/* g */} {...h} />", &mdx)?,
         "",
         "should support attributes"
     );
@@ -63,43 +63,43 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark_with_options("<a />", &mdx)?,
+        to_html_with_options("<a />", &mdx)?,
         "",
         "should support an element"
     );
 
     assert_eq!(
-        micromark_with_options("<a>\n- b\n</a>", &mdx)?,
+        to_html_with_options("<a>\n- b\n</a>", &mdx)?,
         "<ul>\n<li>b</li>\n</ul>\n",
         "should support an element around a container"
     );
 
     assert_eq!(
-        micromark_with_options("<x\n  y\n>  \nb\n  </x>", &mdx)?,
+        to_html_with_options("<x\n  y\n>  \nb\n  </x>", &mdx)?,
         "<p>b</p>\n",
         "should support a dangling `>` in a tag (not a block quote)"
     );
 
     assert_eq!(
-        micromark_with_options("<a>  \nb\n  </a>", &mdx)?,
+        to_html_with_options("<a>  \nb\n  </a>", &mdx)?,
         "<p>b</p>\n",
         "should support trailing initial and final whitespace around tags"
     );
 
     assert_eq!(
-        micromark_with_options("<a> <b>\t\nc\n  </b> </a>", &mdx)?,
+        to_html_with_options("<a> <b>\t\nc\n  </b> </a>", &mdx)?,
         "<p>c</p>\n",
         "should support tags after tags"
     );
 
     assert_eq!(
-        micromark_with_options("> <X\n/>", &mdx).err().unwrap(),
+        to_html_with_options("> <X\n/>", &mdx).err().unwrap(),
         "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
         "should not support lazy flow (1)"
     );
 
     assert_eq!(
-        micromark_with_options("> a\n> <X\n/>", &mdx)
+        to_html_with_options("> a\n> <X\n/>", &mdx)
             .err()
             .unwrap(),
         "3:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -107,7 +107,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("> <a b='\nc'/>", &mdx)
+        to_html_with_options("> <a b='\nc'/>", &mdx)
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -115,7 +115,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("> <a b='c\n'/>", &mdx)
+        to_html_with_options("> <a b='c\n'/>", &mdx)
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -123,7 +123,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("> <a b='c\nd'/>", &mdx)
+        to_html_with_options("> <a b='c\nd'/>", &mdx)
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -131,7 +131,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("> <a b={c\nd}/>", &mdx)
+        to_html_with_options("> <a b={c\nd}/>", &mdx)
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -139,7 +139,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("> <a {b\nc}/>", &mdx)
+        to_html_with_options("> <a {b\nc}/>", &mdx)
             .err()
             .unwrap(),
         "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
@@ -147,13 +147,13 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("> a\n<X />", &mdx)?,
+        to_html_with_options("> a\n<X />", &mdx)?,
         "<blockquote>\n<p>a</p>\n</blockquote>\n",
         "should not support lazy flow (7)"
     );
 
     assert_eq!(
-        micromark_to_mdast("<>\n  * a\n</>", &mdx.parse)?,
+        to_mdast("<>\n  * a\n</>", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxJsxFlowElement(MdxJsxFlowElement {
                 name: None,

@@ -834,7 +834,7 @@ fn on_exit_raw_flow(context: &mut CompileContext) {
     // One special case is if we are inside a container, and the raw (flow) was
     // not closed (meaning it runs to the end).
     // In that case, the following line ending, is considered *outside* the
-    // fenced code and block quote by micromark, but CM wants to treat that
+    // fenced code and block quote by `markdown-rs`, but CM wants to treat that
     // ending as part of the code.
     if let Some(count) = context.raw_flow_fences_count {
         // No closing fence.

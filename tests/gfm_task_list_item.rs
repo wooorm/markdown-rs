@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{List, ListItem, Node, Paragraph, Root, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -18,37 +18,37 @@ fn gfm_task_list_item() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("* [x] y."),
+        to_html("* [x] y."),
         "<ul>\n<li>[x] y.</li>\n</ul>",
         "should ignore task list item checks by default"
     );
 
     assert_eq!(
-        micromark_with_options("* [x] y.", &gfm)?,
+        to_html_with_options("* [x] y.", &gfm)?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" checked=\"\" /> y.</li>\n</ul>",
         "should support task list item checks"
     );
 
     assert_eq!(
-        micromark_with_options("* [ ] z.", &gfm)?,
+        to_html_with_options("* [ ] z.", &gfm)?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" /> z.</li>\n</ul>",
         "should support unchecked task list item checks"
     );
 
     assert_eq!(
-        micromark_with_options("*\n    [x]", &gfm)?,
+        to_html_with_options("*\n    [x]", &gfm)?,
         "<ul>\n<li>[x]</li>\n</ul>",
         "should not support laziness (1)"
     );
 
     assert_eq!(
-        micromark_with_options("*\n[x]", &gfm)?,
+        to_html_with_options("*\n[x]", &gfm)?,
         "<ul>\n<li></li>\n</ul>\n<p>[x]</p>",
         "should not support laziness (2)"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             &r###"
 * [ ] foo
 * [x] bar
@@ -249,7 +249,7 @@ Text.</li>
     );
 
     assert_eq!(
-        micromark_to_mdast("* [x] a\n* [ ] b\n* c", &gfm.parse)?,
+        to_mdast("* [x] a\n* [ ] b\n* c", &gfm.parse)?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,

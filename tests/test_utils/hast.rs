@@ -6,14 +6,14 @@
 // ^-- To do: externalize.
 
 extern crate alloc;
-extern crate micromark;
+extern crate markdown;
 use alloc::{
     fmt,
     string::{String, ToString},
     vec::Vec,
 };
-pub use micromark::mdast::{AttributeContent, AttributeValue, MdxJsxAttribute, Stop};
-use micromark::unist::Position;
+pub use markdown::mdast::{AttributeContent, AttributeValue, MdxJsxAttribute, Stop};
+use markdown::unist::Position;
 
 /// Nodes.
 #[derive(Clone, PartialEq, Eq)]

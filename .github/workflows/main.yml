@@ -16,7 +16,7 @@ jobs:
       # - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
       # - uses: codecov/codecov-action@v1
       - run: cargo doc --no-deps --release
-      - run: echo '<!doctypehtml><html lang=en><meta charset=utf8><title>Redirecting…</title><link rel=canonical href=https://wooorm.com/micromark-rs/micromark><script>location = "https://wooorm.com/micromark-rs/micromark"</script><meta http-equiv=refresh content=0;url=https://wooorm.com/micromark-rs/micromark><meta name=robots content=noindex><body><h1>Redirecting…</h1><p><a href=https://wooorm.com/micromark-rs/micromark>Click here if you are not redirected.</a>' > target/doc/index.html
+      - run: echo '<!doctypehtml><html lang=en><meta charset=utf8><title>Redirecting…</title><link rel=canonical href=https://wooorm.com/markdown-rs/markdown><script>location = "https://wooorm.com/markdown-rs/markdown"</script><meta http-equiv=refresh content=0;url=https://wooorm.com/markdown-rs/markdown><meta name=robots content=noindex><body><h1>Redirecting…</h1><p><a href=https://wooorm.com/markdown-rs/markdown>Click here if you are not redirected.</a>' > target/doc/index.html
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:

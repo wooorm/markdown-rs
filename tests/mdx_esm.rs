@@ -1,8 +1,8 @@
-extern crate micromark;
+extern crate markdown;
 mod test_utils;
-use micromark::{
+use markdown::{
     mdast::{MdxjsEsm, Node, Root},
-    micromark_to_mdast, micromark_with_options,
+    to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -22,103 +22,103 @@ fn mdx_esm() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\n\nc", &swc)?,
+        to_html_with_options("import a from 'b'\n\nc", &swc)?,
         "<p>c</p>",
         "should support an import"
     );
 
     assert_eq!(
-        micromark_with_options("export default a\n\nb", &swc)?,
+        to_html_with_options("export default a\n\nb", &swc)?,
         "<p>b</p>",
         "should support an export"
     );
 
     assert_eq!(
-        micromark_with_options("impossible", &swc)?,
+        to_html_with_options("impossible", &swc)?,
         "<p>impossible</p>",
         "should not support other keywords (`impossible`)"
     );
 
     assert_eq!(
-        micromark_with_options("exporting", &swc)?,
+        to_html_with_options("exporting", &swc)?,
         "<p>exporting</p>",
         "should not support other keywords (`exporting`)"
     );
 
     assert_eq!(
-        micromark_with_options("import.", &swc)?,
+        to_html_with_options("import.", &swc)?,
         "<p>import.</p>",
         "should not support a non-whitespace after the keyword"
     );
 
     assert_eq!(
-        micromark_with_options("import('a')", &swc)?,
+        to_html_with_options("import('a')", &swc)?,
         "<p>import('a')</p>",
         "should not support a non-whitespace after the keyword (import-as-a-function)"
     );
 
     assert_eq!(
-        micromark_with_options("  import a from 'b'\n  export default c", &swc)?,
+        to_html_with_options("  import a from 'b'\n  export default c", &swc)?,
         "<p>import a from 'b'\nexport default c</p>",
         "should not support an indent"
     );
 
     assert_eq!(
-        micromark_with_options("- import a from 'b'\n> export default c", &swc)?,
+        to_html_with_options("- import a from 'b'\n> export default c", &swc)?,
         "<ul>\n<li>import a from 'b'</li>\n</ul>\n<blockquote>\n<p>export default c</p>\n</blockquote>",
         "should not support keywords in containers"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\nexport default c", &swc)?,
+        to_html_with_options("import a from 'b'\nexport default c", &swc)?,
         "",
         "should support imports and exports in the same “block”"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\n\nexport default c", &swc)?,
+        to_html_with_options("import a from 'b'\n\nexport default c", &swc)?,
         "",
         "should support imports and exports in separate “blocks”"
     );
 
     assert_eq!(
-        micromark_with_options("a\n\nimport a from 'b'\n\nb\n\nexport default c", &swc)?,
+        to_html_with_options("a\n\nimport a from 'b'\n\nb\n\nexport default c", &swc)?,
         "<p>a</p>\n<p>b</p>\n",
         "should support imports and exports in between other constructs"
     );
 
     assert_eq!(
-        micromark_with_options("a\nimport a from 'b'\n\nb\nexport default c", &swc)?,
+        to_html_with_options("a\nimport a from 'b'\n\nb\nexport default c", &swc)?,
         "<p>a\nimport a from 'b'</p>\n<p>b\nexport default c</p>",
         "should not support import/exports when interrupting paragraphs"
     );
 
     assert_eq!(
-        micromark_with_options("import a", &swc).err().unwrap(),
+        to_html_with_options("import a", &swc).err().unwrap(),
         "1:9: Could not parse esm with swc: Expected ',', got '<eof>'",
         "should crash on invalid import/exports (1)"
     );
 
     assert_eq!(
-        micromark_with_options("import 1/1", &swc).err().unwrap(),
+        to_html_with_options("import 1/1", &swc).err().unwrap(),
         "1:8: Could not parse esm with swc: Expected 'from', got 'numeric literal (1, 1)'",
         "should crash on invalid import/exports (2)"
     );
 
     assert_eq!(
-        micromark_with_options("export {\n  a\n} from 'b'\n\nc", &swc)?,
+        to_html_with_options("export {\n  a\n} from 'b'\n\nc", &swc)?,
         "<p>c</p>",
         "should support line endings in import/exports"
     );
 
     assert_eq!(
-        micromark_with_options("export {\n\n  a\n\n} from 'b'\n\nc", &swc)?,
+        to_html_with_options("export {\n\n  a\n\n} from 'b'\n\nc", &swc)?,
         "<p>c</p>",
         "should support blank lines in import/exports"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\n*md*?", &swc)
+        to_html_with_options("import a from 'b'\n*md*?", &swc)
             .err()
             .unwrap(),
         "2:6: Could not parse esm with swc: Unexpected token `?`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
@@ -126,13 +126,13 @@ fn mdx_esm() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("export var a = 1\n// b\n/* c */\n\nd", &swc)?,
+        to_html_with_options("export var a = 1\n// b\n/* c */\n\nd", &swc)?,
         "<p>d</p>",
         "should support comments in “blocks”"
     );
 
     assert_eq!(
-        micromark_with_options("export var a = 1\nvar b\n\nc", &swc)
+        to_html_with_options("export var a = 1\nvar b\n\nc", &swc)
             .err()
             .unwrap(),
         "2:1: Unexpected statement in code: only import/exports are supported",
@@ -140,7 +140,7 @@ fn mdx_esm() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("import ('a')\n\nb", &swc)
+        to_html_with_options("import ('a')\n\nb", &swc)
             .err()
             .unwrap(),
         "1:1: Unexpected statement in code: only import/exports are supported",
@@ -148,43 +148,43 @@ fn mdx_esm() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\nexport {a}\n\nc", &swc)?,
+        to_html_with_options("import a from 'b'\nexport {a}\n\nc", &swc)?,
         "<p>c</p>",
         "should support a reexport from another import"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b';\nexport {a};\n\nc", &swc)?,
+        to_html_with_options("import a from 'b';\nexport {a};\n\nc", &swc)?,
         "<p>c</p>",
         "should support a reexport from another import w/ semicolons"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\nexport {a as default}\n\nc", &swc)?,
+        to_html_with_options("import a from 'b'\nexport {a as default}\n\nc", &swc)?,
         "<p>c</p>",
         "should support a reexport default from another import"
     );
 
     assert_eq!(
-        micromark_with_options("export var a = () => <b />", &swc)?,
+        to_html_with_options("export var a = () => <b />", &swc)?,
         "",
         "should support JSX by default"
     );
 
     assert_eq!(
-        micromark_with_options("export {a}\n", &swc)?,
+        to_html_with_options("export {a}\n", &swc)?,
         "",
         "should support EOF after EOL"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\n\nexport {a}\n\nc", &swc)?,
+        to_html_with_options("import a from 'b'\n\nexport {a}\n\nc", &swc)?,
         "<p>c</p>",
         "should support a reexport from another esm block (1)"
     );
 
     assert_eq!(
-        micromark_with_options("import a from 'b'\n\nexport {a}\n\n# c", &swc)?,
+        to_html_with_options("import a from 'b'\n\nexport {a}\n\n# c", &swc)?,
         "<h1>c</h1>",
         "should support a reexport from another esm block (2)"
     );
@@ -201,7 +201,7 @@ fn mdx_esm() -> Result<(), String> {
 
     for case in cases {
         assert_eq!(
-            micromark_with_options(case.1, &swc)?,
+            to_html_with_options(case.1, &swc)?,
             "",
             "should support imports: {}",
             case.0
@@ -238,7 +238,7 @@ fn mdx_esm() -> Result<(), String> {
 
     for case in cases {
         assert_eq!(
-            micromark_with_options(case.1, &swc)?,
+            to_html_with_options(case.1, &swc)?,
             "",
             "should support exports: {}",
             case.0
@@ -246,7 +246,7 @@ fn mdx_esm() -> Result<(), String> {
     }
 
     assert_eq!(
-        micromark_to_mdast("import a from 'b'\nexport {a}", &swc.parse)?,
+        to_mdast("import a from 'b'\nexport {a}", &swc.parse)?,
         Node::Root(Root {
             children: vec![Node::MdxjsEsm(MdxjsEsm {
                 value: "import a from 'b'\nexport {a}".into(),

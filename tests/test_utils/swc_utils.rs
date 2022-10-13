@@ -1,6 +1,6 @@
 //! Lots of helpers for dealing with SWC, particularly from unist.
 
-use micromark::{
+use markdown::{
     mdast::Stop,
     unist::{Point, Position},
     Location,

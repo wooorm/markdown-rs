@@ -13,7 +13,7 @@ use core::str;
 /// ## Examples
 ///
 /// ```rust ignore
-/// use micromark::util::gfm_tagfilter::gfm_tagfilter;
+/// use markdown::util::gfm_tagfilter::gfm_tagfilter;
 ///
 /// assert_eq!(gfm_tagfilter("<iframe>"), "&lt;iframe>");
 /// ```

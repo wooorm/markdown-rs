@@ -1,14 +1,13 @@
 #[macro_use]
 extern crate criterion;
 use criterion::{BenchmarkId, Criterion};
-use micromark::micromark;
 use std::fs;
 
 fn readme(c: &mut Criterion) {
     let doc = fs::read_to_string("readme.md").unwrap();
 
     c.bench_with_input(BenchmarkId::new("readme", "readme"), &doc, |b, s| {
-        b.iter(|| micromark(s));
+        b.iter(|| markdown::to_html(s));
     });
 }
 
@@ -17,7 +16,7 @@ fn readme(c: &mut Criterion) {
 //     let mut group = c.benchmark_group("giant");
 //     group.sample_size(10);
 //     group.bench_with_input(BenchmarkId::new("giant", "1.5 mb"), &doc, |b, s| {
-//         b.iter(|| micromark(s));
+//         b.iter(|| markdown::to_html(s));
 //     });
 //     group.finish();
 // }

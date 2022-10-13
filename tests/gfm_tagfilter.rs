@@ -1,11 +1,11 @@
-extern crate micromark;
-use micromark::{micromark_with_options, CompileOptions, Options};
+extern crate markdown;
+use markdown::{to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_tagfilter() -> Result<(), String> {
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "<iframe>",
             &Options {
                 compile: CompileOptions {
@@ -20,7 +20,7 @@ fn gfm_tagfilter() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "a <i>\n<script>",
             &Options {
                 compile: CompileOptions {
@@ -35,7 +35,7 @@ fn gfm_tagfilter() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "<iframe>",
             &Options {
                 compile: CompileOptions {
@@ -51,7 +51,7 @@ fn gfm_tagfilter() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"
 <title>
 

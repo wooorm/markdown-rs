@@ -34,7 +34,7 @@ use crate::test_utils::{
     swc_utils::{create_ident, position_to_span},
 };
 use core::str;
-use micromark::{Location, MdxExpressionKind};
+use markdown::{Location, MdxExpressionKind};
 
 /// Result.
 #[derive(Debug, PartialEq, Eq)]

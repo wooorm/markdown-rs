@@ -1,7 +1,7 @@
-extern crate micromark;
-use micromark::{
+extern crate markdown;
+use markdown::{
     mdast::{AlignKind, InlineCode, Node, Root, Table, TableCell, TableRow, Text},
-    micromark, micromark_to_mdast, micromark_with_options,
+    to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
@@ -18,193 +18,193 @@ fn gfm_table() -> Result<(), String> {
     };
 
     assert_eq!(
-        micromark("| a |\n| - |\n| b |"),
+        to_html("| a |\n| - |\n| b |"),
         "<p>| a |\n| - |\n| b |</p>",
         "should ignore tables by default"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n| b |", &gfm)?,
+        to_html_with_options("| a |\n| - |\n| b |", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
         "should support tables"
     );
 
     assert_eq!(
-        micromark_with_options("| a |", &gfm)?,
+        to_html_with_options("| a |", &gfm)?,
         "<p>| a |</p>",
         "should not support a table w/ the head row ending in an eof (1)"
     );
 
     assert_eq!(
-        micromark_with_options("| a", &gfm)?,
+        to_html_with_options("| a", &gfm)?,
         "<p>| a</p>",
         "should not support a table w/ the head row ending in an eof (2)"
     );
 
     assert_eq!(
-        micromark_with_options("a |", &gfm)?,
+        to_html_with_options("a |", &gfm)?,
         "<p>a |</p>",
         "should not support a table w/ the head row ending in an eof (3)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |", &gfm)?,
+        to_html_with_options("| a |\n| - |", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should support a table w/ a delimiter row ending in an eof (1)"
     );
 
     assert_eq!(
-        micromark_with_options("| a\n| -", &gfm)?,
+        to_html_with_options("| a\n| -", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should support a table w/ a delimiter row ending in an eof (2)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n| b |", &gfm)?,
+        to_html_with_options("| a |\n| - |\n| b |", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
         "should support a table w/ a body row ending in an eof (1)"
     );
 
     assert_eq!(
-        micromark_with_options("| a\n| -\n| b", &gfm)?,
+        to_html_with_options("| a\n| -\n| b", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
         "should support a table w/ a body row ending in an eof (2)"
     );
 
     assert_eq!(
-        micromark_with_options("a|b\n-|-\nc|d", &gfm)?,
+        to_html_with_options("a|b\n-|-\nc|d", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>c</td>\n<td>d</td>\n</tr>\n</tbody>\n</table>",
         "should support a table w/ a body row ending in an eof (3)"
     );
 
     assert_eq!(
-        micromark_with_options("| a  \n| -\t\n| b |     ", &gfm)?,
+        to_html_with_options("| a  \n| -\t\n| b |     ", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
         "should support rows w/ trailing whitespace (1)"
     );
 
     assert_eq!(
-        micromark_with_options("| a | \n| - |", &gfm)?,
+        to_html_with_options("| a | \n| - |", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should support rows w/ trailing whitespace (2)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - | ", &gfm)?,
+        to_html_with_options("| a |\n| - | ", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should support rows w/ trailing whitespace (3)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n| b | ", &gfm)?,
+        to_html_with_options("| a |\n| - |\n| b | ", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
         "should support rows w/ trailing whitespace (4)"
     );
 
     assert_eq!(
-        micromark_with_options("||a|\n|-|-|", &gfm)?,
+        to_html_with_options("||a|\n|-|-|", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th></th>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should support empty first header cells"
     );
 
     assert_eq!(
-        micromark_with_options("|a||\n|-|-|", &gfm)?,
+        to_html_with_options("|a||\n|-|-|", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n<th></th>\n</tr>\n</thead>\n</table>",
         "should support empty last header cells"
     );
 
     assert_eq!(
-        micromark_with_options("a||b\n-|-|-", &gfm)?,
+        to_html_with_options("a||b\n-|-|-", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n<th></th>\n<th>b</th>\n</tr>\n</thead>\n</table>",
         "should support empty header cells"
     );
 
     assert_eq!(
-        micromark_with_options("|a|b|\n|-|-|\n||c|", &gfm)?,
+        to_html_with_options("|a|b|\n|-|-|\n||c|", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td></td>\n<td>c</td>\n</tr>\n</tbody>\n</table>",
         "should support empty first body cells"
     );
 
     assert_eq!(
-        micromark_with_options("|a|b|\n|-|-|\n|c||", &gfm)?,
+        to_html_with_options("|a|b|\n|-|-|\n|c||", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>c</td>\n<td></td>\n</tr>\n</tbody>\n</table>",
         "should support empty last body cells"
     );
 
     assert_eq!(
-        micromark_with_options("a|b|c\n-|-|-\nd||e", &gfm)?,
+        to_html_with_options("a|b|c\n-|-|-\nd||e", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n<th>b</th>\n<th>c</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>d</td>\n<td></td>\n<td>e</td>\n</tr>\n</tbody>\n</table>",
         "should support empty body cells"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n- b", &gfm)?,
+        to_html_with_options("| a |\n| - |\n- b", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<ul>\n<li>b</li>\n</ul>",
         "should support a list after a table"
     );
 
     assert_eq!(
-        micromark_with_options("> | a |\n| - |", &gfm)?,
+        to_html_with_options("> | a |\n| - |", &gfm)?,
         "<blockquote>\n<p>| a |\n| - |</p>\n</blockquote>",
         "should not support a lazy delimiter row (1)"
     );
 
     assert_eq!(
-        micromark_with_options("> a\n> | b |\n| - |", &gfm)?,
+        to_html_with_options("> a\n> | b |\n| - |", &gfm)?,
         "<blockquote>\n<p>a\n| b |\n| - |</p>\n</blockquote>",
         "should not support a lazy delimiter row (2)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n> | - |", &gfm)?,
+        to_html_with_options("| a |\n> | - |", &gfm)?,
         "<p>| a |</p>\n<blockquote>\n<p>| - |</p>\n</blockquote>",
         "should not support a piercing delimiter row"
     );
 
     assert_eq!(
-        micromark_with_options("> a\n> | b |\n|-", &gfm)?,
+        to_html_with_options("> a\n> | b |\n|-", &gfm)?,
         "<blockquote>\n<p>a\n| b |\n|-</p>\n</blockquote>",
         "should not support a lazy body row (2)"
     );
 
     assert_eq!(
-        micromark_with_options("> | a |\n> | - |\n| b |", &gfm)?,
+        to_html_with_options("> | a |\n> | - |\n| b |", &gfm)?,
         "<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</blockquote>\n<p>| b |</p>",
         "should not support a lazy body row (1)"
     );
 
     assert_eq!(
-        micromark_with_options("> a\n> | b |\n> | - |\n| c |", &gfm)?,
+        to_html_with_options("> a\n> | b |\n> | - |\n| c |", &gfm)?,
         "<blockquote>\n<p>a</p>\n<table>\n<thead>\n<tr>\n<th>b</th>\n</tr>\n</thead>\n</table>\n</blockquote>\n<p>| c |</p>",
         "should not support a lazy body row (2)"
     );
 
     assert_eq!(
-        micromark_with_options("> | A |\n> | - |\n> | 1 |\n| 2 |", &gfm)?,
+        to_html_with_options("> | A |\n> | - |\n> | 1 |\n| 2 |", &gfm)?,
         "<blockquote>\n<table>\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n</tr>\n</tbody>\n</table>\n</blockquote>\n<p>| 2 |</p>",
         "should not support a lazy body row (3)"
     );
 
     assert_eq!(
-        micromark_with_options("   - d\n    - e", &gfm)?,
-        micromark("   - d\n    - e"),
+        to_html_with_options("   - d\n    - e", &gfm)?,
+        to_html("   - d\n    - e"),
         "should not change how lists and lazyness work"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n   | - |", &gfm)?,
+        to_html_with_options("| a |\n   | - |", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should form a table if the delimiter row is indented w/ 3 spaces"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n    | - |", &gfm)?,
+        to_html_with_options("| a |\n    | - |", &gfm)?,
         "<p>| a |\n| - |</p>",
         "should not form a table if the delimiter row is indented w/ 4 spaces"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n    | - |", &Options {
+        to_html_with_options("| a |\n    | - |", &Options {
                 parse: ParseOptions {
                     constructs: Constructs {
                         code_indented: false,
@@ -219,31 +219,31 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n> block quote?", &gfm)?,
+        to_html_with_options("| a |\n| - |\n> block quote?", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<blockquote>\n<p>block quote?</p>\n</blockquote>",
         "should be interrupted by a block quote"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n>", &gfm)?,
+        to_html_with_options("| a |\n| - |\n>", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<blockquote>\n</blockquote>",
         "should be interrupted by a block quote (empty)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n- list?", &gfm)?,
+        to_html_with_options("| a |\n| - |\n- list?", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<ul>\n<li>list?</li>\n</ul>",
         "should be interrupted by a list"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n-", &gfm)?,
+        to_html_with_options("| a |\n| - |\n-", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<ul>\n<li></li>\n</ul>",
         "should be interrupted by a list (empty)"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "| a |\n| - |\n<!-- HTML? -->",
             &Options {
                 parse: ParseOptions {
@@ -262,7 +262,7 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n\tcode?", &Options {
+        to_html_with_options("| a |\n| - |\n\tcode?", &Options {
                 parse: ParseOptions {
                     constructs: Constructs::gfm(),
                     ..ParseOptions::default()
@@ -278,7 +278,7 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n```js\ncode?", &Options {
+        to_html_with_options("| a |\n| - |\n```js\ncode?", &Options {
                 parse: ParseOptions {
                     constructs: Constructs::gfm(),
                     ..ParseOptions::default()
@@ -294,7 +294,7 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             "| a |\n| - |\n***",
             &Options {
                 parse: ParseOptions {
@@ -313,73 +313,73 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\n# heading?", &gfm)?,
+        to_html_with_options("| a |\n| - |\n# heading?", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<h1>heading?</h1>",
         "should be interrupted by a heading (ATX)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\nheading\n=", &gfm)?,
+        to_html_with_options("| a |\n| - |\nheading\n=", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>heading</td>\n</tr>\n<tr>\n<td>=</td>\n</tr>\n</tbody>\n</table>",
         "should *not* be interrupted by a heading (setext)"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\nheading\n---", &gfm)?,
+        to_html_with_options("| a |\n| - |\nheading\n---", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>heading</td>\n</tr>\n</tbody>\n</table>\n<hr />",
         "should *not* be interrupted by a heading (setext), but interrupt if the underline is also a thematic break"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n| - |\nheading\n-", &gfm)?,
+        to_html_with_options("| a |\n| - |\nheading\n-", &gfm)?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>heading</td>\n</tr>\n</tbody>\n</table>\n<ul>\n<li></li>\n</ul>",
         "should *not* be interrupted by a heading (setext), but interrupt if the underline is also an empty list item bullet"
     );
 
     assert_eq!(
-        micromark_with_options("a\nb\n-:", &gfm)?,
+        to_html_with_options("a\nb\n-:", &gfm)?,
         "<p>a</p>\n<table>\n<thead>\n<tr>\n<th align=\"right\">b</th>\n</tr>\n</thead>\n</table>",
         "should support a single head row"
     );
 
     assert_eq!(
-        micromark_with_options("> | a |\n> | - |", &gfm)?,
+        to_html_with_options("> | a |\n> | - |", &gfm)?,
         "<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</blockquote>",
         "should support a table in a container"
     );
 
     assert_eq!(
-        micromark_with_options("> | a |\n| - |", &gfm)?,
+        to_html_with_options("> | a |\n| - |", &gfm)?,
         "<blockquote>\n<p>| a |\n| - |</p>\n</blockquote>",
         "should not support a lazy delimiter row if the head row is in a container"
     );
 
     assert_eq!(
-        micromark_with_options("| a |\n> | - |", &gfm)?,
+        to_html_with_options("| a |\n> | - |", &gfm)?,
         "<p>| a |</p>\n<blockquote>\n<p>| - |</p>\n</blockquote>",
         "should not support a “piercing” container for the delimiter row, if the head row was not in that container"
     );
 
     assert_eq!(
-        micromark_with_options("> | a |\n> | - |\n| c |", &gfm)?,
+        to_html_with_options("> | a |\n> | - |\n| c |", &gfm)?,
         "<blockquote>\n<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n</blockquote>\n<p>| c |</p>",
         "should not support a lazy body row if the head row and delimiter row are in a container"
     );
 
     assert_eq!(
-        micromark_with_options("> | a |\n| - |\n> | c |", &gfm)?,
+        to_html_with_options("> | a |\n| - |\n> | c |", &gfm)?,
         "<blockquote>\n<p>| a |\n| - |\n| c |</p>\n</blockquote>",
         "should not support a lazy delimiter row if the head row and a further body row are in a container"
     );
 
     assert_eq!(
-        micromark_with_options("[\na\n:-\n]: b", &gfm)?,
+        to_html_with_options("[\na\n:-\n]: b", &gfm)?,
         "<p>[</p>\n<table>\n<thead>\n<tr>\n<th align=\"left\">a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">]: b</td>\n</tr>\n</tbody>\n</table>",
         "should prefer GFM tables over definitions"
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Align
 
 ## An empty initial cell
@@ -569,7 +569,7 @@ a
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Tables
 
 | a | b | c |
@@ -634,7 +634,7 @@ a
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Tables in things
 
 ## In lists
@@ -828,7 +828,7 @@ a
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"| a |
 | - |
 | - |
@@ -856,7 +856,7 @@ a
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Examples from GFM
 
 ## A
@@ -1036,7 +1036,7 @@ bar
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Grave accents
 
 ## Grave accent in cell
@@ -1172,7 +1172,7 @@ bar
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Code
 
 ## Indented delimiter row
@@ -1227,7 +1227,7 @@ a
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"## Blank line
 
 a
@@ -1725,7 +1725,7 @@ b
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Loose
 
 ## Loose
@@ -1784,7 +1784,7 @@ a
     );
 
     assert_eq!(
-        micromark_with_options(
+        to_html_with_options(
             r###"# Some more escapes
 
 | Head          |
@@ -1832,7 +1832,7 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
     );
 
     assert_eq!(
-        micromark_to_mdast(
+        to_mdast(
             "| none | left | right | center |\n| - | :- | -: | :-: |\n| a |\n| b | c | d | e | f |",
             &gfm.parse
         )?,
@@ -1937,7 +1937,7 @@ normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://
     );
 
     assert_eq!(
-        micromark_to_mdast("| `a\\|b` |\n| - |", &gfm.parse)?,
+        to_mdast("| `a\\|b` |\n| - |", &gfm.parse)?,
         Node::Root(Root {
             children: vec![Node::Table(Table {
                 align: vec![AlignKind::None,],
