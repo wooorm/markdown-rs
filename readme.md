@@ -349,6 +349,8 @@ Special thanks go out to:
 
 [crate]: https://crates.io/crates/markdown
 
+[chat]: https://github.com/wooorm/markdown-rs/discussions
+
 [commonmark]: https://spec.commonmark.org
 
 [cheat]: https://commonmark.org/help/
