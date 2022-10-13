@@ -1721,11 +1721,11 @@ fn trim_eol(value: String, at_start: bool, at_end: bool) -> String {
     if at_end && end > start {
         if bytes[end - 1] == b'\n' {
             end -= 1;
-        } else if bytes[end - 1] == b'\r' {
-            end -= 1;
-            if end > start && bytes[end - 1] == b'\n' {
+            if end > start && bytes[end - 1] == b'\r' {
                 end -= 1;
             }
+        } else if bytes[end - 1] == b'\r' {
+            end -= 1;
         }
     }
 

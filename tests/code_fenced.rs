@@ -311,5 +311,33 @@ fn code_fenced() -> Result<(), String> {
         "should support code (fenced) w/o closing fence in mdast"
     );
 
+    assert_eq!(
+        to_mdast("```\rasd\r```", &ParseOptions::default())?,
+        Node::Root(Root {
+            children: vec![Node::Code(Code {
+                lang: None,
+                meta: None,
+                value: "asd".into(),
+                position: Some(Position::new(1, 1, 0, 3, 4, 11))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 4, 11))
+        }),
+        "should support code (fenced) w/o CR line endings"
+    );
+
+    assert_eq!(
+        to_mdast("```\r\nasd\r\n```", &ParseOptions::default())?,
+        Node::Root(Root {
+            children: vec![Node::Code(Code {
+                lang: None,
+                meta: None,
+                value: "asd".into(),
+                position: Some(Position::new(1, 1, 0, 3, 4, 13))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 4, 13))
+        }),
+        "should support code (fenced) w/o CR+LF line endings"
+    );
+
     Ok(())
 }
