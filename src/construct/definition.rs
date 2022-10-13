@@ -215,15 +215,11 @@ pub fn label_nok(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
-    if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
-        tokenizer.attempt(
-            State::Next(StateName::DefinitionDestinationBefore),
-            State::Next(StateName::DefinitionDestinationBefore),
-        );
-        State::Retry(space_or_tab_eol(tokenizer))
-    } else {
-        State::Retry(StateName::DefinitionDestinationBefore)
-    }
+    tokenizer.attempt(
+        State::Next(StateName::DefinitionDestinationBefore),
+        State::Next(StateName::DefinitionDestinationBefore),
+    );
+    State::Retry(space_or_tab_eol(tokenizer))
 }
 
 /// Before destination.

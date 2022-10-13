@@ -82,8 +82,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
                 },
             ))
         }
-        Some(b'\n') => State::Retry(StateName::SpaceOrTabEolAtEol),
-        _ => State::Nok,
+        _ => State::Retry(StateName::SpaceOrTabEolAtEol),
     }
 }
 
@@ -98,11 +97,11 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn after_first(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.space_or_tab_eol_ok = true;
-
-    if tokenizer.tokenize_state.space_or_tab_eol_content.is_some() {
-        tokenizer.tokenize_state.space_or_tab_eol_connect = true;
-    }
-
+    debug_assert!(
+        tokenizer.tokenize_state.space_or_tab_eol_content.is_none(),
+        "expected no content"
+    );
+    // If the above ever errors, set `tokenizer.tokenize_state.space_or_tab_eol_connect: true` in that case.
     State::Retry(StateName::SpaceOrTabEolAtEol)
 }
 
@@ -195,14 +194,15 @@ pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn after_more(tokenizer: &mut Tokenizer) -> State {
+    debug_assert!(
+        !matches!(tokenizer.current, None | Some(b'\n')),
+        "did not expect blank line"
+    );
+    // If the above ever starts erroring, gracefully `State::Nok` on it.
+    // Currently it doesn’t happen, as we only use this in content, which does
+    // not allow blank lines.
     tokenizer.tokenize_state.space_or_tab_eol_content = None;
     tokenizer.tokenize_state.space_or_tab_eol_connect = false;
     tokenizer.tokenize_state.space_or_tab_eol_ok = false;
-
-    // Blank line not allowed.
-    if matches!(tokenizer.current, None | Some(b'\n')) {
-        State::Nok
-    } else {
-        State::Ok
-    }
+    State::Ok
 }
