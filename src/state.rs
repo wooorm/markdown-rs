@@ -463,9 +463,9 @@ pub enum Name {
     TitleBegin,
     TitleAfterEol,
     TitleAtBreak,
-    TitleAtBlankLine,
     TitleEscape,
     TitleInside,
+    TitleNok,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -962,9 +962,9 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::TitleBegin => construct::partial_title::begin,
         Name::TitleAfterEol => construct::partial_title::after_eol,
         Name::TitleAtBreak => construct::partial_title::at_break,
-        Name::TitleAtBlankLine => construct::partial_title::at_blank_line,
         Name::TitleEscape => construct::partial_title::escape,
         Name::TitleInside => construct::partial_title::inside,
+        Name::TitleNok => construct::partial_title::nok,
     };
 
     func(tokenizer)

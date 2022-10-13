@@ -99,7 +99,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         } else if byte == b'\n' {
             tokenizer.attempt(
                 State::Next(StateName::TitleAfterEol),
-                State::Next(StateName::TitleAtBlankLine),
+                State::Next(StateName::TitleNok),
             );
             State::Retry(space_or_tab_eol_with_options(
                 tokenizer,
@@ -128,9 +128,7 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
             State::Retry(StateName::TitleInside)
         }
     } else {
-        tokenizer.tokenize_state.marker = 0;
-        tokenizer.tokenize_state.connect = false;
-        State::Nok
+        State::Retry(StateName::TitleNok)
     }
 }
 
@@ -146,15 +144,13 @@ pub fn after_eol(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::TitleAtBreak)
 }
 
-/// In title, at blank line.
+/// In title, at something that isn’t allowed.
 ///
 /// ```markdown
-///   | "a␊
-/// > | ␊
-///     ^
-///   | b"
+/// > | "a
+///       ^
 /// ```
-pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
+pub fn nok(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.marker = 0;
     tokenizer.tokenize_state.connect = false;
     State::Nok
