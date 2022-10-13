@@ -661,35 +661,15 @@ pub fn body_row_start(tokenizer: &mut Tokenizer) -> State {
 
         match tokenizer.current {
             Some(b'\t' | b' ') => {
-                tokenizer.attempt(State::Next(StateName::GfmTableBodyRowBefore), State::Nok);
-
-                State::Retry(space_or_tab_min_max(
-                    tokenizer,
-                    0,
-                    if tokenizer.parse_state.options.constructs.code_indented {
-                        TAB_SIZE - 1
-                    } else {
-                        usize::MAX
-                    },
-                ))
+                tokenizer.attempt(State::Next(StateName::GfmTableBodyRowBreak), State::Nok);
+                // We’re parsing a body row.
+                // If we’re here, we already attempted blank lines and indented
+                // code.
+                // So parse as much whitespace as needed:
+                State::Retry(space_or_tab_min_max(tokenizer, 0, usize::MAX))
             }
-            _ => State::Retry(StateName::GfmTableBodyRowBefore),
+            _ => State::Retry(StateName::GfmTableBodyRowBreak),
         }
-    }
-}
-
-/// Before table body row, after optional whitespace.
-///
-/// ```markdown
-///   | | a |
-///   | | - |
-/// > | | b |
-///     ^
-/// ```
-pub fn body_row_before(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'\t' | b' ') => State::Nok,
-        _ => State::Retry(StateName::GfmTableBodyRowBreak),
     }
 }
 

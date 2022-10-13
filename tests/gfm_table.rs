@@ -379,6 +379,25 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options("    | a |\n\t| - |\n    | b |", &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        code_indented: false,
+                        ..Constructs::gfm()
+                    },
+                    ..ParseOptions::default()
+                },
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    allow_dangerous_protocol: true,
+                    ..CompileOptions::default()
+                }
+            })?,
+        "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
+        "should support indented rows if code (indented) is off"
+    );
+
+    assert_eq!(
         to_html_with_options(
             r###"# Align
 

@@ -212,7 +212,6 @@ pub enum Name {
     GfmTableHeadDelimiterCellAfter,
     GfmTableHeadDelimiterNok,
 
-    GfmTableBodyRowBefore,
     GfmTableBodyRowStart,
     GfmTableBodyRowBreak,
     GfmTableBodyRowData,
@@ -662,7 +661,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         }
         Name::GfmTableHeadDelimiterCellAfter => construct::gfm_table::head_delimiter_cell_after,
         Name::GfmTableHeadDelimiterNok => construct::gfm_table::head_delimiter_nok,
-        Name::GfmTableBodyRowBefore => construct::gfm_table::body_row_before,
         Name::GfmTableBodyRowStart => construct::gfm_table::body_row_start,
         Name::GfmTableBodyRowBreak => construct::gfm_table::body_row_break,
         Name::GfmTableBodyRowData => construct::gfm_table::body_row_data,
