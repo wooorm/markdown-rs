@@ -297,12 +297,11 @@ pub enum Name {
     HtmlTextLineEndingAfterPrefix,
 
     LabelStart,
-    LabelAtMarker,
     LabelAtBreak,
     LabelEolAfter,
-    LabelAtBlankLine,
     LabelEscape,
     LabelInside,
+    LabelNok,
 
     LabelEndStart,
     LabelEndAfter,
@@ -782,12 +781,11 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::HtmlTextLineEndingAfterPrefix => construct::html_text::line_ending_after_prefix,
 
         Name::LabelStart => construct::partial_label::start,
-        Name::LabelAtMarker => construct::partial_label::at_marker,
         Name::LabelAtBreak => construct::partial_label::at_break,
         Name::LabelEolAfter => construct::partial_label::eol_after,
-        Name::LabelAtBlankLine => construct::partial_label::at_blank_line,
         Name::LabelEscape => construct::partial_label::escape,
         Name::LabelInside => construct::partial_label::inside,
+        Name::LabelNok => construct::partial_label::nok,
 
         Name::LabelEndStart => construct::label_end::start,
         Name::LabelEndAfter => construct::label_end::after,

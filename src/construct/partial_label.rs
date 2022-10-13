@@ -75,41 +75,13 @@ use crate::util::constant::LINK_REFERENCE_SIZE_MAX;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'[') => {
-            tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
-            tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
-            tokenizer.consume();
-            tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
-            State::Next(StateName::LabelAtMarker)
-        }
-        _ => State::Nok,
-    }
-}
-
-/// At an optional extra marker.
-///
-/// Used for footnotes.
-///
-/// ```markdown
-/// > | [^a]
-///      ^
-/// ```
-pub fn at_marker(tokenizer: &mut Tokenizer) -> State {
-    // For footnotes (and potentially other custom things in the future),
-    // We need to make sure there is a certain marker after `[`.
-    if tokenizer.tokenize_state.marker == 0 {
-        tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-        State::Retry(StateName::LabelAtBreak)
-    } else if tokenizer.current == Some(tokenizer.tokenize_state.marker) {
-        tokenizer.enter(tokenizer.tokenize_state.token_4.clone());
-        tokenizer.consume();
-        tokenizer.exit(tokenizer.tokenize_state.token_4.clone());
-        tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
-        State::Next(StateName::LabelAtBreak)
-    } else {
-        State::Nok
-    }
+    debug_assert_eq!(tokenizer.current, Some(b'['), "expected `[`");
+    tokenizer.enter(tokenizer.tokenize_state.token_1.clone());
+    tokenizer.enter(tokenizer.tokenize_state.token_2.clone());
+    tokenizer.consume();
+    tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
+    tokenizer.enter(tokenizer.tokenize_state.token_3.clone());
+    State::Next(StateName::LabelAtBreak)
 }
 
 /// In label, at something, before something else.
@@ -123,16 +95,13 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
         || matches!(tokenizer.current, None | Some(b'['))
         || (matches!(tokenizer.current, Some(b']')) && !tokenizer.tokenize_state.seen)
     {
-        tokenizer.tokenize_state.connect = false;
-        tokenizer.tokenize_state.seen = false;
-        tokenizer.tokenize_state.size = 0;
-        State::Nok
+        State::Retry(StateName::LabelNok)
     } else {
         match tokenizer.current {
             Some(b'\n') => {
                 tokenizer.attempt(
                     State::Next(StateName::LabelEolAfter),
-                    State::Next(StateName::LabelAtBlankLine),
+                    State::Next(StateName::LabelNok),
                 );
                 State::Retry(space_or_tab_eol_with_options(
                     tokenizer,
@@ -188,15 +157,13 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::LabelAtBreak)
 }
 
-/// In label, at blank line.
+/// In label, on something disallowed.
 ///
 /// ```markdown
-///   | [a␊
-/// > | ␊
-///     ^
-///   | b]
+/// > | []
+///      ^
 /// ```
-pub fn at_blank_line(tokenizer: &mut Tokenizer) -> State {
+pub fn nok(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.connect = false;
     tokenizer.tokenize_state.seen = false;
     tokenizer.tokenize_state.size = 0;
