@@ -13,6 +13,8 @@
 [![docs.rs][docs-badge]][docs]
 [![crates.io][crate-badge]][crate]
 
+> ⚠️ **Important**: I’ll probably release this on `crates.io` tomorrow!
+
 <!-- To do: coverage -->
 
 <!-- [![Coverage][coverage-badge]][coverage] -->
@@ -78,9 +80,13 @@ This Rust crate has a sibling project in JavaScript: [`micromark`][micromark]
 
 With [Rust][] (rust edition 2018+, ±version 1.56+), install with `cargo`:
 
+> ⚠️ **Important**: I’ll probably release this on `crates.io` tomorrow!
+
 ```sh
 cargo install markdown
 ```
+
+> ⚠️ **Important**: I’ll probably release this on `crates.io` tomorrow!
 
 ## Use
 
