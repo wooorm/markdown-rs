@@ -14,10 +14,6 @@
 [![docs.rs][docs-badge]][docs]
 [![crates.io][crate-badge]][crate]
 
-<!-- To do: coverage -->
-
-<!-- [![Coverage][coverage-badge]][coverage] -->
-
 CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
 ## Feature highlights
@@ -352,7 +348,7 @@ Special thanks go out to:
 
 [crate-badge]: https://img.shields.io/crates/v/markdown
 
-[crate]: https://crates.io/crates/markdown
+[crate]: https://crates.io/crates/markdown/1.0.0-alpha.1
 
 [chat]: https://github.com/wooorm/markdown-rs/discussions
 
