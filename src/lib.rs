@@ -146,38 +146,3 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, Stri
     let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)
 }
-
-#[cfg(test)]
-mod tests {
-    extern crate std;
-    use super::*;
-
-    #[test]
-    fn test_to_html() {
-        assert_eq!(
-            to_html("a"),
-            "<p>a</p>",
-            "should support turning markdown into html with `to_html`"
-        );
-    }
-
-    #[test]
-    fn test_to_html_with_options() {
-        assert_eq!(
-            to_html_with_options("a", &Options::default()).unwrap(),
-            "<p>a</p>",
-            "should support turning markdown into html with `to_html_with_options`"
-        );
-    }
-
-    #[test]
-    fn test_to_mdast() {
-        assert!(
-            matches!(
-                to_mdast("a", &ParseOptions::default()).unwrap(),
-                mdast::Node::Root(_)
-            ),
-            "should support turning markdown into mdast with `to_mdast`"
-        );
-    }
-}
