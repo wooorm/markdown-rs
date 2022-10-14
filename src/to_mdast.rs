@@ -1278,12 +1278,9 @@ fn on_exit_heading_setext_text(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`HeadingSetextUnderlineSequence`][Name::HeadingSetextUnderlineSequence].
 fn on_exit_heading_setext_underline_sequence(context: &mut CompileContext) {
-    let head = Slice::from_position(
-        context.bytes,
-        &SlicePosition::from_exit_event(context.events, context.index),
-    )
-    .head();
-    let depth = if head == Some(b'-') { 2 } else { 1 };
+    let position = SlicePosition::from_exit_event(context.events, context.index);
+    let head = context.bytes[position.start.index];
+    let depth = if head == b'-' { 2 } else { 1 };
 
     if let Node::Heading(node) = context.tail_mut() {
         node.depth = depth;

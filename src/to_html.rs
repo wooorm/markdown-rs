@@ -1271,12 +1271,9 @@ fn on_exit_heading_setext_underline_sequence(context: &mut CompileContext) {
         .heading_setext_buffer
         .take()
         .expect("`heading_atx_rank` must be set in headings");
-    let head = Slice::from_position(
-        context.bytes,
-        &Position::from_exit_event(context.events, context.index),
-    )
-    .head();
-    let rank = if head == Some(b'-') { "2" } else { "1" };
+    let position = Position::from_exit_event(context.events, context.index);
+    let head = context.bytes[position.start.index];
+    let rank = if head == b'-' { "2" } else { "1" };
 
     context.line_ending_if_needed();
     context.push("<h");

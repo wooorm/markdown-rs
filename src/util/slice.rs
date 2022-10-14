@@ -26,20 +26,17 @@ impl<'a> Position<'a> {
     /// When `markdown-rs` is used, this function never panics.
     pub fn from_exit_event(events: &'a [Event], index: usize) -> Position<'a> {
         let exit = &events[index];
-        debug_assert_eq!(
-            exit.kind,
-            Kind::Exit,
-            "expected `from_exit_event` to be called on `exit` event"
-        );
+        debug_assert_eq!(exit.kind, Kind::Exit, "expected `exit` event");
         let mut enter_index = index - 1;
 
         loop {
             let enter = &events[enter_index];
             if enter.kind == Kind::Enter && enter.name == exit.name {
-                return Position {
+                let position = Position {
                     start: &enter.point,
                     end: &exit.point,
                 };
+                return position;
             }
 
             enter_index -= 1;
@@ -70,37 +67,6 @@ pub struct Slice<'a> {
 }
 
 impl<'a> Slice<'a> {
-    /// Get a slice for a single point.
-    pub fn from_point(bytes: &'a [u8], point: &Point) -> Slice<'a> {
-        let mut before = point.vs;
-        let mut start = point.index;
-        let end = if start < bytes.len() {
-            start + 1
-        } else {
-            start
-        };
-
-        // If we have virtual spaces before, it means we are past the actual
-        // character at that index, and those virtual spaces.
-        if before > 0 {
-            before = TAB_SIZE - before;
-            start += 1;
-        };
-
-        Slice {
-            bytes: if start < end { &bytes[start..end] } else { &[] },
-            before,
-            after: 0,
-        }
-    }
-
-    /// Get a slice for a single index.
-    ///
-    /// > 👉 **Note**: indices cannot represent virtual spaces.
-    pub fn from_index(bytes: &'a [u8], index: usize) -> Slice<'a> {
-        Slice::from_indices(bytes, index, index + 1)
-    }
-
     /// Get a slice for a position.
     pub fn from_position(bytes: &'a [u8], position: &Position) -> Slice<'a> {
         let mut before = position.start.vs;
@@ -145,18 +111,6 @@ impl<'a> Slice<'a> {
         self.bytes.len() + self.before + self.after
     }
 
-    /// Get the first byte in this slice, representing a virtual space as a
-    /// space.
-    pub fn head(&self) -> Option<u8> {
-        if self.before > 0 {
-            Some(b' ')
-        } else if self.bytes.is_empty() {
-            None
-        } else {
-            Some(self.bytes[0])
-        }
-    }
-
     /// Turn the slice into a `&str`.
     ///
     /// > 👉 **Note**: cannot represent virtual spaces.
@@ -166,7 +120,7 @@ impl<'a> Slice<'a> {
 
     /// Turn the slice into a `String`.
     ///
-    /// Support virtual spaces.
+    /// Supports virtual spaces.
     pub fn serialize(&self) -> String {
         let mut string = String::with_capacity(self.len());
         let mut index = self.before;
@@ -175,12 +129,10 @@ impl<'a> Slice<'a> {
             index -= 1;
         }
         string.push_str(self.as_str());
-        index = self.after;
-        while index > 0 {
-            string.push(' ');
-            index -= 1;
-        }
-
+        debug_assert_eq!(self.after, 0, "expected no trailing vs");
+        // If the above ever starts erroring, handle the same as `self.before`
+        // above but with `self.after`.
+        // It’d currently be unused code.
         string
     }
 }

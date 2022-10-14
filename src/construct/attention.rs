@@ -81,12 +81,9 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
-use crate::util::{
-    char::{
-        after_index as char_after_index, before_index as char_before_index, classify_opt,
-        Kind as CharacterKind,
-    },
-    slice::Slice,
+use crate::util::char::{
+    after_index as char_after_index, before_index as char_before_index, classify_opt,
+    Kind as CharacterKind,
 };
 use alloc::{vec, vec::Vec};
 
@@ -242,9 +239,7 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
                 let end = index + 1;
                 let exit = &tokenizer.events[end];
 
-                let marker = Slice::from_point(tokenizer.parse_state.bytes, &enter.point)
-                    .head()
-                    .unwrap();
+                let marker = tokenizer.parse_state.bytes[enter.point.index];
                 let before = classify_opt(char_before_index(
                     tokenizer.parse_state.bytes,
                     enter.point.index,
