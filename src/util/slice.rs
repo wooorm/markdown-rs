@@ -29,17 +29,13 @@ impl<'a> Position<'a> {
         debug_assert_eq!(exit.kind, Kind::Exit, "expected `exit` event");
         let mut enter_index = index - 1;
 
-        loop {
-            let enter = &events[enter_index];
-            if enter.kind == Kind::Enter && enter.name == exit.name {
-                let position = Position {
-                    start: &enter.point,
-                    end: &exit.point,
-                };
-                return position;
-            }
-
+        while events[enter_index].kind != Kind::Enter || events[enter_index].name != exit.name {
             enter_index -= 1;
+        }
+
+        Position {
+            start: &events[enter_index].point,
+            end: &exit.point,
         }
     }
 
@@ -122,6 +118,10 @@ impl<'a> Slice<'a> {
     ///
     /// Supports virtual spaces.
     pub fn serialize(&self) -> String {
+        debug_assert_eq!(self.after, 0, "expected no trailing vs");
+        // If the above ever starts erroring, handle the same as `self.before`
+        // above but with `self.after`.
+        // It’d currently be unused code.
         let mut string = String::with_capacity(self.len());
         let mut index = self.before;
         while index > 0 {
@@ -129,10 +129,6 @@ impl<'a> Slice<'a> {
             index -= 1;
         }
         string.push_str(self.as_str());
-        debug_assert_eq!(self.after, 0, "expected no trailing vs");
-        // If the above ever starts erroring, handle the same as `self.before`
-        // above but with `self.after`.
-        // It’d currently be unused code.
         string
     }
 }
