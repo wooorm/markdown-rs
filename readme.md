@@ -149,10 +149,10 @@ Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3
 ## API
 
 `markdown-rs` exposes
-[`to_html`](https://wooorm.com/markdown-rs/markdown/fn.to_html.html),
-[`to_html_with_options`](https://wooorm.com/markdown-rs/markdown/fn.to_html_with_options.html),
-[`to_mdast`](https://wooorm.com/markdown-rs/markdown/fn.to_mdast.html),
-[`Options`](https://wooorm.com/markdown-rs/markdown/struct.Options.html),
+[`to_html`](https://docs.rs/markdown/1.0.0-alpha.1/markdown/fn.to_html.html),
+[`to_html_with_options`](https://docs.rs/markdown/1.0.0-alpha.1/markdown/fn.to_html_with_options.html),
+[`to_mdast`](https://docs.rs/markdown/1.0.0-alpha.1/markdown/fn.to_mdast.html),
+[`Options`](https://docs.rs/markdown/1.0.0-alpha.1/markdown/struct.Options.html),
 and a few other structs and enums.
 
 See the [crate docs][docs] for more info.
@@ -328,8 +328,6 @@ Special thanks go out to:
 
 [MIT][license] © [Titus Wormer][author]
 
-<!-- To do: link `docs` to `docs.rs` instead of temporary site. -->
-
 [build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 
 [build]: https://github.com/wooorm/markdown-rs/actions
@@ -344,7 +342,7 @@ Special thanks go out to:
 
 [docs-badge]: https://img.shields.io/docsrs/markdown
 
-[docs]: https://wooorm.com/markdown-rs/markdown/
+[docs]: https://docs.rs/markdown/1.0.0-alpha.1/markdown/
 
 [crate-badge]: https://img.shields.io/crates/v/markdown
 
