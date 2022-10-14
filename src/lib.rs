@@ -198,6 +198,7 @@ pub enum MdxExpressionKind {
 /// Can be passed as `mdx_expression_parse` in [`ParseOptions`][] to support
 /// expressions according to a certain grammar (typically, a programming
 /// language).
+///
 pub type MdxExpressionParse = dyn Fn(&str, &MdxExpressionKind) -> MdxSignal;
 
 /// Control which constructs are enabled.
@@ -1579,6 +1580,9 @@ mod tests {
 
     #[test]
     fn test_constructs() {
+        #![allow(unused_must_use)]
+        Constructs::default();
+
         let constructs = Constructs::default();
         assert!(constructs.attention, "should default to `CommonMark` (1)");
         assert!(
@@ -1618,6 +1622,9 @@ mod tests {
 
     #[test]
     fn test_parse_options() {
+        #![allow(unused_must_use)]
+        ParseOptions::default();
+
         let options = ParseOptions::default();
         assert!(
             options.constructs.attention,
@@ -1682,6 +1689,9 @@ mod tests {
 
     #[test]
     fn test_compile_options() {
+        #![allow(unused_must_use)]
+        CompileOptions::default();
+
         let options = CompileOptions::default();
         assert!(
             !options.allow_dangerous_html,
@@ -1705,6 +1715,9 @@ mod tests {
 
     #[test]
     fn test_options() {
+        #![allow(unused_must_use)]
+        Options::default();
+
         let options = Options::default();
         assert!(
             options.parse.constructs.attention,
@@ -1744,6 +1757,9 @@ mod tests {
 
     #[test]
     fn test_to_html() {
+        #![allow(unused_must_use)]
+        to_html("a");
+
         assert_eq!(
             to_html("a"),
             "<p>a</p>",
@@ -1753,6 +1769,9 @@ mod tests {
 
     #[test]
     fn test_to_html_with_options() {
+        #![allow(unused_must_use)]
+        to_html_with_options("a", &Options::default());
+
         assert_eq!(
             to_html_with_options("a", &Options::default()).unwrap(),
             "<p>a</p>",
@@ -1762,12 +1781,53 @@ mod tests {
 
     #[test]
     fn test_to_mdast() {
+        #![allow(unused_must_use)]
+        to_mdast("a", &ParseOptions::default());
+
         assert!(
             matches!(
                 to_mdast("a", &ParseOptions::default()).unwrap(),
                 mdast::Node::Root(_)
             ),
             "should support turning markdown into mdast with `to_mdast`"
+        );
+    }
+
+    #[test]
+    fn test_mdx_expression_parse() {
+        fn func(_value: &str, _kind: &MdxExpressionKind) -> MdxSignal {
+            MdxSignal::Ok
+        }
+
+        let func_accepting = |_a: Box<MdxExpressionParse>| true;
+
+        assert!(
+            matches!(func("a", &MdxExpressionKind::Expression), MdxSignal::Ok),
+            "should expose an `MdxExpressionParse` type (1)"
+        );
+
+        assert!(
+            func_accepting(Box::new(func)),
+            "should expose an `MdxExpressionParse` type (2)"
+        );
+    }
+
+    #[test]
+    fn test_mdx_esm_parse() {
+        fn func(_value: &str) -> MdxSignal {
+            MdxSignal::Ok
+        }
+
+        let func_accepting = |_a: Box<MdxEsmParse>| true;
+
+        assert!(
+            matches!(func("a"), MdxSignal::Ok),
+            "should expose an `MdxEsmParse` type (1)"
+        );
+
+        assert!(
+            func_accepting(Box::new(func)),
+            "should expose an `MdxEsmParse` type (2)"
         );
     }
 }
