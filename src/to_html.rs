@@ -216,9 +216,8 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> Stri
         if event.kind == Kind::Exit
             && (event.name == Name::BlankLineEnding || event.name == Name::LineEnding)
         {
-            line_ending_inferred = Some(LineEnding::from_str(
-                Slice::from_position(bytes, &Position::from_exit_event(events, index)).as_str(),
-            ));
+            let slice = Slice::from_position(bytes, &Position::from_exit_event(events, index));
+            line_ending_inferred = Some(slice.as_str().parse().unwrap());
             break;
         }
 

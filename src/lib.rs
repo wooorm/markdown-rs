@@ -14,8 +14,9 @@
 #![no_std]
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]
-#![allow(clippy::too_many_lines)]
 #![allow(clippy::missing_panics_doc)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::too_many_lines)]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/wooorm/markdown-rs/8924580/media/logo-monochromatic.svg?sanitize=true"
 )]
@@ -48,159 +49,12 @@ pub use util::sanitize_uri::sanitize;
 #[doc(hidden)]
 pub use util::location::Location;
 
-/// Type of line endings in markdown.
-///
-/// Particularly when working with Windows, you might want to use
-/// `LineEnding::CarriageReturnLineFeed`.
-///
-/// ## Examples
-///
-/// ```
-/// use markdown::LineEnding;
-/// # fn main() {
-///
-/// // Use a CR + LF combination:
-/// let crlf = LineEnding::CarriageReturnLineFeed;
-/// # }
-/// ```
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub enum LineEnding {
-    /// Both a carriage return (`\r`) and a line feed (`\n`).
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// a␍␊
-    /// b
-    /// ```
-    CarriageReturnLineFeed,
-    /// Sole carriage return (`\r`).
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// a␍
-    /// b
-    /// ```
-    CarriageReturn,
-    /// Sole line feed (`\n`).
-    ///
-    /// ## Example
-    ///
-    /// ```markdown
-    /// a␊
-    /// b
-    /// ```
-    #[default]
-    LineFeed,
-}
+pub use util::line_ending::LineEnding;
 
-impl LineEnding {
-    /// Turn the line ending into a [str].
-    fn as_str(&self) -> &str {
-        match self {
-            LineEnding::CarriageReturnLineFeed => "\r\n",
-            LineEnding::CarriageReturn => "\r",
-            LineEnding::LineFeed => "\n",
-        }
-    }
-    /// Turn a string into a line ending.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if `code` is not `\r\n`, `\r`, or `\n`.
-    fn from_str(str: &str) -> LineEnding {
-        debug_assert!(matches!(str, "\r\n" | "\r" | "\n"), "expected eol");
-        match str {
-            "\r\n" => LineEnding::CarriageReturnLineFeed,
-            "\r" => LineEnding::CarriageReturn,
-            _ => LineEnding::LineFeed,
-        }
-    }
-}
-
-/// Signal used as feedback when parsing MDX ESM/expressions.
-#[derive(Clone, Debug)]
-pub enum MdxSignal {
-    /// A syntax error.
-    ///
-    /// `markdown-rs` will crash with error message `String`, and convert the
-    /// `usize` (byte offset into `&str` passed to `MdxExpressionParse` or
-    /// `MdxEsmParse`) to where it happened in the whole document.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust ignore
-    /// MdxSignal::Error("Unexpected `\"`, expected identifier".into(), 1)
-    /// ```
-    Error(String, usize),
-    /// An error at the end of the (partial?) expression.
-    ///
-    /// `markdown-rs` will either crash with error message `String` if it
-    /// doesn’t have any more text, or it will try again later when more text
-    /// is available.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust ignore
-    /// MdxSignal::Eof("Unexpected end of file in string literal".into())
-    /// ```
-    Eof(String),
-    /// Done, successfully.
-    ///
-    /// `markdown-rs` knows that this is the end of a valid expression/esm and
-    /// continues with markdown.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust ignore
-    /// MdxSignal::Ok
-    /// ```
-    Ok,
-}
-
-/// Signature of a function that parses MDX ESM.
-///
-/// Can be passed as `mdx_esm_parse` in [`ParseOptions`][] to support
-/// ESM according to a certain grammar (typically, a programming language).
-pub type MdxEsmParse = dyn Fn(&str) -> MdxSignal;
-
-/// Expression kind.
-#[derive(Clone, Debug)]
-pub enum MdxExpressionKind {
-    /// Kind of expressions in prose.
-    ///
-    /// ```mdx
-    /// > | # {Math.PI}
-    ///       ^^^^^^^^^
-    ///   |
-    /// > | {Math.PI}
-    ///     ^^^^^^^^^
-    /// ```
-    Expression,
-    /// Kind of expressions as attributes.
-    ///
-    /// ```mdx
-    /// > | <a {...b}>
-    ///        ^^^^^^
-    /// ```
-    AttributeExpression,
-    /// Kind of expressions as attribute values.
-    ///
-    /// ```mdx
-    /// > | <a b={c}>
-    ///          ^^^
-    /// ```
-    AttributeValueExpression,
-}
-
-/// Signature of a function that parses MDX expressions.
-///
-/// Can be passed as `mdx_expression_parse` in [`ParseOptions`][] to support
-/// expressions according to a certain grammar (typically, a programming
-/// language).
-///
-pub type MdxExpressionParse = dyn Fn(&str, &MdxExpressionKind) -> MdxSignal;
+pub use util::mdx::{
+    EsmParse as MdxEsmParse, ExpressionKind as MdxExpressionKind,
+    ExpressionParse as MdxExpressionParse, Signal as MdxSignal,
+};
 
 /// Control which constructs are enabled.
 ///
@@ -527,6 +381,7 @@ pub struct Constructs {
     pub thematic_break: bool,
 }
 
+// xxxxxxxxxxxxxxx
 impl Default for Constructs {
     /// `CommonMark`.
     ///
@@ -585,7 +440,7 @@ impl Constructs {
     ///
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>.
-    #[must_use]
+    // xxxxxxxxxxxxxxx
     pub fn gfm() -> Self {
         Self {
             gfm_autolink_literal: true,
@@ -617,7 +472,7 @@ impl Constructs {
     /// > programming language).
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
-    #[must_use]
+    // xxxxxxxxxxxxxxx
     pub fn mdx() -> Self {
         Self {
             autolink: false,
@@ -1088,6 +943,7 @@ pub struct CompileOptions {
     pub gfm_tagfilter: bool,
 }
 
+// xxxxxxxxxxxxxxx
 impl CompileOptions {
     /// GFM.
     ///
@@ -1098,7 +954,6 @@ impl CompileOptions {
     ///
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>.
-    #[must_use]
     pub fn gfm() -> Self {
         Self {
             gfm_tagfilter: true,
@@ -1355,7 +1210,6 @@ impl ParseOptions {
     ///
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>
-    #[must_use]
     pub fn gfm() -> Self {
         Self {
             constructs: Constructs::gfm(),
@@ -1382,7 +1236,7 @@ impl ParseOptions {
     /// > programming language).
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
-    #[must_use]
+    // xxxxxxxxxxxxxxx
     pub fn mdx() -> Self {
         Self {
             constructs: Constructs::mdx(),
@@ -1429,7 +1283,6 @@ impl Options {
     ///
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>
-    #[must_use]
     pub fn gfm() -> Self {
         Self {
             parse: ParseOptions::gfm(),
@@ -1451,7 +1304,7 @@ impl Options {
 ///
 /// assert_eq!(to_html("# Hello, world!"), "<h1>Hello, world!</h1>");
 /// ```
-#[must_use]
+// xxxxxxxxxxxxxxx
 pub fn to_html(value: &str) -> String {
     to_html_with_options(value, &Options::default()).unwrap()
 }
@@ -1536,51 +1389,7 @@ mod tests {
     use alloc::format;
 
     #[test]
-    fn test_line_ending() {
-        assert_eq!(
-            LineEnding::from_str("\r"),
-            LineEnding::CarriageReturn,
-            "should support turning a string into a carriage return"
-        );
-        assert_eq!(
-            LineEnding::CarriageReturn.as_str(),
-            "\r",
-            "should support turning a carriage return into a string"
-        );
-
-        assert_eq!(
-            LineEnding::from_str("\n"),
-            LineEnding::LineFeed,
-            "should support turning a string into a line feed"
-        );
-        assert_eq!(
-            LineEnding::LineFeed.as_str(),
-            "\n",
-            "should support turning a line feed into a string"
-        );
-
-        assert_eq!(
-            LineEnding::from_str("\r\n"),
-            LineEnding::CarriageReturnLineFeed,
-            "should support turning a string into a carriage return + line feed"
-        );
-        assert_eq!(
-            LineEnding::CarriageReturnLineFeed.as_str(),
-            "\r\n",
-            "should support turning a carriage return + line feed into a string"
-        );
-    }
-
-    #[test]
-    #[should_panic = "expected eol"]
-    fn test_line_ending_broken() {
-        // Hide stack trace.
-        LineEnding::from_str("a");
-    }
-
-    #[test]
     fn test_constructs() {
-        #![allow(unused_must_use)]
         Constructs::default();
         Constructs::gfm();
         Constructs::mdx();
@@ -1624,7 +1433,6 @@ mod tests {
 
     #[test]
     fn test_parse_options() {
-        #![allow(unused_must_use)]
         ParseOptions::default();
         ParseOptions::gfm();
         ParseOptions::mdx();
@@ -1693,7 +1501,6 @@ mod tests {
 
     #[test]
     fn test_compile_options() {
-        #![allow(unused_must_use)]
         CompileOptions::default();
         CompileOptions::gfm();
 
@@ -1720,7 +1527,6 @@ mod tests {
 
     #[test]
     fn test_options() {
-        #![allow(unused_must_use)]
         Options::default();
 
         let options = Options::default();
@@ -1762,9 +1568,6 @@ mod tests {
 
     #[test]
     fn test_to_html() {
-        #![allow(unused_must_use)]
-        to_html("a");
-
         assert_eq!(
             to_html("a"),
             "<p>a</p>",
@@ -1774,9 +1577,6 @@ mod tests {
 
     #[test]
     fn test_to_html_with_options() {
-        #![allow(unused_must_use)]
-        to_html_with_options("a", &Options::default());
-
         assert_eq!(
             to_html_with_options("a", &Options::default()).unwrap(),
             "<p>a</p>",
@@ -1786,53 +1586,12 @@ mod tests {
 
     #[test]
     fn test_to_mdast() {
-        #![allow(unused_must_use)]
-        to_mdast("a", &ParseOptions::default());
-
         assert!(
             matches!(
                 to_mdast("a", &ParseOptions::default()).unwrap(),
                 mdast::Node::Root(_)
             ),
             "should support turning markdown into mdast with `to_mdast`"
-        );
-    }
-
-    #[test]
-    fn test_mdx_expression_parse() {
-        fn func(_value: &str, _kind: &MdxExpressionKind) -> MdxSignal {
-            MdxSignal::Ok
-        }
-
-        let func_accepting = |_a: Box<MdxExpressionParse>| true;
-
-        assert!(
-            matches!(func("a", &MdxExpressionKind::Expression), MdxSignal::Ok),
-            "should expose an `MdxExpressionParse` type (1)"
-        );
-
-        assert!(
-            func_accepting(Box::new(func)),
-            "should expose an `MdxExpressionParse` type (2)"
-        );
-    }
-
-    #[test]
-    fn test_mdx_esm_parse() {
-        fn func(_value: &str) -> MdxSignal {
-            MdxSignal::Ok
-        }
-
-        let func_accepting = |_a: Box<MdxEsmParse>| true;
-
-        assert!(
-            matches!(func("a"), MdxSignal::Ok),
-            "should expose an `MdxEsmParse` type (1)"
-        );
-
-        assert!(
-            func_accepting(Box::new(func)),
-            "should expose an `MdxEsmParse` type (2)"
         );
     }
 }
