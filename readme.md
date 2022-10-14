@@ -76,8 +76,12 @@ This Rust crate has a sibling project in JavaScript: [`micromark`][micromark]
 With [Rust][] (rust edition 2018+, ±version 1.56+), install with `cargo`:
 
 ```sh
-cargo install markdown
+cargo add markdown@1.0.0-alpha.1
 ```
+
+> 👉 **Note**: this is a new crate that reuses an old name.
+> The old crate (`0.3.0` and lower) has a bunch of problems.
+> Make sure to use the new crate, currently in alpha at `1.0.0-alpha.1`.
 
 ## Use
 
