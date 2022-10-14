@@ -15,10 +15,12 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]
 #![allow(clippy::too_many_lines)]
-// Would be nice to use `logo-chromatic`, but that looks horrible on Safari at relatively small sizes currently. 😢
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/wooorm/markdown-rs/8924580/media/logo-monochromatic.svg?sanitize=true"
 )]
+
+// ^-- Would be nice to use `logo-chromatic`, but that looks horrible on Safari
+// at relatively small sizes currently. 😢
 
 extern crate alloc;
 
@@ -39,16 +41,16 @@ use alloc::{boxed::Box, fmt, string::String};
 use mdast::Node;
 use parser::parse;
 
-#[doc(hidden)]
 // Do not use: exported for quick prototyping, will be removed.
+#[doc(hidden)]
 pub use util::identifier::{id_cont, id_start};
 
-#[doc(hidden)]
 // Do not use: exported for quick prototyping, will be removed.
+#[doc(hidden)]
 pub use util::sanitize_uri::sanitize;
 
-#[doc(hidden)]
 // Do not use: exported for quick prototyping, will be removed.
+#[doc(hidden)]
 pub use util::location::Location;
 
 /// Type of line endings in markdown.
@@ -1530,4 +1532,54 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<Node, String> {
     let (events, parse_state) = parse(value, options)?;
     let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate std;
+    use super::*;
+
+    #[test]
+    fn test_line_ending() {
+        assert_eq!(
+            LineEnding::from_str("\r"),
+            LineEnding::CarriageReturn,
+            "should support turning a string into a carriage return"
+        );
+        assert_eq!(
+            LineEnding::CarriageReturn.as_str(),
+            "\r",
+            "should support turning a carriage return into a string"
+        );
+
+        assert_eq!(
+            LineEnding::from_str("\n"),
+            LineEnding::LineFeed,
+            "should support turning a string into a line feed"
+        );
+        assert_eq!(
+            LineEnding::LineFeed.as_str(),
+            "\n",
+            "should support turning a line feed into a string"
+        );
+
+        assert_eq!(
+            LineEnding::from_str("\r\n"),
+            LineEnding::CarriageReturnLineFeed,
+            "should support turning a string into a carriage return + line feed"
+        );
+        assert_eq!(
+            LineEnding::CarriageReturnLineFeed.as_str(),
+            "\r\n",
+            "should support turning a carriage return + line feed into a string"
+        );
+    }
+
+    #[test]
+    #[should_panic = "invalid str"]
+    fn test_line_ending_broken() {
+        // Hide stack trace.
+        std::panic::set_hook(Box::new(|_| {}));
+        LineEnding::from_str("a");
+    }
 }
