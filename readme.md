@@ -9,6 +9,7 @@
 # markdown-rs
 
 [![Build][build-badge]][build]
+[![Coverage][coverage-badge]][coverage]
 [![GitHub][repo-badge]][repo]
 [![docs.rs][docs-badge]][docs]
 [![crates.io][crate-badge]][crate]
@@ -342,6 +343,10 @@ Special thanks go out to:
 [build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 
 [build]: https://github.com/wooorm/markdown-rs/actions
+
+[coverage-badge]: https://img.shields.io/codecov/c/github/wooorm/markdown-rs.svg
+
+[coverage]: https://codecov.io/github/wooorm/markdown-rs
 
 [repo-badge]: https://img.shields.io/badge/GitHub-wooorm%2Fmarkdown--rs-brightgreen
 
