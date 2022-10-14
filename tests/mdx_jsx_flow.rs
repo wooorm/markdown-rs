@@ -30,6 +30,7 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
             &Options {
                 parse: ParseOptions {
                     constructs: Constructs {
+                        html_flow: false,
                         mdx_jsx_flow: true,
                         ..Constructs::default()
                     },
@@ -40,6 +41,25 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
         )?,
         "<pre><code>&lt;a /&gt;\n</code></pre>",
         "should prefer indented code over jsx if it’s enabled"
+    );
+
+    assert_eq!(
+        to_html_with_options(
+            "   <a />",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        html_flow: false,
+                        mdx_jsx_flow: true,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
+                },
+                ..Options::default()
+            }
+        )?,
+        "",
+        "should support indented jsx if indented code is enabled"
     );
 
     assert_eq!(

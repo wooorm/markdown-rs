@@ -51,6 +51,24 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options(
+            "   {}",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        mdx_expression_flow: true,
+                        ..Constructs::default()
+                    },
+                    ..ParseOptions::default()
+                },
+                ..Options::default()
+            }
+        )?,
+        "",
+        "should support indented expressions if indented code is enabled"
+    );
+
+    assert_eq!(
         to_html_with_options("{a", &mdx).err().unwrap(),
         "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
         "should crash if no closing brace is found (1)"

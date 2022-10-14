@@ -493,6 +493,9 @@ pub struct Constructs {
     ///     ^^^^^^^^^^^^^
     /// ```
     ///
+    /// > 👉 **Note**: You *must* pass `html_flow: false` to use this,
+    /// > as it’s preferred when on over `mdx_jsx_flow`.
+    ///
     /// > 👉 **Note**: You *can* pass
     /// > [`mdx_expression_parse`][MdxExpressionParse] in [`ParseOptions`][]
     /// > too, to parse expressions in JSX according to a certain grammar
@@ -506,6 +509,9 @@ pub struct Constructs {
     /// > | a <Component /> c
     ///       ^^^^^^^^^^^^^
     /// ```
+    ///
+    /// > 👉 **Note**: You *must* pass `html_text: false` to use this,
+    /// > as it’s preferred when on over `mdx_jsx_text`.
     ///
     /// > 👉 **Note**: You *can* pass
     /// > [`mdx_expression_parse`][MdxExpressionParse] in [`ParseOptions`][]
