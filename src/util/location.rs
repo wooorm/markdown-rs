@@ -32,6 +32,7 @@ impl Location {
             if bytes[index] == b'\r' {
                 if index + 1 < bytes.len() && bytes[index + 1] == b'\n' {
                     location_index.indices.push(index + 2);
+                    index += 1;
                 } else {
                     location_index.indices.push(index + 1);
                 }
@@ -107,5 +108,92 @@ impl Location {
             let (stop_relative, stop_absolute) = &stops[index - 1];
             Some(stop_absolute + (relative - stop_relative))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_location_lf() {
+        let location = Location::new("ab\nc".as_bytes());
+        assert_eq!(
+            location.to_point(0), // `a`
+            Some(Point::new(1, 1, 0)),
+            "should support some points (1)"
+        );
+        assert_eq!(
+            location.to_point(1), // `b`
+            Some(Point::new(1, 2, 1)),
+            "should support some points (2)"
+        );
+        assert_eq!(
+            location.to_point(2), // `\n`
+            Some(Point::new(1, 3, 2)),
+            "should support some points (3)"
+        );
+        assert_eq!(
+            location.to_point(3), // `c`
+            Some(Point::new(2, 1, 3)),
+            "should support some points (4)"
+        );
+        assert_eq!(
+            location.to_point(4), // EOF
+            // Still gets a point, so that we can represent positions of things
+            // that end at the last character, the `c` end at `2:2`.
+            Some(Point::new(2, 2, 4)),
+            "should support some points (5)"
+        );
+        assert_eq!(
+            location.to_point(5), // Out of bounds
+            None,
+            "should support some points (6)"
+        );
+    }
+
+    #[test]
+    fn test_location_cr() {
+        let location = Location::new("a\rb".as_bytes());
+        assert_eq!(
+            location.to_point(0), // `a`
+            Some(Point::new(1, 1, 0)),
+            "should support some points (1)"
+        );
+        assert_eq!(
+            location.to_point(1), // `\r`
+            Some(Point::new(1, 2, 1)),
+            "should support some points (2)"
+        );
+        assert_eq!(
+            location.to_point(2), // `b`
+            Some(Point::new(2, 1, 2)),
+            "should support some points (3)"
+        );
+    }
+
+    #[test]
+    fn test_location_cr_lf() {
+        let location = Location::new("a\r\nb".as_bytes());
+        assert_eq!(
+            location.to_point(0), // `a`
+            Some(Point::new(1, 1, 0)),
+            "should support some points (1)"
+        );
+        assert_eq!(
+            location.to_point(1), // `\r`
+            Some(Point::new(1, 2, 1)),
+            "should support some points (2)"
+        );
+        assert_eq!(
+            location.to_point(2), // `\n`
+            Some(Point::new(1, 3, 2)),
+            "should support some points (3)"
+        );
+        assert_eq!(
+            location.to_point(3), // `b`
+            Some(Point::new(2, 1, 3)),
+            "should support some points (4)"
+        );
     }
 }
