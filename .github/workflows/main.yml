@@ -3,7 +3,7 @@ on:
   - pull_request
   - push
 jobs:
-  stable:
+  main:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -13,8 +13,22 @@ jobs:
           components: rustfmt, clippy
       - run: cargo fmt --check && cargo clippy --examples --tests --benches
       - run: cargo test
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
       - uses: codecov/codecov-action@v3
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
       - run: cargo doc --no-deps --release
       - run: echo '<!doctypehtml><html lang=en><meta charset=utf8><title>Redirecting…</title><link rel=canonical href=https://wooorm.com/markdown-rs/markdown><script>location = "https://wooorm.com/markdown-rs/markdown"</script><meta http-equiv=refresh content=0;url=https://wooorm.com/markdown-rs/markdown><meta name=robots content=noindex><body><h1>Redirecting…</h1><p><a href=https://wooorm.com/markdown-rs/markdown>Click here if you are not redirected.</a>' > target/doc/index.html
       - name: Deploy
