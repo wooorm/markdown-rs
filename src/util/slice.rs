@@ -2,7 +2,7 @@
 
 use crate::event::{Event, Kind, Point};
 use crate::util::constant::TAB_SIZE;
-use alloc::string::String;
+use alloc::{format, string::String, vec};
 use core::str;
 
 /// A range between two points.
@@ -24,20 +24,19 @@ impl<'a> Position<'a> {
     ///
     /// This function panics if an enter event is given.
     /// When `markdown-rs` is used, this function never panics.
-    #[cfg_attr(tarpaulin, ignore)]
     pub fn from_exit_event(events: &'a [Event], index: usize) -> Position<'a> {
-        let exit = &events[index];
-        debug_assert_eq!(exit.kind, Kind::Exit, "expected `exit` event");
-        let mut enter_index = index - 1;
+        debug_assert_eq!(events[index].kind, Kind::Exit, "expected `exit` event");
+        let end = &events[index].point;
+        let name = &events[index].name;
+        let mut index = index - 1;
 
-        while events[enter_index].kind != Kind::Enter || events[enter_index].name != exit.name {
-            enter_index -= 1;
+        while !(events[index].kind == Kind::Enter && events[index].name == *name) {
+            index -= 1;
         }
 
-        Position {
-            start: &events[enter_index].point,
-            end: &exit.point,
-        }
+        let start = &events[index].point;
+
+        Position { start, end }
     }
 
     /// Turn a position into indices.
@@ -118,19 +117,9 @@ impl<'a> Slice<'a> {
     /// Turn the slice into a `String`.
     ///
     /// Supports virtual spaces.
-    #[cfg_attr(tarpaulin, ignore)]
     pub fn serialize(&self) -> String {
-        debug_assert_eq!(self.after, 0, "expected no trailing vs");
-        // If the above ever starts erroring, handle the same as `self.before`
-        // above but with `self.after`.
-        // It’d currently be unused code.
-        let mut string = String::with_capacity(self.len());
-        let mut index = self.before;
-        while index > 0 {
-            string.push(' ');
-            index -= 1;
-        }
-        string.push_str(self.as_str());
-        string
+        let prefix = String::from_utf8(vec![b' '; self.before]).unwrap();
+        let suffix = String::from_utf8(vec![b' '; self.after]).unwrap();
+        format!("{}{}{}", prefix, self.as_str(), suffix)
     }
 }
