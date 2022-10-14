@@ -14,6 +14,10 @@
 [![docs.rs][docs-badge]][docs]
 [![crates.io][crate-badge]][crate]
 
+> 👉 **Note**: this is a new crate that reuses an old name.
+> The old crate (`0.3.0` and lower) has a bunch of problems.
+> Make sure to use the new crate, currently in alpha at `1.0.0-alpha.1`.
+
 CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
 ## Feature highlights
