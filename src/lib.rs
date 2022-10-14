@@ -19,9 +19,6 @@
     html_logo_url = "https://raw.githubusercontent.com/wooorm/markdown-rs/8924580/media/logo-monochromatic.svg?sanitize=true"
 )]
 
-// ^-- Would be nice to use `logo-chromatic`, but that looks horrible on Safari
-// at relatively small sizes currently. 😢
-
 extern crate alloc;
 
 mod construct;
@@ -41,15 +38,12 @@ use alloc::{boxed::Box, fmt, string::String};
 use mdast::Node;
 use parser::parse;
 
-// Do not use: exported for quick prototyping, will be removed.
 #[doc(hidden)]
 pub use util::identifier::{id_cont, id_start};
 
-// Do not use: exported for quick prototyping, will be removed.
 #[doc(hidden)]
 pub use util::sanitize_uri::sanitize;
 
-// Do not use: exported for quick prototyping, will be removed.
 #[doc(hidden)]
 pub use util::location::Location;
 
@@ -115,11 +109,11 @@ impl LineEnding {
     ///
     /// Panics if `code` is not `\r\n`, `\r`, or `\n`.
     fn from_str(str: &str) -> LineEnding {
+        debug_assert!(matches!(str, "\r\n" | "\r" | "\n"), "expected eol");
         match str {
             "\r\n" => LineEnding::CarriageReturnLineFeed,
             "\r" => LineEnding::CarriageReturn,
-            "\n" => LineEnding::LineFeed,
-            _ => unreachable!("invalid str"),
+            _ => LineEnding::LineFeed,
         }
     }
 }
@@ -1538,6 +1532,7 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<Node, String> {
 mod tests {
     extern crate std;
     use super::*;
+    use alloc::format;
 
     #[test]
     fn test_line_ending() {
@@ -1576,10 +1571,203 @@ mod tests {
     }
 
     #[test]
-    #[should_panic = "invalid str"]
+    #[should_panic = "expected eol"]
     fn test_line_ending_broken() {
         // Hide stack trace.
-        std::panic::set_hook(Box::new(|_| {}));
         LineEnding::from_str("a");
+    }
+
+    #[test]
+    fn test_constructs() {
+        let constructs = Constructs::default();
+        assert!(constructs.attention, "should default to `CommonMark` (1)");
+        assert!(
+            !constructs.gfm_autolink_literal,
+            "should default to `CommonMark` (2)"
+        );
+        assert!(
+            !constructs.mdx_jsx_flow,
+            "should default to `CommonMark` (3)"
+        );
+        assert!(
+            !constructs.frontmatter,
+            "should default to `CommonMark` (4)"
+        );
+
+        let constructs = Constructs::gfm();
+        assert!(constructs.attention, "should support `gfm` shortcut (1)");
+        assert!(
+            constructs.gfm_autolink_literal,
+            "should support `gfm` shortcut (2)"
+        );
+        assert!(
+            !constructs.mdx_jsx_flow,
+            "should support `gfm` shortcut (3)"
+        );
+        assert!(!constructs.frontmatter, "should support `gfm` shortcut (4)");
+
+        let constructs = Constructs::mdx();
+        assert!(constructs.attention, "should support `gfm` shortcut (1)");
+        assert!(
+            !constructs.gfm_autolink_literal,
+            "should support `mdx` shortcut (2)"
+        );
+        assert!(constructs.mdx_jsx_flow, "should support `mdx` shortcut (3)");
+        assert!(!constructs.frontmatter, "should support `mdx` shortcut (4)");
+    }
+
+    #[test]
+    fn test_parse_options() {
+        let options = ParseOptions::default();
+        assert!(
+            options.constructs.attention,
+            "should default to `CommonMark` (1)"
+        );
+        assert!(
+            !options.constructs.gfm_autolink_literal,
+            "should default to `CommonMark` (2)"
+        );
+        assert!(
+            !options.constructs.mdx_jsx_flow,
+            "should default to `CommonMark` (3)"
+        );
+
+        let options = ParseOptions::gfm();
+        assert!(
+            options.constructs.attention,
+            "should support `gfm` shortcut (1)"
+        );
+        assert!(
+            options.constructs.gfm_autolink_literal,
+            "should support `gfm` shortcut (2)"
+        );
+        assert!(
+            !options.constructs.mdx_jsx_flow,
+            "should support `gfm` shortcut (3)"
+        );
+
+        let options = ParseOptions::mdx();
+        assert!(
+            options.constructs.attention,
+            "should support `mdx` shortcut (1)"
+        );
+        assert!(
+            !options.constructs.gfm_autolink_literal,
+            "should support `mdx` shortcut (2)"
+        );
+        assert!(
+            options.constructs.mdx_jsx_flow,
+            "should support `mdx` shortcut (3)"
+        );
+
+        assert_eq!(
+            format!("{:?}", ParseOptions::default()),
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None }",
+            "should support `Debug` trait"
+        );
+        assert_eq!(
+            format!("{:?}", ParseOptions {
+                mdx_esm_parse: Some(Box::new(|_value| {
+                    MdxSignal::Ok
+                })),
+                mdx_expression_parse: Some(Box::new(|_value, _kind| {
+                    MdxSignal::Ok
+                })),
+                ..Default::default()
+            }),
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\") }",
+            "should support `Debug` trait on mdx functions"
+        );
+    }
+
+    #[test]
+    fn test_compile_options() {
+        let options = CompileOptions::default();
+        assert!(
+            !options.allow_dangerous_html,
+            "should default to safe `CommonMark` (1)"
+        );
+        assert!(
+            !options.gfm_tagfilter,
+            "should default to safe `CommonMark` (2)"
+        );
+
+        let options = CompileOptions::gfm();
+        assert!(
+            !options.allow_dangerous_html,
+            "should support safe `gfm` shortcut (1)"
+        );
+        assert!(
+            options.gfm_tagfilter,
+            "should support safe `gfm` shortcut (1)"
+        );
+    }
+
+    #[test]
+    fn test_options() {
+        let options = Options::default();
+        assert!(
+            options.parse.constructs.attention,
+            "should default to safe `CommonMark` (1)"
+        );
+        assert!(
+            !options.parse.constructs.gfm_autolink_literal,
+            "should default to safe `CommonMark` (2)"
+        );
+        assert!(
+            !options.parse.constructs.mdx_jsx_flow,
+            "should default to safe `CommonMark` (3)"
+        );
+        assert!(
+            !options.compile.allow_dangerous_html,
+            "should default to safe `CommonMark` (4)"
+        );
+
+        let options = Options::gfm();
+        assert!(
+            options.parse.constructs.attention,
+            "should support safe `gfm` shortcut (1)"
+        );
+        assert!(
+            options.parse.constructs.gfm_autolink_literal,
+            "should support safe `gfm` shortcut (2)"
+        );
+        assert!(
+            !options.parse.constructs.mdx_jsx_flow,
+            "should support safe `gfm` shortcut (3)"
+        );
+        assert!(
+            !options.compile.allow_dangerous_html,
+            "should support safe `gfm` shortcut (4)"
+        );
+    }
+
+    #[test]
+    fn test_to_html() {
+        assert_eq!(
+            to_html("a"),
+            "<p>a</p>",
+            "should support turning markdown into html with `to_html`"
+        );
+    }
+
+    #[test]
+    fn test_to_html_with_options() {
+        assert_eq!(
+            to_html_with_options("a", &Options::default()).unwrap(),
+            "<p>a</p>",
+            "should support turning markdown into html with `to_html_with_options`"
+        );
+    }
+
+    #[test]
+    fn test_to_mdast() {
+        assert!(
+            matches!(
+                to_mdast("a", &ParseOptions::default()).unwrap(),
+                mdast::Node::Root(_)
+            ),
+            "should support turning markdown into mdast with `to_mdast`"
+        );
     }
 }
