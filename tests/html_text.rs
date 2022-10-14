@@ -13,9 +13,9 @@ fn html_text() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -434,11 +434,11 @@ to_html_with_options("<x> a", &danger)?,
                 parse: ParseOptions {
                     constructs: Constructs {
                         html_text: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>a &lt;x&gt;</p>",
@@ -446,7 +446,7 @@ to_html_with_options("<x> a", &danger)?,
     );
 
     assert_eq!(
-        to_mdast("alpha <i>bravo</b> charlie.", &ParseOptions::default())?,
+        to_mdast("alpha <i>bravo</b> charlie.", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

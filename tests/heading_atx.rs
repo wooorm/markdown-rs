@@ -214,11 +214,11 @@ fn heading_atx() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         heading_atx: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p># a</p>",
@@ -226,7 +226,7 @@ fn heading_atx() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("## alpha #", &ParseOptions::default())?,
+        to_mdast("## alpha #", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Heading(Heading {
                 depth: 2,

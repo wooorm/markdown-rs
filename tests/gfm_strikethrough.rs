@@ -3,20 +3,12 @@ use markdown::{
     mdast::{Delete, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_strikethrough() -> Result<(), String> {
-    let gfm = Options {
-        parse: ParseOptions {
-            constructs: Constructs::gfm(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
-    };
-
     assert_eq!(
         to_html("a ~b~ c"),
         "<p>a ~b~ c</p>",
@@ -24,49 +16,49 @@ fn gfm_strikethrough() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a ~b~", &gfm)?,
+        to_html_with_options("a ~b~", &Options::gfm())?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ one tilde"
     );
 
     assert_eq!(
-        to_html_with_options("a ~~b~~", &gfm)?,
+        to_html_with_options("a ~~b~~", &Options::gfm())?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ two tildes"
     );
 
     assert_eq!(
-        to_html_with_options("a ~~~b~~~", &gfm)?,
+        to_html_with_options("a ~~~b~~~", &Options::gfm())?,
         "<p>a ~~~b~~~</p>",
         "should not support strikethrough w/ three tildes"
     );
 
     assert_eq!(
-        to_html_with_options("a \\~~~b~~ c", &gfm)?,
+        to_html_with_options("a \\~~~b~~ c", &Options::gfm())?,
         "<p>a ~<del>b</del> c</p>",
         "should support strikethrough after an escaped tilde"
     );
 
     assert_eq!(
-        to_html_with_options("a ~~b ~~c~~ d~~ e", &gfm)?,
+        to_html_with_options("a ~~b ~~c~~ d~~ e", &Options::gfm())?,
         "<p>a <del>b <del>c</del> d</del> e</p>",
         "should support nested strikethrough"
     );
 
     assert_eq!(
-        to_html_with_options("a ~-1~ b", &gfm)?,
+        to_html_with_options("a ~-1~ b", &Options::gfm())?,
         "<p>a <del>-1</del> b</p>",
         "should open if preceded by whitespace and followed by punctuation"
     );
 
     assert_eq!(
-        to_html_with_options("a ~b.~ c", &gfm)?,
+        to_html_with_options("a ~b.~ c", &Options::gfm())?,
         "<p>a <del>b.</del> c</p>",
         "should close if preceded by punctuation and followed by whitespace"
     );
 
     assert_eq!(
-        to_html_with_options("~b.~.", &gfm)?,
+        to_html_with_options("~b.~.", &Options::gfm())?,
         "<p><del>b.</del>.</p>",
         "should close if preceded and followed by punctuation"
     );
@@ -130,7 +122,7 @@ a ~~two b one~ c two~~ d
 
 a ~~two b two~~ c one~ d
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>Balanced</h1>
 <p>a <del>one</del> b</p>
@@ -199,7 +191,7 @@ a ~~twoLeft b ~~twoLeft c twoRight~~ d
 
 a ~~twoLeft b ~~twoLeft c ~~twoLeft d
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>Flank</h1>
 <p>a oneRight~ b oneRight~ c oneRight~ d</p>
@@ -316,7 +308,7 @@ t ~~**xxx**~~ zzz
 
 u ~**xxx**~ zzz
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>Interlpay</h1>
 <h2>Interleave with attention</h2>
@@ -372,11 +364,10 @@ u ~**xxx**~ zzz
             "a ~b~ ~~c~~ d",
             &Options {
                 parse: ParseOptions {
-                    constructs: Constructs::gfm(),
                     gfm_strikethrough_single_tilde: false,
-                    ..ParseOptions::default()
+                    ..ParseOptions::gfm()
                 },
-                ..Options::default()
+                ..Options::gfm()
             }
         )?,
         "<p>a ~b~ <del>c</del> d</p>",
@@ -388,11 +379,10 @@ u ~**xxx**~ zzz
             "a ~b~ ~~c~~ d",
             &Options {
                 parse: ParseOptions {
-                    constructs: Constructs::gfm(),
                     gfm_strikethrough_single_tilde: true,
-                    ..ParseOptions::default()
+                    ..ParseOptions::gfm()
                 },
-                ..Options::default()
+                ..Options::gfm()
             }
         )?,
         "<p>a <del>b</del> <del>c</del> d</p>",
@@ -400,7 +390,7 @@ u ~**xxx**~ zzz
     );
 
     assert_eq!(
-        to_mdast("a ~~alpha~~ b.", &gfm.parse)?,
+        to_mdast("a ~~alpha~~ b.", &ParseOptions::gfm())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

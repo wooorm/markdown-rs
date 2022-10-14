@@ -13,9 +13,9 @@ fn character_escape() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -93,11 +93,11 @@ fn character_escape() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         character_escape: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>\\&gt; a</p>",
@@ -105,7 +105,7 @@ fn character_escape() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a \\* b", &ParseOptions::default())?,
+        to_mdast("a \\* b", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::Text(Text {

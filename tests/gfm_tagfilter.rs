@@ -10,9 +10,9 @@ fn gfm_tagfilter() -> Result<(), String> {
             &Options {
                 compile: CompileOptions {
                     allow_dangerous_html: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<iframe>",
@@ -25,9 +25,9 @@ fn gfm_tagfilter() -> Result<(), String> {
             &Options {
                 compile: CompileOptions {
                     gfm_tagfilter: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>a &lt;i&gt;</p>\n&lt;script&gt;",
@@ -41,9 +41,9 @@ fn gfm_tagfilter() -> Result<(), String> {
                 compile: CompileOptions {
                     allow_dangerous_html: true,
                     gfm_tagfilter: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "&lt;iframe>",
@@ -99,9 +99,9 @@ javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onm
                 compile: CompileOptions {
                     allow_dangerous_html: true,
                     gfm_tagfilter: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         r###"&lt;title>

@@ -3,20 +3,12 @@ use markdown::{
     mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptions, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_footnote() -> Result<(), String> {
-    let gfm = Options {
-        parse: ParseOptions {
-            constructs: Constructs::gfm(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
-    };
-
     assert_eq!(
         to_html("A call.[^a]\n\n[^a]: whatevs"),
         "<p>A call.<a href=\"whatevs\">^a</a></p>\n",
@@ -24,7 +16,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("A call.[^a]\n\n[^a]: whatevs", &gfm)?,
+        to_html_with_options("A call.[^a]\n\n[^a]: whatevs", &Options::gfm())?,
         "<p>A call.<sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -41,14 +33,11 @@ fn gfm_footnote() -> Result<(), String> {
         to_html_with_options(
             "Noot.[^a]\n\n[^a]: dingen",
             &Options {
-                parse: ParseOptions {
-                    constructs: Constructs::gfm(),
-                    ..ParseOptions::default()
-                },
+                parse: ParseOptions::gfm(),
                 compile: CompileOptions {
-                gfm_footnote_label: Some("Voetnoten".into()),
-                gfm_footnote_back_label: Some("Terug naar de inhoud".into()),
-                    ..CompileOptions::default()
+                    gfm_footnote_label: Some("Voetnoten".into()),
+                    gfm_footnote_back_label: Some("Terug naar de inhoud".into()),
+                    ..CompileOptions::gfm()
                 }
             }
         )?,
@@ -68,13 +57,10 @@ fn gfm_footnote() -> Result<(), String> {
         to_html_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
-                parse: ParseOptions {
-                    constructs: Constructs::gfm(),
-                    ..ParseOptions::default()
-                },
+                parse: ParseOptions::gfm(),
                 compile: CompileOptions {
-                gfm_footnote_label_tag_name: Some("h1".into()),
-                    ..CompileOptions::default()
+                    gfm_footnote_label_tag_name: Some("h1".into()),
+                    ..CompileOptions::gfm()
                 }
             }
         )?,
@@ -94,13 +80,10 @@ fn gfm_footnote() -> Result<(), String> {
         to_html_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
-                parse: ParseOptions {
-                    constructs: Constructs::gfm(),
-                    ..ParseOptions::default()
-                },
+                parse: ParseOptions::gfm(),
                 compile: CompileOptions {
-                gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
-                    ..CompileOptions::default()
+                    gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
+                    ..CompileOptions::gfm()
                 }
             }
         )?,
@@ -120,13 +103,10 @@ fn gfm_footnote() -> Result<(), String> {
         to_html_with_options(
             "[^a]\n\n[^a]: b",
             &Options {
-                parse: ParseOptions {
-                    constructs: Constructs::gfm(),
-                    ..ParseOptions::default()
-                },
+                parse: ParseOptions::gfm(),
                 compile: CompileOptions {
                     gfm_footnote_clobber_prefix: Some("".into()),
-                    ..CompileOptions::default()
+                    ..CompileOptions::gfm()
                 }
             }
         )?,
@@ -143,19 +123,19 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("A paragraph.\n\n[^a]: whatevs", &gfm)?,
+        to_html_with_options("A paragraph.\n\n[^a]: whatevs", &Options::gfm())?,
         "<p>A paragraph.</p>\n",
         "should ignore definitions w/o calls"
     );
 
     assert_eq!(
-        to_html_with_options("a[^b]", &gfm)?,
+        to_html_with_options("a[^b]", &Options::gfm())?,
         "<p>a[^b]</p>",
         "should ignore calls w/o definitions"
     );
 
     assert_eq!(
-        to_html_with_options("a[^b]\n\n[^b]: c\n[^b]: d", &gfm)?,
+        to_html_with_options("a[^b]\n\n[^b]: c\n[^b]: d", &Options::gfm())?,
         "<p>a<sup><a href=\"#user-content-fn-b\" id=\"user-content-fnref-b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -169,7 +149,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a[^b], c[^b]\n\n[^b]: d", &gfm)?,
+        to_html_with_options("a[^b], c[^b]\n\n[^b]: d", &Options::gfm())?,
         "<p>a<sup><a href=\"#user-content-fn-b\" id=\"user-content-fnref-b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>, c<sup><a href=\"#user-content-fn-b\" id=\"user-content-fnref-b-2\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -183,32 +163,32 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("![^a](b)", &gfm)?,
+        to_html_with_options("![^a](b)", &Options::gfm())?,
         "<p>!<a href=\"b\">^a</a></p>",
         "should not support images starting w/ `^` (but see it as a link?!, 1)"
     );
 
     assert_eq!(
-        to_html_with_options("![^a][b]\n\n[b]: c", &gfm)?,
+        to_html_with_options("![^a][b]\n\n[b]: c", &Options::gfm())?,
         "<p>!<a href=\"c\">^a</a></p>\n",
         "should not support images starting w/ `^` (but see it as a link?!, 2)"
     );
 
     assert_eq!(
-        to_html_with_options("[^]()", &gfm)?,
+        to_html_with_options("[^]()", &Options::gfm())?,
         "<p><a href=\"\">^</a></p>",
         "should support an empty link with caret"
     );
 
     assert_eq!(
-        to_html_with_options("![^]()", &gfm)?,
+        to_html_with_options("![^]()", &Options::gfm())?,
         "<p>!<a href=\"\">^</a></p>",
         "should support an empty image with caret (as link)"
     );
 
     // <https://github.com/github/cmark-gfm/issues/239>
     assert_eq!(
-        to_html_with_options("Call.[^a\\+b].\n\n[^a\\+b]: y", &gfm)?,
+        to_html_with_options("Call.[^a\\+b].\n\n[^a\\+b]: y", &Options::gfm())?,
         "<p>Call.<sup><a href=\"#user-content-fn-a%5C+b\" id=\"user-content-fnref-a%5C+b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -222,7 +202,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("Call.[^a&copy;b].\n\n[^a&copy;b]: y", &gfm)?,
+        to_html_with_options("Call.[^a&copy;b].\n\n[^a&copy;b]: y", &Options::gfm())?,
         "<p>Call.<sup><a href=\"#user-content-fn-a&amp;copy;b\" id=\"user-content-fnref-a&amp;copy;b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -238,7 +218,7 @@ fn gfm_footnote() -> Result<(), String> {
     // <https://github.com/github/cmark-gfm/issues/239>
     // <https://github.com/github/cmark-gfm/issues/240>
     assert_eq!(
-        to_html_with_options("Call.[^a\\]b].\n\n[^a\\]b]: y", &gfm)?,
+        to_html_with_options("Call.[^a\\]b].\n\n[^a\\]b]: y", &Options::gfm())?,
         "<p>Call.<sup><a href=\"#user-content-fn-a%5C%5Db\" id=\"user-content-fnref-a%5C%5Db\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -252,7 +232,7 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("Call.[^a&#91;b].\n\n[^a&#91;b]: y", &gfm)?,
+        to_html_with_options("Call.[^a&#91;b].\n\n[^a&#91;b]: y", &Options::gfm())?,
         "<p>Call.<sup><a href=\"#user-content-fn-a&amp;#91;b\" id=\"user-content-fnref-a&amp;#91;b\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -266,19 +246,19 @@ fn gfm_footnote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("Call.[^a\\+b].\n\n[^a+b]: y", &gfm)?,
+        to_html_with_options("Call.[^a\\+b].\n\n[^a+b]: y", &Options::gfm())?,
         "<p>Call.[^a+b].</p>\n",
         "should match calls to definitions on the source of the label, not on resolved escapes"
     );
 
     assert_eq!(
-        to_html_with_options("Call.[^a&#91;b].\n\n[^a\\[b]: y", &gfm)?,
+        to_html_with_options("Call.[^a&#91;b].\n\n[^a\\[b]: y", &Options::gfm())?,
         "<p>Call.[^a[b].</p>\n",
         "should match calls to definitions on the source of the label, not on resolved references"
     );
 
     assert_eq!(
-        to_html_with_options("[^1].\n\n[^1]: a\nb", &gfm)?,
+        to_html_with_options("[^1].\n\n[^1]: a\nb", &Options::gfm())?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -293,7 +273,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        to_html_with_options("[^1].\n\n> [^1]: a\nb", &gfm)?,
+        to_html_with_options("[^1].\n\n> [^1]: a\nb", &Options::gfm())?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <blockquote>
 </blockquote>
@@ -310,7 +290,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        to_html_with_options("[^1].\n\n> [^1]: a\n> b", &gfm)?,
+        to_html_with_options("[^1].\n\n> [^1]: a\n> b", &Options::gfm())?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <blockquote>
 </blockquote>
@@ -327,7 +307,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     );
 
     assert_eq!(
-        to_html_with_options("[^1].\n\n[^1]: a\n\n    > b", &gfm)?,
+        to_html_with_options("[^1].\n\n[^1]: a\n\n    > b", &Options::gfm())?,
         "<p><sup><a href=\"#user-content-fn-1\" id=\"user-content-fnref-1\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -348,7 +328,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     let max = "x".repeat(999);
 
     assert_eq!(
-        to_html_with_options(format!("Call.[^{}].\n\n[^{}]: y", max, max).as_str(), &gfm)?,
+        to_html_with_options(format!("Call.[^{}].\n\n[^{}]: y", max, max).as_str(), &Options::gfm())?,
         format!("<p>Call.<sup><a href=\"#user-content-fn-{}\" id=\"user-content-fnref-{}\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup>.</p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
 <ol>
@@ -364,7 +344,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     assert_eq!(
         to_html_with_options(
             format!("Call.[^a{}].\n\n[^a{}]: y", max, max).as_str(),
-            &gfm
+            &Options::gfm()
         )?,
         format!("<p>Call.[^a{}].</p>\n<p>[^a{}]: y</p>", max, max),
         "should not support 1000 characters in a call / definition"
@@ -373,7 +353,7 @@ b <a href=\"#user-content-fnref-1\" data-footnote-backref=\"\" aria-label=\"Back
     assert_eq!(
         to_html_with_options(
             "[^a]\n\n[^a]: b\n  \n    c",
-            &gfm
+            &Options::gfm()
         )?,
         "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>
@@ -399,7 +379,7 @@ a![^1]
 [^1]: b
 
 [i]: c"###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>a<img src="#" alt="i" />
 a!<a href="#">i</a>
@@ -419,7 +399,7 @@ a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref=
     );
 
     assert_eq!(
-        to_html_with_options("a![^1]", &gfm)?,
+        to_html_with_options("a![^1]", &Options::gfm())?,
         "<p>a![^1]</p>",
         "should match bang/caret interplay (undefined) like GitHub"
     );
@@ -430,7 +410,7 @@ a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref=
 
 [^1]: b
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>a!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup></p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -469,7 +449,7 @@ even another caret.
 
 [^^]: caret
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Calls may not be empty: <a href="empty">^</a>.</p>
 <p>Calls cannot contain whitespace only: <a href="empty">^ </a>.</p>
@@ -527,7 +507,7 @@ Some calls.[^ w][^x ][^y][^z]
 
 [^x ]: # z
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>[^c d]: # e</p>
 <p>[^f	g]: # h</p>
@@ -595,7 +575,7 @@ j], [^ l], [^m ]</p>
 
 [^![image](#)]: a
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         // Note:
         // * GH does not support colons.
@@ -654,7 +634,7 @@ j], [^ l], [^m ]</p>
   More.
 [^4]: Directly after a list item.
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Call<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <blockquote>
@@ -711,7 +691,7 @@ j], [^ l], [^m ]</p>
 
 - list
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <h1>Heading</h1>
@@ -768,7 +748,7 @@ Lazy?
 
 Lazy!
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Call<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup><sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup>.</p>
 <p>Lazy?</p>
@@ -824,7 +804,7 @@ Lazy!
 
 [^10]:- - - kilo
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Note!<sup><a href="#user-content-fn-0" id="user-content-fnref-0" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup><sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">6</a></sup><sup><a href="#user-content-fn-6" id="user-content-fnref-6" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup><sup><a href="#user-content-fn-7" id="user-content-fnref-7" data-footnote-ref="" aria-describedby="footnote-label">8</a></sup><sup><a href="#user-content-fn-8" id="user-content-fnref-8" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup><sup><a href="#user-content-fn-9" id="user-content-fnref-9" data-footnote-ref="" aria-describedby="footnote-label">10</a></sup><sup><a href="#user-content-fn-10" id="user-content-fnref-10" data-footnote-ref="" aria-describedby="footnote-label">11</a></sup></p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -897,7 +877,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
 [^1]: Recursion[^1][^1]
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Call<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-1" id="user-content-fnref-1-2" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup></p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -919,7 +899,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
 [^1]: b
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Call<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup></p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -961,7 +941,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
 [^5]: e
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><em>emphasis<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup></em></p>
 <p><strong>strong<sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup></strong></p>
@@ -998,7 +978,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
 [^3]: c
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>What are these!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>, !<sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>[], and ![this]<sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup>.</p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -1040,7 +1020,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 …continuation
 *   list
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><sup><a href="#user-content-fn-0" id="user-content-fnref-0" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup><sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">6</a></sup></p>
 <h1>Heading</h1>
@@ -1093,7 +1073,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
 [^3]: c
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>What are these<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup>, <sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup>[], and [this]<sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup>.</p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -1143,7 +1123,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
 - list
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <h1>Heading</h1>
@@ -1205,7 +1185,7 @@ indented delta <a href="#user-content-fnref-2" data-footnote-backref="" aria-lab
 
     - list
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -1254,7 +1234,7 @@ more code
 
 [^3]: [^4]: Paragraph
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Note!<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <ul>
@@ -1304,7 +1284,7 @@ more code
 
 - list
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <h1>Heading</h1>
@@ -1358,7 +1338,7 @@ more code
 
     - list
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup></p>
 <section data-footnotes="" class="footnotes"><h2 id="footnote-label" class="sr-only">Footnotes</h2>
@@ -1416,7 +1396,7 @@ belong to the previous footnote.
 This paragraph won’t be part of the note, because it
 isn’t indented.
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Here is a footnote reference,<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup> and another.<sup><a href="#user-content-fn-longnote" id="user-content-fnref-longnote" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup></p>
 <p>This paragraph won’t be part of the note, because it
@@ -1484,7 +1464,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
 
    3
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Call[^1][^2]<sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-6" id="user-content-fnref-6" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup><sup><a href="#user-content-fn-7" id="user-content-fnref-7" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup><sup><a href="#user-content-fn-8" id="user-content-fnref-8" data-footnote-ref="" aria-describedby="footnote-label">6</a></sup><sup><a href="#user-content-fn-9" id="user-content-fnref-9" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup><sup><a href="#user-content-fn-10" id="user-content-fnref-10" data-footnote-ref="" aria-describedby="footnote-label">8</a></sup><sup><a href="#user-content-fn-11" id="user-content-fnref-11" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup><sup><a href="#user-content-fn-12" id="user-content-fnref-12" data-footnote-ref="" aria-describedby="footnote-label">10</a></sup>.</p>
 <pre><code> [^1]: 5
@@ -1576,7 +1556,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
 
 0
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Call<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref="" aria-describedby="footnote-label">1</a></sup><sup><a href="#user-content-fn-2" id="user-content-fnref-2" data-footnote-ref="" aria-describedby="footnote-label">2</a></sup><sup><a href="#user-content-fn-3" id="user-content-fnref-3" data-footnote-ref="" aria-describedby="footnote-label">3</a></sup><sup><a href="#user-content-fn-4" id="user-content-fnref-4" data-footnote-ref="" aria-describedby="footnote-label">4</a></sup><sup><a href="#user-content-fn-5" id="user-content-fnref-5" data-footnote-ref="" aria-describedby="footnote-label">5</a></sup><sup><a href="#user-content-fn-6" id="user-content-fnref-6" data-footnote-ref="" aria-describedby="footnote-label">6</a></sup><sup><a href="#user-content-fn-7" id="user-content-fnref-7" data-footnote-ref="" aria-describedby="footnote-label">7</a></sup><sup><a href="#user-content-fn-8" id="user-content-fnref-8" data-footnote-ref="" aria-describedby="footnote-label">8</a></sup><sup><a href="#user-content-fn-9" id="user-content-fnref-9" data-footnote-ref="" aria-describedby="footnote-label">9</a></sup>.</p>
 <p>3</p>
@@ -1635,7 +1615,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
 
 [3]: c
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Here is a short reference,<a href="a">1</a>, a collapsed one,<a href="b">2</a>, and a full <a href="c">one</a>.</p>
 "###,
@@ -1643,7 +1623,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
     );
 
     assert_eq!(
-        to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &gfm.parse)?,
+        to_mdast("[^a]: b\n\tc\n\nd [^a] e.", &ParseOptions::gfm())?,
         Node::Root(Root {
             children: vec![
                 Node::FootnoteDefinition(FootnoteDefinition {

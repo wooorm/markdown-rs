@@ -15,11 +15,8 @@ use test_utils::swc::{parse_esm, parse_expression};
 #[test]
 fn mdx_jsx_text_core() -> Result<(), String> {
     let mdx = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
+        parse: ParseOptions::mdx(),
+        ..Default::default()
     };
 
     assert_eq!(
@@ -487,11 +484,8 @@ fn mdx_jsx_text_core() -> Result<(), String> {
 #[test]
 fn mdx_jsx_text_agnosic() -> Result<(), String> {
     let mdx = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
+        parse: ParseOptions::mdx(),
+        ..Default::default()
     };
 
     assert_eq!(
@@ -534,9 +528,9 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
             constructs: Constructs::mdx(),
             mdx_esm_parse: Some(Box::new(parse_esm)),
             mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -631,11 +625,8 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
 #[test]
 fn mdx_jsx_text_complete() -> Result<(), String> {
     let mdx = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
+        parse: ParseOptions::mdx(),
+        ..Default::default()
     };
 
     assert_eq!(

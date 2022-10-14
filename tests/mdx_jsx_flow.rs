@@ -10,11 +10,8 @@ use pretty_assertions::assert_eq;
 #[test]
 fn mdx_jsx_flow_agnostic() -> Result<(), String> {
     let mdx = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
+        parse: ParseOptions::mdx(),
+        ..Default::default()
     };
 
     assert_eq!(
@@ -32,11 +29,11 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
                     constructs: Constructs {
                         html_flow: false,
                         mdx_jsx_flow: true,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<pre><code>&lt;a /&gt;\n</code></pre>",
@@ -51,11 +48,11 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
                     constructs: Constructs {
                         html_flow: false,
                         mdx_jsx_flow: true,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "",
@@ -94,11 +91,8 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
 #[test]
 fn mdx_jsx_flow_essence() -> Result<(), String> {
     let mdx = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
+        parse: ParseOptions::mdx(),
+        ..Default::default()
     };
 
     assert_eq!(

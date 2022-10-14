@@ -3,20 +3,12 @@ use markdown::{
     mdast::{List, ListItem, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_task_list_item() -> Result<(), String> {
-    let gfm = Options {
-        parse: ParseOptions {
-            constructs: Constructs::gfm(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
-    };
-
     assert_eq!(
         to_html("* [x] y."),
         "<ul>\n<li>[x] y.</li>\n</ul>",
@@ -24,25 +16,25 @@ fn gfm_task_list_item() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("* [x] y.", &gfm)?,
+        to_html_with_options("* [x] y.", &Options::gfm())?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" checked=\"\" /> y.</li>\n</ul>",
         "should support task list item checks"
     );
 
     assert_eq!(
-        to_html_with_options("* [ ] z.", &gfm)?,
+        to_html_with_options("* [ ] z.", &Options::gfm())?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" /> z.</li>\n</ul>",
         "should support unchecked task list item checks"
     );
 
     assert_eq!(
-        to_html_with_options("*\n    [x]", &gfm)?,
+        to_html_with_options("*\n    [x]", &Options::gfm())?,
         "<ul>\n<li>[x]</li>\n</ul>",
         "should not support laziness (1)"
     );
 
     assert_eq!(
-        to_html_with_options("*\n[x]", &gfm)?,
+        to_html_with_options("*\n[x]", &Options::gfm())?,
         "<ul>\n<li></li>\n</ul>\n<p>[x]</p>",
         "should not support laziness (2)"
     );
@@ -129,7 +121,7 @@ EOL after:
 "###
             .replace('␠', " ")
             .replace('␉', "\t"),
-            &gfm
+            &Options::gfm()
         )?,
         r###"<ul>
 <li><input type="checkbox" disabled="" /> foo</li>
@@ -249,7 +241,7 @@ Text.</li>
     );
 
     assert_eq!(
-        to_mdast("* [x] a\n* [ ] b\n* c", &gfm.parse)?,
+        to_mdast("* [x] a\n* [ ] b\n* c", &ParseOptions::gfm())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,

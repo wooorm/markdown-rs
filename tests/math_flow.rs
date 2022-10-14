@@ -14,11 +14,11 @@ fn math_flow() -> Result<(), String> {
             constructs: Constructs {
                 math_text: true,
                 math_flow: true,
-                ..Constructs::default()
+                ..Default::default()
             },
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(

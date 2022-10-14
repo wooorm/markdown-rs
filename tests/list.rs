@@ -13,9 +13,9 @@ fn list() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -579,11 +579,11 @@ fn list() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         list_item: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>- one</p>\n<p>two</p>",
@@ -591,7 +591,7 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("* a", &ParseOptions::default())?,
+        to_mdast("* a", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,
@@ -617,7 +617,7 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("3. a", &ParseOptions::default())?,
+        to_mdast("3. a", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: true,
@@ -643,7 +643,7 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("* a\n\n  b\n* c", &ParseOptions::default())?,
+        to_mdast("* a\n\n  b\n* c", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,

@@ -118,11 +118,11 @@ fn hard_break_trailing() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         hard_break_trailing: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>a\nb</p>",
@@ -130,7 +130,7 @@ fn hard_break_trailing() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a  \nb.", &ParseOptions::default())?,
+        to_mdast("a  \nb.", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

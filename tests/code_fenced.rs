@@ -269,11 +269,11 @@ fn code_fenced() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         code_fenced: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>```</p>",
@@ -283,7 +283,7 @@ fn code_fenced() -> Result<(), String> {
     assert_eq!(
         to_mdast(
             "```js extra\nconsole.log(1)\nconsole.log(2)\n```",
-            &ParseOptions::default()
+            &Default::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
@@ -298,7 +298,7 @@ fn code_fenced() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("```\nasd", &ParseOptions::default())?,
+        to_mdast("```\nasd", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
                 lang: None,
@@ -312,7 +312,7 @@ fn code_fenced() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("```\rasd\r```", &ParseOptions::default())?,
+        to_mdast("```\rasd\r```", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
                 lang: None,
@@ -326,7 +326,7 @@ fn code_fenced() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("```\r\nasd\r\n```", &ParseOptions::default())?,
+        to_mdast("```\r\nasd\r\n```", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Code(Code {
                 lang: None,

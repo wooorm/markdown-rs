@@ -178,11 +178,11 @@ fn thematic_break() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         thematic_break: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>***</p>",
@@ -190,7 +190,7 @@ fn thematic_break() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("***", &ParseOptions::default())?,
+        to_mdast("***", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::ThematicBreak(ThematicBreak {
                 position: Some(Position::new(1, 1, 0, 1, 4, 3))

@@ -3,7 +3,7 @@ extern crate swc_common;
 extern crate swc_ecma_ast;
 extern crate swc_ecma_codegen;
 mod test_utils;
-use markdown::{to_mdast, Constructs, Location, ParseOptions};
+use markdown::{to_mdast, Location, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::{
     hast_util_to_swc::hast_util_to_swc,
@@ -17,10 +17,9 @@ fn from_markdown(value: &str) -> Result<String, String> {
     let mdast = to_mdast(
         value,
         &ParseOptions {
-            constructs: Constructs::mdx(),
             mdx_esm_parse: Some(Box::new(parse_esm)),
             mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..ParseOptions::default()
+            ..ParseOptions::mdx()
         },
     )?;
     let hast = mdast_util_to_hast(&mdast);

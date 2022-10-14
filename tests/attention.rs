@@ -13,9 +13,9 @@ fn attention() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     // Rule 1.
@@ -827,11 +827,11 @@ fn attention() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         attention: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>*a*</p>",
@@ -839,7 +839,7 @@ fn attention() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a *alpha* b **bravo** c.", &ParseOptions::default())?,
+        to_mdast("a *alpha* b **bravo** c.", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

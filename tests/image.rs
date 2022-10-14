@@ -204,11 +204,11 @@ fn image() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         label_start_image: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>!<a href=\"\">x</a></p>",
@@ -227,9 +227,9 @@ fn image() -> Result<(), String> {
             &Options {
                 compile: CompileOptions {
                     allow_dangerous_protocol: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
@@ -239,7 +239,7 @@ fn image() -> Result<(), String> {
     assert_eq!(
         to_mdast(
             "a ![alpha]() b ![bravo](charlie 'delta') c.",
-            &ParseOptions::default()
+            &Default::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
@@ -279,7 +279,7 @@ fn image() -> Result<(), String> {
     assert_eq!(
         to_mdast(
             "[x]: y\n\na ![x] b ![x][] c ![d][x] e.",
-            &ParseOptions::default()
+            &Default::default()
         )?,
         Node::Root(Root {
             children: vec![

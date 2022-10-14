@@ -13,9 +13,9 @@ fn code_text() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -170,11 +170,11 @@ fn code_text() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         code_text: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>`a`</p>",
@@ -182,7 +182,7 @@ fn code_text() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a `alpha` b.", &ParseOptions::default())?,
+        to_mdast("a `alpha` b.", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

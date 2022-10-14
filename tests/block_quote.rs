@@ -208,11 +208,11 @@ fn block_quote() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         block_quote: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>&gt; # a\n&gt; b\n&gt; c</p>",
@@ -220,7 +220,7 @@ fn block_quote() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("> a", &ParseOptions::default())?,
+        to_mdast("> a", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::BlockQuote(BlockQuote {
                 children: vec![Node::Paragraph(Paragraph {

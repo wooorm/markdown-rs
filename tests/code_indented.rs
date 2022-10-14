@@ -127,11 +127,11 @@ fn code_indented() -> Result<(), String> {
         parse: ParseOptions {
             constructs: Constructs {
                 code_indented: false,
-                ..Constructs::default()
+                ..Default::default()
             },
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -177,13 +177,13 @@ fn code_indented() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         code_indented: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
                 compile: CompileOptions {
                     allow_dangerous_html: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 }
             }
         )?,
@@ -206,7 +206,7 @@ fn code_indented() -> Result<(), String> {
     assert_eq!(
         to_mdast(
             "\tconsole.log(1)\n    console.log(2)\n",
-            &ParseOptions::default()
+            &Default::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Code(Code {

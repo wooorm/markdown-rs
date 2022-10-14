@@ -16,9 +16,9 @@ fn mdx_esm() -> Result<(), String> {
             constructs: Constructs::mdx(),
             mdx_esm_parse: Some(Box::new(parse_esm)),
             mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(

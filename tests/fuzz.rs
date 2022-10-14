@@ -1,5 +1,5 @@
 extern crate markdown;
-use markdown::{to_html, to_html_with_options, CompileOptions, Constructs, Options, ParseOptions};
+use markdown::{to_html, to_html_with_options, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -13,19 +13,7 @@ fn fuzz() -> Result<(), String> {
     // The first link is stopped by the `+` (so it’s `a@b.c`), but the next
     // link overlaps it (`b.c+d@e.f`).
     assert_eq!(
-        to_html_with_options(
-            "a@b.c+d@e.f",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs::gfm(),
-                    ..ParseOptions::default()
-                },
-                compile: CompileOptions {
-                    gfm_tagfilter: true,
-                    ..CompileOptions::default()
-                }
-            }
-        )?,
+        to_html_with_options("a@b.c+d@e.f", &Options::gfm())?,
         "<p><a href=\"mailto:a@b.c\">a@b.c</a><a href=\"mailto:+d@e.f\">+d@e.f</a></p>",
         "2: gfm: email autolink literals running into each other"
     );

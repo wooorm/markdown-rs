@@ -13,9 +13,9 @@ fn definition() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -497,11 +497,11 @@ fn definition() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         definition: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>[foo]: /url &quot;title&quot;</p>",
@@ -509,7 +509,7 @@ fn definition() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("[a]: <b> 'c'", &ParseOptions::default())?,
+        to_mdast("[a]: <b> 'c'", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Definition(Definition {
                 url: "b".into(),

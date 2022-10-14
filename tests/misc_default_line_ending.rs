@@ -34,9 +34,9 @@ fn default_line_ending() -> Result<(), String> {
             &Options {
                 compile: CompileOptions {
                     default_line_ending: LineEnding::CarriageReturn,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<blockquote>\r<p>a</p>\r</blockquote>",
@@ -49,9 +49,9 @@ fn default_line_ending() -> Result<(), String> {
             &Options {
                 compile: CompileOptions {
                     default_line_ending: LineEnding::CarriageReturn,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         // To do: is this a bug in `to_html.js` that it uses `\r` for earlier line endings?

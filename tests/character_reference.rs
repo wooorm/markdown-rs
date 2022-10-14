@@ -55,9 +55,9 @@ fn character_reference() -> Result<(), String> {
                 compile: CompileOptions {
                     allow_dangerous_html: true,
                     allow_dangerous_protocol: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<a href=\"&ouml;&ouml;.html\">",
@@ -204,11 +204,11 @@ fn character_reference() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         character_reference: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>&amp;amp;</p>",
@@ -216,7 +216,7 @@ fn character_reference() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;\n&#35; &#1234; &#992; &#0;\n&#X22; &#XD06; &#xcab;", &ParseOptions::default())?,
+        to_mdast("&nbsp; &amp; &copy; &AElig; &Dcaron;\n&frac34; &HilbertSpace; &DifferentialD;\n&ClockwiseContourIntegral; &ngE;\n&#35; &#1234; &#992; &#0;\n&#X22; &#XD06; &#xcab;", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::Text(Text {

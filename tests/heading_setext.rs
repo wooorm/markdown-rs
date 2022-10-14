@@ -281,11 +281,11 @@ fn heading_setext() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         heading_setext: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>a\n-</p>",
@@ -293,7 +293,7 @@ fn heading_setext() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("alpha\nbravo\n==", &ParseOptions::default())?,
+        to_mdast("alpha\nbravo\n==", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Heading(Heading {
                 depth: 1,

@@ -16,9 +16,9 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
             constructs: Constructs::mdx(),
             mdx_esm_parse: Some(Box::new(parse_esm)),
             mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -149,11 +149,8 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
 #[test]
 fn mdx_expression_text_agnostic() -> Result<(), String> {
     let mdx = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
+        parse: ParseOptions::mdx(),
+        ..Default::default()
     };
 
     assert_eq!(
@@ -236,9 +233,9 @@ fn mdx_expression_text_gnostic() -> Result<(), String> {
             constructs: Constructs::mdx(),
             mdx_esm_parse: Some(Box::new(parse_esm)),
             mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(

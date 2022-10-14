@@ -13,9 +13,9 @@ fn autolink() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -259,11 +259,11 @@ fn autolink() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         autolink: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>&lt;a@b.co&gt;</p>",
@@ -273,7 +273,7 @@ fn autolink() -> Result<(), String> {
     assert_eq!(
         to_mdast(
             "a <https://alpha.com> b <bravo@charlie.com> c.",
-            &ParseOptions::default()
+            &Default::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

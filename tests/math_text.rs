@@ -14,11 +14,11 @@ fn math_text() -> Result<(), String> {
             constructs: Constructs {
                 math_text: true,
                 math_flow: true,
-                ..Constructs::default()
+                ..Default::default()
             },
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -41,12 +41,12 @@ fn math_text() -> Result<(), String> {
                     constructs: Constructs {
                         math_text: true,
                         math_flow: true,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
                     math_text_single_dollar: false,
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>$foo$ <code class=\"language-math math-inline\">bar</code></p>",
@@ -151,14 +151,14 @@ fn math_text() -> Result<(), String> {
                     constructs: Constructs {
                         math_text: true,
                         math_flow: true,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
                 compile: CompileOptions {
                     allow_dangerous_html: true,
                     allow_dangerous_protocol: true,
-                    ..CompileOptions::default()
+                    ..Default::default()
                 }
             }
         )?,

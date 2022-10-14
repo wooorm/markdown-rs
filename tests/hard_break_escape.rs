@@ -54,9 +54,9 @@ fn hard_break_escape() -> Result<(), String> {
                         hard_break_escape: false,
                         ..Constructs::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>a\\\nb</p>",
@@ -64,7 +64,7 @@ fn hard_break_escape() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a\\\nb.", &ParseOptions::default())?,
+        to_mdast("a\\\nb.", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

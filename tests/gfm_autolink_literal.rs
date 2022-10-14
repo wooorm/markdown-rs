@@ -3,20 +3,12 @@ use markdown::{
     mdast::{Link, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn gfm_autolink_literal() -> Result<(), String> {
-    let gfm = Options {
-        parse: ParseOptions {
-            constructs: Constructs::gfm(),
-            ..ParseOptions::default()
-        },
-        ..Options::default()
-    };
-
     assert_eq!(
         to_html("https://example.com"),
         "<p>https://example.com</p>",
@@ -34,165 +26,165 @@ fn gfm_autolink_literal() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("https://example.com", &gfm)?,
+        to_html_with_options("https://example.com", &Options::gfm())?,
         "<p><a href=\"https://example.com\">https://example.com</a></p>",
         "should support protocol urls if enabled"
     );
     assert_eq!(
-        to_html_with_options("www.example.com", &gfm)?,
+        to_html_with_options("www.example.com", &Options::gfm())?,
         "<p><a href=\"http://www.example.com\">www.example.com</a></p>",
         "should support www urls if enabled"
     );
     assert_eq!(
-        to_html_with_options("user@example.com", &gfm)?,
+        to_html_with_options("user@example.com", &Options::gfm())?,
         "<p><a href=\"mailto:user@example.com\">user@example.com</a></p>",
         "should support email urls if enabled"
     );
 
     assert_eq!(
-        to_html_with_options("[https://example.com](xxx)", &gfm)?,
+        to_html_with_options("[https://example.com](xxx)", &Options::gfm())?,
         "<p><a href=\"xxx\">https://example.com</a></p>",
         "should not link protocol urls in links"
     );
     assert_eq!(
-        to_html_with_options("[www.example.com](xxx)", &gfm)?,
+        to_html_with_options("[www.example.com](xxx)", &Options::gfm())?,
         "<p><a href=\"xxx\">www.example.com</a></p>",
         "should not link www urls in links"
     );
     assert_eq!(
-        to_html_with_options("[user@example.com](xxx)", &gfm)?,
+        to_html_with_options("[user@example.com](xxx)", &Options::gfm())?,
         "<p><a href=\"xxx\">user@example.com</a></p>",
         "should not link email urls in links"
     );
 
     assert_eq!(
-        to_html_with_options("user@example.com", &gfm)?,
+        to_html_with_options("user@example.com", &Options::gfm())?,
         "<p><a href=\"mailto:user@example.com\">user@example.com</a></p>",
         "should support a closing paren at TLD (email)"
     );
 
     assert_eq!(
-        to_html_with_options("www.a.)", &gfm)?,
+        to_html_with_options("www.a.)", &Options::gfm())?,
         "<p><a href=\"http://www.a\">www.a</a>.)</p>",
         "should support a closing paren at TLD (www)"
     );
 
     assert_eq!(
-        to_html_with_options("www.a b", &gfm)?,
+        to_html_with_options("www.a b", &Options::gfm())?,
         "<p><a href=\"http://www.a\">www.a</a> b</p>",
         "should support no TLD"
     );
 
     assert_eq!(
-        to_html_with_options("www.a/b c", &gfm)?,
+        to_html_with_options("www.a/b c", &Options::gfm())?,
         "<p><a href=\"http://www.a/b\">www.a/b</a> c</p>",
         "should support a path instead of TLD"
     );
 
     assert_eq!(
-        to_html_with_options("www.�a", &gfm)?,
+        to_html_with_options("www.�a", &Options::gfm())?,
         "<p><a href=\"http://www.%EF%BF%BDa\">www.�a</a></p>",
         "should support a replacement character in a domain"
     );
 
     assert_eq!(
-        to_html_with_options("http://點看.com", &gfm)?,
+        to_html_with_options("http://點看.com", &Options::gfm())?,
         "<p><a href=\"http://%E9%BB%9E%E7%9C%8B.com\">http://點看.com</a></p>",
         "should support non-ascii characters in a domain (http)"
     );
 
     assert_eq!(
-        to_html_with_options("www.點看.com", &gfm)?,
+        to_html_with_options("www.點看.com", &Options::gfm())?,
         "<p><a href=\"http://www.%E9%BB%9E%E7%9C%8B.com\">www.點看.com</a></p>",
         "should support non-ascii characters in a domain (www)"
     );
 
     assert_eq!(
-        to_html_with_options("點看@example.com", &gfm)?,
+        to_html_with_options("點看@example.com", &Options::gfm())?,
         "<p>點看@example.com</p>",
         "should *not* support non-ascii characters in atext (email)"
     );
 
     assert_eq!(
-        to_html_with_options("example@點看.com", &gfm)?,
+        to_html_with_options("example@點看.com", &Options::gfm())?,
         "<p>example@點看.com</p>",
         "should *not* support non-ascii characters in a domain (email)"
     );
 
     assert_eq!(
-        to_html_with_options("www.a.com/點看", &gfm)?,
+        to_html_with_options("www.a.com/點看", &Options::gfm())?,
         "<p><a href=\"http://www.a.com/%E9%BB%9E%E7%9C%8B\">www.a.com/點看</a></p>",
         "should support non-ascii characters in a path"
     );
 
     assert_eq!(
-        to_html_with_options("www.-a.b", &gfm)?,
+        to_html_with_options("www.-a.b", &Options::gfm())?,
         "<p><a href=\"http://www.-a.b\">www.-a.b</a></p>",
         "should support a dash to start a domain"
     );
 
     assert_eq!(
-        to_html_with_options("www.$", &gfm)?,
+        to_html_with_options("www.$", &Options::gfm())?,
         "<p><a href=\"http://www.$\">www.$</a></p>",
         "should support a dollar as a domain name"
     );
 
     assert_eq!(
-        to_html_with_options("www.a..b.c", &gfm)?,
+        to_html_with_options("www.a..b.c", &Options::gfm())?,
         "<p><a href=\"http://www.a..b.c\">www.a..b.c</a></p>",
         "should support adjacent dots in a domain name"
     );
 
     assert_eq!(
-        to_html_with_options("www.a&a;", &gfm)?,
+        to_html_with_options("www.a&a;", &Options::gfm())?,
         "<p><a href=\"http://www.a\">www.a</a>&amp;a;</p>",
         "should support named character references in domains"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc/d/e/).", &gfm)?,
+        to_html_with_options("https://a.bc/d/e/).", &Options::gfm())?,
         "<p><a href=\"https://a.bc/d/e/\">https://a.bc/d/e/</a>).</p>",
         "should support a closing paren and period after a path"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc/d/e/.)", &gfm)?,
+        to_html_with_options("https://a.bc/d/e/.)", &Options::gfm())?,
         "<p><a href=\"https://a.bc/d/e/\">https://a.bc/d/e/</a>.)</p>",
         "should support a period and closing paren after a path"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc).", &gfm)?,
+        to_html_with_options("https://a.bc).", &Options::gfm())?,
         "<p><a href=\"https://a.bc\">https://a.bc</a>).</p>",
         "should support a closing paren and period after a domain"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc.)", &gfm)?,
+        to_html_with_options("https://a.bc.)", &Options::gfm())?,
         "<p><a href=\"https://a.bc\">https://a.bc</a>.)</p>",
         "should support a period and closing paren after a domain"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc).d", &gfm)?,
+        to_html_with_options("https://a.bc).d", &Options::gfm())?,
         "<p><a href=\"https://a.bc).d\">https://a.bc).d</a></p>",
         "should support a closing paren and period in a path"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc.)d", &gfm)?,
+        to_html_with_options("https://a.bc.)d", &Options::gfm())?,
         "<p><a href=\"https://a.bc.)d\">https://a.bc.)d</a></p>",
         "should support a period and closing paren in a path"
     );
 
     assert_eq!(
-        to_html_with_options("https://a.bc/))d", &gfm)?,
+        to_html_with_options("https://a.bc/))d", &Options::gfm())?,
         "<p><a href=\"https://a.bc/))d\">https://a.bc/))d</a></p>",
         "should support two closing parens in a path"
     );
 
     assert_eq!(
-        to_html_with_options("ftp://a/b/c.txt", &gfm)?,
+        to_html_with_options("ftp://a/b/c.txt", &Options::gfm())?,
         "<p>ftp://a/b/c.txt</p>",
         "should not support ftp links"
     );
@@ -201,19 +193,19 @@ fn gfm_autolink_literal() -> Result<(), String> {
     // Fixing it would mean deviating from `cmark-gfm`:
     // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
     // assert_eq!(
-    //     to_html_with_options("，www.example.com", &gfm)?,
+    //     to_html_with_options("，www.example.com", &Options::gfm())?,
     //     "<p>，<a href=\"http://www.example.com\">www.example.com</a></p>",
     //     "should support www links after Unicode punctuation",
     // );
 
     assert_eq!(
-        to_html_with_options("，https://example.com", &gfm)?,
+        to_html_with_options("，https://example.com", &Options::gfm())?,
         "<p>，<a href=\"https://example.com\">https://example.com</a></p>",
         "should support http links after Unicode punctuation"
     );
 
     assert_eq!(
-        to_html_with_options("，example@example.com", &gfm)?,
+        to_html_with_options("，example@example.com", &Options::gfm())?,
         "<p>，<a href=\"mailto:example@example.com\">example@example.com</a></p>",
         "should support email links after Unicode punctuation"
     );
@@ -221,14 +213,14 @@ fn gfm_autolink_literal() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "http&#x3A;//user:password@host:port/path?key=value#fragment",
-            &gfm
+            &Options::gfm()
         )?,
         "<p>http://user:password@host:port/path?key=value#fragment</p>",
         "should not link character reference for `:`"
     );
 
     assert_eq!(
-        to_html_with_options("http://example.com/ab<cd", &gfm)?,
+        to_html_with_options("http://example.com/ab<cd", &Options::gfm())?,
         "<p><a href=\"http://example.com/ab\">http://example.com/ab</a>&lt;cd</p>",
         "should stop domains/paths at `<`"
     );
@@ -259,7 +251,7 @@ xmpp:scyther@pokemon.com/message
 xmpp:scyther@pokemon.com/message.
 
 Email me at:scyther@pokemon.com"###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a></p>
 <p>This is a <a href="mailto:scyther@pokemon.com">mailto:scyther@pokemon.com</a></p>
@@ -305,7 +297,7 @@ a www.example.com&. b
 
 a www.example.com& b
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>a <a href="http://www.example.com&amp;xxx;b">www.example.com&amp;xxx;b</a> c</p>
 <p>a <a href="http://www.example.com">www.example.com</a>&amp;xxx;. b</p>
@@ -352,7 +344,7 @@ a www.example.com& b
 
 ![ contact@example.com ](#)
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>[ <a href="http://www.example.com">www.example.com</a></p>
 <p>[ <a href="https://example.com">https://example.com</a></p>
@@ -399,7 +391,7 @@ www.example.com/?q=a(business)))
 
 (www.example.com/?q=a(business)".
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><a href="http://www.example.com/?=a(b)cccccc">www.example.com/?=a(b)cccccc</a></p>
 <p><a href="http://www.example.com/?=a(b(c)ccccc">www.example.com/?=a(b(c)ccccc</a></p>
@@ -544,7 +536,7 @@ Can contain an underscore followed by a period: aaa@a.b_.c
 
 [link]() <http://autolink> should still be expanded.
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>Literal autolinks</h1>
 <h2>WWW autolinks</h2>
@@ -648,7 +640,7 @@ H5.
 
 [[]]www.a.com&copy;b
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>H0.</p>
 <p>[<a href="https://a.com&amp;copy;b">https://a.com&amp;copy;b</a></p>
@@ -724,7 +716,7 @@ Autolink literal after image.
 ![a]() www.a.com
 
 ![a]() a@b.c
-"###, &gfm)?,
+"###, &Options::gfm())?,
         r###"<p>Image start.</p>
 <p>![<a href="https://a.com">https://a.com</a></p>
 <p>![<a href="http://a.com">http://a.com</a></p>
@@ -866,7 +858,7 @@ Autolink literal after link.
 [a]() www.a.com
 
 [a]() a@b.c
-"###, &gfm)?,
+"###, &Options::gfm())?,
         r###"<p>Link start.</p>
 <p>[<a href="https://a.com">https://a.com</a></p>
 <p>[<a href="http://a.com">http://a.com</a></p>
@@ -998,7 +990,7 @@ www.a&b}
 
 www.a&b~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>“character reference”</h1>
 <p><a href="http://www.a&amp;b">www.a&amp;b</a> (space)</p>
@@ -1109,7 +1101,7 @@ www.a&#35|
 www.a&#35}
 
 www.a&#35~
-"###, &gfm)?,
+"###, &Options::gfm())?,
         r###"<h1>“character reference”</h1>
 <p><a href="http://www.a&amp;#35">www.a&amp;#35</a> (space)</p>
 <p><a href="http://www.a&amp;#35">www.a&amp;#35</a>!</p>
@@ -1181,7 +1173,7 @@ react@0.0.0-experimental-aae83a4b9
 
 [ react@0.0.0-experimental-aae83a4b9
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>a@0.0</p>
 <p><a href="mailto:a@0.b">a@0.b</a></p>
@@ -1274,7 +1266,7 @@ http://a}
 
 http://a~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>httpshhh? (2)</h1>
 <p><a href="http://a">http://a</a> (space)</p>
@@ -1387,7 +1379,7 @@ http://}
 
 http://~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>httpshhh? (1)</h1>
 <p>http:// (space)</p>
@@ -1500,7 +1492,7 @@ http://a/b}
 
 http://a/b~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>httpshhh? (4)</h1>
 <p><a href="http://a/b">http://a/b</a> (space)</p>
@@ -1613,7 +1605,7 @@ http://a/}
 
 http://a/~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>httpshhh? (3)</h1>
 <p><a href="http://a/">http://a/</a> (space)</p>
@@ -1668,7 +1660,7 @@ www.example.com/a&bogus;
 
 www.example.com/a\.
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p><a href="#">www.example.com/a©</a></p>
 <p><a href="http://www.example.com/a">www.example.com/a</a>©</p>
@@ -1752,7 +1744,7 @@ www.a/b&c}
 
 www.a/b&c~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>“character reference”</h1>
 <p><a href="http://www.a/b&amp;c">www.a/b&amp;c</a> (space)</p>
@@ -1865,7 +1857,7 @@ www.a/b&#35}
 
 www.a/b&#35~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>“character reference”</h1>
 <p><a href="http://www.a/b&amp;#35">www.a/b&amp;#35</a> (space)</p>
@@ -1950,7 +1942,7 @@ http://a.com#d]()
 
 www.a.com#d]()
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>In autolink literal path or link end?</p>
 <p><a href="">https://a.com/d</a></p>
@@ -2023,7 +2015,7 @@ Some non-ascii: 中noreply@example.com, 中http://example.com, 中https://exampl
 
 Some more non-ascii: 🤷‍noreply@example.com, 🤷‍http://example.com, 🤷‍https://example.com, 🤷‍www.example.com
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<p>Last non-markdown ASCII whitespace (FF): <a href="mailto:noreply@example.com">noreply@example.com</a>, <a href="http://example.com">http://example.com</a>, <a href="https://example.com">https://example.com</a>, www.example.com</p>
 <p>Last non-whitespace ASCII control (US): <a href="mailto:noreply@example.com">noreply@example.com</a>, <a href="http://example.com">http://example.com</a>, <a href="https://example.com">https://example.com</a>, www.example.com</p>
@@ -2130,7 +2122,7 @@ See `https://github.com/remarkjs/remark/discussions/678`.
 
 [asd] ,https://github.com
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>HTTP</h1>
 <p><a href="https://a.b">https://a.b</a> can start after EOF</p>
@@ -2250,7 +2242,7 @@ www.a}
 
 www.a~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>wwwtf 2?</h1>
 <p><a href="http://www.a">www.a</a> (space)</p>
@@ -2363,7 +2355,7 @@ www.a.}
 
 www.a.~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>wwwtf 5?</h1>
 <p><a href="http://www.a">www.a</a>. (space)</p>
@@ -2476,7 +2468,7 @@ www.}
 
 www.~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>wwwtf?</h1>
 <p><a href="http://www">www</a>. (space)</p>
@@ -2589,7 +2581,7 @@ www.a/b}
 
 www.a/b~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>wwwtf? (4)</h1>
 <p><a href="http://www.a/b">www.a/b</a> (space)</p>
@@ -2702,7 +2694,7 @@ www.a/}
 
 www.a/~
 "###,
-            &gfm
+            &Options::gfm()
         )?,
         r###"<h1>wwwtf? (3)</h1>
 <p><a href="http://www.a/">www.a/</a> (space)</p>
@@ -2746,7 +2738,7 @@ www.a/~
     assert_eq!(
         to_mdast(
             "a https://alpha.com b bravo@charlie.com c www.delta.com d xmpp:echo@foxtrot.com e mailto:golf@hotel.com f.",
-            &gfm.parse
+            &ParseOptions::gfm()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

@@ -13,9 +13,9 @@ fn link_reference() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -397,11 +397,11 @@ fn link_reference() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         label_start_link: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>[x]()</p>",
@@ -415,11 +415,11 @@ fn link_reference() -> Result<(), String> {
                 parse: ParseOptions {
                     constructs: Constructs {
                         label_end: false,
-                        ..Constructs::default()
+                        ..Default::default()
                     },
-                    ..ParseOptions::default()
+                    ..Default::default()
                 },
-                ..Options::default()
+                ..Default::default()
             }
         )?,
         "<p>[x]()</p>",
@@ -427,10 +427,7 @@ fn link_reference() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast(
-            "[x]: y\n\na [x] b [x][] c [d][x] e.",
-            &ParseOptions::default()
-        )?,
+        to_mdast("[x]: y\n\na [x] b [x][] c [d][x] e.", &Default::default())?,
         Node::Root(Root {
             children: vec![
                 Node::Definition(Definition {

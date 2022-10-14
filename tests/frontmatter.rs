@@ -13,11 +13,11 @@ fn frontmatter() -> Result<(), String> {
         parse: ParseOptions {
             constructs: Constructs {
                 frontmatter: true,
-                ..Constructs::default()
+                ..Default::default()
             },
-            ..ParseOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(

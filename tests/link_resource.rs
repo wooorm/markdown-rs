@@ -3,7 +3,7 @@ use markdown::{
     mdast::{Link, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Options, ParseOptions,
+    CompileOptions, Options,
 };
 use pretty_assertions::assert_eq;
 
@@ -13,9 +13,9 @@ fn link_resource() -> Result<(), String> {
         compile: CompileOptions {
             allow_dangerous_html: true,
             allow_dangerous_protocol: true,
-            ..CompileOptions::default()
+            ..Default::default()
         },
-        ..Options::default()
+        ..Default::default()
     };
 
     assert_eq!(
@@ -469,7 +469,7 @@ fn link_resource() -> Result<(), String> {
     assert_eq!(
         to_mdast(
             "a [alpha]() b [bravo](charlie 'delta') c.",
-            &ParseOptions::default()
+            &Default::default()
         )?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
