@@ -24,6 +24,7 @@ impl<'a> Position<'a> {
     ///
     /// This function panics if an enter event is given.
     /// When `markdown-rs` is used, this function never panics.
+    #[cfg_attr(tarpaulin, ignore)]
     pub fn from_exit_event(events: &'a [Event], index: usize) -> Position<'a> {
         let exit = &events[index];
         debug_assert_eq!(exit.kind, Kind::Exit, "expected `exit` event");
@@ -117,6 +118,7 @@ impl<'a> Slice<'a> {
     /// Turn the slice into a `String`.
     ///
     /// Supports virtual spaces.
+    #[cfg_attr(tarpaulin, ignore)]
     pub fn serialize(&self) -> String {
         debug_assert_eq!(self.after, 0, "expected no trailing vs");
         // If the above ever starts erroring, handle the same as `self.before`
