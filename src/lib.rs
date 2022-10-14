@@ -15,6 +15,7 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::missing_panics_doc)]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/wooorm/markdown-rs/8924580/media/logo-monochromatic.svg?sanitize=true"
 )]
@@ -1451,7 +1452,6 @@ impl Options {
 /// assert_eq!(to_html("# Hello, world!"), "<h1>Hello, world!</h1>");
 /// ```
 #[must_use]
-#[allow(clippy::missing_panics_doc)]
 pub fn to_html(value: &str) -> String {
     to_html_with_options(value, &Options::default()).unwrap()
 }
@@ -1582,6 +1582,8 @@ mod tests {
     fn test_constructs() {
         #![allow(unused_must_use)]
         Constructs::default();
+        Constructs::gfm();
+        Constructs::mdx();
 
         let constructs = Constructs::default();
         assert!(constructs.attention, "should default to `CommonMark` (1)");
@@ -1624,6 +1626,8 @@ mod tests {
     fn test_parse_options() {
         #![allow(unused_must_use)]
         ParseOptions::default();
+        ParseOptions::gfm();
+        ParseOptions::mdx();
 
         let options = ParseOptions::default();
         assert!(
@@ -1691,6 +1695,7 @@ mod tests {
     fn test_compile_options() {
         #![allow(unused_must_use)]
         CompileOptions::default();
+        CompileOptions::gfm();
 
         let options = CompileOptions::default();
         assert!(
