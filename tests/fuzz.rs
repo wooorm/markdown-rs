@@ -30,5 +30,7 @@ fn fuzz() -> Result<(), String> {
         "3-b: containers should not pierce into indented code"
     );
 
+    assert_eq!(to_html("_		"), "<p>_</p>", "4: unterminated emphasis");
+
     Ok(())
 }
