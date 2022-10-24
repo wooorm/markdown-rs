@@ -30,5 +30,11 @@ fn fuzz() -> Result<(), String> {
         "3-b: containers should not pierce into indented code"
     );
 
+    assert_eq!(
+        to_html_with_options("a	~	", &Options::gfm())?,
+        "<p>a	~</p>",
+        "4: gfm: strikethrough like plain text"
+    );
+
     Ok(())
 }
