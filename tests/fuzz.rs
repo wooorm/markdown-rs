@@ -48,5 +48,11 @@ fn fuzz() -> Result<(), String> {
         "4-c: trailing whitespace and broken data"
     );
 
+    assert_eq!(
+        to_html(">~~~ \n"),
+        "<blockquote>\n<pre><code>\n</code></pre>\n</blockquote>",
+        "5: empty code block in blockquote"
+    );
+
     Ok(())
 }
