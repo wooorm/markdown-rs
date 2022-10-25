@@ -1,5 +1,10 @@
 extern crate markdown;
-use markdown::{to_html, to_html_with_options, Options};
+use markdown::{
+    mdast::{List, ListItem, Node, Root},
+    to_html, to_html_with_options, to_mdast,
+    unist::Position,
+    Options, ParseOptions,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -46,6 +51,26 @@ fn fuzz() -> Result<(), String> {
         to_html_with_options("a ~ ", &Options::gfm())?,
         "<p>a ~</p>",
         "4-c: trailing whitespace and broken data"
+    );
+
+    assert_eq!(
+        to_mdast("256.", &ParseOptions::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                children: vec![Node::ListItem(ListItem {
+                    children: vec![],
+                    spread: false,
+                    checked: None,
+                    position: Some(Position::new(1, 1, 0, 1, 5, 4))
+                })],
+                position: Some(Position::new(1, 1, 0, 1, 5, 4)),
+                ordered: true,
+                start: Some(255),
+                spread: false
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 5, 4))
+        }),
+        "5: ordered list starting high enough to overflow u8"
     );
 
     Ok(())
