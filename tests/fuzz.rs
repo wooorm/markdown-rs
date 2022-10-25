@@ -48,5 +48,11 @@ fn fuzz() -> Result<(), String> {
         "4-c: trailing whitespace and broken data"
     );
 
+    assert_eq!(
+        to_html_with_options("\\~\n&&&&&&-&&&&&&&&&&|1<`\n>>>:>>\n>~~>\n", &Options::gfm())?,
+        "<p>~\n&amp;&amp;&amp;&amp;&amp;&amp;-&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;|1&lt;`\n&gt;&gt;&gt;:&gt;&gt;</p>\n<blockquote>\n<p>~~&gt;</p>\n</blockquote>",
+        "5: gfm: code block like plain text"
+    );
+
     Ok(())
 }
