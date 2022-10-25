@@ -1087,7 +1087,7 @@ pub struct ParseOptions {
     /// languages within expressions.
     ///
     /// It only makes sense to pass this when compiling to a syntax tree
-    /// with [`to_mdast()`][].
+    /// with [`to_mdast()`][crate::to_mdast()].
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
@@ -1103,7 +1103,7 @@ pub struct ParseOptions {
     /// > MDX that is aware of, say, Rust, or other programming languages.
     ///
     /// It only makes sense to pass this when compiling to a syntax tree
-    /// with [`to_mdast()`][].
+    /// with [`to_mdast()`][crate::to_mdast()].
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.

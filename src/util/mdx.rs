@@ -44,7 +44,8 @@ pub enum Signal {
 
 /// Signature of a function that parses MDX ESM.
 ///
-/// Can be passed as `mdx_esm_parse` in [`ParseOptions`][] to support
+/// Can be passed as `mdx_esm_parse` in
+/// [`ParseOptions`][crate::configuration::ParseOptions] to support
 /// ESM according to a certain grammar (typically, a programming language).
 pub type EsmParse = dyn Fn(&str) -> Signal;
 
@@ -79,7 +80,8 @@ pub enum ExpressionKind {
 
 /// Signature of a function that parses MDX expressions.
 ///
-/// Can be passed as `mdx_expression_parse` in [`ParseOptions`][] to support
+/// Can be passed as `mdx_expression_parse` in
+/// [`ParseOptions`][crate::configuration::ParseOptions] to support
 /// expressions according to a certain grammar (typically, a programming
 /// language).
 ///
