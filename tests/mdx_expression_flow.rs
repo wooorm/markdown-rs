@@ -96,6 +96,12 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options("a\n\n* b", &mdx)?,
+        "<p>a</p>\n<ul>\n<li>b</li>\n</ul>",
+        "should support lists after non-expressions (GH-11)"
+    );
+
+    assert_eq!(
         to_html_with_options("> {a\nb}", &mdx)
             .err()
             .unwrap(),

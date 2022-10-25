@@ -49,7 +49,6 @@ use crate::util::constant::TAB_SIZE;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.parse_state.options.constructs.mdx_expression_flow {
         tokenizer.tokenize_state.token_1 = Name::MdxFlowExpression;
-        tokenizer.concrete = true;
         if matches!(tokenizer.current, Some(b'\t' | b' ')) {
             tokenizer.attempt(State::Next(StateName::MdxExpressionFlowBefore), State::Nok);
             State::Retry(space_or_tab_min_max(
@@ -77,6 +76,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     if Some(b'{') == tokenizer.current {
+        tokenizer.concrete = true;
         tokenizer.attempt(State::Next(StateName::MdxExpressionFlowAfter), State::Nok);
         State::Retry(StateName::MdxExpressionStart)
     } else {
