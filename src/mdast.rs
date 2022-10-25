@@ -558,7 +558,7 @@ pub struct List {
     pub ordered: bool,
     /// Starting number of the list.
     /// `None` when unordered.
-    pub start: Option<u8>,
+    pub start: Option<u32>,
     /// One or more of its children are separated with a blank line from its
     /// siblings (when `true`), or not (when `false`).
     pub spread: bool,

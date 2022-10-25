@@ -1,5 +1,5 @@
 extern crate markdown;
-use markdown::{to_html, to_html_with_options, Options};
+use markdown::{mdast, to_html, to_html_with_options, to_mdast, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -39,13 +39,21 @@ fn fuzz() -> Result<(), String> {
     assert_eq!(
         to_html("_  "),
         "<p>_</p>",
-        "4-b: trailing whitespace and broken data"
+        "4-b: trailing whitespace and broken data (GH-13)"
     );
 
     assert_eq!(
         to_html_with_options("a ~ ", &Options::gfm())?,
         "<p>a ~</p>",
-        "4-c: trailing whitespace and broken data"
+        "4-c: trailing whitespace and broken data (GH-14)"
+    );
+
+    assert!(
+        matches!(
+            to_mdast("123456789. ok", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "5: lists should support high start numbers (GH-17)"
     );
 
     Ok(())
