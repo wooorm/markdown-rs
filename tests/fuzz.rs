@@ -48,5 +48,11 @@ fn fuzz() -> Result<(), String> {
         "4-c: trailing whitespace and broken data"
     );
 
+    assert_eq!(
+        to_html_with_options(".@.ZZ	o0	:Z.@wo0	.@.@wi.Z.@.ZZ		Z.ZZZZg4Z", &Options::gfm())?,
+        "<p><a href=\".@.ZZ\">.@.ZZ</a>o0	:Z.@wo0	.@<a href=\".@wi.Z\">.@wi.Z</a><a href=\".@.ZZ\">.@.ZZ</a>		Z.ZZZZg4Z</p>",
+        "5: gfm: email autolink"
+    );
+
     Ok(())
 }
