@@ -98,5 +98,11 @@ fn fuzz() -> Result<(), String> {
         "8-d: autolink literals after tabs (GH-18)"
     );
 
+    assert_eq!(
+        to_html_with_options("|\n\n|\n|\nwww.a[a.a|\n|\n", &Options::gfm()),
+        Ok("<p>|</p><p>|<br>|<br><a href=\"http://www.a%5Ba.a%7C\">www.a[a.a]</a><br>|</p>".into()),
+        "9: gfm: mix table, autolink, and open reference link"
+    );
+
     Ok(())
 }
