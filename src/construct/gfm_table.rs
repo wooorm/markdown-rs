@@ -331,6 +331,7 @@ pub fn head_row_break(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
             tokenizer.tokenize_state.seen = false;
+            tokenizer.tokenize_state.size = 0;
             State::Nok
         }
         Some(b'\n') => {
@@ -427,6 +428,7 @@ pub fn head_delimiter_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.interrupt = false;
 
     if tokenizer.lazy || tokenizer.pierce {
+        tokenizer.tokenize_state.size = 0;
         State::Nok
     } else {
         tokenizer.enter(Name::GfmTableDelimiterRow);

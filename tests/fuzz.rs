@@ -68,5 +68,11 @@ fn fuzz() -> Result<(), String> {
         "6-b: container close after unclosed fenced code, with eol (list, GH-16)"
     );
 
+    assert_eq!(
+        to_html_with_options("> x\n``", &Options::gfm()),
+        Ok("<blockquote>\n<p>x</p>\n</blockquote>\n<p>``</p>".into()),
+        "7: lazy container lines almost starting fenced code (GH-19)"
+    );
+
     Ok(())
 }
