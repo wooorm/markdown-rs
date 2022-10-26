@@ -129,5 +129,13 @@ fn fuzz() -> Result<(), String> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert!(
+        matches!(
+            to_mdast("*	~~~\n1.", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "yy: should support unordered list with code block, followed by ordered list (GH-23)"
+    );
+
     Ok(())
 }
