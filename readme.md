@@ -16,7 +16,7 @@
 
 > 👉 **Note**: this is a new crate that reuses an old name.
 > The old crate (`0.3.0` and lower) has a bunch of problems.
-> Make sure to use the new crate, currently in alpha at `1.0.0-alpha.2`.
+> Make sure to use the new crate, currently in alpha at `1.0.0-alpha.3`.
 
 CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
@@ -80,12 +80,12 @@ This Rust crate has a sibling project in JavaScript: [`micromark`][micromark]
 With [Rust][] (rust edition 2018+, ±version 1.56+), install with `cargo`:
 
 ```sh
-cargo add markdown@1.0.0-alpha.2
+cargo add markdown@1.0.0-alpha.3
 ```
 
 > 👉 **Note**: this is a new crate that reuses an old name.
 > The old crate (`0.3.0` and lower) has a bunch of problems.
-> Make sure to use the new crate, currently in alpha at `1.0.0-alpha.2`.
+> Make sure to use the new crate, currently in alpha at `1.0.0-alpha.3`.
 
 ## Use
 
@@ -157,10 +157,10 @@ Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3
 ## API
 
 `markdown-rs` exposes
-[`to_html`](https://docs.rs/markdown/1.0.0-alpha.2/markdown/fn.to_html.html),
-[`to_html_with_options`](https://docs.rs/markdown/1.0.0-alpha.2/markdown/fn.to_html_with_options.html),
-[`to_mdast`](https://docs.rs/markdown/1.0.0-alpha.2/markdown/fn.to_mdast.html),
-[`Options`](https://docs.rs/markdown/1.0.0-alpha.2/markdown/struct.Options.html),
+[`to_html`](https://docs.rs/markdown/1.0.0-alpha.3/markdown/fn.to_html.html),
+[`to_html_with_options`](https://docs.rs/markdown/1.0.0-alpha.3/markdown/fn.to_html_with_options.html),
+[`to_mdast`](https://docs.rs/markdown/1.0.0-alpha.3/markdown/fn.to_mdast.html),
+[`Options`](https://docs.rs/markdown/1.0.0-alpha.3/markdown/struct.Options.html),
 and a few other structs and enums.
 
 See the [crate docs][docs] for more info.
@@ -350,11 +350,11 @@ Special thanks go out to:
 
 [docs-badge]: https://img.shields.io/docsrs/markdown
 
-[docs]: https://docs.rs/markdown/1.0.0-alpha.2/markdown/
+[docs]: https://docs.rs/markdown/1.0.0-alpha.3/markdown/
 
 [crate-badge]: https://img.shields.io/crates/v/markdown
 
-[crate]: https://crates.io/crates/markdown/1.0.0-alpha.2
+[crate]: https://crates.io/crates/markdown/1.0.0-alpha.3
 
 [chat]: https://github.com/wooorm/markdown-rs/discussions
 
