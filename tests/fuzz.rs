@@ -1,5 +1,5 @@
 extern crate markdown;
-use markdown::{mdast, to_html, to_html_with_options, to_mdast, Options};
+use markdown::{mdast, to_html, to_html_with_options, to_mdast, Options, ParseOptions};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -102,6 +102,22 @@ fn fuzz() -> Result<(), String> {
         to_html_with_options("| a |\n| - |\n| www.a|", &Options::gfm()),
         Ok("<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"http://www.a\">www.a</a></td>\n</tr>\n</tbody>\n</table>".into()),
         "9: autolink literals that end in table cell delimiter (GH-20)"
+    );
+
+    assert!(
+        matches!(
+            to_mdast("[*]()[*]()", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "10: links with star as label"
+    );
+
+    assert!(
+        matches!(
+            to_mdast("[~](a) [~](a)", &ParseOptions::gfm()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "10: gfm: links with tilde as label"
     );
 
     Ok(())
