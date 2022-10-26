@@ -127,6 +127,9 @@ fn fuzz() -> Result<(), String> {
         ),
         Ok("<p>&lt;</p>".to_string()),
         "12: mdx: handle invalid mdx without panic (GH-26)"
+        to_html("[:]:a\n-\na\n-"),
+        "<h2>-\na</h2>",
+        "10: handle link in heading"
     );
 
     Ok(())
