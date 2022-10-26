@@ -56,5 +56,17 @@ fn fuzz() -> Result<(), String> {
         "5: lists should support high start numbers (GH-17)"
     );
 
+    assert_eq!(
+        to_html("> ```\n"),
+        "<blockquote>\n<pre><code>\n</code></pre>\n</blockquote>",
+        "6-a: container close after unclosed fenced code, with eol (block quote, GH-16)"
+    );
+
+    assert_eq!(
+        to_html("- ```\n"),
+        "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
+        "6-b: container close after unclosed fenced code, with eol (list, GH-16)"
+    );
+
     Ok(())
 }

@@ -546,19 +546,33 @@ fn resolve(tokenizer: &mut Tokenizer) {
     let mut line = 0;
 
     while child_index < child.events.len() {
-        let event = &child.events[child_index];
-
-        if event.kind == Kind::Enter
-            && (event.name == Name::LineEnding || event.name == Name::BlankLineEnding)
+        if child.events[child_index].kind == Kind::Exit
+            && matches!(
+                child.events[child_index].name,
+                Name::LineEnding | Name::BlankLineEnding
+            )
         {
+            // Inject before `Enter:LineEnding`.
+            let mut inject_index = child_index - 1;
+            let mut point = &child.events[inject_index].point;
+
+            while child_index + 1 < child.events.len()
+                && child.events[child_index + 1].kind == Kind::Exit
+            {
+                child_index += 1;
+                point = &child.events[child_index].point;
+                // Inject after `Exit:*`.
+                inject_index = child_index + 1;
+            }
+
             if let Some(mut exits) = tokenizer.tokenize_state.document_exits[line].take() {
                 let mut exit_index = 0;
                 while exit_index < exits.len() {
-                    exits[exit_index].point = event.point.clone();
+                    exits[exit_index].point = point.clone();
                     exit_index += 1;
                 }
 
-                child.map.add(child_index, 0, exits);
+                child.map.add(inject_index, 0, exits);
             }
 
             line += 1;
