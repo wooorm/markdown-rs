@@ -74,5 +74,29 @@ fn fuzz() -> Result<(), String> {
         "7: lazy container lines almost starting fenced code (GH-19)"
     );
 
+    assert_eq!(
+        to_html_with_options("a\tb@c.d", &Options::gfm()),
+        Ok("<p>a\t<a href=\"mailto:b@c.d\">b@c.d</a></p>".into()),
+        "8-a: autolink literals after tabs (GH-18)"
+    );
+
+    assert_eq!(
+        to_html_with_options("aa\tb@c.d", &Options::gfm()),
+        Ok("<p>aa\t<a href=\"mailto:b@c.d\">b@c.d</a></p>".into()),
+        "8-b: autolink literals after tabs (GH-18)"
+    );
+
+    assert_eq!(
+        to_html_with_options("aaa\tb@c.d", &Options::gfm()),
+        Ok("<p>aaa\t<a href=\"mailto:b@c.d\">b@c.d</a></p>".into()),
+        "8-c: autolink literals after tabs (GH-18)"
+    );
+
+    assert_eq!(
+        to_html_with_options("aaaa\tb@c.d", &Options::gfm()),
+        Ok("<p>aaaa\t<a href=\"mailto:b@c.d\">b@c.d</a></p>".into()),
+        "8-d: autolink literals after tabs (GH-18)"
+    );
+
     Ok(())
 }

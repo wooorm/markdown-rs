@@ -3512,8 +3512,11 @@ impl Point {
                 b'\n' | b'\r' => unreachable!("cannot move past line endings"),
                 b'\t' => {
                     let remainder = next.column % TAB_SIZE;
-                    debug_assert_ne!(remainder, 0, "expected remainder larger than `0`");
-                    let vs = TAB_SIZE - remainder;
+                    let vs = if remainder == 0 {
+                        0
+                    } else {
+                        TAB_SIZE - remainder
+                    };
                     next.index += 1;
                     next.column += 1 + vs;
                 }
