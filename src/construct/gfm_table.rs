@@ -312,6 +312,8 @@ pub fn head_row_start(tokenizer: &mut Tokenizer) -> State {
         Some(b'|') => State::Retry(StateName::GfmTableHeadRowBreak),
         _ => {
             tokenizer.tokenize_state.seen = true;
+            // Count the first character, that isn’t a pipe, double.
+            tokenizer.tokenize_state.size_b += 1;
             State::Retry(StateName::GfmTableHeadRowBreak)
         }
     }
@@ -332,22 +334,34 @@ pub fn head_row_break(tokenizer: &mut Tokenizer) -> State {
         None => {
             tokenizer.tokenize_state.seen = false;
             tokenizer.tokenize_state.size = 0;
+            tokenizer.tokenize_state.size_b = 0;
             State::Nok
         }
         Some(b'\n') => {
-            // Feel free to interrupt:
-            tokenizer.interrupt = true;
-            tokenizer.exit(Name::GfmTableRow);
-            tokenizer.enter(Name::LineEnding);
-            tokenizer.consume();
-            tokenizer.exit(Name::LineEnding);
-            State::Next(StateName::GfmTableHeadDelimiterStart)
+            // If anything other than one pipe (ignoring whitespace) was used, it’s fine.
+            if tokenizer.tokenize_state.size_b > 1 {
+                tokenizer.tokenize_state.size_b = 0;
+                // Feel free to interrupt:
+                tokenizer.interrupt = true;
+                tokenizer.exit(Name::GfmTableRow);
+                tokenizer.enter(Name::LineEnding);
+                tokenizer.consume();
+                tokenizer.exit(Name::LineEnding);
+                State::Next(StateName::GfmTableHeadDelimiterStart)
+            } else {
+                tokenizer.tokenize_state.seen = false;
+                tokenizer.tokenize_state.size = 0;
+                tokenizer.tokenize_state.size_b = 0;
+                State::Nok
+            }
         }
         Some(b'\t' | b' ') => {
             tokenizer.attempt(State::Next(StateName::GfmTableHeadRowBreak), State::Nok);
             State::Retry(space_or_tab(tokenizer))
         }
         _ => {
+            tokenizer.tokenize_state.size_b += 1;
+
             // Whether a delimiter was seen.
             if tokenizer.tokenize_state.seen {
                 tokenizer.tokenize_state.seen = false;

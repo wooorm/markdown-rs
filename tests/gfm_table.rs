@@ -130,6 +130,24 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options(":\n|-|\n|a|\n\nb\n|-|\n|c|\n\n|\n|-|\n|d|\n\n|\n|-|\n|e|\n\n|:\n|-|\n|f|\n\n||\n|-|\n|g|\n\n| |\n|-|\n|h|\n", &Options::gfm())?,
+        "<table>\n<thead>\n<tr>\n<th>:</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>a</td>\n</tr>\n</tbody>\n</table>\n<table>\n<thead>\n<tr>\n<th>b</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>c</td>\n</tr>\n</tbody>\n</table>\n<p>|\n|-|\n|d|</p>\n<p>|\n|-|\n|e|</p>\n<table>\n<thead>\n<tr>\n<th>:</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>f</td>\n</tr>\n</tbody>\n</table>\n<table>\n<thead>\n<tr>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>g</td>\n</tr>\n</tbody>\n</table>\n<table>\n<thead>\n<tr>\n<th></th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>h</td>\n</tr>\n</tbody>\n</table>\n",
+        "should need any character other than a single pipe in the header row"
+    );
+
+    assert_eq!(
+        to_html_with_options("a\n|-\n\nb\n||\n\nc\n|-|\n\nd\n|:|\n\ne\n| |\n\nf\n| -|\n\ng\n|- |\n", &Options::gfm())?,
+        "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<p>b\n||</p>\n<table>\n<thead>\n<tr>\n<th>c</th>\n</tr>\n</thead>\n</table>\n<p>d\n|:|</p>\n<p>e\n| |</p>\n<table>\n<thead>\n<tr>\n<th>f</th>\n</tr>\n</thead>\n</table>\n<table>\n<thead>\n<tr>\n<th>g</th>\n</tr>\n</thead>\n</table>\n",
+        "should need a dash in the delimimter row"
+    );
+
+    assert_eq!(
+        to_html_with_options("|\n|", &Options::gfm())?,
+        "<p>|\n|</p>",
+        "should need something"
+    );
+
+    assert_eq!(
         to_html_with_options("| a |\n| - |\n- b", &Options::gfm())?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<ul>\n<li>b</li>\n</ul>",
         "should support a list after a table"
