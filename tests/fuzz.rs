@@ -104,5 +104,18 @@ fn fuzz() -> Result<(), String> {
         "9: autolink literals that end in table cell delimiter (GH-20)"
     );
 
+    assert_eq!(
+        markdown::to_html_with_options(
+            "<",
+            &markdown::Options {
+                parse: markdown::ParseOptions::mdx(),
+                ..Default::default()
+            }
+        )
+        .ok(),
+        None,
+        "10: mdx: handle invalid mdx without panic"
+    );
+
     Ok(())
 }
