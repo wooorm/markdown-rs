@@ -98,5 +98,11 @@ fn fuzz() -> Result<(), String> {
         "8-d: autolink literals after tabs (GH-18)"
     );
 
+    assert_eq!(
+        to_html_with_options("| a |\n| - |\n| www.a|", &Options::gfm()),
+        Ok("<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"http://www.a\">www.a</a></td>\n</tr>\n</tbody>\n</table>".into()),
+        "9: autolink literals that end in table cell delimiter (GH-20)"
+    );
+
     Ok(())
 }
