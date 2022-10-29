@@ -104,5 +104,11 @@ fn fuzz() -> Result<(), String> {
         "9: autolink literals that end in table cell delimiter (GH-20)"
     );
 
+    assert_eq!(
+        to_html_with_options("[*]() [*]()", &Options::gfm()),
+        Ok("<p><a href=\"\">*</a> <a href=\"\">*</a></p>".into()),
+        "10: attention in different links (GH-21)"
+    );
+
     Ok(())
 }

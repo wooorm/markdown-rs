@@ -92,8 +92,10 @@ use alloc::{vec, vec::Vec};
 struct Sequence {
     /// Marker as a byte (`u8`) used in this sequence.
     marker: u8,
-    /// The depth in events where this sequence resides.
-    balance: usize,
+    /// We track whether sequences are in balanced events, and where those
+    /// events start, so that one attention doesn’t start in say, one link, and
+    /// end in another.
+    stack: Vec<usize>,
     /// The index into events where this sequence’s `Enter` currently resides.
     index: usize,
     /// The (shifted) point where this sequence starts.
@@ -172,7 +174,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                 // An opener matching our closer:
                 if sequence_open.open
                     && sequence_close.marker == sequence_open.marker
-                    && sequence_close.balance == sequence_open.balance
+                    && sequence_close.stack == sequence_open.stack
                 {
                     // If the opening can close or the closing can open,
                     // and the close size *is not* a multiple of three,
@@ -219,23 +221,20 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     }
 
     tokenizer.map.consume(&mut tokenizer.events);
-
     None
 }
 
 /// Get sequences.
 fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
     let mut index = 0;
-    let mut balance = 0;
+    let mut stack = vec![];
     let mut sequences = vec![];
 
     while index < tokenizer.events.len() {
         let enter = &tokenizer.events[index];
 
-        if enter.kind == Kind::Enter {
-            balance += 1;
-
-            if enter.name == Name::AttentionSequence {
+        if enter.name == Name::AttentionSequence {
+            if enter.kind == Kind::Enter {
                 let end = index + 1;
                 let exit = &tokenizer.events[end];
 
@@ -255,7 +254,7 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
 
                 sequences.push(Sequence {
                     index,
-                    balance,
+                    stack: stack.clone(),
                     start_point: enter.point.clone(),
                     end_point: exit.point.clone(),
                     size: exit.point.index - enter.point.index,
@@ -272,8 +271,10 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
                     marker,
                 });
             }
+        } else if enter.kind == Kind::Enter {
+            stack.push(index);
         } else {
-            balance -= 1;
+            stack.pop();
         }
 
         index += 1;
