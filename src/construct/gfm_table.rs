@@ -883,6 +883,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
         flush_table_end(tokenizer, last_table_end, last_table_has_body);
     }
 
+    tokenizer.map.consume(&mut tokenizer.events);
     None
 }
 

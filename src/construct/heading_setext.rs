@@ -185,8 +185,6 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 
 /// Resolve heading (setext).
 pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
-    tokenizer.map.consume(&mut tokenizer.events);
-
     let mut enter = skip::to(&tokenizer.events, 0, &[Name::HeadingSetextUnderline]);
 
     while enter < tokenizer.events.len() {
@@ -280,6 +278,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     }
 
     tokenizer.map.consume(&mut tokenizer.events);
-
     None
 }
