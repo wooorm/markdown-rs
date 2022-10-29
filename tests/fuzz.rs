@@ -109,5 +109,13 @@ fn fuzz() -> Result<(), String> {
         "10: attention in different links (GH-21)"
     );
 
+    assert!(
+        matches!(
+            to_mdast("* [ ]\na", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "11: gfm task list items followed by eols (GH-24)"
+    );
+
     Ok(())
 }

@@ -90,7 +90,6 @@ struct CompileContext<'a> {
     // compile markdown.
     character_reference_marker: u8,
     gfm_table_inside: bool,
-    gfm_task_list_item_check_after: bool,
     hard_break_after: bool,
     heading_setext_text_after: bool,
     jsx_tag_stack: Vec<JsxTag>,
@@ -128,7 +127,6 @@ impl<'a> CompileContext<'a> {
             bytes,
             character_reference_marker: 0,
             gfm_table_inside: false,
-            gfm_task_list_item_check_after: false,
             hard_break_after: false,
             heading_setext_text_after: false,
             jsx_tag_stack: vec![],
@@ -347,7 +345,6 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         | Name::GfmTableRow
         | Name::GfmTableCell
         | Name::HeadingAtx
-        | Name::ListItem
         | Name::ListOrdered
         | Name::ListUnordered
         | Name::Paragraph
@@ -358,6 +355,7 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         Name::CharacterEscapeValue
         | Name::CodeFlowChunk
         | Name::CodeTextData
+        | Name::Data
         | Name::FrontmatterChunk
         | Name::HtmlFlowData
         | Name::HtmlTextData
@@ -385,7 +383,6 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         Name::CodeFenced | Name::MathFlow => on_exit_raw_flow(context)?,
         Name::CodeIndented => on_exit_code_indented(context)?,
         Name::CodeText | Name::MathText => on_exit_raw_text(context)?,
-        Name::Data => on_exit_data_actual(context)?,
         Name::DefinitionDestinationString => on_exit_definition_destination_string(context),
         Name::DefinitionLabelString | Name::GfmFootnoteDefinitionLabelString => {
             on_exit_definition_id(context);
@@ -399,7 +396,6 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         | Name::GfmAutolinkLiteralXmpp => on_exit_gfm_autolink_literal(context)?,
         Name::GfmFootnoteCall | Name::Image | Name::Link => on_exit_media(context)?,
         Name::GfmTable => on_exit_gfm_table(context)?,
-        Name::GfmTaskListItemCheck => on_exit_gfm_task_list_item_check(context),
         Name::GfmTaskListItemValueUnchecked | Name::GfmTaskListItemValueChecked => {
             on_exit_gfm_task_list_item_value(context);
         }
@@ -411,6 +407,7 @@ fn exit(context: &mut CompileContext) -> Result<(), String> {
         Name::HtmlFlow | Name::HtmlText => on_exit_html(context)?,
         Name::LabelText => on_exit_label_text(context),
         Name::LineEnding => on_exit_line_ending(context)?,
+        Name::ListItem => on_exit_list_item(context)?,
         Name::ListItemValue => on_exit_list_item_value(context),
         Name::MdxEsm | Name::MdxFlowExpression | Name::MdxTextExpression => {
             on_exit_mdx_esm_or_expression(context)?;
@@ -1089,29 +1086,6 @@ fn on_exit_data(context: &mut CompileContext) -> Result<(), String> {
     Ok(())
 }
 
-/// Handle [`Exit`][Kind::Exit]:[`Data`][Name::Data] itself.
-fn on_exit_data_actual(context: &mut CompileContext) -> Result<(), String> {
-    on_exit_data(context)?;
-
-    // This field is set when a check exits.
-    // When that’s the case, there’s always a `data` event right after it.
-    // That data event is the first child (after the check) of the paragraph.
-    // We update the text positional info (from the already fixed paragraph),
-    // and remove the first byte, which is always a space or tab.
-    if context.gfm_task_list_item_check_after {
-        let parent = context.tail_mut();
-        let start = parent.position().unwrap().start.clone();
-        let node = parent.children_mut().unwrap().last_mut().unwrap();
-        node.position_mut().unwrap().start = start;
-        if let Node::Text(node) = node {
-            node.value.remove(0);
-        }
-        context.gfm_task_list_item_check_after = false;
-    }
-
-    Ok(())
-}
-
 /// Handle [`Exit`][Kind::Exit]:[`DefinitionDestinationString`][Name::DefinitionDestinationString].
 fn on_exit_definition_destination_string(context: &mut CompileContext) {
     let value = context.resume().to_string();
@@ -1208,23 +1182,6 @@ fn on_exit_gfm_table(context: &mut CompileContext) -> Result<(), String> {
     on_exit(context)?;
     context.gfm_table_inside = false;
     Ok(())
-}
-
-/// Handle [`Exit`][Kind::Exit]:[`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck].
-fn on_exit_gfm_task_list_item_check(context: &mut CompileContext) {
-    // This field is set when a check exits.
-    // When that’s the case, there’s always a `data` event right after it.
-    // That data event is the first child (after the check) of the paragraph.
-    // We update the paragraph positional info to start after the check.
-    let mut start = point_from_event(&context.events[context.index]);
-    debug_assert!(
-        matches!(context.bytes[start.offset], b'\t' | b' '),
-        "expected tab or space after check"
-    );
-    start.column += 1;
-    start.offset += 1;
-    context.tail_mut().position_mut().unwrap().start = start;
-    context.gfm_task_list_item_check_after = true;
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`GfmTaskListItemValueChecked`][Name::GfmTaskListItemValueChecked],[`GfmTaskListItemValueUnchecked`][Name::GfmTaskListItemValueUnchecked]}.
@@ -1412,6 +1369,51 @@ fn on_exit_media(context: &mut CompileContext) -> Result<(), String> {
             _ => unreachable!("expected footnote reference, image, or link on stack"),
         }
     }
+
+    Ok(())
+}
+
+/// Handle [`Exit`][Kind::Exit]:[`ListItem`][Name::ListItem].
+fn on_exit_list_item(context: &mut CompileContext) -> Result<(), String> {
+    if let Node::ListItem(item) = context.tail_mut() {
+        if item.checked.is_some() {
+            if let Some(Node::Paragraph(paragraph)) = item.children.first_mut() {
+                if let Some(Node::Text(text)) = paragraph.children.first_mut() {
+                    let mut point = text.position.as_ref().unwrap().start.clone();
+                    let bytes = text.value.as_bytes();
+                    let mut start = 0;
+
+                    // Move past eol.
+                    if matches!(bytes[0], b'\t' | b' ') {
+                        point.offset += 1;
+                        point.column += 1;
+                        start += 1;
+                    } else if matches!(bytes[0], b'\r' | b'\n') {
+                        point.line += 1;
+                        point.column = 1;
+                        point.offset += 1;
+                        start += 1;
+                        // Move past the LF of CRLF.
+                        if bytes.len() > 1 && bytes[0] == b'\r' && bytes[1] == b'\n' {
+                            point.offset += 1;
+                            start += 1;
+                        }
+                    }
+
+                    // The whole text is whitespace: update the text.
+                    if start == bytes.len() {
+                        paragraph.children.remove(0);
+                    } else {
+                        text.value = str::from_utf8(&bytes[start..]).unwrap().into();
+                        text.position.as_mut().unwrap().start = point.clone();
+                    }
+                    paragraph.position.as_mut().unwrap().start = point;
+                }
+            }
+        }
+    }
+
+    on_exit(context)?;
 
     Ok(())
 }
