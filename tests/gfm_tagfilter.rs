@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
