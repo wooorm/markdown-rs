@@ -334,7 +334,7 @@ pub fn www_prefix_inside(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn www_prefix_after(tokenizer: &mut Tokenizer) -> State {
     // If there is *anything*, we can link.
-    if tokenizer.current == None {
+    if tokenizer.current.is_none() {
         State::Nok
     } else {
         State::Ok

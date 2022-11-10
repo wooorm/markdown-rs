@@ -96,7 +96,7 @@ pub fn subtokenize(
             debug_assert_eq!(event.kind, Kind::Enter);
 
             // No need to enter linked events again.
-            if link.previous == None
+            if link.previous.is_none()
                 && (filter.is_none() || &link.content == filter.as_ref().unwrap())
             {
                 // Index into `events` pointing to a chunk.
@@ -148,7 +148,7 @@ pub fn subtokenize(
                     let link_curr = enter.link.as_ref().expect("expected link");
                     debug_assert_eq!(enter.kind, Kind::Enter);
 
-                    if link_curr.previous != None {
+                    if link_curr.previous.is_some() {
                         tokenizer.define_skip(enter.point.clone());
                     }
 

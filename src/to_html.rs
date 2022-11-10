@@ -685,7 +685,7 @@ fn on_enter_paragraph(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`Resource`][Name::Resource].
 fn on_enter_resource(context: &mut CompileContext) {
     context.buffer(); // We can have line endings in the resource, ignore them.
-    context.media_stack.last_mut().unwrap().destination = Some("".into());
+    context.media_stack.last_mut().unwrap().destination = Some(String::new());
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`ResourceDestinationString`][Name::ResourceDestinationString].
