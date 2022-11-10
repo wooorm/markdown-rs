@@ -1751,7 +1751,7 @@ fn on_mismatch_error(
             if let Some(left) = left {
                 format!(" before the end of `{:?}`", left.name)
             } else {
-                "".into()
+                String::new()
             }
         ));
     }
