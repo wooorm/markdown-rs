@@ -3,8 +3,6 @@
 //! Port of <https://github.com/mdx-js/mdx/blob/main/packages/mdx/lib/plugin/recma-jsx-rewrite.js>,
 //! by the same author.
 
-extern crate swc_common;
-extern crate swc_ecma_ast;
 use crate::test_utils::{
     hast_util_to_swc::Program,
     swc_utils::{

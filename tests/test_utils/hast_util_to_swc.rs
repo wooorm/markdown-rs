@@ -26,8 +26,6 @@
 //! TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //! SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-extern crate swc_common;
-extern crate swc_ecma_ast;
 use crate::test_utils::{
     hast,
     swc::{parse_esm_to_tree, parse_expression_to_tree},

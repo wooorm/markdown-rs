@@ -1,4 +1,3 @@
-extern crate markdown;
 mod test_utils;
 use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
 use pretty_assertions::assert_eq;

@@ -3,7 +3,6 @@
 //! Port of <https://github.com/mdx-js/mdx/blob/main/packages/mdx/lib/plugin/recma-document.js>,
 //! by the same author.
 
-extern crate swc_ecma_ast;
 use crate::test_utils::{
     hast_util_to_swc::Program,
     swc_utils::{bytepos_to_point, prefix_error_with_point, span_to_position},

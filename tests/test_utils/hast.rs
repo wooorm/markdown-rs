@@ -6,7 +6,6 @@
 // ^-- To do: externalize.
 
 extern crate alloc;
-extern crate markdown;
 use alloc::{
     fmt,
     string::{String, ToString},

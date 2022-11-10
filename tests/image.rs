@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{
     mdast::{Definition, Image, ImageReference, Node, Paragraph, ReferenceKind, Root, Text},
     to_html, to_html_with_options, to_mdast,

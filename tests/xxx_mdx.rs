@@ -1,7 +1,3 @@
-extern crate markdown;
-extern crate swc_common;
-extern crate swc_ecma_ast;
-extern crate swc_ecma_codegen;
 mod test_utils;
 use pretty_assertions::assert_eq;
 use test_utils::mdx::{mdx, JsxRuntime, Options};
