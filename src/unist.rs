@@ -4,6 +4,9 @@
 
 use alloc::fmt;
 
+#[cfg(feature = "serde")]
+mod ser;
+
 /// One place in a source file.
 #[derive(Clone, Eq, PartialEq)]
 pub struct Point {

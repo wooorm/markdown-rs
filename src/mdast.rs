@@ -9,6 +9,9 @@ use alloc::{
     vec::Vec,
 };
 
+#[cfg(feature = "serde")]
+mod ser;
+
 /// MDX: relative byte index into a string, to an absolute byte index into the
 /// whole document.
 pub type Stop = (usize, usize);
@@ -22,6 +25,16 @@ pub enum ReferenceKind {
     Collapsed,
     /// The reference is explicit, its identifier explicitly set.
     Full,
+}
+
+impl ReferenceKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Shortcut => "shortcut",
+            Self::Collapsed => "collapsed",
+            Self::Full => "full",
+        }
+    }
 }
 
 /// GFM: alignment of phrasing content.
@@ -69,6 +82,17 @@ pub enum AlignKind {
     ///       ^^^
     /// ```
     None,
+}
+
+impl AlignKind {
+    pub fn as_str(&self) -> Option<&'static str> {
+        match self {
+            Self::Left => Some("left"),
+            Self::Right => Some("right"),
+            Self::Center => Some("center"),
+            Self::None => None,
+        }
+    }
 }
 
 /// Nodes.
