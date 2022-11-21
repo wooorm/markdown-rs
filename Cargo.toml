@@ -24,7 +24,7 @@ path = "benches/bench.rs"
 harness = false
 
 [features]
-default = ["serde"]
+default = []
 serde = ["dep:serde", "dep:serde_json", "dep:thiserror"]
 
 [dependencies]
