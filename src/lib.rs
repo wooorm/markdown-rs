@@ -11,7 +11,7 @@
 //!     constructs (GFM, MDX, and the like)
 //! *   [`to_mdast()`][]
 //!     — turn markdown into a syntax tree
-#![no_std]
+#![cfg_attr(not(feature = "serde"), no_std)]
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]
 #![allow(clippy::missing_panics_doc)]
@@ -24,6 +24,8 @@
 extern crate alloc;
 mod configuration;
 mod construct;
+#[cfg(feature = "serde")]
+mod error;
 mod event;
 mod parser;
 mod resolve;
@@ -54,6 +56,9 @@ pub use util::mdx::{
 };
 
 pub use configuration::{CompileOptions, Constructs, Options, ParseOptions};
+
+#[cfg(feature = "serde")]
+pub use error::Error;
 
 use alloc::string::String;
 
@@ -145,4 +150,20 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, Stri
     let (events, parse_state) = parser::parse(value, options)?;
     let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)
+}
+
+/// Turn markdown into a JSON representation of its syntax tree.
+///
+/// ### Errors
+///
+/// `to_json()` errors under the same conditions as [`to_mdast`]. Additionally, an error may be
+/// returned if the syntax tree cannot be serialized to JSON.
+#[cfg(feature = "serde")]
+pub fn to_json(value: &str, options: &ParseOptions) -> Result<serde_json::Value, Error> {
+    let (events, parse_state) = parser::parse(value, options).map_err(Error::Parser)?;
+    let node = to_mdast::compile(&events, parse_state.bytes).map_err(Error::Compiler)?;
+
+    let value = serde_json::to_value(&node).map_err(Error::Serialization)?;
+
+    Ok(value)
 }
