@@ -1,4 +1,3 @@
-extern crate markdown;
 mod test_utils;
 use markdown::{
     mdast::{

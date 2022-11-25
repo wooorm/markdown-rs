@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{
     mdast::{Heading, Node, Root, Text},
     to_html, to_html_with_options, to_mdast,
@@ -248,6 +247,12 @@ fn heading_setext() -> Result<(), String> {
         to_html("a\n-\nb"),
         "<h2>a</h2>\n<p>b</p>",
         "should prefer a setext heading over an interrupting list"
+    );
+
+    assert_eq!(
+        to_html("[a]: b\n=\n="),
+        "<h1>=</h1>",
+        "should support a two setext heading underlines after a definition, as a setext heading"
     );
 
     assert_eq!(

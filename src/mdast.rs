@@ -250,7 +250,7 @@ impl ToString for Node {
             | Node::Image(_)
             | Node::ImageReference(_)
             | Node::ThematicBreak(_)
-            | Node::Definition(_) => "".into(),
+            | Node::Definition(_) => String::new(),
         }
     }
 }

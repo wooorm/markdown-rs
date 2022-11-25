@@ -216,7 +216,7 @@ fn parse_esm(tokenizer: &mut Tokenizer) -> State {
             State::Error(format!("{}:{}: {}", point.line, point.column, message))
         }
         MdxSignal::Eof(message) => {
-            if tokenizer.current == None {
+            if tokenizer.current.is_none() {
                 State::Error(format!(
                     "{}:{}: {}",
                     tokenizer.point.line, tokenizer.point.column, message

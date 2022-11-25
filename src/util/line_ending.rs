@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use alloc::{str::FromStr, string::String};
 
 /// Type of line endings in markdown.
@@ -82,7 +80,6 @@ impl FromStr for LineEnding {
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
     use super::*;
 
     #[test]

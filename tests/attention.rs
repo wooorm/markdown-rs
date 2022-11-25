@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{
     mdast::{Emphasis, Node, Paragraph, Root, Strong, Text},
     to_html, to_html_with_options, to_mdast,

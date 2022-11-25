@@ -259,5 +259,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
         resolve_gfm_autolink_literal(tokenizer);
     }
 
+    tokenizer.map.consume(&mut tokenizer.events);
     None
 }

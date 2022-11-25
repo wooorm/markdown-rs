@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate criterion;
-use criterion::{BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::fs;
 
 fn readme(c: &mut Criterion) {

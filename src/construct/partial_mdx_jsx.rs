@@ -1119,7 +1119,7 @@ fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
         "{}:{}: Unexpected {} {}, expected {}",
         tokenizer.point.line,
         tokenizer.point.column,
-        format_char_opt(if tokenizer.current == None {
+        format_char_opt(if tokenizer.current.is_none() {
             None
         } else {
             char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)

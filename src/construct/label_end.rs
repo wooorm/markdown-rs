@@ -669,7 +669,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     mark_as_data(tokenizer, &starts);
 
     tokenizer.map.consume(&mut tokenizer.events);
-
     None
 }
 

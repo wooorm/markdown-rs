@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{mdast, to_html, to_html_with_options, to_mdast, Options};
 use pretty_assertions::assert_eq;
 
@@ -102,6 +101,20 @@ fn fuzz() -> Result<(), String> {
         to_html_with_options("| a |\n| - |\n| www.a|", &Options::gfm()),
         Ok("<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td><a href=\"http://www.a\">www.a</a></td>\n</tr>\n</tbody>\n</table>".into()),
         "9: autolink literals that end in table cell delimiter (GH-20)"
+    );
+
+    assert_eq!(
+        to_html_with_options("[*]() [*]()", &Options::gfm()),
+        Ok("<p><a href=\"\">*</a> <a href=\"\">*</a></p>".into()),
+        "10: attention in different links (GH-21)"
+    );
+
+    assert!(
+        matches!(
+            to_mdast("* [ ]\na", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "11: gfm task list items followed by eols (GH-24)"
     );
 
     Ok(())

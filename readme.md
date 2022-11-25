@@ -90,8 +90,6 @@ cargo add markdown@1.0.0-alpha.3
 ## Use
 
 ```rs
-extern crate markdown;
-
 fn main() {
     println!("{}", markdown::to_html("## Hello, *world*!"));
 }
@@ -106,8 +104,6 @@ Yields:
 Extensions (in this case GFM):
 
 ```rs
-extern crate markdown;
-
 fn main() -> Result<(), String> {
     println!(
         "{}",
@@ -136,8 +132,6 @@ Yields:
 Syntax tree ([mdast][]):
 
 ```rs
-extern crate markdown;
-
 fn main() -> Result<(), String> {
     println!(
         "{:?}",

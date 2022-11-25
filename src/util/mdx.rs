@@ -1,5 +1,3 @@
-extern crate alloc;
-
 use alloc::string::String;
 
 /// Signal used as feedback when parsing MDX ESM/expressions.
@@ -89,7 +87,6 @@ pub type ExpressionParse = dyn Fn(&str, &ExpressionKind) -> Signal;
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
     use super::*;
     use alloc::boxed::Box;
 

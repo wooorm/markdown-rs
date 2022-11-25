@@ -280,5 +280,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
         index += 1;
     }
 
+    tokenizer.map.consume(&mut tokenizer.events);
     None
 }

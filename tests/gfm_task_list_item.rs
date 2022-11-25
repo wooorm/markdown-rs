@@ -1,6 +1,5 @@
-extern crate markdown;
 use markdown::{
-    mdast::{List, ListItem, Node, Paragraph, Root, Text},
+    mdast::{Emphasis, List, ListItem, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
     Options, ParseOptions,
@@ -290,6 +289,64 @@ Text.</li>
             position: Some(Position::new(1, 1, 0, 3, 4, 19))
         }),
         "should support task list items as `checked` fields on `ListItem`s in mdast"
+    );
+
+    assert_eq!(
+        to_mdast(
+            "* [x]\r\n  a\n* [ ]   b\n* [x]\t \r*c*",
+            &ParseOptions::gfm()
+        )?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: false,
+                start: None,
+                children: vec![
+                    Node::ListItem(ListItem {
+                        checked: Some(true),
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "a".into(),
+                                position: Some(Position::new(2, 1, 7, 2, 4, 10))
+                            }),],
+                            position: Some(Position::new(2, 1, 7, 2, 4, 10))
+                        })],
+                        position: Some(Position::new(1, 1, 0, 2, 4, 10))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: Some(false),
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "  b".into(),
+                                position: Some(Position::new(3, 7, 17, 3, 10, 20))
+                            }),],
+                            position: Some(Position::new(3, 7, 17, 3, 10, 20))
+                        })],
+                        position: Some(Position::new(3, 1, 11, 3, 10, 20))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: Some(true),
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Emphasis(Emphasis {
+                                children: vec![Node::Text(Text {
+                                    value: "c".into(),
+                                    position: Some(Position::new(5, 2, 30, 5, 3, 31))
+                                }),],
+                                position: Some(Position::new(5, 1, 29, 5, 4, 32))
+                            })],
+                            position: Some(Position::new(5, 1, 29, 5, 4, 32))
+                        })],
+                        position: Some(Position::new(4, 1, 21, 5, 4, 32))
+                    }),
+                ],
+                position: Some(Position::new(1, 1, 0, 5, 4, 32))
+            })],
+            position: Some(Position::new(1, 1, 0, 5, 4, 32))
+        }),
+        "should handle lots of whitespace after checkbox, and non-text"
     );
 
     Ok(())
