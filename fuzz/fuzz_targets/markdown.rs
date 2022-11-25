@@ -7,5 +7,6 @@ fuzz_target!(|data: &[u8]| {
         let _ = markdown::to_html_with_options(s, &markdown::Options::gfm());
         let _ = markdown::to_mdast(s, &markdown::ParseOptions::default());
         let _ = markdown::to_mdast(s, &markdown::ParseOptions::gfm());
+        let _ = markdown::to_mdast(s, &markdown::ParseOptions::mdx());
     }
 });
