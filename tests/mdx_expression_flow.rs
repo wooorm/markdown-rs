@@ -176,7 +176,7 @@ fn mdx_expression_flow_gnostic() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("{b { c }", &swc).err().unwrap(),
-        "1:4: Could not parse expression with swc: Unexpected content after expression",
+        "1:9: Could not parse expression with swc: Unexpected content after expression",
         "should crash if no closing brace is found (2)"
     );
 
@@ -239,7 +239,7 @@ fn mdx_expression_spread() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("<a {b} />", &swc).err().unwrap(),
-        "1:5: Expected a single spread value, such as `...x`",
+        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
         "should crash if not a spread"
     );
 
@@ -251,13 +251,13 @@ fn mdx_expression_spread() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("<a {...b,c} d>", &swc).err().unwrap(),
-        "1:5: Expected a single spread value, such as `...x`",
+        "1:5: Unexpected extra content in spread (such as `{...x,y}`): only a single spread is supported (such as `{...x}`)",
         "should crash if a spread and other things"
     );
 
     assert_eq!(
         to_html_with_options("<a {} />", &swc).err().unwrap(),
-        "1:5: Expected a single spread value, such as `...x`",
+        "1:9: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
         "should crash on an empty spread"
     );
 
@@ -269,7 +269,7 @@ fn mdx_expression_spread() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("<a {/* b */} />", &swc).err().unwrap(),
-        "1:5: Expected a single spread value, such as `...x`",
+        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
         "should crash on a comment spread"
     );
 

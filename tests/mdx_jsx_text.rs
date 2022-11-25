@@ -608,7 +608,7 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
         to_html_with_options("a <b{c=d}={}/> f", &swc)
             .err()
             .unwrap(),
-        "1:6: Expected a single spread value, such as `...x`",
+        "1:6: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
         "should crash on invalid JS in an attribute expression (2)"
     );
 

@@ -138,7 +138,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
         to_html_with_options("> a {\n> b\n> c} d", &swc)
             .err()
             .unwrap(),
-        "3:3: Could not parse expression with swc: Unexpected content after expression",
+        "3:7: Could not parse expression with swc: Unexpected content after expression",
         "should crash on incorrect expressions in containers (2)"
     );
 
@@ -263,7 +263,7 @@ fn mdx_expression_text_gnostic() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("a {b { c } d", &swc).err().unwrap(),
-        "1:6: Could not parse expression with swc: Unexpected content after expression",
+        "1:13: Could not parse expression with swc: Unexpected content after expression",
         "should crash if no closing brace is found (2)"
     );
 
