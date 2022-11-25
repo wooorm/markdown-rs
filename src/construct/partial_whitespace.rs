@@ -67,8 +67,6 @@ use alloc::vec;
 
 /// Resolve whitespace.
 pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whole: bool) {
-    tokenizer.map.consume(&mut tokenizer.events);
-
     let mut index = 0;
 
     while index < tokenizer.events.len() {
@@ -86,6 +84,8 @@ pub fn resolve_whitespace(tokenizer: &mut Tokenizer, hard_break: bool, trim_whol
 
         index += 1;
     }
+
+    tokenizer.map.consume(&mut tokenizer.events);
 }
 
 /// Trim a [`Data`][Name::Data] event.

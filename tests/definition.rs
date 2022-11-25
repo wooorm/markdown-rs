@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{
     mdast::{Definition, Node, Root},
     to_html, to_html_with_options, to_mdast,

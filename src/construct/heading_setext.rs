@@ -92,13 +92,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         && !tokenizer.pierce
         // Require a paragraph before.
         && (!tokenizer.events.is_empty()
-            && tokenizer.events[skip::opt_back(
+            && matches!(tokenizer.events[skip::opt_back(
                 &tokenizer.events,
                 tokenizer.events.len() - 1,
                 &[Name::LineEnding, Name::SpaceOrTab],
             )]
-            .name
-                == Name::Content)
+            .name, Name::Content | Name::HeadingSetextUnderline))
     {
         tokenizer.enter(Name::HeadingSetextUnderline);
 
@@ -185,8 +184,6 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 
 /// Resolve heading (setext).
 pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
-    tokenizer.map.consume(&mut tokenizer.events);
-
     let mut enter = skip::to(&tokenizer.events, 0, &[Name::HeadingSetextUnderline]);
 
     while enter < tokenizer.events.len() {
@@ -280,6 +277,5 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     }
 
     tokenizer.map.consume(&mut tokenizer.events);
-
     None
 }

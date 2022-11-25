@@ -74,8 +74,6 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 
 /// Merge adjacent data events.
 pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
-    tokenizer.map.consume(&mut tokenizer.events);
-
     let mut index = 0;
 
     // Loop through events and merge adjacent data events.
@@ -107,5 +105,6 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
         index += 1;
     }
 
+    tokenizer.map.consume(&mut tokenizer.events);
     None
 }

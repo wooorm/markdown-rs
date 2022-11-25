@@ -24,7 +24,7 @@ use alloc::{format, string::String, vec::Vec};
 /// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 #[must_use]
 pub fn sanitize(value: &str) -> String {
-    encode(&*normalize(value), true)
+    encode(&normalize(value), true)
 }
 
 /// Make a value safe for injection as a URL, and check protocols.
@@ -71,7 +71,7 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
         // If it is a protocol, it should be allowed.
         let protocol = value[0..colon].to_lowercase();
         if !protocols.contains(&protocol.as_str()) {
-            return "".into();
+            return String::new();
         }
     }
 

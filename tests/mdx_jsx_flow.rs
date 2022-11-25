@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{
     mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
     to_html_with_options, to_mdast,

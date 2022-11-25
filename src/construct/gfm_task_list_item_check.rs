@@ -61,7 +61,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
             .tokenize_state
             .document_at_first_paragraph_of_list_item
         && tokenizer.current == Some(b'[')
-        && tokenizer.previous == None
+        && tokenizer.previous.is_none()
     {
         tokenizer.enter(Name::GfmTaskListItemCheck);
         tokenizer.enter(Name::GfmTaskListItemMarker);
@@ -149,7 +149,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn after_space_or_tab(tokenizer: &mut Tokenizer) -> State {
     // End of paragraph, after whitespace, after check, is not okay.
-    if tokenizer.current == None {
+    if tokenizer.current.is_none() {
         State::Nok
     } else {
         State::Ok

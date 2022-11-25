@@ -1,4 +1,3 @@
-extern crate markdown;
 use markdown::{mdast, to_html, to_html_with_options, to_mdast, Options};
 use pretty_assertions::assert_eq;
 
@@ -105,6 +104,20 @@ fn fuzz() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options("[*]() [*]()", &Options::gfm()),
+        Ok("<p><a href=\"\">*</a> <a href=\"\">*</a></p>".into()),
+        "10: attention in different links (GH-21)"
+    );
+
+    assert!(
+        matches!(
+            to_mdast("* [ ]\na", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "11: gfm task list items followed by eols (GH-24)"
+    );
+
+    assert_eq!(
         markdown::to_html_with_options(
             "<",
             &markdown::Options {
@@ -114,7 +127,7 @@ fn fuzz() -> Result<(), String> {
         )
         .ok(),
         None,
-        "10: mdx: handle invalid mdx without panic"
+        "zz: mdx: handle invalid mdx without panic"
     );
 
     Ok(())

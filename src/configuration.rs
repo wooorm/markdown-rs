@@ -1236,7 +1236,6 @@ impl Options {
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
     use super::*;
     use crate::util::mdx::Signal;
     use alloc::format;

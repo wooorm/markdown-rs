@@ -423,7 +423,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
     if !document_lazy_continuation_current && !child.events.is_empty() {
         let before = skip::opt_back(&child.events, child.events.len() - 1, &[Name::LineEnding]);
         let name = &child.events[before].name;
-        if name == &Name::Content {
+        if name == &Name::Content || name == &Name::HeadingSetextUnderline {
             document_lazy_continuation_current = true;
         }
     }
