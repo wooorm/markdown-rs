@@ -250,6 +250,12 @@ fn heading_setext() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html("[a]: b\n=\n="),
+        "<h1>=</h1>",
+        "should support a two setext heading underlines after a definition, as a setext heading"
+    );
+
+    assert_eq!(
         to_html("> ===\na"),
         "<blockquote>\n<p>===\na</p>\n</blockquote>",
         "should not support lazyness (1)"

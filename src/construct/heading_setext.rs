@@ -92,13 +92,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
         && !tokenizer.pierce
         // Require a paragraph before.
         && (!tokenizer.events.is_empty()
-            && tokenizer.events[skip::opt_back(
+            && matches!(tokenizer.events[skip::opt_back(
                 &tokenizer.events,
                 tokenizer.events.len() - 1,
                 &[Name::LineEnding, Name::SpaceOrTab],
             )]
-            .name
-                == Name::Content)
+            .name, Name::Content | Name::HeadingSetextUnderline))
     {
         tokenizer.enter(Name::HeadingSetextUnderline);
 
