@@ -23,7 +23,7 @@ unicode-id = { version = "0.3", features = ["no_std"] }
 
 
 [dev-dependencies]
-env_logger = "0.9"
+env_logger = "0.10"
 criterion = "0.4"
 pretty_assertions = "1"
 swc_core = { version = "0.43.30", features = [
