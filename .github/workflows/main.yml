@@ -11,8 +11,8 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt, clippy
-      - run: cargo fmt --check && cargo clippy --examples --tests --benches
-      - run: cargo test
+      - run: cargo fmt --check && cargo clippy --examples --tests --benches --all-features
+      - run: cargo test --all-features
   coverage:
     runs-on: ubuntu-latest
     steps:
@@ -20,5 +20,5 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
+      - run: cargo install cargo-tarpaulin && cargo tarpaulin --all-features --out Xml
       - uses: codecov/codecov-action@v3
