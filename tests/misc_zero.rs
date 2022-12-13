@@ -1,8 +1,12 @@
-use markdown::to_html;
+use markdown::{
+    mdast::{Node, Root},
+    to_html, to_mdast,
+    unist::Position,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn zero() {
+fn zero() -> Result<(), String> {
     assert_eq!(to_html(""), "", "should support no markdown");
 
     assert_eq!(
@@ -24,4 +28,15 @@ fn zero() {
         "<p>\\0</p>",
         "should not support NUL in a character escape"
     );
+
+    assert_eq!(
+        to_mdast("", &Default::default())?,
+        Node::Root(Root {
+            children: vec![],
+            position: Some(Position::new(1, 1, 0, 1, 1, 0))
+        }),
+        "should support no markdown (ast)"
+    );
+
+    Ok(())
 }
