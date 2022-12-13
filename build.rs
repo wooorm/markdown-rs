@@ -8,7 +8,19 @@ async fn main() {
 }
 
 async fn commonmark() {
-    let url = "https://raw.githubusercontent.com/commonmark/commonmark-spec/0.30/spec.txt";
+    #[cfg(all(feature = "native-tls", feature = "rustls-tls"))]
+    {
+        panic!("`native-tls` and `rustls-tls` features are mutually exclusive");
+    }
+
+    let url = if cfg!(any(feature = "native-tls", feature = "rustls-tls")) {
+        "https://raw.githubusercontent.com/commonmark/commonmark-spec/0.30/spec.txt"
+    } else {
+        println!("cargo:warning={}","[Warning]: neither `native-tls` nor `default-tls` feature is enabled, using HTTP instead of HTTPS.");
+        println!("cargo:warning={}","           This means default feature for `native-tls` is turned off but corresponding feature is not enabled.");
+        "http://raw.githubusercontent.com/commonmark/commonmark-spec/0.30/spec.txt"
+    };
+
     let data_url = "commonmark-data.txt";
     let code_url = "tests/commonmark.rs";
 

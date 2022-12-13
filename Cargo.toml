@@ -9,7 +9,13 @@ homepage = "https://github.com/wooorm/markdown-rs"
 repository = "https://github.com/wooorm/markdown-rs"
 license = "MIT"
 keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
-categories = ["compilers", "encoding", "parser-implementations", "parsing", "text-processing"]
+categories = [
+  "compilers",
+  "encoding",
+  "parser-implementations",
+  "parsing",
+  "text-processing",
+]
 include = ["src/", "license"]
 
 [[bench]]
@@ -21,6 +27,19 @@ harness = false
 log = "0.4"
 unicode-id = { version = "0.3", features = ["no_std"] }
 
+[features]
+default = ["native-tls"]
+# Provides way to control which TLS backend is used.
+# This is helpful to support platform targets requires specific TLS backend -
+# If a upstream application have transitive deps to reqwest somewhere,
+# cargo tries to merge all of the features from reqwest and try to build unsupported
+# TLS backend for the specific platform. Fine grained control of TLS backend
+# allows to avoid this issue.
+#
+# Normally, you don't need to specify this feature as reqwest's default (native-tls)
+# is enabled by default.
+native-tls = ["reqwest/native-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
 
 [dev-dependencies]
 env_logger = "0.10"
@@ -35,5 +54,5 @@ swc_core = { version = "0.43.30", features = [
 
 [build-dependencies]
 regex = "1"
-reqwest = "0.11"
+reqwest = { version = "0.11", default-features = false }
 tokio = { version = "1", features = ["full"] }
