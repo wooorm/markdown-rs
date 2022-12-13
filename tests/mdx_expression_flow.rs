@@ -245,7 +245,7 @@ fn mdx_expression_spread() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("<a {...?} />", &swc).err().unwrap(),
-        "1:13: Could not parse expression with swc: Unexpected token `?`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        "1:13: Could not parse expression with swc: Expression expected",
         "should crash on an incorrect spread"
     );
 

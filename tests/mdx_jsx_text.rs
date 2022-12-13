@@ -589,10 +589,8 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a <b c={?} /> d", &swc)
-            .err()
-            .unwrap(),
-        "1:16: Could not parse expression with swc: Unexpected token `?`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        to_html_with_options("a <b c={?} /> d", &swc).err().unwrap(),
+        "1:16: Could not parse expression with swc: Expression expected",
         "should crash on invalid JS in an attribute value expression"
     );
 

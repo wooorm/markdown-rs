@@ -117,8 +117,10 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a {var b = \"c\"} d", &swc).err().unwrap(),
-        "1:4: Could not parse expression with swc: Unexpected token `var`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        to_html_with_options("a {var b = \"c\"} d", &swc)
+            .err()
+            .unwrap(),
+        "1:4: Could not parse expression with swc: Expression expected",
         "should crash on non-expressions"
     );
 

@@ -120,7 +120,7 @@ fn mdx_esm() -> Result<(), String> {
         to_html_with_options("import a from 'b'\n*md*?", &swc)
             .err()
             .unwrap(),
-        "2:6: Could not parse esm with swc: Unexpected token `?`. Expected this, import, async, function, [ for array literal, { for object literal, @ for decorator, function, class, null, true, false, number, bigint, string, regexp, ` for template literal, (, or an identifier",
+        "2:6: Could not parse esm with swc: Expression expected",
         "should crash on markdown after import/export w/o blank line"
     );
 
