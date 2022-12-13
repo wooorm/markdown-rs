@@ -14,7 +14,7 @@ use crate::util::{
         decode as decode_character_reference, parse as parse_character_reference,
     },
     infer::{gfm_table_align, list_item_loose, list_loose},
-    mdx_collect::collect,
+    mdx_collect::{collect, Result as CollectResult},
     normalize_identifier::normalize_identifier,
     slice::{Position as SlicePosition, Slice},
 };
@@ -834,7 +834,7 @@ fn on_enter_mdx_jsx_tag_attribute(context: &mut CompileContext) -> Result<(), St
 fn on_enter_mdx_jsx_tag_attribute_expression(context: &mut CompileContext) -> Result<(), String> {
     on_enter_mdx_jsx_tag_any_attribute(context)?;
 
-    let result = collect(
+    let CollectResult { value, stops } = collect(
         context.events,
         context.bytes,
         context.index,
@@ -846,7 +846,7 @@ fn on_enter_mdx_jsx_tag_attribute_expression(context: &mut CompileContext) -> Re
         .as_mut()
         .expect("expected tag")
         .attributes
-        .push(AttributeContent::Expression(result.value, result.stops));
+        .push(AttributeContent::Expression { value, stops });
 
     context.buffer();
 
@@ -855,7 +855,7 @@ fn on_enter_mdx_jsx_tag_attribute_expression(context: &mut CompileContext) -> Re
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagAttributeValueExpression`][Name::MdxJsxTagAttributeValueExpression].
 fn on_enter_mdx_jsx_tag_attribute_value_expression(context: &mut CompileContext) {
-    let result = collect(
+    let CollectResult { value, stops } = collect(
         context.events,
         context.bytes,
         context.index,
@@ -870,7 +870,7 @@ fn on_enter_mdx_jsx_tag_attribute_value_expression(context: &mut CompileContext)
         .attributes
         .last_mut()
     {
-        node.value = Some(AttributeValue::Expression(result.value, result.stops));
+        node.value = Some(AttributeValue::Expression { value, stops });
     } else {
         unreachable!("expected property")
     }
