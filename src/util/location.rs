@@ -196,4 +196,19 @@ mod tests {
             "should support some points (4)"
         );
     }
+    #[test]
+    fn test_empty() {
+        let location = Location::new("".as_bytes());
+        assert_eq!(location.to_point(0), Some(Point::new(1, 1, 0)), "to_point");
+        assert_eq!(
+            location.relative_to_point(&[], 0),
+            None,
+            "relative_to_point"
+        );
+        assert_eq!(
+            Location::relative_to_absolute(&[], 0),
+            None,
+            "relative_to_absolute"
+        );
+    }
 }
