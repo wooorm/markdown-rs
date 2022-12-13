@@ -21,7 +21,6 @@ harness = false
 log = "0.4"
 unicode-id = { version = "0.3", features = ["no_std"] }
 
-
 [dev-dependencies]
 env_logger = "0.10"
 criterion = "0.4"
@@ -33,7 +32,5 @@ swc_core = { version = "0.43.30", features = [
   "common",
 ] }
 
-[build-dependencies]
-regex = "1"
-reqwest = "0.11"
-tokio = { version = "1", features = ["full"] }
+[workspace]
+members = ["generate"]

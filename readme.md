@@ -241,6 +241,10 @@ Fuzz testing is used to check for things that might fall through coverage.
 
 The following bash scripts are useful when working on this project:
 
+*   generate code (latest CM tests and Unicode info):
+    ```sh
+    cargo run --manifest-path generate/Cargo.toml
+    ```
 *   run examples:
     ```sh
     RUST_BACKTRACE=1 RUST_LOG=debug cargo run --example lib
