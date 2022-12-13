@@ -11,7 +11,6 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt, clippy
-      - run: cargo run --manifest-path generate/Cargo.toml
       - run: cargo fmt --check && cargo clippy --examples --tests --benches
       - run: cargo test
   coverage:
@@ -21,6 +20,5 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo run --manifest-path generate/Cargo.toml
       - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
       - uses: codecov/codecov-action@v3
