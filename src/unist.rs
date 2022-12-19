@@ -6,10 +6,7 @@ use alloc::fmt;
 
 /// One place in a source file.
 #[derive(Clone, Eq, PartialEq)]
-#[cfg_attr(
-    feature = "json",
-    derive(serde::Serialize, serde::Deserialize),
-)]
+#[cfg_attr(feature = "json", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point {
     /// 1-indexed integer representing a line in a source file.
     pub line: usize,
@@ -38,10 +35,7 @@ impl fmt::Debug for Point {
 
 /// Location of a node in a source file.
 #[derive(Clone, Eq, PartialEq)]
-#[cfg_attr(
-    feature = "json",
-    derive(serde::Serialize, serde::Deserialize),
-)]
+#[cfg_attr(feature = "json", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {
     /// Represents the place of the first character of the parsed source region.
     pub start: Point,

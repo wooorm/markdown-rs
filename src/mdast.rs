@@ -15,7 +15,11 @@ pub type Stop = (usize, usize);
 
 /// Explicitness of a reference.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(serde::Serialize, serde::Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum ReferenceKind {
     /// The reference is implicit, its identifier inferred from its content.
     Shortcut,
@@ -29,7 +33,11 @@ pub enum ReferenceKind {
 ///
 /// Used to align the contents of table cells within a table.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(serde::Serialize, serde::Deserialize), serde(rename_all = "lowercase"))]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum AlignKind {
     /// Left alignment.
     ///
