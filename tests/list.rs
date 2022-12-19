@@ -616,27 +616,41 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("3. a", &Default::default())?,
+        to_mdast("3. a\n4. b", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: true,
                 spread: false,
                 start: Some(3),
-                children: vec![Node::ListItem(ListItem {
-                    checked: None,
-                    spread: false,
-                    children: vec![Node::Paragraph(Paragraph {
-                        children: vec![Node::Text(Text {
-                            value: "a".into(),
+                children: vec![
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "a".into(),
+                                position: Some(Position::new(1, 4, 3, 1, 5, 4))
+                            }),],
                             position: Some(Position::new(1, 4, 3, 1, 5, 4))
-                        }),],
-                        position: Some(Position::new(1, 4, 3, 1, 5, 4))
-                    })],
-                    position: Some(Position::new(1, 1, 0, 1, 5, 4))
-                })],
-                position: Some(Position::new(1, 1, 0, 1, 5, 4))
+                        })],
+                        position: Some(Position::new(1, 1, 0, 1, 5, 4))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "b".into(),
+                                position: Some(Position::new(2, 4, 8, 2, 5, 9))
+                            }),],
+                            position: Some(Position::new(2, 4, 8, 2, 5, 9))
+                        })],
+                        position: Some(Position::new(2, 1, 5, 2, 5, 9))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 2, 5, 9))
             })],
-            position: Some(Position::new(1, 1, 0, 1, 5, 4))
+            position: Some(Position::new(1, 1, 0, 2, 5, 9))
         }),
         "should support `start` fields on `List` w/ `ordered: true` in mdast"
     );

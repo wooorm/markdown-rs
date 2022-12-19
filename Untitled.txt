@@ -6,6 +6,7 @@ micromark.js: `atLineEnding` in html (text) should always eat arbitrary whitespa
 ```rs
 // ---------------------
 // Useful helper:
+extern crate std;
 use std::println;
 use alloc::string::String;
 

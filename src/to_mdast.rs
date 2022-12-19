@@ -1430,7 +1430,9 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
 
     if let Node::List(node) = context.tail_penultimate_mut() {
         debug_assert!(node.ordered, "expected list to be ordered");
-        node.start = Some(start);
+        if node.start.is_none() {
+            node.start = Some(start);
+        }
     } else {
         unreachable!("expected list on stack");
     }
