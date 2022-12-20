@@ -146,19 +146,3 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, Stri
     let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)
 }
-
-/// Turn markdown into a JSON representation of its syntax tree.
-///
-/// ### Errors
-///
-/// `to_json()` errors under the same conditions as [`to_mdast`]. Additionally, an error may be
-/// returned if the syntax tree cannot be serialized to JSON.
-#[cfg(feature = "json")]
-pub fn to_json(value: &str, options: &ParseOptions) -> Result<serde_json::Value, String> {
-    let (events, parse_state) = parser::parse(value, options)?;
-    let node = to_mdast::compile(&events, parse_state.bytes)?;
-
-    let value = serde_json::to_value(&node).map_err(|_| "Failed to serialize mdast to json")?;
-
-    Ok(value)
-}
