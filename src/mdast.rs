@@ -490,12 +490,7 @@ pub enum AttributeValue {
     /// > | <a b={c} />
     ///          ^^^
     /// ```
-    #[cfg_attr(feature = "json", serde(rename = "mdxJsxAttributeValueExpression"))]
-    Expression {
-        value: String,
-        #[cfg_attr(feature = "json", serde(skip))]
-        stops: Vec<Stop>,
-    },
+    Expression(AttributeValueExpression),
     /// Static value.
     ///
     /// ```markdown

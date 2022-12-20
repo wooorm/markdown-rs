@@ -2,11 +2,12 @@
 
 use crate::event::{Event, Kind, Name, Point as EventPoint};
 use crate::mdast::{
-    AttributeContent, AttributeValue, BlockQuote, Break, Code, Definition, Delete, Emphasis,
-    FootnoteDefinition, FootnoteReference, Heading, Html, Image, ImageReference, InlineCode,
-    InlineMath, Link, LinkReference, List, ListItem, Math, MdxFlowExpression, MdxJsxAttribute,
-    MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression, MdxjsEsm, Node, Paragraph,
-    ReferenceKind, Root, Strong, Table, TableCell, TableRow, Text, ThematicBreak, Toml, Yaml,
+    AttributeContent, AttributeValue, AttributeValueExpression, BlockQuote, Break, Code,
+    Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference, Heading, Html, Image,
+    ImageReference, InlineCode, InlineMath, Link, LinkReference, List, ListItem, Math,
+    MdxFlowExpression, MdxJsxAttribute, MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression,
+    MdxjsEsm, Node, Paragraph, ReferenceKind, Root, Strong, Table, TableCell, TableRow, Text,
+    ThematicBreak, Toml, Yaml,
 };
 use crate::unist::{Point, Position};
 use crate::util::{
@@ -870,7 +871,10 @@ fn on_enter_mdx_jsx_tag_attribute_value_expression(context: &mut CompileContext)
         .attributes
         .last_mut()
     {
-        node.value = Some(AttributeValue::Expression { value, stops });
+        node.value = Some(AttributeValue::Expression(AttributeValueExpression {
+            value,
+            stops,
+        }));
     } else {
         unreachable!("expected property")
     }
