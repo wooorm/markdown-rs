@@ -2,7 +2,7 @@ use markdown::{
     mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Options, ParseOptions,
+    CompileOptionsBuilder, Options, OptionsBuilder, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -31,14 +31,7 @@ fn gfm_footnote() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "Noot.[^a]\n\n[^a]: dingen",
-            &Options {
-                parse: ParseOptions::gfm(),
-                compile: CompileOptions {
-                    gfm_footnote_label: Some("Voetnoten".into()),
-                    gfm_footnote_back_label: Some("Terug naar de inhoud".into()),
-                    ..CompileOptions::gfm()
-                }
-            }
+            &OptionsBuilder::default().parse(ParseOptions::gfm()).compile(CompileOptionsBuilder::gfm().gfm_footnote_label(Some("Voetnoten".into())).gfm_footnote_back_label(Some("Terug naar de inhoud".into())).build()).build()
         )?,
         "<p>Noot.<sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Voetnoten</h2>
@@ -55,13 +48,7 @@ fn gfm_footnote() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "[^a]\n\n[^a]: b",
-            &Options {
-                parse: ParseOptions::gfm(),
-                compile: CompileOptions {
-                    gfm_footnote_label_tag_name: Some("h1".into()),
-                    ..CompileOptions::gfm()
-                }
-            }
+            &OptionsBuilder::default().parse(ParseOptions::gfm()).compile(CompileOptionsBuilder::gfm().gfm_footnote_label_tag_name(Some("h1".into())).build()).build()
         )?,
         "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>
@@ -78,13 +65,7 @@ fn gfm_footnote() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "[^a]\n\n[^a]: b",
-            &Options {
-                parse: ParseOptions::gfm(),
-                compile: CompileOptions {
-                    gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
-                    ..CompileOptions::gfm()
-                }
-            }
+            &OptionsBuilder::default().parse(ParseOptions::gfm()).compile(CompileOptionsBuilder::gfm().gfm_footnote_label_attributes(Some("class=\"footnote-heading\"".into())).build()).build()
         )?,
         "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>
@@ -101,13 +82,13 @@ fn gfm_footnote() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "[^a]\n\n[^a]: b",
-            &Options {
-                parse: ParseOptions::gfm(),
-                compile: CompileOptions {
-                    gfm_footnote_clobber_prefix: Some("".into()),
-                    ..CompileOptions::gfm()
-                }
-            }
+            &OptionsBuilder::default().parse(ParseOptions::gfm())
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .gfm_footnote_clobber_prefix(Some("".into()))
+                        .build()
+                )
+                .build()
         )?,
         "<p><sup><a href=\"#fn-a\" id=\"fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>
 <section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>

@@ -3,22 +3,27 @@ use markdown::{
     mdast::{MdxjsEsm, Node, Root},
     to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Constructs, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_esm() -> Result<(), String> {
-    let swc = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let parse = ParseOptionsBuilder::default()
+        .constructs(Constructs::mdx())
+        .mdx_esm_parse(Some(Box::new(parse_esm)))
+        .mdx_expression_parse(Some(Box::new(parse_expression)))
+        .build();
+    let swc = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(Constructs::mdx())
+                .mdx_esm_parse(Some(Box::new(parse_esm)))
+                .mdx_expression_parse(Some(Box::new(parse_expression)))
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("import a from 'b'\n\nc", &swc)?,
@@ -245,7 +250,7 @@ fn mdx_esm() -> Result<(), String> {
     }
 
     assert_eq!(
-        to_mdast("import a from 'b'\nexport {a}", &swc.parse)?,
+        to_mdast("import a from 'b'\nexport {a}", &parse)?,
         Node::Root(Root {
             children: vec![Node::MdxjsEsm(MdxjsEsm {
                 value: "import a from 'b'\nexport {a}".into(),

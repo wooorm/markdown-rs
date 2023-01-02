@@ -2,6 +2,7 @@ use alloc::string::String;
 
 /// Signal used as feedback when parsing MDX ESM/expressions.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum Signal {
     /// A syntax error.
     ///
@@ -49,6 +50,7 @@ pub type EsmParse = dyn Fn(&str) -> Signal;
 
 /// Expression kind.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum ExpressionKind {
     /// Kind of expressions in prose.
     ///

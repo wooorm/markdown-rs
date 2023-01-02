@@ -1,19 +1,19 @@
 mod test_utils;
-use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
+use markdown::{to_html_with_options, Constructs, OptionsBuilder, ParseOptionsBuilder};
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_swc() -> Result<(), String> {
-    let swc = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let swc = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(Constructs::mdx())
+                .mdx_esm_parse(Some(Box::new(parse_esm)))
+                .mdx_expression_parse(Some(Box::new(parse_expression)))
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("{'}'}", &swc)?,

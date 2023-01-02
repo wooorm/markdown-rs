@@ -2,23 +2,32 @@ use markdown::{
     mdast::{InlineMath, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn math_text() -> Result<(), String> {
-    let math = Options {
-        parse: ParseOptions {
-            constructs: Constructs {
-                math_text: true,
-                math_flow: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let math_parse = ParseOptionsBuilder::default()
+        .constructs(
+            ConstructsBuilder::default()
+                .math_text(true)
+                .math_flow(true)
+                .build(),
+        )
+        .build();
+    let math = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(
+                    ConstructsBuilder::default()
+                        .math_text(true)
+                        .math_flow(true)
+                        .build(),
+                )
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("$a$"),
@@ -35,18 +44,19 @@ fn math_text() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "$foo$ $$bar$$",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        math_text: true,
-                        math_flow: true,
-                        ..Default::default()
-                    },
-                    math_text_single_dollar: false,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .math_text_single_dollar(false)
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .math_text(true)
+                                .math_flow(true)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "<p>$foo$ <code class=\"language-math math-inline\">bar</code></p>",
         "should not support math (text) w/ a single dollar, w/ `math_text_single_dollar: false`"
@@ -145,21 +155,24 @@ fn math_text() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "<a href=\"$\">$",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        math_text: true,
-                        math_flow: true,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..Default::default()
-                }
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .math_text(true)
+                                .math_flow(true)
+                                .build()
+                        )
+                        .build()
+                )
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .allow_dangerous_html(true)
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )?,
         "<p><a href=\"$\">$</p>",
         "should have same precedence as HTML (2)"
@@ -208,7 +221,7 @@ fn math_text() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a $alpha$ b.", &math.parse)?,
+        to_mdast("a $alpha$ b.", &math_parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![

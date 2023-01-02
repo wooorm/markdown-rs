@@ -2,20 +2,20 @@ use markdown::{
     mdast::{Definition, LinkReference, Node, Paragraph, ReferenceKind, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn link_reference() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("[bar]: /url \"title\"\n\n[foo][bar]"),
@@ -392,16 +392,13 @@ fn link_reference() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "[x]()",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        label_start_link: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().label_start_link(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>[x]()</p>",
         "should support turning off label start (link)"
@@ -410,16 +407,13 @@ fn link_reference() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "[x]()",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        label_end: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().label_end(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>[x]()</p>",
         "should support turning off label end"

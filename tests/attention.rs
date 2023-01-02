@@ -2,20 +2,20 @@ use markdown::{
     mdast::{Emphasis, Node, Paragraph, Root, Strong, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn attention() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     // Rule 1.
     assert_eq!(
@@ -822,16 +822,13 @@ fn attention() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "*a*",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        attention: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().attention(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>*a*</p>",
         "should support turning off attention"

@@ -2,20 +2,20 @@ use markdown::{
     mdast::{Definition, Node, Root},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn definition() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("[foo]: /url \"title\"\n\n[foo]"),
@@ -492,16 +492,13 @@ fn definition() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "[foo]: /url \"title\"",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        definition: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().definition(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>[foo]: /url &quot;title&quot;</p>",
         "should support turning off definitions"

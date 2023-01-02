@@ -1,16 +1,16 @@
-use markdown::{to_html, to_html_with_options, CompileOptions, Options};
+use markdown::{to_html, to_html_with_options, CompileOptionsBuilder, OptionsBuilder};
 use pretty_assertions::assert_eq;
 
 #[test]
 fn dangerous_html() -> Result<(), String> {
-    let danger = &Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = &OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("<x>"),

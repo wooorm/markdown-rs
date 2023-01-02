@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Break, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -47,16 +47,17 @@ fn hard_break_escape() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "a\\\nb",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        hard_break_escape: false,
-                        ..Constructs::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .hard_break_escape(false)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "<p>a\\\nb</p>",
         "should support turning off hard break (escape)"

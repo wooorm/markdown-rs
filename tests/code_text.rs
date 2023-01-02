@@ -2,20 +2,20 @@ use markdown::{
     mdast::{InlineCode, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn code_text() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("`foo`"),
@@ -165,16 +165,13 @@ fn code_text() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "`a`",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        code_text: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().code_text(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>`a`</p>",
         "should support turning off code (text)"

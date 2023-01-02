@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Delete, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Options, ParseOptions,
+    Options, OptionsBuilder, ParseOptions, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -361,13 +361,13 @@ u ~**xxx**~ zzz
     assert_eq!(
         to_html_with_options(
             "a ~b~ ~~c~~ d",
-            &Options {
-                parse: ParseOptions {
-                    gfm_strikethrough_single_tilde: false,
-                    ..ParseOptions::gfm()
-                },
-                ..Options::gfm()
-            }
+            &OptionsBuilder::gfm()
+                .parse(
+                    ParseOptionsBuilder::gfm()
+                        .gfm_strikethrough_single_tilde(false)
+                        .build()
+                )
+                .build()
         )?,
         "<p>a ~b~ <del>c</del> d</p>",
         "should not support strikethrough w/ one tilde if `singleTilde: false`"
@@ -376,13 +376,13 @@ u ~**xxx**~ zzz
     assert_eq!(
         to_html_with_options(
             "a ~b~ ~~c~~ d",
-            &Options {
-                parse: ParseOptions {
-                    gfm_strikethrough_single_tilde: true,
-                    ..ParseOptions::gfm()
-                },
-                ..Options::gfm()
-            }
+            &OptionsBuilder::gfm()
+                .parse(
+                    ParseOptionsBuilder::gfm()
+                        .gfm_strikethrough_single_tilde(true)
+                        .build()
+                )
+                .build()
         )?,
         "<p>a <del>b</del> <del>c</del> d</p>",
         "should support strikethrough w/ one tilde if `singleTilde: true`"

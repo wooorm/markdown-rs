@@ -11,14 +11,14 @@ fn main() -> Result<(), String> {
         "{:?}",
         markdown::to_html_with_options(
             "<div style=\"color: tomato\">\n\n# Hello, tomato!\n\n</div>",
-            &markdown::Options {
-                compile: markdown::CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..markdown::CompileOptions::default()
-                },
-                ..markdown::Options::default()
-            }
+            &markdown::OptionsBuilder::default()
+                .compile(
+                    markdown::CompileOptionsBuilder::default()
+                        .allow_dangerous_html(true)
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )
     );
 

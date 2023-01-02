@@ -2,23 +2,32 @@ use markdown::{
     mdast::{Math, Node, Root},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn math_flow() -> Result<(), String> {
-    let math = Options {
-        parse: ParseOptions {
-            constructs: Constructs {
-                math_text: true,
-                math_flow: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let math_parse = ParseOptionsBuilder::default()
+        .constructs(
+            ConstructsBuilder::default()
+                .math_text(true)
+                .math_flow(true)
+                .build(),
+        )
+        .build();
+    let math = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(
+                    ConstructsBuilder::default()
+                        .math_text(true)
+                        .math_flow(true)
+                        .build(),
+                )
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("$$\na\n$$"),
@@ -256,7 +265,7 @@ fn math_flow() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("$$extra\nabc\ndef\n$$", &math.parse)?,
+        to_mdast("$$extra\nabc\ndef\n$$", &math_parse)?,
         Node::Root(Root {
             children: vec![Node::Math(Math {
                 meta: Some("extra".into()),

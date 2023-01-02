@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Node, Root, ThematicBreak},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -173,16 +173,13 @@ fn thematic_break() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "***",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        thematic_break: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().thematic_break(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>***</p>",
         "should support turning off thematic breaks"

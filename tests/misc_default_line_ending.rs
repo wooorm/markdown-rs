@@ -1,4 +1,4 @@
-use markdown::{to_html, to_html_with_options, CompileOptions, LineEnding, Options};
+use markdown::{to_html, to_html_with_options, CompileOptionsBuilder, LineEnding, OptionsBuilder};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -30,13 +30,13 @@ fn default_line_ending() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "> a",
-            &Options {
-                compile: CompileOptions {
-                    default_line_ending: LineEnding::CarriageReturn,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .default_line_ending(LineEnding::CarriageReturn)
+                        .build()
+                )
+                .build()
         )?,
         "<blockquote>\r<p>a</p>\r</blockquote>",
         "should support the given line ending"
@@ -45,13 +45,13 @@ fn default_line_ending() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "> a\n",
-            &Options {
-                compile: CompileOptions {
-                    default_line_ending: LineEnding::CarriageReturn,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .default_line_ending(LineEnding::CarriageReturn)
+                        .build()
+                )
+                .build()
         )?,
         // To do: is this a bug in `to_html.js` that it uses `\r` for earlier line endings?
         // "<blockquote>\r<p>a</p>\r</blockquote>\n",

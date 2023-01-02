@@ -2,20 +2,20 @@ use markdown::{
     mdast::{Link, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn autolink() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("<http://foo.bar.baz>"),
@@ -254,16 +254,13 @@ fn autolink() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "<a@b.co>",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        autolink: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().autolink(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>&lt;a@b.co&gt;</p>",
         "should support turning off autolinks"
