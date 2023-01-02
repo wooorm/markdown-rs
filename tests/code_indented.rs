@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Code, Node, Root},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -122,16 +122,13 @@ fn code_indented() -> Result<(), String> {
         "should not support lazyness (7)"
     );
 
-    let off = Options {
-        parse: ParseOptions {
-            constructs: Constructs {
-                code_indented: false,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let off = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(ConstructsBuilder::default().code_indented(false).build())
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("    a", &off)?,
@@ -172,19 +169,18 @@ fn code_indented() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "a <?\n    ?>",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        code_indented: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    ..Default::default()
-                }
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().code_indented(false).build())
+                        .build()
+                )
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .allow_dangerous_html(true)
+                        .build()
+                )
+                .build()
         )?,
         "<p>a <?\n?></p>",
         "should support turning off code (indented, 7)"

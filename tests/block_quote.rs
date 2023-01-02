@@ -2,7 +2,7 @@ use markdown::{
     mdast::{BlockQuote, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -203,16 +203,13 @@ fn block_quote() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "> # a\n> b\n> c",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        block_quote: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().block_quote(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>&gt; # a\n&gt; b\n&gt; c</p>",
         "should support turning off block quotes"

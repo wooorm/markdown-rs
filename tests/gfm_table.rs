@@ -2,7 +2,8 @@ use markdown::{
     mdast::{AlignKind, InlineCode, Node, Root, Table, TableCell, TableRow, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, Options, OptionsBuilder, ParseOptions,
+    ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -213,16 +214,20 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("| a |\n    | - |", &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        code_indented: false,
-                        ..Constructs::gfm()
-                    },
-                    ..ParseOptions::gfm()
-                },
-                ..Options::gfm()
-            })?,
+        to_html_with_options(
+            "| a |\n    | - |",
+            &OptionsBuilder::gfm()
+                .parse(
+                    ParseOptionsBuilder::gfm()
+                        .constructs(
+                            ConstructsBuilder::gfm()
+                                .code_indented(false)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
+        )?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>",
         "should form a table if the delimiter row is indented w/ 4 spaces and indented code is turned off"
     );
@@ -254,41 +259,43 @@ fn gfm_table() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "| a |\n| - |\n<!-- HTML? -->",
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..CompileOptions::gfm()
-                },
-                ..Options::gfm()
-            }
+            &OptionsBuilder::gfm()
+                .compile(
+                    CompileOptionsBuilder::gfm()
+                        .allow_dangerous_html(true)
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<!-- HTML? -->",
         "should be interrupted by HTML (flow)"
     );
 
     assert_eq!(
-        to_html_with_options("| a |\n| - |\n\tcode?", &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..CompileOptions::gfm()
-                },
-                ..Options::gfm()
-            })?,
+        to_html_with_options("| a |\n| - |\n\tcode?", 
+        &OptionsBuilder::gfm()
+            .compile(
+                CompileOptionsBuilder::gfm()
+                    .allow_dangerous_html(true)
+                    .allow_dangerous_protocol(true)
+                    .build()
+            )
+            .build())?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<pre><code>code?\n</code></pre>",
         "should be interrupted by code (indented)"
     );
 
     assert_eq!(
-        to_html_with_options("| a |\n| - |\n```js\ncode?", &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..CompileOptions::gfm()
-                },
-                ..Options::gfm()
-            })?,
+        to_html_with_options("| a |\n| - |\n```js\ncode?", 
+        &OptionsBuilder::gfm()
+            .compile(
+                CompileOptionsBuilder::gfm()
+                    .allow_dangerous_html(true)
+                    .allow_dangerous_protocol(true)
+                    .build()
+            )
+            .build())?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<pre><code class=\"language-js\">code?\n</code></pre>\n",
         "should be interrupted by code (fenced)"
     );
@@ -296,14 +303,14 @@ fn gfm_table() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "| a |\n| - |\n***",
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..CompileOptions::gfm()
-                },
-                ..Options::gfm()
-            }
+            &OptionsBuilder::gfm()
+                .compile(
+                    CompileOptionsBuilder::gfm()
+                        .allow_dangerous_html(true)
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n</table>\n<hr />",
         "should be interrupted by a thematic break"
@@ -376,16 +383,7 @@ fn gfm_table() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("    | a |\n\t| - |\n    | b |", &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        code_indented: false,
-                        ..Constructs::gfm()
-                    },
-                    ..ParseOptions::gfm()
-                },
-                ..Options::gfm()
-            })?,
+        to_html_with_options("    | a |\n\t| - |\n    | b |", &OptionsBuilder::gfm().parse(ParseOptionsBuilder::gfm().constructs(ConstructsBuilder::gfm().code_indented(false).build()).build()).build())?,
         "<table>\n<thead>\n<tr>\n<th>a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>b</td>\n</tr>\n</tbody>\n</table>",
         "should support indented rows if code (indented) is off"
     );
@@ -1082,14 +1080,14 @@ bar
 
 `\|\\`
 "###,
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..CompileOptions::gfm()
-                },
-                ..Options::gfm()
-            }
+            &OptionsBuilder::gfm()
+                .compile(
+                    CompileOptionsBuilder::gfm()
+                        .allow_dangerous_html(true)
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )?,
         r###"<h1>Grave accents</h1>
 <h2>Grave accent in cell</h2>
@@ -1394,14 +1392,14 @@ a
 b
 ***
 "###,
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    allow_dangerous_protocol: true,
-                    ..CompileOptions::gfm()
-                },
-                ..Options::gfm()
-            }
+            &OptionsBuilder::gfm()
+                .compile(
+                    CompileOptionsBuilder::gfm()
+                        .allow_dangerous_html(true)
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )?,
         r###"<h2>Blank line</h2>
 <table>

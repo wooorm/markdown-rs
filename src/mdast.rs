@@ -15,6 +15,7 @@ pub type Stop = (usize, usize);
 
 /// Explicitness of a reference.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum ReferenceKind {
     /// The reference is implicit, its identifier inferred from its content.
     Shortcut,
@@ -73,6 +74,7 @@ pub enum AlignKind {
 
 /// Nodes.
 #[derive(Clone, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum Node {
     // Document:
     /// Root.
@@ -428,6 +430,7 @@ impl Node {
 
 /// MDX: attribute content.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum AttributeContent {
     /// JSX expression.
     ///
@@ -447,6 +450,7 @@ pub enum AttributeContent {
 
 /// MDX: attribute value.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum AttributeValue {
     /// Expression value.
     ///

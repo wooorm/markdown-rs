@@ -2,16 +2,13 @@ use markdown::{
     mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
     to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptions, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn mdx_jsx_flow_agnostic() -> Result<(), String> {
-    let mdx = Options {
-        parse: ParseOptions::mdx(),
-        ..Default::default()
-    };
+    let mdx = OptionsBuilder::default().parse(ParseOptions::mdx()).build();
 
     assert_eq!(
         to_html_with_options("<a />", &mdx)?,
@@ -23,17 +20,18 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "    <a />",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        html_flow: false,
-                        mdx_jsx_flow: true,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .html_flow(false)
+                                .mdx_jsx_flow(true)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "<pre><code>&lt;a /&gt;\n</code></pre>",
         "should prefer indented code over jsx if it’s enabled"
@@ -42,17 +40,18 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "   <a />",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        html_flow: false,
-                        mdx_jsx_flow: true,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .html_flow(false)
+                                .mdx_jsx_flow(true)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "",
         "should support indented jsx if indented code is enabled"
@@ -89,10 +88,8 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
 // differences.
 #[test]
 fn mdx_jsx_flow_essence() -> Result<(), String> {
-    let mdx = Options {
-        parse: ParseOptions::mdx(),
-        ..Default::default()
-    };
+    let mdx_parse = ParseOptions::mdx();
+    let mdx = OptionsBuilder::default().parse(ParseOptions::mdx()).build();
 
     assert_eq!(
         to_html_with_options("<a />", &mdx)?,
@@ -194,7 +191,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("<>\n  * a\n</>", &mdx.parse)?,
+        to_mdast("<>\n  * a\n</>", &mdx_parse)?,
         Node::Root(Root {
             children: vec![Node::MdxJsxFlowElement(MdxJsxFlowElement {
                 name: None,

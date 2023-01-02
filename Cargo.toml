@@ -18,6 +18,7 @@ path = "benches/bench.rs"
 harness = false
 
 [dependencies]
+derive_builder = "0.12.0"
 log = "0.4"
 unicode-id = { version = "0.3", features = ["no_std"] }
 

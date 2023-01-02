@@ -2,20 +2,20 @@ use markdown::{
     mdast::{List, ListItem, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn list() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html(
@@ -574,16 +574,13 @@ fn list() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "- one\n\n two",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        list_item: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().list_item(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>- one</p>\n<p>two</p>",
         "should support turning off lists"

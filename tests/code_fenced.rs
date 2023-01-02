@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Code, Node, Root},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -264,16 +264,13 @@ fn code_fenced() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "```",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        code_fenced: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().code_fenced(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>```</p>",
         "should support turning off code (fenced)"

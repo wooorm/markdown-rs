@@ -1,4 +1,4 @@
-use markdown::{to_html_with_options, CompileOptions, Options};
+use markdown::{to_html_with_options, CompileOptionsBuilder, OptionsBuilder};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -6,13 +6,13 @@ fn gfm_tagfilter() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "<iframe>",
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .allow_dangerous_html(true)
+                        .build()
+                )
+                .build()
         )?,
         "<iframe>",
         "should not filter by default"
@@ -21,13 +21,9 @@ fn gfm_tagfilter() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "a <i>\n<script>",
-            &Options {
-                compile: CompileOptions {
-                    gfm_tagfilter: true,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(CompileOptionsBuilder::default().gfm_tagfilter(true).build())
+                .build()
         )?,
         "<p>a &lt;i&gt;</p>\n&lt;script&gt;",
         "should not turn `allow_dangerous_html` on"
@@ -36,14 +32,14 @@ fn gfm_tagfilter() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "<iframe>",
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    gfm_tagfilter: true,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .allow_dangerous_html(true)
+                        .gfm_tagfilter(true)
+                        .build()
+                )
+                .build()
         )?,
         "&lt;iframe>",
         "should filter"
@@ -94,14 +90,14 @@ javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onm
 
 <STYLE>@import'http://xss.rocks/xss.css';</STYLE>
 "###,
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_html: true,
-                    gfm_tagfilter: true,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .allow_dangerous_html(true)
+                        .gfm_tagfilter(true)
+                        .build()
+                )
+                .build()
         )?,
         r###"&lt;title>
 <div title="&lt;title>"></div>

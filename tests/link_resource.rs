@@ -2,20 +2,20 @@ use markdown::{
     mdast::{Link, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Options,
+    CompileOptionsBuilder, OptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn link_resource() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("[link](/uri \"title\")"),

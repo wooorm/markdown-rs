@@ -3,22 +3,22 @@ use markdown::{
     mdast::{MdxTextExpression, Node, Paragraph, Root, Text},
     to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Constructs, OptionsBuilder, ParseOptions, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_expression_text_gnostic_core() -> Result<(), String> {
-    let swc = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let swc = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(Constructs::mdx())
+                .mdx_esm_parse(Some(Box::new(parse_esm)))
+                .mdx_expression_parse(Some(Box::new(parse_expression)))
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("a {} b", &swc)?,
@@ -149,10 +149,8 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
 
 #[test]
 fn mdx_expression_text_agnostic() -> Result<(), String> {
-    let mdx = Options {
-        parse: ParseOptions::mdx(),
-        ..Default::default()
-    };
+    let mdx_parse = ParseOptions::mdx();
+    let mdx = OptionsBuilder::default().parse(ParseOptions::mdx()).build();
 
     assert_eq!(
         to_html_with_options("a {b} c", &mdx)?,
@@ -199,7 +197,7 @@ fn mdx_expression_text_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a {alpha} b.", &mdx.parse)?,
+        to_mdast("a {alpha} b.", &mdx_parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![
@@ -229,15 +227,15 @@ fn mdx_expression_text_agnostic() -> Result<(), String> {
 
 #[test]
 fn mdx_expression_text_gnostic() -> Result<(), String> {
-    let swc = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let swc = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(Constructs::mdx())
+                .mdx_esm_parse(Some(Box::new(parse_esm)))
+                .mdx_expression_parse(Some(Box::new(parse_expression)))
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("a {b} c", &swc)?,

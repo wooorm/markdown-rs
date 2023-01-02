@@ -2,20 +2,20 @@ use markdown::{
     mdast::{Html, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn html_text() -> Result<(), String> {
-    let danger = Options {
-        compile: CompileOptions {
-            allow_dangerous_html: true,
-            allow_dangerous_protocol: true,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let danger = OptionsBuilder::default()
+        .compile(
+            CompileOptionsBuilder::default()
+                .allow_dangerous_html(true)
+                .allow_dangerous_protocol(true)
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("a <b> c"),
@@ -429,16 +429,13 @@ to_html_with_options("<x> a", &danger)?,
     assert_eq!(
         to_html_with_options(
             "a <x>",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        html_text: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().html_text(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p>a &lt;x&gt;</p>",
         "should support turning off html (text)"

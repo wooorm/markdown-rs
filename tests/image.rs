@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Definition, Image, ImageReference, Node, Paragraph, ReferenceKind, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Constructs, Options, ParseOptions,
+    CompileOptionsBuilder, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -199,16 +199,17 @@ fn image() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "![x]()",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        label_start_image: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .label_start_image(false)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "<p>!<a href=\"\">x</a></p>",
         "should support turning off label start (image)"
@@ -223,13 +224,13 @@ fn image() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "![](javascript:alert(1))",
-            &Options {
-                compile: CompileOptions {
-                    allow_dangerous_protocol: true,
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .compile(
+                    CompileOptionsBuilder::default()
+                        .allow_dangerous_protocol(true)
+                        .build()
+                )
+                .build()
         )?,
         "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
         "should allow non-http protocols w/ `allowDangerousProtocol`"

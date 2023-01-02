@@ -12,7 +12,7 @@ use alloc::{boxed::Box, fmt, string::String};
 /// ## Examples
 ///
 /// ```
-/// use markdown::Constructs;
+/// use markdown::{Constructs, ConstructsBuilder};
 /// # fn main() {
 ///
 /// // Use the default trait to get `CommonMark` constructs:
@@ -22,15 +22,15 @@ use alloc::{boxed::Box, fmt, string::String};
 /// let gfm = Constructs::gfm();
 ///
 /// // Or, mix and match:
-/// let custom = Constructs {
-///   math_flow: true,
-///   math_text: true,
-///   ..Constructs::gfm()
-/// };
+/// let custom = ConstructsBuilder::gfm()
+///     .math_flow(true)
+///     .math_text(true)
+///     .build();
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, derive_builder::Builder)]
+#[builder(no_std, default, pattern = "owned", build_fn(name = "fallible_build"))]
 pub struct Constructs {
     /// Attention.
     ///
@@ -38,42 +38,42 @@ pub struct Constructs {
     /// > | a *b* c **d**.
     ///       ^^^   ^^^^^
     /// ```
-    pub attention: bool,
+    pub(crate) attention: bool,
     /// Autolink.
     ///
     /// ```markdown
     /// > | a <https://example.com> b <user@example.org>.
     ///       ^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^
     /// ```
-    pub autolink: bool,
+    pub(crate) autolink: bool,
     /// Block quote.
     ///
     /// ```markdown
     /// > | > a
     ///     ^^^
     /// ```
-    pub block_quote: bool,
+    pub(crate) block_quote: bool,
     /// Character escape.
     ///
     /// ```markdown
     /// > | a \* b
     ///       ^^
     /// ```
-    pub character_escape: bool,
+    pub(crate) character_escape: bool,
     /// Character reference.
     ///
     /// ```markdown
     /// > | a &amp; b
     ///       ^^^^^
     /// ```
-    pub character_reference: bool,
+    pub(crate) character_reference: bool,
     /// Code (indented).
     ///
     /// ```markdown
     /// > |     a
     ///     ^^^^^
     /// ```
-    pub code_indented: bool,
+    pub(crate) code_indented: bool,
     /// Code (fenced).
     ///
     /// ```markdown
@@ -84,21 +84,21 @@ pub struct Constructs {
     /// > | ~~~
     ///     ^^^
     /// ```
-    pub code_fenced: bool,
+    pub(crate) code_fenced: bool,
     /// Code (text).
     ///
     /// ```markdown
     /// > | a `b` c
     ///       ^^^
     /// ```
-    pub code_text: bool,
+    pub(crate) code_text: bool,
     /// Definition.
     ///
     /// ```markdown
     /// > | [a]: b "c"
     ///     ^^^^^^^^^^
     /// ```
-    pub definition: bool,
+    pub(crate) definition: bool,
     /// Frontmatter.
     ///
     /// ````markdown
@@ -109,34 +109,34 @@ pub struct Constructs {
     /// > | ---
     ///     ^^^
     /// ````
-    pub frontmatter: bool,
+    pub(crate) frontmatter: bool,
     /// GFM: autolink literal.
     ///
     /// ```markdown
     /// > | https://example.com
     ///     ^^^^^^^^^^^^^^^^^^^
     /// ```
-    pub gfm_autolink_literal: bool,
+    pub(crate) gfm_autolink_literal: bool,
     /// GFM: footnote definition.
     ///
     /// ```markdown
     /// > | [^a]: b
     ///     ^^^^^^^
     /// ```
-    pub gfm_footnote_definition: bool,
+    pub(crate) gfm_footnote_definition: bool,
     /// GFM: footnote label start.
     ///
     /// ```markdown
     /// > | a[^b]
     ///      ^^
     /// ```
-    pub gfm_label_start_footnote: bool,
+    pub(crate) gfm_label_start_footnote: bool,
     ///
     /// ```markdown
     /// > | a ~b~ c.
     ///       ^^^
     /// ```
-    pub gfm_strikethrough: bool,
+    pub(crate) gfm_strikethrough: bool,
     /// GFM: table.
     ///
     /// ```markdown
@@ -147,14 +147,14 @@ pub struct Constructs {
     /// > | | b |
     ///     ^^^^^
     /// ```
-    pub gfm_table: bool,
+    pub(crate) gfm_table: bool,
     /// GFM: task list item.
     ///
     /// ```markdown
     /// > | * [x] y.
     ///       ^^^
     /// ```
-    pub gfm_task_list_item: bool,
+    pub(crate) gfm_task_list_item: bool,
     /// Hard break (escape).
     ///
     /// ```markdown
@@ -162,7 +162,7 @@ pub struct Constructs {
     ///      ^
     ///   | b
     /// ```
-    pub hard_break_escape: bool,
+    pub(crate) hard_break_escape: bool,
     /// Hard break (trailing).
     ///
     /// ```markdown
@@ -170,14 +170,14 @@ pub struct Constructs {
     ///      ^^
     ///   | b
     /// ```
-    pub hard_break_trailing: bool,
+    pub(crate) hard_break_trailing: bool,
     /// Heading (atx).
     ///
     /// ```markdown
     /// > | # a
     ///     ^^^
     /// ```
-    pub heading_atx: bool,
+    pub(crate) heading_atx: bool,
     /// Heading (setext).
     ///
     /// ```markdown
@@ -186,49 +186,49 @@ pub struct Constructs {
     /// > | ==
     ///     ^^
     /// ```
-    pub heading_setext: bool,
+    pub(crate) heading_setext: bool,
     /// HTML (flow).
     ///
     /// ```markdown
     /// > | <div>
     ///     ^^^^^
     /// ```
-    pub html_flow: bool,
+    pub(crate) html_flow: bool,
     /// HTML (text).
     ///
     /// ```markdown
     /// > | a <b> c
     ///       ^^^
     /// ```
-    pub html_text: bool,
+    pub(crate) html_text: bool,
     /// Label start (image).
     ///
     /// ```markdown
     /// > | a ![b](c) d
     ///       ^^
     /// ```
-    pub label_start_image: bool,
+    pub(crate) label_start_image: bool,
     /// Label start (link).
     ///
     /// ```markdown
     /// > | a [b](c) d
     ///       ^
     /// ```
-    pub label_start_link: bool,
+    pub(crate) label_start_link: bool,
     /// Label end.
     ///
     /// ```markdown
     /// > | a [b](c) d
     ///         ^^^^
     /// ```
-    pub label_end: bool,
+    pub(crate) label_end: bool,
     /// List items.
     ///
     /// ```markdown
     /// > | * a
     ///     ^^^
     /// ```
-    pub list_item: bool,
+    pub(crate) list_item: bool,
     /// Math (flow).
     ///
     /// ```markdown
@@ -239,14 +239,14 @@ pub struct Constructs {
     /// > | $$
     ///     ^^
     /// ```
-    pub math_flow: bool,
+    pub(crate) math_flow: bool,
     /// Math (text).
     ///
     /// ```markdown
     /// > | a $b$ c
     ///       ^^^
     /// ```
-    pub math_text: bool,
+    pub(crate) math_text: bool,
     /// MDX: ESM.
     ///
     /// ```markdown
@@ -257,7 +257,7 @@ pub struct Constructs {
     /// > 👉 **Note**: to support ESM, you *must* pass
     /// > [`mdx_esm_parse`][MdxEsmParse] in [`ParseOptions`][] too.
     /// > Otherwise, ESM is treated as normal markdown.
-    pub mdx_esm: bool,
+    pub(crate) mdx_esm: bool,
     /// MDX: expression (flow).
     ///
     /// ```markdown
@@ -271,7 +271,7 @@ pub struct Constructs {
     /// > a programming language).
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
-    pub mdx_expression_flow: bool,
+    pub(crate) mdx_expression_flow: bool,
     /// MDX: expression (text).
     ///
     /// ```markdown
@@ -285,7 +285,7 @@ pub struct Constructs {
     /// > a programming language).
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
-    pub mdx_expression_text: bool,
+    pub(crate) mdx_expression_text: bool,
     /// MDX: JSX (flow).
     ///
     /// ```markdown
@@ -302,7 +302,7 @@ pub struct Constructs {
     /// > (typically, a programming language).
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
-    pub mdx_jsx_flow: bool,
+    pub(crate) mdx_jsx_flow: bool,
     /// MDX: JSX (text).
     ///
     /// ```markdown
@@ -319,14 +319,14 @@ pub struct Constructs {
     /// > (typically, a programming language).
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
-    pub mdx_jsx_text: bool,
+    pub(crate) mdx_jsx_text: bool,
     /// Thematic break.
     ///
     /// ```markdown
     /// > | ***
     ///     ^^^
     /// ```
-    pub thematic_break: bool,
+    pub(crate) thematic_break: bool,
 }
 
 impl Default for Constructs {
@@ -378,7 +378,7 @@ impl Default for Constructs {
     }
 }
 
-impl Constructs {
+impl ConstructsBuilder {
     /// GFM.
     ///
     /// GFM stands for **GitHub flavored markdown**.
@@ -388,15 +388,13 @@ impl Constructs {
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>.
     pub fn gfm() -> Self {
-        Self {
-            gfm_autolink_literal: true,
-            gfm_footnote_definition: true,
-            gfm_label_start_footnote: true,
-            gfm_strikethrough: true,
-            gfm_table: true,
-            gfm_task_list_item: true,
-            ..Self::default()
-        }
+        Self::default()
+            .gfm_autolink_literal(true)
+            .gfm_footnote_definition(true)
+            .gfm_label_start_footnote(true)
+            .gfm_strikethrough(true)
+            .gfm_table(true)
+            .gfm_task_list_item(true)
     }
 
     /// MDX.
@@ -419,18 +417,29 @@ impl Constructs {
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
     pub fn mdx() -> Self {
-        Self {
-            autolink: false,
-            code_indented: false,
-            html_flow: false,
-            html_text: false,
-            mdx_esm: true,
-            mdx_expression_flow: true,
-            mdx_expression_text: true,
-            mdx_jsx_flow: true,
-            mdx_jsx_text: true,
-            ..Self::default()
-        }
+        Self::default()
+            .autolink(false)
+            .code_indented(false)
+            .html_flow(false)
+            .html_text(false)
+            .mdx_esm(true)
+            .mdx_expression_flow(true)
+            .mdx_expression_text(true)
+            .mdx_jsx_flow(true)
+            .mdx_jsx_text(true)
+    }
+
+    pub fn build(self) -> Constructs {
+        self.fallible_build().unwrap()
+    }
+}
+
+impl Constructs {
+    pub fn gfm() -> Self {
+        ConstructsBuilder::gfm().build()
+    }
+    pub fn mdx() -> Self {
+        ConstructsBuilder::mdx().build()
     }
 }
 
@@ -444,29 +453,28 @@ impl Constructs {
 /// ## Examples
 ///
 /// ```
-/// use markdown::CompileOptions;
+/// use markdown::{CompileOptions, CompileOptionsBuilder};
 /// # fn main() {
 ///
 /// // Use the default trait to get safe defaults:
 /// let safe = CompileOptions::default();
 ///
 /// // Live dangerously / trust the author:
-/// let danger = CompileOptions {
-///   allow_dangerous_html: true,
-///   allow_dangerous_protocol: true,
-///   ..CompileOptions::default()
-/// };
+/// let danger = CompileOptionsBuilder::default()
+///     .allow_dangerous_html(true)
+///     .allow_dangerous_protocol(true)
+///     .build();
 ///
 /// // In French:
-/// let enFrançais = CompileOptions {
-///   gfm_footnote_label: Some("Notes de bas de page".into()),
-///   gfm_footnote_back_label: Some("Arrière".into()),
-///   ..CompileOptions::default()
-/// };
+/// let enFrançais = CompileOptionsBuilder::default()
+///     .gfm_footnote_label(Some("Notes de bas de page".into()))
+///     .gfm_footnote_back_label(Some("Arrière".into()))
+///     .build();
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, derive_builder::Builder)]
+#[builder(no_std, default, pattern = "owned", build_fn(name = "fallible_build"))]
 pub struct CompileOptions {
     /// Whether to allow (dangerous) HTML.
     ///
@@ -478,7 +486,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html, to_html_with_options, CompileOptions, Options};
+    /// use markdown::{to_html, to_html_with_options, CompileOptionsBuilder, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `markdown-rs` is safe by default:
@@ -491,20 +499,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "Hi, <i>venus</i>!",
-    ///         &Options {
-    ///             compile: CompileOptions {
-    ///               allow_dangerous_html: true,
-    ///               ..CompileOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::default()
+    ///                     .allow_dangerous_html(true)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p>Hi, <i>venus</i>!</p>"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub allow_dangerous_html: bool,
+    pub(crate) allow_dangerous_html: bool,
 
     /// Whether to allow dangerous protocols in links and images.
     ///
@@ -522,7 +530,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html, to_html_with_options, CompileOptions, Options};
+    /// use markdown::{to_html, to_html_with_options, CompileOptionsBuilder, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `markdown-rs` is safe by default:
@@ -535,20 +543,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "<javascript:alert(1)>",
-    ///         &Options {
-    ///             compile: CompileOptions {
-    ///               allow_dangerous_protocol: true,
-    ///               ..CompileOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::default()
+    ///                     .allow_dangerous_protocol(true)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><a href=\"javascript:alert(1)\">javascript:alert(1)</a></p>"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub allow_dangerous_protocol: bool,
+    pub(crate) allow_dangerous_protocol: bool,
 
     /// Default line ending to use when compiling to HTML, for line endings not
     /// in `value`.
@@ -566,7 +574,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html, to_html_with_options, CompileOptions, LineEnding, Options};
+    /// use markdown::{to_html, to_html_with_options, CompileOptionsBuilder, LineEnding, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `markdown-rs` uses `\n` by default:
@@ -579,20 +587,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "> a",
-    ///         &Options {
-    ///             compile: CompileOptions {
-    ///               default_line_ending: LineEnding::CarriageReturnLineFeed,
-    ///               ..CompileOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::default()
+    ///                     .default_line_ending(LineEnding::CarriageReturnLineFeed)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<blockquote>\r\n<p>a</p>\r\n</blockquote>"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub default_line_ending: LineEnding,
+    pub(crate) default_line_ending: LineEnding,
 
     /// Textual label to use for the footnotes section.
     ///
@@ -608,7 +616,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptionsBuilder, Options, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"Footnotes"` is used by default:
@@ -624,20 +632,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_label: Some("Notes de bas de page".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::gfm()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::gfm()
+    ///                     .gfm_footnote_label(Some("Notes de bas de page".into()))
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Notes de bas de page</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub gfm_footnote_label: Option<String>,
+    pub(crate) gfm_footnote_label: Option<String>,
 
     /// HTML tag name to use for the footnote label element.
     ///
@@ -653,7 +661,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptionsBuilder, Options, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"h2"` is used by default:
@@ -669,20 +677,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_label_tag_name: Some("h1".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::gfm()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::gfm()
+    ///                     .gfm_footnote_label_tag_name(Some("h1".into()))
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub gfm_footnote_label_tag_name: Option<String>,
+    pub(crate) gfm_footnote_label_tag_name: Option<String>,
 
     /// Attributes to use on the footnote label.
     ///
@@ -701,7 +709,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptionsBuilder, Options, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"class=\"sr-only\""` is used by default:
@@ -717,20 +725,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::gfm()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::gfm()
+    ///                     .gfm_footnote_label_attributes(Some(r#"class="footnote-heading""#.into()))
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub gfm_footnote_label_attributes: Option<String>,
+    pub(crate) gfm_footnote_label_attributes: Option<String>,
 
     /// Textual label to describe the backreference back to footnote calls.
     ///
@@ -744,7 +752,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptionsBuilder, Options, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"Back to content"` is used by default:
@@ -760,20 +768,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_back_label: Some("Arrière".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::gfm()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::gfm()
+    ///                     .gfm_footnote_back_label(Some("Arrière".into()))
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Arrière\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub gfm_footnote_back_label: Option<String>,
+    pub(crate) gfm_footnote_back_label: Option<String>,
 
     /// Prefix to use before the `id` attribute on footnotes to prevent them
     /// from *clobbering*.
@@ -800,7 +808,7 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptionsBuilder, Options, OptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `"user-content-"` is used by default:
@@ -816,20 +824,20 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_clobber_prefix: Some("".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::gfm()
+    ///             .compile(
+    ///                 CompileOptionsBuilder::gfm()
+    ///                     .gfm_footnote_clobber_prefix(Some("".into()))
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><sup><a href=\"#fn-a\" id=\"fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"fn-a\">\n<p>b <a href=\"#fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub gfm_footnote_clobber_prefix: Option<String>,
+    pub(crate) gfm_footnote_clobber_prefix: Option<String>,
 
     /// Whether to support the GFM tagfilter.
     ///
@@ -844,20 +852,21 @@ pub struct CompileOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, CompileOptionsBuilder, OptionsBuilder, ParseOptions};
     /// # fn main() -> Result<(), String> {
     ///
     /// // With `allow_dangerous_html`, `markdown-rs` passes HTML through untouched:
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "<iframe>",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               allow_dangerous_html: true,
-    ///               ..CompileOptions::default()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(ParseOptions::gfm())
+    ///             .compile(
+    ///                 CompileOptionsBuilder::default()
+    ///                     .allow_dangerous_html(true)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<iframe>"
     /// );
@@ -866,14 +875,15 @@ pub struct CompileOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "<iframe>",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               allow_dangerous_html: true,
-    ///               gfm_tagfilter: true,
-    ///               ..CompileOptions::default()
-    ///             }
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(ParseOptions::gfm())
+    ///             .compile(
+    ///                 CompileOptionsBuilder::default()
+    ///                     .allow_dangerous_html(true)
+    ///                     .gfm_tagfilter(true)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "&lt;iframe>"
     /// );
@@ -885,10 +895,10 @@ pub struct CompileOptions {
     ///
     /// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
     /// *   [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
-    pub gfm_tagfilter: bool,
+    pub(crate) gfm_tagfilter: bool,
 }
 
-impl CompileOptions {
+impl CompileOptionsBuilder {
     /// GFM.
     ///
     /// GFM stands for **GitHub flavored markdown**.
@@ -899,10 +909,17 @@ impl CompileOptions {
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>.
     pub fn gfm() -> Self {
-        Self {
-            gfm_tagfilter: true,
-            ..Self::default()
-        }
+        Self::default().gfm_tagfilter(true)
+    }
+
+    pub fn build(self) -> CompileOptions {
+        self.fallible_build().unwrap()
+    }
+}
+
+impl CompileOptions {
+    pub fn gfm() -> Self {
+        CompileOptionsBuilder::gfm().build()
     }
 }
 
@@ -930,6 +947,8 @@ impl CompileOptions {
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
+#[derive(derive_builder::Builder)]
+#[builder(no_std, default, pattern = "owned", build_fn(name = "fallible_build"))]
 pub struct ParseOptions {
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
     /// Which constructs to enable and disable.
@@ -939,7 +958,7 @@ pub struct ParseOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html, to_html_with_options, Constructs, Options, ParseOptions};
+    /// use markdown::{to_html, to_html_with_options, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `markdown-rs` follows CommonMark by default:
@@ -952,23 +971,24 @@ pub struct ParseOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "    indented code?",
-    ///         &Options {
-    ///             parse: ParseOptions {
-    ///               constructs: Constructs {
-    ///                 code_indented: false,
-    ///                 ..Constructs::default()
-    ///               },
-    ///               ..ParseOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(
+    ///                 ParseOptionsBuilder::default()
+    ///                     .constructs(
+    ///                         ConstructsBuilder::default()
+    ///                             .code_indented(false)
+    ///                             .build()
+    ///                     )
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p>indented code?</p>"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub constructs: Constructs,
+    pub(crate) constructs: Constructs,
 
     /// Whether to support GFM strikethrough with a single tilde
     ///
@@ -984,20 +1004,20 @@ pub struct ParseOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, Constructs, Options, OptionsBuilder, ParseOptions, ParseOptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `markdown-rs` supports single tildes by default:
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "~a~",
-    ///         &Options {
-    ///             parse: ParseOptions {
-    ///               constructs: Constructs::gfm(),
-    ///               ..ParseOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(
+    ///                 ParseOptionsBuilder::default()
+    ///                     .constructs(Constructs::gfm())
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><del>a</del></p>"
     /// );
@@ -1006,21 +1026,21 @@ pub struct ParseOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "~a~",
-    ///         &Options {
-    ///             parse: ParseOptions {
-    ///               constructs: Constructs::gfm(),
-    ///               gfm_strikethrough_single_tilde: false,
-    ///               ..ParseOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(
+    ///                 ParseOptionsBuilder::default()
+    ///                     .constructs(Constructs::gfm())
+    ///                     .gfm_strikethrough_single_tilde(false)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p>~a~</p>"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub gfm_strikethrough_single_tilde: bool,
+    pub(crate) gfm_strikethrough_single_tilde: bool,
 
     /// Whether to support math (text) with a single dollar
     ///
@@ -1037,23 +1057,24 @@ pub struct ParseOptions {
     /// ## Examples
     ///
     /// ```
-    /// use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
+    /// use markdown::{to_html_with_options, ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder};
     /// # fn main() -> Result<(), String> {
     ///
     /// // `markdown-rs` supports single dollars by default:
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "$a$",
-    ///         &Options {
-    ///             parse: ParseOptions {
-    ///               constructs: Constructs {
-    ///                 math_text: true,
-    ///                 ..Constructs::default()
-    ///               },
-    ///               ..ParseOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(
+    ///                 ParseOptionsBuilder::default()
+    ///                     .constructs(
+    ///                         ConstructsBuilder::default()
+    ///                             .math_text(true)
+    ///                             .build()
+    ///                     )
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p><code class=\"language-math math-inline\">a</code></p>"
     /// );
@@ -1062,24 +1083,25 @@ pub struct ParseOptions {
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "$a$",
-    ///         &Options {
-    ///             parse: ParseOptions {
-    ///               constructs: Constructs {
-    ///                 math_text: true,
-    ///                 ..Constructs::default()
-    ///               },
-    ///               math_text_single_dollar: false,
-    ///               ..ParseOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
+    ///         &OptionsBuilder::default()
+    ///             .parse(
+    ///                 ParseOptionsBuilder::default()
+    ///                     .constructs(
+    ///                         ConstructsBuilder::default()
+    ///                             .math_text(true)
+    ///                             .build()
+    ///                     )
+    ///                     .math_text_single_dollar(false)
+    ///                     .build()
+    ///             )
+    ///             .build()
     ///     )?,
     ///     "<p>$a$</p>"
     /// );
     /// # Ok(())
     /// # }
     /// ```
-    pub math_text_single_dollar: bool,
+    pub(crate) math_text_single_dollar: bool,
 
     /// Function to parse expressions with.
     ///
@@ -1091,7 +1113,7 @@ pub struct ParseOptions {
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
-    pub mdx_expression_parse: Option<Box<MdxExpressionParse>>,
+    pub(crate) mdx_expression_parse: Option<Box<MdxExpressionParse>>,
 
     /// Function to parse ESM with.
     ///
@@ -1107,7 +1129,7 @@ pub struct ParseOptions {
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
-    pub mdx_esm_parse: Option<Box<MdxEsmParse>>,
+    pub(crate) mdx_esm_parse: Option<Box<MdxEsmParse>>,
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
 }
 
@@ -1145,7 +1167,7 @@ impl Default for ParseOptions {
     }
 }
 
-impl ParseOptions {
+impl ParseOptionsBuilder {
     /// GFM.
     ///
     /// GFM stands for GitHub flavored markdown.
@@ -1155,10 +1177,7 @@ impl ParseOptions {
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>
     pub fn gfm() -> Self {
-        Self {
-            constructs: Constructs::gfm(),
-            ..Self::default()
-        }
+        Self::default().constructs(Constructs::gfm())
     }
 
     /// MDX.
@@ -1181,10 +1200,20 @@ impl ParseOptions {
     /// > Otherwise, expressions are parsed with a basic algorithm that only
     /// > cares about braces.
     pub fn mdx() -> Self {
-        Self {
-            constructs: Constructs::mdx(),
-            ..Self::default()
-        }
+        Self::default().constructs(Constructs::mdx())
+    }
+
+    pub fn build(self) -> ParseOptions {
+        self.fallible_build().unwrap()
+    }
+}
+
+impl ParseOptions {
+    pub fn gfm() -> Self {
+        ParseOptionsBuilder::gfm().build()
+    }
+    pub fn mdx() -> Self {
+        ParseOptionsBuilder::mdx().build()
     }
 }
 
@@ -1207,15 +1236,16 @@ impl ParseOptions {
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, derive_builder::Builder)]
+#[builder(no_std, default, pattern = "owned", build_fn(name = "fallible_build"))]
 pub struct Options {
     /// Configuration that describes how to parse from markdown.
-    pub parse: ParseOptions,
+    pub(crate) parse: ParseOptions,
     /// Configuration that describes how to compile to HTML.
-    pub compile: CompileOptions,
+    pub(crate) compile: CompileOptions,
 }
 
-impl Options {
+impl OptionsBuilder {
     /// GFM.
     ///
     /// GFM stands for GitHub flavored markdown.
@@ -1227,10 +1257,19 @@ impl Options {
     /// For more information, see the GFM specification:
     /// <https://github.github.com/gfm/>
     pub fn gfm() -> Self {
-        Self {
-            parse: ParseOptions::gfm(),
-            compile: CompileOptions::gfm(),
-        }
+        Self::default()
+            .parse(ParseOptions::gfm())
+            .compile(CompileOptions::gfm())
+    }
+
+    pub fn build(self) -> Options {
+        self.fallible_build().unwrap()
+    }
+}
+
+impl Options {
+    pub fn gfm() -> Self {
+        OptionsBuilder::gfm().build()
     }
 }
 
@@ -1399,7 +1438,7 @@ mod tests {
             "should default to safe `CommonMark` (4)"
         );
 
-        let options = Options::gfm();
+        let options = OptionsBuilder::gfm().build();
         assert!(
             options.parse.constructs.attention,
             "should support safe `gfm` shortcut (1)"

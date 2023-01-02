@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Heading, Node, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
@@ -209,16 +209,13 @@ fn heading_atx() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "# a",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        heading_atx: false,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(ConstructsBuilder::default().heading_atx(false).build())
+                        .build()
+                )
+                .build()
         )?,
         "<p># a</p>",
         "should support turning off heading (atx)"

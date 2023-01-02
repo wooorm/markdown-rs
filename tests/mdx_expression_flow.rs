@@ -3,17 +3,15 @@ use markdown::{
     mdast::{MdxFlowExpression, Node, Root},
     to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Constructs, ConstructsBuilder, OptionsBuilder, ParseOptions, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_expression_flow_agnostic() -> Result<(), String> {
-    let mdx = Options {
-        parse: ParseOptions::mdx(),
-        ..Default::default()
-    };
+    let mdx_parse = ParseOptions::mdx();
+    let mdx = OptionsBuilder::default().parse(ParseOptions::mdx()).build();
 
     assert_eq!(
         to_html_with_options("{a}", &mdx)?,
@@ -31,16 +29,17 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "    {}",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        mdx_expression_flow: true,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .mdx_expression_flow(true)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "<pre><code>{}\n</code></pre>",
         "should prefer indented code over expressions if it’s enabled"
@@ -49,16 +48,17 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     assert_eq!(
         to_html_with_options(
             "   {}",
-            &Options {
-                parse: ParseOptions {
-                    constructs: Constructs {
-                        mdx_expression_flow: true,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                },
-                ..Default::default()
-            }
+            &OptionsBuilder::default()
+                .parse(
+                    ParseOptionsBuilder::default()
+                        .constructs(
+                            ConstructsBuilder::default()
+                                .mdx_expression_flow(true)
+                                .build()
+                        )
+                        .build()
+                )
+                .build()
         )?,
         "",
         "should support indented expressions if indented code is enabled"
@@ -129,7 +129,7 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("{alpha +\nbravo}", &mdx.parse)?,
+        to_mdast("{alpha +\nbravo}", &mdx_parse)?,
         Node::Root(Root {
             children: vec![Node::MdxFlowExpression(MdxFlowExpression {
                 value: "alpha +\nbravo".into(),
@@ -146,15 +146,15 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
 
 #[test]
 fn mdx_expression_flow_gnostic() -> Result<(), String> {
-    let swc = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let swc = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(Constructs::mdx())
+                .mdx_esm_parse(Some(Box::new(parse_esm)))
+                .mdx_expression_parse(Some(Box::new(parse_expression)))
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("{a}", &swc)?,
@@ -221,15 +221,15 @@ fn mdx_expression_flow_gnostic() -> Result<(), String> {
 
 #[test]
 fn mdx_expression_spread() -> Result<(), String> {
-    let swc = Options {
-        parse: ParseOptions {
-            constructs: Constructs::mdx(),
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let swc = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(Constructs::mdx())
+                .mdx_esm_parse(Some(Box::new(parse_esm)))
+                .mdx_expression_parse(Some(Box::new(parse_expression)))
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html_with_options("<a {...b} />", &swc)?,

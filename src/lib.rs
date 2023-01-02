@@ -53,7 +53,10 @@ pub use util::mdx::{
     ExpressionParse as MdxExpressionParse, Signal as MdxSignal,
 };
 
-pub use configuration::{CompileOptions, Constructs, Options, ParseOptions};
+pub use configuration::{
+    CompileOptions, CompileOptionsBuilder, Constructs, ConstructsBuilder, Options, OptionsBuilder,
+    ParseOptions, ParseOptionsBuilder,
+};
 
 use alloc::string::String;
 
@@ -87,7 +90,7 @@ pub fn to_html(value: &str) -> String {
 /// ## Examples
 ///
 /// ```
-/// use markdown::{to_html_with_options, CompileOptions, Options};
+/// use markdown::{to_html_with_options, CompileOptions, CompileOptionsBuilder, Options, OptionsBuilder};
 /// # fn main() -> Result<(), String> {
 ///
 /// // Use GFM:
@@ -96,14 +99,17 @@ pub fn to_html(value: &str) -> String {
 /// assert_eq!(result, "<p><del>hi</del>hello!</p>");
 ///
 /// // Live dangerously / trust the author:
-/// let result = to_html_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
-///     compile: CompileOptions {
-///       allow_dangerous_html: true,
-///       allow_dangerous_protocol: true,
-///       ..CompileOptions::default()
-///     },
-///     ..Options::default()
-/// })?;
+/// let result = to_html_with_options(
+///     "<div>\n\n# Hello, world!\n\n</div>",
+///     &OptionsBuilder::default()
+///         .compile(
+///             CompileOptionsBuilder::default()
+///                 .allow_dangerous_html(true)
+///                 .allow_dangerous_protocol(true)
+///                 .build()
+///         )
+///         .build()
+/// )?;
 ///
 /// assert_eq!(result, "<div>\n<h1>Hello, world!</h1>\n</div>");
 /// # Ok(())

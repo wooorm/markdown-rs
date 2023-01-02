@@ -2,22 +2,22 @@ use markdown::{
     mdast::{Node, Root, Toml, Yaml},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    ConstructsBuilder, OptionsBuilder, ParseOptionsBuilder,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
 fn frontmatter() -> Result<(), String> {
-    let frontmatter = Options {
-        parse: ParseOptions {
-            constructs: Constructs {
-                frontmatter: true,
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        ..Default::default()
-    };
+    let frontmatter_parse = ParseOptionsBuilder::default()
+        .constructs(ConstructsBuilder::default().frontmatter(true).build())
+        .build();
+    let frontmatter = OptionsBuilder::default()
+        .parse(
+            ParseOptionsBuilder::default()
+                .constructs(ConstructsBuilder::default().frontmatter(true).build())
+                .build(),
+        )
+        .build();
 
     assert_eq!(
         to_html("---\ntitle: Jupyter\n---"),
@@ -128,7 +128,7 @@ fn frontmatter() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("---\na: b\n---", &frontmatter.parse)?,
+        to_mdast("---\na: b\n---", &frontmatter_parse)?,
         Node::Root(Root {
             children: vec![Node::Yaml(Yaml {
                 value: "a: b".into(),
@@ -140,7 +140,7 @@ fn frontmatter() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("+++\ntitle = \"Jupyter\"\n+++", &frontmatter.parse)?,
+        to_mdast("+++\ntitle = \"Jupyter\"\n+++", &frontmatter_parse)?,
         Node::Root(Root {
             children: vec![Node::Toml(Toml {
                 value: "title = \"Jupyter\"".into(),
