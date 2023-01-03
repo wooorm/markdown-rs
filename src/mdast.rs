@@ -15,6 +15,11 @@ pub type Stop = (usize, usize);
 
 /// Explicitness of a reference.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum ReferenceKind {
     /// The reference is implicit, its identifier inferred from its content.
     Shortcut,
@@ -28,6 +33,11 @@ pub enum ReferenceKind {
 ///
 /// Used to align the contents of table cells within a table.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "lowercase")
+)]
 pub enum AlignKind {
     /// Left alignment.
     ///
@@ -73,6 +83,11 @@ pub enum AlignKind {
 
 /// Nodes.
 #[derive(Clone, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "type")
+)]
 pub enum Node {
     // Document:
     /// Root.
@@ -428,6 +443,11 @@ impl Node {
 
 /// MDX: attribute content.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxExpressionAttribute")
+)]
 pub enum AttributeContent {
     /// JSX expression.
     ///
@@ -435,7 +455,7 @@ pub enum AttributeContent {
     /// > | <a {...b} />
     ///        ^^^^^^
     /// ```
-    Expression(String, Vec<Stop>),
+    Expression { value: String, stops: Vec<Stop> },
     /// JSX property.
     ///
     /// ```markdown
@@ -444,9 +464,25 @@ pub enum AttributeContent {
     /// ```
     Property(MdxJsxAttribute),
 }
+//
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxAttributeValueExpression")
+)]
+pub struct AttributeValueExpression {
+    pub value: String,
+    pub stops: Vec<Stop>,
+}
 
 /// MDX: attribute value.
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "type")
+)]
 pub enum AttributeValue {
     /// Expression value.
     ///
@@ -454,13 +490,14 @@ pub enum AttributeValue {
     /// > | <a b={c} />
     ///          ^^^
     /// ```
-    Expression(String, Vec<Stop>),
+    Expression(AttributeValueExpression),
     /// Static value.
     ///
     /// ```markdown
     /// > | <a b="c" />
     ///          ^^^
     /// ```
+    #[cfg_attr(feature = "json", serde(rename = "literal"))]
     Literal(String),
 }
 
@@ -471,6 +508,11 @@ pub enum AttributeValue {
 ///     ^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "root")
+)]
 pub struct Root {
     // Parent.
     /// Content model.
@@ -486,6 +528,11 @@ pub struct Root {
 ///     ^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "paragraph")
+)]
 pub struct Paragraph {
     // Parent.
     /// Content model.
@@ -501,6 +548,11 @@ pub struct Paragraph {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "heading")
+)]
 pub struct Heading {
     // Parent.
     /// Content model.
@@ -519,6 +571,11 @@ pub struct Heading {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "thematicBreak")
+)]
 pub struct ThematicBreak {
     // Void.
     /// Positional info.
@@ -532,6 +589,11 @@ pub struct ThematicBreak {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "blockquote")
+)]
 pub struct BlockQuote {
     // Parent.
     /// Content model.
@@ -547,6 +609,11 @@ pub struct BlockQuote {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "list")
+)]
 pub struct List {
     // Parent.
     /// Content model.
@@ -571,6 +638,11 @@ pub struct List {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "listItem")
+)]
 pub struct ListItem {
     // Parent.
     /// Content model.
@@ -593,6 +665,11 @@ pub struct ListItem {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "html")
+)]
 pub struct Html {
     // Text.
     /// Content model.
@@ -612,6 +689,11 @@ pub struct Html {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "code")
+)]
 pub struct Code {
     // Text.
     /// Content model.
@@ -636,6 +718,11 @@ pub struct Code {
 ///     ^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "math")
+)]
 pub struct Math {
     // Text.
     /// Content model.
@@ -654,6 +741,11 @@ pub struct Math {
 ///     ^^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "definition")
+)]
 pub struct Definition {
     // Void.
     /// Positional info.
@@ -686,6 +778,11 @@ pub struct Definition {
 ///     ^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "text")
+)]
 pub struct Text {
     // Text.
     /// Content model.
@@ -701,6 +798,11 @@ pub struct Text {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "emphasis")
+)]
 pub struct Emphasis {
     // Parent.
     /// Content model.
@@ -716,6 +818,11 @@ pub struct Emphasis {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "strong")
+)]
 pub struct Strong {
     // Parent.
     /// Content model.
@@ -731,6 +838,11 @@ pub struct Strong {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "inlineCode")
+)]
 pub struct InlineCode {
     // Text.
     /// Content model.
@@ -746,6 +858,11 @@ pub struct InlineCode {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "inlineMath")
+)]
 pub struct InlineMath {
     // Text.
     /// Content model.
@@ -762,6 +879,11 @@ pub struct InlineMath {
 ///   | b
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "break")
+)]
 pub struct Break {
     // Void.
     /// Positional info.
@@ -775,6 +897,11 @@ pub struct Break {
 ///     ^^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "link")
+)]
 pub struct Link {
     // Parent.
     /// Content model.
@@ -796,6 +923,11 @@ pub struct Link {
 ///     ^^^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "image")
+)]
 pub struct Image {
     // Void.
     /// Positional info.
@@ -819,6 +951,11 @@ pub struct Image {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "linkReference")
+)]
 pub struct LinkReference {
     // Parent.
     /// Content model.
@@ -827,6 +964,7 @@ pub struct LinkReference {
     pub position: Option<Position>,
     // Reference.
     /// Explicitness of a reference.
+    #[cfg_attr(feature = "json", serde(rename = "referenceType"))]
     pub reference_kind: ReferenceKind,
     // Association.
     /// Value that can match another node.
@@ -850,6 +988,11 @@ pub struct LinkReference {
 ///     ^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "imageReference")
+)]
 pub struct ImageReference {
     // Void.
     /// Positional info.
@@ -860,6 +1003,7 @@ pub struct ImageReference {
     pub alt: String,
     // Reference.
     /// Explicitness of a reference.
+    #[cfg_attr(feature = "json", serde(rename = "referenceType"))]
     pub reference_kind: ReferenceKind,
     // Association.
     /// Value that can match another node.
@@ -883,6 +1027,11 @@ pub struct ImageReference {
 ///     ^^^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "footnoteDefinition")
+)]
 pub struct FootnoteDefinition {
     // Parent.
     /// Content model.
@@ -911,6 +1060,11 @@ pub struct FootnoteDefinition {
 ///     ^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "footnoteReference")
+)]
 pub struct FootnoteReference {
     // Void.
     /// Positional info.
@@ -939,6 +1093,11 @@ pub struct FootnoteReference {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "table")
+)]
 pub struct Table {
     // Parent.
     /// Content model.
@@ -957,6 +1116,11 @@ pub struct Table {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "tableRow")
+)]
 pub struct TableRow {
     // Parent.
     /// Content model.
@@ -972,6 +1136,11 @@ pub struct TableRow {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "tableCell")
+)]
 pub struct TableCell {
     // Parent.
     /// Content model.
@@ -987,6 +1156,11 @@ pub struct TableCell {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "delete")
+)]
 pub struct Delete {
     // Parent.
     /// Content model.
@@ -1006,6 +1180,11 @@ pub struct Delete {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "yaml")
+)]
 pub struct Yaml {
     // Void.
     /// Content model.
@@ -1025,6 +1204,11 @@ pub struct Yaml {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "toml")
+)]
 pub struct Toml {
     // Void.
     /// Content model.
@@ -1040,6 +1224,11 @@ pub struct Toml {
 ///     ^^^^^^^^^^^^^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxjsEsm")
+)]
 pub struct MdxjsEsm {
     // Literal.
     /// Content model.
@@ -1058,6 +1247,11 @@ pub struct MdxjsEsm {
 ///     ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxFlowExpression")
+)]
 pub struct MdxFlowExpression {
     // Literal.
     /// Content model.
@@ -1076,6 +1270,11 @@ pub struct MdxFlowExpression {
 ///       ^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxTextExpression")
+)]
 pub struct MdxTextExpression {
     // Literal.
     /// Content model.
@@ -1094,6 +1293,11 @@ pub struct MdxTextExpression {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxFlowElement")
+)]
 pub struct MdxJsxFlowElement {
     // Parent.
     /// Content model.
@@ -1116,6 +1320,11 @@ pub struct MdxJsxFlowElement {
 ///     ^^^^^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxTextElement")
+)]
 pub struct MdxJsxTextElement {
     // Parent.
     /// Content model.
@@ -1138,6 +1347,11 @@ pub struct MdxJsxTextElement {
 ///        ^
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "json",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxAttribute")
+)]
 pub struct MdxJsxAttribute {
     // Void.
     /// Positional info.

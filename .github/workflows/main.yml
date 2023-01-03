@@ -11,8 +11,8 @@ jobs:
         with:
           toolchain: stable
           components: rustfmt, clippy
-      - run: cargo fmt --check && cargo clippy --examples --tests --benches
-      - run: cargo test
+      - run: cargo fmt --check && cargo clippy --examples --tests --benches --all-features
+      - run: cargo test --all-features
   coverage:
     runs-on: ubuntu-latest
     steps:
