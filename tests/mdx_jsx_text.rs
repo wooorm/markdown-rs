@@ -1,8 +1,8 @@
 mod test_utils;
 use markdown::{
     mdast::{
-        AttributeContent, AttributeValue, AttributeValueExpression, Emphasis, MdxJsxAttribute,
-        MdxJsxTextElement, Node, Paragraph, Root, Text,
+        AttributeContent, AttributeValue, Emphasis, MdxJsxAttribute, MdxJsxTextElement, Node,
+        Paragraph, Root, Text,
     },
     to_html_with_options, to_mdast,
     unist::Position,
@@ -165,10 +165,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                 children: vec![
                     Node::MdxJsxTextElement(MdxJsxTextElement {
                         name: Some("a".into()),
-                        attributes: vec![AttributeContent::Expression {
-                            value: "...b".into(),
-                            stops: vec![(0, 4)]
-                        }],
+                        attributes: vec![AttributeContent::Expression("...b".into(), vec![(0, 4)])],
                         children: vec![],
                         position: Some(Position::new(1, 1, 0, 1, 13, 12))
                     }),
@@ -234,10 +231,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
                             }),
                             AttributeContent::Property(MdxJsxAttribute {
                                 name: "f".into(),
-                                value: Some(AttributeValue::Expression(AttributeValueExpression {
-                                    value: "g".into(),
-                                    stops: vec![(0, 18)]
-                                })),
+                                value: Some(AttributeValue::Expression("g".into(), vec![(0, 18)])),
                             }),
                         ],
                         children: vec![],
