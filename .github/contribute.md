@@ -59,6 +59,18 @@ See [Project][] for more info.
 *   write a convincing description of why your pull request should land:
     it’s your job to be convincing
 
+## Project (for maintainers)
+
+See [Project][project] in the readme for info on how the project is structured
+and how to run useful scripts.
+
+### Release
+
+*   update the `version` field in `Cargo.toml`
+*   search for the previous version in `readme.md`, replace with new one
+*   `git commit --all --message 1.2.3 && git tag 1.2.3 && git push && git push --tags`
+*   `cargo publish`
+
 ## Resources
 
 *   [how to contribute to open source](https://opensource.guide/how-to-contribute/)
