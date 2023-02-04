@@ -6,6 +6,7 @@ use crate::unist::Position;
 use alloc::{
     fmt,
     string::{String, ToString},
+    vec,
     vec::Vec,
 };
 
@@ -178,6 +179,41 @@ pub enum Node {
     Paragraph(Paragraph),
 }
 
+/// Datastructure for pre-order traversal of a node and its children.
+pub struct NodeIter<'a> {
+    stack: Vec<&'a Node>,
+}
+
+impl<'a> IntoIterator for &'a Node {
+    type Item = &'a Node;
+    type IntoIter = NodeIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let stack = vec![self];
+
+        NodeIter { stack }
+    }
+}
+
+impl<'a> Iterator for NodeIter<'a> {
+    type Item = &'a Node;
+
+    // pre-order traversal
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(node) = self.stack.pop() {
+            if let Some(children) = node.children() {
+                for child in children.iter().rev() {
+                    self.stack.push(child);
+                }
+            }
+
+            Some(node)
+        } else {
+            None
+        }
+    }
+}
+
 impl fmt::Debug for Node {
     // Debug the wrapped struct.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -220,53 +256,29 @@ impl fmt::Debug for Node {
     }
 }
 
-fn children_to_string(children: &[Node]) -> String {
-    children.iter().map(ToString::to_string).collect()
-}
-
 impl ToString for Node {
     fn to_string(&self) -> String {
-        match self {
-            // Parents.
-            Node::Root(x) => children_to_string(&x.children),
-            Node::BlockQuote(x) => children_to_string(&x.children),
-            Node::FootnoteDefinition(x) => children_to_string(&x.children),
-            Node::MdxJsxFlowElement(x) => children_to_string(&x.children),
-            Node::List(x) => children_to_string(&x.children),
-            Node::Delete(x) => children_to_string(&x.children),
-            Node::Emphasis(x) => children_to_string(&x.children),
-            Node::MdxJsxTextElement(x) => children_to_string(&x.children),
-            Node::Link(x) => children_to_string(&x.children),
-            Node::LinkReference(x) => children_to_string(&x.children),
-            Node::Strong(x) => children_to_string(&x.children),
-            Node::Heading(x) => children_to_string(&x.children),
-            Node::Table(x) => children_to_string(&x.children),
-            Node::TableRow(x) => children_to_string(&x.children),
-            Node::TableCell(x) => children_to_string(&x.children),
-            Node::ListItem(x) => children_to_string(&x.children),
-            Node::Paragraph(x) => children_to_string(&x.children),
+        self.into_iter()
+            .map(|e| {
+                match e {
+                    // Literals.
+                    Node::MdxjsEsm(x) => x.value.clone(),
+                    Node::Toml(x) => x.value.clone(),
+                    Node::Yaml(x) => x.value.clone(),
+                    Node::InlineCode(x) => x.value.clone(),
+                    Node::InlineMath(x) => x.value.clone(),
+                    Node::MdxTextExpression(x) => x.value.clone(),
+                    Node::Html(x) => x.value.clone(),
+                    Node::Text(x) => x.value.clone(),
+                    Node::Code(x) => x.value.clone(),
+                    Node::Math(x) => x.value.clone(),
+                    Node::MdxFlowExpression(x) => x.value.clone(),
 
-            // Literals.
-            Node::MdxjsEsm(x) => x.value.clone(),
-            Node::Toml(x) => x.value.clone(),
-            Node::Yaml(x) => x.value.clone(),
-            Node::InlineCode(x) => x.value.clone(),
-            Node::InlineMath(x) => x.value.clone(),
-            Node::MdxTextExpression(x) => x.value.clone(),
-            Node::Html(x) => x.value.clone(),
-            Node::Text(x) => x.value.clone(),
-            Node::Code(x) => x.value.clone(),
-            Node::Math(x) => x.value.clone(),
-            Node::MdxFlowExpression(x) => x.value.clone(),
-
-            // Voids.
-            Node::Break(_)
-            | Node::FootnoteReference(_)
-            | Node::Image(_)
-            | Node::ImageReference(_)
-            | Node::ThematicBreak(_)
-            | Node::Definition(_) => String::new(),
-        }
+                    // Anything else cannot be transformed to String.
+                    _ => String::new(),
+                }
+            })
+            .collect()
     }
 }
 
