@@ -18,7 +18,7 @@ path = "benches/bench.rs"
 harness = false
 
 [features]
-default = ["json"]
+default = []
 json = ["dep:serde", "dep:serde_json"]
 
 [dependencies]
