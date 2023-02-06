@@ -483,10 +483,9 @@ impl<'a> Tokenizer<'a> {
                     self.line_start = self.point.clone();
 
                     self.account_for_potential_skip();
- 
+
                     #[cfg(feature = "log")]
                     log::debug!("position: after eol: `{:?}`", self.point);
-
                 } else {
                     self.point.column += 1;
                 }
@@ -759,7 +758,6 @@ fn push_impl(
                 };
             }
             State::Retry(name) => {
-
                 #[cfg(feature = "log")]
                 log::debug!("retry:   `{:?}`", name);
 
