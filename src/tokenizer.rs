@@ -13,7 +13,11 @@ use crate::parser::ParseState;
 use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, State};
 use crate::subtokenize::Subresult;
-use crate::util::{char::format_byte_opt, constant::TAB_SIZE, edit_map::EditMap};
+
+#[cfg(feature = "log")]
+use crate::util::char::format_byte_opt;
+
+use crate::util::{constant::TAB_SIZE, edit_map::EditMap};
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
 /// Containers.
@@ -405,7 +409,10 @@ impl<'a> Tokenizer<'a> {
         move_point_back(self, &mut point);
 
         let info = (point.index, point.vs);
+
+        #[cfg(feature = "log")]
         log::debug!("position: define skip: {:?} -> ({:?})", point.line, info);
+
         let at = point.line - self.first_line;
 
         if at >= self.column_start.len() {
@@ -476,7 +483,10 @@ impl<'a> Tokenizer<'a> {
                     self.line_start = self.point.clone();
 
                     self.account_for_potential_skip();
+ 
+                    #[cfg(feature = "log")]
                     log::debug!("position: after eol: `{:?}`", self.point);
+
                 } else {
                     self.point.column += 1;
                 }
@@ -533,7 +543,9 @@ impl<'a> Tokenizer<'a> {
             move_point_back(self, &mut point);
         }
 
+        #[cfg(feature = "log")]
         log::debug!("exit:    `{:?}`", name);
+
         let event = Event {
             kind: Kind::Exit,
             name,
@@ -663,7 +675,9 @@ fn enter_impl(tokenizer: &mut Tokenizer, name: Name, link: Option<Link>) {
     let mut point = tokenizer.point.clone();
     move_point_back(tokenizer, &mut point);
 
+    #[cfg(feature = "log")]
     log::debug!("enter:   `{:?}`", name);
+
     tokenizer.stack.push(name.clone());
     tokenizer.events.push(Event {
         kind: Kind::Enter,
@@ -708,7 +722,9 @@ fn push_impl(
                         attempt.nok
                     };
 
+                    #[cfg(feature = "log")]
                     log::debug!("attempt: `{:?}` -> `{:?}`", state, next);
+
                     state = next;
                 } else {
                     break;
@@ -735,13 +751,18 @@ fn push_impl(
                             None
                         };
 
+                    #[cfg(feature = "log")]
                     log::debug!("feed:    {} to {:?}", format_byte_opt(byte), name);
+
                     tokenizer.expect(byte);
                     state = call(tokenizer, name);
                 };
             }
             State::Retry(name) => {
+
+                #[cfg(feature = "log")]
                 log::debug!("retry:   `{:?}`", name);
+
                 state = call(tokenizer, name);
             }
         }
