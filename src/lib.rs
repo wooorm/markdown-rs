@@ -11,6 +11,17 @@
 //!     constructs (GFM, MDX, and the like)
 //! *   [`to_mdast()`][]
 //!     — turn markdown into a syntax tree
+//!
+//! ## Features
+//!
+//! *   **`default`**
+//!     — nothing is enabled by default
+//! *   **`json`**
+//!     — enable serde to serialize the AST (includes `dep:serde`, `dep:serde_json`)
+//! *   **`log`**
+//!     — enable logging (includes `dep:log`);
+//!     you can show logs with `RUST_LOG=debug`
+
 #![no_std]
 #![deny(clippy::pedantic)]
 #![allow(clippy::doc_link_with_quotes)]

@@ -20,6 +20,7 @@ harness = false
 [features]
 default = []
 json = ["dep:serde", "dep:serde_json"]
+log = ["dep:log"]
 
 [dependencies]
 log = { version = "0.4", optional = true }

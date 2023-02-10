@@ -1,6 +1,6 @@
 fn main() -> Result<(), String> {
     // Turn on debugging.
-    // You can show it with `RUST_LOG=debug cargo run --example lib`
+    // You can show it with `RUST_LOG=debug cargo run --features log --example lib`
     env_logger::init();
 
     // Safely turn (untrusted?) markdown into HTML.
