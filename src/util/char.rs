@@ -115,6 +115,7 @@ pub fn format_opt(char: Option<char>) -> String {
 }
 
 /// Format an optional `byte` (`none` means eof).
+#[cfg(feature = "log")]
 pub fn format_byte_opt(byte: Option<u8>) -> String {
     byte.map_or("end of file".into(), |byte| {
         format!("byte {}", format_byte(byte))
@@ -191,6 +192,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "log")]
     fn test_format_byte_opt() {
         assert_eq!(
             format_byte_opt(None),
