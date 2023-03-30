@@ -268,7 +268,9 @@ The following bash scripts are useful when working on this project:
 *   fuzz:
     ```sh
     cargo install cargo-fuzz
-    cargo +nightly fuzz run markdown
+    cargo install honggfuzz
+    cargo +nightly fuzz run markdown_libfuzz
+    cargo hfuzz run markdown_honggfuzz
     ```
 
 ### Version
