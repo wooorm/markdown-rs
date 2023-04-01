@@ -10,6 +10,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+honggfuzz = "0.5"
 
 [dependencies.markdown]
 path = ".."
@@ -19,7 +20,13 @@ path = ".."
 members = ["."]
 
 [[bin]]
-name = "markdown"
-path = "fuzz_targets/markdown.rs"
+name = "markdown_libfuzz"
+path = "fuzz_targets/markdown_libfuzz.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "markdown_honggfuzz"
+path = "fuzz_targets/markdown_honggfuzz.rs"
 test = false
 doc = false
