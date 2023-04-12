@@ -159,6 +159,14 @@ and a few other structs and enums.
 
 See the [crate docs][docs] for more info.
 
+## Feature Flags
+
+These feature flags are exposed via `cargo`:
+
+* log: enables logging via the [log crate](https://crates.io/crates/log)
+* json: enables de/serialization via the [serde crate](https://crates.io/crates/serde)
+* serde: enables de/serialization via the [serde crate](https://crates.io/crates/log)
+
 ## Extensions
 
 `markdown-rs` supports extensions to `CommonMark`.
