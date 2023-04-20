@@ -1070,17 +1070,19 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::MdxJsxEsWhitespaceInside)
         }
-        _ => {
+        Some(_)
             if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-                == CharacterKind::Whitespace
-            {
-                tokenizer.consume();
-                State::Next(StateName::MdxJsxEsWhitespaceInside)
-            } else {
-                tokenizer.exit(Name::MdxJsxEsWhitespace);
-                State::Ok
-            }
+                == CharacterKind::Whitespace =>
+        {
+            tokenizer.consume();
+            State::Next(StateName::MdxJsxEsWhitespaceInside)
         }
+        Some(_) => {
+            tokenizer.exit(Name::MdxJsxEsWhitespace);
+            State::Ok
+        }
+        // Handle EOF.
+        None => State::Nok,
     }
 }
 
