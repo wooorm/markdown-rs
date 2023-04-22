@@ -126,7 +126,7 @@ fn fuzz() -> Result<(), String> {
             }
         ),
         Ok("<p>&lt;</p>".to_string()),
-        "10: mdx: handle invalid mdx without panic"
+        "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
     Ok(())
