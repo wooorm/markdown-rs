@@ -117,5 +117,17 @@ fn fuzz() -> Result<(), String> {
         "11: gfm task list items followed by eols (GH-24)"
     );
 
+    assert_eq!(
+        markdown::to_html_with_options(
+            "<",
+            &markdown::Options {
+                parse: markdown::ParseOptions::mdx(),
+                ..Default::default()
+            }
+        ),
+        Ok("<p>&lt;</p>".to_string()),
+        "12: mdx: handle invalid mdx without panic (GH-26)"
+    );
+
     Ok(())
 }

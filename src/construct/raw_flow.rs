@@ -10,7 +10,7 @@
 //! raw_flow ::= fence_open *( eol *byte ) [ eol fence_close ]
 //!
 //! ; Restriction: math (flow) does not support the `info` part.
-//! fence_open ::= sequence [1*space_or_tab info [1*space_or_tab meta]] *space_or_tab
+//! fence_open ::= sequence [*space_or_tab info [1*space_or_tab meta]] *space_or_tab
 //! ; Restriction: the number of markers in the closing fence sequence must be
 //! ; equal to or greater than the number of markers in the opening fence
 //! ; sequence.
