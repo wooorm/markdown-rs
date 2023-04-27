@@ -19,14 +19,14 @@ harness = false
 
 [features]
 default = []
-json = ["dep:serde", "dep:serde_json"]
+json = ["serde"]
+serde = ["dep:serde"]
 log = ["dep:log"]
 
 [dependencies]
 log = { version = "0.4", optional = true }
 unicode-id = { version = "0.3", features = ["no_std"] }
 serde = { version = "1.0", features = ["derive"], optional = true }
-serde_json = { version = "1.0", optional = true }
 
 [dev-dependencies]
 env_logger = "0.10"
