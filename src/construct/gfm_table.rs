@@ -972,7 +972,7 @@ fn flush_cell(
                 content: Content::Text,
             });
 
-            if !in_delimiter_row && range.3 > range.2 + 1 {
+            if range.3 > range.2 + 1 {
                 let a = range.2 + 1;
                 let b = range.3 - range.2 - 1;
                 tokenizer.map.add(a, b, vec![]);
