@@ -51,6 +51,8 @@ to markdown such as MDX, math, and frontmatter.
 This Rust crate has a sibling project in JavaScript: [`micromark`][micromark]
 (and [`mdast-util-from-markdown`][mdast-util-from-markdown] for the AST).
 
+P.S. if you want to *compile* MDX, use [`mdxjs-rs`][mdxjs-rs].
+
 ## Questions
 
 *   to learn markdown, see this [cheatsheet and tutorial][cheat]
@@ -68,6 +70,7 @@ This Rust crate has a sibling project in JavaScript: [`micromark`][micromark]
     *   [Overview](#overview)
     *   [File structure](#file-structure)
     *   [Test](#test)
+    *   [Related](#related)
     *   [Version](#version)
     *   [Security](#security)
     *   [Contribute](#contribute)
@@ -273,6 +276,13 @@ The following bash scripts are useful when working on this project:
     cargo hfuzz run markdown_honggfuzz
     ```
 
+### Related
+
+*   [`micromark`][micromark]
+    — same as `markdown-rs` but in JavaScript
+*   [`mdxjs-rs`][mdxjs-rs]
+    — wraps `markdown-rs` to *compile* MDX to JavaScript
+
 ### Version
 
 `markdown-rs` follows [SemVer](https://semver.org).
@@ -377,6 +387,8 @@ Special thanks go out to:
 [mdast]: https://github.com/syntax-tree/mdast
 
 [micromark]: https://github.com/micromark/micromark
+
+[mdxjs-rs]: https://github.com/wooorm/mdxjs-rs
 
 [mdast-util-from-markdown]: https://github.com/syntax-tree/mdast-util-from-markdown
 
