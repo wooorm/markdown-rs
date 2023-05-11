@@ -145,7 +145,7 @@
 //! [*§ 4.9.8 The `tr` element*][html_tr]
 //! in the HTML spec for more info.
 //!
-//! If the the alignment of a column is left, right, or center, a deprecated
+//! If the alignment of a column is left, right, or center, a deprecated
 //! `align` attribute is added to each `<th>` and `<td>` element belonging to
 //! that column.
 //! That attribute is interpreted by browsers as if a CSS `text-align` property
@@ -972,6 +972,8 @@ fn flush_cell(
                 content: Content::Text,
             });
 
+            // To do: positional info of the remaining `data` nodes likely have
+            // to be fixed.
             if range.3 > range.2 + 1 {
                 let a = range.2 + 1;
                 let b = range.3 - range.2 - 1;
