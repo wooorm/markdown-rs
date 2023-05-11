@@ -70,12 +70,12 @@ P.S. if you want to *compile* MDX, use [`mdxjs-rs`][mdxjs-rs].
     *   [Overview](#overview)
     *   [File structure](#file-structure)
     *   [Test](#test)
-    *   [Related](#related)
     *   [Version](#version)
     *   [Security](#security)
     *   [Contribute](#contribute)
     *   [Sponsor](#sponsor)
     *   [Thanks](#thanks)
+*   [Related](#related)
 *   [License](#license)
 
 ## Install
@@ -276,13 +276,6 @@ The following bash scripts are useful when working on this project:
     cargo hfuzz run markdown_honggfuzz
     ```
 
-### Related
-
-*   [`micromark`][micromark]
-    — same as `markdown-rs` but in JavaScript
-*   [`mdxjs-rs`][mdxjs-rs]
-    — wraps `markdown-rs` to *compile* MDX to JavaScript
-
 ### Version
 
 `markdown-rs` follows [SemVer](https://semver.org).
@@ -341,6 +334,13 @@ Special thanks go out to:
 *   [Vercel][] for funding the initial development
 *   [**@Murderlon**][murderlon] for the design of the logo
 *   [**@johannhof**][johannhof] for the crate name
+
+## Related
+
+*   [`micromark`][micromark]
+    — same as `markdown-rs` but in JavaScript
+*   [`mdxjs-rs`][mdxjs-rs]
+    — wraps `markdown-rs` to *compile* MDX to JavaScript
 
 ## License
 
