@@ -1060,10 +1060,7 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'\n') => {
             tokenizer.exit(Name::MdxJsxEsWhitespace);
-            tokenizer.enter(Name::LineEnding);
-            tokenizer.consume();
-            tokenizer.exit(Name::LineEnding);
-            State::Next(StateName::MdxJsxEsWhitespaceEolAfter)
+            State::Retry(StateName::MdxJsxEsWhitespaceStart)
         }
         // Allow continuation bytes.
         Some(0x80..=0xBF) => {
