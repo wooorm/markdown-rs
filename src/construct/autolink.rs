@@ -126,7 +126,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::constant::{AUTOLINK_DOMAIN_SIZE_MAX, AUTOLINK_SCHEME_SIZE_MAX};
 
-/// Start of autolink.
+/// Start of an autolink.
 ///
 /// ```markdown
 /// > | a<https://example.com>b
@@ -205,8 +205,8 @@ pub fn scheme_inside_or_email_atext(tokenizer: &mut Tokenizer) -> State {
         Some(b'+' | b'-' | b'.' | b'0'..=b'9' | b'A'..=b'Z' | b'a'..=b'z')
             if tokenizer.tokenize_state.size < AUTOLINK_SCHEME_SIZE_MAX =>
         {
-            tokenizer.tokenize_state.size += 1;
             tokenizer.consume();
+            tokenizer.tokenize_state.size += 1;
             State::Next(StateName::AutolinkSchemeInsideOrEmailAtext)
         }
         _ => {
@@ -305,12 +305,11 @@ pub fn email_at_sign_or_dot(tokenizer: &mut Tokenizer) -> State {
 pub fn email_label(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'.') => {
-            tokenizer.tokenize_state.size = 0;
             tokenizer.consume();
+            tokenizer.tokenize_state.size = 0;
             State::Next(StateName::AutolinkEmailAtSignOrDot)
         }
         Some(b'>') => {
-            tokenizer.tokenize_state.size = 0;
             let index = tokenizer.events.len();
             tokenizer.exit(Name::AutolinkProtocol);
             // Change the event name.
@@ -320,6 +319,7 @@ pub fn email_label(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             tokenizer.exit(Name::AutolinkMarker);
             tokenizer.exit(Name::Autolink);
+            tokenizer.tokenize_state.size = 0;
             State::Ok
         }
         _ => State::Retry(StateName::AutolinkEmailValue),

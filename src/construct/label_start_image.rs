@@ -68,6 +68,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.enter(Name::LabelMarker);
             tokenizer.consume();
             tokenizer.exit(Name::LabelMarker);
+            tokenizer.exit(Name::LabelImage);
             State::Next(StateName::LabelStartImageAfter)
         }
         _ => State::Nok,
@@ -107,7 +108,6 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
     {
         State::Nok
     } else {
-        tokenizer.exit(Name::LabelImage);
         tokenizer.tokenize_state.label_starts.push(LabelStart {
             kind: LabelKind::Image,
             start: (tokenizer.events.len() - 6, tokenizer.events.len() - 1),

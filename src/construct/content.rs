@@ -30,7 +30,7 @@ use crate::subtokenize::{subtokenize, Subresult};
 use crate::tokenizer::Tokenizer;
 use alloc::{string::String, vec};
 
-/// Before a content content.
+/// Before a content chunk.
 ///
 /// ```markdown
 /// > | abc

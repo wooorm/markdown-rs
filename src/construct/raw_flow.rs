@@ -434,7 +434,7 @@ pub fn meta(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// At eol/eof in code, before a non-lazy closing fence or content.
+/// At eol/eof in raw, before a non-lazy closing fence or content.
 ///
 /// ```markdown
 /// > | ~~~js
@@ -552,7 +552,7 @@ pub fn sequence_close_after(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Before closing fence, at eol.
+/// Before raw content, not a closing fence, at eol.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -567,7 +567,7 @@ pub fn content_before(tokenizer: &mut Tokenizer) -> State {
     State::Next(StateName::RawFlowContentStart)
 }
 
-/// Before code content, definitely not before a closing fence.
+/// Before raw content, not a closing fence.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -591,7 +591,7 @@ pub fn content_start(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Before code content, after optional prefix.
+/// Before raw content, after optional prefix.
 ///
 /// ```markdown
 ///   | ~~~js
@@ -615,7 +615,7 @@ pub fn before_content_chunk(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// In code content.
+/// In raw content.
 ///
 /// ```markdown
 ///   | ~~~js

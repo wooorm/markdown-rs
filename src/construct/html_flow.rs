@@ -197,8 +197,8 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::HtmlFlowTagCloseStart)
         }
         Some(b'?') => {
-            tokenizer.tokenize_state.marker = INSTRUCTION;
             tokenizer.consume();
+            tokenizer.tokenize_state.marker = INSTRUCTION;
             // Do not form containers.
             tokenizer.concrete = true;
             // While we’re in an instruction instead of a declaration, we’re on a `?`
@@ -273,8 +273,8 @@ pub fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.current == Some(HTML_CDATA_PREFIX[tokenizer.tokenize_state.size]) {
-        tokenizer.tokenize_state.size += 1;
         tokenizer.consume();
+        tokenizer.tokenize_state.size += 1;
 
         if tokenizer.tokenize_state.size == HTML_CDATA_PREFIX.len() {
             tokenizer.tokenize_state.size = 0;
@@ -531,8 +531,8 @@ pub fn complete_attribute_value_before(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn complete_attribute_value_quoted(tokenizer: &mut Tokenizer) -> State {
     if tokenizer.current == Some(tokenizer.tokenize_state.marker_b) {
-        tokenizer.tokenize_state.marker_b = 0;
         tokenizer.consume();
+        tokenizer.tokenize_state.marker_b = 0;
         State::Next(StateName::HtmlFlowCompleteAttributeValueQuotedAfter)
     } else if matches!(tokenizer.current, None | Some(b'\n')) {
         tokenizer.tokenize_state.marker = 0;
@@ -640,8 +640,7 @@ pub fn continuation(tokenizer: &mut Tokenizer) -> State {
     } else if tokenizer.tokenize_state.marker == CDATA && tokenizer.current == Some(b']') {
         tokenizer.consume();
         State::Next(StateName::HtmlFlowContinuationCdataInside)
-    } else if (tokenizer.tokenize_state.marker == BASIC
-        || tokenizer.tokenize_state.marker == COMPLETE)
+    } else if matches!(tokenizer.tokenize_state.marker, BASIC | COMPLETE)
         && tokenizer.current == Some(b'\n')
     {
         tokenizer.exit(Name::HtmlFlowData);

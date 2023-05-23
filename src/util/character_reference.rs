@@ -15,7 +15,7 @@ use core::str;
 /// [`CHARACTER_REFERENCES`][] (or [`CHARACTER_REFERENCES_HTML_4`][]) and then
 /// takes the corresponding value from `1`.
 ///
-/// The `html5` boolean us used for named character references, and specifier
+/// The `html5` boolean is used for named character references, and specifier
 /// whether the 2125 names from HTML 5 or the 252 names from HTML 4 are
 /// supported.
 ///
@@ -82,9 +82,9 @@ pub fn decode_named(value: &str, html5: bool) -> Option<String> {
 pub fn decode_numeric(value: &str, radix: u32) -> String {
     if let Some(char) = char::from_u32(u32::from_str_radix(value, radix).unwrap()) {
         if !matches!(char,
-            // C0 except for HT, LF, FF, CR, space
+            // C0 except for HT, LF, FF, CR, space.
             '\0'..='\u{08}' | '\u{0B}' | '\u{0E}'..='\u{1F}' |
-            // Control character (DEL) of c0, and C1 controls.
+            // Control character (DEL) of C0, and C1 controls.
             '\u{7F}'..='\u{9F}'
             // Lone surrogates, noncharacters, and out of range are handled by
             // Rust.
@@ -104,7 +104,7 @@ pub fn decode_numeric(value: &str, radix: u32) -> String {
 /// The marker specifies the format: `#` for hexadecimal, `x` for decimal, and
 /// `&` for named.
 ///
-/// The `html5` boolean us used for named character references, and specifier
+/// The `html5` boolean is used for named character references, and specifier
 /// whether the 2125 names from HTML 5 or the 252 names from HTML 4 are
 /// supported.
 ///

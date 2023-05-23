@@ -57,7 +57,7 @@ use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::constant::HTML_CDATA_PREFIX;
 
-/// Start of HTML (text)
+/// Start of HTML (text).
 ///
 /// ```markdown
 /// > | a <b> c
@@ -606,7 +606,7 @@ pub fn tag_open_attribute_value_unquoted(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn tag_open_attribute_value_quoted_after(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'\t' | b'\n' | b' ' | b'>' | b'/') => State::Retry(StateName::HtmlTextTagOpenBetween),
+        Some(b'\t' | b'\n' | b' ' | b'/' | b'>') => State::Retry(StateName::HtmlTextTagOpenBetween),
         _ => State::Nok,
     }
 }

@@ -185,7 +185,7 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
-/// Between something and something else
+/// Between something and something else.
 ///
 /// ```markdown
 /// > | `a`

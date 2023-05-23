@@ -529,7 +529,7 @@ pub fn resource_title_after(tokenizer: &mut Tokenizer) -> State {
 
     if matches!(tokenizer.current, Some(b'\t' | b'\n' | b' ')) {
         tokenizer.attempt(
-            State::Next(StateName::LabelEndResourceBetween),
+            State::Next(StateName::LabelEndResourceEnd),
             State::Next(StateName::LabelEndResourceEnd),
         );
         State::Retry(space_or_tab_eol(tokenizer))
@@ -571,7 +571,7 @@ pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_3 = Name::ReferenceString;
             tokenizer.attempt(
                 State::Next(StateName::LabelEndReferenceFullAfter),
-                State::Nok,
+                State::Next(StateName::LabelEndReferenceFullMissing)
             );
             State::Retry(StateName::LabelStart)
         }
@@ -613,6 +613,19 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
     } else {
         State::Nok
     }
+}
+
+/// In reference (full) that was missing.
+///
+/// ```markdown
+/// > | [a][b d
+///        ^
+/// ```
+pub fn reference_full_missing(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.token_1 = Name::Data;
+    tokenizer.tokenize_state.token_2 = Name::Data;
+    tokenizer.tokenize_state.token_3 = Name::Data;
+    State::Nok
 }
 
 /// In reference (collapsed), at `[`.
