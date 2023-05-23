@@ -475,7 +475,7 @@ impl Constructs {
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
+    serde(default, rename_all = "camelCase")
 )]
 pub struct CompileOptions {
     /// Whether to allow (dangerous) HTML.
@@ -943,7 +943,7 @@ impl CompileOptions {
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
-    serde(rename_all = "camelCase")
+    serde(default, rename_all = "camelCase")
 )]
 pub struct ParseOptions {
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
@@ -1229,7 +1229,11 @@ impl ParseOptions {
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default)
+)]
 pub struct Options {
     /// Configuration that describes how to parse from markdown.
     pub parse: ParseOptions,
