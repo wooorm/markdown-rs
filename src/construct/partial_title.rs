@@ -187,7 +187,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'"' | b'\'' | b')') => {
+        Some(b'"' | b'\'' | b')' | b'\\') => {
             tokenizer.consume();
             State::Next(StateName::TitleInside)
         }
