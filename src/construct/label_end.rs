@@ -571,7 +571,7 @@ pub fn reference_full(tokenizer: &mut Tokenizer) -> State {
             tokenizer.tokenize_state.token_3 = Name::ReferenceString;
             tokenizer.attempt(
                 State::Next(StateName::LabelEndReferenceFullAfter),
-                State::Next(StateName::LabelEndReferenceFullMissing)
+                State::Next(StateName::LabelEndReferenceFullMissing),
             );
             State::Retry(StateName::LabelStart)
         }

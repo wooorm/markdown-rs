@@ -1,6 +1,6 @@
 [package]
 name = "markdown"
-version = "1.0.0-alpha.9"
+version = "1.0.0-alpha.10"
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
 edition = "2018"
 rust-version = "1.56"
@@ -30,9 +30,9 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 env_logger = "0.10"
-criterion = "0.4"
+criterion = "0.5"
 pretty_assertions = "1"
-swc_core = { version = "0.75.0", features = [
+swc_core = { version = "0.78.0", features = [
   "ecma_ast",
   "ecma_visit",
   "ecma_parser",
