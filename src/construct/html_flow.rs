@@ -19,10 +19,10 @@
 //!
 //! raw_tag_name ::= 'pre' | 'script' | 'style' | 'textarea' ; Note: case-insensitive.
 //! basic_tag_name ::= 'address' | 'article' | 'aside' | ... ; See `constants.rs`, and note: case-insensitive.
-//! opening_tag ::= '<' tag_name *(space_or_tab_eol attribute) [[space_or_tab_eol] '/'] [space_or_tab_eol] '>'
-//! closing_tag ::= '</' tag_name [space_or_tab_eol] '>'
+//! opening_tag ::= '<' tag_name *(1*space_or_tab attribute) [*space_or_tab '/'] *space_or_tab '>'
+//! closing_tag ::= '</' tag_name *space_or_tab '>'
 //! tag_name ::= ascii_alphabetic *('-' | ascii_alphanumeric)
-//! attribute ::= attribute_name [[space_or_tab_eol] '=' [space_or_tab_eol] attribute_value]
+//! attribute ::= attribute_name [*space_or_tab '=' *space_or_tab attribute_value]
 //! attribute_name ::= (':' | '_' | ascii_alphabetic) *('-' | '.' | ':' | '_' | ascii_alphanumeric)
 //! attribute_value ::= '"' *(line - '"') '"' | "'" *(line - "'")  "'" | 1*(text - '"' - "'" - '/' - '<' - '=' - '>' - '`')
 //! ```
