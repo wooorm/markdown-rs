@@ -752,7 +752,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
         // Though: if this was what looked like a footnote, but didn’t match,
         // it’s a link instead, and we need to inject the `^`.
         if label.start.1 != label.end.0 || !caret.is_empty() {
-            tokenizer.map.add(
+            tokenizer.map.add_before(
                 label.start.1 + 1,
                 0,
                 vec![Event {

@@ -1,5 +1,5 @@
 use markdown::{
-    mdast::{Link, Node, Paragraph, Root, Text},
+    mdast::{Image, Link, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Options,
@@ -509,6 +509,28 @@ fn link_resource() -> Result<(), String> {
             position: Some(Position::new(1, 1, 0, 1, 42, 41))
         }),
         "should support link (resource) as `Link`s in mdast"
+    );
+
+    assert_eq!(
+        to_mdast("[![name](image)](url)", &Default::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![Node::Link(Link {
+                    children: vec![Node::Image(Image {
+                        alt: "name".into(),
+                        url: "image".into(),
+                        title: None,
+                        position: Some(Position::new(1, 2, 1, 1, 16, 15)),
+                    }),],
+                    url: "url".into(),
+                    title: None,
+                    position: Some(Position::new(1, 1, 0, 1, 22, 21)),
+                }),],
+                position: Some(Position::new(1, 1, 0, 1, 22, 21)),
+            }),],
+            position: Some(Position::new(1, 1, 0, 1, 22, 21))
+        }),
+        "should support nested links in mdast"
     );
 
     Ok(())
