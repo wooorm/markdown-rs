@@ -38,6 +38,7 @@ swc_core = { version = "0.78.0", features = [
   "ecma_parser",
   "common",
 ] }
+serde_json = "1.0"
 
 [workspace]
 members = ["generate"]
