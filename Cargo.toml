@@ -32,13 +32,13 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 env_logger = "0.10"
 criterion = "0.5"
 pretty_assertions = "1"
+serde_json = "1.0"
 swc_core = { version = "0.78.0", features = [
   "ecma_ast",
   "ecma_visit",
   "ecma_parser",
   "common",
 ] }
-serde_json = "1.0"
 
 [workspace]
 members = ["generate"]
