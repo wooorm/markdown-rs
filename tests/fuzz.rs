@@ -129,5 +129,11 @@ fn fuzz() -> Result<(), String> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert_eq!(
+        to_html("[](a (a \n))"),
+        "<p><a href=\"a\" title=\"a \n\"></a></p>",
+        "yy: link and title with newline (GH-79)"
+    );
+
     Ok(())
 }
