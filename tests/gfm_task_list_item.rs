@@ -2,7 +2,7 @@ use markdown::{
     mdast::{Emphasis, List, ListItem, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Options, ParseOptions,
+    CompileOptions, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -24,6 +24,21 @@ fn gfm_task_list_item() -> Result<(), String> {
         to_html_with_options("* [ ] z.", &Options::gfm())?,
         "<ul>\n<li><input type=\"checkbox\" disabled=\"\" /> z.</li>\n</ul>",
         "should support unchecked task list item checks"
+    );
+
+    assert_eq!(
+        to_html_with_options(
+            "* [x] y.",
+            &Options {
+                parse: ParseOptions::gfm(),
+                compile: CompileOptions {
+                    gfm_task_list_item_checkable: true,
+                    ..CompileOptions::gfm()
+                }
+            }
+        )?,
+        "<ul>\n<li><input type=\"checkbox\" checked=\"\" /> y.</li>\n</ul>",
+        "should support option for enabled (checkable) task list item checks"
     );
 
     assert_eq!(
