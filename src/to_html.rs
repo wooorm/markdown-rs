@@ -601,7 +601,10 @@ fn on_enter_gfm_table_row(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck].
 fn on_enter_gfm_task_list_item_check(context: &mut CompileContext) {
     if !context.image_alt_inside {
-        context.push("<input type=\"checkbox\" disabled=\"\" ");
+        context.push("<input type=\"checkbox\" ");
+        if !context.options.gfm_task_list_item_checkable {
+            context.push("disabled=\"\" ");
+        }
     }
 }
 

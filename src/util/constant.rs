@@ -2742,7 +2742,7 @@ mod tests {
     fn longest<'a>(list: &[&'a str]) -> Option<&'a str> {
         let mut max = 0;
         let mut result = None;
-        for name in list.iter() {
+        for name in list {
             let len = name.len();
             if len > max {
                 max = len;

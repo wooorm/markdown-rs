@@ -831,6 +831,38 @@ pub struct CompileOptions {
     /// ```
     pub gfm_footnote_clobber_prefix: Option<String>,
 
+    /// Whether or not GFM task list html `<input>` items are enabled.
+    ///
+    /// This determines whether or not the user of the browser is able
+    /// to click and toggle generated checkbox items. The default is false.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// # fn main() -> Result<(), String> {
+    ///
+    /// // With `gfm_task_list_item_checkable`, generated `<input type="checkbox" />`
+    /// // tags do not contain the attribute `disabled=""` and are thus toggleable by
+    /// // browser users.
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "* [x] y.",
+    ///         &Options {
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///                 gfm_task_list_item_checkable: true,
+    ///                 ..CompileOptions::gfm()
+    ///             }
+    ///         }
+    ///     )?,
+    ///     "<ul>\n<li><input type=\"checkbox\" checked=\"\" /> y.</li>\n</ul>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub gfm_task_list_item_checkable: bool,
+
     /// Whether to support the GFM tagfilter.
     ///
     /// This option does nothing if `allow_dangerous_html` is not turned on.
