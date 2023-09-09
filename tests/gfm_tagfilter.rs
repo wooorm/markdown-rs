@@ -56,6 +56,38 @@ fn gfm_tagfilter() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options(
+            "<iframe\n>",
+            &Options {
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    gfm_tagfilter: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "&lt;iframe\n>",
+        "should filter when followed by a line ending (1)"
+    );
+
+    assert_eq!(
+        to_html_with_options(
+            "<div\n>",
+            &Options {
+                compile: CompileOptions {
+                    allow_dangerous_html: true,
+                    gfm_tagfilter: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<div\n>",
+        "should filter when followed by a line ending (2)"
+    );
+
+    assert_eq!(
+        to_html_with_options(
             r##"
 <title>
 

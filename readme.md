@@ -254,11 +254,11 @@ The following bash scripts are useful when working on this project:
     ```
 *   format:
     ```sh
-    cargo fmt
+    cargo fmt && cargo fix --all-targets
     ```
 *   lint:
     ```sh
-    cargo fmt --check && cargo clippy --all --all-features
+    cargo fmt --check && cargo clippy --examples --tests --benches --all-features
     ```
 *   test:
     ```sh
