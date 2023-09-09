@@ -472,7 +472,7 @@ a
 "###,
             &Options::gfm()
         )?,
-        r###"<h1>Align</h1>
+        r#"<h1>Align</h1>
 <h2>An empty initial cell</h2>
 <table>
 <thead>
@@ -576,7 +576,7 @@ a
 </tr>
 </tbody>
 </table>
-"###,
+"#,
         "should match alignment like GitHub"
     );
 
@@ -869,7 +869,7 @@ a
 
     assert_eq!(
         to_html_with_options(
-            r###"# Examples from GFM
+            r"# Examples from GFM
 
 ## A
 
@@ -923,10 +923,10 @@ bar
 
 | abc | def |
 | --- | --- |
-"###,
+",
             &Options::gfm()
         )?,
-        r###"<h1>Examples from GFM</h1>
+        r#"<h1>Examples from GFM</h1>
 <h2>A</h2>
 <table>
 <thead>
@@ -1043,13 +1043,13 @@ bar
 </tr>
 </thead>
 </table>
-"###,
+"#,
         "should match examples from the GFM spec like GitHub"
     );
 
     assert_eq!(
         to_html_with_options(
-            r###"# Grave accents
+            r"# Grave accents
 
 ## Grave accent in cell
 
@@ -1081,7 +1081,7 @@ bar
 | `\|\\` |
 
 `\|\\`
-"###,
+",
             &Options {
                 compile: CompileOptions {
                     allow_dangerous_html: true,
@@ -1091,7 +1091,7 @@ bar
                 ..Options::gfm()
             }
         )?,
-        r###"<h1>Grave accents</h1>
+        r"<h1>Grave accents</h1>
 <h2>Grave accent in cell</h2>
 <table>
 <thead>
@@ -1176,7 +1176,7 @@ bar
 </tbody>
 </table>
 <p><code>\|\\</code></p>
-"###,
+",
         "should match grave accent like GitHub"
     );
 
@@ -1403,7 +1403,7 @@ b
                 ..Options::gfm()
             }
         )?,
-        r###"<h2>Blank line</h2>
+        r#"<h2>Blank line</h2>
 <table>
 <thead>
 <tr>
@@ -1726,7 +1726,7 @@ b
 </tbody>
 </table>
 <hr />
-"###,
+"#,
         "should match interrupt like GitHub"
     );
 
@@ -1791,7 +1791,7 @@ a
 
     assert_eq!(
         to_html_with_options(
-            r###"# Some more escapes
+            r"# Some more escapes
 
 | Head          |
 | ------------- |
@@ -1803,10 +1803,10 @@ a
 
 Note: GH has a bug where in case C and E, the escaped escape is treated as a
 normal escape: <https://github.com/github/cmark-gfm/issues/277>.
-"###,
+",
             &Options::gfm()
         )?,
-        r###"<h1>Some more escapes</h1>
+        r#"<h1>Some more escapes</h1>
 <table>
 <thead>
 <tr>
@@ -1833,7 +1833,7 @@ normal escape: <https://github.com/github/cmark-gfm/issues/277>.
 </table>
 <p>Note: GH has a bug where in case C and E, the escaped escape is treated as a
 normal escape: <a href="https://github.com/github/cmark-gfm/issues/277">https://github.com/github/cmark-gfm/issues/277</a>.</p>
-"###,
+"#,
         "should match loose escapes like GitHub"
     );
 

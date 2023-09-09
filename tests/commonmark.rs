@@ -184,29 +184,29 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~
-"###,
+            r#"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~
+"#,
             &danger
         )?,
-        r###"<p>!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~</p>
-"###,
+        r"<p>!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~</p>
+",
         r###"Backslash escapes (12)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"\	\A\a\ \3\φ\«
-"###,
+            r"\	\A\a\ \3\φ\«
+",
             &danger
         )?,
-        r###"<p>\	\A\a\ \3\φ\«</p>
-"###,
+        r"<p>\	\A\a\ \3\φ\«</p>
+",
         r###"Backslash escapes (13)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"\*not emphasized*
+            r#"\*not emphasized*
 \<br/> not a tag
 \[not a link](/foo)
 \`not code`
@@ -215,7 +215,7 @@ bar
 \# not a heading
 \[foo]: /url "not a reference"
 \&ouml; not a character entity
-"###,
+"#,
             &danger
         )?,
         r###"<p>*not emphasized*
@@ -233,20 +233,20 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"\\*emphasis*
-"###,
+            r"\\*emphasis*
+",
             &danger
         )?,
-        r###"<p>\<em>emphasis</em></p>
-"###,
+        r"<p>\<em>emphasis</em></p>
+",
         r###"Backslash escapes (15)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"foo\
+            r"foo\
 bar
-"###,
+",
             &danger
         )?,
         r###"<p>foo<br />
@@ -257,98 +257,98 @@ bar</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"`` \[\` ``
-"###,
+            r"`` \[\` ``
+",
             &danger
         )?,
-        r###"<p><code>\[\`</code></p>
-"###,
+        r"<p><code>\[\`</code></p>
+",
         r###"Backslash escapes (17)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"    \[\]
-"###,
+            r"    \[\]
+",
             &danger
         )?,
-        r###"<pre><code>\[\]
+        r"<pre><code>\[\]
 </code></pre>
-"###,
+",
         r###"Backslash escapes (18)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"~~~
+            r"~~~
 \[\]
 ~~~
-"###,
+",
             &danger
         )?,
-        r###"<pre><code>\[\]
+        r"<pre><code>\[\]
 </code></pre>
-"###,
+",
         r###"Backslash escapes (19)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://example.com?find=\*>
-"###,
+            r"<http://example.com?find=\*>
+",
             &danger
         )?,
-        r###"<p><a href="http://example.com?find=%5C*">http://example.com?find=\*</a></p>
-"###,
+        r#"<p><a href="http://example.com?find=%5C*">http://example.com?find=\*</a></p>
+"#,
         r###"Backslash escapes (20)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="/bar\/)">
-"###,
+            r#"<a href="/bar\/)">
+"#,
             &danger
         )?,
-        r###"<a href="/bar\/)">
-"###,
+        r#"<a href="/bar\/)">
+"#,
         r###"Backslash escapes (21)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo](/bar\* "ti\*tle")
-"###,
+            r#"[foo](/bar\* "ti\*tle")
+"#,
             &danger
         )?,
-        r###"<p><a href="/bar*" title="ti*tle">foo</a></p>
-"###,
+        r#"<p><a href="/bar*" title="ti*tle">foo</a></p>
+"#,
         r###"Backslash escapes (22)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]
+            r#"[foo]
 
 [foo]: /bar\* "ti\*tle"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/bar*" title="ti*tle">foo</a></p>
-"###,
+        r#"<p><a href="/bar*" title="ti*tle">foo</a></p>
+"#,
         r###"Backslash escapes (23)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"``` foo\+bar
+            r"``` foo\+bar
 foo
 ```
-"###,
+",
             &danger
         )?,
-        r###"<pre><code class="language-foo+bar">foo
+        r#"<pre><code class="language-foo+bar">foo
 </code></pre>
-"###,
+"#,
         r###"Backslash escapes (24)"###
 );
 
@@ -430,36 +430,36 @@ foo
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="&ouml;&ouml;.html">
-"###,
+            r#"<a href="&ouml;&ouml;.html">
+"#,
             &danger
         )?,
-        r###"<a href="&ouml;&ouml;.html">
-"###,
+        r#"<a href="&ouml;&ouml;.html">
+"#,
         r###"Entity and numeric character references (31)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo](/f&ouml;&ouml; "f&ouml;&ouml;")
-"###,
+            r#"[foo](/f&ouml;&ouml; "f&ouml;&ouml;")
+"#,
             &danger
         )?,
-        r###"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
-"###,
+        r#"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
+"#,
         r###"Entity and numeric character references (32)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]
+            r#"[foo]
 
 [foo]: /f&ouml;&ouml; "f&ouml;&ouml;"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
-"###,
+        r#"<p><a href="/f%C3%B6%C3%B6" title="föö">foo</a></p>
+"#,
         r###"Entity and numeric character references (33)"###
 );
 
@@ -471,9 +471,9 @@ foo
 "###,
             &danger
         )?,
-        r###"<pre><code class="language-föö">foo
+        r#"<pre><code class="language-föö">foo
 </code></pre>
-"###,
+"#,
         r###"Entity and numeric character references (34)"###
 );
 
@@ -886,8 +886,8 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"\## foo
-"###,
+            r"\## foo
+",
             &danger
         )?,
         r###"<p>## foo</p>
@@ -897,8 +897,8 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"# foo *bar* \*baz\*
-"###,
+            r"# foo *bar* \*baz\*
+",
             &danger
         )?,
         r###"<h1>foo <em>bar</em> *baz*</h1>
@@ -1018,10 +1018,10 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"### foo \###
+            r"### foo \###
 ## foo #\##
 # foo \#
-"###,
+",
             &danger
         )?,
         r###"<h3>foo ###</h3>
@@ -1233,26 +1233,26 @@ Foo
 
     assert_eq!(
         to_html_with_options(
-            r###"Foo\
+            r"Foo\
 ----
-"###,
+",
             &danger
         )?,
-        r###"<h2>Foo\</h2>
-"###,
+        r"<h2>Foo\</h2>
+",
         r###"Setext headings (90)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"`Foo
+            r#"`Foo
 ----
 `
 
 <a title="a lot
 ---
 of dashes"/>
-"###,
+"#,
             &danger
         )?,
         r###"<h2>`Foo</h2>
@@ -1414,9 +1414,9 @@ Baz
 
     assert_eq!(
         to_html_with_options(
-            r###"\> foo
+            r"\> foo
 ------
-"###,
+",
             &danger
         )?,
         r###"<h2>&gt; foo</h2>
@@ -1479,11 +1479,11 @@ bar</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"Foo
+            r"Foo
 bar
 \---
 baz
-"###,
+",
             &danger
         )?,
         r###"<p>Foo
@@ -2065,11 +2065,11 @@ end
 "###,
             &danger
         )?,
-        r###"<pre><code class="language-ruby">def foo(x)
+        r#"<pre><code class="language-ruby">def foo(x)
   return 3
 end
 </code></pre>
-"###,
+"#,
         r###"Fenced code blocks (142)"###
 );
 
@@ -2083,11 +2083,11 @@ end
 "###,
             &danger
         )?,
-        r###"<pre><code class="language-ruby">def foo(x)
+        r#"<pre><code class="language-ruby">def foo(x)
   return 3
 end
 </code></pre>
-"###,
+"#,
         r###"Fenced code blocks (143)"###
 );
 
@@ -2098,8 +2098,8 @@ end
 "###,
             &danger
         )?,
-        r###"<pre><code class="language-;"></code></pre>
-"###,
+        r#"<pre><code class="language-;"></code></pre>
+"#,
         r###"Fenced code blocks (144)"###
 );
 
@@ -2124,9 +2124,9 @@ foo
 "###,
             &danger
         )?,
-        r###"<pre><code class="language-aa">foo
+        r#"<pre><code class="language-aa">foo
 </code></pre>
-"###,
+"#,
         r###"Fenced code blocks (146)"###
 );
 
@@ -2222,48 +2222,48 @@ okay.
 
     assert_eq!(
         to_html_with_options(
-            r###"<DIV CLASS="foo">
+            r#"<DIV CLASS="foo">
 
 *Markdown*
 
 </DIV>
-"###,
+"#,
             &danger
         )?,
-        r###"<DIV CLASS="foo">
+        r#"<DIV CLASS="foo">
 <p><em>Markdown</em></p>
 </DIV>
-"###,
+"#,
         r###"HTML blocks (152)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<div id="foo"
+            r#"<div id="foo"
   class="bar">
 </div>
-"###,
+"#,
             &danger
         )?,
-        r###"<div id="foo"
+        r#"<div id="foo"
   class="bar">
 </div>
-"###,
+"#,
         r###"HTML blocks (153)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<div id="foo" class="bar
+            r#"<div id="foo" class="bar
   baz">
 </div>
-"###,
+"#,
             &danger
         )?,
-        r###"<div id="foo" class="bar
+        r#"<div id="foo" class="bar
   baz">
 </div>
-"###,
+"#,
         r###"HTML blocks (154)"###
 );
 
@@ -2285,14 +2285,14 @@ okay.
 
     assert_eq!(
         to_html_with_options(
-            r###"<div id="foo"
+            r#"<div id="foo"
 *hi*
-"###,
+"#,
             &danger
         )?,
-        r###"<div id="foo"
+        r#"<div id="foo"
 *hi*
-"###,
+"#,
         r###"HTML blocks (156)"###
 );
 
@@ -2324,12 +2324,12 @@ foo
 
     assert_eq!(
         to_html_with_options(
-            r###"<div><a href="bar">*foo*</a></div>
-"###,
+            r#"<div><a href="bar">*foo*</a></div>
+"#,
             &danger
         )?,
-        r###"<div><a href="bar">*foo*</a></div>
-"###,
+        r#"<div><a href="bar">*foo*</a></div>
+"#,
         r###"HTML blocks (159)"###
 );
 
@@ -2367,16 +2367,16 @@ int x = 33;
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="foo">
+            r#"<a href="foo">
 *bar*
 </a>
-"###,
+"#,
             &danger
         )?,
-        r###"<a href="foo">
+        r#"<a href="foo">
 *bar*
 </a>
-"###,
+"#,
         r###"HTML blocks (162)"###
 );
 
@@ -2397,16 +2397,16 @@ int x = 33;
 
     assert_eq!(
         to_html_with_options(
-            r###"<i class="foo">
+            r#"<i class="foo">
 *bar*
 </i>
-"###,
+"#,
             &danger
         )?,
-        r###"<i class="foo">
+        r#"<i class="foo">
 *bar*
 </i>
-"###,
+"#,
         r###"HTML blocks (164)"###
 );
 
@@ -2468,45 +2468,45 @@ int x = 33;
 
     assert_eq!(
         to_html_with_options(
-            r###"<pre language="haskell"><code>
+            r#"<pre language="haskell"><code>
 import Text.HTML.TagSoup
 
 main :: IO ()
 main = print $ parseTags tags
 </code></pre>
 okay
-"###,
+"#,
             &danger
         )?,
-        r###"<pre language="haskell"><code>
+        r#"<pre language="haskell"><code>
 import Text.HTML.TagSoup
 
 main :: IO ()
 main = print $ parseTags tags
 </code></pre>
 <p>okay</p>
-"###,
+"#,
         r###"HTML blocks (169)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<script type="text/javascript">
+            r#"<script type="text/javascript">
 // JavaScript example
 
 document.getElementById("demo").innerHTML = "Hello JavaScript!";
 </script>
 okay
-"###,
+"#,
             &danger
         )?,
-        r###"<script type="text/javascript">
+        r#"<script type="text/javascript">
 // JavaScript example
 
 document.getElementById("demo").innerHTML = "Hello JavaScript!";
 </script>
 <p>okay</p>
-"###,
+"#,
         r###"HTML blocks (170)"###
 );
 
@@ -2535,41 +2535,41 @@ _bar_
 
     assert_eq!(
         to_html_with_options(
-            r###"<style
+            r#"<style
   type="text/css">
 h1 {color:red;}
 
 p {color:blue;}
 </style>
 okay
-"###,
+"#,
             &danger
         )?,
-        r###"<style
+        r#"<style
   type="text/css">
 h1 {color:red;}
 
 p {color:blue;}
 </style>
 <p>okay</p>
-"###,
+"#,
         r###"HTML blocks (172)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<style
+            r#"<style
   type="text/css">
 
 foo
-"###,
+"#,
             &danger
         )?,
-        r###"<style
+        r#"<style
   type="text/css">
 
 foo
-"###,
+"#,
         r###"HTML blocks (173)"###
 );
 
@@ -2801,16 +2801,16 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"Foo
+            r#"Foo
 <a href="bar">
 baz
-"###,
+"#,
             &danger
         )?,
-        r###"<p>Foo
+        r#"<p>Foo
 <a href="bar">
 baz</p>
-"###,
+"#,
         r###"HTML blocks (187)"###
 );
 
@@ -2903,14 +2903,14 @@ Hi
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]: /url "title"
+            r#"[foo]: /url "title"
 
 [foo]
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">foo</a></p>
+"#,
         r###"Link reference definitions (192)"###
 );
 
@@ -2924,21 +2924,21 @@ Hi
 "###,
             &danger
         )?,
-        r###"<p><a href="/url" title="the title">foo</a></p>
-"###,
+        r#"<p><a href="/url" title="the title">foo</a></p>
+"#,
         r###"Link reference definitions (193)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[Foo*bar\]]:my_(url) 'title (with parens)'
+            r"[Foo*bar\]]:my_(url) 'title (with parens)'
 
 [Foo*bar\]]
-"###,
+",
             &danger
         )?,
-        r###"<p><a href="my_(url)" title="title (with parens)">Foo*bar]</a></p>
-"###,
+        r#"<p><a href="my_(url)" title="title (with parens)">Foo*bar]</a></p>
+"#,
         r###"Link reference definitions (194)"###
 );
 
@@ -2952,8 +2952,8 @@ Hi
 "###,
             &danger
         )?,
-        r###"<p><a href="my%20url" title="title">Foo bar</a></p>
-"###,
+        r#"<p><a href="my%20url" title="title">Foo bar</a></p>
+"#,
         r###"Link reference definitions (195)"###
 );
 
@@ -2969,12 +2969,12 @@ line2
 "###,
             &danger
         )?,
-        r###"<p><a href="/url" title="
+        r#"<p><a href="/url" title="
 title
 line1
 line2
 ">foo</a></p>
-"###,
+"#,
         r###"Link reference definitions (196)"###
 );
 
@@ -3004,8 +3004,8 @@ with blank line'
 "###,
             &danger
         )?,
-        r###"<p><a href="/url">foo</a></p>
-"###,
+        r#"<p><a href="/url">foo</a></p>
+"#,
         r###"Link reference definitions (198)"###
 );
 
@@ -3031,8 +3031,8 @@ with blank line'
 "###,
             &danger
         )?,
-        r###"<p><a href="">foo</a></p>
-"###,
+        r#"<p><a href="">foo</a></p>
+"#,
         r###"Link reference definitions (200)"###
 );
 
@@ -3052,14 +3052,14 @@ with blank line'
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]: /url\bar\*baz "foo\"bar\baz"
+            r#"[foo]: /url\bar\*baz "foo\"bar\baz"
 
 [foo]
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url%5Cbar*baz" title="foo&quot;bar\baz">foo</a></p>
-"###,
+        r#"<p><a href="/url%5Cbar*baz" title="foo&quot;bar\baz">foo</a></p>
+"#,
         r###"Link reference definitions (202)"###
 );
 
@@ -3071,8 +3071,8 @@ with blank line'
 "###,
             &danger
         )?,
-        r###"<p><a href="url">foo</a></p>
-"###,
+        r#"<p><a href="url">foo</a></p>
+"#,
         r###"Link reference definitions (203)"###
 );
 
@@ -3085,8 +3085,8 @@ with blank line'
 "###,
             &danger
         )?,
-        r###"<p><a href="first">foo</a></p>
-"###,
+        r#"<p><a href="first">foo</a></p>
+"#,
         r###"Link reference definitions (204)"###
 );
 
@@ -3098,8 +3098,8 @@ with blank line'
 "###,
             &danger
         )?,
-        r###"<p><a href="/url">Foo</a></p>
-"###,
+        r#"<p><a href="/url">Foo</a></p>
+"#,
         r###"Link reference definitions (205)"###
 );
 
@@ -3111,8 +3111,8 @@ with blank line'
 "###,
             &danger
         )?,
-        r###"<p><a href="/%CF%86%CE%BF%CF%85">αγω</a></p>
-"###,
+        r#"<p><a href="/%CF%86%CE%BF%CF%85">αγω</a></p>
+"#,
         r###"Link reference definitions (206)"###
 );
 
@@ -3142,8 +3142,8 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]: /url "title" ok
-"###,
+            r#"[foo]: /url "title" ok
+"#,
             &danger
         )?,
         r###"<p>[foo]: /url &quot;title&quot; ok</p>
@@ -3153,9 +3153,9 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]: /url
+            r#"[foo]: /url
 "title" ok
-"###,
+"#,
             &danger
         )?,
         r###"<p>&quot;title&quot; ok</p>
@@ -3165,10 +3165,10 @@ bar
 
     assert_eq!(
         to_html_with_options(
-            r###"    [foo]: /url "title"
+            r#"    [foo]: /url "title"
 
 [foo]
-"###,
+"#,
             &danger
         )?,
         r###"<pre><code>[foo]: /url &quot;title&quot;
@@ -3219,11 +3219,11 @@ bar
 "###,
             &danger
         )?,
-        r###"<h1><a href="/url">Foo</a></h1>
+        r#"<h1><a href="/url">Foo</a></h1>
 <blockquote>
 <p>bar</p>
 </blockquote>
-"###,
+"#,
         r###"Link reference definitions (214)"###
 );
 
@@ -3236,9 +3236,9 @@ bar
 "###,
             &danger
         )?,
-        r###"<h1>bar</h1>
+        r#"<h1>bar</h1>
 <p><a href="/url">foo</a></p>
-"###,
+"#,
         r###"Link reference definitions (215)"###
 );
 
@@ -3250,15 +3250,15 @@ bar
 "###,
             &danger
         )?,
-        r###"<p>===
+        r#"<p>===
 <a href="/url">foo</a></p>
-"###,
+"#,
         r###"Link reference definitions (216)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]: /foo-url "foo"
+            r#"[foo]: /foo-url "foo"
 [bar]: /bar-url
   "bar"
 [baz]: /baz-url
@@ -3266,13 +3266,13 @@ bar
 [foo],
 [bar],
 [baz]
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/foo-url" title="foo">foo</a>,
+        r#"<p><a href="/foo-url" title="foo">foo</a>,
 <a href="/bar-url" title="bar">bar</a>,
 <a href="/baz-url">baz</a></p>
-"###,
+"#,
         r###"Link reference definitions (217)"###
 );
 
@@ -3284,10 +3284,10 @@ bar
 "###,
             &danger
         )?,
-        r###"<p><a href="/url">foo</a></p>
+        r#"<p><a href="/url">foo</a></p>
 <blockquote>
 </blockquote>
-"###,
+"#,
         r###"Link reference definitions (218)"###
 );
 
@@ -4091,10 +4091,10 @@ baz
 "###,
             &danger
         )?,
-        r###"<ol start="123456789">
+        r#"<ol start="123456789">
 <li>ok</li>
 </ol>
-"###,
+"#,
         r###"List items (265)"###
 );
 
@@ -4115,10 +4115,10 @@ baz
 "###,
             &danger
         )?,
-        r###"<ol start="0">
+        r#"<ol start="0">
 <li>ok</li>
 </ol>
-"###,
+"#,
         r###"List items (267)"###
 );
 
@@ -4128,10 +4128,10 @@ baz
 "###,
             &danger
         )?,
-        r###"<ol start="3">
+        r#"<ol start="3">
 <li>ok</li>
 </ol>
-"###,
+"#,
         r###"List items (268)"###
 );
 
@@ -4173,14 +4173,14 @@ baz
 "###,
             &danger
         )?,
-        r###"<ol start="10">
+        r#"<ol start="10">
 <li>
 <p>foo</p>
 <pre><code>bar
 </code></pre>
 </li>
 </ol>
-"###,
+"#,
         r###"List items (271)"###
 );
 
@@ -4674,14 +4674,14 @@ continued here.</p>
 "###,
             &danger
         )?,
-        r###"<ol start="10">
+        r#"<ol start="10">
 <li>foo
 <ul>
 <li>bar</li>
 </ul>
 </li>
 </ol>
-"###,
+"#,
         r###"List items (296)"###
 );
 
@@ -4692,13 +4692,13 @@ continued here.</p>
 "###,
             &danger
         )?,
-        r###"<ol start="10">
+        r#"<ol start="10">
 <li>foo</li>
 </ol>
 <ul>
 <li>bar</li>
 </ul>
-"###,
+"#,
         r###"List items (297)"###
 );
 
@@ -4725,7 +4725,7 @@ continued here.</p>
 "###,
             &danger
         )?,
-        r###"<ol>
+        r#"<ol>
 <li>
 <ul>
 <li>
@@ -4736,7 +4736,7 @@ continued here.</p>
 </ul>
 </li>
 </ol>
-"###,
+"#,
         r###"List items (299)"###
 );
 
@@ -4788,14 +4788,14 @@ baz</li>
 "###,
             &danger
         )?,
-        r###"<ol>
+        r#"<ol>
 <li>foo</li>
 <li>bar</li>
 </ol>
 <ol start="3">
 <li>baz</li>
 </ol>
-"###,
+"#,
         r###"Lists (302)"###
 );
 
@@ -5481,12 +5481,12 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"`foo\`bar`
-"###,
+            r"`foo\`bar`
+",
             &danger
         )?,
-        r###"<p><code>foo\</code>bar`</p>
-"###,
+        r"<p><code>foo\</code>bar`</p>
+",
         r###"Code spans (338)"###
 );
 
@@ -5536,8 +5536,8 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"`<a href="`">`
-"###,
+            r#"`<a href="`">`
+"#,
             &danger
         )?,
         r###"<p><code>&lt;a href=&quot;</code>&quot;&gt;`</p>
@@ -5547,12 +5547,12 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="`">`
-"###,
+            r#"<a href="`">`
+"#,
             &danger
         )?,
-        r###"<p><a href="`">`</p>
-"###,
+        r#"<p><a href="`">`</p>
+"#,
         r###"Code spans (344)"###
 );
 
@@ -5573,8 +5573,8 @@ baz`
 "###,
             &danger
         )?,
-        r###"<p><a href="http://foo.bar.%60baz">http://foo.bar.`baz</a>`</p>
-"###,
+        r#"<p><a href="http://foo.bar.%60baz">http://foo.bar.`baz</a>`</p>
+"#,
         r###"Code spans (346)"###
 );
 
@@ -5635,8 +5635,8 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"a*"foo"*
-"###,
+            r#"a*"foo"*
+"#,
             &danger
         )?,
         r###"<p>a*&quot;foo&quot;*</p>
@@ -5701,8 +5701,8 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"a_"foo"_
-"###,
+            r#"a_"foo"_
+"#,
             &danger
         )?,
         r###"<p>a_&quot;foo&quot;_</p>
@@ -5745,8 +5745,8 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"aa_"bb"_cc
-"###,
+            r#"aa_"bb"_cc
+"#,
             &danger
         )?,
         r###"<p>aa_&quot;bb&quot;_cc</p>
@@ -5934,8 +5934,8 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"a**"foo"**
-"###,
+            r#"a**"foo"**
+"#,
             &danger
         )?,
         r###"<p>a**&quot;foo&quot;**</p>
@@ -5991,8 +5991,8 @@ foo bar__</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"a__"foo"__
-"###,
+            r#"a__"foo"__
+"#,
             &danger
         )?,
         r###"<p>a__&quot;foo&quot;__</p>
@@ -6103,8 +6103,8 @@ foo bar__</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"**foo "*bar*" foo**
-"###,
+            r#"**foo "*bar*" foo**
+"#,
             &danger
         )?,
         r###"<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>
@@ -6206,8 +6206,8 @@ foo bar__</p>
 "###,
             &danger
         )?,
-        r###"<p><em>foo <a href="/url">bar</a></em></p>
-"###,
+        r#"<p><em>foo <a href="/url">bar</a></em></p>
+"#,
         r###"Emphasis and strong emphasis (403)"###
 );
 
@@ -6373,8 +6373,8 @@ bar</em></p>
 "###,
             &danger
         )?,
-        r###"<p><em>foo <a href="/url"><em>bar</em></a></em></p>
-"###,
+        r#"<p><em>foo <a href="/url"><em>bar</em></a></em></p>
+"#,
         r###"Emphasis and strong emphasis (418)"###
 );
 
@@ -6406,8 +6406,8 @@ bar</em></p>
 "###,
             &danger
         )?,
-        r###"<p><strong>foo <a href="/url">bar</a></strong></p>
-"###,
+        r#"<p><strong>foo <a href="/url">bar</a></strong></p>
+"#,
         r###"Emphasis and strong emphasis (421)"###
 );
 
@@ -6531,8 +6531,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><strong>foo <a href="/url"><em>bar</em></a></strong></p>
-"###,
+        r#"<p><strong>foo <a href="/url"><em>bar</em></a></strong></p>
+"#,
         r###"Emphasis and strong emphasis (432)"###
 );
 
@@ -6571,8 +6571,8 @@ bim</em> bop</strong></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"foo *\**
-"###,
+            r"foo *\**
+",
             &danger
         )?,
         r###"<p>foo <em>*</em></p>
@@ -6604,8 +6604,8 @@ bim</em> bop</strong></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"foo **\***
-"###,
+            r"foo **\***
+",
             &danger
         )?,
         r###"<p>foo <strong>*</strong></p>
@@ -6703,8 +6703,8 @@ bim</em> bop</strong></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"foo _\__
-"###,
+            r"foo _\__
+",
             &danger
         )?,
         r###"<p>foo <em>_</em></p>
@@ -6736,8 +6736,8 @@ bim</em> bop</strong></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"foo __\___
-"###,
+            r"foo __\___
+",
             &danger
         )?,
         r###"<p>foo <strong>_</strong></p>
@@ -6971,8 +6971,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p>*<a href="/url">bar*</a></p>
-"###,
+        r#"<p>*<a href="/url">bar*</a></p>
+"#,
         r###"Emphasis and strong emphasis (472)"###
 );
 
@@ -6982,41 +6982,41 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p>_foo <a href="/url">bar_</a></p>
-"###,
+        r#"<p>_foo <a href="/url">bar_</a></p>
+"#,
         r###"Emphasis and strong emphasis (473)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"*<img src="foo" title="*"/>
-"###,
+            r#"*<img src="foo" title="*"/>
+"#,
             &danger
         )?,
-        r###"<p>*<img src="foo" title="*"/></p>
-"###,
+        r#"<p>*<img src="foo" title="*"/></p>
+"#,
         r###"Emphasis and strong emphasis (474)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"**<a href="**">
-"###,
+            r#"**<a href="**">
+"#,
             &danger
         )?,
-        r###"<p>**<a href="**"></p>
-"###,
+        r#"<p>**<a href="**"></p>
+"#,
         r###"Emphasis and strong emphasis (475)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"__<a href="__">
-"###,
+            r#"__<a href="__">
+"#,
             &danger
         )?,
-        r###"<p>__<a href="__"></p>
-"###,
+        r#"<p>__<a href="__"></p>
+"#,
         r###"Emphasis and strong emphasis (476)"###
 );
 
@@ -7048,8 +7048,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p>**a<a href="http://foo.bar/?q=**">http://foo.bar/?q=**</a></p>
-"###,
+        r#"<p>**a<a href="http://foo.bar/?q=**">http://foo.bar/?q=**</a></p>
+"#,
         r###"Emphasis and strong emphasis (479)"###
 );
 
@@ -7059,19 +7059,19 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p>__a<a href="http://foo.bar/?q=__">http://foo.bar/?q=__</a></p>
-"###,
+        r#"<p>__a<a href="http://foo.bar/?q=__">http://foo.bar/?q=__</a></p>
+"#,
         r###"Emphasis and strong emphasis (480)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](/uri "title")
-"###,
+            r#"[link](/uri "title")
+"#,
             &danger
         )?,
-        r###"<p><a href="/uri" title="title">link</a></p>
-"###,
+        r#"<p><a href="/uri" title="title">link</a></p>
+"#,
         r###"Links (481)"###
 );
 
@@ -7081,8 +7081,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri">link</a></p>
-"###,
+        r#"<p><a href="/uri">link</a></p>
+"#,
         r###"Links (482)"###
 );
 
@@ -7092,8 +7092,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><a href="./target.md"></a></p>
-"###,
+        r#"<p><a href="./target.md"></a></p>
+"#,
         r###"Links (483)"###
 );
 
@@ -7103,8 +7103,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><a href="">link</a></p>
-"###,
+        r#"<p><a href="">link</a></p>
+"#,
         r###"Links (484)"###
 );
 
@@ -7114,8 +7114,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><a href="">link</a></p>
-"###,
+        r#"<p><a href="">link</a></p>
+"#,
         r###"Links (485)"###
 );
 
@@ -7125,8 +7125,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><a href=""></a></p>
-"###,
+        r#"<p><a href=""></a></p>
+"#,
         r###"Links (486)"###
 );
 
@@ -7147,8 +7147,8 @@ bim</em> bop</strong></p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/my%20uri">link</a></p>
-"###,
+        r#"<p><a href="/my%20uri">link</a></p>
+"#,
         r###"Links (488)"###
 );
 
@@ -7184,15 +7184,15 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="b)c">a</a></p>
-"###,
+        r#"<p><a href="b)c">a</a></p>
+"#,
         r###"Links (491)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](<foo\>)
-"###,
+            r"[link](<foo\>)
+",
             &danger
         )?,
         r###"<p>[link](&lt;foo&gt;)</p>
@@ -7217,12 +7217,12 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](\(foo\))
-"###,
+            r"[link](\(foo\))
+",
             &danger
         )?,
-        r###"<p><a href="(foo)">link</a></p>
-"###,
+        r#"<p><a href="(foo)">link</a></p>
+"#,
         r###"Links (494)"###
 );
 
@@ -7232,8 +7232,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="foo(and(bar))">link</a></p>
-"###,
+        r#"<p><a href="foo(and(bar))">link</a></p>
+"#,
         r###"Links (495)"###
 );
 
@@ -7250,12 +7250,12 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](foo\(and\(bar\))
-"###,
+            r"[link](foo\(and\(bar\))
+",
             &danger
         )?,
-        r###"<p><a href="foo(and(bar)">link</a></p>
-"###,
+        r#"<p><a href="foo(and(bar)">link</a></p>
+"#,
         r###"Links (497)"###
 );
 
@@ -7265,19 +7265,19 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="foo(and(bar)">link</a></p>
-"###,
+        r#"<p><a href="foo(and(bar)">link</a></p>
+"#,
         r###"Links (498)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](foo\)\:)
-"###,
+            r"[link](foo\)\:)
+",
             &danger
         )?,
-        r###"<p><a href="foo):">link</a></p>
-"###,
+        r#"<p><a href="foo):">link</a></p>
+"#,
         r###"Links (499)"###
 );
 
@@ -7291,21 +7291,21 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="#fragment">link</a></p>
+        r##"<p><a href="#fragment">link</a></p>
 <p><a href="http://example.com#fragment">link</a></p>
 <p><a href="http://example.com?foo=3#frag">link</a></p>
-"###,
+"##,
         r###"Links (500)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](foo\bar)
-"###,
+            r"[link](foo\bar)
+",
             &danger
         )?,
-        r###"<p><a href="foo%5Cbar">link</a></p>
-"###,
+        r#"<p><a href="foo%5Cbar">link</a></p>
+"#,
         r###"Links (501)"###
 );
 
@@ -7315,63 +7315,63 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="foo%20b%C3%A4">link</a></p>
-"###,
+        r#"<p><a href="foo%20b%C3%A4">link</a></p>
+"#,
         r###"Links (502)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link]("title")
-"###,
+            r#"[link]("title")
+"#,
             &danger
         )?,
-        r###"<p><a href="%22title%22">link</a></p>
-"###,
+        r#"<p><a href="%22title%22">link</a></p>
+"#,
         r###"Links (503)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](/url "title")
+            r#"[link](/url "title")
 [link](/url 'title')
 [link](/url (title))
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">link</a>
+        r#"<p><a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a></p>
-"###,
+"#,
         r###"Links (504)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](/url "title \"&quot;")
-"###,
+            r#"[link](/url "title \"&quot;")
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title &quot;&quot;">link</a></p>
-"###,
+        r#"<p><a href="/url" title="title &quot;&quot;">link</a></p>
+"#,
         r###"Links (505)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](/url "title")
-"###,
+            r#"[link](/url "title")
+"#,
             &danger
         )?,
-        r###"<p><a href="/url%C2%A0%22title%22">link</a></p>
-"###,
+        r#"<p><a href="/url%C2%A0%22title%22">link</a></p>
+"#,
         r###"Links (506)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](/url "title "and" title")
-"###,
+            r#"[link](/url "title "and" title")
+"#,
             &danger
         )?,
         r###"<p>[link](/url &quot;title &quot;and&quot; title&quot;)</p>
@@ -7381,24 +7381,24 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](/url 'title "and" title')
-"###,
+            r#"[link](/url 'title "and" title')
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title &quot;and&quot; title">link</a></p>
-"###,
+        r#"<p><a href="/url" title="title &quot;and&quot; title">link</a></p>
+"#,
         r###"Links (508)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link](   /uri
+            r#"[link](   /uri
   "title"  )
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/uri" title="title">link</a></p>
-"###,
+        r#"<p><a href="/uri" title="title">link</a></p>
+"#,
         r###"Links (509)"###
 );
 
@@ -7419,8 +7419,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri">link [foo [bar]]</a></p>
-"###,
+        r#"<p><a href="/uri">link [foo [bar]]</a></p>
+"#,
         r###"Links (511)"###
 );
 
@@ -7441,19 +7441,19 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[link <a href="/uri">bar</a></p>
-"###,
+        r#"<p>[link <a href="/uri">bar</a></p>
+"#,
         r###"Links (513)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link \[bar](/uri)
-"###,
+            r"[link \[bar](/uri)
+",
             &danger
         )?,
-        r###"<p><a href="/uri">link [bar</a></p>
-"###,
+        r#"<p><a href="/uri">link [bar</a></p>
+"#,
         r###"Links (514)"###
 );
 
@@ -7463,8 +7463,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
-"###,
+        r#"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
+"#,
         r###"Links (515)"###
 );
 
@@ -7474,8 +7474,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
-"###,
+        r#"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
+"#,
         r###"Links (516)"###
 );
 
@@ -7485,8 +7485,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo <a href="/uri">bar</a>](/uri)</p>
-"###,
+        r#"<p>[foo <a href="/uri">bar</a>](/uri)</p>
+"#,
         r###"Links (517)"###
 );
 
@@ -7496,8 +7496,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo <em>[bar <a href="/uri">baz</a>](/uri)</em>](/uri)</p>
-"###,
+        r#"<p>[foo <em>[bar <a href="/uri">baz</a>](/uri)</em>](/uri)</p>
+"#,
         r###"Links (518)"###
 );
 
@@ -7507,8 +7507,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="uri3" alt="[foo](uri2)" /></p>
-"###,
+        r#"<p><img src="uri3" alt="[foo](uri2)" /></p>
+"#,
         r###"Links (519)"###
 );
 
@@ -7518,8 +7518,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>*<a href="/uri">foo*</a></p>
-"###,
+        r#"<p>*<a href="/uri">foo*</a></p>
+"#,
         r###"Links (520)"###
 );
 
@@ -7529,8 +7529,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="baz*">foo *bar</a></p>
-"###,
+        r#"<p><a href="baz*">foo *bar</a></p>
+"#,
         r###"Links (521)"###
 );
 
@@ -7547,12 +7547,12 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo <bar attr="](baz)">
-"###,
+            r#"[foo <bar attr="](baz)">
+"#,
             &danger
         )?,
-        r###"<p>[foo <bar attr="](baz)"></p>
-"###,
+        r#"<p>[foo <bar attr="](baz)"></p>
+"#,
         r###"Links (523)"###
 );
 
@@ -7573,21 +7573,21 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo<a href="http://example.com/?search=%5D(uri)">http://example.com/?search=](uri)</a></p>
-"###,
+        r#"<p>[foo<a href="http://example.com/?search=%5D(uri)">http://example.com/?search=](uri)</a></p>
+"#,
         r###"Links (525)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo][bar]
+            r#"[foo][bar]
 
 [bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">foo</a></p>
+"#,
         r###"Links (526)"###
 );
 
@@ -7599,21 +7599,21 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri">link [foo [bar]]</a></p>
-"###,
+        r#"<p><a href="/uri">link [foo [bar]]</a></p>
+"#,
         r###"Links (527)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[link \[bar][ref]
+            r"[link \[bar][ref]
 
 [ref]: /uri
-"###,
+",
             &danger
         )?,
-        r###"<p><a href="/uri">link [bar</a></p>
-"###,
+        r#"<p><a href="/uri">link [bar</a></p>
+"#,
         r###"Links (528)"###
 );
 
@@ -7625,8 +7625,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
-"###,
+        r#"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
+"#,
         r###"Links (529)"###
 );
 
@@ -7638,8 +7638,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
-"###,
+        r#"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
+"#,
         r###"Links (530)"###
 );
 
@@ -7651,8 +7651,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo <a href="/uri">bar</a>]<a href="/uri">ref</a></p>
-"###,
+        r#"<p>[foo <a href="/uri">bar</a>]<a href="/uri">ref</a></p>
+"#,
         r###"Links (531)"###
 );
 
@@ -7664,8 +7664,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo <em>bar <a href="/uri">baz</a></em>]<a href="/uri">ref</a></p>
-"###,
+        r#"<p>[foo <em>bar <a href="/uri">baz</a></em>]<a href="/uri">ref</a></p>
+"#,
         r###"Links (532)"###
 );
 
@@ -7677,8 +7677,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>*<a href="/uri">foo*</a></p>
-"###,
+        r#"<p>*<a href="/uri">foo*</a></p>
+"#,
         r###"Links (533)"###
 );
 
@@ -7690,21 +7690,21 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/uri">foo *bar</a>*</p>
-"###,
+        r#"<p><a href="/uri">foo *bar</a>*</p>
+"#,
         r###"Links (534)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo <bar attr="][ref]">
+            r#"[foo <bar attr="][ref]">
 
 [ref]: /uri
-"###,
+"#,
             &danger
         )?,
-        r###"<p>[foo <bar attr="][ref]"></p>
-"###,
+        r#"<p>[foo <bar attr="][ref]"></p>
+"#,
         r###"Links (535)"###
 );
 
@@ -7729,21 +7729,21 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo<a href="http://example.com/?search=%5D%5Bref%5D">http://example.com/?search=][ref]</a></p>
-"###,
+        r#"<p>[foo<a href="http://example.com/?search=%5D%5Bref%5D">http://example.com/?search=][ref]</a></p>
+"#,
         r###"Links (537)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo][BaR]
+            r#"[foo][BaR]
 
 [bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">foo</a></p>
+"#,
         r###"Links (538)"###
 );
 
@@ -7755,8 +7755,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url">ẞ</a></p>
-"###,
+        r#"<p><a href="/url">ẞ</a></p>
+"#,
         r###"Links (539)"###
 );
 
@@ -7769,36 +7769,36 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url">Baz</a></p>
-"###,
+        r#"<p><a href="/url">Baz</a></p>
+"#,
         r###"Links (540)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo] [bar]
+            r#"[foo] [bar]
 
 [bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p>[foo] <a href="/url" title="title">bar</a></p>
-"###,
+        r#"<p>[foo] <a href="/url" title="title">bar</a></p>
+"#,
         r###"Links (541)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]
+            r#"[foo]
 [bar]
 
 [bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p>[foo]
+        r#"<p>[foo]
 <a href="/url" title="title">bar</a></p>
-"###,
+"#,
         r###"Links (542)"###
 );
 
@@ -7812,17 +7812,17 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url1">bar</a></p>
-"###,
+        r#"<p><a href="/url1">bar</a></p>
+"#,
         r###"Links (543)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[bar][foo\!]
+            r"[bar][foo\!]
 
 [foo!]: /url
-"###,
+",
             &danger
         )?,
         r###"<p>[bar][foo!]</p>
@@ -7874,27 +7874,27 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo][ref\[]
+            r"[foo][ref\[]
 
 [ref\[]: /uri
-"###,
+",
             &danger
         )?,
-        r###"<p><a href="/uri">foo</a></p>
-"###,
+        r#"<p><a href="/uri">foo</a></p>
+"#,
         r###"Links (548)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[bar\\]: /uri
+            r"[bar\\]: /uri
 
 [bar\\]
-"###,
+",
             &danger
         )?,
-        r###"<p><a href="/uri">bar\</a></p>
-"###,
+        r#"<p><a href="/uri">bar\</a></p>
+"#,
         r###"Links (549)"###
 );
 
@@ -7932,94 +7932,94 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo][]
+            r#"[foo][]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">foo</a></p>
+"#,
         r###"Links (552)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[*foo* bar][]
+            r#"[*foo* bar][]
 
 [*foo* bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
-"###,
+        r#"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
+"#,
         r###"Links (553)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[Foo][]
+            r#"[Foo][]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">Foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">Foo</a></p>
+"#,
         r###"Links (554)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo] 
+            r#"[foo] 
 []
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">foo</a>
+        r#"<p><a href="/url" title="title">foo</a>
 []</p>
-"###,
+"#,
         r###"Links (555)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo]
+            r#"[foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">foo</a></p>
+"#,
         r###"Links (556)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[*foo* bar]
+            r#"[*foo* bar]
 
 [*foo* bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
-"###,
+        r#"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
+"#,
         r###"Links (557)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[[*foo* bar]]
+            r#"[[*foo* bar]]
 
 [*foo* bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p>[<a href="/url" title="title"><em>foo</em> bar</a>]</p>
-"###,
+        r#"<p>[<a href="/url" title="title"><em>foo</em> bar</a>]</p>
+"#,
         r###"Links (558)"###
 );
 
@@ -8031,21 +8031,21 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[[bar <a href="/url">foo</a></p>
-"###,
+        r#"<p>[[bar <a href="/url">foo</a></p>
+"#,
         r###"Links (559)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[Foo]
+            r#"[Foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="/url" title="title">Foo</a></p>
-"###,
+        r#"<p><a href="/url" title="title">Foo</a></p>
+"#,
         r###"Links (560)"###
 );
 
@@ -8057,17 +8057,17 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url">foo</a> bar</p>
-"###,
+        r#"<p><a href="/url">foo</a> bar</p>
+"#,
         r###"Links (561)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"\[foo]
+            r#"\[foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
         r###"<p>[foo]</p>
@@ -8083,8 +8083,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>*<a href="/url">foo*</a></p>
-"###,
+        r#"<p>*<a href="/url">foo*</a></p>
+"#,
         r###"Links (563)"###
 );
 
@@ -8097,8 +8097,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url2">foo</a></p>
-"###,
+        r#"<p><a href="/url2">foo</a></p>
+"#,
         r###"Links (564)"###
 );
 
@@ -8110,8 +8110,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url1">foo</a></p>
-"###,
+        r#"<p><a href="/url1">foo</a></p>
+"#,
         r###"Links (565)"###
 );
 
@@ -8123,8 +8123,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="">foo</a></p>
-"###,
+        r#"<p><a href="">foo</a></p>
+"#,
         r###"Links (566)"###
 );
 
@@ -8136,8 +8136,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url1">foo</a>(not a link)</p>
-"###,
+        r#"<p><a href="/url1">foo</a>(not a link)</p>
+"#,
         r###"Links (567)"###
 );
 
@@ -8149,8 +8149,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo]<a href="/url">bar</a></p>
-"###,
+        r#"<p>[foo]<a href="/url">bar</a></p>
+"#,
         r###"Links (568)"###
 );
 
@@ -8163,8 +8163,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="/url2">foo</a><a href="/url1">baz</a></p>
-"###,
+        r#"<p><a href="/url2">foo</a><a href="/url1">baz</a></p>
+"#,
         r###"Links (569)"###
 );
 
@@ -8177,32 +8177,32 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p>[foo]<a href="/url1">bar</a></p>
-"###,
+        r#"<p>[foo]<a href="/url1">bar</a></p>
+"#,
         r###"Links (570)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo](/url "title")
-"###,
+            r#"![foo](/url "title")
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo" title="title" /></p>
+"#,
         r###"Images (571)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo *bar*]
+            r#"![foo *bar*]
 
 [foo *bar*]: train.jpg "train & tracks"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
-"###,
+        r#"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
+"#,
         r###"Images (572)"###
 );
 
@@ -8212,8 +8212,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="/url2" alt="foo bar" /></p>
-"###,
+        r#"<p><img src="/url2" alt="foo bar" /></p>
+"#,
         r###"Images (573)"###
 );
 
@@ -8223,34 +8223,34 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="/url2" alt="foo bar" /></p>
-"###,
+        r#"<p><img src="/url2" alt="foo bar" /></p>
+"#,
         r###"Images (574)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo *bar*][]
+            r#"![foo *bar*][]
 
 [foo *bar*]: train.jpg "train & tracks"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
-"###,
+        r#"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
+"#,
         r###"Images (575)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo *bar*][foobar]
+            r#"![foo *bar*][foobar]
 
 [FOOBAR]: train.jpg "train & tracks"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
-"###,
+        r#"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
+"#,
         r###"Images (576)"###
 );
 
@@ -8260,19 +8260,19 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="train.jpg" alt="foo" /></p>
-"###,
+        r#"<p><img src="train.jpg" alt="foo" /></p>
+"#,
         r###"Images (577)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"My ![foo bar](/path/to/train.jpg  "title"   )
-"###,
+            r#"My ![foo bar](/path/to/train.jpg  "title"   )
+"#,
             &danger
         )?,
-        r###"<p>My <img src="/path/to/train.jpg" alt="foo bar" title="title" /></p>
-"###,
+        r#"<p>My <img src="/path/to/train.jpg" alt="foo bar" title="title" /></p>
+"#,
         r###"Images (578)"###
 );
 
@@ -8282,8 +8282,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="url" alt="foo" /></p>
-"###,
+        r#"<p><img src="url" alt="foo" /></p>
+"#,
         r###"Images (579)"###
 );
 
@@ -8293,8 +8293,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="/url" alt="" /></p>
-"###,
+        r#"<p><img src="/url" alt="" /></p>
+"#,
         r###"Images (580)"###
 );
 
@@ -8306,8 +8306,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo" /></p>
+"#,
         r###"Images (581)"###
 );
 
@@ -8319,97 +8319,97 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo" /></p>
+"#,
         r###"Images (582)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo][]
+            r#"![foo][]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo" title="title" /></p>
+"#,
         r###"Images (583)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![*foo* bar][]
+            r#"![*foo* bar][]
 
 [*foo* bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo bar" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo bar" title="title" /></p>
+"#,
         r###"Images (584)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![Foo][]
+            r#"![Foo][]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="Foo" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="Foo" title="title" /></p>
+"#,
         r###"Images (585)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo] 
+            r#"![foo] 
 []
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo" title="title" />
+        r#"<p><img src="/url" alt="foo" title="title" />
 []</p>
-"###,
+"#,
         r###"Images (586)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![foo]
+            r#"![foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo" title="title" /></p>
+"#,
         r###"Images (587)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![*foo* bar]
+            r#"![*foo* bar]
 
 [*foo* bar]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="foo bar" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="foo bar" title="title" /></p>
+"#,
         r###"Images (588)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"![[foo]]
+            r#"![[foo]]
 
 [[foo]]: /url "title"
-"###,
+"#,
             &danger
         )?,
         r###"<p>![[foo]]</p>
@@ -8420,23 +8420,23 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"![Foo]
+            r#"![Foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p><img src="/url" alt="Foo" title="title" /></p>
-"###,
+        r#"<p><img src="/url" alt="Foo" title="title" /></p>
+"#,
         r###"Images (590)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"!\[foo]
+            r#"!\[foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
         r###"<p>![foo]</p>
@@ -8446,14 +8446,14 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"\![foo]
+            r#"\![foo]
 
 [foo]: /url "title"
-"###,
+"#,
             &danger
         )?,
-        r###"<p>!<a href="/url" title="title">foo</a></p>
-"###,
+        r#"<p>!<a href="/url" title="title">foo</a></p>
+"#,
         r###"Images (592)"###
 );
 
@@ -8463,8 +8463,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://foo.bar.baz">http://foo.bar.baz</a></p>
-"###,
+        r#"<p><a href="http://foo.bar.baz">http://foo.bar.baz</a></p>
+"#,
         r###"Autolinks (593)"###
 );
 
@@ -8474,8 +8474,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean">http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>
-"###,
+        r#"<p><a href="http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean">http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>
+"#,
         r###"Autolinks (594)"###
 );
 
@@ -8485,8 +8485,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="irc://foo.bar:2233/baz">irc://foo.bar:2233/baz</a></p>
-"###,
+        r#"<p><a href="irc://foo.bar:2233/baz">irc://foo.bar:2233/baz</a></p>
+"#,
         r###"Autolinks (595)"###
 );
 
@@ -8496,8 +8496,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="MAILTO:FOO@BAR.BAZ">MAILTO:FOO@BAR.BAZ</a></p>
-"###,
+        r#"<p><a href="MAILTO:FOO@BAR.BAZ">MAILTO:FOO@BAR.BAZ</a></p>
+"#,
         r###"Autolinks (596)"###
 );
 
@@ -8507,8 +8507,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="a+b+c:d">a+b+c:d</a></p>
-"###,
+        r#"<p><a href="a+b+c:d">a+b+c:d</a></p>
+"#,
         r###"Autolinks (597)"###
 );
 
@@ -8518,8 +8518,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="made-up-scheme://foo,bar">made-up-scheme://foo,bar</a></p>
-"###,
+        r#"<p><a href="made-up-scheme://foo,bar">made-up-scheme://foo,bar</a></p>
+"#,
         r###"Autolinks (598)"###
 );
 
@@ -8529,8 +8529,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://../">http://../</a></p>
-"###,
+        r#"<p><a href="http://../">http://../</a></p>
+"#,
         r###"Autolinks (599)"###
 );
 
@@ -8540,8 +8540,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="localhost:5001/foo">localhost:5001/foo</a></p>
-"###,
+        r#"<p><a href="localhost:5001/foo">localhost:5001/foo</a></p>
+"#,
         r###"Autolinks (600)"###
 );
 
@@ -8558,12 +8558,12 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://example.com/\[\>
-"###,
+            r"<http://example.com/\[\>
+",
             &danger
         )?,
-        r###"<p><a href="http://example.com/%5C%5B%5C">http://example.com/\[\</a></p>
-"###,
+        r#"<p><a href="http://example.com/%5C%5B%5C">http://example.com/\[\</a></p>
+"#,
         r###"Autolinks (602)"###
 );
 
@@ -8573,8 +8573,8 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="mailto:foo@bar.example.com">foo@bar.example.com</a></p>
-"###,
+        r#"<p><a href="mailto:foo@bar.example.com">foo@bar.example.com</a></p>
+"#,
         r###"Autolinks (603)"###
 );
 
@@ -8584,15 +8584,15 @@ bar>)</p>
 "###,
             &danger
         )?,
-        r###"<p><a href="mailto:foo+special@Bar.baz-bar0.com">foo+special@Bar.baz-bar0.com</a></p>
-"###,
+        r#"<p><a href="mailto:foo+special@Bar.baz-bar0.com">foo+special@Bar.baz-bar0.com</a></p>
+"#,
         r###"Autolinks (604)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<foo\+@bar.example.com>
-"###,
+            r"<foo\+@bar.example.com>
+",
             &danger
         )?,
         r###"<p>&lt;foo+@bar.example.com&gt;</p>
@@ -8690,38 +8690,38 @@ bar>)</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"<a  /><b2
+            r#"<a  /><b2
 data="foo" >
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a  /><b2
+        r#"<p><a  /><b2
 data="foo" ></p>
-"###,
+"#,
         r###"Raw HTML (614)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<a foo="bar" bam = 'baz <em>"</em>'
+            r#"<a foo="bar" bam = 'baz <em>"</em>'
 _boolean zoop:33=zoop:33 />
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a foo="bar" bam = 'baz <em>"</em>'
+        r#"<p><a foo="bar" bam = 'baz <em>"</em>'
 _boolean zoop:33=zoop:33 /></p>
-"###,
+"#,
         r###"Raw HTML (615)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"Foo <responsive-image src="foo.jpg" />
-"###,
+            r#"Foo <responsive-image src="foo.jpg" />
+"#,
             &danger
         )?,
-        r###"<p>Foo <responsive-image src="foo.jpg" /></p>
-"###,
+        r#"<p>Foo <responsive-image src="foo.jpg" /></p>
+"#,
         r###"Raw HTML (616)"###
 );
 
@@ -8738,8 +8738,8 @@ _boolean zoop:33=zoop:33 /></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"<a h*#ref="hi">
-"###,
+            r#"<a h*#ref="hi">
+"#,
             &danger
         )?,
         r###"<p>&lt;a h*#ref=&quot;hi&quot;&gt;</p>
@@ -8749,8 +8749,8 @@ _boolean zoop:33=zoop:33 /></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="hi'> <a href=hi'>
-"###,
+            r#"<a href="hi'> <a href=hi'>
+"#,
             &danger
         )?,
         r###"<p>&lt;a href=&quot;hi'&gt; &lt;a href=hi'&gt;</p>
@@ -8799,8 +8799,8 @@ bim!bop /&gt;</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"</a href="foo">
-"###,
+            r#"</a href="foo">
+"#,
             &danger
         )?,
         r###"<p>&lt;/a href=&quot;foo&quot;&gt;</p>
@@ -8881,30 +8881,30 @@ foo <!-- foo--->
 
     assert_eq!(
         to_html_with_options(
-            r###"foo <a href="&ouml;">
-"###,
+            r#"foo <a href="&ouml;">
+"#,
             &danger
         )?,
-        r###"<p>foo <a href="&ouml;"></p>
-"###,
+        r#"<p>foo <a href="&ouml;"></p>
+"#,
         r###"Raw HTML (630)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"foo <a href="\*">
-"###,
+            r#"foo <a href="\*">
+"#,
             &danger
         )?,
-        r###"<p>foo <a href="\*"></p>
-"###,
+        r#"<p>foo <a href="\*"></p>
+"#,
         r###"Raw HTML (631)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="\"">
-"###,
+            r#"<a href="\"">
+"#,
             &danger
         )?,
         r###"<p>&lt;a href=&quot;&quot;&quot;&gt;</p>
@@ -8927,9 +8927,9 @@ baz</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"foo\
+            r"foo\
 baz
-"###,
+",
             &danger
         )?,
         r###"<p>foo<br />
@@ -8966,9 +8966,9 @@ bar</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"foo\
+            r"foo\
      bar
-"###,
+",
             &danger
         )?,
         r###"<p>foo<br />
@@ -8992,9 +8992,9 @@ bar</em></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"*foo\
+            r"*foo\
 bar*
-"###,
+",
             &danger
         )?,
         r###"<p><em>foo<br />
@@ -9017,50 +9017,50 @@ span`
 
     assert_eq!(
         to_html_with_options(
-            r###"`code\
+            r"`code\
 span`
-"###,
+",
             &danger
         )?,
-        r###"<p><code>code\ span</code></p>
-"###,
+        r"<p><code>code\ span</code></p>
+",
         r###"Hard line breaks (641)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="foo  
+            r#"<a href="foo  
 bar">
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="foo  
+        r#"<p><a href="foo  
 bar"></p>
-"###,
+"#,
         r###"Hard line breaks (642)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<a href="foo\
+            r#"<a href="foo\
 bar">
-"###,
+"#,
             &danger
         )?,
-        r###"<p><a href="foo\
+        r#"<p><a href="foo\
 bar"></p>
-"###,
+"#,
         r###"Hard line breaks (643)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"foo\
-"###,
+            r"foo\
+",
             &danger
         )?,
-        r###"<p>foo\</p>
-"###,
+        r"<p>foo\</p>
+",
         r###"Hard line breaks (644)"###
 );
 
@@ -9077,12 +9077,12 @@ bar"></p>
 
     assert_eq!(
         to_html_with_options(
-            r###"### foo\
-"###,
+            r"### foo\
+",
             &danger
         )?,
-        r###"<h3>foo\</h3>
-"###,
+        r"<h3>foo\</h3>
+",
         r###"Hard line breaks (646)"###
 );
 

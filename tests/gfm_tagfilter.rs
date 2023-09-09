@@ -1,3 +1,8 @@
+#![allow(clippy::needless_raw_string_hashes)]
+
+// To do: clippy introduced this in 1.72 but breaks when it fixes it.
+// Remove when solved.
+
 use markdown::{to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
@@ -51,7 +56,7 @@ fn gfm_tagfilter() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options(
-            r###"
+            r##"
 <title>
 
 <div title="<title>"></div>
@@ -93,7 +98,7 @@ fn gfm_tagfilter() -> Result<(), String> {
 javascript:/*--></title></style></textarea></script></xmp><svg/onload='+/"/+/onmouseover=1/+/[*/[]/+alert(1)//'>
 
 <STYLE>@import'http://xss.rocks/xss.css';</STYLE>
-"###,
+"##,
             &Options {
                 compile: CompileOptions {
                     allow_dangerous_html: true,

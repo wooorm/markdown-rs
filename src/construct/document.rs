@@ -494,8 +494,8 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) -> Result<(), Strin
             - (if *phase == Phase::After { 2 } else { 1 });
         let mut exits = Vec::with_capacity(stack_close.len());
 
-        while !stack_close.is_empty() {
-            let container = stack_close.pop().unwrap();
+        while let Some(container) = stack_close.pop() {
+            
             let name = match container.kind {
                 Container::BlockQuote => Name::BlockQuote,
                 Container::GfmFootnoteDefinition => Name::GfmFootnoteDefinition,

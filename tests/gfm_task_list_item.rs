@@ -137,7 +137,7 @@ EOL after:
             .replace('␉', "\t"),
             &Options::gfm()
         )?,
-        r###"<ul>
+        r#"<ul>
 <li><input type="checkbox" disabled="" /> foo</li>
 <li><input type="checkbox" disabled="" checked="" /> bar</li>
 </ul>
@@ -250,7 +250,7 @@ Text.</li>
 <li><input type="checkbox" disabled="" checked="" /> In a list in a block quote</li>
 </ul>
 </blockquote>
-"###,
+"#,
         "should handle things like GitHub"
     );
 

@@ -1,3 +1,8 @@
+#![allow(clippy::needless_raw_string_hashes)]
+
+// To do: clippy introduced this in 1.72 but breaks when it fixes it.
+// Remove when solved.
+
 use markdown::{
     mdast::{Delete, Node, Paragraph, Root, Text},
     to_html, to_html_with_options, to_mdast,
