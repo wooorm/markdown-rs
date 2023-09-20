@@ -4,7 +4,6 @@ use crate::util::constant::{GFM_HTML_TAGFILTER_NAMES, GFM_HTML_TAGFILTER_SIZE_MA
 use alloc::string::String;
 use core::str;
 extern crate std;
-use std::println;
 
 /// Make dangerous HTML a tiny bit safer.
 ///
@@ -51,7 +50,6 @@ pub fn gfm_tagfilter(value: &str) -> String {
                 name_end += 1;
             }
 
-            println!("{:?}, {:?}, {:?}", name_start, name_end, bytes);
             // Non-empty.
             if (name_end == len || (name_end != name_start &&
                 // HTML whitespace, closing slash, or closing angle bracket.
