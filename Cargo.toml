@@ -1,6 +1,6 @@
 [package]
 name = "markdown"
-version = "1.0.0-alpha.13"
+version = "1.0.0-alpha.14"
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
 edition = "2018"
 rust-version = "1.56"
