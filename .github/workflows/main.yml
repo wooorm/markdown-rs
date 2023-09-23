@@ -20,5 +20,5 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo install cargo-tarpaulin && cargo tarpaulin --out Xml
+      - run: cargo install cargo-tarpaulin && cargo tarpaulin --out xml
       - uses: codecov/codecov-action@v3
