@@ -64,17 +64,36 @@ pub fn kind_after_index(bytes: &[u8], index: usize) -> Kind {
         Kind::Whitespace
     } else {
         let byte = bytes[index];
-        if byte.is_ascii_whitespace() {
-            Kind::Whitespace
-        } else if byte.is_ascii_punctuation() {
-            Kind::Punctuation
-        } else if byte.is_ascii_alphanumeric() {
-            Kind::Other
-        } else {
+        classify_ascii(byte).unwrap_or_else(|| {
             // Otherwise: seems to be an ASCII control, so it seems to be a
             // non-ASCII `char`.
             classify_opt(after_index(bytes, index))
-        }
+        })
+    }
+}
+
+pub fn kind_before_index(bytes: &[u8], index: usize) -> Kind {
+    if index == 0 {
+        Kind::Whitespace
+    } else {
+        let byte = bytes[index - 1];
+        classify_ascii(byte).unwrap_or_else(|| {
+            // Otherwise: seems to be an ASCII control, so it seems to be a
+            // non-ASCII `char`.
+            classify_opt(before_index(bytes, index))
+        })
+    }
+}
+
+fn classify_ascii(byte: u8) -> Option<Kind> {
+    if byte.is_ascii_whitespace() {
+        Some(Kind::Whitespace)
+    } else if byte.is_ascii_punctuation() {
+        Some(Kind::Punctuation)
+    } else if byte.is_ascii_alphanumeric() {
+        Some(Kind::Other)
+    } else {
+        None
     }
 }
 

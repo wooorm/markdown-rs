@@ -81,10 +81,7 @@ use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
-use crate::util::char::{
-    after_index as char_after_index, before_index as char_before_index, classify_opt,
-    Kind as CharacterKind,
-};
+use crate::util::char::{after_index as char_after_index, before_index as char_before_index, before_index, classify_opt, Kind as CharacterKind, kind_after_index, kind_before_index};
 use alloc::{vec, vec::Vec};
 
 /// Attentention sequence that we can take markers from.
@@ -239,14 +236,24 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
                 let exit = &tokenizer.events[end];
 
                 let marker = tokenizer.parse_state.bytes[enter.point.index];
-                let before = classify_opt(char_before_index(
-                    tokenizer.parse_state.bytes,
-                    enter.point.index,
-                ));
-                let after = classify_opt(char_after_index(
+                /*
+                    Github has the lovely behavior of not following its own spec.
+                    I've tried a few different markdown parsers and they all will correctly treat
+                    "~" like a punctuation in determining right-flanking delimiter runs.
+                    but github doesn't and it makes their markdown display differently.
+                 */
+                let before = if before_index(tokenizer.parse_state.bytes, enter.point.index) == Some('~') {
+                    CharacterKind::Other
+                } else {
+                    kind_before_index(
+                        tokenizer.parse_state.bytes,
+                        enter.point.index,
+                    )
+                };
+                let after = kind_after_index(
                     tokenizer.parse_state.bytes,
                     exit.point.index,
-                ));
+                );
                 let open = after == CharacterKind::Other
                     || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
                 let close = before == CharacterKind::Other

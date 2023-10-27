@@ -68,6 +68,36 @@ fn gfm_strikethrough() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_html_with_options("e ***~~xxx~~***yyy", &Options::gfm())?,
+        "<p>e <em><strong><del>xxx</del></strong></em>yyy</p>",
+        "interplay"
+    );
+
+    assert_eq!(
+        to_html_with_options("~~foo __*a*__~~", &Options::gfm())?,
+        "<p><del>foo <strong><em>a</em></strong></del></p>",
+        "should support emphasis within strong emphasis within strikethrough w/ `*` in `_`"
+    );
+
+    assert_eq!(
+        to_html_with_options("~~foo **_a_**~~", &Options::gfm())?,
+        "<p><del>foo <strong><em>a</em></strong></del></p>",
+        "should support emphasis within strong emphasis within strikethrough w/ `*` in `_`"
+    );
+
+    assert_eq!(
+        to_html_with_options("~~foo _**a**_~~", &Options::gfm())?,
+        "<p><del>foo <em><strong>a</strong></em></del></p>",
+        "should support strong emphasis within emphasis within strikethrough w/ `*` in `_`"
+    );
+
+    assert_eq!(
+        to_html_with_options("~~foo *__a__*~~", &Options::gfm())?,
+        "<p><del>foo <em><strong>a</strong></em></del></p>",
+        "should support strong emphasis within emphasis within strikethrough w/ `*` in `_`"
+    );
+
+    assert_eq!(
         to_html_with_options(
             r###"
 # Balanced
