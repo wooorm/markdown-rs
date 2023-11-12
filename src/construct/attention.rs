@@ -236,12 +236,11 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
                 let exit = &tokenizer.events[end];
 
                 let marker = tokenizer.parse_state.bytes[enter.point.index];
-                /*
-                    Github has the lovely behavior of not following its own spec.
-                    I've tried a few different markdown parsers and they all will correctly treat
-                    "~" like a punctuation in determining right-flanking delimiter runs.
-                    but github doesn't and it makes their markdown display differently.
-                 */
+
+                // I've tried a few different markdown parsers and they will treat
+                // "~" like a punctuation in determining right-flanking delimiter runs,
+                // but Github doesn't and it makes their markdown display differently.
+                // see tests/gfm_strikethrough.rs -> "e ***~~xxx~~***yyy"
                 let before = if before_index(tokenizer.parse_state.bytes, enter.point.index) == Some('~') {
                     CharacterKind::Other
                 } else {
