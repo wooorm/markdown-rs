@@ -411,7 +411,7 @@ impl<'a> Tokenizer<'a> {
         let info = (point.index, point.vs);
 
         #[cfg(feature = "log")]
-        log::debug!("position: define skip: {:?} -> ({:?})", point.line, info);
+        log::trace!("position: define skip: {:?} -> ({:?})", point.line, info);
 
         let at = point.line - self.first_line;
 
@@ -485,7 +485,7 @@ impl<'a> Tokenizer<'a> {
                     self.account_for_potential_skip();
 
                     #[cfg(feature = "log")]
-                    log::debug!("position: after eol: `{:?}`", self.point);
+                    log::trace!("position: after eol: `{:?}`", self.point);
                 } else {
                     self.point.column += 1;
                 }
@@ -722,7 +722,7 @@ fn push_impl(
                     };
 
                     #[cfg(feature = "log")]
-                    log::debug!("attempt: `{:?}` -> `{:?}`", state, next);
+                    log::trace!("attempt: `{:?}` -> `{:?}`", state, next);
 
                     state = next;
                 } else {
@@ -751,7 +751,7 @@ fn push_impl(
                         };
 
                     #[cfg(feature = "log")]
-                    log::debug!("feed:    {} to {:?}", format_byte_opt(byte), name);
+                    log::trace!("feed:    {} to {:?}", format_byte_opt(byte), name);
 
                     tokenizer.expect(byte);
                     state = call(tokenizer, name);
@@ -759,7 +759,7 @@ fn push_impl(
             }
             State::Retry(name) => {
                 #[cfg(feature = "log")]
-                log::debug!("retry:   `{:?}`", name);
+                log::trace!("retry:   `{:?}`", name);
 
                 state = call(tokenizer, name);
             }
