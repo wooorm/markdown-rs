@@ -250,7 +250,7 @@ The following bash scripts are useful when working on this project:
     ```
 *   run examples:
     ```sh
-    RUST_BACKTRACE=1 RUST_LOG=debug cargo run --features log --example lib
+    RUST_BACKTRACE=1 RUST_LOG=trace cargo run --features log --example lib
     ```
 *   format:
     ```sh
