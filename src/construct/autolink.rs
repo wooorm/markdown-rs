@@ -21,9 +21,9 @@
 //! ```
 //!
 //! The maximum allowed size of a scheme is `31` (inclusive), which is defined
-//! in [`AUTOLINK_SCHEME_SIZE_MAX`][autolink_scheme_size_max].
+//! in [`AUTOLINK_SCHEME_SIZE_MAX`][].
 //! The maximum allowed size of a domain is `63` (inclusive), which is defined
-//! in [`AUTOLINK_DOMAIN_SIZE_MAX`][autolink_domain_size_max].
+//! in [`AUTOLINK_DOMAIN_SIZE_MAX`][].
 //!
 //! The grammar for autolinks is quite strict and prohibits the use of ASCII control
 //! characters or spaces.

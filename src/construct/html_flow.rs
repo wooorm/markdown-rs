@@ -68,12 +68,12 @@
 //! typically kick-in instead.
 //!
 //! The list of tag names allowed in the **raw** production are defined in
-//! [`HTML_RAW_NAMES`][html_raw_names].
+//! [`HTML_RAW_NAMES`][].
 //! This production exists because there are a few cases where markdown
 //! *inside* some elements, and hence interleaving, does not make sense.
 //!
 //! The list of tag names allowed in the **basic** production are defined in
-//! [`HTML_BLOCK_NAMES`][html_block_names].
+//! [`HTML_BLOCK_NAMES`][].
 //! This production exists because there are a few cases where we can decide
 //! early that something is going to be a flow (block) element instead of a
 //! phrasing (inline) element.

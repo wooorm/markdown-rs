@@ -34,7 +34,7 @@
 //!
 //! The following constructs are found in markdown (`CommonMark`):
 //!
-//! *   [attention][attention] (strong, emphasis, extension: GFM strikethrough)
+//! *   [attention][] (strong, emphasis, extension: GFM strikethrough)
 //! *   [autolink][]
 //! *   [blank line][blank_line]
 //! *   [block quote][block_quote]

@@ -16,7 +16,7 @@
 //!
 //! The maximum allowed size of the label, without the brackets, is `999`
 //! (inclusive), which is defined in
-//! [`LINK_REFERENCE_SIZE_MAX`][link_reference_size_max].
+//! [`LINK_REFERENCE_SIZE_MAX`][].
 //!
 //! Labels can contain line endings and whitespace, but they are not allowed to
 //! contain blank lines, and they must not be blank themselves.

@@ -29,7 +29,7 @@
 //! interpreting the text provided between the first, implicit, label (`x`).
 //! To match, the effective label of the reference must be equal to the label
 //! of the definition after normalizing with
-//! [`normalize_identifier`][normalize_identifier].
+//! [`normalize_identifier`][].
 //!
 //! Importantly, while the label of a full reference *can* include [string][]
 //! content, and in case of collapsed and shortcut references even [text][]

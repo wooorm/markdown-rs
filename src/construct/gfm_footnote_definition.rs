@@ -29,7 +29,7 @@
 //!
 //! Definitions match to calls through identifiers.
 //! To match, both labels must be equal after normalizing with
-//! [`normalize_identifier`][normalize_identifier].
+//! [`normalize_identifier`][].
 //! One definition can match to multiple calls.
 //! Multiple definitions with the same, normalized, identifier are ignored: the
 //! first definition is preferred.

@@ -18,7 +18,7 @@
 //! consistents solely of spaces, at least 2, forms a hard break (trailing).
 //!
 //! The minimum number of those spaces is defined in
-//! [`HARD_BREAK_PREFIX_SIZE_MIN`][hard_break_prefix_size_min].
+//! [`HARD_BREAK_PREFIX_SIZE_MIN`][].
 //!
 //! It is also possible to create a hard break with a similar construct: a
 //! [hard break (escape)][hard_break_escape] is a backslash followed

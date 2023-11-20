@@ -29,7 +29,7 @@ pub fn sanitize(value: &str) -> String {
 
 /// Make a value safe for injection as a URL, and check protocols.
 ///
-/// This first uses [`sanitize`][sanitize].
+/// This first uses [`sanitize`][].
 /// Then, a vec of (lowercase) allowed protocols can be given, in which case
 /// the URL is ignored or kept.
 ///
@@ -127,6 +127,8 @@ fn normalize(value: &str) -> String {
         {
             result.push_str(&chars[start..index].iter().collect::<String>());
             char.encode_utf8(&mut buff);
+
+            #[allow(clippy::format_collect)]
             result.push_str(
                 &buff[0..char.len_utf8()]
                     .iter()
