@@ -93,7 +93,7 @@ pub fn classify(char: char) -> Kind {
         Kind::Whitespace
     }
     // Unicode punctuation.
-    else if PUNCTUATION.contains(&char) {
+    else if char.is_ascii_punctuation() || PUNCTUATION.contains(&char) {
         Kind::Punctuation
     }
     // Everything else.

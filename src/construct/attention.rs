@@ -239,18 +239,22 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
                 let exit = &tokenizer.events[end];
 
                 let marker = tokenizer.parse_state.bytes[enter.point.index];
-                let before = classify_opt(char_before_index(
-                    tokenizer.parse_state.bytes,
-                    enter.point.index,
-                ));
-                let after = classify_opt(char_after_index(
-                    tokenizer.parse_state.bytes,
-                    exit.point.index,
-                ));
+                let before_char = char_before_index(tokenizer.parse_state.bytes, enter.point.index);
+                let before = classify_opt(before_char);
+                let after_char = char_after_index(tokenizer.parse_state.bytes, exit.point.index);
+                let after = classify_opt(after_char);
                 let open = after == CharacterKind::Other
-                    || (after == CharacterKind::Punctuation && before != CharacterKind::Other);
+                    || (after == CharacterKind::Punctuation && before != CharacterKind::Other)
+                    // For regular attention markers (not strikethrough), the
+                    // other attention markers can be used around them
+                    || (marker != b'~' && matches!(after_char, Some('*' | '_')))
+                    || (marker != b'~' && tokenizer.parse_state.options.constructs.gfm_strikethrough && matches!(after_char, Some('~')));
                 let close = before == CharacterKind::Other
-                    || (before == CharacterKind::Punctuation && after != CharacterKind::Other);
+                    || (before == CharacterKind::Punctuation && after != CharacterKind::Other)
+                    || (marker != b'~' && matches!(before_char, Some('*' | '_')))
+                    || (marker != b'~'
+                        && tokenizer.parse_state.options.constructs.gfm_strikethrough
+                        && matches!(before_char, Some('~')));
 
                 sequences.push(Sequence {
                     index,

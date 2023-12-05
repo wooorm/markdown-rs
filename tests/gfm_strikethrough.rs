@@ -364,6 +364,18 @@ u ~**xxx**~ zzz
     );
 
     assert_eq!(
+        to_html_with_options("a*~b~*c\n\na*.b.*c", &Options::gfm())?,
+        "<p>a<em><del>b</del></em>c</p>\n<p>a*.b.*c</p>",
+        "should handle interplay w/ other attention markers (GFM)"
+    );
+
+    assert_eq!(
+        to_html("a*~b~*c\n\na*.b.*c"),
+        "<p>a*~b~*c</p>\n<p>a*.b.*c</p>",
+        "should handle interplay w/ other attention markers (CM reference)"
+    );
+
+    assert_eq!(
         to_html_with_options(
             "a ~b~ ~~c~~ d",
             &Options {
