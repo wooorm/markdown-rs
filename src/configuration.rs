@@ -475,6 +475,9 @@ pub struct CompileOptions {
     ///
     /// Pass `true` for trusted content to get actual HTML elements.
     ///
+    /// When using GFM, make sure to also turn off `gfm_tagfilter`.
+    /// Otherwise, some dangerous HTML is still ignored.
+    ///
     /// ## Examples
     ///
     /// ```
