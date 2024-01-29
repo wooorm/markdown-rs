@@ -740,7 +740,7 @@ fn on_enter_link(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:{[`ListOrdered`][Name::ListOrdered],[`ListUnordered`][Name::ListUnordered]}.
 fn on_enter_list(context: &mut CompileContext) {
     let ordered = context.events[context.index].name == Name::ListOrdered;
-    let spread = list_loose(context.events, context.index, false);
+    let spread = list_loose(context.events, context.index, true);
 
     context.tail_push(Node::List(List {
         ordered,

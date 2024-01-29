@@ -616,6 +616,41 @@ fn list() -> Result<(), String> {
     );
 
     assert_eq!(
+        to_mdast("* a\n\n   b", &Default::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: true,
+                start: None,
+                children: vec![Node::ListItem(ListItem {
+                    checked: None,
+                    spread: true,
+                    children: vec![
+                        Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "a".into(),
+                                position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                            }),],
+                            position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                        }),
+                        Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "b".into(),
+                                position: Some(Position::new(3, 4, 8, 3, 5, 9))
+                            }),],
+                            position: Some(Position::new(3, 3, 7, 3, 5, 9))
+                        })
+                    ],
+                    position: Some(Position::new(1, 1, 0, 3, 5, 9))
+                })],
+                position: Some(Position::new(1, 1, 0, 3, 5, 9))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 5, 9))
+        }),
+        "should support lists, list items as `List`, `ListItem`s in mdast"
+    );
+
+    assert_eq!(
         to_mdast("3. a\n4. b", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {
@@ -660,7 +695,7 @@ fn list() -> Result<(), String> {
         Node::Root(Root {
             children: vec![Node::List(List {
                 ordered: false,
-                spread: false,
+                spread: true,
                 start: None,
                 children: vec![
                     Node::ListItem(ListItem {
