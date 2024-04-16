@@ -2652,6 +2652,7 @@ pub enum Name {
     /// > | a <b.c> d
     ///        ^^^
     /// ```
+    #[allow(clippy::enum_variant_names)]
     MdxJsxTagName,
     /// MDX extension: JSX: primary tag name.
     ///
@@ -2820,6 +2821,7 @@ pub enum Name {
     /// > | a <b c:d="e"> f
     ///          ^^^
     /// ```
+    #[allow(clippy::enum_variant_names)]
     MdxJsxTagAttributeName,
     /// MDX extension: JSX: primary attribute name.
     ///
@@ -2840,6 +2842,7 @@ pub enum Name {
     /// > | a <b c:d="e"> f
     ///          ^
     /// ```
+    #[allow(clippy::enum_variant_names)]
     MdxJsxTagAttributePrimaryName,
     /// MDX extension: JSX: attribute name prefix marker.
     ///
@@ -3460,6 +3463,7 @@ pub enum Content {
     /// Represents [flow content][crate::construct::flow].
     Flow,
     /// Represents [content][crate::construct::content].
+    #[allow(clippy::enum_variant_names)]
     Content,
     /// Represents [string content][crate::construct::string].
     String,

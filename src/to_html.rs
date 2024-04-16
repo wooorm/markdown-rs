@@ -293,7 +293,7 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> Stri
     debug_assert_eq!(context.buffers.len(), 1, "expected 1 final buffer");
     context
         .buffers
-        .get(0)
+        .first()
         .expect("expected 1 final buffer")
         .into()
 }

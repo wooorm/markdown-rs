@@ -30,6 +30,7 @@ use core::str;
 /// A reference to something.
 #[derive(Debug)]
 struct Reference {
+    #[allow(clippy::struct_field_names)]
     reference_kind: Option<ReferenceKind>,
     identifier: String,
     label: String,
