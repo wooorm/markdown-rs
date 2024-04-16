@@ -33,7 +33,7 @@
 //! ## References
 //!
 //! *   [`content.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/content.js)
-//! *   [*§ 4.8 Paragraphs* in `CommonMark`](https://spec.commonmark.org/0.30/#paragraphs)
+//! *   [*§ 4.8 Paragraphs* in `CommonMark`](https://spec.commonmark.org/0.31/#paragraphs)
 //!
 //! [content]: crate::construct::content
 //! [text]: crate::construct::text

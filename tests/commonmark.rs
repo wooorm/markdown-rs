@@ -294,11 +294,11 @@ bar</p>
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://example.com?find=\*>
+            r###"<https://example.com?find=\*>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://example.com?find=%5C*">http://example.com?find=\*</a></p>
+        r###"<p><a href="https://example.com?find=%5C*">https://example.com?find=\*</a></p>
 "###,
         r###"Backslash escapes (20)"###
 );
@@ -5558,22 +5558,22 @@ baz`
 
     assert_eq!(
         to_html_with_options(
-            r###"`<http://foo.bar.`baz>`
+            r###"`<https://foo.bar.`baz>`
 "###,
             &danger
         )?,
-        r###"<p><code>&lt;http://foo.bar.</code>baz&gt;`</p>
+        r###"<p><code>&lt;https://foo.bar.</code>baz&gt;`</p>
 "###,
         r###"Code spans (345)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://foo.bar.`baz>`
+            r###"<https://foo.bar.`baz>`
 "###,
             &danger
         )?,
-        r###"<p><a href="http://foo.bar.%60baz">http://foo.bar.`baz</a>`</p>
+        r###"<p><a href="https://foo.bar.%60baz">https://foo.bar.`baz</a>`</p>
 "###,
         r###"Code spans (346)"###
 );
@@ -5657,13 +5657,30 @@ baz`
 
     assert_eq!(
         to_html_with_options(
+            r###"*$*alpha.
+
+*£*bravo.
+
+*€*charlie.
+"###,
+            &danger
+        )?,
+        r###"<p>*$*alpha.</p>
+<p>*£*bravo.</p>
+<p>*€*charlie.</p>
+"###,
+        r###"Emphasis and strong emphasis (354)"###
+);
+
+    assert_eq!(
+        to_html_with_options(
             r###"foo*bar*
 "###,
             &danger
         )?,
         r###"<p>foo<em>bar</em></p>
 "###,
-        r###"Emphasis and strong emphasis (354)"###
+        r###"Emphasis and strong emphasis (355)"###
 );
 
     assert_eq!(
@@ -5674,7 +5691,7 @@ baz`
         )?,
         r###"<p>5<em>6</em>78</p>
 "###,
-        r###"Emphasis and strong emphasis (355)"###
+        r###"Emphasis and strong emphasis (356)"###
 );
 
     assert_eq!(
@@ -5685,7 +5702,7 @@ baz`
         )?,
         r###"<p><em>foo bar</em></p>
 "###,
-        r###"Emphasis and strong emphasis (356)"###
+        r###"Emphasis and strong emphasis (357)"###
 );
 
     assert_eq!(
@@ -5696,7 +5713,7 @@ baz`
         )?,
         r###"<p>_ foo bar_</p>
 "###,
-        r###"Emphasis and strong emphasis (357)"###
+        r###"Emphasis and strong emphasis (358)"###
 );
 
     assert_eq!(
@@ -5707,7 +5724,7 @@ baz`
         )?,
         r###"<p>a_&quot;foo&quot;_</p>
 "###,
-        r###"Emphasis and strong emphasis (358)"###
+        r###"Emphasis and strong emphasis (359)"###
 );
 
     assert_eq!(
@@ -5718,7 +5735,7 @@ baz`
         )?,
         r###"<p>foo_bar_</p>
 "###,
-        r###"Emphasis and strong emphasis (359)"###
+        r###"Emphasis and strong emphasis (360)"###
 );
 
     assert_eq!(
@@ -5729,7 +5746,7 @@ baz`
         )?,
         r###"<p>5_6_78</p>
 "###,
-        r###"Emphasis and strong emphasis (360)"###
+        r###"Emphasis and strong emphasis (361)"###
 );
 
     assert_eq!(
@@ -5740,7 +5757,7 @@ baz`
         )?,
         r###"<p>пристаням_стремятся_</p>
 "###,
-        r###"Emphasis and strong emphasis (361)"###
+        r###"Emphasis and strong emphasis (362)"###
 );
 
     assert_eq!(
@@ -5751,7 +5768,7 @@ baz`
         )?,
         r###"<p>aa_&quot;bb&quot;_cc</p>
 "###,
-        r###"Emphasis and strong emphasis (362)"###
+        r###"Emphasis and strong emphasis (363)"###
 );
 
     assert_eq!(
@@ -5762,7 +5779,7 @@ baz`
         )?,
         r###"<p>foo-<em>(bar)</em></p>
 "###,
-        r###"Emphasis and strong emphasis (363)"###
+        r###"Emphasis and strong emphasis (364)"###
 );
 
     assert_eq!(
@@ -5773,7 +5790,7 @@ baz`
         )?,
         r###"<p>_foo*</p>
 "###,
-        r###"Emphasis and strong emphasis (364)"###
+        r###"Emphasis and strong emphasis (365)"###
 );
 
     assert_eq!(
@@ -5784,7 +5801,7 @@ baz`
         )?,
         r###"<p>*foo bar *</p>
 "###,
-        r###"Emphasis and strong emphasis (365)"###
+        r###"Emphasis and strong emphasis (366)"###
 );
 
     assert_eq!(
@@ -5797,7 +5814,7 @@ baz`
         r###"<p>*foo bar
 *</p>
 "###,
-        r###"Emphasis and strong emphasis (366)"###
+        r###"Emphasis and strong emphasis (367)"###
 );
 
     assert_eq!(
@@ -5808,7 +5825,7 @@ baz`
         )?,
         r###"<p>*(*foo)</p>
 "###,
-        r###"Emphasis and strong emphasis (367)"###
+        r###"Emphasis and strong emphasis (368)"###
 );
 
     assert_eq!(
@@ -5819,7 +5836,7 @@ baz`
         )?,
         r###"<p><em>(<em>foo</em>)</em></p>
 "###,
-        r###"Emphasis and strong emphasis (368)"###
+        r###"Emphasis and strong emphasis (369)"###
 );
 
     assert_eq!(
@@ -5830,7 +5847,7 @@ baz`
         )?,
         r###"<p><em>foo</em>bar</p>
 "###,
-        r###"Emphasis and strong emphasis (369)"###
+        r###"Emphasis and strong emphasis (370)"###
 );
 
     assert_eq!(
@@ -5841,7 +5858,7 @@ baz`
         )?,
         r###"<p>_foo bar _</p>
 "###,
-        r###"Emphasis and strong emphasis (370)"###
+        r###"Emphasis and strong emphasis (371)"###
 );
 
     assert_eq!(
@@ -5852,7 +5869,7 @@ baz`
         )?,
         r###"<p>_(_foo)</p>
 "###,
-        r###"Emphasis and strong emphasis (371)"###
+        r###"Emphasis and strong emphasis (372)"###
 );
 
     assert_eq!(
@@ -5863,7 +5880,7 @@ baz`
         )?,
         r###"<p><em>(<em>foo</em>)</em></p>
 "###,
-        r###"Emphasis and strong emphasis (372)"###
+        r###"Emphasis and strong emphasis (373)"###
 );
 
     assert_eq!(
@@ -5874,7 +5891,7 @@ baz`
         )?,
         r###"<p>_foo_bar</p>
 "###,
-        r###"Emphasis and strong emphasis (373)"###
+        r###"Emphasis and strong emphasis (374)"###
 );
 
     assert_eq!(
@@ -5885,7 +5902,7 @@ baz`
         )?,
         r###"<p>_пристаням_стремятся</p>
 "###,
-        r###"Emphasis and strong emphasis (374)"###
+        r###"Emphasis and strong emphasis (375)"###
 );
 
     assert_eq!(
@@ -5896,7 +5913,7 @@ baz`
         )?,
         r###"<p><em>foo_bar_baz</em></p>
 "###,
-        r###"Emphasis and strong emphasis (375)"###
+        r###"Emphasis and strong emphasis (376)"###
 );
 
     assert_eq!(
@@ -5907,7 +5924,7 @@ baz`
         )?,
         r###"<p><em>(bar)</em>.</p>
 "###,
-        r###"Emphasis and strong emphasis (376)"###
+        r###"Emphasis and strong emphasis (377)"###
 );
 
     assert_eq!(
@@ -5918,7 +5935,7 @@ baz`
         )?,
         r###"<p><strong>foo bar</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (377)"###
+        r###"Emphasis and strong emphasis (378)"###
 );
 
     assert_eq!(
@@ -5929,7 +5946,7 @@ baz`
         )?,
         r###"<p>** foo bar**</p>
 "###,
-        r###"Emphasis and strong emphasis (378)"###
+        r###"Emphasis and strong emphasis (379)"###
 );
 
     assert_eq!(
@@ -5940,7 +5957,7 @@ baz`
         )?,
         r###"<p>a**&quot;foo&quot;**</p>
 "###,
-        r###"Emphasis and strong emphasis (379)"###
+        r###"Emphasis and strong emphasis (380)"###
 );
 
     assert_eq!(
@@ -5951,7 +5968,7 @@ baz`
         )?,
         r###"<p>foo<strong>bar</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (380)"###
+        r###"Emphasis and strong emphasis (381)"###
 );
 
     assert_eq!(
@@ -5962,7 +5979,7 @@ baz`
         )?,
         r###"<p><strong>foo bar</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (381)"###
+        r###"Emphasis and strong emphasis (382)"###
 );
 
     assert_eq!(
@@ -5973,7 +5990,7 @@ baz`
         )?,
         r###"<p>__ foo bar__</p>
 "###,
-        r###"Emphasis and strong emphasis (382)"###
+        r###"Emphasis and strong emphasis (383)"###
 );
 
     assert_eq!(
@@ -5986,7 +6003,7 @@ foo bar__
         r###"<p>__
 foo bar__</p>
 "###,
-        r###"Emphasis and strong emphasis (383)"###
+        r###"Emphasis and strong emphasis (384)"###
 );
 
     assert_eq!(
@@ -5997,7 +6014,7 @@ foo bar__</p>
         )?,
         r###"<p>a__&quot;foo&quot;__</p>
 "###,
-        r###"Emphasis and strong emphasis (384)"###
+        r###"Emphasis and strong emphasis (385)"###
 );
 
     assert_eq!(
@@ -6008,7 +6025,7 @@ foo bar__</p>
         )?,
         r###"<p>foo__bar__</p>
 "###,
-        r###"Emphasis and strong emphasis (385)"###
+        r###"Emphasis and strong emphasis (386)"###
 );
 
     assert_eq!(
@@ -6019,7 +6036,7 @@ foo bar__</p>
         )?,
         r###"<p>5__6__78</p>
 "###,
-        r###"Emphasis and strong emphasis (386)"###
+        r###"Emphasis and strong emphasis (387)"###
 );
 
     assert_eq!(
@@ -6030,7 +6047,7 @@ foo bar__</p>
         )?,
         r###"<p>пристаням__стремятся__</p>
 "###,
-        r###"Emphasis and strong emphasis (387)"###
+        r###"Emphasis and strong emphasis (388)"###
 );
 
     assert_eq!(
@@ -6041,7 +6058,7 @@ foo bar__</p>
         )?,
         r###"<p><strong>foo, <strong>bar</strong>, baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (388)"###
+        r###"Emphasis and strong emphasis (389)"###
 );
 
     assert_eq!(
@@ -6052,7 +6069,7 @@ foo bar__</p>
         )?,
         r###"<p>foo-<strong>(bar)</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (389)"###
+        r###"Emphasis and strong emphasis (390)"###
 );
 
     assert_eq!(
@@ -6063,7 +6080,7 @@ foo bar__</p>
         )?,
         r###"<p>**foo bar **</p>
 "###,
-        r###"Emphasis and strong emphasis (390)"###
+        r###"Emphasis and strong emphasis (391)"###
 );
 
     assert_eq!(
@@ -6074,7 +6091,7 @@ foo bar__</p>
         )?,
         r###"<p>**(**foo)</p>
 "###,
-        r###"Emphasis and strong emphasis (391)"###
+        r###"Emphasis and strong emphasis (392)"###
 );
 
     assert_eq!(
@@ -6085,7 +6102,7 @@ foo bar__</p>
         )?,
         r###"<p><em>(<strong>foo</strong>)</em></p>
 "###,
-        r###"Emphasis and strong emphasis (392)"###
+        r###"Emphasis and strong emphasis (393)"###
 );
 
     assert_eq!(
@@ -6098,7 +6115,7 @@ foo bar__</p>
         r###"<p><strong>Gomphocarpus (<em>Gomphocarpus physocarpus</em>, syn.
 <em>Asclepias physocarpa</em>)</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (393)"###
+        r###"Emphasis and strong emphasis (394)"###
 );
 
     assert_eq!(
@@ -6109,7 +6126,7 @@ foo bar__</p>
         )?,
         r###"<p><strong>foo &quot;<em>bar</em>&quot; foo</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (394)"###
+        r###"Emphasis and strong emphasis (395)"###
 );
 
     assert_eq!(
@@ -6120,7 +6137,7 @@ foo bar__</p>
         )?,
         r###"<p><strong>foo</strong>bar</p>
 "###,
-        r###"Emphasis and strong emphasis (395)"###
+        r###"Emphasis and strong emphasis (396)"###
 );
 
     assert_eq!(
@@ -6131,7 +6148,7 @@ foo bar__</p>
         )?,
         r###"<p>__foo bar __</p>
 "###,
-        r###"Emphasis and strong emphasis (396)"###
+        r###"Emphasis and strong emphasis (397)"###
 );
 
     assert_eq!(
@@ -6142,7 +6159,7 @@ foo bar__</p>
         )?,
         r###"<p>__(__foo)</p>
 "###,
-        r###"Emphasis and strong emphasis (397)"###
+        r###"Emphasis and strong emphasis (398)"###
 );
 
     assert_eq!(
@@ -6153,7 +6170,7 @@ foo bar__</p>
         )?,
         r###"<p><em>(<strong>foo</strong>)</em></p>
 "###,
-        r###"Emphasis and strong emphasis (398)"###
+        r###"Emphasis and strong emphasis (399)"###
 );
 
     assert_eq!(
@@ -6164,7 +6181,7 @@ foo bar__</p>
         )?,
         r###"<p>__foo__bar</p>
 "###,
-        r###"Emphasis and strong emphasis (399)"###
+        r###"Emphasis and strong emphasis (400)"###
 );
 
     assert_eq!(
@@ -6175,7 +6192,7 @@ foo bar__</p>
         )?,
         r###"<p>__пристаням__стремятся</p>
 "###,
-        r###"Emphasis and strong emphasis (400)"###
+        r###"Emphasis and strong emphasis (401)"###
 );
 
     assert_eq!(
@@ -6186,7 +6203,7 @@ foo bar__</p>
         )?,
         r###"<p><strong>foo__bar__baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (401)"###
+        r###"Emphasis and strong emphasis (402)"###
 );
 
     assert_eq!(
@@ -6197,7 +6214,7 @@ foo bar__</p>
         )?,
         r###"<p><strong>(bar)</strong>.</p>
 "###,
-        r###"Emphasis and strong emphasis (402)"###
+        r###"Emphasis and strong emphasis (403)"###
 );
 
     assert_eq!(
@@ -6208,7 +6225,7 @@ foo bar__</p>
         )?,
         r###"<p><em>foo <a href="/url">bar</a></em></p>
 "###,
-        r###"Emphasis and strong emphasis (403)"###
+        r###"Emphasis and strong emphasis (404)"###
 );
 
     assert_eq!(
@@ -6221,7 +6238,7 @@ bar*
         r###"<p><em>foo
 bar</em></p>
 "###,
-        r###"Emphasis and strong emphasis (404)"###
+        r###"Emphasis and strong emphasis (405)"###
 );
 
     assert_eq!(
@@ -6232,7 +6249,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <strong>bar</strong> baz</em></p>
 "###,
-        r###"Emphasis and strong emphasis (405)"###
+        r###"Emphasis and strong emphasis (406)"###
 );
 
     assert_eq!(
@@ -6243,7 +6260,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <em>bar</em> baz</em></p>
 "###,
-        r###"Emphasis and strong emphasis (406)"###
+        r###"Emphasis and strong emphasis (407)"###
 );
 
     assert_eq!(
@@ -6254,7 +6271,7 @@ bar</em></p>
         )?,
         r###"<p><em><em>foo</em> bar</em></p>
 "###,
-        r###"Emphasis and strong emphasis (407)"###
+        r###"Emphasis and strong emphasis (408)"###
 );
 
     assert_eq!(
@@ -6265,7 +6282,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <em>bar</em></em></p>
 "###,
-        r###"Emphasis and strong emphasis (408)"###
+        r###"Emphasis and strong emphasis (409)"###
 );
 
     assert_eq!(
@@ -6276,7 +6293,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <strong>bar</strong> baz</em></p>
 "###,
-        r###"Emphasis and strong emphasis (409)"###
+        r###"Emphasis and strong emphasis (410)"###
 );
 
     assert_eq!(
@@ -6287,7 +6304,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo<strong>bar</strong>baz</em></p>
 "###,
-        r###"Emphasis and strong emphasis (410)"###
+        r###"Emphasis and strong emphasis (411)"###
 );
 
     assert_eq!(
@@ -6298,7 +6315,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo**bar</em></p>
 "###,
-        r###"Emphasis and strong emphasis (411)"###
+        r###"Emphasis and strong emphasis (412)"###
 );
 
     assert_eq!(
@@ -6309,7 +6326,7 @@ bar</em></p>
         )?,
         r###"<p><em><strong>foo</strong> bar</em></p>
 "###,
-        r###"Emphasis and strong emphasis (412)"###
+        r###"Emphasis and strong emphasis (413)"###
 );
 
     assert_eq!(
@@ -6320,7 +6337,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <strong>bar</strong></em></p>
 "###,
-        r###"Emphasis and strong emphasis (413)"###
+        r###"Emphasis and strong emphasis (414)"###
 );
 
     assert_eq!(
@@ -6331,7 +6348,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo<strong>bar</strong></em></p>
 "###,
-        r###"Emphasis and strong emphasis (414)"###
+        r###"Emphasis and strong emphasis (415)"###
 );
 
     assert_eq!(
@@ -6342,7 +6359,7 @@ bar</em></p>
         )?,
         r###"<p>foo<em><strong>bar</strong></em>baz</p>
 "###,
-        r###"Emphasis and strong emphasis (415)"###
+        r###"Emphasis and strong emphasis (416)"###
 );
 
     assert_eq!(
@@ -6353,7 +6370,7 @@ bar</em></p>
         )?,
         r###"<p>foo<strong><strong><strong>bar</strong></strong></strong>***baz</p>
 "###,
-        r###"Emphasis and strong emphasis (416)"###
+        r###"Emphasis and strong emphasis (417)"###
 );
 
     assert_eq!(
@@ -6364,7 +6381,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <strong>bar <em>baz</em> bim</strong> bop</em></p>
 "###,
-        r###"Emphasis and strong emphasis (417)"###
+        r###"Emphasis and strong emphasis (418)"###
 );
 
     assert_eq!(
@@ -6375,7 +6392,7 @@ bar</em></p>
         )?,
         r###"<p><em>foo <a href="/url"><em>bar</em></a></em></p>
 "###,
-        r###"Emphasis and strong emphasis (418)"###
+        r###"Emphasis and strong emphasis (419)"###
 );
 
     assert_eq!(
@@ -6386,7 +6403,7 @@ bar</em></p>
         )?,
         r###"<p>** is not an empty emphasis</p>
 "###,
-        r###"Emphasis and strong emphasis (419)"###
+        r###"Emphasis and strong emphasis (420)"###
 );
 
     assert_eq!(
@@ -6397,7 +6414,7 @@ bar</em></p>
         )?,
         r###"<p>**** is not an empty strong emphasis</p>
 "###,
-        r###"Emphasis and strong emphasis (420)"###
+        r###"Emphasis and strong emphasis (421)"###
 );
 
     assert_eq!(
@@ -6408,7 +6425,7 @@ bar</em></p>
         )?,
         r###"<p><strong>foo <a href="/url">bar</a></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (421)"###
+        r###"Emphasis and strong emphasis (422)"###
 );
 
     assert_eq!(
@@ -6421,7 +6438,7 @@ bar**
         r###"<p><strong>foo
 bar</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (422)"###
+        r###"Emphasis and strong emphasis (423)"###
 );
 
     assert_eq!(
@@ -6432,7 +6449,7 @@ bar</strong></p>
         )?,
         r###"<p><strong>foo <em>bar</em> baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (423)"###
+        r###"Emphasis and strong emphasis (424)"###
 );
 
     assert_eq!(
@@ -6443,7 +6460,7 @@ bar</strong></p>
         )?,
         r###"<p><strong>foo <strong>bar</strong> baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (424)"###
+        r###"Emphasis and strong emphasis (425)"###
 );
 
     assert_eq!(
@@ -6454,7 +6471,7 @@ bar</strong></p>
         )?,
         r###"<p><strong><strong>foo</strong> bar</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (425)"###
+        r###"Emphasis and strong emphasis (426)"###
 );
 
     assert_eq!(
@@ -6465,7 +6482,7 @@ bar</strong></p>
         )?,
         r###"<p><strong>foo <strong>bar</strong></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (426)"###
+        r###"Emphasis and strong emphasis (427)"###
 );
 
     assert_eq!(
@@ -6476,7 +6493,7 @@ bar</strong></p>
         )?,
         r###"<p><strong>foo <em>bar</em> baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (427)"###
+        r###"Emphasis and strong emphasis (428)"###
 );
 
     assert_eq!(
@@ -6487,7 +6504,7 @@ bar</strong></p>
         )?,
         r###"<p><strong>foo<em>bar</em>baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (428)"###
+        r###"Emphasis and strong emphasis (429)"###
 );
 
     assert_eq!(
@@ -6498,7 +6515,7 @@ bar</strong></p>
         )?,
         r###"<p><strong><em>foo</em> bar</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (429)"###
+        r###"Emphasis and strong emphasis (430)"###
 );
 
     assert_eq!(
@@ -6509,7 +6526,7 @@ bar</strong></p>
         )?,
         r###"<p><strong>foo <em>bar</em></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (430)"###
+        r###"Emphasis and strong emphasis (431)"###
 );
 
     assert_eq!(
@@ -6522,7 +6539,7 @@ bim* bop**
         r###"<p><strong>foo <em>bar <strong>baz</strong>
 bim</em> bop</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (431)"###
+        r###"Emphasis and strong emphasis (432)"###
 );
 
     assert_eq!(
@@ -6533,7 +6550,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong>foo <a href="/url"><em>bar</em></a></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (432)"###
+        r###"Emphasis and strong emphasis (433)"###
 );
 
     assert_eq!(
@@ -6544,7 +6561,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>__ is not an empty emphasis</p>
 "###,
-        r###"Emphasis and strong emphasis (433)"###
+        r###"Emphasis and strong emphasis (434)"###
 );
 
     assert_eq!(
@@ -6555,7 +6572,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>____ is not an empty strong emphasis</p>
 "###,
-        r###"Emphasis and strong emphasis (434)"###
+        r###"Emphasis and strong emphasis (435)"###
 );
 
     assert_eq!(
@@ -6566,7 +6583,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo ***</p>
 "###,
-        r###"Emphasis and strong emphasis (435)"###
+        r###"Emphasis and strong emphasis (436)"###
 );
 
     assert_eq!(
@@ -6577,7 +6594,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <em>*</em></p>
 "###,
-        r###"Emphasis and strong emphasis (436)"###
+        r###"Emphasis and strong emphasis (437)"###
 );
 
     assert_eq!(
@@ -6588,7 +6605,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <em>_</em></p>
 "###,
-        r###"Emphasis and strong emphasis (437)"###
+        r###"Emphasis and strong emphasis (438)"###
 );
 
     assert_eq!(
@@ -6599,7 +6616,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo *****</p>
 "###,
-        r###"Emphasis and strong emphasis (438)"###
+        r###"Emphasis and strong emphasis (439)"###
 );
 
     assert_eq!(
@@ -6610,7 +6627,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <strong>*</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (439)"###
+        r###"Emphasis and strong emphasis (440)"###
 );
 
     assert_eq!(
@@ -6621,7 +6638,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <strong>_</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (440)"###
+        r###"Emphasis and strong emphasis (441)"###
 );
 
     assert_eq!(
@@ -6632,7 +6649,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>*<em>foo</em></p>
 "###,
-        r###"Emphasis and strong emphasis (441)"###
+        r###"Emphasis and strong emphasis (442)"###
 );
 
     assert_eq!(
@@ -6643,7 +6660,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>foo</em>*</p>
 "###,
-        r###"Emphasis and strong emphasis (442)"###
+        r###"Emphasis and strong emphasis (443)"###
 );
 
     assert_eq!(
@@ -6654,7 +6671,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>*<strong>foo</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (443)"###
+        r###"Emphasis and strong emphasis (444)"###
 );
 
     assert_eq!(
@@ -6665,7 +6682,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>***<em>foo</em></p>
 "###,
-        r###"Emphasis and strong emphasis (444)"###
+        r###"Emphasis and strong emphasis (445)"###
 );
 
     assert_eq!(
@@ -6676,7 +6693,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong>foo</strong>*</p>
 "###,
-        r###"Emphasis and strong emphasis (445)"###
+        r###"Emphasis and strong emphasis (446)"###
 );
 
     assert_eq!(
@@ -6687,7 +6704,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>foo</em>***</p>
 "###,
-        r###"Emphasis and strong emphasis (446)"###
+        r###"Emphasis and strong emphasis (447)"###
 );
 
     assert_eq!(
@@ -6698,7 +6715,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo ___</p>
 "###,
-        r###"Emphasis and strong emphasis (447)"###
+        r###"Emphasis and strong emphasis (448)"###
 );
 
     assert_eq!(
@@ -6709,7 +6726,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <em>_</em></p>
 "###,
-        r###"Emphasis and strong emphasis (448)"###
+        r###"Emphasis and strong emphasis (449)"###
 );
 
     assert_eq!(
@@ -6720,7 +6737,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <em>*</em></p>
 "###,
-        r###"Emphasis and strong emphasis (449)"###
+        r###"Emphasis and strong emphasis (450)"###
 );
 
     assert_eq!(
@@ -6731,7 +6748,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo _____</p>
 "###,
-        r###"Emphasis and strong emphasis (450)"###
+        r###"Emphasis and strong emphasis (451)"###
 );
 
     assert_eq!(
@@ -6742,7 +6759,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <strong>_</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (451)"###
+        r###"Emphasis and strong emphasis (452)"###
 );
 
     assert_eq!(
@@ -6753,7 +6770,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>foo <strong>*</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (452)"###
+        r###"Emphasis and strong emphasis (453)"###
 );
 
     assert_eq!(
@@ -6764,7 +6781,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>_<em>foo</em></p>
 "###,
-        r###"Emphasis and strong emphasis (453)"###
+        r###"Emphasis and strong emphasis (454)"###
 );
 
     assert_eq!(
@@ -6775,7 +6792,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>foo</em>_</p>
 "###,
-        r###"Emphasis and strong emphasis (454)"###
+        r###"Emphasis and strong emphasis (455)"###
 );
 
     assert_eq!(
@@ -6786,7 +6803,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>_<strong>foo</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (455)"###
+        r###"Emphasis and strong emphasis (456)"###
 );
 
     assert_eq!(
@@ -6797,7 +6814,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>___<em>foo</em></p>
 "###,
-        r###"Emphasis and strong emphasis (456)"###
+        r###"Emphasis and strong emphasis (457)"###
 );
 
     assert_eq!(
@@ -6808,7 +6825,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong>foo</strong>_</p>
 "###,
-        r###"Emphasis and strong emphasis (457)"###
+        r###"Emphasis and strong emphasis (458)"###
 );
 
     assert_eq!(
@@ -6819,7 +6836,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>foo</em>___</p>
 "###,
-        r###"Emphasis and strong emphasis (458)"###
+        r###"Emphasis and strong emphasis (459)"###
 );
 
     assert_eq!(
@@ -6830,7 +6847,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong>foo</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (459)"###
+        r###"Emphasis and strong emphasis (460)"###
 );
 
     assert_eq!(
@@ -6841,7 +6858,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em><em>foo</em></em></p>
 "###,
-        r###"Emphasis and strong emphasis (460)"###
+        r###"Emphasis and strong emphasis (461)"###
 );
 
     assert_eq!(
@@ -6852,7 +6869,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong>foo</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (461)"###
+        r###"Emphasis and strong emphasis (462)"###
 );
 
     assert_eq!(
@@ -6863,7 +6880,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em><em>foo</em></em></p>
 "###,
-        r###"Emphasis and strong emphasis (462)"###
+        r###"Emphasis and strong emphasis (463)"###
 );
 
     assert_eq!(
@@ -6874,7 +6891,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong><strong>foo</strong></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (463)"###
+        r###"Emphasis and strong emphasis (464)"###
 );
 
     assert_eq!(
@@ -6885,7 +6902,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong><strong>foo</strong></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (464)"###
+        r###"Emphasis and strong emphasis (465)"###
 );
 
     assert_eq!(
@@ -6896,7 +6913,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><strong><strong><strong>foo</strong></strong></strong></p>
 "###,
-        r###"Emphasis and strong emphasis (465)"###
+        r###"Emphasis and strong emphasis (466)"###
 );
 
     assert_eq!(
@@ -6907,7 +6924,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em><strong>foo</strong></em></p>
 "###,
-        r###"Emphasis and strong emphasis (466)"###
+        r###"Emphasis and strong emphasis (467)"###
 );
 
     assert_eq!(
@@ -6918,7 +6935,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em><strong><strong>foo</strong></strong></em></p>
 "###,
-        r###"Emphasis and strong emphasis (467)"###
+        r###"Emphasis and strong emphasis (468)"###
 );
 
     assert_eq!(
@@ -6929,7 +6946,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>foo _bar</em> baz_</p>
 "###,
-        r###"Emphasis and strong emphasis (468)"###
+        r###"Emphasis and strong emphasis (469)"###
 );
 
     assert_eq!(
@@ -6940,7 +6957,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>foo <strong>bar *baz bim</strong> bam</em></p>
 "###,
-        r###"Emphasis and strong emphasis (469)"###
+        r###"Emphasis and strong emphasis (470)"###
 );
 
     assert_eq!(
@@ -6951,7 +6968,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>**foo <strong>bar baz</strong></p>
 "###,
-        r###"Emphasis and strong emphasis (470)"###
+        r###"Emphasis and strong emphasis (471)"###
 );
 
     assert_eq!(
@@ -6962,7 +6979,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>*foo <em>bar baz</em></p>
 "###,
-        r###"Emphasis and strong emphasis (471)"###
+        r###"Emphasis and strong emphasis (472)"###
 );
 
     assert_eq!(
@@ -6973,7 +6990,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>*<a href="/url">bar*</a></p>
 "###,
-        r###"Emphasis and strong emphasis (472)"###
+        r###"Emphasis and strong emphasis (473)"###
 );
 
     assert_eq!(
@@ -6984,7 +7001,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>_foo <a href="/url">bar_</a></p>
 "###,
-        r###"Emphasis and strong emphasis (473)"###
+        r###"Emphasis and strong emphasis (474)"###
 );
 
     assert_eq!(
@@ -6995,7 +7012,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>*<img src="foo" title="*"/></p>
 "###,
-        r###"Emphasis and strong emphasis (474)"###
+        r###"Emphasis and strong emphasis (475)"###
 );
 
     assert_eq!(
@@ -7006,7 +7023,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>**<a href="**"></p>
 "###,
-        r###"Emphasis and strong emphasis (475)"###
+        r###"Emphasis and strong emphasis (476)"###
 );
 
     assert_eq!(
@@ -7017,7 +7034,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>__<a href="__"></p>
 "###,
-        r###"Emphasis and strong emphasis (476)"###
+        r###"Emphasis and strong emphasis (477)"###
 );
 
     assert_eq!(
@@ -7028,7 +7045,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>a <code>*</code></em></p>
 "###,
-        r###"Emphasis and strong emphasis (477)"###
+        r###"Emphasis and strong emphasis (478)"###
 );
 
     assert_eq!(
@@ -7039,29 +7056,29 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><em>a <code>_</code></em></p>
 "###,
-        r###"Emphasis and strong emphasis (478)"###
-);
-
-    assert_eq!(
-        to_html_with_options(
-            r###"**a<http://foo.bar/?q=**>
-"###,
-            &danger
-        )?,
-        r###"<p>**a<a href="http://foo.bar/?q=**">http://foo.bar/?q=**</a></p>
-"###,
         r###"Emphasis and strong emphasis (479)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"__a<http://foo.bar/?q=__>
+            r###"**a<https://foo.bar/?q=**>
 "###,
             &danger
         )?,
-        r###"<p>__a<a href="http://foo.bar/?q=__">http://foo.bar/?q=__</a></p>
+        r###"<p>**a<a href="https://foo.bar/?q=**">https://foo.bar/?q=**</a></p>
 "###,
         r###"Emphasis and strong emphasis (480)"###
+);
+
+    assert_eq!(
+        to_html_with_options(
+            r###"__a<https://foo.bar/?q=__>
+"###,
+            &danger
+        )?,
+        r###"<p>__a<a href="https://foo.bar/?q=__">https://foo.bar/?q=__</a></p>
+"###,
+        r###"Emphasis and strong emphasis (481)"###
 );
 
     assert_eq!(
@@ -7072,7 +7089,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href="/uri" title="title">link</a></p>
 "###,
-        r###"Links (481)"###
+        r###"Links (482)"###
 );
 
     assert_eq!(
@@ -7083,7 +7100,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href="/uri">link</a></p>
 "###,
-        r###"Links (482)"###
+        r###"Links (483)"###
 );
 
     assert_eq!(
@@ -7094,7 +7111,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href="./target.md"></a></p>
 "###,
-        r###"Links (483)"###
+        r###"Links (484)"###
 );
 
     assert_eq!(
@@ -7105,7 +7122,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href="">link</a></p>
 "###,
-        r###"Links (484)"###
+        r###"Links (485)"###
 );
 
     assert_eq!(
@@ -7116,7 +7133,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href="">link</a></p>
 "###,
-        r###"Links (485)"###
+        r###"Links (486)"###
 );
 
     assert_eq!(
@@ -7127,7 +7144,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href=""></a></p>
 "###,
-        r###"Links (486)"###
+        r###"Links (487)"###
 );
 
     assert_eq!(
@@ -7138,7 +7155,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p>[link](/my uri)</p>
 "###,
-        r###"Links (487)"###
+        r###"Links (488)"###
 );
 
     assert_eq!(
@@ -7149,7 +7166,7 @@ bim</em> bop</strong></p>
         )?,
         r###"<p><a href="/my%20uri">link</a></p>
 "###,
-        r###"Links (488)"###
+        r###"Links (489)"###
 );
 
     assert_eq!(
@@ -7162,7 +7179,7 @@ bar)
         r###"<p>[link](foo
 bar)</p>
 "###,
-        r###"Links (489)"###
+        r###"Links (490)"###
 );
 
     assert_eq!(
@@ -7175,7 +7192,7 @@ bar>)
         r###"<p>[link](<foo
 bar>)</p>
 "###,
-        r###"Links (490)"###
+        r###"Links (491)"###
 );
 
     assert_eq!(
@@ -7186,7 +7203,7 @@ bar>)</p>
         )?,
         r###"<p><a href="b)c">a</a></p>
 "###,
-        r###"Links (491)"###
+        r###"Links (492)"###
 );
 
     assert_eq!(
@@ -7197,7 +7214,7 @@ bar>)</p>
         )?,
         r###"<p>[link](&lt;foo&gt;)</p>
 "###,
-        r###"Links (492)"###
+        r###"Links (493)"###
 );
 
     assert_eq!(
@@ -7212,7 +7229,7 @@ bar>)</p>
 [a](&lt;b)c&gt;
 [a](<b>c)</p>
 "###,
-        r###"Links (493)"###
+        r###"Links (494)"###
 );
 
     assert_eq!(
@@ -7223,7 +7240,7 @@ bar>)</p>
         )?,
         r###"<p><a href="(foo)">link</a></p>
 "###,
-        r###"Links (494)"###
+        r###"Links (495)"###
 );
 
     assert_eq!(
@@ -7234,7 +7251,7 @@ bar>)</p>
         )?,
         r###"<p><a href="foo(and(bar))">link</a></p>
 "###,
-        r###"Links (495)"###
+        r###"Links (496)"###
 );
 
     assert_eq!(
@@ -7245,7 +7262,7 @@ bar>)</p>
         )?,
         r###"<p>[link](foo(and(bar))</p>
 "###,
-        r###"Links (496)"###
+        r###"Links (497)"###
 );
 
     assert_eq!(
@@ -7256,7 +7273,7 @@ bar>)</p>
         )?,
         r###"<p><a href="foo(and(bar)">link</a></p>
 "###,
-        r###"Links (497)"###
+        r###"Links (498)"###
 );
 
     assert_eq!(
@@ -7267,7 +7284,7 @@ bar>)</p>
         )?,
         r###"<p><a href="foo(and(bar)">link</a></p>
 "###,
-        r###"Links (498)"###
+        r###"Links (499)"###
 );
 
     assert_eq!(
@@ -7278,24 +7295,24 @@ bar>)</p>
         )?,
         r###"<p><a href="foo):">link</a></p>
 "###,
-        r###"Links (499)"###
+        r###"Links (500)"###
 );
 
     assert_eq!(
         to_html_with_options(
             r###"[link](#fragment)
 
-[link](http://example.com#fragment)
+[link](https://example.com#fragment)
 
-[link](http://example.com?foo=3#frag)
+[link](https://example.com?foo=3#frag)
 "###,
             &danger
         )?,
         r###"<p><a href="#fragment">link</a></p>
-<p><a href="http://example.com#fragment">link</a></p>
-<p><a href="http://example.com?foo=3#frag">link</a></p>
+<p><a href="https://example.com#fragment">link</a></p>
+<p><a href="https://example.com?foo=3#frag">link</a></p>
 "###,
-        r###"Links (500)"###
+        r###"Links (501)"###
 );
 
     assert_eq!(
@@ -7306,7 +7323,7 @@ bar>)</p>
         )?,
         r###"<p><a href="foo%5Cbar">link</a></p>
 "###,
-        r###"Links (501)"###
+        r###"Links (502)"###
 );
 
     assert_eq!(
@@ -7317,7 +7334,7 @@ bar>)</p>
         )?,
         r###"<p><a href="foo%20b%C3%A4">link</a></p>
 "###,
-        r###"Links (502)"###
+        r###"Links (503)"###
 );
 
     assert_eq!(
@@ -7328,7 +7345,7 @@ bar>)</p>
         )?,
         r###"<p><a href="%22title%22">link</a></p>
 "###,
-        r###"Links (503)"###
+        r###"Links (504)"###
 );
 
     assert_eq!(
@@ -7343,7 +7360,7 @@ bar>)</p>
 <a href="/url" title="title">link</a>
 <a href="/url" title="title">link</a></p>
 "###,
-        r###"Links (504)"###
+        r###"Links (505)"###
 );
 
     assert_eq!(
@@ -7354,7 +7371,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title &quot;&quot;">link</a></p>
 "###,
-        r###"Links (505)"###
+        r###"Links (506)"###
 );
 
     assert_eq!(
@@ -7365,7 +7382,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url%C2%A0%22title%22">link</a></p>
 "###,
-        r###"Links (506)"###
+        r###"Links (507)"###
 );
 
     assert_eq!(
@@ -7376,7 +7393,7 @@ bar>)</p>
         )?,
         r###"<p>[link](/url &quot;title &quot;and&quot; title&quot;)</p>
 "###,
-        r###"Links (507)"###
+        r###"Links (508)"###
 );
 
     assert_eq!(
@@ -7387,7 +7404,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title &quot;and&quot; title">link</a></p>
 "###,
-        r###"Links (508)"###
+        r###"Links (509)"###
 );
 
     assert_eq!(
@@ -7399,7 +7416,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri" title="title">link</a></p>
 "###,
-        r###"Links (509)"###
+        r###"Links (510)"###
 );
 
     assert_eq!(
@@ -7410,7 +7427,7 @@ bar>)</p>
         )?,
         r###"<p>[link] (/uri)</p>
 "###,
-        r###"Links (510)"###
+        r###"Links (511)"###
 );
 
     assert_eq!(
@@ -7421,7 +7438,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">link [foo [bar]]</a></p>
 "###,
-        r###"Links (511)"###
+        r###"Links (512)"###
 );
 
     assert_eq!(
@@ -7432,7 +7449,7 @@ bar>)</p>
         )?,
         r###"<p>[link] bar](/uri)</p>
 "###,
-        r###"Links (512)"###
+        r###"Links (513)"###
 );
 
     assert_eq!(
@@ -7443,7 +7460,7 @@ bar>)</p>
         )?,
         r###"<p>[link <a href="/uri">bar</a></p>
 "###,
-        r###"Links (513)"###
+        r###"Links (514)"###
 );
 
     assert_eq!(
@@ -7454,7 +7471,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">link [bar</a></p>
 "###,
-        r###"Links (514)"###
+        r###"Links (515)"###
 );
 
     assert_eq!(
@@ -7465,7 +7482,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
 "###,
-        r###"Links (515)"###
+        r###"Links (516)"###
 );
 
     assert_eq!(
@@ -7476,7 +7493,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
 "###,
-        r###"Links (516)"###
+        r###"Links (517)"###
 );
 
     assert_eq!(
@@ -7487,7 +7504,7 @@ bar>)</p>
         )?,
         r###"<p>[foo <a href="/uri">bar</a>](/uri)</p>
 "###,
-        r###"Links (517)"###
+        r###"Links (518)"###
 );
 
     assert_eq!(
@@ -7498,7 +7515,7 @@ bar>)</p>
         )?,
         r###"<p>[foo <em>[bar <a href="/uri">baz</a>](/uri)</em>](/uri)</p>
 "###,
-        r###"Links (518)"###
+        r###"Links (519)"###
 );
 
     assert_eq!(
@@ -7509,7 +7526,7 @@ bar>)</p>
         )?,
         r###"<p><img src="uri3" alt="[foo](uri2)" /></p>
 "###,
-        r###"Links (519)"###
+        r###"Links (520)"###
 );
 
     assert_eq!(
@@ -7520,7 +7537,7 @@ bar>)</p>
         )?,
         r###"<p>*<a href="/uri">foo*</a></p>
 "###,
-        r###"Links (520)"###
+        r###"Links (521)"###
 );
 
     assert_eq!(
@@ -7531,7 +7548,7 @@ bar>)</p>
         )?,
         r###"<p><a href="baz*">foo *bar</a></p>
 "###,
-        r###"Links (521)"###
+        r###"Links (522)"###
 );
 
     assert_eq!(
@@ -7542,7 +7559,7 @@ bar>)</p>
         )?,
         r###"<p><em>foo [bar</em> baz]</p>
 "###,
-        r###"Links (522)"###
+        r###"Links (523)"###
 );
 
     assert_eq!(
@@ -7553,7 +7570,7 @@ bar>)</p>
         )?,
         r###"<p>[foo <bar attr="](baz)"></p>
 "###,
-        r###"Links (523)"###
+        r###"Links (524)"###
 );
 
     assert_eq!(
@@ -7564,18 +7581,18 @@ bar>)</p>
         )?,
         r###"<p>[foo<code>](/uri)</code></p>
 "###,
-        r###"Links (524)"###
+        r###"Links (525)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo<http://example.com/?search=](uri)>
+            r###"[foo<https://example.com/?search=](uri)>
 "###,
             &danger
         )?,
-        r###"<p>[foo<a href="http://example.com/?search=%5D(uri)">http://example.com/?search=](uri)</a></p>
+        r###"<p>[foo<a href="https://example.com/?search=%5D(uri)">https://example.com/?search=](uri)</a></p>
 "###,
-        r###"Links (525)"###
+        r###"Links (526)"###
 );
 
     assert_eq!(
@@ -7588,7 +7605,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
-        r###"Links (526)"###
+        r###"Links (527)"###
 );
 
     assert_eq!(
@@ -7601,7 +7618,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">link [foo [bar]]</a></p>
 "###,
-        r###"Links (527)"###
+        r###"Links (528)"###
 );
 
     assert_eq!(
@@ -7614,7 +7631,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">link [bar</a></p>
 "###,
-        r###"Links (528)"###
+        r###"Links (529)"###
 );
 
     assert_eq!(
@@ -7627,7 +7644,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">link <em>foo <strong>bar</strong> <code>#</code></em></a></p>
 "###,
-        r###"Links (529)"###
+        r###"Links (530)"###
 );
 
     assert_eq!(
@@ -7640,7 +7657,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri"><img src="moon.jpg" alt="moon" /></a></p>
 "###,
-        r###"Links (530)"###
+        r###"Links (531)"###
 );
 
     assert_eq!(
@@ -7653,7 +7670,7 @@ bar>)</p>
         )?,
         r###"<p>[foo <a href="/uri">bar</a>]<a href="/uri">ref</a></p>
 "###,
-        r###"Links (531)"###
+        r###"Links (532)"###
 );
 
     assert_eq!(
@@ -7666,7 +7683,7 @@ bar>)</p>
         )?,
         r###"<p>[foo <em>bar <a href="/uri">baz</a></em>]<a href="/uri">ref</a></p>
 "###,
-        r###"Links (532)"###
+        r###"Links (533)"###
 );
 
     assert_eq!(
@@ -7679,7 +7696,7 @@ bar>)</p>
         )?,
         r###"<p>*<a href="/uri">foo*</a></p>
 "###,
-        r###"Links (533)"###
+        r###"Links (534)"###
 );
 
     assert_eq!(
@@ -7692,7 +7709,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">foo *bar</a>*</p>
 "###,
-        r###"Links (534)"###
+        r###"Links (535)"###
 );
 
     assert_eq!(
@@ -7705,7 +7722,7 @@ bar>)</p>
         )?,
         r###"<p>[foo <bar attr="][ref]"></p>
 "###,
-        r###"Links (535)"###
+        r###"Links (536)"###
 );
 
     assert_eq!(
@@ -7718,20 +7735,20 @@ bar>)</p>
         )?,
         r###"<p>[foo<code>][ref]</code></p>
 "###,
-        r###"Links (536)"###
+        r###"Links (537)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"[foo<http://example.com/?search=][ref]>
+            r###"[foo<https://example.com/?search=][ref]>
 
 [ref]: /uri
 "###,
             &danger
         )?,
-        r###"<p>[foo<a href="http://example.com/?search=%5D%5Bref%5D">http://example.com/?search=][ref]</a></p>
+        r###"<p>[foo<a href="https://example.com/?search=%5D%5Bref%5D">https://example.com/?search=][ref]</a></p>
 "###,
-        r###"Links (537)"###
+        r###"Links (538)"###
 );
 
     assert_eq!(
@@ -7744,7 +7761,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
-        r###"Links (538)"###
+        r###"Links (539)"###
 );
 
     assert_eq!(
@@ -7757,7 +7774,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url">ẞ</a></p>
 "###,
-        r###"Links (539)"###
+        r###"Links (540)"###
 );
 
     assert_eq!(
@@ -7771,7 +7788,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url">Baz</a></p>
 "###,
-        r###"Links (540)"###
+        r###"Links (541)"###
 );
 
     assert_eq!(
@@ -7784,7 +7801,7 @@ bar>)</p>
         )?,
         r###"<p>[foo] <a href="/url" title="title">bar</a></p>
 "###,
-        r###"Links (541)"###
+        r###"Links (542)"###
 );
 
     assert_eq!(
@@ -7799,7 +7816,7 @@ bar>)</p>
         r###"<p>[foo]
 <a href="/url" title="title">bar</a></p>
 "###,
-        r###"Links (542)"###
+        r###"Links (543)"###
 );
 
     assert_eq!(
@@ -7814,7 +7831,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url1">bar</a></p>
 "###,
-        r###"Links (543)"###
+        r###"Links (544)"###
 );
 
     assert_eq!(
@@ -7827,7 +7844,7 @@ bar>)</p>
         )?,
         r###"<p>[bar][foo!]</p>
 "###,
-        r###"Links (544)"###
+        r###"Links (545)"###
 );
 
     assert_eq!(
@@ -7841,7 +7858,7 @@ bar>)</p>
         r###"<p>[foo][ref[]</p>
 <p>[ref[]: /uri</p>
 "###,
-        r###"Links (545)"###
+        r###"Links (546)"###
 );
 
     assert_eq!(
@@ -7855,7 +7872,7 @@ bar>)</p>
         r###"<p>[foo][ref[bar]]</p>
 <p>[ref[bar]]: /uri</p>
 "###,
-        r###"Links (546)"###
+        r###"Links (547)"###
 );
 
     assert_eq!(
@@ -7869,7 +7886,7 @@ bar>)</p>
         r###"<p>[[[foo]]]</p>
 <p>[[[foo]]]: /url</p>
 "###,
-        r###"Links (547)"###
+        r###"Links (548)"###
 );
 
     assert_eq!(
@@ -7882,7 +7899,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">foo</a></p>
 "###,
-        r###"Links (548)"###
+        r###"Links (549)"###
 );
 
     assert_eq!(
@@ -7895,7 +7912,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/uri">bar\</a></p>
 "###,
-        r###"Links (549)"###
+        r###"Links (550)"###
 );
 
     assert_eq!(
@@ -7909,7 +7926,7 @@ bar>)</p>
         r###"<p>[]</p>
 <p>[]: /uri</p>
 "###,
-        r###"Links (550)"###
+        r###"Links (551)"###
 );
 
     assert_eq!(
@@ -7927,7 +7944,7 @@ bar>)</p>
 <p>[
 ]: /uri</p>
 "###,
-        r###"Links (551)"###
+        r###"Links (552)"###
 );
 
     assert_eq!(
@@ -7940,7 +7957,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
-        r###"Links (552)"###
+        r###"Links (553)"###
 );
 
     assert_eq!(
@@ -7953,7 +7970,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
 "###,
-        r###"Links (553)"###
+        r###"Links (554)"###
 );
 
     assert_eq!(
@@ -7966,7 +7983,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title">Foo</a></p>
 "###,
-        r###"Links (554)"###
+        r###"Links (555)"###
 );
 
     assert_eq!(
@@ -7981,7 +7998,7 @@ bar>)</p>
         r###"<p><a href="/url" title="title">foo</a>
 []</p>
 "###,
-        r###"Links (555)"###
+        r###"Links (556)"###
 );
 
     assert_eq!(
@@ -7994,7 +8011,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title">foo</a></p>
 "###,
-        r###"Links (556)"###
+        r###"Links (557)"###
 );
 
     assert_eq!(
@@ -8007,7 +8024,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title"><em>foo</em> bar</a></p>
 "###,
-        r###"Links (557)"###
+        r###"Links (558)"###
 );
 
     assert_eq!(
@@ -8020,7 +8037,7 @@ bar>)</p>
         )?,
         r###"<p>[<a href="/url" title="title"><em>foo</em> bar</a>]</p>
 "###,
-        r###"Links (558)"###
+        r###"Links (559)"###
 );
 
     assert_eq!(
@@ -8033,7 +8050,7 @@ bar>)</p>
         )?,
         r###"<p>[[bar <a href="/url">foo</a></p>
 "###,
-        r###"Links (559)"###
+        r###"Links (560)"###
 );
 
     assert_eq!(
@@ -8046,7 +8063,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url" title="title">Foo</a></p>
 "###,
-        r###"Links (560)"###
+        r###"Links (561)"###
 );
 
     assert_eq!(
@@ -8059,7 +8076,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url">foo</a> bar</p>
 "###,
-        r###"Links (561)"###
+        r###"Links (562)"###
 );
 
     assert_eq!(
@@ -8072,7 +8089,7 @@ bar>)</p>
         )?,
         r###"<p>[foo]</p>
 "###,
-        r###"Links (562)"###
+        r###"Links (563)"###
 );
 
     assert_eq!(
@@ -8085,7 +8102,7 @@ bar>)</p>
         )?,
         r###"<p>*<a href="/url">foo*</a></p>
 "###,
-        r###"Links (563)"###
+        r###"Links (564)"###
 );
 
     assert_eq!(
@@ -8099,7 +8116,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url2">foo</a></p>
 "###,
-        r###"Links (564)"###
+        r###"Links (565)"###
 );
 
     assert_eq!(
@@ -8112,7 +8129,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url1">foo</a></p>
 "###,
-        r###"Links (565)"###
+        r###"Links (566)"###
 );
 
     assert_eq!(
@@ -8125,7 +8142,7 @@ bar>)</p>
         )?,
         r###"<p><a href="">foo</a></p>
 "###,
-        r###"Links (566)"###
+        r###"Links (567)"###
 );
 
     assert_eq!(
@@ -8138,7 +8155,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url1">foo</a>(not a link)</p>
 "###,
-        r###"Links (567)"###
+        r###"Links (568)"###
 );
 
     assert_eq!(
@@ -8151,7 +8168,7 @@ bar>)</p>
         )?,
         r###"<p>[foo]<a href="/url">bar</a></p>
 "###,
-        r###"Links (568)"###
+        r###"Links (569)"###
 );
 
     assert_eq!(
@@ -8165,7 +8182,7 @@ bar>)</p>
         )?,
         r###"<p><a href="/url2">foo</a><a href="/url1">baz</a></p>
 "###,
-        r###"Links (569)"###
+        r###"Links (570)"###
 );
 
     assert_eq!(
@@ -8179,7 +8196,7 @@ bar>)</p>
         )?,
         r###"<p>[foo]<a href="/url1">bar</a></p>
 "###,
-        r###"Links (570)"###
+        r###"Links (571)"###
 );
 
     assert_eq!(
@@ -8190,7 +8207,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
-        r###"Images (571)"###
+        r###"Images (572)"###
 );
 
     assert_eq!(
@@ -8203,7 +8220,7 @@ bar>)</p>
         )?,
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
-        r###"Images (572)"###
+        r###"Images (573)"###
 );
 
     assert_eq!(
@@ -8214,7 +8231,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url2" alt="foo bar" /></p>
 "###,
-        r###"Images (573)"###
+        r###"Images (574)"###
 );
 
     assert_eq!(
@@ -8225,7 +8242,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url2" alt="foo bar" /></p>
 "###,
-        r###"Images (574)"###
+        r###"Images (575)"###
 );
 
     assert_eq!(
@@ -8238,7 +8255,7 @@ bar>)</p>
         )?,
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
-        r###"Images (575)"###
+        r###"Images (576)"###
 );
 
     assert_eq!(
@@ -8251,7 +8268,7 @@ bar>)</p>
         )?,
         r###"<p><img src="train.jpg" alt="foo bar" title="train &amp; tracks" /></p>
 "###,
-        r###"Images (576)"###
+        r###"Images (577)"###
 );
 
     assert_eq!(
@@ -8262,7 +8279,7 @@ bar>)</p>
         )?,
         r###"<p><img src="train.jpg" alt="foo" /></p>
 "###,
-        r###"Images (577)"###
+        r###"Images (578)"###
 );
 
     assert_eq!(
@@ -8273,7 +8290,7 @@ bar>)</p>
         )?,
         r###"<p>My <img src="/path/to/train.jpg" alt="foo bar" title="title" /></p>
 "###,
-        r###"Images (578)"###
+        r###"Images (579)"###
 );
 
     assert_eq!(
@@ -8284,7 +8301,7 @@ bar>)</p>
         )?,
         r###"<p><img src="url" alt="foo" /></p>
 "###,
-        r###"Images (579)"###
+        r###"Images (580)"###
 );
 
     assert_eq!(
@@ -8295,7 +8312,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="" /></p>
 "###,
-        r###"Images (580)"###
+        r###"Images (581)"###
 );
 
     assert_eq!(
@@ -8308,7 +8325,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo" /></p>
 "###,
-        r###"Images (581)"###
+        r###"Images (582)"###
 );
 
     assert_eq!(
@@ -8321,7 +8338,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo" /></p>
 "###,
-        r###"Images (582)"###
+        r###"Images (583)"###
 );
 
     assert_eq!(
@@ -8334,7 +8351,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
-        r###"Images (583)"###
+        r###"Images (584)"###
 );
 
     assert_eq!(
@@ -8347,7 +8364,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo bar" title="title" /></p>
 "###,
-        r###"Images (584)"###
+        r###"Images (585)"###
 );
 
     assert_eq!(
@@ -8360,7 +8377,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="Foo" title="title" /></p>
 "###,
-        r###"Images (585)"###
+        r###"Images (586)"###
 );
 
     assert_eq!(
@@ -8375,7 +8392,7 @@ bar>)</p>
         r###"<p><img src="/url" alt="foo" title="title" />
 []</p>
 "###,
-        r###"Images (586)"###
+        r###"Images (587)"###
 );
 
     assert_eq!(
@@ -8388,7 +8405,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo" title="title" /></p>
 "###,
-        r###"Images (587)"###
+        r###"Images (588)"###
 );
 
     assert_eq!(
@@ -8401,7 +8418,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="foo bar" title="title" /></p>
 "###,
-        r###"Images (588)"###
+        r###"Images (589)"###
 );
 
     assert_eq!(
@@ -8415,7 +8432,7 @@ bar>)</p>
         r###"<p>![[foo]]</p>
 <p>[[foo]]: /url &quot;title&quot;</p>
 "###,
-        r###"Images (589)"###
+        r###"Images (590)"###
 );
 
     assert_eq!(
@@ -8428,7 +8445,7 @@ bar>)</p>
         )?,
         r###"<p><img src="/url" alt="Foo" title="title" /></p>
 "###,
-        r###"Images (590)"###
+        r###"Images (591)"###
 );
 
     assert_eq!(
@@ -8441,7 +8458,7 @@ bar>)</p>
         )?,
         r###"<p>![foo]</p>
 "###,
-        r###"Images (591)"###
+        r###"Images (592)"###
 );
 
     assert_eq!(
@@ -8454,7 +8471,7 @@ bar>)</p>
         )?,
         r###"<p>!<a href="/url" title="title">foo</a></p>
 "###,
-        r###"Images (592)"###
+        r###"Images (593)"###
 );
 
     assert_eq!(
@@ -8465,18 +8482,18 @@ bar>)</p>
         )?,
         r###"<p><a href="http://foo.bar.baz">http://foo.bar.baz</a></p>
 "###,
-        r###"Autolinks (593)"###
+        r###"Autolinks (594)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://foo.bar.baz/test?q=hello&id=22&boolean>
+            r###"<https://foo.bar.baz/test?q=hello&id=22&boolean>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean">http://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>
+        r###"<p><a href="https://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean">https://foo.bar.baz/test?q=hello&amp;id=22&amp;boolean</a></p>
 "###,
-        r###"Autolinks (594)"###
+        r###"Autolinks (595)"###
 );
 
     assert_eq!(
@@ -8487,7 +8504,7 @@ bar>)</p>
         )?,
         r###"<p><a href="irc://foo.bar:2233/baz">irc://foo.bar:2233/baz</a></p>
 "###,
-        r###"Autolinks (595)"###
+        r###"Autolinks (596)"###
 );
 
     assert_eq!(
@@ -8498,7 +8515,7 @@ bar>)</p>
         )?,
         r###"<p><a href="MAILTO:FOO@BAR.BAZ">MAILTO:FOO@BAR.BAZ</a></p>
 "###,
-        r###"Autolinks (596)"###
+        r###"Autolinks (597)"###
 );
 
     assert_eq!(
@@ -8509,7 +8526,7 @@ bar>)</p>
         )?,
         r###"<p><a href="a+b+c:d">a+b+c:d</a></p>
 "###,
-        r###"Autolinks (597)"###
+        r###"Autolinks (598)"###
 );
 
     assert_eq!(
@@ -8520,18 +8537,18 @@ bar>)</p>
         )?,
         r###"<p><a href="made-up-scheme://foo,bar">made-up-scheme://foo,bar</a></p>
 "###,
-        r###"Autolinks (598)"###
+        r###"Autolinks (599)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://../>
+            r###"<https://../>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://../">http://../</a></p>
+        r###"<p><a href="https://../">https://../</a></p>
 "###,
-        r###"Autolinks (599)"###
+        r###"Autolinks (600)"###
 );
 
     assert_eq!(
@@ -8542,29 +8559,29 @@ bar>)</p>
         )?,
         r###"<p><a href="localhost:5001/foo">localhost:5001/foo</a></p>
 "###,
-        r###"Autolinks (600)"###
-);
-
-    assert_eq!(
-        to_html_with_options(
-            r###"<http://foo.bar/baz bim>
-"###,
-            &danger
-        )?,
-        r###"<p>&lt;http://foo.bar/baz bim&gt;</p>
-"###,
         r###"Autolinks (601)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"<http://example.com/\[\>
+            r###"<https://foo.bar/baz bim>
 "###,
             &danger
         )?,
-        r###"<p><a href="http://example.com/%5C%5B%5C">http://example.com/\[\</a></p>
+        r###"<p>&lt;https://foo.bar/baz bim&gt;</p>
 "###,
         r###"Autolinks (602)"###
+);
+
+    assert_eq!(
+        to_html_with_options(
+            r###"<https://example.com/\[\>
+"###,
+            &danger
+        )?,
+        r###"<p><a href="https://example.com/%5C%5B%5C">https://example.com/\[\</a></p>
+"###,
+        r###"Autolinks (603)"###
 );
 
     assert_eq!(
@@ -8575,7 +8592,7 @@ bar>)</p>
         )?,
         r###"<p><a href="mailto:foo@bar.example.com">foo@bar.example.com</a></p>
 "###,
-        r###"Autolinks (603)"###
+        r###"Autolinks (604)"###
 );
 
     assert_eq!(
@@ -8586,7 +8603,7 @@ bar>)</p>
         )?,
         r###"<p><a href="mailto:foo+special@Bar.baz-bar0.com">foo+special@Bar.baz-bar0.com</a></p>
 "###,
-        r###"Autolinks (604)"###
+        r###"Autolinks (605)"###
 );
 
     assert_eq!(
@@ -8597,7 +8614,7 @@ bar>)</p>
         )?,
         r###"<p>&lt;foo+@bar.example.com&gt;</p>
 "###,
-        r###"Autolinks (605)"###
+        r###"Autolinks (606)"###
 );
 
     assert_eq!(
@@ -8608,18 +8625,18 @@ bar>)</p>
         )?,
         r###"<p>&lt;&gt;</p>
 "###,
-        r###"Autolinks (606)"###
+        r###"Autolinks (607)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"< http://foo.bar >
+            r###"< https://foo.bar >
 "###,
             &danger
         )?,
-        r###"<p>&lt; http://foo.bar &gt;</p>
+        r###"<p>&lt; https://foo.bar &gt;</p>
 "###,
-        r###"Autolinks (607)"###
+        r###"Autolinks (608)"###
 );
 
     assert_eq!(
@@ -8630,7 +8647,7 @@ bar>)</p>
         )?,
         r###"<p>&lt;m:abc&gt;</p>
 "###,
-        r###"Autolinks (608)"###
+        r###"Autolinks (609)"###
 );
 
     assert_eq!(
@@ -8641,18 +8658,18 @@ bar>)</p>
         )?,
         r###"<p>&lt;foo.bar.baz&gt;</p>
 "###,
-        r###"Autolinks (609)"###
+        r###"Autolinks (610)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"http://example.com
+            r###"https://example.com
 "###,
             &danger
         )?,
-        r###"<p>http://example.com</p>
+        r###"<p>https://example.com</p>
 "###,
-        r###"Autolinks (610)"###
+        r###"Autolinks (611)"###
 );
 
     assert_eq!(
@@ -8663,7 +8680,7 @@ bar>)</p>
         )?,
         r###"<p>foo@bar.example.com</p>
 "###,
-        r###"Autolinks (611)"###
+        r###"Autolinks (612)"###
 );
 
     assert_eq!(
@@ -8674,7 +8691,7 @@ bar>)</p>
         )?,
         r###"<p><a><bab><c2c></p>
 "###,
-        r###"Raw HTML (612)"###
+        r###"Raw HTML (613)"###
 );
 
     assert_eq!(
@@ -8685,7 +8702,7 @@ bar>)</p>
         )?,
         r###"<p><a/><b2/></p>
 "###,
-        r###"Raw HTML (613)"###
+        r###"Raw HTML (614)"###
 );
 
     assert_eq!(
@@ -8698,7 +8715,7 @@ data="foo" >
         r###"<p><a  /><b2
 data="foo" ></p>
 "###,
-        r###"Raw HTML (614)"###
+        r###"Raw HTML (615)"###
 );
 
     assert_eq!(
@@ -8711,7 +8728,7 @@ _boolean zoop:33=zoop:33 />
         r###"<p><a foo="bar" bam = 'baz <em>"</em>'
 _boolean zoop:33=zoop:33 /></p>
 "###,
-        r###"Raw HTML (615)"###
+        r###"Raw HTML (616)"###
 );
 
     assert_eq!(
@@ -8722,7 +8739,7 @@ _boolean zoop:33=zoop:33 /></p>
         )?,
         r###"<p>Foo <responsive-image src="foo.jpg" /></p>
 "###,
-        r###"Raw HTML (616)"###
+        r###"Raw HTML (617)"###
 );
 
     assert_eq!(
@@ -8733,7 +8750,7 @@ _boolean zoop:33=zoop:33 /></p>
         )?,
         r###"<p>&lt;33&gt; &lt;__&gt;</p>
 "###,
-        r###"Raw HTML (617)"###
+        r###"Raw HTML (618)"###
 );
 
     assert_eq!(
@@ -8744,7 +8761,7 @@ _boolean zoop:33=zoop:33 /></p>
         )?,
         r###"<p>&lt;a h*#ref=&quot;hi&quot;&gt;</p>
 "###,
-        r###"Raw HTML (618)"###
+        r###"Raw HTML (619)"###
 );
 
     assert_eq!(
@@ -8755,7 +8772,7 @@ _boolean zoop:33=zoop:33 /></p>
         )?,
         r###"<p>&lt;a href=&quot;hi'&gt; &lt;a href=hi'&gt;</p>
 "###,
-        r###"Raw HTML (619)"###
+        r###"Raw HTML (620)"###
 );
 
     assert_eq!(
@@ -8772,7 +8789,7 @@ foo&gt;&lt;bar/ &gt;
 &lt;foo bar=baz
 bim!bop /&gt;</p>
 "###,
-        r###"Raw HTML (620)"###
+        r###"Raw HTML (621)"###
 );
 
     assert_eq!(
@@ -8783,7 +8800,7 @@ bim!bop /&gt;</p>
         )?,
         r###"<p>&lt;a href='bar'title=title&gt;</p>
 "###,
-        r###"Raw HTML (621)"###
+        r###"Raw HTML (622)"###
 );
 
     assert_eq!(
@@ -8794,7 +8811,7 @@ bim!bop /&gt;</p>
         )?,
         r###"<p></a></foo ></p>
 "###,
-        r###"Raw HTML (622)"###
+        r###"Raw HTML (623)"###
 );
 
     assert_eq!(
@@ -8805,29 +8822,18 @@ bim!bop /&gt;</p>
         )?,
         r###"<p>&lt;/a href=&quot;foo&quot;&gt;</p>
 "###,
-        r###"Raw HTML (623)"###
-);
-
-    assert_eq!(
-        to_html_with_options(
-            r###"foo <!-- this is a
-comment - with hyphen -->
-"###,
-            &danger
-        )?,
-        r###"<p>foo <!-- this is a
-comment - with hyphen --></p>
-"###,
         r###"Raw HTML (624)"###
 );
 
     assert_eq!(
         to_html_with_options(
-            r###"foo <!-- not a comment -- two hyphens -->
+            r###"foo <!-- this is a --
+comment - with hyphens -->
 "###,
             &danger
         )?,
-        r###"<p>foo &lt;!-- not a comment -- two hyphens --&gt;</p>
+        r###"<p>foo <!-- this is a --
+comment - with hyphens --></p>
 "###,
         r###"Raw HTML (625)"###
 );
@@ -8836,12 +8842,12 @@ comment - with hyphen --></p>
         to_html_with_options(
             r###"foo <!--> foo -->
 
-foo <!-- foo--->
+foo <!---> foo -->
 "###,
             &danger
         )?,
-        r###"<p>foo &lt;!--&gt; foo --&gt;</p>
-<p>foo &lt;!-- foo---&gt;</p>
+        r###"<p>foo <!--> foo --&gt;</p>
+<p>foo <!---> foo --&gt;</p>
 "###,
         r###"Raw HTML (626)"###
 );

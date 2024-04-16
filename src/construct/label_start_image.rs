@@ -26,7 +26,7 @@
 //! ## References
 //!
 //! *   [`label-start-image.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-start-image.js)
-//! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.30/#images)
+//! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.31/#images)
 //!
 //! [text]: crate::construct::text
 //! [label_end]: crate::construct::label_end

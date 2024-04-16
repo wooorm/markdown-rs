@@ -129,11 +129,11 @@ pub const HEADING_ATX_OPENING_FENCE_SIZE_MAX: usize = 6;
 ///
 /// ## References
 ///
-/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
+/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
 /// *   [*Remove source element as HTML block start condition* as `commonmark/commonmark-spec#710`](https://github.com/commonmark/commonmark-spec/pull/710)
 ///
 /// [html_flow]: crate::construct::html_flow
-pub const HTML_BLOCK_NAMES: [&str; 61] = [
+pub const HTML_BLOCK_NAMES: [&str; 62] = [
     "address",
     "article",
     "aside",
@@ -183,6 +183,7 @@ pub const HTML_BLOCK_NAMES: [&str; 61] = [
     "option",
     "p",
     "param",
+    "search",
     "section",
     "summary",
     "table",
@@ -221,7 +222,7 @@ pub const HTML_CDATA_PREFIX: [u8; 6] = [b'C', b'D', b'A', b'T', b'A', b'['];
 ///
 /// ## References
 ///
-/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
+/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
 ///
 /// [html_flow]: crate::construct::html_flow
 pub const HTML_RAW_NAMES: [&str; 4] = ["pre", "script", "style", "textarea"];
@@ -243,7 +244,7 @@ pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 ///
 /// ## References
 ///
-/// *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.30/#ordered-list-marker)
+/// *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.31/#ordered-list-marker)
 ///
 /// [list-item]: crate::construct::list_item
 pub const LIST_ITEM_VALUE_SIZE_MAX: usize = 10;
@@ -260,7 +261,7 @@ pub const MATH_FLOW_SEQUENCE_SIZE_MIN: usize = 2;
 /// There can be many balanced parens, but if there are 33 opens that were not
 /// yet closed, the destination does not parse.
 /// `CommonMark` requires that at least 3 opening parens are allowed.
-/// See: <https://spec.commonmark.org/0.30/#link-destination>,
+/// See: <https://spec.commonmark.org/0.31/#link-destination>,
 /// In practice, this is quite low, and several places instead cap it at 32.
 /// See: <https://github.com/remarkjs/react-markdown/issues/658#issuecomment-984345577>.
 pub const RESOURCE_DESTINATION_BALANCE_MAX: usize = 32;
@@ -302,7 +303,7 @@ pub const THEMATIC_BREAK_MARKER_COUNT_MIN: usize = 3;
 ///
 /// ## References
 ///
-/// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.30/#entity-and-numeric-character-references)
+/// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
 ///
 /// [character_reference]: crate::construct::character_reference
 pub const CHARACTER_REFERENCES: [(&str, &str); 2125] = [

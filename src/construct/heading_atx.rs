@@ -53,7 +53,7 @@
 //! ## References
 //!
 //! *   [`heading-atx.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/heading-atx.js)
-//! *   [*§ 4.2 ATX headings* in `CommonMark`](https://spec.commonmark.org/0.30/#atx-headings)
+//! *   [*§ 4.2 ATX headings* in `CommonMark`](https://spec.commonmark.org/0.31/#atx-headings)
 //!
 //! [flow]: crate::construct::flow
 //! [heading_setext]: crate::construct::heading_setext

@@ -89,7 +89,7 @@
 //! ## References
 //!
 //! *   [`html-flow.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-flow.js)
-//! *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#html-blocks)
+//! *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
 //!
 //! [flow]: crate::construct::flow
 //! [html_text]: crate::construct::html_text

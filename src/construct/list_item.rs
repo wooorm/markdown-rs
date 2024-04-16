@@ -49,14 +49,14 @@
 //! ## References
 //!
 //! *   [`list.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/list.js)
-//! *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.30/#list-items)
-//! *   [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.30/#lists)
+//! *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.31/#list-items)
+//! *   [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.31/#lists)
 //!
 //! [document]: crate::construct::document
 //! [html_li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
 //! [html_ol]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
 //! [html_ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
-//! [commonmark_block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
+//! [commonmark_block]: https://spec.commonmark.org/0.31/#phase-1-block-structure
 
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::{Kind, Name};

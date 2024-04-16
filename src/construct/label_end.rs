@@ -155,9 +155,9 @@
 //!
 //! *   [`label-end.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-end.js)
 //! *   [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-footnote)
-//! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.30/#link-reference-definitions)
-//! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.30/#links)
-//! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.30/#images)
+//! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.31/#link-reference-definitions)
+//! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.31/#links)
+//! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.31/#images)
 //!
 //! > 👉 **Note**: Footnotes are not specified in GFM yet.
 //! > See [`github/cmark-gfm#270`](https://github.com/github/cmark-gfm/issues/270)

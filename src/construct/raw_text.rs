@@ -104,7 +104,7 @@
 //!
 //! *   [`code-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-text.js)
 //! *   [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
-//! *   [*§ 6.1 Code spans* in `CommonMark`](https://spec.commonmark.org/0.30/#code-spans)
+//! *   [*§ 6.1 Code spans* in `CommonMark`](https://spec.commonmark.org/0.31/#code-spans)
 //!
 //! > 👉 **Note**: math is not specified anywhere.
 //!

@@ -45,7 +45,7 @@
 //! ## References
 //!
 //! *   [`html-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-text.js)
-//! *   [*§ 6.6 Raw HTML* in `CommonMark`](https://spec.commonmark.org/0.30/#raw-html)
+//! *   [*§ 6.6 Raw HTML* in `CommonMark`](https://spec.commonmark.org/0.31/#raw-html)
 //!
 //! [text]: crate::construct::text
 //! [html_flow]: crate::construct::html_flow
@@ -146,53 +146,9 @@ pub fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Next(StateName::HtmlTextCommentStart)
+            State::Next(StateName::HtmlTextCommentEnd)
         }
         _ => State::Nok,
-    }
-}
-
-/// After `<!--`, in a comment.
-///
-/// > 👉 **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
-/// > empty comments.
-/// > This is prohibited in html (text).
-/// > See: <https://github.com/commonmark/commonmark-spec/issues/712>.
-///
-/// ```markdown
-/// > | a <!--b--> c
-///           ^
-/// ```
-///
-/// [html_flow]: crate::construct::html_flow
-pub fn comment_start(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'>') => State::Nok,
-        Some(b'-') => {
-            tokenizer.consume();
-            State::Next(StateName::HtmlTextCommentStartDash)
-        }
-        _ => State::Retry(StateName::HtmlTextComment),
-    }
-}
-
-/// After `<!---`, in a comment.
-///
-/// > 👉 **Note**: [html (flow)][html_flow] does allow `<!-->` or `<!--->` as
-/// > empty comments.
-/// > This is prohibited in html (text).
-/// > See: <https://github.com/commonmark/commonmark-spec/issues/712>.
-///
-/// ```markdown
-/// > | a <!---b--> c
-///            ^
-/// ```
-///
-/// [html_flow]: crate::construct::html_flow
-pub fn comment_start_dash(tokenizer: &mut Tokenizer) -> State {
-    match tokenizer.current {
-        Some(b'>') => State::Nok,
-        _ => State::Retry(StateName::HtmlTextComment),
     }
 }
 
@@ -230,8 +186,21 @@ pub fn comment_close(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'-') => {
             tokenizer.consume();
-            State::Next(StateName::HtmlTextEnd)
+            State::Next(StateName::HtmlTextCommentEnd)
         }
+        _ => State::Retry(StateName::HtmlTextComment),
+    }
+}
+/// In comment, after `-`.
+///
+/// ```markdown
+/// > | a <!--b--> c
+///             ^
+/// ```
+pub fn comment_end(tokenizer: &mut Tokenizer) -> State {
+    match tokenizer.current {
+        Some(b'>') => State::Retry(StateName::HtmlTextEnd),
+        Some(b'-') => State::Retry(StateName::HtmlTextCommentClose),
         _ => State::Retry(StateName::HtmlTextComment),
     }
 }

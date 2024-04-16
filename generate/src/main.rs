@@ -14,7 +14,7 @@ async fn main() {
 }
 
 async fn commonmark() {
-    let url = "https://raw.githubusercontent.com/commonmark/commonmark-spec/0.30/spec.txt";
+    let url = "https://raw.githubusercontent.com/commonmark/commonmark-spec/0.31.2/spec.txt";
     let data_url = "commonmark-data.txt";
     let code_url = "tests/commonmark.rs";
 
@@ -121,6 +121,10 @@ async fn punctuation() {
         "Pi", // Punctuation, InitialQuote
         "Po", // Punctuation, Other
         "Ps", // Punctuation, Open
+        "Sc", // Symbol, Currency
+        "Sk", // Symbol, Modifier
+        "Sm", // Symbol, Math
+        "So", // Symbol, Other
     ];
 
     let found = value
@@ -148,7 +152,7 @@ async fn punctuation() {
 ///
 /// ## References
 ///
-/// *   [*§ 2.1 Characters and lines* in `CommonMark`](https://spec.commonmark.org/0.30/#unicode-punctuation-character)
+/// *   [*§ 2.1 Characters and lines* in `CommonMark`](https://spec.commonmark.org/0.31.2/#unicode-punctuation-character)
 pub const PUNCTUATION: [char; {}] = [
 {}
 ];

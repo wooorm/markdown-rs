@@ -156,7 +156,7 @@
 //! [label]: crate::construct::partial_label
 //! [label_end]: crate::construct::label_end
 //! [gfm_label_start_footnote]: crate::construct::gfm_label_start_footnote
-//! [commonmark_block]: https://spec.commonmark.org/0.30/#phase-1-block-structure
+//! [commonmark_block]: https://spec.commonmark.org/0.31/#phase-1-block-structure
 //! [html_a]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
 //! [html_h]: https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
 //! [html_li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element

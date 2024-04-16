@@ -110,7 +110,7 @@
 //! ## References
 //!
 //! *   [`autolink.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/autolink.js)
-//! *   [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.30/#autolinks)
+//! *   [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.31/#autolinks)
 //!
 //! [text]: crate::construct::text
 //! [definition]: crate::construct::definition

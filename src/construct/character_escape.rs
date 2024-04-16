@@ -34,7 +34,7 @@
 //! ## References
 //!
 //! *   [`character-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-escape.js)
-//! *   [*§ 2.4 Backslash escapes* in `CommonMark`](https://spec.commonmark.org/0.30/#backslash-escapes)
+//! *   [*§ 2.4 Backslash escapes* in `CommonMark`](https://spec.commonmark.org/0.31/#backslash-escapes)
 //!
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text

@@ -106,20 +106,20 @@ fn html_text() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("foo <!-- not a comment -- two hyphens -->", &danger)?,
-        "<p>foo &lt;!-- not a comment -- two hyphens --&gt;</p>",
-        "should not support comments w/ two dashes inside"
+        "<p>foo <!-- not a comment -- two hyphens --></p>",
+        "should support comments w/ two dashes inside"
     );
 
     assert_eq!(
         to_html_with_options("foo <!--> foo -->", &danger)?,
-        "<p>foo &lt;!--&gt; foo --&gt;</p>",
-        "should not support nonconforming comments (1)"
+        "<p>foo <!--> foo --&gt;</p>",
+        "should support nonconforming comments (1)"
     );
 
     assert_eq!(
         to_html_with_options("foo <!-- foo--->", &danger)?,
-        "<p>foo &lt;!-- foo---&gt;</p>",
-        "should not support nonconforming comments (2)"
+        "<p>foo <!-- foo---></p>",
+        "should support nonconforming comments (2)"
     );
 
     assert_eq!(
@@ -179,8 +179,8 @@ fn html_text() -> Result<(), String> {
 
     assert_eq!(
         to_html_with_options("foo <!--->", &danger)?,
-        "<p>foo &lt;!---&gt;</p>",
-        "should not support comments that start w/ `->`"
+        "<p>foo <!---></p>",
+        "should support comments that start w/ `->`"
     );
 
     assert_eq!(

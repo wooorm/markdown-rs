@@ -124,7 +124,7 @@
 //!
 //! *   [`code-fenced.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-fenced.js)
 //! *   [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
-//! *   [*§ 4.5 Fenced code blocks* in `CommonMark`](https://spec.commonmark.org/0.30/#fenced-code-blocks)
+//! *   [*§ 4.5 Fenced code blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#fenced-code-blocks)
 //!
 //! > 👉 **Note**: math is not specified anywhere.
 //!
