@@ -278,6 +278,7 @@ fn create_config(source: String) -> (SourceFile, Syntax, EsVersion) {
             ..EsConfig::default()
         }),
         // Version.
+        // To do: update once in a while (last checked: 2024-04-18).
         EsVersion::Es2022,
     )
 }
