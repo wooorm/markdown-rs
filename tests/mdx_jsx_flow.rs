@@ -1,3 +1,4 @@
+mod test_utils;
 use markdown::{
     mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
     to_html_with_options, to_mdast,
@@ -5,6 +6,7 @@ use markdown::{
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
+use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
 fn mdx_jsx_flow_agnostic() -> Result<(), String> {
@@ -222,6 +224,119 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
             position: Some(Position::new(1, 1, 0, 3, 4, 12))
         }),
         "should support mdx jsx (flow) as `MdxJsxFlowElement`s in mdast"
+    );
+
+    Ok(())
+}
+
+// Flow is mostly the same as `text`, so we only test the relevant
+// differences.
+#[test]
+fn mdx_jsx_flow_interleaving_with_expressions() -> Result<(), String> {
+    let mdx = Options {
+        parse: ParseOptions::mdx(),
+        ..Default::default()
+    };
+    let swc = Options {
+        parse: ParseOptions {
+            constructs: Constructs::mdx(),
+            mdx_esm_parse: Some(Box::new(parse_esm)),
+            mdx_expression_parse: Some(Box::new(parse_expression)),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+
+    assert_eq!(
+        to_html_with_options("<div>\n{1}\n</div>", &mdx)?,
+        "",
+        "should support tags and expressions (unaware)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<div>\n{'}'}\n</div>", &swc)?,
+        "",
+        "should support tags and expressions (aware)"
+    );
+
+    assert_eq!(
+        to_html_with_options("x<em>{1}</em>", &swc)?,
+        "<p>x</p>",
+        "should support tags and expressions with text before (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<em>x{1}</em>", &swc)?,
+        "<p>x</p>",
+        "should support tags and expressions with text between, early (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<em>{1}x</em>", &swc)?,
+        "<p>x</p>",
+        "should support tags and expressions with text between, late (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<em>{1}</em>x", &swc)?,
+        "<p>x</p>",
+        "should support tags and expressions with text after (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<x/>{1}", &swc)?,
+        "",
+        "should support a tag and then an expression (flow)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<x/>{1}x", &swc)?,
+        "<p>x</p>",
+        "should support a tag, an expression, then text (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("x<x/>{1}", &swc)?,
+        "<p>x</p>",
+        "should support text, a tag, then an expression (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("{1}<x/>", &swc)?,
+        "",
+        "should support an expression and then a tag (flow)"
+    );
+
+    assert_eq!(
+        to_html_with_options("{1}<x/>x", &swc)?,
+        "<p>x</p>",
+        "should support an expression, a tag, then text (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("x{1}<x/>", &swc)?,
+        "<p>x</p>",
+        "should support text, an expression, then a tag (text)"
+    );
+
+    assert_eq!(
+        to_html_with_options("<x>{[\n'',\n{c:''}\n]}</x>", &swc)?,
+        "",
+        "should nicely interleaf (micromark/micromark-extension-mdx-jsx#9)"
+    );
+
+    assert_eq!(
+        to_html_with_options(
+            "
+<style>{`
+  .foo {}
+  .bar {}
+`}</style>
+    ",
+            &swc
+        )?,
+        "",
+        "should nicely interleaf (mdx-js/mdx#1945)"
     );
 
     Ok(())

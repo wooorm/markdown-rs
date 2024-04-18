@@ -1068,6 +1068,8 @@ pub struct ParseOptions {
     /// However, single dollars can interfere with “normal” dollars in text.
     /// Pass `false`, to only allow math (text) to form when two or more
     /// dollars are used.
+    /// If you pass `false`, you can still use two or more dollars for text
+    /// math.
     ///
     /// ## Examples
     ///

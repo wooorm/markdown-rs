@@ -107,12 +107,83 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///               ^
 /// ```
 pub fn end(tokenizer: &mut Tokenizer) -> State {
+    // We want to allow tags directly after expressions.
+    //
+    // This case is useful:
+    //
+    // ```mdx
+    // <a>{b}</a>
+    // ```
+    //
+    // This case is not (very?) useful:
+    //
+    // ```mdx
+    // {a}<b/>
+    // ```
+    //
+    // …but it would be tougher than needed to disallow.
+    //
+    // To allow that, here we call the MDX JSX flow construct, and there we
+    // call this one.
+    //
+    // It would introduce a cyclical interdependency if we test JSX and
+    // expressions here.
+    // Because the JSX extension already uses parts of this monorepo, we
+    // instead test it there.
+    //
+    // Note: in the JS version of micromark, arbitrary extensions could be
+    // loaded.
+    // Here we know that only our own construct `mdx_expression_flow` can be
+    // enabled.
+
+    // if matches!(tokenizer.current, None | Some(b'\n')) {
+    //     State::Ok
+    // } else {
+    //     State::Nok
+    // }
+    match tokenizer.current {
+        None | Some(b'\n') => {
+            reset(tokenizer);
+            State::Ok
+        }
+        // Tag.
+        Some(b'<') if tokenizer.parse_state.options.constructs.mdx_jsx_flow => {
+            // We can’t just say: fine.
+            // Lines of blocks have to be parsed until an eol/eof.
+            tokenizer.attempt(
+                State::Next(StateName::MdxExpressionFlowAfter),
+                State::Next(StateName::MdxExpressionFlowNok),
+            );
+            State::Retry(StateName::MdxJsxStart)
+        }
+        // // An expression.
+        // Some(b'{') if tokenizer.parse_state.options.constructs.mdx_expression_flow => {
+        //     tokenizer.attempt(
+        //         State::Next(StateName::MdxExpressionFlowAfter),
+        //         State::Next(StateName::MdxExpressionFlowNok),
+        //     );
+        //     State::Retry(StateName::MdxExpressionFlowStart)
+        // }
+        _ => {
+            reset(tokenizer);
+            State::Nok
+        }
+    }
+}
+
+/// At something that wasn’t an MDX expression (flow).
+///
+/// ```markdown
+/// > | {A} x
+///     ^
+/// ```
+pub fn nok(tokenizer: &mut Tokenizer) -> State {
+    reset(tokenizer);
+    State::Nok
+}
+
+/// Reset state.
+fn reset(tokenizer: &mut Tokenizer) {
     tokenizer.concrete = false;
     tokenizer.tokenize_state.token_1 = Name::Data;
-
-    if matches!(tokenizer.current, None | Some(b'\n')) {
-        State::Ok
-    } else {
-        State::Nok
-    }
 }

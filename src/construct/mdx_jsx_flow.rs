@@ -112,18 +112,36 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///         ^
 /// ```
 pub fn end(tokenizer: &mut Tokenizer) -> State {
+    // We want to allow expressions directly after tags.
+    // See <https://github.com/micromark/micromark-extension-mdx-expression/blob/d5d92b9/packages/micromark-extension-mdx-expression/dev/lib/syntax.js#L183>
+    // for more info.
+    //
+    // Note: in the JS version of micromark, arbitrary extensions could be
+    // loaded.
+    // Here we know that only our own construct `mdx_expression_flow` can be
+    // enabled.
     match tokenizer.current {
         None | Some(b'\n') => {
             reset(tokenizer);
             State::Ok
         }
-        // Another?
+        // Another tag.
         Some(b'<') => {
+            // We can’t just say: fine.
+            // Lines of blocks have to be parsed until an eol/eof.
             tokenizer.attempt(
                 State::Next(StateName::MdxJsxFlowAfter),
                 State::Next(StateName::MdxJsxFlowNok),
             );
             State::Retry(StateName::MdxJsxStart)
+        }
+        // An expression.
+        Some(b'{') if tokenizer.parse_state.options.constructs.mdx_expression_flow => {
+            tokenizer.attempt(
+                State::Next(StateName::MdxJsxFlowAfter),
+                State::Next(StateName::MdxJsxFlowNok),
+            );
+            State::Retry(StateName::MdxExpressionFlowStart)
         }
         _ => {
             reset(tokenizer);
