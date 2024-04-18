@@ -1743,12 +1743,13 @@ fn on_mismatch_error(
     right: &Event,
 ) -> Result<(), String> {
     if right.name == Name::MdxJsxFlowTag || right.name == Name::MdxJsxTextTag {
+        let stack = &context.jsx_tag_stack;
+        let tag = stack.last().unwrap();
         let point = if let Some(left) = left {
             &left.point
         } else {
             &context.events[context.events.len() - 1].point
         };
-        let tag = context.jsx_tag.as_ref().unwrap();
 
         return Err(format!(
             "{}:{}: Expected a closing tag for `{}` ({}:{}){} (mdx-jsx:end-tag-mismatch)",

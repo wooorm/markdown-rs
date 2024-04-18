@@ -483,6 +483,12 @@ fn mdx_jsx_text_core() -> Result<(), String> {
         "should crash when building the ast on mismatched interleaving (4)"
     );
 
+    assert_eq!(
+        to_mdast("<a><b></b>", &mdx.parse).err().unwrap(),
+        "1:11: Expected a closing tag for `<a>` (1:1) (mdx-jsx:end-tag-mismatch)",
+        "should crash on unclosed jsx after closed jsx"
+    );
+
     Ok(())
 }
 
