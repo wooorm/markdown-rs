@@ -162,6 +162,7 @@
 //! [interleaving]: https://mdxjs.com/docs/what-is-mdx/#interleaving
 
 use crate::event::Name;
+use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{
@@ -171,7 +172,7 @@ use crate::util::{
     },
     identifier::{id_cont, id_start},
 };
-use alloc::format;
+use alloc::{boxed::Box, format};
 use core::str;
 
 /// Start of MDX: JSX.
@@ -1092,10 +1093,14 @@ pub fn es_whitespace_inside(tokenizer: &mut Tokenizer) -> State {
 pub fn es_whitespace_eol_after(tokenizer: &mut Tokenizer) -> State {
     // Lazy continuation in a flow tag is a syntax error.
     if tokenizer.tokenize_state.token_1 == Name::MdxJsxFlowTag && tokenizer.lazy {
-        State::Error(format!(
-            "{}:{}: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
-            tokenizer.point.line, tokenizer.point.column
-        ))
+        State::Error(
+            message::Message {
+                place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
+                reason: "Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc".into(),
+                rule_id: Box::new("unexpected-lazy".into()),
+                source: Box::new("markdown-rs".into()),
+            }
+        )
     } else {
         State::Retry(StateName::MdxJsxEsWhitespaceStart)
     }
@@ -1114,16 +1119,26 @@ fn id_cont_opt(code: Option<char>) -> bool {
 /// Crash because something happened `at`, with info on what was `expect`ed
 /// instead.
 fn crash(tokenizer: &Tokenizer, at: &str, expect: &str) -> State {
-    State::Error(format!(
-        "{}:{}: Unexpected {} {}, expected {}",
-        tokenizer.point.line,
-        tokenizer.point.column,
-        format_char_opt(if tokenizer.current.is_none() {
-            None
-        } else {
-            char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-        }),
-        at,
-        expect
-    ))
+    State::Error(message::Message {
+        place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
+        reason: format!(
+            "Unexpected {} {}, expected {}",
+            format_char_opt(if tokenizer.current.is_none() {
+                None
+            } else {
+                char_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+            }),
+            at,
+            expect
+        ),
+        rule_id: Box::new(format!(
+            "unexpected-{}",
+            if tokenizer.current.is_none() {
+                "eof"
+            } else {
+                "character"
+            }
+        )),
+        source: Box::new("markdown-rs".into()),
+    })
 }

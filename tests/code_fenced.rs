@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Code, Node, Root},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn code_fenced() -> Result<(), String> {
+fn code_fenced() -> Result<(), message::Message> {
     assert_eq!(
         to_html("```\n<\n >\n```"),
         "<pre><code>&lt;\n &gt;\n</code></pre>",

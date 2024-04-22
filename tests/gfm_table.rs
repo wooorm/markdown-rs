@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{AlignKind, InlineCode, Node, Root, Table, TableCell, TableRow, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_table() -> Result<(), String> {
+fn gfm_table() -> Result<(), message::Message> {
     assert_eq!(
         to_html("| a |\n| - |\n| b |"),
         "<p>| a |\n| - |\n| b |</p>",

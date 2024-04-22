@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Heading, Node, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn heading_setext() -> Result<(), String> {
+fn heading_setext() -> Result<(), message::Message> {
     assert_eq!(
         to_html("Foo *bar*\n========="),
         "<h1>Foo <em>bar</em></h1>",

@@ -107,7 +107,7 @@ Yields:
 Extensions (in this case GFM):
 
 ```rs
-fn main() -> Result<(), String> {
+fn main() -> Result<(), markdown::message::Message> {
     println!(
         "{}",
         markdown::to_html_with_options(
@@ -135,7 +135,7 @@ Yields:
 Syntax tree ([mdast][]):
 
 ```rs
-fn main() -> Result<(), String> {
+fn main() -> Result<(), markdown::message::Message> {
     println!(
         "{:?}",
         markdown::to_mdast("# Hey, *you*!", &markdown::ParseOptions::default())?
@@ -294,8 +294,8 @@ user-provided markdown opens you up to XSS attacks.
 An aspect related to XSS for security is syntax errors: markdown itself has no
 syntax errors.
 Some syntax extensions (specifically, only MDX) do include syntax errors.
-For that reason, `to_html_with_options` returns `Result<String, String>`, of
-which the error is a simple string indicating where the problem happened, what
+For that reason, `to_html_with_options` returns `Result<String, Message>`, of
+which the error is a struct indicating where the problem happened, what
 occurred, and what was expected instead.
 Make sure to handle your errors when using MDX.
 

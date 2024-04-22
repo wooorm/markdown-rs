@@ -1,8 +1,8 @@
-use markdown::{to_html, to_html_with_options, CompileOptions, Options};
+use markdown::{message, to_html, to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn tabs_flow() -> Result<(), String> {
+fn tabs_flow() -> Result<(), message::Message> {
     let danger = &Options {
         compile: CompileOptions {
             allow_dangerous_html: true,

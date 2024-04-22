@@ -1,4 +1,4 @@
-use alloc::string::String;
+use alloc::{boxed::Box, string::String};
 
 /// Signal used as feedback when parsing MDX ESM/expressions.
 #[derive(Clone, Debug)]
@@ -14,7 +14,7 @@ pub enum Signal {
     /// ```rust ignore
     /// Signal::Error("Unexpected `\"`, expected identifier".into(), 1)
     /// ```
-    Error(String, usize),
+    Error(String, usize, Box<String>, Box<String>),
     /// An error at the end of the (partial?) expression.
     ///
     /// `markdown-rs` will either crash with error message `String` if it
@@ -26,7 +26,7 @@ pub enum Signal {
     /// ```rust ignore
     /// Signal::Eof("Unexpected end of file in string literal".into())
     /// ```
-    Eof(String),
+    Eof(String, Box<String>, Box<String>),
     /// Done, successfully.
     ///
     /// `markdown-rs` knows that this is the end of a valid expression/esm and

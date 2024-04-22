@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{BlockQuote, Node, Paragraph, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn block_quote() -> Result<(), String> {
+fn block_quote() -> Result<(), message::Message> {
     assert_eq!(
         to_html("> # a\n> b\n> c"),
         "<blockquote>\n<h1>a</h1>\n<p>b\nc</p>\n</blockquote>",

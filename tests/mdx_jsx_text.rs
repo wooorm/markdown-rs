@@ -4,7 +4,7 @@ use markdown::{
         AttributeContent, AttributeValue, AttributeValueExpression, Emphasis, MdxJsxAttribute,
         MdxJsxTextElement, Node, Paragraph, Root, Text,
     },
-    to_html_with_options, to_mdast,
+    message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -12,7 +12,7 @@ use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
-fn mdx_jsx_text_core() -> Result<(), String> {
+fn mdx_jsx_text_core() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -419,73 +419,79 @@ fn mdx_jsx_text_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_mdast("a </b> c", &mdx.parse)
-            .err()
-            .unwrap(),
-        "1:4: Unexpected closing slash `/` in tag, expected an open tag first (mdx-jsx:unexpected-closing-slash)",
+        to_mdast("a </b> c", &mdx.parse).err().unwrap().to_string(),
+        "1:4: Unexpected closing slash `/` in tag, expected an open tag first (markdown-rs:unexpected-closing-slash)",
         "should crash when building the ast on a closing tag if none is open"
     );
 
     assert_eq!(
         to_mdast("a <b> c </b/> d", &mdx.parse)
             .err()
-            .unwrap(),
-        "1:12: Unexpected self-closing slash `/` in closing tag, expected the end of the tag (mdx-jsx:unexpected-self-closing-slash)",
+            .unwrap()
+            .to_string(),
+        "1:12: Unexpected self-closing slash `/` in closing tag, expected the end of the tag (markdown-rs:unexpected-self-closing-slash)",
         "should crash when building the ast on a closing tag with a self-closing slash"
     );
 
     assert_eq!(
         to_mdast("a <b> c </b d> e", &mdx.parse)
             .err()
-            .unwrap(),
-        "1:13: Unexpected attribute in closing tag, expected the end of the tag (mdx-jsx:unexpected-attribute)",
+            .unwrap()
+            .to_string(),
+        "1:13: Unexpected attribute in closing tag, expected the end of the tag (markdown-rs:unexpected-attribute)",
         "should crash when building the ast on a closing tag with an attribute"
     );
 
     assert_eq!(
         to_mdast("a <>b</c> d", &mdx.parse)
             .err()
-            .unwrap(),
-        "1:6: Unexpected closing tag `</c>`, expected corresponding closing tag for `<>` (1:3) (mdx-jsx:end-tag-mismatch)",
+            .unwrap().to_string(),
+        "1:6-1:10: Unexpected closing tag `</c>`, expected corresponding closing tag for `<>` (1:3) (markdown-rs:end-tag-mismatch)",
         "should crash when building the ast on mismatched tags (1)"
     );
 
     assert_eq!(
         to_mdast("a <b>c</> d", &mdx.parse)
             .err()
-            .unwrap(),
-        "1:7: Unexpected closing tag `</>`, expected corresponding closing tag for `<b>` (1:3) (mdx-jsx:end-tag-mismatch)",
+            .unwrap().to_string(),
+        "1:7-1:10: Unexpected closing tag `</>`, expected corresponding closing tag for `<b>` (1:3) (markdown-rs:end-tag-mismatch)",
         "should crash when building the ast on mismatched tags (2)"
     );
 
     assert_eq!(
-        to_mdast("*a <b>c* d</b>.", &mdx.parse).err().unwrap(),
-        "1:9: Expected a closing tag for `<b>` (1:4) before the end of `Emphasis` (mdx-jsx:end-tag-mismatch)",
+        to_mdast("*a <b>c* d</b>.", &mdx.parse)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:9: Expected a closing tag for `<b>` (1:4) before the end of `Emphasis` (markdown-rs:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (1)"
     );
 
     assert_eq!(
-        to_mdast("<a>b *c</a> d*.", &mdx.parse).err().unwrap(),
-        "1:8: Expected the closing tag `</a>` either before the start of `Emphasis` (1:6), or another opening tag after that start (mdx-jsx:end-tag-mismatch)",
+        to_mdast("<a>b *c</a> d*.", &mdx.parse).err().unwrap().to_string(),
+        "1:8: Expected the closing tag `</a>` either before the start of `Emphasis` (1:6), or another opening tag after that start (markdown-rs:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (2)"
     );
 
     assert_eq!(
-        to_mdast("a <b>.", &mdx.parse).err().unwrap(),
-        "1:7: Expected a closing tag for `<b>` (1:3) before the end of `Paragraph` (mdx-jsx:end-tag-mismatch)",
+        to_mdast("a <b>.", &mdx.parse).err().unwrap().to_string(),
+        "1:7: Expected a closing tag for `<b>` (1:3) before the end of `Paragraph` (markdown-rs:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (3)"
     );
 
     // Note: this is flow, not text.
     assert_eq!(
-        to_mdast("<a>", &mdx.parse).err().unwrap(),
-        "1:4: Expected a closing tag for `<a>` (1:1) (mdx-jsx:end-tag-mismatch)",
+        to_mdast("<a>", &mdx.parse).err().unwrap().to_string(),
+        "1:4: Expected a closing tag for `<a>` (1:1) (markdown-rs:end-tag-mismatch)",
         "should crash when building the ast on mismatched interleaving (4)"
     );
 
     assert_eq!(
-        to_mdast("<a><b></b>", &mdx.parse).err().unwrap(),
-        "1:11: Expected a closing tag for `<a>` (1:1) (mdx-jsx:end-tag-mismatch)",
+        to_mdast("<a><b></b>", &mdx.parse)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:11: Expected a closing tag for `<a>` (1:1) (markdown-rs:end-tag-mismatch)",
         "should crash on unclosed jsx after closed jsx"
     );
 
@@ -493,7 +499,7 @@ fn mdx_jsx_text_core() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_jsx_text_agnosic() -> Result<(), String> {
+fn mdx_jsx_text_agnosic() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -533,7 +539,7 @@ fn mdx_jsx_text_agnosic() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_jsx_text_gnostic() -> Result<(), String> {
+fn mdx_jsx_text_gnostic() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -587,38 +593,45 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a <b c={} /> d", &swc).err().unwrap(),
-        "1:15: Could not parse expression with swc: Unexpected eof",
+        to_html_with_options("a <b c={} /> d", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:15: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on an empty attribute value expression"
     );
 
     assert_eq!(
         to_html_with_options("a <b {1 + 1} /> c", &swc)
             .err()
-            .unwrap(),
-        "1:18: Could not parse expression with swc: Expected ',', got '}'",
+            .unwrap()
+            .to_string(),
+        "1:18: Could not parse expression with swc: Expected ',', got '}' (mdx:swc)",
         "should crash on a non-spread attribute expression"
     );
 
     assert_eq!(
-        to_html_with_options("a <b c={?} /> d", &swc).err().unwrap(),
-        "1:16: Could not parse expression with swc: Expression expected",
+        to_html_with_options("a <b c={?} /> d", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:16: Could not parse expression with swc: Expression expected (mdx:swc)",
         "should crash on invalid JS in an attribute value expression"
     );
 
     assert_eq!(
         to_html_with_options("a <b {?} /> c", &swc)
             .err()
-            .unwrap(),
-        "1:14: Could not parse expression with swc: Unexpected token `?`. Expected identifier, string literal, numeric literal or [ for the computed key",
+            .unwrap().to_string(),
+        "1:14: Could not parse expression with swc: Unexpected token `?`. Expected identifier, string literal, numeric literal or [ for the computed key (mdx:swc)",
         "should crash on invalid JS in an attribute expression"
     );
 
     assert_eq!(
         to_html_with_options("a <b{c=d}={}/> f", &swc)
             .err()
-            .unwrap(),
-        "1:6: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
+            .unwrap().to_string(),
+        "1:6: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
         "should crash on invalid JS in an attribute expression (2)"
     );
 
@@ -632,7 +645,7 @@ fn mdx_jsx_text_gnostic() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_jsx_text_complete() -> Result<(), String> {
+fn mdx_jsx_text_complete() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -665,16 +678,16 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <!> b", &mdx)
             .err()
-            .unwrap(),
-        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`)",
+            .unwrap().to_string(),
+        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`) (markdown-rs:unexpected-character)",
         "should crash on a nonconforming start identifier"
     );
 
     assert_eq!(
         to_html_with_options("a </(> b.", &mdx)
             .err()
-            .unwrap(),
-        "1:5: Unexpected character `(` (U+0028) before name, expected a character that can start a name, such as a letter, `$`, or `_`",
+            .unwrap().to_string(),
+        "1:5: Unexpected character `(` (U+0028) before name, expected a character that can start a name, such as a letter, `$`, or `_` (markdown-rs:unexpected-character)",
         "should crash on a nonconforming start identifier in a closing tag"
     );
 
@@ -687,48 +700,48 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <© /> b.", &mdx)
             .err()
-            .unwrap(),
-        "1:4: Unexpected character U+00A9 before name, expected a character that can start a name, such as a letter, `$`, or `_`",
+            .unwrap().to_string(),
+        "1:4: Unexpected character U+00A9 before name, expected a character that can start a name, such as a letter, `$`, or `_` (markdown-rs:unexpected-character)",
         "should crash on non-conforming non-ascii identifier start characters"
     );
 
     assert_eq!(
         to_html_with_options("a <!--b-->", &mdx)
             .err()
-            .unwrap(),
-        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`)",
+            .unwrap().to_string(),
+        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`) (markdown-rs:unexpected-character)",
         "should crash nicely on what might be a comment"
     );
 
     assert_eq!(
         to_html_with_options("a <// b\nc/>", &mdx)
             .err()
-            .unwrap(),
-        "1:5: Unexpected character `/` (U+002F) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: JS comments in JSX tags are not supported in MDX)",
+            .unwrap().to_string(),
+        "1:5: Unexpected character `/` (U+002F) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: JS comments in JSX tags are not supported in MDX) (markdown-rs:unexpected-character)",
         "should crash nicely on JS line comments inside tags (1)"
     );
 
     assert_eq!(
         to_html_with_options("a <b// c\nd/>", &mdx)
             .err()
-            .unwrap(),
-        "1:6: Unexpected character `/` (U+002F) after self-closing slash, expected `>` to end the tag (note: JS comments in JSX tags are not supported in MDX)",
+            .unwrap().to_string(),
+        "1:6: Unexpected character `/` (U+002F) after self-closing slash, expected `>` to end the tag (note: JS comments in JSX tags are not supported in MDX) (markdown-rs:unexpected-character)",
         "should crash nicely JS line comments inside tags (2)"
     );
 
     assert_eq!(
         to_html_with_options("a </*b*/c>", &mdx)
             .err()
-            .unwrap(),
-        "1:5: Unexpected character `*` (U+002A) before name, expected a character that can start a name, such as a letter, `$`, or `_`",
+            .unwrap().to_string(),
+        "1:5: Unexpected character `*` (U+002A) before name, expected a character that can start a name, such as a letter, `$`, or `_` (markdown-rs:unexpected-character)",
         "should crash nicely JS multiline comments inside tags (1)"
     );
 
     assert_eq!(
         to_html_with_options("a <b/*c*/>", &mdx)
             .err()
-            .unwrap(),
-        "1:6: Unexpected character `*` (U+002A) after self-closing slash, expected `>` to end the tag",
+            .unwrap().to_string(),
+        "1:6: Unexpected character `*` (U+002A) after self-closing slash, expected `>` to end the tag (markdown-rs:unexpected-character)",
         "should crash nicely JS multiline comments inside tags (2)"
     );
 
@@ -741,16 +754,16 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <a¬ /> b.", &mdx)
             .err()
-            .unwrap(),
-        "1:5: Unexpected character U+00AC in name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:5: Unexpected character U+00AC in name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on non-conforming non-ascii identifier continuation characters"
     );
 
     assert_eq!(
         to_html_with_options("a <b@c.d>", &mdx)
             .err()
-            .unwrap(),
-        "1:5: Unexpected character `@` (U+0040) in name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (note: to create a link in MDX, use `[text](url)`)",
+            .unwrap().to_string(),
+        "1:5: Unexpected character `@` (U+0040) in name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (note: to create a link in MDX, use `[text](url)`) (markdown-rs:unexpected-character)",
         "should crash nicely on what might be an email link"
     );
 
@@ -763,8 +776,8 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <a?> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:5: Unexpected character `?` (U+003F) in name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:5: Unexpected character `?` (U+003F) in name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on nonconforming identifier continuation characters"
     );
 
@@ -775,10 +788,10 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a <b.c@d.e>", &mdx)
+         to_html_with_options("a <b.c@d.e>", &mdx)
             .err()
-            .unwrap(),
-        "1:7: Unexpected character `@` (U+0040) in member name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (note: to create a link in MDX, use `[text](url)`)",
+            .unwrap().to_string(),
+        "1:7: Unexpected character `@` (U+0040) in member name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (note: to create a link in MDX, use `[text](url)`) (markdown-rs:unexpected-character)",
         "should crash nicely on what might be an email link in member names"
     );
 
@@ -791,72 +804,72 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <a:+> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:6: Unexpected character `+` (U+002B) before local name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a link in MDX, use `[text](url)`)",
+            .unwrap().to_string(),
+        "1:6: Unexpected character `+` (U+002B) before local name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a link in MDX, use `[text](url)`) (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character to start a local name"
     );
 
     assert_eq!(
         to_html_with_options("a <http://example.com>", &mdx)
             .err()
-            .unwrap(),
-        "1:9: Unexpected character `/` (U+002F) before local name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a link in MDX, use `[text](url)`)",
+            .unwrap().to_string(),
+        "1:9: Unexpected character `/` (U+002F) before local name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a link in MDX, use `[text](url)`) (markdown-rs:unexpected-character)",
         "should crash nicely on what might be a protocol in local names"
     );
 
     assert_eq!(
         to_html_with_options("a <http: >", &mdx)
             .err()
-            .unwrap(),
-        "1:10: Unexpected character `>` (U+003E) before local name, expected a character that can start a name, such as a letter, `$`, or `_`",
+            .unwrap().to_string(),
+        "1:10: Unexpected character `>` (U+003E) before local name, expected a character that can start a name, such as a letter, `$`, or `_` (markdown-rs:unexpected-character)",
         "should crash nicely on what might be a protocol in local names"
     );
 
     assert_eq!(
         to_html_with_options("a <a:b|> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:7: Unexpected character `|` (U+007C) in local name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:7: Unexpected character `|` (U+007C) in local name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character in a local name"
     );
 
     assert_eq!(
         to_html_with_options("a <a..> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:6: Unexpected character `.` (U+002E) before member name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:6: Unexpected character `.` (U+002E) before member name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character to start a member name"
     );
 
     assert_eq!(
         to_html_with_options("a <a.b,> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:7: Unexpected character `,` (U+002C) in member name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:7: Unexpected character `,` (U+002C) in member name, expected a name character such as letters, digits, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character in a member name"
     );
 
     assert_eq!(
         to_html_with_options("a <a:b .> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:8: Unexpected character `.` (U+002E) after local name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:8: Unexpected character `.` (U+002E) after local name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after a local name"
     );
 
     assert_eq!(
         to_html_with_options("a <a.b :> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:8: Unexpected character `:` (U+003A) after member name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:8: Unexpected character `:` (U+003A) after member name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after a member name"
     );
 
     assert_eq!(
         to_html_with_options("a <a => c.", &mdx)
             .err()
-            .unwrap(),
-        "1:6: Unexpected character `=` (U+003D) after name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:6: Unexpected character `=` (U+003D) after name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after name"
     );
 
@@ -917,24 +930,24 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <b {...p}~>c</b>.", &mdx)
             .err()
-            .unwrap(),
-        "1:12: Unexpected character `~` (U+007E) before attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:12: Unexpected character `~` (U+007E) before attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character before an attribute name"
     );
 
     assert_eq!(
         to_html_with_options("a <b {...", &mdx)
             .err()
-            .unwrap(),
-        "1:10: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+            .unwrap().to_string(),
+        "1:10: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash on a missing closing brace in attribute expression"
     );
 
     assert_eq!(
         to_html_with_options("a <a b@> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:7: Unexpected character `@` (U+0040) in attribute name, expected an attribute name character such as letters, digits, `$`, or `_`; `=` to initialize a value; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:7: Unexpected character `@` (U+0040) in attribute name, expected an attribute name character such as letters, digits, `$`, or `_`; `=` to initialize a value; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character in attribute name"
     );
 
@@ -953,32 +966,32 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <a b 1> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:8: Unexpected character `1` (U+0031) after attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; `=` to initialize a value; or the end of the tag",
+            .unwrap().to_string(),
+        "1:8: Unexpected character `1` (U+0031) after attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; `=` to initialize a value; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after an attribute name"
     );
 
     assert_eq!(
         to_html_with_options("a <a b:#> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:8: Unexpected character `#` (U+0023) before local attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; `=` to initialize a value; or the end of the tag",
+            .unwrap().to_string(),
+        "1:8: Unexpected character `#` (U+0023) before local attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; `=` to initialize a value; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character to start a local attribute name"
     );
 
     assert_eq!(
         to_html_with_options("a <a b:c%> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:9: Unexpected character `%` (U+0025) in local attribute name, expected an attribute name character such as letters, digits, `$`, or `_`; `=` to initialize a value; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:9: Unexpected character `%` (U+0025) in local attribute name, expected an attribute name character such as letters, digits, `$`, or `_`; `=` to initialize a value; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character in a local attribute name"
     );
 
     assert_eq!(
         to_html_with_options("a <a b:c ^> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:10: Unexpected character `^` (U+005E) after local attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; `=` to initialize a value; or the end of the tag",
+            .unwrap().to_string(),
+        "1:10: Unexpected character `^` (U+005E) after local attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; `=` to initialize a value; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after a local attribute name"
     );
 
@@ -997,48 +1010,48 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <a b=``> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:8: Unexpected character `` ` `` (U+0060) before attribute value, expected a character that can start an attribute value, such as `\"`, `'`, or `{`",
+            .unwrap().to_string(),
+        "1:8: Unexpected character `` ` `` (U+0060) before attribute value, expected a character that can start an attribute value, such as `\"`, `'`, or `{` (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character before an attribute value"
     );
 
     assert_eq!(
         to_html_with_options("a <a b=<c />> d.", &mdx)
             .err()
-            .unwrap(),
-        "1:8: Unexpected character `<` (U+003C) before attribute value, expected a character that can start an attribute value, such as `\"`, `'`, or `{` (note: to use an element or fragment as a prop value in MDX, use `{<element />}`)",
+            .unwrap().to_string(),
+        "1:8: Unexpected character `<` (U+003C) before attribute value, expected a character that can start an attribute value, such as `\"`, `'`, or `{` (note: to use an element or fragment as a prop value in MDX, use `{<element />}`) (markdown-rs:unexpected-character)",
         "should crash nicely on what might be a fragment, element as prop value"
     );
 
     assert_eq!(
         to_html_with_options("a <a b=\"> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:13: Unexpected end of file in attribute value, expected a corresponding closing quote `\"` (U+0022)",
+            .unwrap().to_string(),
+        "1:13: Unexpected end of file in attribute value, expected a corresponding closing quote `\"` (U+0022) (markdown-rs:unexpected-eof)",
         "should crash on a missing closing quote in double quoted attribute value"
     );
 
     assert_eq!(
         to_html_with_options("a <a b=\"> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:13: Unexpected end of file in attribute value, expected a corresponding closing quote `\"` (U+0022)",
+            .unwrap().to_string(),
+        "1:13: Unexpected end of file in attribute value, expected a corresponding closing quote `\"` (U+0022) (markdown-rs:unexpected-eof)",
         "should crash on a missing closing quote in single quoted attribute value"
     );
 
     assert_eq!(
         to_html_with_options("a <a b={> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:13: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+            .unwrap().to_string(),
+        "1:13: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash on a missing closing brace in an attribute value expression"
     );
 
     assert_eq!(
         to_html_with_options("a <a b=\"\"*> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:10: Unexpected character `*` (U+002A) before attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag",
+            .unwrap().to_string(),
+        "1:10: Unexpected character `*` (U+002A) before attribute name, expected a character that can start an attribute name, such as a letter, `$`, or `_`; whitespace before attributes; or the end of the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after an attribute value"
     );
 
@@ -1057,8 +1070,8 @@ fn mdx_jsx_text_complete() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a <a/b> c.", &mdx)
             .err()
-            .unwrap(),
-        "1:6: Unexpected character `b` (U+0062) after self-closing slash, expected `>` to end the tag",
+            .unwrap().to_string(),
+        "1:6: Unexpected character `b` (U+0062) after self-closing slash, expected `>` to end the tag (markdown-rs:unexpected-character)",
         "should crash on a nonconforming character after a self-closing slash"
     );
 

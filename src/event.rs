@@ -1,5 +1,6 @@
 //! Semantic labels of things happening.
 
+use crate::unist;
 use crate::util::constant::TAB_SIZE;
 
 /// Semantic label of a span.
@@ -3505,8 +3506,17 @@ pub struct Point {
 }
 
 impl Point {
+    /// Create a unist point.
+    pub fn to_unist(&self) -> unist::Point {
+        unist::Point {
+            line: self.line,
+            column: self.column,
+            offset: self.index,
+        }
+    }
+
     /// Create a new point, that is shifted from the close earlier current
-    /// point, to `index.`
+    /// point, to `index`.
     pub fn shift_to(&self, bytes: &[u8], index: usize) -> Point {
         let mut next = self.clone();
         debug_assert!(index > next.index, "expected to shift forward");

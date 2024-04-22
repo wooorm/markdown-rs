@@ -58,11 +58,12 @@
 
 use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::Name;
+use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{constant::TAB_SIZE, mdx_collect::collect};
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
-use alloc::format;
+use alloc::boxed::Box;
 
 /// Start of an MDX expression.
 ///
@@ -89,12 +90,15 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
-            State::Error(format!(
-                "{}:{}: {}",
-                tokenizer.point.line, tokenizer.point.column,
-                tokenizer.tokenize_state.mdx_last_parse_error.take()
-                    .unwrap_or_else(|| "Unexpected end of file in expression, expected a corresponding closing brace for `{`".into())
-            ))
+            let problem = tokenizer.tokenize_state.mdx_last_parse_error.take()
+                        .unwrap_or_else(|| ("Unexpected end of file in expression, expected a corresponding closing brace for `{`".into(), "markdown-rs".into(), "unexpected-eof".into()));
+
+            State::Error(message::Message {
+                place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
+                reason: problem.0,
+                rule_id: Box::new(problem.2),
+                source: Box::new(problem.1),
+            })
         }
         Some(b'\n') => {
             tokenizer.enter(Name::LineEnding);
@@ -167,10 +171,14 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         || tokenizer.tokenize_state.token_2 == Name::MdxJsxFlowTag)
         && tokenizer.lazy
     {
-        State::Error(format!(
-            "{}:{}: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
-            tokenizer.point.line, tokenizer.point.column
-        ))
+        State::Error(
+            message::Message {
+                place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
+                reason: "Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc".into(),
+                source: Box::new("markdown-rs".into()),
+                rule_id: Box::new("unexpected-lazy".into()),
+            }
+        )
     } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
         tokenizer.attempt(State::Next(StateName::MdxExpressionBefore), State::Nok);
         // Idea: investigate if we’d need to use more complex stripping.
@@ -220,21 +228,24 @@ fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> St
     // Parse and handle what was signaled back.
     match parse(&result.value, &kind) {
         MdxSignal::Ok => State::Ok,
-        MdxSignal::Error(message, relative) => {
+        MdxSignal::Error(reason, relative, source, rule_id) => {
             let point = tokenizer
                 .parse_state
                 .location
                 .as_ref()
                 .expect("expected location index if aware mdx is on")
                 .relative_to_point(&result.stops, relative)
-                .map_or((tokenizer.point.line, tokenizer.point.column), |d| {
-                    (d.line, d.column)
-                });
+                .unwrap_or_else(|| tokenizer.point.to_unist());
 
-            State::Error(format!("{}:{}: {}", point.0, point.1, message))
+            State::Error(message::Message {
+                place: Some(Box::new(message::Place::Point(point))),
+                reason,
+                rule_id,
+                source,
+            })
         }
-        MdxSignal::Eof(message) => {
-            tokenizer.tokenize_state.mdx_last_parse_error = Some(message);
+        MdxSignal::Eof(reason, source, rule_id) => {
+            tokenizer.tokenize_state.mdx_last_parse_error = Some((reason, *source, *rule_id));
             tokenizer.enter(Name::MdxExpressionData);
             tokenizer.consume();
             State::Next(StateName::MdxExpressionInside)

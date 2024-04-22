@@ -18,6 +18,7 @@
 //! any level that can include references can be parsed.
 
 use crate::event::{Content, Event, Kind, Name, VOID_EVENTS};
+use crate::message;
 use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
@@ -78,7 +79,7 @@ pub fn subtokenize(
     events: &mut Vec<Event>,
     parse_state: &ParseState,
     filter: &Option<Content>,
-) -> Result<Subresult, String> {
+) -> Result<Subresult, message::Message> {
     let mut map = EditMap::new();
     let mut index = 0;
     let mut value = Subresult {

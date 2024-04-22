@@ -28,6 +28,7 @@
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::too_many_lines)]
+#![allow(clippy::result_large_err)]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/wooorm/markdown-rs/8924580/media/logo-monochromatic.svg?sanitize=true"
 )]
@@ -46,6 +47,7 @@ mod tokenizer;
 mod util;
 
 pub mod mdast; // To do: externalize?
+pub mod message; // To do: externalize.
 pub mod unist; // To do: externalize.
 
 #[doc(hidden)]
@@ -99,7 +101,7 @@ pub fn to_html(value: &str) -> String {
 ///
 /// ```
 /// use markdown::{to_html_with_options, CompileOptions, Options};
-/// # fn main() -> Result<(), String> {
+/// # fn main() -> Result<(), markdown::message::Message> {
 ///
 /// // Use GFM:
 /// let result = to_html_with_options("~hi~hello!", &Options::gfm())?;
@@ -120,7 +122,7 @@ pub fn to_html(value: &str) -> String {
 /// # Ok(())
 /// # }
 /// ```
-pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, String> {
+pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, message::Message> {
     let (events, parse_state) = parser::parse(value, &options.parse)?;
     Ok(to_html::compile(
         &events,
@@ -143,7 +145,7 @@ pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, St
 ///
 /// ```
 /// use markdown::{to_mdast, ParseOptions};
-/// # fn main() -> Result<(), String> {
+/// # fn main() -> Result<(), markdown::message::Message> {
 ///
 /// let tree = to_mdast("# Hey, *you*!", &ParseOptions::default())?;
 ///
@@ -152,7 +154,7 @@ pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, St
 /// # Ok(())
 /// # }
 /// ```
-pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, String> {
+pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, message::Message> {
     let (events, parse_state) = parser::parse(value, options)?;
     let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)

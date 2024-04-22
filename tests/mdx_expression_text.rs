@@ -1,7 +1,7 @@
 mod test_utils;
 use markdown::{
     mdast::{MdxTextExpression, Node, Paragraph, Root, Text},
-    to_html_with_options, to_mdast,
+    message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -9,7 +9,7 @@ use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
-fn mdx_expression_text_gnostic_core() -> Result<(), String> {
+fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -63,14 +63,20 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a {//} b", &swc).err().unwrap(),
-        "1:4: Could not parse expression with swc: Unexpected eof",
+        to_html_with_options("a {//} b", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:4: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on an incorrect line comment (1)"
     );
 
     assert_eq!(
-        to_html_with_options("a { // b } c", &swc).err().unwrap(),
-        "1:4: Could not parse expression with swc: Unexpected eof",
+        to_html_with_options("a { // b } c", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:4: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on an incorrect line comment (2)"
     );
 
@@ -119,8 +125,9 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("a {var b = \"c\"} d", &swc)
             .err()
-            .unwrap(),
-        "1:4: Could not parse expression with swc: Expression expected",
+            .unwrap()
+            .to_string(),
+        "1:4: Could not parse expression with swc: Expression expected (mdx:swc)",
         "should crash on non-expressions"
     );
 
@@ -131,16 +138,20 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("> a {\n> b<} c", &swc).err().unwrap(),
-        "2:8: Could not parse expression with swc: Unexpected eof",
+        to_html_with_options("> a {\n> b<} c", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "2:8: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on incorrect expressions in containers (1)"
     );
 
     assert_eq!(
         to_html_with_options("> a {\n> b\n> c} d", &swc)
             .err()
-            .unwrap(),
-        "3:7: Could not parse expression with swc: Unexpected content after expression",
+            .unwrap()
+            .to_string(),
+        "3:7: Could not parse expression with swc: Unexpected content after expression (mdx:swc)",
         "should crash on incorrect expressions in containers (2)"
     );
 
@@ -148,7 +159,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_expression_text_agnostic() -> Result<(), String> {
+fn mdx_expression_text_agnostic() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -167,16 +178,19 @@ fn mdx_expression_text_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a {b c", &mdx).err().unwrap(),
-        "1:7: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        to_html_with_options("a {b c", &mdx)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:7: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash if no closing brace is found (1)"
     );
 
     assert_eq!(
         to_html_with_options("a {b { c } d", &mdx)
             .err()
-            .unwrap(),
-        "1:13: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+            .unwrap().to_string(),
+        "1:13: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash if no closing brace is found (2)"
     );
 
@@ -228,7 +242,7 @@ fn mdx_expression_text_agnostic() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_expression_text_gnostic() -> Result<(), String> {
+fn mdx_expression_text_gnostic() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -246,8 +260,11 @@ fn mdx_expression_text_gnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a {??} b", &swc).err().unwrap(),
-        "1:9: Could not parse expression with swc: Unexpected eof",
+        to_html_with_options("a {??} b", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:9: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on an incorrect expression"
     );
 
@@ -258,14 +275,20 @@ fn mdx_expression_text_gnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("a {b c", &swc).err().unwrap(),
-        "1:7: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        to_html_with_options("a {b c", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:7: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash if no closing brace is found (1)"
     );
 
     assert_eq!(
-        to_html_with_options("a {b { c } d", &swc).err().unwrap(),
-        "1:13: Could not parse expression with swc: Unexpected content after expression",
+        to_html_with_options("a {b { c } d", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:13: Could not parse expression with swc: Unexpected content after expression (mdx:swc)",
         "should crash if no closing brace is found (2)"
     );
 

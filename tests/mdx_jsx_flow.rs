@@ -1,7 +1,7 @@
 mod test_utils;
 use markdown::{
     mdast::{List, ListItem, MdxJsxFlowElement, Node, Paragraph, Root, Text},
-    to_html_with_options, to_mdast,
+    message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -9,7 +9,7 @@ use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
-fn mdx_jsx_flow_agnostic() -> Result<(), String> {
+fn mdx_jsx_flow_agnostic() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -90,7 +90,7 @@ fn mdx_jsx_flow_agnostic() -> Result<(), String> {
 // Flow is mostly the same as `text`, so we only test the relevant
 // differences.
 #[test]
-fn mdx_jsx_flow_essence() -> Result<(), String> {
+fn mdx_jsx_flow_essence() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -130,62 +130,62 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("* <!a>\n1. b", &mdx)
             .err()
-            .unwrap(),
-        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`)",
+            .unwrap().to_string(),
+        "1:4: Unexpected character `!` (U+0021) before name, expected a character that can start a name, such as a letter, `$`, or `_` (note: to create a comment in MDX, use `{/* text */}`) (markdown-rs:unexpected-character)",
         "should handle crash in containers gracefully"
     );
 
     assert_eq!(
-        to_html_with_options("> <X\n/>", &mdx).err().unwrap(),
-        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+         to_html_with_options("> <X\n/>", &mdx).err().unwrap().to_string(),
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (1)"
     );
 
     assert_eq!(
         to_html_with_options("> a\n> <X\n/>", &mdx)
             .err()
-            .unwrap(),
-        "3:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "3:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (2)"
     );
 
     assert_eq!(
         to_html_with_options("> <a b='\nc'/>", &mdx)
             .err()
-            .unwrap(),
-        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (3)"
     );
 
     assert_eq!(
         to_html_with_options("> <a b='c\n'/>", &mdx)
             .err()
-            .unwrap(),
-        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (4)"
     );
 
     assert_eq!(
         to_html_with_options("> <a b='c\nd'/>", &mdx)
             .err()
-            .unwrap(),
-        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "2:1: Unexpected lazy line in jsx in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (5)"
     );
 
     assert_eq!(
         to_html_with_options("> <a b={c\nd}/>", &mdx)
             .err()
-            .unwrap(),
-        "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (6)"
     );
 
     assert_eq!(
         to_html_with_options("> <a {b\nc}/>", &mdx)
             .err()
-            .unwrap(),
-        "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazy flow (7)"
     );
 
@@ -232,7 +232,7 @@ fn mdx_jsx_flow_essence() -> Result<(), String> {
 // Flow is mostly the same as `text`, so we only test the relevant
 // differences.
 #[test]
-fn mdx_jsx_flow_interleaving_with_expressions() -> Result<(), String> {
+fn mdx_jsx_flow_interleaving_with_expressions() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()

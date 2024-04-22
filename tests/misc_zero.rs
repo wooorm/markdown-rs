@@ -1,12 +1,12 @@
 use markdown::{
     mdast::{Node, Root},
-    to_html, to_mdast,
+    message, to_html, to_mdast,
     unist::Position,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn zero() -> Result<(), String> {
+fn zero() -> Result<(), message::Message> {
     assert_eq!(to_html(""), "", "should support no markdown");
 
     assert_eq!(

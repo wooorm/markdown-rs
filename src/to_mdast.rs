@@ -1,6 +1,6 @@
 //! Turn events into a syntax tree.
 
-use crate::event::{Event, Kind, Name, Point as EventPoint};
+use crate::event::{Event, Kind, Name};
 use crate::mdast::{
     AttributeContent, AttributeValue, AttributeValueExpression, BlockQuote, Break, Code,
     Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference, Heading, Html, Image,
@@ -9,6 +9,7 @@ use crate::mdast::{
     MdxjsEsm, Node, Paragraph, ReferenceKind, Root, Strong, Table, TableCell, TableRow, Text,
     ThematicBreak, Toml, Yaml,
 };
+use crate::message;
 use crate::unist::{Point, Position};
 use crate::util::{
     character_reference::{
@@ -20,6 +21,7 @@ use crate::util::{
     slice::{Position as SlicePosition, Slice},
 };
 use alloc::{
+    boxed::Box,
     format,
     string::{String, ToString},
     vec,
@@ -114,12 +116,12 @@ impl<'a> CompileContext<'a> {
                 start: if events.is_empty() {
                     Point::new(1, 1, 0)
                 } else {
-                    point_from_event(&events[0])
+                    events[0].point.to_unist()
                 },
                 end: if events.is_empty() {
                     Point::new(1, 1, 0)
                 } else {
-                    point_from_event(&events[events.len() - 1])
+                    events[events.len() - 1].point.to_unist()
                 },
             }),
         });
@@ -203,9 +205,9 @@ impl<'a> CompileContext<'a> {
         event_stack.push(self.index);
     }
 
-    fn tail_pop(&mut self) -> Result<(), String> {
+    fn tail_pop(&mut self) -> Result<(), message::Message> {
         let ev = &self.events[self.index];
-        let end = point_from_event(ev);
+        let end = ev.point.to_unist();
         let (tree, stack, event_stack) = self.trees.last_mut().expect("Cannot get tail w/o tree");
         let node = delve_mut(tree, stack);
         let pos = node.position_mut().expect("Cannot pop manually added node");
@@ -223,7 +225,7 @@ impl<'a> CompileContext<'a> {
 }
 
 /// Turn events and bytes into a syntax tree.
-pub fn compile(events: &[Event], bytes: &[u8]) -> Result<Node, String> {
+pub fn compile(events: &[Event], bytes: &[u8]) -> Result<Node, message::Message> {
     let mut context = CompileContext::new(events, bytes);
 
     let mut index = 0;
@@ -244,7 +246,7 @@ pub fn compile(events: &[Event], bytes: &[u8]) -> Result<Node, String> {
 }
 
 /// Handle the event at `index`.
-fn handle(context: &mut CompileContext, index: usize) -> Result<(), String> {
+fn handle(context: &mut CompileContext, index: usize) -> Result<(), message::Message> {
     context.index = index;
 
     if context.events[index].kind == Kind::Enter {
@@ -257,7 +259,7 @@ fn handle(context: &mut CompileContext, index: usize) -> Result<(), String> {
 }
 
 /// Handle [`Enter`][Kind::Enter].
-fn enter(context: &mut CompileContext) -> Result<(), String> {
+fn enter(context: &mut CompileContext) -> Result<(), message::Message> {
     match context.events[context.index].name {
         Name::AutolinkEmail
         | Name::AutolinkProtocol
@@ -335,7 +337,7 @@ fn enter(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit].
-fn exit(context: &mut CompileContext) -> Result<(), String> {
+fn exit(context: &mut CompileContext) -> Result<(), message::Message> {
     match context.events[context.index].name {
         Name::Autolink
         | Name::BlockQuote
@@ -775,7 +777,7 @@ fn on_enter_math_flow(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:{[`MdxJsxFlowTag`][Name::MdxJsxFlowTag],[`MdxJsxTextTag`][Name::MdxJsxTextTag]}.
 fn on_enter_mdx_jsx_tag(context: &mut CompileContext) {
-    let point = point_from_event(&context.events[context.index]);
+    let point = context.events[context.index].point.to_unist();
     context.jsx_tag = Some(JsxTag {
         name: None,
         attributes: vec![],
@@ -788,35 +790,41 @@ fn on_enter_mdx_jsx_tag(context: &mut CompileContext) {
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker].
-fn on_enter_mdx_jsx_tag_closing_marker(context: &mut CompileContext) -> Result<(), String> {
+fn on_enter_mdx_jsx_tag_closing_marker(
+    context: &mut CompileContext,
+) -> Result<(), message::Message> {
     if context.jsx_tag_stack.is_empty() {
         let event = &context.events[context.index];
-        Err(format!(
-            "{}:{}: Unexpected closing slash `/` in tag, expected an open tag first (mdx-jsx:unexpected-closing-slash)",
-            event.point.line,
-            event.point.column,
-        ))
+        Err(message::Message {
+            place: Some(Box::new(message::Place::Point(event.point.to_unist()))),
+            reason: "Unexpected closing slash `/` in tag, expected an open tag first".into(),
+            rule_id: Box::new("unexpected-closing-slash".into()),
+            source: Box::new("markdown-rs".into()),
+        })
     } else {
         Ok(())
     }
 }
 
 /// Handle [`Enter`][Kind::Enter]:{[`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute],[`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression]}.
-fn on_enter_mdx_jsx_tag_any_attribute(context: &mut CompileContext) -> Result<(), String> {
+fn on_enter_mdx_jsx_tag_any_attribute(
+    context: &mut CompileContext,
+) -> Result<(), message::Message> {
     if context.jsx_tag.as_ref().expect("expected tag").close {
         let event = &context.events[context.index];
-        Err(format!(
-            "{}:{}: Unexpected attribute in closing tag, expected the end of the tag (mdx-jsx:unexpected-attribute)",
-            event.point.line,
-            event.point.column,
-        ))
+        Err(message::Message {
+            place: Some(Box::new(message::Place::Point(event.point.to_unist()))),
+            reason: "Unexpected attribute in closing tag, expected the end of the tag".into(),
+            rule_id: Box::new("unexpected-attribute".into()),
+            source: Box::new("markdown-rs".into()),
+        })
     } else {
         Ok(())
     }
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute].
-fn on_enter_mdx_jsx_tag_attribute(context: &mut CompileContext) -> Result<(), String> {
+fn on_enter_mdx_jsx_tag_attribute(context: &mut CompileContext) -> Result<(), message::Message> {
     on_enter_mdx_jsx_tag_any_attribute(context)?;
 
     context
@@ -833,7 +841,9 @@ fn on_enter_mdx_jsx_tag_attribute(context: &mut CompileContext) -> Result<(), St
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagAttributeExpression`][Name::MdxJsxTagAttributeExpression].
-fn on_enter_mdx_jsx_tag_attribute_expression(context: &mut CompileContext) -> Result<(), String> {
+fn on_enter_mdx_jsx_tag_attribute_expression(
+    context: &mut CompileContext,
+) -> Result<(), message::Message> {
     on_enter_mdx_jsx_tag_any_attribute(context)?;
 
     let CollectResult { value, stops } = collect(
@@ -884,15 +894,19 @@ fn on_enter_mdx_jsx_tag_attribute_value_expression(context: &mut CompileContext)
 }
 
 /// Handle [`Enter`][Kind::Enter]:[`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker].
-fn on_enter_mdx_jsx_tag_self_closing_marker(context: &mut CompileContext) -> Result<(), String> {
+fn on_enter_mdx_jsx_tag_self_closing_marker(
+    context: &mut CompileContext,
+) -> Result<(), message::Message> {
     let tag = context.jsx_tag.as_ref().expect("expected tag");
     if tag.close {
         let event = &context.events[context.index];
-        Err(format!(
-            "{}:{}: Unexpected self-closing slash `/` in closing tag, expected the end of the tag (mdx-jsx:unexpected-self-closing-slash)",
-            event.point.line,
-            event.point.column,
-        ))
+        Err(message::Message {
+            place: Some(Box::new(message::Place::Point(event.point.to_unist()))),
+            reason: "Unexpected self-closing slash `/` in closing tag, expected the end of the tag"
+                .into(),
+            rule_id: Box::new("unexpected-self-closing-slash".into()),
+            source: Box::new("markdown-rs".into()),
+        })
     } else {
         Ok(())
     }
@@ -907,13 +921,13 @@ fn on_enter_paragraph(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:`*`.
-fn on_exit(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit(context: &mut CompileContext) -> Result<(), message::Message> {
     context.tail_pop()?;
     Ok(())
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`AutolinkProtocol`][Name::AutolinkProtocol].
-fn on_exit_autolink_protocol(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_autolink_protocol(context: &mut CompileContext) -> Result<(), message::Message> {
     on_exit_data(context)?;
     let value = Slice::from_position(
         context.bytes,
@@ -928,7 +942,7 @@ fn on_exit_autolink_protocol(context: &mut CompileContext) -> Result<(), String>
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`AutolinkEmail`][Name::AutolinkEmail].
-fn on_exit_autolink_email(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_autolink_email(context: &mut CompileContext) -> Result<(), message::Message> {
     on_exit_data(context)?;
     let value = Slice::from_position(
         context.bytes,
@@ -1010,7 +1024,7 @@ fn on_exit_raw_flow_fence(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`CodeFenced`][Name::CodeFenced],[`MathFlow`][Name::MathFlow]}.
-fn on_exit_raw_flow(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_raw_flow(context: &mut CompileContext) -> Result<(), message::Message> {
     let value = trim_eol(context.resume().to_string(), true, true);
 
     match context.tail_mut() {
@@ -1025,7 +1039,7 @@ fn on_exit_raw_flow(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`CodeIndented`][Name::CodeIndented].
-fn on_exit_code_indented(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_code_indented(context: &mut CompileContext) -> Result<(), message::Message> {
     let value = context.resume().to_string();
 
     if let Node::Code(node) = context.tail_mut() {
@@ -1039,7 +1053,7 @@ fn on_exit_code_indented(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
-fn on_exit_raw_text(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_raw_text(context: &mut CompileContext) -> Result<(), message::Message> {
     let mut value = context.resume().to_string();
 
     // To do: share with `to_html`.
@@ -1077,7 +1091,7 @@ fn on_exit_raw_text(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`Data`][Name::Data] (and many text things).
-fn on_exit_data(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_data(context: &mut CompileContext) -> Result<(), message::Message> {
     let value = Slice::from_position(
         context.bytes,
         &SlicePosition::from_exit_event(context.events, context.index),
@@ -1139,7 +1153,7 @@ fn on_exit_drop(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`Frontmatter`][Name::Frontmatter].
-fn on_exit_frontmatter(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_frontmatter(context: &mut CompileContext) -> Result<(), message::Message> {
     let value = trim_eol(context.resume().to_string(), true, true);
 
     match context.tail_mut() {
@@ -1153,7 +1167,7 @@ fn on_exit_frontmatter(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail],[`GfmAutolinkLiteralMailto`][Name::GfmAutolinkLiteralMailto],[`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol],[`GfmAutolinkLiteralWww`][Name::GfmAutolinkLiteralWww],[`GfmAutolinkLiteralXmpp`][Name::GfmAutolinkLiteralXmpp]}.
-fn on_exit_gfm_autolink_literal(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_gfm_autolink_literal(context: &mut CompileContext) -> Result<(), message::Message> {
     on_exit_data(context)?;
 
     let value = Slice::from_position(
@@ -1183,7 +1197,7 @@ fn on_exit_gfm_autolink_literal(context: &mut CompileContext) -> Result<(), Stri
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`GfmTable`][Name::GfmTable].
-fn on_exit_gfm_table(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_gfm_table(context: &mut CompileContext) -> Result<(), message::Message> {
     on_exit(context)?;
     context.gfm_table_inside = false;
     Ok(())
@@ -1202,7 +1216,7 @@ fn on_exit_gfm_task_list_item_value(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`HardBreakEscape`][Name::HardBreakEscape],[`HardBreakTrailing`][Name::HardBreakTrailing]}.
-fn on_exit_hard_break(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_hard_break(context: &mut CompileContext) -> Result<(), message::Message> {
     on_exit(context)?;
     context.hard_break_after = true;
     Ok(())
@@ -1227,7 +1241,7 @@ fn on_exit_heading_atx_sequence(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`HeadingSetext`][Name::HeadingSetext].
-fn on_exit_heading_setext(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_heading_setext(context: &mut CompileContext) -> Result<(), message::Message> {
     context.heading_setext_text_after = false;
     on_exit(context)?;
     Ok(())
@@ -1278,13 +1292,13 @@ fn on_exit_label_text(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`LineEnding`][Name::LineEnding].
-fn on_exit_line_ending(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_line_ending(context: &mut CompileContext) -> Result<(), message::Message> {
     if context.heading_setext_text_after {
         // Ignore.
     }
     // Line ending position after hard break is part of it.
     else if context.hard_break_after {
-        let end = point_from_event(&context.events[context.index]);
+        let end = context.events[context.index].point.to_unist();
         let node = context.tail_mut();
         let tail = node
             .children_mut()
@@ -1313,7 +1327,7 @@ fn on_exit_line_ending(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`HtmlFlow`][Name::HtmlFlow],[`HtmlText`][Name::HtmlText]}.
-fn on_exit_html(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_html(context: &mut CompileContext) -> Result<(), message::Message> {
     let value = context.resume().to_string();
 
     match context.tail_mut() {
@@ -1326,7 +1340,7 @@ fn on_exit_html(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`GfmFootnoteCall`][Name::GfmFootnoteCall],[`Image`][Name::Image],[`Link`][Name::Link]}.
-fn on_exit_media(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_media(context: &mut CompileContext) -> Result<(), message::Message> {
     let reference = context
         .media_reference_stack
         .pop()
@@ -1379,7 +1393,7 @@ fn on_exit_media(context: &mut CompileContext) -> Result<(), String> {
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`ListItem`][Name::ListItem].
-fn on_exit_list_item(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_list_item(context: &mut CompileContext) -> Result<(), message::Message> {
     if let Node::ListItem(item) = context.tail_mut() {
         if item.checked.is_some() {
             if let Some(Node::Paragraph(paragraph)) = item.children.first_mut() {
@@ -1444,13 +1458,13 @@ fn on_exit_list_item_value(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`MdxJsxFlowTag`][Name::MdxJsxFlowTag],[`MdxJsxTextTag`][Name::MdxJsxTextTag]}.
-fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), message::Message> {
     let mut tag = context.jsx_tag.as_ref().expect("expected tag").clone();
 
     // End of a tag, so drop the buffer.
     context.resume();
     // Set end point.
-    tag.end = point_from_event(&context.events[context.index]);
+    tag.end = context.events[context.index].point.to_unist();
 
     let stack = &context.jsx_tag_stack;
     let tail = stack.last();
@@ -1460,15 +1474,24 @@ fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), String> {
         let tail = tail.unwrap();
 
         if tail.name != tag.name {
-            return Err(format!(
-                "{}:{}: Unexpected closing tag `{}`, expected corresponding closing tag for `{}` ({}:{}) (mdx-jsx:end-tag-mismatch)",
-                tag.start.line,
-                tag.start.column,
-                serialize_abbreviated_tag(&tag),
-                serialize_abbreviated_tag(tail),
-                tail.start.line,
-                tail.start.column,
-            ));
+            let label = serialize_abbreviated_tag(&tag);
+            return Err(
+                message::Message {
+                    place: Some(Box::new(message::Place::Position(Position {
+                        start: tag.start,
+                        end: tag.end,
+                    }))),
+                    reason: format!(
+                        "Unexpected closing tag `{}`, expected corresponding closing tag for `{}` ({}:{})",
+                        label,
+                        serialize_abbreviated_tag(tail),
+                        tail.start.line,
+                        tail.start.column,
+                    ),
+                    rule_id: Box::new("end-tag-mismatch".into()),
+                    source: Box::new("markdown-rs".into()),
+                },
+            );
         }
 
         // Remove from our custom stack.
@@ -1559,7 +1582,7 @@ fn on_exit_mdx_jsx_tag_name_local(context: &mut CompileContext) {
 }
 
 /// Handle [`Exit`][Kind::Exit]:{[`MdxEsm`][Name::MdxEsm],[`MdxFlowExpression`][Name::MdxFlowExpression],[`MdxTextExpression`][Name::MdxTextExpression]}.
-fn on_exit_mdx_esm_or_expression(context: &mut CompileContext) -> Result<(), String> {
+fn on_exit_mdx_esm_or_expression(context: &mut CompileContext) -> Result<(), message::Message> {
     on_exit_drop(context);
     context.tail_pop()?;
     Ok(())
@@ -1669,16 +1692,6 @@ fn on_exit_resource_title_string(context: &mut CompileContext) {
     }
 }
 
-/// Create a point from an event.
-fn point_from_event_point(point: &EventPoint) -> Point {
-    Point::new(point.line, point.column, point.index)
-}
-
-/// Create a point from an event.
-fn point_from_event(event: &Event) -> Point {
-    point_from_event_point(&event.point)
-}
-
 /// Create a position from an event.
 fn position_from_event(event: &Event) -> Position {
     let end = Point::new(event.point.line, event.point.column, event.point.index);
@@ -1741,7 +1754,7 @@ fn on_mismatch_error(
     context: &mut CompileContext,
     left: Option<&Event>,
     right: &Event,
-) -> Result<(), String> {
+) -> Result<(), message::Message> {
     if right.name == Name::MdxJsxFlowTag || right.name == Name::MdxJsxTextTag {
         let stack = &context.jsx_tag_stack;
         let tag = stack.last().unwrap();
@@ -1751,34 +1764,42 @@ fn on_mismatch_error(
             &context.events[context.events.len() - 1].point
         };
 
-        return Err(format!(
-            "{}:{}: Expected a closing tag for `{}` ({}:{}){} (mdx-jsx:end-tag-mismatch)",
-            point.line,
-            point.column,
-            serialize_abbreviated_tag(tag),
-            tag.start.line,
-            tag.start.column,
-            if let Some(left) = left {
-                format!(" before the end of `{:?}`", left.name)
-            } else {
-                String::new()
-            }
-        ));
+        return Err(message::Message {
+            place: Some(Box::new(message::Place::Point(point.to_unist()))),
+            reason: format!(
+                "Expected a closing tag for `{}` ({}:{}){}",
+                serialize_abbreviated_tag(tag),
+                tag.start.line,
+                tag.start.column,
+                if let Some(left) = left {
+                    format!(" before the end of `{:?}`", left.name)
+                } else {
+                    String::new()
+                }
+            ),
+            rule_id: Box::new("end-tag-mismatch".into()),
+            source: Box::new("markdown-rs".into()),
+        });
     }
 
     if let Some(left) = left {
         if left.name == Name::MdxJsxFlowTag || left.name == Name::MdxJsxTextTag {
             let tag = context.jsx_tag.as_ref().unwrap();
 
-            return Err(format!(
-                "{}:{}: Expected the closing tag `{}` either before the start of `{:?}` ({}:{}), or another opening tag after that start (mdx-jsx:end-tag-mismatch)",
-                tag.start.line,
-                tag.start.column,
-                serialize_abbreviated_tag(tag),
-                &right.name,
-                &right.point.line,
-                &right.point.column,
-            ));
+            return Err(
+                message::Message {
+                    place: Some(Box::new(message::Place::Point(tag.start.clone()))),
+                    reason: format!(
+                        "Expected the closing tag `{}` either before the start of `{:?}` ({}:{}), or another opening tag after that start",
+                        serialize_abbreviated_tag(tag),
+                        &right.name,
+                        &right.point.line,
+                        &right.point.column,
+                    ),
+                    rule_id: Box::new("end-tag-mismatch".into()),
+                    source: Box::new("markdown-rs".into()),
+                }
+            );
         }
         unreachable!("mismatched (non-jsx): {:?} / {:?}", left.name, right.name);
     } else {

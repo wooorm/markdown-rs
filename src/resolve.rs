@@ -1,9 +1,9 @@
 //! Resolve events.
 
 use crate::construct;
+use crate::message;
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
-use alloc::string::String;
 
 /// Names of resolvers.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -63,7 +63,7 @@ pub enum Name {
 }
 
 /// Call the corresponding resolver.
-pub fn call(tokenizer: &mut Tokenizer, name: Name) -> Result<Option<Subresult>, String> {
+pub fn call(tokenizer: &mut Tokenizer, name: Name) -> Result<Option<Subresult>, message::Message> {
     let result = match name {
         Name::Label => construct::label_end::resolve(tokenizer),
         Name::Attention => construct::attention::resolve(tokenizer),

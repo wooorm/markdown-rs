@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Node, Root, Toml, Yaml},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn frontmatter() -> Result<(), String> {
+fn frontmatter() -> Result<(), message::Message> {
     let frontmatter = Options {
         parse: ParseOptions {
             constructs: Constructs {

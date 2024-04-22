@@ -1,6 +1,7 @@
 //! Turn bytes of markdown into events.
 
 use crate::event::{Event, Point};
+use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::Tokenizer;
@@ -32,7 +33,7 @@ pub struct ParseState<'a> {
 pub fn parse<'a>(
     value: &'a str,
     options: &'a ParseOptions,
-) -> Result<(Vec<Event>, ParseState<'a>), String> {
+) -> Result<(Vec<Event>, ParseState<'a>), message::Message> {
     let bytes = value.as_bytes();
 
     let mut parse_state = ParseState {

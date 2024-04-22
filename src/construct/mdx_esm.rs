@@ -30,11 +30,12 @@
 //! [parse_options]: crate::ParseOptions
 
 use crate::event::Name;
+use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::{mdx_collect::collect, slice::Slice};
 use crate::MdxSignal;
-use alloc::format;
+use alloc::boxed::Box;
 
 /// Start of MDX ESM.
 ///
@@ -205,7 +206,7 @@ fn parse_esm(tokenizer: &mut Tokenizer) -> State {
     // Parse and handle what was signaled back.
     match parse(&result.value) {
         MdxSignal::Ok => State::Ok,
-        MdxSignal::Error(message, relative) => {
+        MdxSignal::Error(message, relative, source, rule_id) => {
             let point = tokenizer
                 .parse_state
                 .location
@@ -213,16 +214,23 @@ fn parse_esm(tokenizer: &mut Tokenizer) -> State {
                 .expect("expected location index if aware mdx is on")
                 .relative_to_point(&result.stops, relative)
                 .expect("expected non-empty string");
-            State::Error(format!("{}:{}: {}", point.line, point.column, message))
+            State::Error(message::Message {
+                place: Some(Box::new(message::Place::Point(point))),
+                reason: message,
+                source,
+                rule_id,
+            })
         }
-        MdxSignal::Eof(message) => {
+        MdxSignal::Eof(message, source, rule_id) => {
             if tokenizer.current.is_none() {
-                State::Error(format!(
-                    "{}:{}: {}",
-                    tokenizer.point.line, tokenizer.point.column, message
-                ))
+                State::Error(message::Message {
+                    place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
+                    reason: message,
+                    source,
+                    rule_id,
+                })
             } else {
-                tokenizer.tokenize_state.mdx_last_parse_error = Some(message);
+                tokenizer.tokenize_state.mdx_last_parse_error = Some((message, *source, *rule_id));
                 State::Retry(StateName::MdxEsmContinuationStart)
             }
         }

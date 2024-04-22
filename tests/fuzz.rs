@@ -1,8 +1,8 @@
-use markdown::{mdast, to_html, to_html_with_options, to_mdast, Options};
+use markdown::{mdast, message, to_html, to_html_with_options, to_mdast, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn fuzz() -> Result<(), String> {
+fn fuzz() -> Result<(), message::Message> {
     assert_eq!(
         to_html("[\n~\na\n-\n\n"),
         "<h2>[\n~\na</h2>\n",

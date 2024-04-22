@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Break, Node, Paragraph, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn hard_break_escape() -> Result<(), String> {
+fn hard_break_escape() -> Result<(), message::Message> {
     assert_eq!(
         to_html("foo\\\nbaz"),
         "<p>foo<br />\nbaz</p>",
