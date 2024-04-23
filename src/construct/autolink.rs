@@ -162,6 +162,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::AutolinkSchemeOrEmailAtext)
         }
+        Some(b'@') => State::Nok,
         _ => State::Retry(StateName::AutolinkEmailAtext),
     }
 }

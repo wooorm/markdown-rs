@@ -252,6 +252,12 @@ fn autolink() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("<@example.com>"),
+        "<p>&lt;@example.com&gt;</p>",
+        "should not support an at sign at the start of email autolinks"
+    );
+
+    assert_eq!(
         to_html_with_options(
             "<a@b.co>",
             &Options {
