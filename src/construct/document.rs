@@ -10,11 +10,12 @@
 //! *   [GFM: Footnote definition][crate::construct::gfm_footnote_definition]
 
 use crate::event::{Content, Event, Kind, Link, Name};
+use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::divide_events;
 use crate::tokenizer::{Container, ContainerState, Tokenizer};
 use crate::util::skip;
-use alloc::{boxed::Box, string::String, vec::Vec};
+use alloc::{boxed::Box, vec::Vec};
 
 /// Phases where we can exit containers.
 #[derive(Debug, PartialEq)]
@@ -470,7 +471,7 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
 }
 
 /// Close containers (and flow if needed).
-fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) -> Result<(), String> {
+fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) -> Result<(), message::Message> {
     let mut stack_close = tokenizer
         .tokenize_state
         .document_container_stack

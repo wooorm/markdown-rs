@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_footnote() -> Result<(), String> {
+fn gfm_footnote() -> Result<(), message::Message> {
     assert_eq!(
         to_html("A call.[^a]\n\n[^a]: whatevs"),
         "<p>A call.<a href=\"whatevs\">^a</a></p>\n",

@@ -3,11 +3,11 @@
 // To do: clippy introduced this in 1.72 but breaks when it fixes it.
 // Remove when solved.
 
-use markdown::{to_html_with_options, CompileOptions, Options};
+use markdown::{message, to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_tagfilter() -> Result<(), String> {
+fn gfm_tagfilter() -> Result<(), message::Message> {
     assert_eq!(
         to_html_with_options(
             "<iframe>",

@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Math, Node, Root},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn math_flow() -> Result<(), String> {
+fn math_flow() -> Result<(), message::Message> {
     let math = Options {
         parse: ParseOptions {
             constructs: Constructs {

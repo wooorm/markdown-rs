@@ -1,7 +1,7 @@
 mod test_utils;
 use markdown::{
     mdast::{MdxjsEsm, Node, Root},
-    to_html_with_options, to_mdast,
+    message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -9,7 +9,7 @@ use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
-fn mdx_esm() -> Result<(), String> {
+fn mdx_esm() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -93,14 +93,20 @@ fn mdx_esm() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("import a", &swc).err().unwrap(),
-        "1:9: Could not parse esm with swc: Expected ',', got '<eof>'",
+        to_html_with_options("import a", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:9: Could not parse esm with swc: Expected ',', got '<eof>' (mdx:swc)",
         "should crash on invalid import/exports (1)"
     );
 
     assert_eq!(
-        to_html_with_options("import 1/1", &swc).err().unwrap(),
-        "1:8: Could not parse esm with swc: Expected 'from', got 'numeric literal (1, 1)'",
+        to_html_with_options("import 1/1", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:8: Could not parse esm with swc: Expected 'from', got 'numeric literal (1, 1)' (mdx:swc)",
         "should crash on invalid import/exports (2)"
     );
 
@@ -119,8 +125,9 @@ fn mdx_esm() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("import a from 'b'\n*md*?", &swc)
             .err()
-            .unwrap(),
-        "2:6: Could not parse esm with swc: Expression expected",
+            .unwrap()
+            .to_string(),
+        "2:6: Could not parse esm with swc: Expression expected (mdx:swc)",
         "should crash on markdown after import/export w/o blank line"
     );
 
@@ -133,16 +140,18 @@ fn mdx_esm() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("export var a = 1\nvar b\n\nc", &swc)
             .err()
-            .unwrap(),
-        "2:1: Unexpected statement in code: only import/exports are supported",
+            .unwrap()
+            .to_string(),
+        "2:1: Unexpected statement in code: only import/exports are supported (mdx:swc)",
         "should crash on other statements in “blocks”"
     );
 
     assert_eq!(
         to_html_with_options("import ('a')\n\nb", &swc)
             .err()
-            .unwrap(),
-        "1:1: Unexpected statement in code: only import/exports are supported",
+            .unwrap()
+            .to_string(),
+        "1:1: Unexpected statement in code: only import/exports are supported (mdx:swc)",
         "should crash on import-as-a-function with a space `import (x)`"
     );
 

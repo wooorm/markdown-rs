@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Html, Node, Root},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn html_flow() -> Result<(), String> {
+fn html_flow() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -63,7 +63,7 @@ fn html_flow() -> Result<(), String> {
 }
 
 #[test]
-fn html_flow_1_raw() -> Result<(), String> {
+fn html_flow_1_raw() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -235,7 +235,7 @@ p {color:blue;}
 }
 
 #[test]
-fn html_flow_2_comment() -> Result<(), String> {
+fn html_flow_2_comment() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -344,7 +344,7 @@ fn html_flow_2_comment() -> Result<(), String> {
 }
 
 #[test]
-fn html_flow_3_instruction() -> Result<(), String> {
+fn html_flow_3_instruction() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -401,7 +401,7 @@ fn html_flow_3_instruction() -> Result<(), String> {
 }
 
 #[test]
-fn html_flow_4_declaration() -> Result<(), String> {
+fn html_flow_4_declaration() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -466,7 +466,7 @@ fn html_flow_4_declaration() -> Result<(), String> {
 }
 
 #[test]
-fn html_flow_5_cdata() -> Result<(), String> {
+fn html_flow_5_cdata() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -540,7 +540,7 @@ fn html_flow_5_cdata() -> Result<(), String> {
 }
 
 #[test]
-fn html_flow_6_basic() -> Result<(), String> {
+fn html_flow_6_basic() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
@@ -827,7 +827,7 @@ okay.",
 }
 
 #[test]
-fn html_flow_7_complete() -> Result<(), String> {
+fn html_flow_7_complete() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,

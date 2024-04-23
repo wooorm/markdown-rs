@@ -1,7 +1,7 @@
 mod test_utils;
 use markdown::{
     mdast::{MdxFlowExpression, Node, Root},
-    to_html_with_options, to_mdast,
+    message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
@@ -9,7 +9,7 @@ use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
-fn mdx_expression_flow_agnostic() -> Result<(), String> {
+fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
     let mdx = Options {
         parse: ParseOptions::mdx(),
         ..Default::default()
@@ -65,14 +65,17 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("{a", &mdx).err().unwrap(),
-        "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        to_html_with_options("{a", &mdx).err().unwrap().to_string(),
+        "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash if no closing brace is found (1)"
     );
 
     assert_eq!(
-        to_html_with_options("{b { c }", &mdx).err().unwrap(),
-        "1:9: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        to_html_with_options("{b { c }", &mdx)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:9: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash if no closing brace is found (2)"
     );
 
@@ -103,8 +106,8 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("> {a\nb}", &mdx)
             .err()
-            .unwrap(),
-        "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "2:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazyness (1)"
     );
 
@@ -123,8 +126,8 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
     assert_eq!(
         to_html_with_options("> {\n> a\nb}", &mdx)
             .err()
-            .unwrap(),
-        "3:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc",
+            .unwrap().to_string(),
+        "3:1: Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc (markdown-rs:unexpected-lazy)",
         "should not support lazyness (4)"
     );
 
@@ -145,7 +148,7 @@ fn mdx_expression_flow_agnostic() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_expression_flow_gnostic() -> Result<(), String> {
+fn mdx_expression_flow_gnostic() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -169,14 +172,17 @@ fn mdx_expression_flow_gnostic() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("{a", &swc).err().unwrap(),
-        "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{`",
+        to_html_with_options("{a", &swc).err().unwrap().to_string(),
+        "1:3: Unexpected end of file in expression, expected a corresponding closing brace for `{` (markdown-rs:unexpected-eof)",
         "should crash if no closing brace is found (1)"
     );
 
     assert_eq!(
-        to_html_with_options("{b { c }", &swc).err().unwrap(),
-        "1:9: Could not parse expression with swc: Unexpected content after expression",
+        to_html_with_options("{b { c }", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:9: Could not parse expression with swc: Unexpected content after expression (mdx:swc)",
         "should crash if no closing brace is found (2)"
     );
 
@@ -220,7 +226,7 @@ fn mdx_expression_flow_gnostic() -> Result<(), String> {
 }
 
 #[test]
-fn mdx_expression_spread() -> Result<(), String> {
+fn mdx_expression_spread() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -238,38 +244,44 @@ fn mdx_expression_spread() -> Result<(), String> {
     );
 
     assert_eq!(
-        to_html_with_options("<a {b} />", &swc).err().unwrap(),
-        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
+        to_html_with_options("<a {b} />", &swc).err().unwrap().to_string(),
+        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
         "should crash if not a spread"
     );
 
     assert_eq!(
-        to_html_with_options("<a {...?} />", &swc).err().unwrap(),
-        "1:13: Could not parse expression with swc: Expression expected",
+        to_html_with_options("<a {...?} />", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:13: Could not parse expression with swc: Expression expected (mdx:swc)",
         "should crash on an incorrect spread"
     );
 
     assert_eq!(
-        to_html_with_options("<a {...b,c} d>", &swc).err().unwrap(),
-        "1:5: Unexpected extra content in spread (such as `{...x,y}`): only a single spread is supported (such as `{...x}`)",
+        to_html_with_options("<a {...b,c} d>", &swc).err().unwrap().to_string(),
+        "1:5: Unexpected extra content in spread (such as `{...x,y}`): only a single spread is supported (such as `{...x}`) (mdx:swc)",
         "should crash if a spread and other things"
     );
 
     assert_eq!(
-        to_html_with_options("<a {} />", &swc).err().unwrap(),
-        "1:9: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
+        to_html_with_options("<a {} />", &swc).err().unwrap().to_string(),
+        "1:9: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
         "should crash on an empty spread"
     );
 
     assert_eq!(
-        to_html_with_options("<a {a=b} />", &swc).err().unwrap(),
-        "1:12: Could not parse expression with swc: assignment property is invalid syntax",
+        to_html_with_options("<a {a=b} />", &swc)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:12: Could not parse expression with swc: assignment property is invalid syntax (mdx:swc)",
         "should crash if not an identifier"
     );
 
     assert_eq!(
-        to_html_with_options("<a {/* b */} />", &swc).err().unwrap(),
-        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`)",
+        to_html_with_options("<a {/* b */} />", &swc).err().unwrap().to_string(),
+        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
         "should crash on a comment spread"
     );
 

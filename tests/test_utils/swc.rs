@@ -180,12 +180,14 @@ pub fn flat_comments(single_threaded_comments: SingleThreadedComments) -> Vec<Co
 /// * If the error happens at `value_len`, yields `MdxSignal::Eof`
 /// * Else, yields `MdxSignal::Error`.
 fn swc_error_to_signal(span: Span, reason: &str, value_len: usize) -> MdxSignal {
+    let source = Box::new("mdx".into());
+    let rule_id = Box::new("swc".into());
     let error_end = span.hi.to_usize();
 
     if error_end >= value_len {
-        MdxSignal::Eof(reason.into())
+        MdxSignal::Eof(reason.into(), source, rule_id)
     } else {
-        MdxSignal::Error(reason.into(), span.lo.to_usize())
+        MdxSignal::Error(reason.into(), span.lo.to_usize(), source, rule_id)
     }
 }
 

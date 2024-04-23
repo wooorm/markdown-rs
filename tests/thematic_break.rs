@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Node, Root, ThematicBreak},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn thematic_break() -> Result<(), String> {
+fn thematic_break() -> Result<(), message::Message> {
     assert_eq!(
         to_html("***\n---\n___"),
         "<hr />\n<hr />\n<hr />",

@@ -1,16 +1,16 @@
 //! States of the state machine.
 
 use crate::construct;
+use crate::message;
 use crate::tokenizer::Tokenizer;
-use alloc::string::String;
 
 /// Result of a state.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum State {
     /// Syntax error.
     ///
     /// Only used by MDX.
-    Error(String),
+    Error(message::Message),
     /// Move to [`Name`][] next.
     Next(Name),
     /// Retry in [`Name`][].
@@ -28,13 +28,13 @@ impl State {
     /// or on an attempt ([`State::Nok`]).
     ///
     /// But it turns the final result into an error if crashed.
-    pub fn to_result(&self) -> Result<(), String> {
+    pub fn to_result(&self) -> Result<(), message::Message> {
         match self {
             State::Nok | State::Next(_) | State::Retry(_) => {
                 unreachable!("cannot turn intermediate state into result")
             }
             State::Ok => Ok(()),
-            State::Error(x) => Err(x.into()),
+            State::Error(x) => Err(x.clone()),
         }
     }
 }

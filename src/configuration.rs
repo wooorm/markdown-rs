@@ -482,7 +482,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html, to_html_with_options, CompileOptions, Options};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `markdown-rs` is safe by default:
     /// assert_eq!(
@@ -526,7 +526,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html, to_html_with_options, CompileOptions, Options};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `markdown-rs` is safe by default:
     /// assert_eq!(
@@ -570,7 +570,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html, to_html_with_options, CompileOptions, LineEnding, Options};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `markdown-rs` uses `\n` by default:
     /// assert_eq!(
@@ -612,7 +612,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `"Footnotes"` is used by default:
     /// assert_eq!(
@@ -657,7 +657,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `"h2"` is used by default:
     /// assert_eq!(
@@ -705,7 +705,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `"class=\"sr-only\""` is used by default:
     /// assert_eq!(
@@ -748,7 +748,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `"Back to content"` is used by default:
     /// assert_eq!(
@@ -804,7 +804,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `"user-content-"` is used by default:
     /// assert_eq!(
@@ -843,7 +843,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // With `gfm_task_list_item_checkable`, generated `<input type="checkbox" />`
     /// // tags do not contain the attribute `disabled=""` and are thus toggleable by
@@ -880,7 +880,7 @@ pub struct CompileOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // With `allow_dangerous_html`, `markdown-rs` passes HTML through untouched:
     /// assert_eq!(
@@ -975,7 +975,7 @@ pub struct ParseOptions {
     ///
     /// ```
     /// use markdown::{to_html, to_html_with_options, Constructs, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `markdown-rs` follows CommonMark by default:
     /// assert_eq!(
@@ -1020,7 +1020,7 @@ pub struct ParseOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `markdown-rs` supports single tildes by default:
     /// assert_eq!(
@@ -1075,7 +1075,7 @@ pub struct ParseOptions {
     ///
     /// ```
     /// use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
-    /// # fn main() -> Result<(), String> {
+    /// # fn main() -> Result<(), markdown::message::Message> {
     ///
     /// // `markdown-rs` supports single dollars by default:
     /// assert_eq!(

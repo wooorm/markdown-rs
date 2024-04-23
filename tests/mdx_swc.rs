@@ -1,10 +1,10 @@
 mod test_utils;
-use markdown::{to_html_with_options, Constructs, Options, ParseOptions};
+use markdown::{message, to_html_with_options, Constructs, Options, ParseOptions};
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
 #[test]
-fn mdx_swc() -> Result<(), String> {
+fn mdx_swc() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),

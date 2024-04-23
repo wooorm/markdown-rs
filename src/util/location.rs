@@ -71,11 +71,7 @@ impl Location {
                 } else {
                     0
                 };
-                return Some(Point {
-                    line: index + 1,
-                    column: offset + 1 - previous,
-                    offset,
-                });
+                return Some(Point::new(index + 1, offset + 1 - previous, offset));
             }
         }
 

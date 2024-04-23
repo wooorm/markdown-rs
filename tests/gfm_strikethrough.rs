@@ -5,14 +5,14 @@
 
 use markdown::{
     mdast::{Delete, Node, Paragraph, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_strikethrough() -> Result<(), String> {
+fn gfm_strikethrough() -> Result<(), message::Message> {
     assert_eq!(
         to_html("a ~b~ c"),
         "<p>a ~b~ c</p>",

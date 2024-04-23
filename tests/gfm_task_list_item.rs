@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Emphasis, List, ListItem, Node, Paragraph, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_task_list_item() -> Result<(), String> {
+fn gfm_task_list_item() -> Result<(), message::Message> {
     assert_eq!(
         to_html("* [x] y."),
         "<ul>\n<li>[x] y.</li>\n</ul>",

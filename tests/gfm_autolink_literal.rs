@@ -5,14 +5,14 @@
 
 use markdown::{
     mdast::{Link, Node, Paragraph, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn gfm_autolink_literal() -> Result<(), String> {
+fn gfm_autolink_literal() -> Result<(), message::Message> {
     assert_eq!(
         to_html("https://example.com"),
         "<p>https://example.com</p>",

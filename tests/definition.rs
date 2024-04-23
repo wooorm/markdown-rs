@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Definition, Node, Root},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn definition() -> Result<(), String> {
+fn definition() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,

@@ -1,8 +1,8 @@
-use markdown::{to_html, to_html_with_options, CompileOptions, Options};
+use markdown::{message, to_html, to_html_with_options, CompileOptions, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
-fn line_ending() -> Result<(), String> {
+fn line_ending() -> Result<(), message::Message> {
     let danger = &Options {
         compile: CompileOptions {
             allow_dangerous_html: true,

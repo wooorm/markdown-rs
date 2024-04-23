@@ -9,6 +9,7 @@
 //! [`attempt`]: Tokenizer::attempt
 
 use crate::event::{Content, Event, Kind, Link, Name, Point, VOID_EVENTS};
+use crate::message;
 use crate::parser::ParseState;
 use crate::resolve::{call as call_resolve, Name as ResolveName};
 use crate::state::{call, State};
@@ -232,7 +233,7 @@ pub struct TokenizeState<'a> {
     pub gfm_footnote_definitions: Vec<String>,
 
     // Last error message provided at an EOF of an expression.
-    pub mdx_last_parse_error: Option<String>,
+    pub mdx_last_parse_error: Option<(String, String, String)>,
 
     /// Whether to connect events.
     pub connect: bool,
@@ -625,7 +626,7 @@ impl<'a> Tokenizer<'a> {
     }
 
     /// Flush.
-    pub fn flush(&mut self, state: State, resolve: bool) -> Result<Subresult, String> {
+    pub fn flush(&mut self, state: State, resolve: bool) -> Result<Subresult, message::Message> {
         let to = (self.point.index, self.point.vs);
         let state = push_impl(self, to, to, state, true);
 

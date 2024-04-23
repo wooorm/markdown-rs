@@ -1,13 +1,13 @@
 use markdown::{
     mdast::{Definition, LinkReference, Node, Paragraph, ReferenceKind, Root, Text},
-    to_html, to_html_with_options, to_mdast,
+    message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
 #[test]
-fn link_reference() -> Result<(), String> {
+fn link_reference() -> Result<(), message::Message> {
     let danger = Options {
         compile: CompileOptions {
             allow_dangerous_html: true,
