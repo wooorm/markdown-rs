@@ -224,6 +224,8 @@ fn children_to_string(children: &[Node]) -> String {
     children.iter().map(ToString::to_string).collect()
 }
 
+// To do: clippy may be right but that’s a breaking change.
+#[allow(clippy::to_string_trait_impl)]
 impl ToString for Node {
     fn to_string(&self) -> String {
         match self {

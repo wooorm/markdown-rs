@@ -553,6 +553,8 @@ pub struct CompileOptions {
     /// ```
     pub allow_dangerous_protocol: bool,
 
+    // To do: `doc_markdown` is broken.
+    #[allow(clippy::doc_markdown)]
     /// Default line ending to use when compiling to HTML, for line endings not
     /// in `value`.
     ///

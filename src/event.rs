@@ -3266,7 +3266,7 @@ pub enum Name {
     ///                 ^
     /// ```
     ResourceTitleString,
-    /// SpaceOrTab.
+    /// Space or tab.
     ///
     /// ## Info
     ///

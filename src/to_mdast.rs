@@ -1280,7 +1280,7 @@ fn on_exit_label_text(context: &mut CompileContext) {
         .media_reference_stack
         .last_mut()
         .expect("expected reference on media stack");
-    reference.label = label.clone();
+    reference.label.clone_from(&label);
     reference.identifier = identifier;
 
     match context.tail_mut() {
