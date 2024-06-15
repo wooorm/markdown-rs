@@ -6,8 +6,8 @@ jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           components: rustfmt, clippy
@@ -16,9 +16,9 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
       - run: cargo install cargo-tarpaulin && cargo tarpaulin --out xml
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
