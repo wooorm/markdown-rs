@@ -17,7 +17,7 @@
 //! *   **`default`**
 //!     — nothing is enabled by default
 //! *   **`serde`**
-//!     — enable serde to serialize the AST (includes `dep:serde`)
+//!     — enable serde to serialize the AST and configuration objects (includes `dep:serde`)
 //! *   **`log`**
 //!     — enable logging (includes `dep:log`);
 //!     you can show logs with `RUST_LOG=debug`
