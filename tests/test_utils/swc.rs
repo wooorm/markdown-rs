@@ -7,12 +7,12 @@ use markdown::{MdxExpressionKind, MdxSignal};
 use std::rc::Rc;
 use swc_core::common::{
     comments::{Comment, SingleThreadedComments, SingleThreadedCommentsMap},
-    source_map::Pos,
+    source_map::SmallPos,
     BytePos, FileName, SourceFile, Span, Spanned,
 };
 use swc_core::ecma::ast::{EsVersion, Expr, Module, PropOrSpread};
 use swc_core::ecma::parser::{
-    error::Error as SwcError, parse_file_as_expr, parse_file_as_module, EsConfig, Syntax,
+    error::Error as SwcError, parse_file_as_expr, parse_file_as_module, EsSyntax, Syntax,
 };
 use swc_core::ecma::visit::VisitMutWith;
 
@@ -268,16 +268,16 @@ fn create_config(source: String) -> (SourceFile, Syntax, EsVersion) {
     (
         // File.
         SourceFile::new(
-            FileName::Anon,
+            FileName::Anon.into(),
             false,
-            FileName::Anon,
+            FileName::Anon.into(),
             source,
             BytePos::from_usize(1),
         ),
         // Syntax.
-        Syntax::Es(EsConfig {
+        Syntax::Es(EsSyntax {
             jsx: true,
-            ..EsConfig::default()
+            ..EsSyntax::default()
         }),
         // Version.
         // To do: update once in a while (last checked: 2024-04-18).
