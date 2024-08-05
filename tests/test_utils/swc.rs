@@ -92,7 +92,6 @@ fn parse_expression_core(
     let (file, syntax, version) = create_config(format!("{}{}{}", prefix, value, suffix));
     let mut errors = vec![];
     let result = parse_file_as_expr(&file, syntax, version, None, &mut errors);
-    println!("parse_file_as_expr: {:?}", result);
 
     match result {
         Err(error) => Err((
@@ -184,7 +183,6 @@ fn swc_error_to_signal(span: Span, reason: &str, value_len: usize) -> MdxSignal 
     let source = Box::new("mdx".into());
     let rule_id = Box::new("swc".into());
     let error_end = span.hi.to_usize();
-    println!("error_end: {:?} {:?} {:?}", span, error_end, value_len);
 
     if error_end >= value_len {
         MdxSignal::Eof(reason.into(), source, rule_id)
