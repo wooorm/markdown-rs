@@ -32,7 +32,7 @@ serde = { version = "1", features = ["derive"], optional = true }
 env_logger = "0.11"
 criterion = "0.5"
 pretty_assertions = "1"
-swc_core = { version = "0.99.6", features = [
+swc_core = { version = "0.100.0", features = [
   "ecma_ast",
   "ecma_visit",
   "ecma_parser",
