@@ -1,7 +1,7 @@
 //! Lots of helpers for dealing with SWC, particularly from unist, and for
 //! building its ES AST.
 
-use swc_core::common::{BytePos, Span, SyntaxContext, DUMMY_SP};
+use swc_core::common::{BytePos, Span, DUMMY_SP};
 use swc_core::ecma::visit::{noop_visit_mut_type, VisitMut};
 
 /// Visitor to fix SWC byte positions by removing a prefix.
@@ -33,6 +33,5 @@ pub fn create_span(lo: u32, hi: u32) -> Span {
     Span {
         lo: BytePos(lo),
         hi: BytePos(hi),
-        ctxt: SyntaxContext::default(),
     }
 }

@@ -67,7 +67,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
             .err()
             .unwrap()
             .to_string(),
-        "1:4: Could not parse expression with swc: Unexpected eof (mdx:swc)",
+        "1:9: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on an incorrect line comment (1)"
     );
 
@@ -76,7 +76,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
             .err()
             .unwrap()
             .to_string(),
-        "1:4: Could not parse expression with swc: Unexpected eof (mdx:swc)",
+        "1:13: Could not parse expression with swc: Unexpected eof (mdx:swc)",
         "should crash on an incorrect line comment (2)"
     );
 
