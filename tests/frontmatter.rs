@@ -62,6 +62,12 @@ fn frontmatter() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options("---\n--\n", &frontmatter)?,
+        "<hr />\n<p>--</p>\n",
+        "should not panic if newline after 2 marker closing fence"
+    );
+
+    assert_eq!(
         to_html_with_options("---\n----", &frontmatter)?,
         "<hr />\n<hr />",
         "should not support 4 markers in a closing fence"
