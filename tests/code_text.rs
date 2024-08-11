@@ -207,7 +207,7 @@ fn code_text() -> Result<(), message::Message> {
 
     assert_eq!(
         to_mdast("` alpha `", &Default::default())?,
-        //     offsets: 012345678
+        //        012345678 <- offsets
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::InlineCode(InlineCode {
