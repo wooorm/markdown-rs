@@ -206,19 +206,33 @@ fn code_text() -> Result<(), message::Message> {
     );
 
     assert_eq!(
-        to_mdast("` alpha `", &Default::default())?,
-        //        012345678 <- offsets
+        to_mdast("`  alpha `", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {
                 children: vec![Node::InlineCode(InlineCode {
-                    value: "alpha".into(),
-                    position: Some(Position::new(1, 1, 0, 1, 10, 9))
+                    value: " alpha".into(),
+                    position: Some(Position::new(1, 1, 0, 1, 11, 10))
                 }),],
-                position: Some(Position::new(1, 1, 0, 1, 10, 9))
+                position: Some(Position::new(1, 1, 0, 1, 11, 10))
             })],
-            position: Some(Position::new(1, 1, 0, 1, 10, 9))
+            position: Some(Position::new(1, 1, 0, 1, 11, 10))
         }),
-        "should support code (text) as `InlineCode`s in mdast"
+        "should strip one space from each side of `InlineCode` if the value starts and ends with space"
+    );
+
+    assert_eq!(
+        to_mdast("`   `", &Default::default())?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![Node::InlineCode(InlineCode {
+                    value: "   ".into(),
+                    position: Some(Position::new(1, 1, 0, 1, 6, 5))
+                }),],
+                position: Some(Position::new(1, 1, 0, 1, 6, 5))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 6, 5))
+        }),
+        "should not strip any whitespace if `InlineCode` is all whitespace"
     );
 
     Ok(())

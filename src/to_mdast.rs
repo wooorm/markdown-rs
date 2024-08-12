@@ -1081,7 +1081,11 @@ fn on_exit_raw_text(context: &mut CompileContext) -> Result<(), message::Message
     }
 
     let value_bytes = value.as_bytes();
-    if value.len() > 2 && value_bytes[0] == b' ' && value_bytes[value.len() - 1] == b' ' {
+    if value.len() > 2
+        && value_bytes[0] == b' '
+        && value_bytes[value.len() - 1] == b' '
+        && !value_bytes.iter().all(|b| *b == b' ')
+    {
         value.remove(0);
         value.pop();
     }
