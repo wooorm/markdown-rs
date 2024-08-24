@@ -1,4 +1,4 @@
-use crate::mdast::{Node, Paragraph, Root};
+use crate::mdast::{Node, Paragraph, Root, Text};
 use alloc::{string::String, vec::Vec};
 
 #[allow(dead_code)]
@@ -152,22 +152,22 @@ pub enum ConstructName {
 }
 
 pub trait PhrasingParent {
-    fn children(&self) -> &Vec<Node>;
+    fn children(self) -> Vec<Node>;
 }
 
 pub trait FlowParent {
-    fn children(&self) -> &Vec<Node>;
+    fn children(self) -> Vec<Node>;
 }
 
 impl FlowParent for Root {
-    fn children(&self) -> &Vec<Node> {
-        &self.children
+    fn children(self) -> Vec<Node> {
+        self.children
     }
 }
 
 impl PhrasingParent for Paragraph {
-    fn children(&self) -> &Vec<Node> {
-        &self.children
+    fn children(self) -> Vec<Node> {
+        self.children
     }
 }
 
@@ -188,10 +188,11 @@ impl State {
         self.stack.pop();
     }
 
-    pub fn handle(mut self, node: Node) -> String {
+    pub fn handle(&mut self, node: Node) -> String {
         match node {
             Node::Root(root) => self.handle_root(root),
-            Node::Paragraph(paragarph) => self.handle_paragraph(paragarph),
+            Node::Paragraph(paragraph) => self.handle_paragraph(paragraph),
+            Node::Text(text) => self.handle_text(text),
             _ => panic!("Not handled yet"),
         }
     }
@@ -212,17 +213,57 @@ impl State {
         value
     }
 
-    fn container_phrasing<T: PhrasingParent>(&self, _parent: T) -> String {
+    fn container_phrasing<T: PhrasingParent>(&mut self, parent: T) -> String {
+        let mut results = Vec::new();
+
+        for (_, child) in parent.children().into_iter().enumerate() {
+            results.push(self.handle(child));
+        }
+
+        results.into_iter().collect()
+    }
+
+    fn container_flow<T: FlowParent>(&mut self, _parent: T) -> String {
         String::new()
     }
 
-    fn container_flow<T: FlowParent>(&self, _parent: T) -> String {
-        String::new()
+    fn handle_text(&self, text: Text) -> String {
+        self.safe(text.value)
+    }
+
+    fn safe(&self, value: String) -> String {
+        value
     }
 }
 
 pub fn serialize(tree: Node) -> String {
-    let state = State::new();
+    let mut state = State::new();
     let result = state.handle(tree);
     result
+}
+
+#[cfg(test)]
+mod init_tests {
+    use super::*;
+    use alloc::{string::String, vec};
+
+    use crate::mdast::{Node, Paragraph, Text};
+
+    #[test]
+    fn it_works_for_simple_text() {
+        let text_a = Node::Text(Text {
+            value: String::from("a"),
+            position: None,
+        });
+        let text_b = Node::Text(Text {
+            value: String::from("b"),
+            position: None,
+        });
+        let paragraph = Node::Paragraph(Paragraph {
+            children: vec![text_a, text_b],
+            position: None,
+        });
+        let actual = serialize(paragraph);
+        assert_eq!(actual, String::from("ab"));
+    }
 }
