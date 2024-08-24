@@ -42,6 +42,7 @@ mod resolve;
 mod state;
 mod subtokenize;
 mod to_html;
+mod to_markdown;
 mod to_mdast;
 mod tokenizer;
 mod util;
@@ -50,6 +51,7 @@ pub mod mdast; // To do: externalize?
 pub mod message; // To do: externalize.
 pub mod unist; // To do: externalize.
 
+use mdast::Node;
 #[doc(hidden)]
 pub use util::identifier::{id_cont, id_start};
 
@@ -158,4 +160,8 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, mess
     let (events, parse_state) = parser::parse(value, options)?;
     let node = to_mdast::compile(&events, parse_state.bytes)?;
     Ok(node)
+}
+
+pub fn to_markdown(tree: Node) -> String {
+    to_markdown::serialize(tree)
 }
