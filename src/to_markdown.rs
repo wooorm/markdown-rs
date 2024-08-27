@@ -249,7 +249,7 @@ impl State {
         let mut children_iter = parent.children().into_iter().peekable();
         let mut index = 0;
         // SAFETY : -1 is used to mark the absense of children, we make sure to never use this as
-        // an index before checking the presense of a child.
+        // an index before checking the presence of a child.
         self.index_stack.push(-1);
 
         let index_stack_size = self.index_stack.len();
