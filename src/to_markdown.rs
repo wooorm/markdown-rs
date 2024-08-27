@@ -1,4 +1,4 @@
-use crate::mdast::{Node, Paragraph, Root, Text};
+use crate::mdast::{Node, Paragraph, Root, Strong, Text};
 use alloc::{string::String, vec::Vec};
 
 #[allow(dead_code)]
@@ -151,6 +151,17 @@ pub enum ConstructName {
     TitleQuote,
 }
 
+pub trait PeekNode {
+    // @todo make it take a reference to the state options
+    fn handle_peek(&self) -> String;
+}
+
+impl PeekNode for Strong {
+    fn handle_peek(&self) -> String {
+        "*".into()
+    }
+}
+
 pub trait PhrasingParent {
     fn children(self) -> Vec<Node>;
 }
@@ -173,11 +184,26 @@ impl PhrasingParent for Paragraph {
 
 struct State {
     stack: Vec<ConstructName>,
+    index_stack: Vec<i64>,
+}
+
+struct Info<'a> {
+    before: &'a str,
+    after: &'a str,
+}
+
+impl<'a> Info<'a> {
+    pub fn new(before: &'a str, after: &'a str) -> Self {
+        Info { before, after }
+    }
 }
 
 impl State {
     pub fn new() -> Self {
-        State { stack: Vec::new() }
+        State {
+            stack: Vec::new(),
+            index_stack: Vec::new(),
+        }
     }
 
     fn enter(&mut self, name: ConstructName) {
@@ -188,24 +214,24 @@ impl State {
         self.stack.pop();
     }
 
-    pub fn handle(&mut self, node: Node) -> String {
+    pub fn handle(&mut self, node: Node, info: Info) -> String {
         match node {
-            Node::Root(root) => self.handle_root(root),
-            Node::Paragraph(paragraph) => self.handle_paragraph(paragraph),
-            Node::Text(text) => self.handle_text(text),
+            Node::Root(root) => self.handle_root(root, info),
+            Node::Paragraph(paragraph) => self.handle_paragraph(paragraph, info),
+            Node::Text(text) => self.handle_text(text, info),
             _ => panic!("Not handled yet"),
         }
     }
 
-    fn handle_root(&mut self, node: Root) -> String {
-        self.container_flow(node)
+    fn handle_root(&mut self, node: Root, info: Info) -> String {
+        self.container_flow(node, info)
     }
 
-    fn handle_paragraph(&mut self, node: Paragraph) -> String {
+    fn handle_paragraph(&mut self, node: Paragraph, info: Info) -> String {
         self.enter(ConstructName::Paragraph);
 
         self.enter(ConstructName::Phrasing);
-        let value = self.container_phrasing(node);
+        let value = self.container_phrasing(node, info);
         // exit phrasing
         self.exit();
         // exit paragarph
@@ -213,22 +239,60 @@ impl State {
         value
     }
 
-    fn container_phrasing<T: PhrasingParent>(&mut self, parent: T) -> String {
-        let mut results = Vec::new();
+    fn handle_text(&self, text: Text, _info: Info) -> String {
+        self.safe(text.value)
+    }
 
-        for (_, child) in parent.children().into_iter().enumerate() {
-            results.push(self.handle(child));
+    fn container_phrasing<T: PhrasingParent>(&mut self, parent: T, info: Info) -> String {
+        let mut results: Vec<String> = Vec::new();
+
+        let mut children_iter = parent.children().into_iter().peekable();
+        let mut index = 0;
+        // SAFETY : -1 is used to mark the absense of children, we make sure to never use this as
+        // an index before checking the presense of a child.
+        self.index_stack.push(-1);
+
+        let index_stack_size = self.index_stack.len();
+        while let Some(child) = children_iter.next() {
+            self.index_stack[index_stack_size - 1] = index;
+
+            let mut after: String = "".into();
+            if let Some(child_node) = children_iter.peek() {
+                after = match self.determine_first_char(child_node) {
+                    Some(after_char) => after_char,
+                    None => self
+                        .handle(child_node.clone(), Info::new("", ""))
+                        .chars()
+                        .next()
+                        .map(|c| c.into())
+                        .unwrap_or_default(),
+                };
+            }
+
+            if let Some(result) = results.last() {
+                results.push(self.handle(
+                    child,
+                    Info::new(&result[result.len() - 1..], after.as_ref()),
+                ));
+            } else {
+                results.push(self.handle(child, Info::new(info.before, after.as_ref())));
+            }
+
+            index += 1;
         }
-
+        self.index_stack.pop();
         results.into_iter().collect()
     }
 
-    fn container_flow<T: FlowParent>(&mut self, _parent: T) -> String {
-        String::new()
+    fn determine_first_char(&self, node: &Node) -> Option<String> {
+        match node {
+            Node::Strong(strong) => Some(strong.handle_peek()),
+            _ => None,
+        }
     }
 
-    fn handle_text(&self, text: Text) -> String {
-        self.safe(text.value)
+    fn container_flow<T: FlowParent>(&mut self, _parent: T, _info: Info) -> String {
+        String::new()
     }
 
     fn safe(&self, value: String) -> String {
@@ -238,7 +302,7 @@ impl State {
 
 pub fn serialize(tree: Node) -> String {
     let mut state = State::new();
-    let result = state.handle(tree);
+    let result = state.handle(tree, Info::new("\n".into(), "\n".into()));
     result
 }
 
