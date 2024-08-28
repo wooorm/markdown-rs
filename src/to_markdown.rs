@@ -167,6 +167,10 @@ impl State {
         self.safe(text.value.clone())
     }
 
+    fn safe(&self, value: String) -> String {
+        value
+    }
+
     fn container_phrasing<T: PhrasingParent>(&mut self, parent: &T, info: Info) -> String {
         let mut results: Vec<String> = Vec::new();
         let mut children_iter = parent.children().into_iter().peekable();
@@ -243,12 +247,8 @@ impl State {
         results.into_iter().collect()
     }
 
-    fn safe(&self, value: String) -> String {
-        value
-    }
-
     fn between<T: FlowParent>(&self, left: &Node, right: &Node, parent: &T) -> String {
-        match self.join_default(left, right, parent) {
+        match self.join_defaults(left, right, parent) {
             Some(Join::Number(num)) => {
                 if num == 1 {
                     "\n\n".into()
@@ -267,7 +267,7 @@ impl State {
         }
     }
 
-    fn join_default<T: FlowParent>(&self, left: &Node, right: &Node, parent: &T) -> Option<Join> {
+    fn join_defaults<T: FlowParent>(&self, left: &Node, right: &Node, parent: &T) -> Option<Join> {
         if format_code_as_indented(right, self)
             && (matches!(left, Node::List(_)) || format_code_as_indented(left, self))
         {
