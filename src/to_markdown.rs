@@ -39,7 +39,7 @@ pub enum ConstructName {
 }
 
 pub trait PeekNode {
-    // @todo make it take a reference to the state options
+    // TODO make it take a reference to the state options
     fn handle_peek(&self) -> String;
 }
 
@@ -72,17 +72,28 @@ impl FlowParent for List {
     }
 }
 
-impl FlowParent for Root {
-    fn children(&self) -> &Vec<Node> {
-        &self.children
+macro_rules! impl_PhrasingParent {
+    (for $($t:ty),+) => {
+        $(impl PhrasingParent for $t {
+            fn children(&self) -> &Vec<Node> {
+                &self.children
+            }
+        })*
     }
 }
 
-impl PhrasingParent for Paragraph {
-    fn children(&self) -> &Vec<Node> {
-        &self.children
+macro_rules! impl_FlowParent {
+    (for $($t:ty),+) => {
+        $(impl FlowParent for $t {
+            fn children(&self) -> &Vec<Node> {
+                &self.children
+            }
+        })*
     }
 }
+
+impl_PhrasingParent!(for Paragraph);
+impl_FlowParent!(for Root);
 
 pub enum Join {
     Number(usize),
