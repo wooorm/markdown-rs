@@ -27,6 +27,7 @@ log = ["dep:log"]
 log = { version = "0.4", optional = true }
 unicode-id = { version = "0.3", features = ["no_std"] }
 serde = { version = "1", features = ["derive"], optional = true }
+regex = { version = "1.7.3" }
 
 [dev-dependencies]
 env_logger = "0.11"
