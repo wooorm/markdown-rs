@@ -5,9 +5,14 @@ use crate::{
         format_heading_as_setext::format_heading_as_settext,
     },
 };
-use alloc::{string::String, vec::Vec};
+use alloc::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub enum ConstructName {
     Autolink,
     Blockquote,
@@ -107,6 +112,348 @@ pub struct State {
     // We don't use index_stack values to index into any child.
     pub index_stack: Vec<i64>,
     pub bullet_last_used: Option<String>,
+    pub r#unsafe: Vec<Unsafe>,
+}
+
+#[allow(dead_code)]
+pub struct Unsafe {
+    pub character: char,
+    pub in_construct: Option<Construct>,
+    pub not_in_construct: Option<Construct>,
+    pub before: Option<String>,
+    pub after: Option<String>,
+    pub at_break: Option<bool>,
+}
+
+#[allow(dead_code)]
+pub enum Construct {
+    List(Vec<ConstructName>),
+    Single(ConstructName),
+}
+
+impl Unsafe {
+    pub fn new(
+        character: char,
+        before: Option<String>,
+        after: Option<String>,
+        in_construct: Option<Construct>,
+        not_in_construct: Option<Construct>,
+        at_break: Option<bool>,
+    ) -> Unsafe {
+        Unsafe {
+            character,
+            in_construct,
+            not_in_construct,
+            before,
+            after,
+            at_break,
+        }
+    }
+
+    pub fn get_default_unsafe() -> Vec<Unsafe> {
+        let full_phrasing_spans = vec![
+            ConstructName::Autolink,
+            ConstructName::DestinationLiteral,
+            ConstructName::DestinationRaw,
+            ConstructName::Reference,
+            ConstructName::TitleQuote,
+            ConstructName::TitleApostrophe,
+        ];
+
+        vec![
+            Self::new(
+                '\t',
+                None,
+                r"[\\r\\n]".to_string().into(),
+                Construct::Single(ConstructName::Phrasing).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '\t',
+                r"[\\r\\n]".to_string().into(),
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '\t',
+                None,
+                None,
+                Construct::List(vec![
+                    ConstructName::CodeFencedLangGraveAccent,
+                    ConstructName::CodeFencedLangTilde,
+                ])
+                .into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '\r',
+                None,
+                None,
+                Construct::List(vec![
+                    ConstructName::CodeFencedLangGraveAccent,
+                    ConstructName::CodeFencedLangTilde,
+                    ConstructName::CodeFencedMetaGraveAccent,
+                    ConstructName::CodeFencedMetaTilde,
+                    ConstructName::DestinationLiteral,
+                    ConstructName::HeadingAtx,
+                ])
+                .into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '\n',
+                None,
+                None,
+                Construct::List(vec![
+                    ConstructName::CodeFencedLangGraveAccent,
+                    ConstructName::CodeFencedLangTilde,
+                    ConstructName::CodeFencedMetaGraveAccent,
+                    ConstructName::CodeFencedMetaTilde,
+                    ConstructName::DestinationLiteral,
+                    ConstructName::HeadingAtx,
+                ])
+                .into(),
+                None,
+                None,
+            ),
+            Self::new(
+                ' ',
+                None,
+                r"[\\r\\n]".to_string().into(),
+                Construct::Single(ConstructName::Phrasing).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                ' ',
+                r"[\\r\\n]".to_string().into(),
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                ' ',
+                None,
+                None,
+                Construct::List(vec![
+                    ConstructName::CodeFencedLangGraveAccent,
+                    ConstructName::CodeFencedLangTilde,
+                ])
+                .into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '!',
+                None,
+                r"\\[".to_string().into(),
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new(
+                '"',
+                None,
+                None,
+                Construct::Single(ConstructName::TitleQuote).into(),
+                None,
+                None,
+            ),
+            Self::new('#', None, None, None, None, Some(true)),
+            Self::new(
+                '&',
+                None,
+                "[#A-Za-z]".to_string().into(),
+                Construct::Single(ConstructName::Phrasing).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '\'',
+                None,
+                None,
+                Construct::Single(ConstructName::TitleApostrophe).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '(',
+                None,
+                None,
+                Construct::Single(ConstructName::DestinationRaw).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '(',
+                r"\\]".to_string().into(),
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new(
+                ')',
+                r"\\d+".to_string().into(),
+                None,
+                None,
+                None,
+                Some(true),
+            ),
+            Self::new(
+                ')',
+                None,
+                None,
+                Construct::Single(ConstructName::DestinationRaw).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '*',
+                None,
+                r"(?:[ \t\r\n*])".to_string().into(),
+                None,
+                None,
+                Some(true),
+            ),
+            Self::new(
+                '*',
+                None,
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new(
+                '+',
+                None,
+                r"(?:[ \t\r\n])".to_string().into(),
+                None,
+                None,
+                Some(true),
+            ),
+            Self::new(
+                '-',
+                None,
+                r"(?:[ \t\r\n-])".to_string().into(),
+                None,
+                None,
+                Some(true),
+            ),
+            Self::new(
+                '.',
+                r"\\d+".to_string().into(),
+                r"(?:[ \t\r\n]|$)".to_string().into(),
+                None,
+                None,
+                Some(true),
+            ),
+            Self::new(
+                '<',
+                None,
+                r"[!/?A-Za-z]".to_string().into(),
+                None,
+                None,
+                Some(true),
+            ),
+            Self::new(
+                '<',
+                None,
+                r"[!/?A-Za-z]".to_string().into(),
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new(
+                '<',
+                None,
+                None,
+                Construct::Single(ConstructName::DestinationLiteral).into(),
+                None,
+                None,
+            ),
+            Self::new('=', None, None, None, None, Some(true)),
+            Self::new('>', None, None, None, None, Some(true)),
+            Self::new(
+                '>',
+                None,
+                None,
+                Construct::Single(ConstructName::DestinationLiteral).into(),
+                None,
+                Some(true),
+            ),
+            Self::new('[', None, None, None, None, Some(true)),
+            Self::new(
+                '[',
+                None,
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new(
+                '[',
+                None,
+                None,
+                Construct::List(vec![ConstructName::Label, ConstructName::Reference]).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '\\',
+                None,
+                r"[\\r\\n]".to_string().into(),
+                Construct::Single(ConstructName::Phrasing).into(),
+                None,
+                None,
+            ),
+            Self::new(
+                ']',
+                None,
+                None,
+                Construct::List(vec![ConstructName::Label, ConstructName::Reference]).into(),
+                None,
+                None,
+            ),
+            Self::new('_', None, None, None, None, Some(true)),
+            Self::new(
+                '_',
+                None,
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new('`', None, None, None, None, Some(true)),
+            Self::new(
+                '`',
+                None,
+                None,
+                Construct::List(vec![
+                    ConstructName::CodeFencedLangGraveAccent,
+                    ConstructName::CodeFencedMetaGraveAccent,
+                ])
+                .into(),
+                None,
+                None,
+            ),
+            Self::new(
+                '`',
+                None,
+                None,
+                Construct::Single(ConstructName::Phrasing).into(),
+                Construct::List(full_phrasing_spans.clone()).into(),
+                None,
+            ),
+            Self::new('~', None, None, None, None, Some(true)),
+        ]
+    }
 }
 
 #[allow(dead_code)]
@@ -127,6 +474,7 @@ impl State {
             stack: Vec::new(),
             index_stack: Vec::new(),
             bullet_last_used: None,
+            r#unsafe: Unsafe::get_default_unsafe(),
         }
     }
 
@@ -167,8 +515,8 @@ impl State {
         self.safe(text.value.clone())
     }
 
-    fn safe(&self, value: String) -> String {
-        value
+    fn safe(&self, input: String) -> String {
+        input
     }
 
     fn container_phrasing<T: PhrasingParent>(&mut self, parent: &T, info: Info) -> String {

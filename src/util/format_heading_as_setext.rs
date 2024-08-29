@@ -38,7 +38,7 @@ fn include_literal_with_break(node: &Node, state: &State, regex: &Regex) -> bool
         Node::MdxFlowExpression(x) => regex.is_match(&x.value),
         _ => {
             if let Some(children) = node.children() {
-                for child in children.into_iter() {
+                for child in children.iter() {
                     if include_literal_with_break(child, state, regex) {
                         return true;
                     }
