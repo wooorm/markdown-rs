@@ -4,12 +4,12 @@ use regex::Regex;
 use crate::{mdast::Node, to_markdown::State};
 
 pub fn format_heading_as_settext(node: &Node, state: &State) -> bool {
-    let line_berak = Regex::new(r"\r?\n|\r").unwrap();
+    let line_break = Regex::new(r"\r?\n|\r").unwrap();
     match node {
         Node::Heading(heading) => {
             let mut literal_with_break = false;
             for child in heading.children.iter() {
-                if include_literal_with_break(child, state, &line_berak) {
+                if include_literal_with_break(child, state, &line_break) {
                     literal_with_break = true;
                     break;
                 }
