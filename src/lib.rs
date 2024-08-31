@@ -162,6 +162,6 @@ pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, mess
     Ok(node)
 }
 
-pub fn to_markdown(tree: Node) -> String {
+pub fn to_markdown(tree: &Node) -> String {
     to_markdown::serialize(tree)
 }

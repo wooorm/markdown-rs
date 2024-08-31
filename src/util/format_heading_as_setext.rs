@@ -3,13 +3,13 @@ use regex::Regex;
 
 use crate::{mdast::Node, to_markdown::State};
 
-pub fn format_heading_as_settext(node: &Node, state: &State) -> bool {
+pub fn format_heading_as_settext(node: &Node, _state: &State) -> bool {
     let line_break = Regex::new(r"\r?\n|\r").unwrap();
     match node {
         Node::Heading(heading) => {
             let mut literal_with_break = false;
-            for child in heading.children.iter() {
-                if include_literal_with_break(child, state, &line_break) {
+            for child in &heading.children {
+                if include_literal_with_break(child, &line_break) {
                     literal_with_break = true;
                     break;
                 }
@@ -22,7 +22,7 @@ pub fn format_heading_as_settext(node: &Node, state: &State) -> bool {
     }
 }
 
-fn include_literal_with_break(node: &Node, state: &State, regex: &Regex) -> bool {
+fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
     match node {
         Node::Break(_) => true,
         Node::MdxjsEsm(x) => regex.is_match(&x.value),
@@ -38,13 +38,14 @@ fn include_literal_with_break(node: &Node, state: &State, regex: &Regex) -> bool
         Node::MdxFlowExpression(x) => regex.is_match(&x.value),
         _ => {
             if let Some(children) = node.children() {
-                for child in children.iter() {
-                    if include_literal_with_break(child, state, regex) {
+                for child in children {
+                    if include_literal_with_break(child, regex) {
                         return true;
                     }
                 }
             }
-            return false;
+
+            false
         }
     }
 }

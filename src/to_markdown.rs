@@ -66,7 +66,7 @@ pub trait FlowParent {
 
     /// One or more of its children are separated with a blank line from its
     /// siblings (when `true`), or not (when `false`).
-    fn spread(&self) -> Option<bool> {
+    fn spreadable(&self) -> Option<bool> {
         None
     }
 }
@@ -76,7 +76,7 @@ impl FlowParent for List {
         &self.children
     }
 
-    fn spread(&self) -> Option<bool> {
+    fn spreadable(&self) -> Option<bool> {
         Some(self.spread)
     }
 }
@@ -492,7 +492,7 @@ impl<'a> State<'a> {
         self.stack.pop();
     }
 
-    pub fn handle(&mut self, node: &Node, info: Info) -> String {
+    pub fn handle(&mut self, node: &Node, info: &Info) -> String {
         match node {
             Node::Root(root) => self.handle_root(root, info),
             Node::Paragraph(paragraph) => self.handle_paragraph(paragraph, info),
@@ -501,11 +501,11 @@ impl<'a> State<'a> {
         }
     }
 
-    fn handle_root(&mut self, node: &Root, info: Info) -> String {
+    fn handle_root(&mut self, node: &Root, info: &Info) -> String {
         self.container_flow(node, info)
     }
 
-    fn handle_paragraph(&mut self, node: &Paragraph, info: Info) -> String {
+    fn handle_paragraph(&mut self, node: &Paragraph, info: &Info) -> String {
         self.enter(ConstructName::Paragraph);
 
         self.enter(ConstructName::Phrasing);
@@ -517,27 +517,24 @@ impl<'a> State<'a> {
         value
     }
 
-    fn handle_text(&mut self, text: &Text, info: Info) -> String {
+    fn handle_text(&mut self, text: &Text, info: &Info) -> String {
         self.safe(
-            text.value.clone(),
+            &text.value,
             &SafeConfig::new(Some(info.before), Some(info.after), None),
         )
     }
 
-    fn safe(&mut self, input: String, config: &SafeConfig) -> String {
+    fn safe(&mut self, input: &String, config: &SafeConfig) -> String {
         let value = format!("{}{}{}", config.before, input, config.after);
         let mut positions: Vec<usize> = Vec::new();
         let mut result: String = String::new();
         let mut infos: BTreeMap<usize, EscapeInfos> = BTreeMap::new();
-        let mut unsafe_iter = self.r#unsafe.iter_mut();
 
-        while let Some(pattern) = unsafe_iter.next() {
+        for pattern in &mut self.r#unsafe {
             if !pattern_in_scope(&self.stack, pattern) {
                 continue;
             }
-
             Self::compile_pattern(pattern);
-
             if let Some(regex) = &pattern.compiled {
                 for m in regex.captures_iter(&value) {
                     let full_match = m.get(0).unwrap();
@@ -611,10 +608,10 @@ impl<'a> State<'a> {
                 match &config.encode {
                     Some(encode) => {
                         if encode.contains(&char_at_pos.as_str()) {
-                            result.push_str(r"\");
+                            result.push('\\');
                         }
                     }
-                    None => result.push_str(r"\"),
+                    None => result.push('\\'),
                 }
             } else if let Some(character) = value.chars().nth(*position) {
                 let code = u32::from(character);
@@ -645,10 +642,10 @@ impl<'a> State<'a> {
                     .map_or(String::new(), |before| format!("(?:{})", before))
             );
 
-            let before = if !before.is_empty() {
-                format!("({})", before)
-            } else {
+            let before = if before.is_empty() {
                 String::new()
+            } else {
+                format!("({})", before)
             };
 
             let after = pattern
@@ -669,9 +666,9 @@ impl<'a> State<'a> {
         }
     }
 
-    fn container_phrasing<T: PhrasingParent>(&mut self, parent: &T, info: Info) -> String {
+    fn container_phrasing<T: PhrasingParent>(&mut self, parent: &T, info: &Info) -> String {
         let mut results: String = String::new();
-        let mut children_iter = parent.children().into_iter().peekable();
+        let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
 
         self.index_stack.push(-1);
@@ -682,10 +679,10 @@ impl<'a> State<'a> {
             }
 
             let after = if let Some(child) = children_iter.peek() {
-                match self.determine_first_char(child) {
+                match Self::determine_first_char(child) {
                     Some(after_char) => after_char,
                     None => self
-                        .handle(child, Info::new("", ""))
+                        .handle(child, &Info::new("", ""))
                         .chars()
                         .nth(0)
                         .unwrap_or_default()
@@ -695,13 +692,13 @@ impl<'a> State<'a> {
                 String::from(info.after)
             };
 
-            if !results.is_empty() {
+            if results.is_empty() {
+                results.push_str(&self.handle(child, &Info::new(info.before, after.as_ref())));
+            } else {
                 results.push_str(&self.handle(
                     child,
-                    Info::new(&results[results.len() - 1..], after.as_ref()),
+                    &Info::new(&results[results.len() - 1..], after.as_ref()),
                 ));
-            } else {
-                results.push_str(&self.handle(child, Info::new(info.before, after.as_ref())));
             }
 
             index += 1;
@@ -712,16 +709,16 @@ impl<'a> State<'a> {
         results
     }
 
-    fn determine_first_char(&self, node: &Node) -> Option<String> {
+    fn determine_first_char(node: &Node) -> Option<String> {
         match node {
             Node::Strong(strong) => Some(strong.handle_peek()),
             _ => None,
         }
     }
 
-    fn container_flow<T: FlowParent>(&mut self, parent: &T, _info: Info) -> String {
+    fn container_flow<T: FlowParent>(&mut self, parent: &T, _info: &Info) -> String {
         let mut results: String = String::new();
-        let mut children_iter = parent.children().into_iter().peekable();
+        let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
 
         self.index_stack.push(-1);
@@ -735,10 +732,10 @@ impl<'a> State<'a> {
                 self.bullet_last_used = None;
             }
 
-            results.push_str(&self.handle(child, Info::new("\n", "\n")));
+            results.push_str(&self.handle(child, &Info::new("\n", "\n")));
 
             if let Some(next_child) = children_iter.peek() {
-                results.push_str(&self.between(&child, next_child, parent));
+                results.push_str(&self.between(child, next_child, parent));
             }
 
             index += 1;
@@ -773,7 +770,7 @@ impl<'a> State<'a> {
             return Some(Join::Bool(false));
         }
 
-        if let Some(spread) = parent.spread() {
+        if let Some(spread) = parent.spreadable() {
             if matches!(left, Node::Paragraph(_)) && Self::matches((left, right))
                 || matches!(right, Node::Definition(_))
                 || format_heading_as_settext(right, self)
@@ -783,9 +780,9 @@ impl<'a> State<'a> {
 
             if spread {
                 return Some(Join::Number(1));
-            } else {
-                return Some(Join::Number(0));
             }
+
+            return Some(Join::Number(0));
         }
 
         Some(Join::Bool(true))
@@ -814,12 +811,12 @@ fn escape_backslashes(value: &str, after: &str) -> String {
     let positions: Vec<usize> = expression.find_iter(&whole).map(|m| m.start()).collect();
     let mut start = 0;
 
-    for position in positions.iter() {
+    for position in &positions {
         if start != *position {
             results.push_str(&value[start..*position]);
         }
 
-        results.push_str(r"\");
+        results.push('\\');
 
         start = *position;
     }
@@ -829,43 +826,43 @@ fn escape_backslashes(value: &str, after: &str) -> String {
     results
 }
 
-fn pattern_in_scope(stack: &Vec<ConstructName>, pattern: &Unsafe) -> bool {
+fn pattern_in_scope(stack: &[ConstructName], pattern: &Unsafe) -> bool {
     list_in_scope(stack, &pattern.in_construct, true)
         && !list_in_scope(stack, &pattern.not_in_construct, false)
 }
 
 // This could use a better name
-fn list_in_scope(stack: &Vec<ConstructName>, list: &Option<Construct>, none: bool) -> bool {
+fn list_in_scope(stack: &[ConstructName], list: &Option<Construct>, none: bool) -> bool {
     let Some(list) = list else {
         return none;
     };
     match list {
         Construct::Single(construct_name) => {
-            if stack.contains(&construct_name) {
+            if stack.contains(construct_name) {
                 return true;
             }
 
-            return false;
+            false
         }
         Construct::List(constructs_names) => {
-            if constructs_names.len() == 0 {
+            if constructs_names.is_empty() {
                 return none;
             }
 
-            for construct_name in constructs_names.iter() {
+            for construct_name in constructs_names {
                 if stack.contains(construct_name) {
                     return true;
                 }
             }
 
-            return false;
+            false
         }
     }
 }
 
-pub fn serialize(tree: Node) -> String {
+pub fn serialize(tree: &Node) -> String {
     let mut state = State::new();
-    let result = state.handle(&tree, Info::new("\n".into(), "\n".into()));
+    let result = state.handle(tree, &Info::new("\n", "\n"));
     result
 }
 
@@ -890,7 +887,7 @@ mod init_tests {
             children: vec![text_a, text_b],
             position: None,
         });
-        let actual = serialize(paragraph);
+        let actual = serialize(&paragraph);
         assert_eq!(actual, String::from("ab"));
     }
 
@@ -904,7 +901,7 @@ mod init_tests {
             children: vec![text_a],
             position: None,
         });
-        let actual = serialize(paragraph);
+        let actual = serialize(&paragraph);
         assert_eq!(actual, "!\\[]\\(a.jpg)");
     }
 }
