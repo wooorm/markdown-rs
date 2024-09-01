@@ -1,10 +1,4 @@
-use crate::{
-    mdast::{List, Node, Paragraph, Root, Strong, Text},
-    util::{
-        format_code_as_indented::format_code_as_indented,
-        format_heading_as_setext::format_heading_as_settext,
-    },
-};
+use crate::mdast::{List, Node, Paragraph, Root, Strong, Text};
 use alloc::{
     collections::BTreeMap,
     format,
@@ -101,7 +95,7 @@ macro_rules! impl_FlowParent {
     }
 }
 
-impl_PhrasingParent!(for Paragraph);
+impl_PhrasingParent!(for Paragraph, Strong);
 impl_FlowParent!(for Root);
 
 pub enum Join {
@@ -112,7 +106,7 @@ pub enum Join {
 #[allow(dead_code)]
 pub struct State<'a> {
     pub stack: Vec<ConstructName>,
-    // SAFETY : -1 is used to mark the absense of children.
+    // We use i64 for index_stack because -1 is used to mark the absense of children.
     // We don't use index_stack values to index into any child.
     pub index_stack: Vec<i64>,
     pub bullet_last_used: Option<String>,
@@ -497,6 +491,7 @@ impl<'a> State<'a> {
             Node::Root(root) => self.handle_root(root, info),
             Node::Paragraph(paragraph) => self.handle_paragraph(paragraph, info),
             Node::Text(text) => self.handle_text(text, info),
+            Node::Strong(strong) => self.handle_strong(strong, info),
             _ => panic!("Not handled yet"),
         }
     }
@@ -522,6 +517,20 @@ impl<'a> State<'a> {
             &text.value,
             &SafeConfig::new(Some(info.before), Some(info.after), None),
         )
+    }
+
+    fn handle_strong(&mut self, node: &Strong, info: &Info) -> String {
+        let marker = check_strong(self);
+
+        self.enter(ConstructName::Strong);
+
+        let mut value = format!("{}{}", marker, marker);
+        value.push_str(&self.container_phrasing(node, info));
+        value.push_str(&format!("{}{}", marker, marker));
+
+        self.exit();
+
+        value
     }
 
     fn safe(&mut self, input: &String, config: &SafeConfig) -> String {
@@ -559,8 +568,8 @@ impl<'a> State<'a> {
                             }
                         }
                     } else {
-                        positions.push(position);
                         infos.insert(position, EscapeInfos { before, after });
+                        positions.push(position);
                     }
                 }
             }
@@ -579,7 +588,7 @@ impl<'a> State<'a> {
             // If this character is supposed to be escaped because it has a condition on
             // the next character, and the next character is definitly being escaped,
             // then skip this escape.
-            // SAFETY This will never panic because we're checking the correct bounds, and we
+            // This will never panic because we're checking the correct bounds, and we
             // gurantee to have the positions as key in the infos map before reaching this
             // execution.
             if index + 1 < positions.len()
@@ -735,31 +744,40 @@ impl<'a> State<'a> {
             results.push_str(&self.handle(child, &Info::new("\n", "\n")));
 
             if let Some(next_child) = children_iter.peek() {
-                results.push_str(&self.between(child, next_child, parent));
+                self.set_between(child, next_child, parent, &mut results);
             }
 
             index += 1;
         }
+
+        self.index_stack.pop();
+
         results
     }
 
-    fn between<T: FlowParent>(&self, left: &Node, right: &Node, parent: &T) -> String {
+    fn set_between<T: FlowParent>(
+        &self,
+        left: &Node,
+        right: &Node,
+        parent: &T,
+        results: &mut String,
+    ) {
         match self.join_defaults(left, right, parent) {
             Some(Join::Number(num)) => {
                 if num == 1 {
-                    "\n\n".into()
+                    results.push_str("\n\n");
                 } else {
-                    "\n".repeat(1 + num)
+                    results.push_str("\n".repeat(1 + num).as_ref());
                 }
             }
             Some(Join::Bool(bool)) => {
                 if bool {
-                    "\n\n".into()
+                    results.push_str("\n\n");
                 } else {
-                    "\n\n<!---->\n\n".into()
+                    results.push_str("\n\n<!---->\n\n");
                 }
             }
-            None => "\n\n".into(),
+            None => results.push_str("\n\n"),
         }
     }
 
@@ -801,6 +819,10 @@ impl<'a> State<'a> {
                 | (Node::Table(_), Node::Table(_))
         )
     }
+}
+
+fn check_strong(_state: &State) -> String {
+    "*".into()
 }
 
 fn escape_backslashes(value: &str, after: &str) -> String {
@@ -860,6 +882,67 @@ fn list_in_scope(stack: &[ConstructName], list: &Option<Construct>, none: bool) 
     }
 }
 
+pub fn format_code_as_indented(node: &Node, _state: &State) -> bool {
+    match node {
+        Node::Code(code) => {
+            let white_space = Regex::new(r"[^ \r\n]").unwrap();
+            let blank = Regex::new(r"^[\t ]*(?:[\r\n]|$)|(?:^|[\r\n])[\t ]*$").unwrap();
+            !code.value.is_empty()
+                && code.lang.is_none()
+                && white_space.is_match(&code.value)
+                && !blank.is_match(&code.value)
+        }
+        _ => false,
+    }
+}
+
+pub fn format_heading_as_settext(node: &Node, _state: &State) -> bool {
+    let line_break = Regex::new(r"\r?\n|\r").unwrap();
+    match node {
+        Node::Heading(heading) => {
+            let mut literal_with_break = false;
+            for child in &heading.children {
+                if include_literal_with_break(child, &line_break) {
+                    literal_with_break = true;
+                    break;
+                }
+            }
+
+            heading.depth == 0
+                || heading.depth < 3 && !node.to_string().is_empty() && literal_with_break
+        }
+        _ => false,
+    }
+}
+
+fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
+    match node {
+        Node::Break(_) => true,
+        Node::MdxjsEsm(x) => regex.is_match(&x.value),
+        Node::Toml(x) => regex.is_match(&x.value),
+        Node::Yaml(x) => regex.is_match(&x.value),
+        Node::InlineCode(x) => regex.is_match(&x.value),
+        Node::InlineMath(x) => regex.is_match(&x.value),
+        Node::MdxTextExpression(x) => regex.is_match(&x.value),
+        Node::Html(x) => regex.is_match(&x.value),
+        Node::Text(x) => regex.is_match(&x.value),
+        Node::Code(x) => regex.is_match(&x.value),
+        Node::Math(x) => regex.is_match(&x.value),
+        Node::MdxFlowExpression(x) => regex.is_match(&x.value),
+        _ => {
+            if let Some(children) = node.children() {
+                for child in children {
+                    if include_literal_with_break(child, regex) {
+                        return true;
+                    }
+                }
+            }
+
+            false
+        }
+    }
+}
+
 pub fn serialize(tree: &Node) -> String {
     let mut state = State::new();
     let result = state.handle(tree, &Info::new("\n", "\n"));
@@ -903,5 +986,24 @@ mod init_tests {
         });
         let actual = serialize(&paragraph);
         assert_eq!(actual, "!\\[]\\(a.jpg)");
+    }
+
+    #[test]
+    fn it_will_strong() {
+        let text_a = Node::Text(Text {
+            value: String::from("a"),
+            position: None,
+        });
+
+        let text_b = Node::Text(Text {
+            value: String::from("b"),
+            position: None,
+        });
+        let strong = Node::Strong(Strong {
+            children: vec![text_a, text_b],
+            position: None,
+        });
+        let actual = serialize(&strong);
+        assert_eq!(actual, "**ab**");
     }
 }
