@@ -10,7 +10,7 @@ use regex::Regex;
 
 #[allow(dead_code)]
 #[derive(Clone, PartialEq)]
-pub enum ConstructName {
+enum ConstructName {
     Autolink,
     Blockquote,
     CodeIndented,
@@ -40,7 +40,7 @@ pub enum ConstructName {
     TitleQuote,
 }
 
-pub trait PeekNode {
+trait PeekNode {
     // TODO make it take a reference to the state options
     fn handle_peek(&self) -> String;
 }
@@ -51,11 +51,11 @@ impl PeekNode for Strong {
     }
 }
 
-pub trait PhrasingParent {
+trait PhrasingParent {
     fn children(&self) -> &Vec<Node>;
 }
 
-pub trait FlowParent {
+trait FlowParent {
     fn children(&self) -> &Vec<Node>;
 
     /// One or more of its children are separated with a blank line from its
@@ -98,41 +98,41 @@ macro_rules! impl_FlowParent {
 impl_PhrasingParent!(for Paragraph, Strong);
 impl_FlowParent!(for Root);
 
-pub enum Join {
+enum Join {
     Number(usize),
     Bool(bool),
 }
 
 #[allow(dead_code)]
-pub struct State<'a> {
-    pub stack: Vec<ConstructName>,
+struct State<'a> {
+    stack: Vec<ConstructName>,
     // We use i64 for index_stack because -1 is used to mark the absense of children.
     // We don't use index_stack values to index into any child.
-    pub index_stack: Vec<i64>,
-    pub bullet_last_used: Option<String>,
-    pub r#unsafe: Vec<Unsafe<'a>>,
+    index_stack: Vec<i64>,
+    bullet_last_used: Option<String>,
+    r#unsafe: Vec<Unsafe<'a>>,
 }
 
 #[allow(dead_code)]
-pub struct Unsafe<'a> {
-    pub character: &'a str,
-    pub in_construct: Option<Construct>,
-    pub not_in_construct: Option<Construct>,
-    pub before: Option<&'a str>,
-    pub after: Option<&'a str>,
-    pub at_break: Option<bool>,
+struct Unsafe<'a> {
+    character: &'a str,
+    in_construct: Option<Construct>,
+    not_in_construct: Option<Construct>,
+    before: Option<&'a str>,
+    after: Option<&'a str>,
+    at_break: Option<bool>,
     compiled: Option<Regex>,
 }
 
 #[allow(dead_code)]
 // This could use a better name.
-pub enum Construct {
+enum Construct {
     List(Vec<ConstructName>),
     Single(ConstructName),
 }
 
 impl<'a> Unsafe<'a> {
-    pub fn new(
+    fn new(
         character: &'a str,
         before: Option<&'a str>,
         after: Option<&'a str>,
@@ -151,7 +151,7 @@ impl<'a> Unsafe<'a> {
         }
     }
 
-    pub fn get_default_unsafe() -> Vec<Self> {
+    fn get_default_unsafe() -> Vec<Self> {
         let full_phrasing_spans = vec![
             ConstructName::Autolink,
             ConstructName::DestinationLiteral,
@@ -421,40 +421,36 @@ impl<'a> Unsafe<'a> {
         ]
     }
 
-    pub fn compiled(&self) -> bool {
+    fn compiled(&self) -> bool {
         self.compiled.is_some()
     }
 
-    pub fn set_compiled(&mut self, regex_pattern: Regex) {
+    fn set_compiled(&mut self, regex_pattern: Regex) {
         self.compiled = Some(regex_pattern);
     }
 }
 
 #[allow(dead_code)]
-pub struct Info<'a> {
-    pub before: &'a str,
-    pub after: &'a str,
+struct Info<'a> {
+    before: &'a str,
+    after: &'a str,
 }
 
 impl<'a> Info<'a> {
-    pub fn new(before: &'a str, after: &'a str) -> Self {
+    fn new(before: &'a str, after: &'a str) -> Self {
         Info { before, after }
     }
 }
 
 #[allow(dead_code)]
-pub struct SafeConfig<'a> {
-    pub before: &'a str,
-    pub after: &'a str,
-    pub encode: Option<Vec<&'a str>>,
+struct SafeConfig<'a> {
+    before: &'a str,
+    after: &'a str,
+    encode: Option<Vec<&'a str>>,
 }
 
 impl<'a> SafeConfig<'a> {
-    pub fn new(
-        before: Option<&'a str>,
-        after: Option<&'a str>,
-        encode: Option<Vec<&'a str>>,
-    ) -> Self {
+    fn new(before: Option<&'a str>, after: Option<&'a str>, encode: Option<Vec<&'a str>>) -> Self {
         SafeConfig {
             before: before.unwrap_or(""),
             after: after.unwrap_or(""),
@@ -469,7 +465,7 @@ struct EscapeInfos {
 }
 
 impl<'a> State<'a> {
-    pub fn new() -> Self {
+    fn new() -> Self {
         State {
             stack: Vec::new(),
             index_stack: Vec::new(),
@@ -486,7 +482,7 @@ impl<'a> State<'a> {
         self.stack.pop();
     }
 
-    pub fn handle(&mut self, node: &Node, info: &Info) -> String {
+    fn handle(&mut self, node: &Node, info: &Info) -> String {
         match node {
             Node::Root(root) => self.handle_root(root, info),
             Node::Paragraph(paragraph) => self.handle_paragraph(paragraph, info),
@@ -882,7 +878,7 @@ fn list_in_scope(stack: &[ConstructName], list: &Option<Construct>, none: bool) 
     }
 }
 
-pub fn format_code_as_indented(node: &Node, _state: &State) -> bool {
+fn format_code_as_indented(node: &Node, _state: &State) -> bool {
     match node {
         Node::Code(code) => {
             let white_space = Regex::new(r"[^ \r\n]").unwrap();
@@ -896,7 +892,7 @@ pub fn format_code_as_indented(node: &Node, _state: &State) -> bool {
     }
 }
 
-pub fn format_heading_as_settext(node: &Node, _state: &State) -> bool {
+fn format_heading_as_settext(node: &Node, _state: &State) -> bool {
     let line_break = Regex::new(r"\r?\n|\r").unwrap();
     match node {
         Node::Heading(heading) => {
