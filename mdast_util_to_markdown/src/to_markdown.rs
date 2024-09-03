@@ -1,44 +1,17 @@
+use crate::{
+    parents::Parent,
+    r#unsafe::{Construct, Unsafe},
+};
 use alloc::{
     collections::BTreeMap,
     format,
     string::{String, ToString},
-    vec,
     vec::Vec,
 };
-use markdown::mdast::{List, Node, Paragraph, Root, Strong, Text};
+use markdown::mdast::{Node, Paragraph, Root, Strong, Text};
 use regex::Regex;
 
-#[allow(dead_code)]
-#[derive(Clone, PartialEq)]
-enum ConstructName {
-    Autolink,
-    Blockquote,
-    CodeIndented,
-    CodeFenced,
-    CodeFencedLangGraveAccent,
-    CodeFencedLangTilde,
-    CodeFencedMetaGraveAccent,
-    CodeFencedMetaTilde,
-    Definition,
-    DestinationLiteral,
-    DestinationRaw,
-    Emphasis,
-    HeadingAtx,
-    HeadingSetext,
-    Image,
-    ImageReference,
-    Label,
-    Link,
-    LinkReference,
-    List,
-    ListItem,
-    Paragraph,
-    Phrasing,
-    Reference,
-    Strong,
-    TitleApostrophe,
-    TitleQuote,
-}
+use crate::ConstructName;
 
 trait PeekNode {
     // TODO make it take a reference to the state options
@@ -50,53 +23,6 @@ impl PeekNode for Strong {
         "*".into()
     }
 }
-
-trait PhrasingParent {
-    fn children(&self) -> &Vec<Node>;
-}
-
-trait FlowParent {
-    fn children(&self) -> &Vec<Node>;
-
-    /// One or more of its children are separated with a blank line from its
-    /// siblings (when `true`), or not (when `false`).
-    fn spreadable(&self) -> Option<bool> {
-        None
-    }
-}
-
-impl FlowParent for List {
-    fn children(&self) -> &Vec<Node> {
-        &self.children
-    }
-
-    fn spreadable(&self) -> Option<bool> {
-        Some(self.spread)
-    }
-}
-
-macro_rules! impl_PhrasingParent {
-    (for $($t:ty),+) => {
-        $(impl PhrasingParent for $t {
-            fn children(&self) -> &Vec<Node> {
-                &self.children
-            }
-        })*
-    }
-}
-
-macro_rules! impl_FlowParent {
-    (for $($t:ty),+) => {
-        $(impl FlowParent for $t {
-            fn children(&self) -> &Vec<Node> {
-                &self.children
-            }
-        })*
-    }
-}
-
-impl_PhrasingParent!(for Paragraph, Strong);
-impl_FlowParent!(for Root);
 
 enum Join {
     Number(usize),
@@ -111,323 +37,6 @@ struct State<'a> {
     index_stack: Vec<i64>,
     bullet_last_used: Option<String>,
     r#unsafe: Vec<Unsafe<'a>>,
-}
-
-#[allow(dead_code)]
-struct Unsafe<'a> {
-    character: &'a str,
-    in_construct: Option<Construct>,
-    not_in_construct: Option<Construct>,
-    before: Option<&'a str>,
-    after: Option<&'a str>,
-    at_break: Option<bool>,
-    compiled: Option<Regex>,
-}
-
-#[allow(dead_code)]
-// This could use a better name.
-enum Construct {
-    List(Vec<ConstructName>),
-    Single(ConstructName),
-}
-
-impl<'a> Unsafe<'a> {
-    fn new(
-        character: &'a str,
-        before: Option<&'a str>,
-        after: Option<&'a str>,
-        in_construct: Option<Construct>,
-        not_in_construct: Option<Construct>,
-        at_break: Option<bool>,
-    ) -> Self {
-        Unsafe {
-            character,
-            in_construct,
-            not_in_construct,
-            before,
-            after,
-            at_break,
-            compiled: None,
-        }
-    }
-
-    fn get_default_unsafe() -> Vec<Self> {
-        let full_phrasing_spans = vec![
-            ConstructName::Autolink,
-            ConstructName::DestinationLiteral,
-            ConstructName::DestinationRaw,
-            ConstructName::Reference,
-            ConstructName::TitleQuote,
-            ConstructName::TitleApostrophe,
-        ];
-
-        vec![
-            Self::new(
-                "\t",
-                None,
-                r"[\\r\\n]".into(),
-                Construct::Single(ConstructName::Phrasing).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "\t",
-                r"[\\r\\n]".into(),
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "\t",
-                None,
-                None,
-                Construct::List(vec![
-                    ConstructName::CodeFencedLangGraveAccent,
-                    ConstructName::CodeFencedLangTilde,
-                ])
-                .into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "\r",
-                None,
-                None,
-                Construct::List(vec![
-                    ConstructName::CodeFencedLangGraveAccent,
-                    ConstructName::CodeFencedLangTilde,
-                    ConstructName::CodeFencedMetaGraveAccent,
-                    ConstructName::CodeFencedMetaTilde,
-                    ConstructName::DestinationLiteral,
-                    ConstructName::HeadingAtx,
-                ])
-                .into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "\n",
-                None,
-                None,
-                Construct::List(vec![
-                    ConstructName::CodeFencedLangGraveAccent,
-                    ConstructName::CodeFencedLangTilde,
-                    ConstructName::CodeFencedMetaGraveAccent,
-                    ConstructName::CodeFencedMetaTilde,
-                    ConstructName::DestinationLiteral,
-                    ConstructName::HeadingAtx,
-                ])
-                .into(),
-                None,
-                None,
-            ),
-            Self::new(
-                " ",
-                None,
-                r"[\\r\\n]".into(),
-                Construct::Single(ConstructName::Phrasing).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                " ",
-                r"[\\r\\n]".into(),
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                " ",
-                None,
-                None,
-                Construct::List(vec![
-                    ConstructName::CodeFencedLangGraveAccent,
-                    ConstructName::CodeFencedLangTilde,
-                ])
-                .into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "!",
-                None,
-                r"\[".into(),
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new(
-                "\"",
-                None,
-                None,
-                Construct::Single(ConstructName::TitleQuote).into(),
-                None,
-                None,
-            ),
-            Self::new("#", None, None, None, None, Some(true)),
-            Self::new(
-                "&",
-                None,
-                r"[#A-Za-z]".into(),
-                Construct::Single(ConstructName::Phrasing).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "'",
-                None,
-                None,
-                Construct::Single(ConstructName::TitleApostrophe).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "(",
-                None,
-                None,
-                Construct::Single(ConstructName::DestinationRaw).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "(",
-                r"\]".into(),
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new(")", r"\d+".into(), None, None, None, Some(true)),
-            Self::new(
-                ")",
-                None,
-                None,
-                Construct::Single(ConstructName::DestinationRaw).into(),
-                None,
-                None,
-            ),
-            Self::new("*", None, r"(?:[ \t\r\n*])".into(), None, None, Some(true)),
-            Self::new(
-                "*",
-                None,
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new("+", None, r"(?:[ \t\r\n])".into(), None, None, Some(true)),
-            Self::new("-", None, r"(?:[ \t\r\n-])".into(), None, None, Some(true)),
-            Self::new(
-                ".",
-                r"\d+".into(),
-                "(?:[ \t\r\n]|$)".into(),
-                None,
-                None,
-                Some(true),
-            ),
-            Self::new("<", None, r"[!/?A-Za-z]".into(), None, None, Some(true)),
-            Self::new(
-                "<",
-                None,
-                "[!/?A-Za-z]".into(),
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new(
-                "<",
-                None,
-                None,
-                Construct::Single(ConstructName::DestinationLiteral).into(),
-                None,
-                None,
-            ),
-            Self::new("=", None, None, None, None, Some(true)),
-            Self::new(">", None, None, None, None, Some(true)),
-            Self::new(
-                ">",
-                None,
-                None,
-                Construct::Single(ConstructName::DestinationLiteral).into(),
-                None,
-                Some(true),
-            ),
-            Self::new("[", None, None, None, None, Some(true)),
-            Self::new(
-                "[",
-                None,
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new(
-                "[",
-                None,
-                None,
-                Construct::List(vec![ConstructName::Label, ConstructName::Reference]).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                r"\",
-                None,
-                "[\\r\\n]".into(),
-                Construct::Single(ConstructName::Phrasing).into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "]",
-                None,
-                None,
-                Construct::List(vec![ConstructName::Label, ConstructName::Reference]).into(),
-                None,
-                None,
-            ),
-            Self::new("_", None, None, None, None, Some(true)),
-            Self::new(
-                "_",
-                None,
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new("`", None, None, None, None, Some(true)),
-            Self::new(
-                "`",
-                None,
-                None,
-                Construct::List(vec![
-                    ConstructName::CodeFencedLangGraveAccent,
-                    ConstructName::CodeFencedMetaGraveAccent,
-                ])
-                .into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "`",
-                None,
-                None,
-                Construct::Single(ConstructName::Phrasing).into(),
-                Construct::List(full_phrasing_spans.clone()).into(),
-                None,
-            ),
-            Self::new("~", None, None, None, None, Some(true)),
-        ]
-    }
-
-    fn compiled(&self) -> bool {
-        self.compiled.is_some()
-    }
-
-    fn set_compiled(&mut self, regex_pattern: Regex) {
-        self.compiled = Some(regex_pattern);
-    }
 }
 
 #[allow(dead_code)]
@@ -544,7 +153,9 @@ impl<'a> State<'a> {
             if !pattern_in_scope(&self.stack, pattern) {
                 continue;
             }
+
             Self::compile_pattern(pattern);
+
             if let Some(regex) = &pattern.compiled {
                 for m in regex.captures_iter(&value) {
                     let full_match = m.get(0).unwrap();
@@ -637,7 +248,7 @@ impl<'a> State<'a> {
     }
 
     fn compile_pattern(pattern: &mut Unsafe) {
-        if !pattern.compiled() {
+        if !pattern.is_compiled() {
             let before = if pattern.at_break.unwrap_or(false) {
                 r"[\\r\\n][\\t ]*"
             } else {
@@ -676,7 +287,7 @@ impl<'a> State<'a> {
         }
     }
 
-    fn container_phrasing<T: PhrasingParent>(&mut self, parent: &T, info: &Info) -> String {
+    fn container_phrasing<T: Parent>(&mut self, parent: &T, info: &Info) -> String {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
@@ -726,7 +337,7 @@ impl<'a> State<'a> {
         }
     }
 
-    fn container_flow<T: FlowParent>(&mut self, parent: &T, _info: &Info) -> String {
+    fn container_flow<T: Parent>(&mut self, parent: &T, _info: &Info) -> String {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
@@ -756,13 +367,7 @@ impl<'a> State<'a> {
         results
     }
 
-    fn set_between<T: FlowParent>(
-        &self,
-        left: &Node,
-        right: &Node,
-        parent: &T,
-        results: &mut String,
-    ) {
+    fn set_between<T: Parent>(&self, left: &Node, right: &Node, parent: &T, results: &mut String) {
         match self.join_defaults(left, right, parent) {
             Some(Join::Number(num)) => {
                 if num == 1 {
@@ -782,7 +387,7 @@ impl<'a> State<'a> {
         }
     }
 
-    fn join_defaults<T: FlowParent>(&self, left: &Node, right: &Node, parent: &T) -> Option<Join> {
+    fn join_defaults<T: Parent>(&self, left: &Node, right: &Node, parent: &T) -> Option<Join> {
         if format_code_as_indented(right, self)
             && (matches!(left, Node::List(_)) || format_code_as_indented(left, self))
         {
