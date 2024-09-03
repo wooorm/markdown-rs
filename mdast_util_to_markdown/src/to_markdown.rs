@@ -1,4 +1,3 @@
-use crate::mdast::{List, Node, Paragraph, Root, Strong, Text};
 use alloc::{
     collections::BTreeMap,
     format,
@@ -6,6 +5,7 @@ use alloc::{
     vec,
     vec::Vec,
 };
+use markdown::mdast::{List, Node, Paragraph, Root, Strong, Text};
 use regex::Regex;
 
 #[allow(dead_code)]
@@ -520,9 +520,14 @@ impl<'a> State<'a> {
 
         self.enter(ConstructName::Strong);
 
-        let mut value = format!("{}{}", marker, marker);
-        value.push_str(&self.container_phrasing(node, info));
-        value.push_str(&format!("{}{}", marker, marker));
+        let mut value = format!(
+            "{}{}{}",
+            marker,
+            marker,
+            self.container_phrasing(node, info)
+        );
+        value.push(marker);
+        value.push(marker);
 
         self.exit();
 
@@ -817,8 +822,8 @@ impl<'a> State<'a> {
     }
 }
 
-fn check_strong(_state: &State) -> String {
-    "*".into()
+fn check_strong(_state: &State) -> char {
+    '*'
 }
 
 fn escape_backslashes(value: &str, after: &str) -> String {
@@ -879,36 +884,35 @@ fn list_in_scope(stack: &[ConstructName], list: &Option<Construct>, none: bool) 
 }
 
 fn format_code_as_indented(node: &Node, _state: &State) -> bool {
-    match node {
-        Node::Code(code) => {
-            let white_space = Regex::new(r"[^ \r\n]").unwrap();
-            let blank = Regex::new(r"^[\t ]*(?:[\r\n]|$)|(?:^|[\r\n])[\t ]*$").unwrap();
-            !code.value.is_empty()
-                && code.lang.is_none()
-                && white_space.is_match(&code.value)
-                && !blank.is_match(&code.value)
-        }
-        _ => false,
+    if let Node::Code(code) = node {
+        let white_space = Regex::new(r"[^ \r\n]").unwrap();
+        let blank = Regex::new(r"^[\t ]*(?:[\r\n]|$)|(?:^|[\r\n])[\t ]*$").unwrap();
+
+        return !code.value.is_empty()
+            && code.lang.is_none()
+            && white_space.is_match(&code.value)
+            && !blank.is_match(&code.value);
     }
+
+    false
 }
 
 fn format_heading_as_settext(node: &Node, _state: &State) -> bool {
-    let line_break = Regex::new(r"\r?\n|\r").unwrap();
-    match node {
-        Node::Heading(heading) => {
-            let mut literal_with_break = false;
-            for child in &heading.children {
-                if include_literal_with_break(child, &line_break) {
-                    literal_with_break = true;
-                    break;
-                }
+    if let Node::Heading(heading) = node {
+        let line_break = Regex::new(r"\r?\n|\r").unwrap();
+        let mut literal_with_break = false;
+        for child in &heading.children {
+            if include_literal_with_break(child, &line_break) {
+                literal_with_break = true;
+                break;
             }
-
-            heading.depth == 0
-                || heading.depth < 3 && !node.to_string().is_empty() && literal_with_break
         }
-        _ => false,
+
+        return heading.depth == 0
+            || heading.depth < 3 && !node.to_string().is_empty() && literal_with_break;
     }
+
+    false
 }
 
 fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
@@ -950,7 +954,7 @@ mod init_tests {
     use super::*;
     use alloc::{string::String, vec};
 
-    use crate::mdast::{Node, Paragraph, Text};
+    use markdown::mdast::{Node, Paragraph, Text};
 
     #[test]
     fn it_works_for_simple_text() {
