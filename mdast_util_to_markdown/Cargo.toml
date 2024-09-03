@@ -5,5 +5,5 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
-markdown = {path = "../"}
+markdown = { path = "../" }
 regex = { version = "1.7.3" }

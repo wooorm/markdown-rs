@@ -1,8 +1,9 @@
 use alloc::{vec, vec::Vec};
 use regex::Regex;
 
-use crate::ConstructName;
+use crate::construct_name::ConstructName;
 
+#[derive(Default)]
 pub struct Unsafe<'a> {
     pub character: &'a str,
     pub in_construct: Option<Construct>,
@@ -20,7 +21,7 @@ pub enum Construct {
 }
 
 impl<'a> Unsafe<'a> {
-    fn new(
+    pub fn new(
         character: &'a str,
         before: Option<&'a str>,
         after: Option<&'a str>,
@@ -307,10 +308,6 @@ impl<'a> Unsafe<'a> {
             ),
             Self::new("~", None, None, None, None, Some(true)),
         ]
-    }
-
-    pub(crate) fn is_compiled(&self) -> bool {
-        self.compiled.is_some()
     }
 
     pub(crate) fn set_compiled(&mut self, regex_pattern: Regex) {

@@ -1,6 +1,15 @@
+use crate::construct_name::ConstructName;
+use crate::handle::strong::peek_strong;
+use crate::handle::Handle;
 use crate::{
     parents::Parent,
-    r#unsafe::{Construct, Unsafe},
+    r#unsafe::Unsafe,
+    util::{
+        format_code_as_indented::format_code_as_indented,
+        format_heading_as_setext::format_heading_as_setext,
+        pattern_in_scope::pattern_in_scope,
+        safe::{escape_backslashes, EscapeInfos, SafeConfig},
+    },
 };
 use alloc::{
     collections::BTreeMap,
@@ -8,21 +17,8 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use markdown::mdast::{Node, Paragraph, Root, Strong, Text};
+use markdown::mdast::Node;
 use regex::Regex;
-
-use crate::ConstructName;
-
-trait PeekNode {
-    // TODO make it take a reference to the state options
-    fn handle_peek(&self) -> String;
-}
-
-impl PeekNode for Strong {
-    fn handle_peek(&self) -> String {
-        "*".into()
-    }
-}
 
 enum Join {
     Number(usize),
@@ -30,7 +26,7 @@ enum Join {
 }
 
 #[allow(dead_code)]
-struct State<'a> {
+pub struct State<'a> {
     stack: Vec<ConstructName>,
     // We use i64 for index_stack because -1 is used to mark the absense of children.
     // We don't use index_stack values to index into any child.
@@ -39,42 +35,20 @@ struct State<'a> {
     r#unsafe: Vec<Unsafe<'a>>,
 }
 
-#[allow(dead_code)]
-struct Info<'a> {
-    before: &'a str,
-    after: &'a str,
+pub struct Info<'a> {
+    pub before: &'a str,
+    pub after: &'a str,
 }
 
 impl<'a> Info<'a> {
-    fn new(before: &'a str, after: &'a str) -> Self {
+    pub fn new(before: &'a str, after: &'a str) -> Self {
         Info { before, after }
     }
 }
 
 #[allow(dead_code)]
-struct SafeConfig<'a> {
-    before: &'a str,
-    after: &'a str,
-    encode: Option<Vec<&'a str>>,
-}
-
-impl<'a> SafeConfig<'a> {
-    fn new(before: Option<&'a str>, after: Option<&'a str>, encode: Option<Vec<&'a str>>) -> Self {
-        SafeConfig {
-            before: before.unwrap_or(""),
-            after: after.unwrap_or(""),
-            encode,
-        }
-    }
-}
-
-struct EscapeInfos {
-    before: bool,
-    after: bool,
-}
-
 impl<'a> State<'a> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         State {
             stack: Vec::new(),
             index_stack: Vec::new(),
@@ -83,67 +57,28 @@ impl<'a> State<'a> {
         }
     }
 
-    fn enter(&mut self, name: ConstructName) {
+    pub fn enter(&mut self, name: ConstructName) {
         self.stack.push(name);
     }
 
-    fn exit(&mut self) {
+    pub fn exit(&mut self) {
         self.stack.pop();
     }
 
-    fn handle(&mut self, node: &Node, info: &Info) -> String {
+    pub fn handle(&mut self, node: &Node, info: &Info) -> Result<String, String> {
         match node {
-            Node::Root(root) => self.handle_root(root, info),
-            Node::Paragraph(paragraph) => self.handle_paragraph(paragraph, info),
-            Node::Text(text) => self.handle_text(text, info),
-            Node::Strong(strong) => self.handle_strong(strong, info),
+            Node::Paragraph(paragraph) => paragraph.handle(self, info),
+            Node::Text(text) => text.handle(self, info),
+            Node::Strong(strong) => strong.handle(self, info),
             _ => panic!("Not handled yet"),
         }
     }
 
-    fn handle_root(&mut self, node: &Root, info: &Info) -> String {
-        self.container_flow(node, info)
-    }
+    //fn handle_root(&mut self, node: &Root, info: &Info) -> String {
+    //    self.container_flow(node, info)
+    //}
 
-    fn handle_paragraph(&mut self, node: &Paragraph, info: &Info) -> String {
-        self.enter(ConstructName::Paragraph);
-
-        self.enter(ConstructName::Phrasing);
-        let value = self.container_phrasing(node, info);
-        // exit phrasing
-        self.exit();
-        // exit paragarph
-        self.exit();
-        value
-    }
-
-    fn handle_text(&mut self, text: &Text, info: &Info) -> String {
-        self.safe(
-            &text.value,
-            &SafeConfig::new(Some(info.before), Some(info.after), None),
-        )
-    }
-
-    fn handle_strong(&mut self, node: &Strong, info: &Info) -> String {
-        let marker = check_strong(self);
-
-        self.enter(ConstructName::Strong);
-
-        let mut value = format!(
-            "{}{}{}",
-            marker,
-            marker,
-            self.container_phrasing(node, info)
-        );
-        value.push(marker);
-        value.push(marker);
-
-        self.exit();
-
-        value
-    }
-
-    fn safe(&mut self, input: &String, config: &SafeConfig) -> String {
+    pub fn safe(&mut self, input: &String, config: &SafeConfig) -> String {
         let value = format!("{}{}{}", config.before, input, config.after);
         let mut positions: Vec<usize> = Vec::new();
         let mut result: String = String::new();
@@ -248,7 +183,7 @@ impl<'a> State<'a> {
     }
 
     fn compile_pattern(pattern: &mut Unsafe) {
-        if !pattern.is_compiled() {
+        if pattern.compiled.is_none() {
             let before = if pattern.at_break.unwrap_or(false) {
                 r"[\\r\\n][\\t ]*"
             } else {
@@ -287,7 +222,11 @@ impl<'a> State<'a> {
         }
     }
 
-    fn container_phrasing<T: Parent>(&mut self, parent: &T, info: &Info) -> String {
+    pub fn container_phrasing<T: Parent>(
+        &mut self,
+        parent: &T,
+        info: &Info,
+    ) -> Result<String, String> {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
@@ -300,10 +239,10 @@ impl<'a> State<'a> {
             }
 
             let after = if let Some(child) = children_iter.peek() {
-                match Self::determine_first_char(child) {
+                match self.determine_first_char(child) {
                     Some(after_char) => after_char,
                     None => self
-                        .handle(child, &Info::new("", ""))
+                        .handle(child, &Info::new("", ""))?
                         .chars()
                         .nth(0)
                         .unwrap_or_default()
@@ -314,12 +253,12 @@ impl<'a> State<'a> {
             };
 
             if results.is_empty() {
-                results.push_str(&self.handle(child, &Info::new(info.before, after.as_ref())));
+                results.push_str(&self.handle(child, &Info::new(info.before, after.as_ref()))?);
             } else {
                 results.push_str(&self.handle(
                     child,
                     &Info::new(&results[results.len() - 1..], after.as_ref()),
-                ));
+                )?);
             }
 
             index += 1;
@@ -327,17 +266,17 @@ impl<'a> State<'a> {
 
         self.index_stack.pop();
 
-        results
+        Ok(results)
     }
 
-    fn determine_first_char(node: &Node) -> Option<String> {
+    fn determine_first_char(&self, node: &Node) -> Option<String> {
         match node {
-            Node::Strong(strong) => Some(strong.handle_peek()),
+            Node::Strong(_) => Some(peek_strong(self)),
             _ => None,
         }
     }
 
-    fn container_flow<T: Parent>(&mut self, parent: &T, _info: &Info) -> String {
+    fn container_flow<T: Parent>(&mut self, parent: &T, _info: &Info) -> Result<String, String> {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
@@ -353,7 +292,7 @@ impl<'a> State<'a> {
                 self.bullet_last_used = None;
             }
 
-            results.push_str(&self.handle(child, &Info::new("\n", "\n")));
+            results.push_str(&self.handle(child, &Info::new("\n", "\n"))?);
 
             if let Some(next_child) = children_iter.peek() {
                 self.set_between(child, next_child, parent, &mut results);
@@ -364,7 +303,7 @@ impl<'a> State<'a> {
 
         self.index_stack.pop();
 
-        results
+        Ok(results)
     }
 
     fn set_between<T: Parent>(&self, left: &Node, right: &Node, parent: &T, results: &mut String) {
@@ -397,7 +336,7 @@ impl<'a> State<'a> {
         if let Some(spread) = parent.spreadable() {
             if matches!(left, Node::Paragraph(_)) && Self::matches((left, right))
                 || matches!(right, Node::Definition(_))
-                || format_heading_as_settext(right, self)
+                || format_heading_as_setext(right, self)
             {
                 return None;
             }
@@ -424,191 +363,5 @@ impl<'a> State<'a> {
                 | (Node::Paragraph(_), Node::Paragraph(_))
                 | (Node::Table(_), Node::Table(_))
         )
-    }
-}
-
-fn check_strong(_state: &State) -> char {
-    '*'
-}
-
-fn escape_backslashes(value: &str, after: &str) -> String {
-    let expression = Regex::new(r"\\[!-/:-@\[-`{-~]").unwrap();
-    let mut results: String = String::new();
-    let whole = format!("{}{}", value, after);
-
-    let positions: Vec<usize> = expression.find_iter(&whole).map(|m| m.start()).collect();
-    let mut start = 0;
-
-    for position in &positions {
-        if start != *position {
-            results.push_str(&value[start..*position]);
-        }
-
-        results.push('\\');
-
-        start = *position;
-    }
-
-    results.push_str(&value[start..]);
-
-    results
-}
-
-fn pattern_in_scope(stack: &[ConstructName], pattern: &Unsafe) -> bool {
-    list_in_scope(stack, &pattern.in_construct, true)
-        && !list_in_scope(stack, &pattern.not_in_construct, false)
-}
-
-// This could use a better name
-fn list_in_scope(stack: &[ConstructName], list: &Option<Construct>, none: bool) -> bool {
-    let Some(list) = list else {
-        return none;
-    };
-    match list {
-        Construct::Single(construct_name) => {
-            if stack.contains(construct_name) {
-                return true;
-            }
-
-            false
-        }
-        Construct::List(constructs_names) => {
-            if constructs_names.is_empty() {
-                return none;
-            }
-
-            for construct_name in constructs_names {
-                if stack.contains(construct_name) {
-                    return true;
-                }
-            }
-
-            false
-        }
-    }
-}
-
-fn format_code_as_indented(node: &Node, _state: &State) -> bool {
-    if let Node::Code(code) = node {
-        let white_space = Regex::new(r"[^ \r\n]").unwrap();
-        let blank = Regex::new(r"^[\t ]*(?:[\r\n]|$)|(?:^|[\r\n])[\t ]*$").unwrap();
-
-        return !code.value.is_empty()
-            && code.lang.is_none()
-            && white_space.is_match(&code.value)
-            && !blank.is_match(&code.value);
-    }
-
-    false
-}
-
-fn format_heading_as_settext(node: &Node, _state: &State) -> bool {
-    if let Node::Heading(heading) = node {
-        let line_break = Regex::new(r"\r?\n|\r").unwrap();
-        let mut literal_with_break = false;
-        for child in &heading.children {
-            if include_literal_with_break(child, &line_break) {
-                literal_with_break = true;
-                break;
-            }
-        }
-
-        return heading.depth == 0
-            || heading.depth < 3 && !node.to_string().is_empty() && literal_with_break;
-    }
-
-    false
-}
-
-fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
-    match node {
-        Node::Break(_) => true,
-        Node::MdxjsEsm(x) => regex.is_match(&x.value),
-        Node::Toml(x) => regex.is_match(&x.value),
-        Node::Yaml(x) => regex.is_match(&x.value),
-        Node::InlineCode(x) => regex.is_match(&x.value),
-        Node::InlineMath(x) => regex.is_match(&x.value),
-        Node::MdxTextExpression(x) => regex.is_match(&x.value),
-        Node::Html(x) => regex.is_match(&x.value),
-        Node::Text(x) => regex.is_match(&x.value),
-        Node::Code(x) => regex.is_match(&x.value),
-        Node::Math(x) => regex.is_match(&x.value),
-        Node::MdxFlowExpression(x) => regex.is_match(&x.value),
-        _ => {
-            if let Some(children) = node.children() {
-                for child in children {
-                    if include_literal_with_break(child, regex) {
-                        return true;
-                    }
-                }
-            }
-
-            false
-        }
-    }
-}
-
-pub fn serialize(tree: &Node) -> String {
-    let mut state = State::new();
-    let result = state.handle(tree, &Info::new("\n", "\n"));
-    result
-}
-
-#[cfg(test)]
-mod init_tests {
-    use super::*;
-    use alloc::{string::String, vec};
-
-    use markdown::mdast::{Node, Paragraph, Text};
-
-    #[test]
-    fn it_works_for_simple_text() {
-        let text_a = Node::Text(Text {
-            value: String::from("a"),
-            position: None,
-        });
-        let text_b = Node::Text(Text {
-            value: String::from("b"),
-            position: None,
-        });
-        let paragraph = Node::Paragraph(Paragraph {
-            children: vec![text_a, text_b],
-            position: None,
-        });
-        let actual = serialize(&paragraph);
-        assert_eq!(actual, String::from("ab"));
-    }
-
-    #[test]
-    fn it_escape() {
-        let text_a = Node::Text(Text {
-            value: String::from("![](a.jpg)"),
-            position: None,
-        });
-        let paragraph = Node::Paragraph(Paragraph {
-            children: vec![text_a],
-            position: None,
-        });
-        let actual = serialize(&paragraph);
-        assert_eq!(actual, "!\\[]\\(a.jpg)");
-    }
-
-    #[test]
-    fn it_will_strong() {
-        let text_a = Node::Text(Text {
-            value: String::from("a"),
-            position: None,
-        });
-
-        let text_b = Node::Text(Text {
-            value: String::from("b"),
-            position: None,
-        });
-        let strong = Node::Strong(Strong {
-            children: vec![text_a, text_b],
-            position: None,
-        });
-        let actual = serialize(&strong);
-        assert_eq!(actual, "**ab**");
     }
 }
