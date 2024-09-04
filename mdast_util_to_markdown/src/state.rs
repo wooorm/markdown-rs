@@ -1,6 +1,8 @@
 use crate::construct_name::ConstructName;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
+use crate::message::Message;
+use crate::Options;
 use crate::{
     parents::Parent,
     r#unsafe::Unsafe,
@@ -11,12 +13,7 @@ use crate::{
         safe::{escape_backslashes, EscapeInfos, SafeConfig},
     },
 };
-use alloc::{
-    collections::BTreeMap,
-    format,
-    string::{String, ToString},
-    vec::Vec,
-};
+use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use markdown::mdast::Node;
 use regex::Regex;
 
@@ -33,6 +30,7 @@ pub struct State<'a> {
     index_stack: Vec<i64>,
     bullet_last_used: Option<String>,
     r#unsafe: Vec<Unsafe<'a>>,
+    pub options: &'a Options,
 }
 
 pub struct Info<'a> {
@@ -48,12 +46,13 @@ impl<'a> Info<'a> {
 
 #[allow(dead_code)]
 impl<'a> State<'a> {
-    pub fn new() -> Self {
+    pub fn new(options: &'a Options) -> Self {
         State {
             stack: Vec::new(),
             index_stack: Vec::new(),
             bullet_last_used: None,
             r#unsafe: Unsafe::get_default_unsafe(),
+            options,
         }
     }
 
@@ -65,18 +64,16 @@ impl<'a> State<'a> {
         self.stack.pop();
     }
 
-    pub fn handle(&mut self, node: &Node, info: &Info) -> Result<String, String> {
+    pub fn handle(&mut self, node: &Node, info: &Info) -> Result<String, Message> {
         match node {
             Node::Paragraph(paragraph) => paragraph.handle(self, info),
             Node::Text(text) => text.handle(self, info),
             Node::Strong(strong) => strong.handle(self, info),
-            _ => panic!("Not handled yet"),
+            _ => Err(Message {
+                reason: "Cannot handle node".into(),
+            }),
         }
     }
-
-    //fn handle_root(&mut self, node: &Root, info: &Info) -> String {
-    //    self.container_flow(node, info)
-    //}
 
     pub fn safe(&mut self, input: &String, config: &SafeConfig) -> String {
         let value = format!("{}{}{}", config.before, input, config.after);
@@ -159,22 +156,19 @@ impl<'a> State<'a> {
 
             start = *position;
 
-            let char_match = Regex::new(r"[!-/:-@\[-{-~]").unwrap();
-            if let Some(char_at_pos) = char_match.find_at(&value, *position).iter().next() {
-                match &config.encode {
-                    Some(encode) => {
-                        if encode.contains(&char_at_pos.as_str()) {
-                            result.push('\\');
-                        }
-                    }
-                    None => result.push('\\'),
+            let char_at_pos = value.chars().nth(*position);
+            match char_at_pos {
+                Some('!'..='/') | Some(':'..='@') | Some('['..='`') | Some('{'..='~') => {
+                    Self::encode(config, char_at_pos, &mut result)
                 }
-            } else if let Some(character) = value.chars().nth(*position) {
-                let code = u32::from(character);
-                let hex_string = format!("{:X}", code);
-                result.push_str(&format!("&#x{};", hex_string));
-                start += 1;
-            }
+                Some(character) => {
+                    let code = u32::from(character);
+                    let hex_string = format!("{:X}", code);
+                    result.push_str(&format!("&#x{};", hex_string));
+                    start += 1;
+                }
+                _ => (),
+            };
         }
 
         result.push_str(&escape_backslashes(&value[start..end], config.after));
@@ -182,10 +176,21 @@ impl<'a> State<'a> {
         result
     }
 
+    fn encode(config: &SafeConfig, char_at_pos: Option<char>, result: &mut String) {
+        match &config.encode {
+            Some(encode) => {
+                if encode.contains(&char_at_pos.unwrap()) {
+                    result.push('\\');
+                }
+            }
+            None => result.push('\\'),
+        }
+    }
+
     fn compile_pattern(pattern: &mut Unsafe) {
         if pattern.compiled.is_none() {
             let before = if pattern.at_break.unwrap_or(false) {
-                r"[\\r\\n][\\t ]*"
+                "[\\r\\n][\\t ]*"
             } else {
                 ""
             };
@@ -212,7 +217,7 @@ impl<'a> State<'a> {
                 .unwrap()
                 .is_match(pattern.character)
             {
-                r"\"
+                "\\"
             } else {
                 ""
             };
@@ -226,7 +231,7 @@ impl<'a> State<'a> {
         &mut self,
         parent: &T,
         info: &Info,
-    ) -> Result<String, String> {
+    ) -> Result<String, Message> {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
@@ -238,29 +243,25 @@ impl<'a> State<'a> {
                 *top = index;
             }
 
-            let after = if let Some(child) = children_iter.peek() {
-                match self.determine_first_char(child) {
-                    Some(after_char) => after_char,
-                    None => self
-                        .handle(child, &Info::new("", ""))?
+            let mut new_info = Info::new(info.before, info.after);
+            let mut buffer = [0u8; 4];
+            if let Some(child) = children_iter.peek() {
+                if let Some(first_char) = self.determine_first_char(child) {
+                    new_info.after = first_char.encode_utf8(&mut buffer);
+                } else {
+                    self.handle(child, &Info::new("", ""))?
                         .chars()
                         .nth(0)
                         .unwrap_or_default()
-                        .to_string(),
+                        .encode_utf8(&mut buffer);
                 }
-            } else {
-                String::from(info.after)
-            };
-
-            if results.is_empty() {
-                results.push_str(&self.handle(child, &Info::new(info.before, after.as_ref()))?);
-            } else {
-                results.push_str(&self.handle(
-                    child,
-                    &Info::new(&results[results.len() - 1..], after.as_ref()),
-                )?);
             }
 
+            if !results.is_empty() {
+                new_info.before = &results[results.len() - 1..];
+            }
+
+            results.push_str(&self.handle(child, &new_info)?);
             index += 1;
         }
 
@@ -269,14 +270,14 @@ impl<'a> State<'a> {
         Ok(results)
     }
 
-    fn determine_first_char(&self, node: &Node) -> Option<String> {
+    fn determine_first_char(&self, node: &Node) -> Option<char> {
         match node {
             Node::Strong(_) => Some(peek_strong(self)),
             _ => None,
         }
     }
 
-    fn container_flow<T: Parent>(&mut self, parent: &T, _info: &Info) -> Result<String, String> {
+    fn container_flow<T: Parent>(&mut self, parent: &T, _info: &Info) -> Result<String, Message> {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;

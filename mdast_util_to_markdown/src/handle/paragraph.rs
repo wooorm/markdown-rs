@@ -1,17 +1,15 @@
-use alloc::string::String;
 use markdown::mdast::Paragraph;
 
 use crate::{
     construct_name::ConstructName,
+    message::Message,
     state::{Info, State},
 };
 
 use super::Handle;
 
 impl Handle for Paragraph {
-    type Error = String;
-
-    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Self::Error> {
+    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Message> {
         state.enter(ConstructName::Paragraph);
 
         state.enter(ConstructName::Phrasing);

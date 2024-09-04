@@ -3,78 +3,31 @@
 use alloc::string::String;
 pub use configure::Options;
 use markdown::mdast::Node;
+use message::Message;
 use state::{Info, State};
 
 extern crate alloc;
 mod configure;
 mod construct_name;
 mod handle;
+pub mod message;
 mod parents;
 mod state;
 mod r#unsafe;
 mod util;
 
-pub fn to_markdown(tree: &Node, _options: &Options) -> Result<String, String> {
-    let mut state = State::new();
-    let result = state.handle(tree, &Info::new("\n", "\n"))?;
-    Ok(result)
+pub fn to_markdown(tree: &Node) -> Result<String, Message> {
+    to_markdown_with_options(tree, &Options::default())
 }
 
-#[cfg(test)]
-mod init_tests {
-    use super::*;
-    use alloc::{string::String, vec};
-
-    use markdown::mdast::{Node, Paragraph, Strong, Text};
-
-    #[test]
-    fn it_works_for_simple_text() {
-        let text_a = Node::Text(Text {
-            value: String::from("a"),
-            position: None,
-        });
-        let text_b = Node::Text(Text {
-            value: String::from("b"),
-            position: None,
-        });
-        let paragraph = Node::Paragraph(Paragraph {
-            children: vec![text_a, text_b],
-            position: None,
-        });
-        let actual = to_markdown(&paragraph, &Default::default()).unwrap();
-        assert_eq!(actual, String::from("ab"));
+pub fn to_markdown_with_options(tree: &Node, options: &Options) -> Result<String, Message> {
+    let mut state = State::new(options);
+    let mut result = state.handle(tree, &Info::new("\n", "\n"))?;
+    if !result.is_empty() {
+        let last_char = result.chars().last().unwrap();
+        if last_char != '\n' && last_char != '\r' {
+            result.push('\n');
+        }
     }
-
-    #[test]
-    fn it_escape() {
-        let text_a = Node::Text(Text {
-            value: String::from("![](a.jpg)"),
-            position: None,
-        });
-        let paragraph = Node::Paragraph(Paragraph {
-            children: vec![text_a],
-            position: None,
-        });
-        let actual = to_markdown(&paragraph, &Default::default()).unwrap();
-        assert_eq!(actual, "!\\[]\\(a.jpg)");
-    }
-
-    #[test]
-    fn it_will_strong() {
-        let text_a = Node::Text(Text {
-            value: String::from("a"),
-            position: None,
-        });
-
-        let text_b = Node::Text(Text {
-            value: String::from("b"),
-            position: None,
-        });
-        let strong = Node::Strong(Strong {
-            children: vec![text_a, text_b],
-            position: None,
-        });
-        let actual = to_markdown(&strong, &Default::default()).unwrap();
-        assert_eq!(actual, "**ab**");
-    }
+    Ok(result)
 }

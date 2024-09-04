@@ -1,8 +1,9 @@
-use alloc::{format, string::String};
+use alloc::format;
 use markdown::mdast::Strong;
 
 use crate::{
     construct_name::ConstructName,
+    message::Message,
     state::{Info, State},
     util::check_strong::check_strong,
 };
@@ -10,9 +11,7 @@ use crate::{
 use super::Handle;
 
 impl Handle for Strong {
-    type Error = String;
-
-    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Self::Error> {
+    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Message> {
         let marker = check_strong(state)?;
 
         state.enter(ConstructName::Strong);
@@ -32,6 +31,6 @@ impl Handle for Strong {
     }
 }
 
-pub fn peek_strong(_state: &State) -> String {
-    "*".into()
+pub fn peek_strong(_state: &State) -> char {
+    '*'
 }

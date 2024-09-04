@@ -5,6 +5,7 @@ use crate::construct_name::ConstructName;
 
 #[derive(Default)]
 pub struct Unsafe<'a> {
+    // TODO this could be a char
     pub character: &'a str,
     pub in_construct: Option<Construct>,
     pub not_in_construct: Option<Construct>,
@@ -54,14 +55,14 @@ impl<'a> Unsafe<'a> {
             Self::new(
                 "\t",
                 None,
-                r"[\\r\\n]".into(),
+                "[\\r\\n]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
                 None,
                 None,
             ),
             Self::new(
                 "\t",
-                r"[\\r\\n]".into(),
+                "[\\r\\n]".into(),
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 None,
@@ -114,14 +115,14 @@ impl<'a> Unsafe<'a> {
             Self::new(
                 " ",
                 None,
-                r"[\\r\\n]".into(),
+                "[\\r\\n]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
                 None,
                 None,
             ),
             Self::new(
                 " ",
-                r"[\\r\\n]".into(),
+                "[\\r\\n]".into(),
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 None,
@@ -142,7 +143,7 @@ impl<'a> Unsafe<'a> {
             Self::new(
                 "!",
                 None,
-                r"\[".into(),
+                "\\[".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
@@ -159,7 +160,7 @@ impl<'a> Unsafe<'a> {
             Self::new(
                 "&",
                 None,
-                r"[#A-Za-z]".into(),
+                "[#A-Za-z]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
                 None,
                 None,
@@ -182,13 +183,13 @@ impl<'a> Unsafe<'a> {
             ),
             Self::new(
                 "(",
-                r"\]".into(),
+                "\\]".into(),
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
             ),
-            Self::new(")", r"\d+".into(), None, None, None, Some(true)),
+            Self::new(")", "\\d+".into(), None, None, None, Some(true)),
             Self::new(
                 ")",
                 None,
@@ -197,7 +198,7 @@ impl<'a> Unsafe<'a> {
                 None,
                 None,
             ),
-            Self::new("*", None, r"(?:[ \t\r\n*])".into(), None, None, Some(true)),
+            Self::new("*", None, "(?:[ \t\r\n*])".into(), None, None, Some(true)),
             Self::new(
                 "*",
                 None,
@@ -206,17 +207,17 @@ impl<'a> Unsafe<'a> {
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
             ),
-            Self::new("+", None, r"(?:[ \t\r\n])".into(), None, None, Some(true)),
-            Self::new("-", None, r"(?:[ \t\r\n-])".into(), None, None, Some(true)),
+            Self::new("+", None, "(?:[ \t\r\n])".into(), None, None, Some(true)),
+            Self::new("-", None, "(?:[ \t\r\n-])".into(), None, None, Some(true)),
             Self::new(
                 ".",
-                r"\d+".into(),
+                "\\d+".into(),
                 "(?:[ \t\r\n]|$)".into(),
                 None,
                 None,
                 Some(true),
             ),
-            Self::new("<", None, r"[!/?A-Za-z]".into(), None, None, Some(true)),
+            Self::new("<", None, "[!/?A-Za-z]".into(), None, None, Some(true)),
             Self::new(
                 "<",
                 None,
@@ -261,7 +262,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                r"\",
+                "\\",
                 None,
                 "[\\r\\n]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),

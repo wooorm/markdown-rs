@@ -1,7 +1,18 @@
-use alloc::string::String;
+use alloc::format;
 
-use crate::state::State;
+use crate::{message::Message, state::State};
 
-pub fn check_strong(_state: &State) -> Result<char, String> {
-    Ok('*')
+pub fn check_strong(state: &State) -> Result<char, Message> {
+    let marker = state.options.strong;
+
+    if marker != '*' && marker != '_' {
+        return Err(Message {
+            reason: format!(
+                "Cannot serialize strong with `{}` for `options.strong`, expected `*`, or `_`",
+                marker
+            ),
+        });
+    }
+
+    Ok(marker)
 }

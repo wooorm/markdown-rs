@@ -13,13 +13,7 @@ fn list_in_scope(stack: &[ConstructName], list: &Option<Construct>, none: bool) 
         return none;
     };
     match list {
-        Construct::Single(construct_name) => {
-            if stack.contains(construct_name) {
-                return true;
-            }
-
-            false
-        }
+        Construct::Single(construct_name) => stack.contains(construct_name),
         Construct::List(constructs_names) => {
             if constructs_names.is_empty() {
                 return none;
