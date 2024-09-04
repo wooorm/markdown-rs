@@ -1,4 +1,5 @@
 use crate::construct_name::ConstructName;
+use crate::handle::emphasis::peek_emphasis;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
 use crate::message::Message;
@@ -69,9 +70,9 @@ impl<'a> State<'a> {
             Node::Paragraph(paragraph) => paragraph.handle(self, info),
             Node::Text(text) => text.handle(self, info),
             Node::Strong(strong) => strong.handle(self, info),
-            _ => Err(Message {
-                reason: "Cannot handle node".into(),
-            }),
+            Node::Strong(strong) => strong.handle(self, info),
+            Node::Emphasis(emphasis) => emphasis.handle(self, info),
+            _ => Err("Cannot handle node".into()),
         }
     }
 
@@ -273,6 +274,7 @@ impl<'a> State<'a> {
     fn determine_first_char(&self, node: &Node) -> Option<char> {
         match node {
             Node::Strong(_) => Some(peek_strong(self)),
+            Node::Emphasis(_) => Some(peek_emphasis(self)),
             _ => None,
         }
     }

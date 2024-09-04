@@ -31,6 +31,6 @@ impl Handle for Strong {
     }
 }
 
-pub fn peek_strong(_state: &State) -> char {
-    '*'
+pub fn peek_strong(state: &State) -> char {
+    state.options.strong
 }

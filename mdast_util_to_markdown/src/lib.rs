@@ -10,7 +10,7 @@ extern crate alloc;
 mod configure;
 mod construct_name;
 mod handle;
-pub mod message;
+mod message;
 mod parents;
 mod state;
 mod r#unsafe;
