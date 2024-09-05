@@ -196,18 +196,14 @@ impl<'a> State<'a> {
 
             if let Some(pattern_before) = pattern.before {
                 pattern_to_compile.push('(');
-
                 if at_break {
                     pattern_to_compile.push_str("[\\r\\n][\\t ]*");
                 }
-
                 pattern_to_compile.push_str("(?:");
                 pattern_to_compile.push_str(pattern_before);
                 pattern_to_compile.push(')');
                 pattern_to_compile.push(')');
-            }
-
-            if pattern_to_compile.is_empty() && at_break {
+            } else if at_break {
                 pattern_to_compile.push('(');
                 pattern_to_compile.push_str("[\\r\\n][\\t ]*");
                 pattern_to_compile.push(')');
