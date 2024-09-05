@@ -1,5 +1,6 @@
 use crate::construct_name::ConstructName;
 use crate::handle::emphasis::peek_emphasis;
+use crate::handle::html::peek_html;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
 use crate::message::Message;
@@ -71,6 +72,7 @@ impl<'a> State<'a> {
             Node::Emphasis(emphasis) => emphasis.handle(self, info),
             Node::Heading(heading) => heading.handle(self, info),
             Node::Break(r#break) => r#break.handle(self, info),
+            Node::Html(html) => html.handle(self, info),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -105,7 +107,6 @@ impl<'a> State<'a> {
                             if entry.before && !before {
                                 entry.before = false;
                             }
-
                             if entry.after && !after {
                                 entry.after = false;
                             }
@@ -269,7 +270,19 @@ impl<'a> State<'a> {
             }
 
             if !results.is_empty() {
-                new_info.before = &results[results.len() - 1..];
+                if info.before == "\r" || info.before == "\n" && matches!(child, Node::Html(_)) {
+                    if let Some(last_poped_char) = results.pop() {
+                        if last_poped_char == '\n' {
+                            if results.ends_with('\r') {
+                                results.pop();
+                            }
+                        }
+                    }
+                    results.push(' ');
+                    new_info.before = " ";
+                } else {
+                    new_info.before = &results[results.len() - 1..];
+                }
             }
 
             results.push_str(&self.handle(child, &new_info)?);
@@ -285,6 +298,7 @@ impl<'a> State<'a> {
         match node {
             Node::Strong(_) => Some(peek_strong(self)),
             Node::Emphasis(_) => Some(peek_emphasis(self)),
+            Node::Html(_) => Some(peek_html()),
             _ => None,
         }
     }

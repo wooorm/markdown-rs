@@ -1,4 +1,4 @@
-use markdown::mdast::Break;
+use markdown::mdast::{Break, Html};
 use markdown::mdast::{Heading, Node, Text};
 use mdast_util_to_markdown::to_markdown as to;
 use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
@@ -211,16 +211,19 @@ fn heading() {
     //    "should serialize an heading w/ rank 1 and code w/ a line ending as setext"
     //);
 
-    //assert_eq!(
-    //    to(&Node::Heading(Heading {
-    //        children: vec![],
-    //        position: None,
-    //        depth: 1
-    //    }),)
-    //    .unwrap(),
-    //    "<a\n/>\n==\n",
-    //    "should serialize an heading w/ rank 1 and html w/ a line ending as setext"
-    //);
+    assert_eq!(
+        to(&Node::Heading(Heading {
+            children: vec![Node::Html(Html {
+                value: "<a\n/>".to_string(),
+                position: None
+            })],
+            position: None,
+            depth: 1
+        }),)
+        .unwrap(),
+        "<a\n/>\n==\n",
+        "should serialize an heading w/ rank 1 and html w/ a line ending as setext"
+    );
 
     assert_eq!(
         to(&Node::Heading(Heading {

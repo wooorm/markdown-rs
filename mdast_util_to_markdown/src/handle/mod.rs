@@ -4,6 +4,7 @@ use alloc::string::String;
 mod r#break;
 pub mod emphasis;
 mod heading;
+pub mod html;
 mod paragraph;
 pub mod strong;
 mod text;
