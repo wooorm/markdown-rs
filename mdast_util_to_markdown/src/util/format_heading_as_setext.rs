@@ -1,28 +1,25 @@
-use alloc::string::ToString;
-use markdown::mdast::Node;
+use alloc::string::{String, ToString};
+use markdown::mdast::{Heading, Node};
 use regex::Regex;
 
 use crate::state::State;
 
-pub fn format_heading_as_setext(node: &Node, _state: &State) -> bool {
-    if let Node::Heading(heading) = node {
-        let line_break = Regex::new(r"\r?\n|\r").unwrap();
-        let mut literal_with_break = false;
-        for child in &heading.children {
-            if include_literal_with_break(child, &line_break) {
-                literal_with_break = true;
-                break;
-            }
+pub fn format_heading_as_setext(heading: &Heading, state: &State) -> bool {
+    let line_break = Regex::new(r"\r?\n|\r").unwrap();
+    let mut literal_with_line_break = false;
+    for child in &heading.children {
+        if include_literal_with_line_break(child, &line_break) {
+            literal_with_line_break = true;
+            break;
         }
-
-        return heading.depth == 0
-            || heading.depth < 3 && !node.to_string().is_empty() && literal_with_break;
     }
 
-    false
+    heading.depth < 3
+        && !to_string(&heading.children).is_empty()
+        && (state.options.setext || literal_with_line_break)
 }
 
-fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
+fn include_literal_with_line_break(node: &Node, regex: &Regex) -> bool {
     match node {
         Node::Break(_) => true,
         Node::MdxjsEsm(x) => regex.is_match(&x.value),
@@ -39,7 +36,7 @@ fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
         _ => {
             if let Some(children) = node.children() {
                 for child in children {
-                    if include_literal_with_break(child, regex) {
+                    if include_literal_with_line_break(child, regex) {
                         return true;
                     }
                 }
@@ -48,4 +45,8 @@ fn include_literal_with_break(node: &Node, regex: &Regex) -> bool {
             false
         }
     }
+}
+
+fn to_string(children: &[Node]) -> String {
+    children.iter().map(ToString::to_string).collect()
 }

@@ -13,7 +13,7 @@ pub struct Options {
     pub close_atx: bool,
     pub resource_link: bool,
     pub rule_spaces: bool,
-    pub set_text: bool,
+    pub setext: bool,
     pub tight_definitions: bool,
     pub rule_repetition: u32,
 }
@@ -42,7 +42,7 @@ impl Default for Options {
             close_atx: false,
             rule_spaces: false,
             resource_link: false,
-            set_text: false,
+            setext: false,
             tight_definitions: false,
         }
     }

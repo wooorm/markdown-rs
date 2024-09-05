@@ -158,6 +158,14 @@ impl<'a> Unsafe<'a> {
             ),
             Self::new("#", None, None, None, None, Some(true)),
             Self::new(
+                "#",
+                None,
+                "(?:[\r\n]|$)".into(),
+                Construct::Single(ConstructName::HeadingAtx).into(),
+                None,
+                None,
+            ),
+            Self::new(
                 "&",
                 None,
                 "[#A-Za-z]".into(),

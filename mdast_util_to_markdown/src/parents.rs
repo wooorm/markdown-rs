@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use markdown::mdast::{Emphasis, List, Node, Paragraph, Root, Strong};
+use markdown::mdast::{Emphasis, Heading, List, Node, Paragraph, Root, Strong};
 
 pub trait Parent {
     fn children(&self) -> &Vec<Node>;
@@ -29,4 +29,4 @@ macro_rules! impl_Parent {
     }
 }
 
-impl_Parent!(for Root, Paragraph, Strong, Emphasis);
+impl_Parent!(for Root, Paragraph, Strong, Emphasis, Heading);

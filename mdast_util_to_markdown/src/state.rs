@@ -25,12 +25,12 @@ enum Join {
 
 #[allow(dead_code)]
 pub struct State<'a> {
-    stack: Vec<ConstructName>,
+    pub stack: Vec<ConstructName>,
     // We use i64 for index_stack because -1 is used to mark the absense of children.
     // We don't use index_stack values to index into any child.
     index_stack: Vec<i64>,
     bullet_last_used: Option<String>,
-    r#unsafe: Vec<Unsafe<'a>>,
+    pub r#unsafe: Vec<Unsafe<'a>>,
     pub options: &'a Options,
 }
 
@@ -71,6 +71,8 @@ impl<'a> State<'a> {
             Node::Text(text) => text.handle(self, info),
             Node::Strong(strong) => strong.handle(self, info),
             Node::Emphasis(emphasis) => emphasis.handle(self, info),
+            Node::Heading(heading) => heading.handle(self, info),
+            Node::Break(r#break) => r#break.handle(self, info),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -162,9 +164,8 @@ impl<'a> State<'a> {
                     Self::encode(config, char_at_pos, &mut result)
                 }
                 Some(character) => {
-                    let code = u32::from(character);
-                    let hex_string = format!("{:X}", code);
-                    result.push_str(&format!("&#x{};", hex_string));
+                    let hex_code = u32::from(character);
+                    result.push_str(&format!("&#x{:X};", hex_code));
                     start += 1;
                 }
                 _ => (),
@@ -339,9 +340,14 @@ impl<'a> State<'a> {
         if let Some(spread) = parent.spreadable() {
             if matches!(left, Node::Paragraph(_)) && Self::matches((left, right))
                 || matches!(right, Node::Definition(_))
-                || format_heading_as_setext(right, self)
             {
                 return None;
+            }
+
+            if let Node::Heading(heading) = right {
+                if format_heading_as_setext(heading, self) {
+                    return None;
+                }
             }
 
             if spread {
