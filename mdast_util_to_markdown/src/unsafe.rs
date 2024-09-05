@@ -5,8 +5,7 @@ use crate::construct_name::ConstructName;
 
 #[derive(Default)]
 pub struct Unsafe<'a> {
-    // TODO this could be a char
-    pub character: &'a str,
+    pub character: char,
     pub in_construct: Option<Construct>,
     pub not_in_construct: Option<Construct>,
     pub before: Option<&'a str>,
@@ -23,7 +22,7 @@ pub enum Construct {
 
 impl<'a> Unsafe<'a> {
     pub fn new(
-        character: &'a str,
+        character: char,
         before: Option<&'a str>,
         after: Option<&'a str>,
         in_construct: Option<Construct>,
@@ -53,7 +52,7 @@ impl<'a> Unsafe<'a> {
 
         vec![
             Self::new(
-                "\t",
+                '\t',
                 None,
                 "[\\r\\n]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -61,7 +60,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "\t",
+                '\t',
                 "[\\r\\n]".into(),
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -69,7 +68,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "\t",
+                '\t',
                 None,
                 None,
                 Construct::List(vec![
@@ -81,23 +80,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "\r",
-                None,
-                None,
-                Construct::List(vec![
-                    ConstructName::CodeFencedLangGraveAccent,
-                    ConstructName::CodeFencedLangTilde,
-                    ConstructName::CodeFencedMetaGraveAccent,
-                    ConstructName::CodeFencedMetaTilde,
-                    ConstructName::DestinationLiteral,
-                    ConstructName::HeadingAtx,
-                ])
-                .into(),
-                None,
-                None,
-            ),
-            Self::new(
-                "\n",
+                '\r',
                 None,
                 None,
                 Construct::List(vec![
@@ -113,7 +96,23 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                " ",
+                '\n',
+                None,
+                None,
+                Construct::List(vec![
+                    ConstructName::CodeFencedLangGraveAccent,
+                    ConstructName::CodeFencedLangTilde,
+                    ConstructName::CodeFencedMetaGraveAccent,
+                    ConstructName::CodeFencedMetaTilde,
+                    ConstructName::DestinationLiteral,
+                    ConstructName::HeadingAtx,
+                ])
+                .into(),
+                None,
+                None,
+            ),
+            Self::new(
+                ' ',
                 None,
                 "[\\r\\n]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -121,7 +120,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                " ",
+                ' ',
                 "[\\r\\n]".into(),
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -129,7 +128,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                " ",
+                ' ',
                 None,
                 None,
                 Construct::List(vec![
@@ -141,7 +140,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "!",
+                '!',
                 None,
                 "\\[".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -149,16 +148,16 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "\"",
+                '\"',
                 None,
                 None,
                 Construct::Single(ConstructName::TitleQuote).into(),
                 None,
                 None,
             ),
-            Self::new("#", None, None, None, None, Some(true)),
+            Self::new('#', None, None, None, None, Some(true)),
             Self::new(
-                "#",
+                '#',
                 None,
                 "(?:[\r\n]|$)".into(),
                 Construct::Single(ConstructName::HeadingAtx).into(),
@@ -166,7 +165,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "&",
+                '&',
                 None,
                 "[#A-Za-z]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -174,7 +173,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "'",
+                '\'',
                 None,
                 None,
                 Construct::Single(ConstructName::TitleApostrophe).into(),
@@ -182,7 +181,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "(",
+                '(',
                 None,
                 None,
                 Construct::Single(ConstructName::DestinationRaw).into(),
@@ -190,44 +189,44 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "(",
+                '(',
                 "\\]".into(),
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
             ),
-            Self::new(")", "\\d+".into(), None, None, None, Some(true)),
+            Self::new(')', "\\d+".into(), None, None, None, Some(true)),
             Self::new(
-                ")",
+                ')',
                 None,
                 None,
                 Construct::Single(ConstructName::DestinationRaw).into(),
                 None,
                 None,
             ),
-            Self::new("*", None, "(?:[ \t\r\n*])".into(), None, None, Some(true)),
+            Self::new('*', None, "(?:[ \t\r\n*])".into(), None, None, Some(true)),
             Self::new(
-                "*",
+                '*',
                 None,
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
             ),
-            Self::new("+", None, "(?:[ \t\r\n])".into(), None, None, Some(true)),
-            Self::new("-", None, "(?:[ \t\r\n-])".into(), None, None, Some(true)),
+            Self::new('+', None, "(?:[ \t\r\n])".into(), None, None, Some(true)),
+            Self::new('-', None, "(?:[ \t\r\n-])".into(), None, None, Some(true)),
             Self::new(
-                ".",
+                '.',
                 "\\d+".into(),
                 "(?:[ \t\r\n]|$)".into(),
                 None,
                 None,
                 Some(true),
             ),
-            Self::new("<", None, "[!/?A-Za-z]".into(), None, None, Some(true)),
+            Self::new('<', None, "[!/?A-Za-z]".into(), None, None, Some(true)),
             Self::new(
-                "<",
+                '<',
                 None,
                 "[!/?A-Za-z]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -235,26 +234,26 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "<",
+                '<',
                 None,
                 None,
                 Construct::Single(ConstructName::DestinationLiteral).into(),
                 None,
                 None,
             ),
-            Self::new("=", None, None, None, None, Some(true)),
-            Self::new(">", None, None, None, None, Some(true)),
+            Self::new('=', None, None, None, None, Some(true)),
+            Self::new('>', None, None, None, None, Some(true)),
             Self::new(
-                ">",
+                '>',
                 None,
                 None,
                 Construct::Single(ConstructName::DestinationLiteral).into(),
                 None,
                 Some(true),
             ),
-            Self::new("[", None, None, None, None, Some(true)),
+            Self::new('[', None, None, None, None, Some(true)),
             Self::new(
-                "[",
+                '[',
                 None,
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -262,7 +261,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "[",
+                '[',
                 None,
                 None,
                 Construct::List(vec![ConstructName::Label, ConstructName::Reference]).into(),
@@ -270,7 +269,7 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "\\",
+                '\\',
                 None,
                 "[\\r\\n]".into(),
                 Construct::Single(ConstructName::Phrasing).into(),
@@ -278,25 +277,25 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "]",
+                ']',
                 None,
                 None,
                 Construct::List(vec![ConstructName::Label, ConstructName::Reference]).into(),
                 None,
                 None,
             ),
-            Self::new("_", None, None, None, None, Some(true)),
+            Self::new('_', None, None, None, None, Some(true)),
             Self::new(
-                "_",
+                '_',
                 None,
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
             ),
-            Self::new("`", None, None, None, None, Some(true)),
+            Self::new('`', None, None, None, None, Some(true)),
             Self::new(
-                "`",
+                '`',
                 None,
                 None,
                 Construct::List(vec![
@@ -308,14 +307,14 @@ impl<'a> Unsafe<'a> {
                 None,
             ),
             Self::new(
-                "`",
+                '`',
                 None,
                 None,
                 Construct::Single(ConstructName::Phrasing).into(),
                 Construct::List(full_phrasing_spans.clone()).into(),
                 None,
             ),
-            Self::new("~", None, None, None, None, Some(true)),
+            Self::new('~', None, None, None, None, Some(true)),
         ]
     }
 

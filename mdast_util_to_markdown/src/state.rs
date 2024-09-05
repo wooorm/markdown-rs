@@ -190,41 +190,58 @@ impl<'a> State<'a> {
 
     fn compile_pattern(pattern: &mut Unsafe) {
         if pattern.compiled.is_none() {
-            let before = if pattern.at_break.unwrap_or(false) {
-                "[\\r\\n][\\t ]*"
-            } else {
-                ""
-            };
+            let mut pattern_to_compile = String::new();
 
-            let before = format!(
-                "{}{}",
-                before,
-                pattern
-                    .before
-                    .map_or(String::new(), |before| format!("(?:{})", before))
-            );
+            let at_break = pattern.at_break.unwrap_or(false);
 
-            let before = if before.is_empty() {
-                String::new()
-            } else {
-                format!("({})", before)
-            };
+            if let Some(pattern_before) = pattern.before {
+                pattern_to_compile.push('(');
 
-            let after = pattern
-                .after
-                .map_or(String::new(), |after| format!("(?:{})", after));
+                if at_break {
+                    pattern_to_compile.push_str("[\\r\\n][\\t ]*");
+                }
 
-            let special_char = if Regex::new(r"[\|\{}\()\[\]\\\^\$\+\*\?\.\-]")
-                .unwrap()
-                .is_match(pattern.character)
-            {
-                "\\"
-            } else {
-                ""
-            };
+                pattern_to_compile.push_str("(?:");
+                pattern_to_compile.push_str(pattern_before);
+                pattern_to_compile.push(')');
+                pattern_to_compile.push(')');
+            }
 
-            let regex = format!("{}{}{}{}", before, special_char, pattern.character, after);
-            pattern.set_compiled(Regex::new(&regex).unwrap());
+            if pattern_to_compile.is_empty() && at_break {
+                pattern_to_compile.push('(');
+                pattern_to_compile.push_str("[\\r\\n][\\t ]*");
+                pattern_to_compile.push(')');
+            }
+
+            if matches!(
+                pattern.character,
+                '|' | '\\'
+                    | '{'
+                    | '}'
+                    | '('
+                    | ')'
+                    | '['
+                    | ']'
+                    | '^'
+                    | '$'
+                    | '+'
+                    | '*'
+                    | '?'
+                    | '.'
+                    | '-'
+            ) {
+                pattern_to_compile.push('\\');
+            }
+
+            pattern_to_compile.push(pattern.character);
+
+            if let Some(pattern_after) = pattern.after {
+                pattern_to_compile.push_str("(?:");
+                pattern_to_compile.push_str(pattern_after);
+                pattern_to_compile.push(')');
+            }
+
+            pattern.set_compiled(Regex::new(&pattern_to_compile).unwrap());
         }
     }
 
