@@ -70,7 +70,6 @@ impl<'a> State<'a> {
             Node::Paragraph(paragraph) => paragraph.handle(self, info),
             Node::Text(text) => text.handle(self, info),
             Node::Strong(strong) => strong.handle(self, info),
-            Node::Strong(strong) => strong.handle(self, info),
             Node::Emphasis(emphasis) => emphasis.handle(self, info),
             _ => Err("Cannot handle node".into()),
         }
@@ -250,7 +249,8 @@ impl<'a> State<'a> {
                 if let Some(first_char) = self.determine_first_char(child) {
                     new_info.after = first_char.encode_utf8(&mut buffer);
                 } else {
-                    self.handle(child, &Info::new("", ""))?
+                    new_info.after = self
+                        .handle(child, &Info::new("", ""))?
                         .chars()
                         .nth(0)
                         .unwrap_or_default()
