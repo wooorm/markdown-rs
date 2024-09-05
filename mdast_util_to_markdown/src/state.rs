@@ -271,11 +271,10 @@ impl<'a> State<'a> {
 
             if !results.is_empty() {
                 if info.before == "\r" || info.before == "\n" && matches!(child, Node::Html(_)) {
-                    if let Some(last_poped_char) = results.pop() {
-                        if last_poped_char == '\n' {
-                            if results.ends_with('\r') {
-                                results.pop();
-                            }
+                    if results.ends_with('\n') || results.ends_with('\r') {
+                        results.pop();
+                        if results.ends_with('\r') {
+                            results.pop();
                         }
                     }
                     results.push(' ');
