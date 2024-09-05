@@ -26,9 +26,7 @@ enum Join {
 #[allow(dead_code)]
 pub struct State<'a> {
     pub stack: Vec<ConstructName>,
-    // We use i64 for index_stack because -1 is used to mark the absense of children.
-    // We don't use index_stack values to index into any child.
-    index_stack: Vec<i64>,
+    index_stack: Vec<usize>,
     bullet_last_used: Option<String>,
     pub r#unsafe: Vec<Unsafe<'a>>,
     pub options: &'a Options,
@@ -93,11 +91,10 @@ impl<'a> State<'a> {
             if let Some(regex) = &pattern.compiled {
                 for m in regex.captures_iter(&value) {
                     let full_match = m.get(0).unwrap();
-                    let captured_group_len = if let Some(captured_group) = m.get(1) {
-                        captured_group.len()
-                    } else {
-                        0
-                    };
+                    let captured_group_len = m
+                        .get(1)
+                        .map(|captured_group| captured_group.len())
+                        .unwrap_or(0);
 
                     let before = pattern.before.is_some() || pattern.at_break.unwrap_or(false);
                     let after = pattern.after.is_some();
@@ -161,7 +158,13 @@ impl<'a> State<'a> {
             let char_at_pos = value.chars().nth(*position);
             match char_at_pos {
                 Some('!'..='/') | Some(':'..='@') | Some('['..='`') | Some('{'..='~') => {
-                    Self::encode(config, char_at_pos, &mut result)
+                    if let Some(encode) = &config.encode {
+                        if encode.contains(&char_at_pos.unwrap()) {
+                            result.push('\\');
+                        }
+                    } else {
+                        result.push('\\');
+                    }
                 }
                 Some(character) => {
                     let hex_code = u32::from(character);
@@ -175,17 +178,6 @@ impl<'a> State<'a> {
         result.push_str(&escape_backslashes(&value[start..end], config.after));
 
         result
-    }
-
-    fn encode(config: &SafeConfig, char_at_pos: Option<char>, result: &mut String) {
-        match &config.encode {
-            Some(encode) => {
-                if encode.contains(&char_at_pos.unwrap()) {
-                    result.push('\\');
-                }
-            }
-            None => result.push('\\'),
-        }
     }
 
     fn compile_pattern(pattern: &mut Unsafe) {
@@ -250,17 +242,21 @@ impl<'a> State<'a> {
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
 
-        self.index_stack.push(-1);
+        if !parent.children().is_empty() {
+            self.index_stack.push(0);
+        }
 
         while let Some(child) = children_iter.next() {
-            if let Some(top) = self.index_stack.last_mut() {
-                *top = index;
+            if index > 0 {
+                if let Some(top) = self.index_stack.last_mut() {
+                    *top = index;
+                }
             }
 
             let mut new_info = Info::new(info.before, info.after);
             let mut buffer = [0u8; 4];
             if let Some(child) = children_iter.peek() {
-                if let Some(first_char) = self.determine_first_char(child) {
+                if let Some(first_char) = self.peek_node(child) {
                     new_info.after = first_char.encode_utf8(&mut buffer);
                 } else {
                     new_info.after = self
@@ -285,7 +281,7 @@ impl<'a> State<'a> {
         Ok(results)
     }
 
-    fn determine_first_char(&self, node: &Node) -> Option<char> {
+    fn peek_node(&self, node: &Node) -> Option<char> {
         match node {
             Node::Strong(_) => Some(peek_strong(self)),
             Node::Emphasis(_) => Some(peek_emphasis(self)),
@@ -298,11 +294,15 @@ impl<'a> State<'a> {
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
 
-        self.index_stack.push(-1);
+        if !parent.children().is_empty() {
+            self.index_stack.push(0);
+        }
 
         while let Some(child) = children_iter.next() {
-            if let Some(top) = self.index_stack.last_mut() {
-                *top = index;
+            if index > 0 {
+                if let Some(top) = self.index_stack.last_mut() {
+                    *top = index;
+                }
             }
 
             if matches!(child, Node::List(_)) {

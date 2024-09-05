@@ -18,7 +18,7 @@ impl Handle for Heading {
         if format_heading_as_setext(self, state) {
             state.enter(ConstructName::HeadingSetext);
             state.enter(ConstructName::Phrasing);
-            let value = state.container_phrasing(self, &Info::new("\n", "\n"))?;
+            let mut value = state.container_phrasing(self, &Info::new("\n", "\n"))?;
 
             state.exit();
             state.exit();
@@ -36,7 +36,8 @@ impl Handle for Heading {
             };
 
             let setext_underline = underline_char.repeat(value.len() - last_line_rank);
-            let value = format!("{}\n{}", value, setext_underline);
+            value.push('\n');
+            value.push_str(&setext_underline);
 
             return Ok(value);
         }
