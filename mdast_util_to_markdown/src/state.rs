@@ -92,7 +92,7 @@ impl<'a> State<'a> {
 
             if let Some(regex) = &pattern.compiled {
                 for m in regex.captures_iter(&value) {
-                    let full_match = m.get(0).unwrap();
+                    let full_match = m.get(0).expect("Guaranteed to have a match");
                     let captured_group_len = m
                         .get(1)
                         .map(|captured_group| captured_group.len())
@@ -230,7 +230,9 @@ impl<'a> State<'a> {
                 pattern_to_compile.push(')');
             }
 
-            pattern.set_compiled(Regex::new(&pattern_to_compile).unwrap());
+            pattern.set_compiled(
+                Regex::new(&pattern_to_compile).expect("A valid unsafe regex pattern"),
+            );
         }
     }
 
@@ -249,9 +251,11 @@ impl<'a> State<'a> {
 
         while let Some(child) = children_iter.next() {
             if index > 0 {
-                if let Some(top) = self.index_stack.last_mut() {
-                    *top = index;
-                }
+                let top = self
+                    .index_stack
+                    .last_mut()
+                    .expect("The stack is populated with at least one child position");
+                *top = index;
             }
 
             let mut new_info = Info::new(info.before, info.after);
@@ -271,6 +275,8 @@ impl<'a> State<'a> {
 
             if !results.is_empty() {
                 if info.before == "\r" || info.before == "\n" && matches!(child, Node::Html(_)) {
+                    // TODO Remove this check here it might not be needed since we're
+                    // checking for the before info.
                     if results.ends_with('\n') || results.ends_with('\r') {
                         results.pop();
                         if results.ends_with('\r') {
@@ -313,9 +319,11 @@ impl<'a> State<'a> {
 
         while let Some(child) = children_iter.next() {
             if index > 0 {
-                if let Some(top) = self.index_stack.last_mut() {
-                    *top = index;
-                }
+                let top = self
+                    .index_stack
+                    .last_mut()
+                    .expect("The stack is populated with at least one child position");
+                *top = index;
             }
 
             if matches!(child, Node::List(_)) {
