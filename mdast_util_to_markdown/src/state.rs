@@ -132,9 +132,9 @@ impl<'a> State<'a> {
             // If this character is supposed to be escaped because it has a condition on
             // the next character, and the next character is definitly being escaped,
             // then skip this escape.
-            // This will never panic because we're checking the correct bounds, and we
-            // gurantee to have the positions as key in the infos map before reaching this
-            // execution.
+            // This will never panic because the bounds are properly checked, and we
+            // guarantee that the positions are already keys in the `infos` map before this
+            // point in execution.
             if index + 1 < positions.len()
                 && position + 1 < end
                 && positions[index + 1] == position + 1
