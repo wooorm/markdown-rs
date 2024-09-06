@@ -8,6 +8,7 @@ pub mod html;
 mod paragraph;
 pub mod strong;
 mod text;
+mod thematic_break;
 
 pub trait Handle {
     fn handle(&self, state: &mut State, info: &Info) -> Result<String, Message>;

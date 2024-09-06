@@ -73,6 +73,7 @@ impl<'a> State<'a> {
             Node::Heading(heading) => heading.handle(self, info),
             Node::Break(r#break) => r#break.handle(self, info),
             Node::Html(html) => html.handle(self, info),
+            Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info),
             _ => Err("Cannot handle node".into()),
         }
     }
