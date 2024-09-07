@@ -4,14 +4,14 @@ use regex::Regex;
 pub struct SafeConfig<'a> {
     pub before: &'a str,
     pub after: &'a str,
-    pub encode: Option<Vec<char>>,
+    pub encode: Option<char>,
 }
 
 impl<'a> SafeConfig<'a> {
     pub(crate) fn new(
         before: Option<&'a str>,
         after: Option<&'a str>,
-        encode: Option<Vec<char>>,
+        encode: Option<char>,
     ) -> Self {
         SafeConfig {
             before: before.unwrap_or(""),

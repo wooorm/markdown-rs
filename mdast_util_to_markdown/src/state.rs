@@ -74,6 +74,7 @@ impl<'a> State<'a> {
             Node::Break(r#break) => r#break.handle(self, info),
             Node::Html(html) => html.handle(self, info),
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info),
+            Node::Code(code) => code.handle(self, info),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -161,17 +162,22 @@ impl<'a> State<'a> {
             match char_at_pos {
                 Some('!'..='/') | Some(':'..='@') | Some('['..='`') | Some('{'..='~') => {
                     if let Some(encode) = &config.encode {
-                        if encode.contains(&char_at_pos.unwrap()) {
+                        let character = char_at_pos.expect("To be a valid char");
+                        if *encode != character {
                             result.push('\\');
+                        } else {
+                            let encoded_char = Self::encode_char(character);
+                            result.push_str(&encoded_char);
+                            start += character.len_utf8();
                         }
                     } else {
                         result.push('\\');
                     }
                 }
                 Some(character) => {
-                    let hex_code = u32::from(character);
-                    result.push_str(&format!("&#x{:X};", hex_code));
-                    start += 1;
+                    let encoded_char = Self::encode_char(character);
+                    result.push_str(&encoded_char);
+                    start += character.len_utf8();
                 }
                 _ => (),
             };
@@ -180,6 +186,11 @@ impl<'a> State<'a> {
         result.push_str(&escape_backslashes(&value[start..end], config.after));
 
         result
+    }
+
+    fn encode_char(character: char) -> String {
+        let hex_code = u32::from(character);
+        format!("&#x{:X};", hex_code)
     }
 
     fn compile_pattern(pattern: &mut Unsafe) {
@@ -366,10 +377,16 @@ impl<'a> State<'a> {
     }
 
     fn join_defaults<T: Parent>(&self, left: &Node, right: &Node, parent: &T) -> Option<Join> {
-        if format_code_as_indented(right, self)
-            && (matches!(left, Node::List(_)) || format_code_as_indented(left, self))
-        {
-            return Some(Join::Bool(false));
+        if let Node::Code(code) = right {
+            if format_code_as_indented(code, self) && matches!(left, Node::List(_)) {
+                return Some(Join::Bool(false));
+            }
+
+            if let Node::Code(code) = left {
+                if format_code_as_indented(code, self) {
+                    return Some(Join::Bool(false));
+                }
+            }
         }
 
         if let Some(spread) = parent.spreadable() {
