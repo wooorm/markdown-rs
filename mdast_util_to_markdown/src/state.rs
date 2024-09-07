@@ -75,6 +75,7 @@ impl<'a> State<'a> {
             Node::Html(html) => html.handle(self, info),
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info),
             Node::Code(code) => code.handle(self, info),
+            Node::BlockQuote(block_quote) => block_quote.handle(self, info),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -320,7 +321,7 @@ impl<'a> State<'a> {
         }
     }
 
-    fn container_flow<T: Parent>(&mut self, parent: &T, _info: &Info) -> Result<String, Message> {
+    pub fn container_flow<T: Parent>(&mut self, parent: &T) -> Result<String, Message> {
         let mut results: String = String::new();
         let mut children_iter = parent.children().iter().peekable();
         let mut index = 0;
