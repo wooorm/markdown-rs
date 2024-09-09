@@ -2,7 +2,7 @@ use alloc::{
     format,
     string::{String, ToString},
 };
-use markdown::mdast::Code;
+use markdown::mdast::{Code, Node};
 
 use crate::{
     construct_name::ConstructName,
@@ -17,7 +17,13 @@ use crate::{
 use super::Handle;
 
 impl Handle for Code {
-    fn handle(&self, state: &mut State, _info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        _info: &Info,
+        _parent: Option<&Node>,
+        _node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         let marker = check_fence(state)?;
 
         if format_code_as_indented(self, state) {

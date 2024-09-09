@@ -1,5 +1,5 @@
 use alloc::format;
-use markdown::mdast::Heading;
+use markdown::mdast::{Heading, Node};
 use regex::Regex;
 
 use crate::{
@@ -12,13 +12,19 @@ use crate::{
 use super::Handle;
 
 impl Handle for Heading {
-    fn handle(&self, state: &mut State, _info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        _info: &Info,
+        _parent: Option<&Node>,
+        node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         let rank = self.depth.clamp(1, 6);
 
         if format_heading_as_setext(self, state) {
             state.enter(ConstructName::HeadingSetext);
             state.enter(ConstructName::Phrasing);
-            let mut value = state.container_phrasing(self, &Info::new("\n", "\n"))?;
+            let mut value = state.container_phrasing(node, &Info::new("\n", "\n"))?;
 
             state.exit();
             state.exit();
@@ -46,7 +52,7 @@ impl Handle for Heading {
         state.enter(ConstructName::HeadingAtx);
         state.enter(ConstructName::Phrasing);
 
-        let mut value = state.container_phrasing(self, &Info::new("# ", "\n"))?;
+        let mut value = state.container_phrasing(node, &Info::new("# ", "\n"))?;
 
         let tab_or_space_regex = Regex::new(r"^[\t ]").unwrap();
         if tab_or_space_regex.is_match(&value) {

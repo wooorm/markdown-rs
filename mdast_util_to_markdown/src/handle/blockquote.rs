@@ -1,5 +1,5 @@
 use alloc::string::String;
-use markdown::mdast::BlockQuote;
+use markdown::mdast::{BlockQuote, Node};
 
 use crate::{
     construct_name::ConstructName,
@@ -11,17 +11,27 @@ use crate::{
 use super::Handle;
 
 impl Handle for BlockQuote {
-    fn handle(&self, state: &mut State, _info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        _info: &Info,
+        _parent: Option<&Node>,
+        node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         state.enter(ConstructName::Blockquote);
-        let value = indent_lines(&state.container_flow(self)?, map);
+        let value = indent_lines(&state.container_flow(node)?, map);
         Ok(value)
     }
 }
 
 fn map(value: &str, _line: usize, blank: bool) -> String {
-    let mut result = String::from(">");
+    let marker = ">";
+    let total_allocation = marker.len() + value.len() + 1;
+    let mut result = String::with_capacity(total_allocation);
+    result.push_str(marker);
     if !blank {
-        result.push(' ');
+        let blank_str = " ";
+        result.push_str(blank_str);
     }
     result.push_str(value);
     result

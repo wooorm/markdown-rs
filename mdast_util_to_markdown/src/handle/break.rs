@@ -1,5 +1,5 @@
 use alloc::string::ToString;
-use markdown::mdast::Break;
+use markdown::mdast::{Break, Node};
 use regex::Regex;
 
 use crate::{
@@ -11,7 +11,13 @@ use crate::{
 use super::Handle;
 
 impl Handle for Break {
-    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        info: &Info,
+        _parent: Option<&Node>,
+        _node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         for pattern in state.r#unsafe.iter() {
             if pattern.character == '\n' && pattern_in_scope(&state.stack, pattern) {
                 let regex = Regex::new(r"[ \t]").unwrap();

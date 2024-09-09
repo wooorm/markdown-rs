@@ -2,7 +2,7 @@
 pub struct Options {
     pub bullet: char,
     pub bullet_other: char,
-    pub bullet_orderd: char,
+    pub bullet_ordered: char,
     pub emphasis: char,
     pub fence: char,
     pub fences: bool,
@@ -20,6 +20,7 @@ pub struct Options {
 }
 
 #[allow(dead_code)]
+#[derive(Copy, Clone)]
 pub enum IndentOptions {
     Mixed,
     One,
@@ -31,11 +32,11 @@ impl Default for Options {
         Self {
             bullet: '*',
             bullet_other: '-',
-            bullet_orderd: '.',
+            bullet_ordered: '.',
             emphasis: '*',
             fence: '`',
             fences: true,
-            increment_list_marker: false,
+            increment_list_marker: true,
             rule_repetition: 3,
             list_item_indent: IndentOptions::One,
             quote: '"',

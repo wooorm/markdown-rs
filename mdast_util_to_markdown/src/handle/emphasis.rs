@@ -1,5 +1,5 @@
 use alloc::format;
-use markdown::mdast::Emphasis;
+use markdown::mdast::{Emphasis, Node};
 
 use crate::{
     construct_name::ConstructName,
@@ -11,12 +11,18 @@ use crate::{
 use super::Handle;
 
 impl Handle for Emphasis {
-    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        info: &Info,
+        _parent: Option<&Node>,
+        node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         let marker = check_emphasis(state)?;
 
         state.enter(ConstructName::Emphasis);
 
-        let mut value = format!("{}{}", marker, state.container_phrasing(self, info)?);
+        let mut value = format!("{}{}", marker, state.container_phrasing(node, info)?);
         value.push(marker);
 
         state.exit();

@@ -1,4 +1,4 @@
-use markdown::mdast::Paragraph;
+use markdown::mdast::{Node, Paragraph};
 
 use crate::{
     construct_name::ConstructName,
@@ -9,11 +9,17 @@ use crate::{
 use super::Handle;
 
 impl Handle for Paragraph {
-    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        info: &Info,
+        _parent: Option<&Node>,
+        node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         state.enter(ConstructName::Paragraph);
 
         state.enter(ConstructName::Phrasing);
-        let value = state.container_phrasing(self, info)?;
+        let value = state.container_phrasing(node, info)?;
         // exit phrasing
         state.exit();
         // exit paragarph

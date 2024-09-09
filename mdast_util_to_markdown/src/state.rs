@@ -6,7 +6,6 @@ use crate::handle::Handle;
 use crate::message::Message;
 use crate::Options;
 use crate::{
-    parents::Parent,
     r#unsafe::Unsafe,
     util::{
         format_code_as_indented::format_code_as_indented,
@@ -19,16 +18,20 @@ use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use markdown::mdast::Node;
 use regex::Regex;
 
+#[allow(dead_code)]
+#[derive(Debug)]
 enum Join {
+    True,
+    False,
     Number(usize),
-    Bool(bool),
 }
 
 #[allow(dead_code)]
 pub struct State<'a> {
     pub stack: Vec<ConstructName>,
-    index_stack: Vec<usize>,
-    bullet_last_used: Option<String>,
+    pub index_stack: Vec<usize>,
+    pub bullet_last_used: Option<char>,
+    pub bullet_current: Option<char>,
     pub r#unsafe: Vec<Unsafe<'a>>,
     pub options: &'a Options,
 }
@@ -51,6 +54,7 @@ impl<'a> State<'a> {
             stack: Vec::new(),
             index_stack: Vec::new(),
             bullet_last_used: None,
+            bullet_current: None,
             r#unsafe: Unsafe::get_default_unsafe(),
             options,
         }
@@ -64,18 +68,25 @@ impl<'a> State<'a> {
         self.stack.pop();
     }
 
-    pub fn handle(&mut self, node: &Node, info: &Info) -> Result<String, Message> {
+    pub fn handle(
+        &mut self,
+        node: &Node,
+        info: &Info,
+        parent: Option<&Node>,
+    ) -> Result<String, Message> {
         match node {
-            Node::Paragraph(paragraph) => paragraph.handle(self, info),
-            Node::Text(text) => text.handle(self, info),
-            Node::Strong(strong) => strong.handle(self, info),
-            Node::Emphasis(emphasis) => emphasis.handle(self, info),
-            Node::Heading(heading) => heading.handle(self, info),
-            Node::Break(r#break) => r#break.handle(self, info),
-            Node::Html(html) => html.handle(self, info),
-            Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info),
-            Node::Code(code) => code.handle(self, info),
-            Node::BlockQuote(block_quote) => block_quote.handle(self, info),
+            Node::Paragraph(paragraph) => paragraph.handle(self, info, parent, node),
+            Node::Text(text) => text.handle(self, info, parent, node),
+            Node::Strong(strong) => strong.handle(self, info, parent, node),
+            Node::Emphasis(emphasis) => emphasis.handle(self, info, parent, node),
+            Node::Heading(heading) => heading.handle(self, info, parent, node),
+            Node::Break(r#break) => r#break.handle(self, info, parent, node),
+            Node::Html(html) => html.handle(self, info, parent, node),
+            Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
+            Node::Code(code) => code.handle(self, info, parent, node),
+            Node::BlockQuote(block_quote) => block_quote.handle(self, info, parent, node),
+            Node::List(list) => list.handle(self, info, parent, node),
+            Node::ListItem(list_item) => list_item.handle(self, info, parent, node),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -249,16 +260,14 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn container_phrasing<T: Parent>(
-        &mut self,
-        parent: &T,
-        info: &Info,
-    ) -> Result<String, Message> {
-        let mut results: String = String::new();
-        let mut children_iter = parent.children().iter().peekable();
-        let mut index = 0;
+    pub fn container_phrasing(&mut self, parent: &Node, info: &Info) -> Result<String, Message> {
+        let children = parent.children().expect("To be a parent.");
 
-        if !parent.children().is_empty() {
+        let mut results: String = String::new();
+        let mut index = 0;
+        let mut children_iter = children.iter().peekable();
+
+        if !children.is_empty() {
             self.index_stack.push(0);
         }
 
@@ -278,7 +287,7 @@ impl<'a> State<'a> {
                     new_info.after = first_char.encode_utf8(&mut buffer);
                 } else {
                     new_info.after = self
-                        .handle(child, &Info::new("", ""))?
+                        .handle(child, &Info::new("", ""), Some(parent))?
                         .chars()
                         .nth(0)
                         .unwrap_or_default()
@@ -303,7 +312,7 @@ impl<'a> State<'a> {
                 }
             }
 
-            results.push_str(&self.handle(child, &new_info)?);
+            results.push_str(&self.handle(child, &new_info, Some(parent))?);
             index += 1;
         }
 
@@ -321,12 +330,14 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn container_flow<T: Parent>(&mut self, parent: &T) -> Result<String, Message> {
+    pub fn container_flow(&mut self, parent: &Node) -> Result<String, Message> {
+        let children = parent.children().expect("To be a parent.");
+
         let mut results: String = String::new();
-        let mut children_iter = parent.children().iter().peekable();
+        let mut children_iter = children.iter().peekable();
         let mut index = 0;
 
-        if !parent.children().is_empty() {
+        if !children.is_empty() {
             self.index_stack.push(0);
         }
 
@@ -343,7 +354,7 @@ impl<'a> State<'a> {
                 self.bullet_last_used = None;
             }
 
-            results.push_str(&self.handle(child, &Info::new("\n", "\n"))?);
+            results.push_str(&self.handle(child, &Info::new("\n", "\n"), Some(parent))?);
 
             if let Some(next_child) = children_iter.peek() {
                 self.set_between(child, next_child, parent, &mut results);
@@ -357,60 +368,60 @@ impl<'a> State<'a> {
         Ok(results)
     }
 
-    fn set_between<T: Parent>(&self, left: &Node, right: &Node, parent: &T, results: &mut String) {
+    fn set_between(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
         match self.join_defaults(left, right, parent) {
-            Some(Join::Number(num)) => {
-                if num == 1 {
-                    results.push_str("\n\n");
-                } else {
-                    results.push_str("\n".repeat(1 + num).as_ref());
-                }
+            Join::Number(n) => {
+                results.push_str("\n".repeat(1 + n).as_ref());
             }
-            Some(Join::Bool(bool)) => {
-                if bool {
-                    results.push_str("\n\n");
-                } else {
-                    results.push_str("\n\n<!---->\n\n");
-                }
+            Join::False => {
+                results.push_str("\n\n<!---->\n\n");
             }
-            None => results.push_str("\n\n"),
+            Join::True => results.push_str("\n\n"),
         }
     }
 
-    fn join_defaults<T: Parent>(&self, left: &Node, right: &Node, parent: &T) -> Option<Join> {
+    fn join_defaults(&self, left: &Node, right: &Node, parent: &Node) -> Join {
         if let Node::Code(code) = right {
             if format_code_as_indented(code, self) && matches!(left, Node::List(_)) {
-                return Some(Join::Bool(false));
+                return Join::False;
             }
 
             if let Node::Code(code) = left {
                 if format_code_as_indented(code, self) {
-                    return Some(Join::Bool(false));
+                    return Join::False;
                 }
             }
         }
 
-        if let Some(spread) = parent.spreadable() {
+        if matches!(parent, Node::List(_) | Node::ListItem(_)) {
             if matches!(left, Node::Paragraph(_)) && Self::matches((left, right))
                 || matches!(right, Node::Definition(_))
             {
-                return None;
+                return Join::True;
             }
 
             if let Node::Heading(heading) = right {
                 if format_heading_as_setext(heading, self) {
-                    return None;
+                    return Join::True;
                 }
             }
 
+            let spread = if let Node::List(list) = parent {
+                list.spread
+            } else if let Node::ListItem(list_item) = parent {
+                list_item.spread
+            } else {
+                false
+            };
+
             if spread {
-                return Some(Join::Number(1));
+                return Join::Number(1);
             }
 
-            return Some(Join::Number(0));
+            return Join::Number(0);
         }
 
-        Some(Join::Bool(true))
+        Join::True
     }
 
     fn matches(nodes: (&Node, &Node)) -> bool {

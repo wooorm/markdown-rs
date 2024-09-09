@@ -1,7 +1,7 @@
 use alloc::string::String;
 use regex::Regex;
 
-pub fn indent_lines(value: &str, map: fn(&str, usize, bool) -> String) -> String {
+pub fn indent_lines(value: &str, map: impl Fn(&str, usize, bool) -> String) -> String {
     let mut result = String::new();
     let mut start = 0;
     let mut line = 0;

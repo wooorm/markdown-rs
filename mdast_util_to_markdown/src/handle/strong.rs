@@ -1,5 +1,5 @@
 use alloc::format;
-use markdown::mdast::Strong;
+use markdown::mdast::{Node, Strong};
 
 use crate::{
     construct_name::ConstructName,
@@ -11,7 +11,13 @@ use crate::{
 use super::Handle;
 
 impl Handle for Strong {
-    fn handle(&self, state: &mut State, info: &Info) -> Result<alloc::string::String, Message> {
+    fn handle(
+        &self,
+        state: &mut State,
+        info: &Info,
+        _parent: Option<&Node>,
+        node: &Node,
+    ) -> Result<alloc::string::String, Message> {
         let marker = check_strong(state)?;
 
         state.enter(ConstructName::Strong);
@@ -20,7 +26,7 @@ impl Handle for Strong {
             "{}{}{}",
             marker,
             marker,
-            state.container_phrasing(self, info)?
+            state.container_phrasing(node, info)?
         );
         value.push(marker);
         value.push(marker);
