@@ -8,6 +8,7 @@ mod code;
 pub mod emphasis;
 mod heading;
 pub mod html;
+pub mod image;
 mod list;
 mod list_item;
 mod paragraph;

@@ -3,6 +3,7 @@ pub mod check_bullet_ordered;
 pub mod check_bullet_other;
 pub mod check_emphasis;
 pub mod check_fence;
+pub mod check_quote;
 pub mod check_rule;
 pub mod check_rule_repetition;
 pub mod check_strong;

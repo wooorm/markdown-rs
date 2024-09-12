@@ -249,7 +249,7 @@ impl<'a> Unsafe<'a> {
                 None,
                 Construct::Single(ConstructName::DestinationLiteral).into(),
                 None,
-                Some(true),
+                None,
             ),
             Self::new('[', None, None, None, None, Some(true)),
             Self::new(
