@@ -1,6 +1,5 @@
 use alloc::string::ToString;
 use markdown::mdast::{Break, Node};
-use regex::Regex;
 
 use crate::{
     message::Message,
@@ -20,8 +19,9 @@ impl Handle for Break {
     ) -> Result<alloc::string::String, Message> {
         for pattern in state.r#unsafe.iter() {
             if pattern.character == '\n' && pattern_in_scope(&state.stack, pattern) {
-                let regex = Regex::new(r"[ \t]").unwrap();
-                if regex.is_match(info.before) {
+                let is_whitespace_or_tab =
+                    info.before.chars().any(|c| c.is_whitespace() || c == '\t');
+                if is_whitespace_or_tab {
                     return Ok("".to_string());
                 }
 

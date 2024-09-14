@@ -1,6 +1,5 @@
 use alloc::format;
 use markdown::mdast::{Heading, Node};
-use regex::Regex;
 
 use crate::{
     construct_name::ConstructName,
@@ -54,9 +53,8 @@ impl Handle for Heading {
 
         let mut value = state.container_phrasing(node, &Info::new("# ", "\n"))?;
 
-        let tab_or_space_regex = Regex::new(r"^[\t ]").unwrap();
-        if tab_or_space_regex.is_match(&value) {
-            if let Some(first_char) = value.chars().nth(0) {
+        if let Some(first_char) = value.chars().nth(0) {
+            if first_char.is_whitespace() || first_char == '\t' {
                 let hex_code = u32::from(first_char);
                 value = format!("&#x{:X};{}", hex_code, &value[1..])
             }
