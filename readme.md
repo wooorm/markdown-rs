@@ -264,6 +264,9 @@ The following bash scripts are useful when working on this project:
     ```sh
     RUST_BACKTRACE=1 cargo test
     ```
+    ```sh
+    RUST_BACKTRACE=1 cargo test --features json
+    ```
 *   docs:
     ```sh
     cargo doc --document-private-items
