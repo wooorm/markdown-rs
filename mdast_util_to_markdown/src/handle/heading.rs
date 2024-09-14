@@ -54,7 +54,7 @@ impl Handle for Heading {
         let mut value = state.container_phrasing(node, &Info::new("# ", "\n"))?;
 
         if let Some(first_char) = value.chars().nth(0) {
-            if first_char.is_whitespace() || first_char == '\t' {
+            if first_char == ' ' || first_char == '\t' {
                 let hex_code = u32::from(first_char);
                 value = format!("&#x{:X};{}", hex_code, &value[1..])
             }

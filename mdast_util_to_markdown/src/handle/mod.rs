@@ -23,6 +23,6 @@ pub trait Handle {
         state: &mut State,
         info: &Info,
         parent: Option<&Node>,
-        _node: &Node,
+        node: &Node,
     ) -> Result<String, Message>;
 }
