@@ -2,6 +2,7 @@ use crate::construct_name::ConstructName;
 use crate::handle::emphasis::peek_emphasis;
 use crate::handle::html::peek_html;
 use crate::handle::image::peek_image;
+use crate::handle::inline_code::peek_inline_code;
 use crate::handle::link::peek_link;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
@@ -91,6 +92,7 @@ impl<'a> State<'a> {
             Node::ListItem(list_item) => list_item.handle(self, info, parent, node),
             Node::Image(image) => image.handle(self, info, parent, node),
             Node::Link(link) => link.handle(self, info, parent, node),
+            Node::InlineCode(inline_code) => inline_code.handle(self, info, parent, node),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -116,7 +118,7 @@ impl<'a> State<'a> {
                         .map(|captured_group| captured_group.len())
                         .unwrap_or(0);
 
-                    let before = pattern.before.is_some() || pattern.at_break.unwrap_or(false);
+                    let before = pattern.before.is_some() || pattern.at_break;
                     let after = pattern.after.is_some();
                     let position = full_match.start() + if before { captured_group_len } else { 0 };
 
@@ -209,22 +211,20 @@ impl<'a> State<'a> {
         format!("&#x{:X};", hex_code)
     }
 
-    fn compile_pattern(pattern: &mut Unsafe) {
+    pub fn compile_pattern(pattern: &mut Unsafe) {
         if pattern.compiled.is_none() {
             let mut pattern_to_compile = String::new();
 
-            let at_break = pattern.at_break.unwrap_or(false);
-
             if let Some(pattern_before) = pattern.before {
                 pattern_to_compile.push('(');
-                if at_break {
+                if pattern.at_break {
                     pattern_to_compile.push_str("[\\r\\n][\\t ]*");
                 }
                 pattern_to_compile.push_str("(?:");
                 pattern_to_compile.push_str(pattern_before);
                 pattern_to_compile.push(')');
                 pattern_to_compile.push(')');
-            } else if at_break {
+            } else if pattern.at_break {
                 pattern_to_compile.push('(');
                 pattern_to_compile.push_str("[\\r\\n][\\t ]*");
                 pattern_to_compile.push(')');
@@ -332,6 +332,7 @@ impl<'a> State<'a> {
             Node::Html(_) => Some(peek_html()),
             Node::Image(_) => Some(peek_image()),
             Node::Link(link) => Some(peek_link(link, node, self)),
+            Node::InlineCode(_) => Some(peek_inline_code()),
             _ => None,
         }
     }
