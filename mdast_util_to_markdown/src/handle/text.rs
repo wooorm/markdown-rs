@@ -16,9 +16,6 @@ impl Handle for Text {
         _parent: Option<&Node>,
         _node: &Node,
     ) -> Result<alloc::string::String, Message> {
-        Ok(state.safe(
-            &self.value,
-            &SafeConfig::new(Some(info.before), Some(info.after), None),
-        ))
+        Ok(state.safe(&self.value, &SafeConfig::new(info.before, info.after, None)))
     }
 }

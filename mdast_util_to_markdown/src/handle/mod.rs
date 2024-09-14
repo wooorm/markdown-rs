@@ -9,6 +9,7 @@ pub mod emphasis;
 mod heading;
 pub mod html;
 pub mod image;
+pub mod link;
 mod list;
 mod list_item;
 mod paragraph;

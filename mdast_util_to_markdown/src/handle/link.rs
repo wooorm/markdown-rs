@@ -1,33 +1,45 @@
+use core::mem;
+
 use alloc::string::String;
-use markdown::mdast::{Image, Node};
+use markdown::mdast::{Link, Node};
 
 use crate::{
     construct_name::ConstructName,
     message::Message,
     state::{Info, State},
-    util::{check_quote::check_quote, safe::SafeConfig},
+    util::{
+        check_quote::check_quote, format_link_as_auto_link::format_link_as_auto_link,
+        safe::SafeConfig,
+    },
 };
 
 use super::Handle;
 
-impl Handle for Image {
+impl Handle for Link {
     fn handle(
         &self,
         state: &mut State,
         _info: &Info,
         _parent: Option<&Node>,
-        _node: &Node,
+        node: &Node,
     ) -> Result<alloc::string::String, Message> {
         let quote = check_quote(state)?;
-        state.enter(ConstructName::Image);
+
+        if format_link_as_auto_link(self, node, state) {
+            let old_stack = mem::take(&mut state.stack);
+            state.enter(ConstructName::Autolink);
+            let mut value = String::from("<");
+            value.push_str(&state.container_phrasing(node, &Info::new(&value, ">"))?);
+            value.push('>');
+            state.exit();
+            state.stack = old_stack;
+            return Ok(value);
+        }
+
+        state.enter(ConstructName::Link);
         state.enter(ConstructName::Label);
-
-        let mut value = String::new();
-
-        value.push_str("![");
-
-        value.push_str(&state.safe(&self.alt, &SafeConfig::new(value.as_str(), "]", None)));
-
+        let mut value = String::from("[");
+        value.push_str(&state.container_phrasing(node, &Info::new(&value, "]("))?);
         value.push_str("](");
         state.exit();
 
@@ -41,7 +53,7 @@ impl Handle for Image {
         } else {
             state.enter(ConstructName::DestinationRaw);
             let after = if self.title.is_some() { " " } else { ")" };
-            value.push_str(&state.safe(&self.url, &SafeConfig::new(&value, after, None)));
+            value.push_str(&state.safe(&self.url, &SafeConfig::new(&value, after, None)))
         }
 
         state.exit();
@@ -76,6 +88,10 @@ fn contain_control_char_or_whitespace(value: &str) -> bool {
     value.chars().any(|c| c.is_whitespace() || c.is_control())
 }
 
-pub fn peek_image() -> char {
-    '!'
+pub fn peek_link(link: &Link, node: &Node, state: &State) -> char {
+    if format_link_as_auto_link(link, node, state) {
+        '>'
+    } else {
+        '['
+    }
 }

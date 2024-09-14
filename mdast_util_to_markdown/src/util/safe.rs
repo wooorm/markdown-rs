@@ -8,14 +8,10 @@ pub struct SafeConfig<'a> {
 }
 
 impl<'a> SafeConfig<'a> {
-    pub(crate) fn new(
-        before: Option<&'a str>,
-        after: Option<&'a str>,
-        encode: Option<char>,
-    ) -> Self {
+    pub(crate) fn new(before: &'a str, after: &'a str, encode: Option<char>) -> Self {
         SafeConfig {
-            before: before.unwrap_or(""),
-            after: after.unwrap_or(""),
+            before,
+            after,
             encode,
         }
     }

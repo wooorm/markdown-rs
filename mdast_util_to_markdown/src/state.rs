@@ -2,6 +2,7 @@ use crate::construct_name::ConstructName;
 use crate::handle::emphasis::peek_emphasis;
 use crate::handle::html::peek_html;
 use crate::handle::image::peek_image;
+use crate::handle::link::peek_link;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
 use crate::message::Message;
@@ -89,6 +90,7 @@ impl<'a> State<'a> {
             Node::List(list) => list.handle(self, info, parent, node),
             Node::ListItem(list_item) => list_item.handle(self, info, parent, node),
             Node::Image(image) => image.handle(self, info, parent, node),
+            Node::Link(link) => link.handle(self, info, parent, node),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -329,6 +331,7 @@ impl<'a> State<'a> {
             Node::Emphasis(_) => Some(peek_emphasis(self)),
             Node::Html(_) => Some(peek_html()),
             Node::Image(_) => Some(peek_image()),
+            Node::Link(link) => Some(peek_link(link, node, self)),
             _ => None,
         }
     }

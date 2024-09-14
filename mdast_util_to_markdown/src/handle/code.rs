@@ -48,8 +48,7 @@ impl Handle for Code {
             };
             state.enter(code_fenced_lang_construct);
 
-            value
-                .push_str(&state.safe(lang, &SafeConfig::new(Some(&value), " ".into(), Some('`'))));
+            value.push_str(&state.safe(lang, &SafeConfig::new(&value, " ", Some('`'))));
 
             state.exit();
 
@@ -63,9 +62,7 @@ impl Handle for Code {
                 state.enter(code_fenced_meta_construct);
                 value.push(' ');
 
-                value.push_str(
-                    &state.safe(meta, &SafeConfig::new(Some(&value), "\n".into(), Some('`'))),
-                );
+                value.push_str(&state.safe(meta, &SafeConfig::new(&value, "\n", Some('`'))));
 
                 state.exit();
             }
