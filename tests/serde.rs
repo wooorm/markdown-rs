@@ -11,8 +11,7 @@ enum Error {
 #[cfg_attr(feature = "serde", test)]
 fn serde() -> Result<(), Error> {
     let source = markdown::to_mdast(
-        r#"
----
+        r#"---
 title: Serde
 ---
 
@@ -103,7 +102,13 @@ Here's a simple footnote,[^1] and here's a longer one.[^bignote]
     Add as many paragraphs as you like.
 
 "#,
-        &markdown::ParseOptions::mdx(),
+        &markdown::ParseOptions {
+            constructs: markdown::Constructs {
+                frontmatter: true,
+                ..markdown::Constructs::mdx()
+            },
+            ..markdown::ParseOptions::gfm()
+        },
     )
     .map_err(Error::Mdast)?;
 
