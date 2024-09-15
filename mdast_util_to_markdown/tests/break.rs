@@ -1,5 +1,7 @@
 use markdown::mdast::{Break, Heading, Node, Text};
-use mdast_util_to_markdown::to_markdown as to;
+use markdown::to_mdast as from;
+use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
+use mdast_util_to_markdown::{to_markdown as to, Options};
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -52,16 +54,16 @@ fn r#break() {
         "should serialize breaks in heading (atx) as a space"
     );
 
-    //assert_eq!(
-    //    to_md_with_opts(
-    //        &from("a  \nb\n=\n", &Default::default()).unwrap(),
-    //        &Options {
-    //            setext: true,
-    //            ..Default::default()
-    //        }
-    //    )
-    //    .unwrap(),
-    //    "a\\\nb\n=\n",
-    //    "should support a break"
-    //);
+    assert_eq!(
+        to_md_with_opts(
+            &from("a  \nb\n=\n", &Default::default()).unwrap(),
+            &Options {
+                setext: true,
+                ..Default::default()
+            }
+        )
+        .unwrap(),
+        "a\\\nb\n=\n",
+        "should support a break"
+    );
 }

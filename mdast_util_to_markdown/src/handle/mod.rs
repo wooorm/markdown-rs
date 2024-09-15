@@ -14,6 +14,7 @@ pub mod link;
 mod list;
 mod list_item;
 mod paragraph;
+mod root;
 pub mod strong;
 mod text;
 mod thematic_break;

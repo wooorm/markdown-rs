@@ -78,6 +78,7 @@ impl<'a> State<'a> {
         parent: Option<&Node>,
     ) -> Result<String, Message> {
         match node {
+            Node::Root(root) => root.handle(self, info, parent, node),
             Node::Paragraph(paragraph) => paragraph.handle(self, info, parent, node),
             Node::Text(text) => text.handle(self, info, parent, node),
             Node::Strong(strong) => strong.handle(self, info, parent, node),
