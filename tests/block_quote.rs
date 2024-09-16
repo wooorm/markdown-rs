@@ -1,5 +1,5 @@
 use markdown::{
-    mdast::{BlockQuote, Node, Paragraph, Root, Text},
+    mdast::{Blockquote, Node, Paragraph, Root, Text},
     message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
@@ -221,7 +221,7 @@ fn block_quote() -> Result<(), message::Message> {
     assert_eq!(
         to_mdast("> a", &Default::default())?,
         Node::Root(Root {
-            children: vec![Node::BlockQuote(BlockQuote {
+            children: vec![Node::Blockquote(Blockquote {
                 children: vec![Node::Paragraph(Paragraph {
                     children: vec![Node::Text(Text {
                         value: "a".into(),

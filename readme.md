@@ -254,18 +254,15 @@ The following bash scripts are useful when working on this project:
     ```
 *   format:
     ```sh
-    cargo fmt && cargo fix --all-targets
+    cargo fmt && cargo fix --all-targets --all-features
     ```
 *   lint:
     ```sh
-    cargo fmt --check && cargo clippy --examples --tests --benches --all-features
+    cargo fmt --check && cargo clippy --examples --tests --benches --all-features --all-features
     ```
 *   test:
     ```sh
-    RUST_BACKTRACE=1 cargo test
-    ```
-    ```sh
-    RUST_BACKTRACE=1 cargo test --features json
+    RUST_BACKTRACE=1 cargo test --all-features
     ```
 *   docs:
     ```sh

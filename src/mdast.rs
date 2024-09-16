@@ -95,7 +95,7 @@ pub enum Node {
 
     // Container:
     /// Block quote.
-    BlockQuote(BlockQuote),
+    Blockquote(Blockquote),
     /// Footnote definition.
     FootnoteDefinition(FootnoteDefinition),
     /// MDX: JSX element (container).
@@ -183,7 +183,7 @@ impl fmt::Debug for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Node::Root(x) => x.fmt(f),
-            Node::BlockQuote(x) => x.fmt(f),
+            Node::Blockquote(x) => x.fmt(f),
             Node::FootnoteDefinition(x) => x.fmt(f),
             Node::MdxJsxFlowElement(x) => x.fmt(f),
             Node::List(x) => x.fmt(f),
@@ -231,7 +231,7 @@ impl ToString for Node {
         match self {
             // Parents.
             Node::Root(x) => children_to_string(&x.children),
-            Node::BlockQuote(x) => children_to_string(&x.children),
+            Node::Blockquote(x) => children_to_string(&x.children),
             Node::FootnoteDefinition(x) => children_to_string(&x.children),
             Node::MdxJsxFlowElement(x) => children_to_string(&x.children),
             Node::List(x) => children_to_string(&x.children),
@@ -280,7 +280,7 @@ impl Node {
             Node::Root(x) => Some(&x.children),
             Node::Paragraph(x) => Some(&x.children),
             Node::Heading(x) => Some(&x.children),
-            Node::BlockQuote(x) => Some(&x.children),
+            Node::Blockquote(x) => Some(&x.children),
             Node::List(x) => Some(&x.children),
             Node::ListItem(x) => Some(&x.children),
             Node::Emphasis(x) => Some(&x.children),
@@ -305,7 +305,7 @@ impl Node {
             Node::Root(x) => Some(&mut x.children),
             Node::Paragraph(x) => Some(&mut x.children),
             Node::Heading(x) => Some(&mut x.children),
-            Node::BlockQuote(x) => Some(&mut x.children),
+            Node::Blockquote(x) => Some(&mut x.children),
             Node::List(x) => Some(&mut x.children),
             Node::ListItem(x) => Some(&mut x.children),
             Node::Emphasis(x) => Some(&mut x.children),
@@ -328,7 +328,7 @@ impl Node {
     pub fn position(&self) -> Option<&Position> {
         match self {
             Node::Root(x) => x.position.as_ref(),
-            Node::BlockQuote(x) => x.position.as_ref(),
+            Node::Blockquote(x) => x.position.as_ref(),
             Node::FootnoteDefinition(x) => x.position.as_ref(),
             Node::MdxJsxFlowElement(x) => x.position.as_ref(),
             Node::List(x) => x.position.as_ref(),
@@ -367,7 +367,7 @@ impl Node {
     pub fn position_mut(&mut self) -> Option<&mut Position> {
         match self {
             Node::Root(x) => x.position.as_mut(),
-            Node::BlockQuote(x) => x.position.as_mut(),
+            Node::Blockquote(x) => x.position.as_mut(),
             Node::FootnoteDefinition(x) => x.position.as_mut(),
             Node::MdxJsxFlowElement(x) => x.position.as_mut(),
             Node::List(x) => x.position.as_mut(),
@@ -406,7 +406,7 @@ impl Node {
     pub fn position_set(&mut self, position: Option<Position>) {
         match self {
             Node::Root(x) => x.position = position,
-            Node::BlockQuote(x) => x.position = position,
+            Node::Blockquote(x) => x.position = position,
             Node::FootnoteDefinition(x) => x.position = position,
             Node::MdxJsxFlowElement(x) => x.position = position,
             Node::List(x) => x.position = position,
@@ -575,7 +575,7 @@ pub struct ThematicBreak {
 /// ```
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct BlockQuote {
+pub struct Blockquote {
     // Parent.
     /// Content model.
     pub children: Vec<Node>,
@@ -1712,14 +1712,14 @@ mod tests {
 
     #[test]
     fn block_quote() {
-        let mut node = Node::BlockQuote(BlockQuote {
+        let mut node = Node::Blockquote(Blockquote {
             position: None,
             children: vec![],
         });
 
         assert_eq!(
             format!("{:?}", node),
-            "BlockQuote { children: [], position: None }",
+            "Blockquote { children: [], position: None }",
             "should support `Debug`"
         );
         assert_eq!(node.to_string(), "", "should support `ToString`");
@@ -1734,7 +1734,7 @@ mod tests {
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
             format!("{:?}", node),
-            "BlockQuote { children: [], position: Some(1:1-1:2 (0-1)) }",
+            "Blockquote { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
     }

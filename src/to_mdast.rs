@@ -2,7 +2,7 @@
 
 use crate::event::{Event, Kind, Name};
 use crate::mdast::{
-    AttributeContent, AttributeValue, AttributeValueExpression, BlockQuote, Break, Code,
+    AttributeContent, AttributeValue, AttributeValueExpression, Blockquote, Break, Code,
     Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference, Heading, Html, Image,
     ImageReference, InlineCode, InlineMath, Link, LinkReference, List, ListItem, Math,
     MdxFlowExpression, MdxJsxAttribute, MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression,
@@ -470,7 +470,7 @@ fn on_enter_autolink(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`BlockQuote`][Name::BlockQuote].
 fn on_enter_block_quote(context: &mut CompileContext) {
-    context.tail_push(Node::BlockQuote(BlockQuote {
+    context.tail_push(Node::Blockquote(Blockquote {
         children: vec![],
         position: None,
     }));
