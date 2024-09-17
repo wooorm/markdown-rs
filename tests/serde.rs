@@ -322,6 +322,59 @@ fn serde_mdx_jsx_text_element() -> Result<(), Error> {
 }
 
 #[cfg_attr(feature = "serde", test)]
+fn serde_mdx_jsx_text_element_attributes() -> Result<(), Error> {
+    let source = r#"text <Test id={id} class="test" {...b} />"#;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[0].type",
+        "mdxJsxAttribute",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[0].name",
+        "id",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[0].value.type",
+        "mdxJsxAttributeValueExpression",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[1].type",
+        "mdxJsxAttribute",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[1].name",
+        "class",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[1].value",
+        "test",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[2].type",
+        "mdxJsxExpressionAttribute",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].children[1].attributes[2].value",
+        "...b",
+        None,
+    )
+}
+
+#[cfg_attr(feature = "serde", test)]
 fn serde_link() -> Result<(), Error> {
     assert_jq("link [a](b)", ".children[0].children[1].type", "link", None)
 }
@@ -414,7 +467,11 @@ fn serde_paragraph() -> Result<(), Error> {
     assert_jq("a", ".children[0].type", "paragraph", None)
 }
 
-/// Assert serde of Mdast constructs
+/// Assert serde of Mdast constructs.
+///
+/// Refer below links for the MDAST JSON construct types.
+/// * https://github.com/syntax-tree/mdast#nodes
+/// * https://github.com/syntax-tree/mdast-util-mdx-jsx?tab=readme-ov-file#returns-1
 #[cfg(feature = "serde")]
 fn assert_jq(
     input: &str,
