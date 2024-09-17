@@ -1,4 +1,4 @@
-use crate::association_id::AssociationId;
+use crate::association_id::Association;
 use crate::construct_name::ConstructName;
 use crate::handle::emphasis::peek_emphasis;
 use crate::handle::html::peek_html;
@@ -449,7 +449,7 @@ impl<'a> State<'a> {
         )
     }
 
-    pub fn association(&self, node: &impl AssociationId) -> String {
+    pub fn association(&self, node: &impl Association) -> String {
         if node.label().is_some() || node.identifier().is_empty() {
             return node.label().clone().unwrap_or_default();
         }
