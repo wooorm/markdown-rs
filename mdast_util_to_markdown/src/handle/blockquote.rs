@@ -1,5 +1,5 @@
 use alloc::string::String;
-use markdown::mdast::{BlockQuote, Node};
+use markdown::mdast::{Blockquote, Node};
 
 use crate::{
     construct_name::ConstructName,
@@ -10,7 +10,7 @@ use crate::{
 
 use super::Handle;
 
-impl Handle for BlockQuote {
+impl Handle for Blockquote {
     fn handle(
         &self,
         state: &mut State,

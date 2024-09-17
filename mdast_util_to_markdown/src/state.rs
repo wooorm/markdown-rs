@@ -91,7 +91,7 @@ impl<'a> State<'a> {
             Node::Html(html) => html.handle(self, info, parent, node),
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
             Node::Code(code) => code.handle(self, info, parent, node),
-            Node::BlockQuote(block_quote) => block_quote.handle(self, info, parent, node),
+            Node::Blockquote(block_quote) => block_quote.handle(self, info, parent, node),
             Node::List(list) => list.handle(self, info, parent, node),
             Node::ListItem(list_item) => list_item.handle(self, info, parent, node),
             Node::Image(image) => image.handle(self, info, parent, node),
@@ -444,7 +444,7 @@ impl<'a> State<'a> {
         matches!(
             nodes,
             (Node::Root(_), Node::Root(_))
-                | (Node::BlockQuote(_), Node::BlockQuote(_))
+                | (Node::Blockquote(_), Node::Blockquote(_))
                 | (Node::FootnoteDefinition(_), Node::FootnoteDefinition(_))
                 | (Node::Heading(_), Node::Heading(_))
                 | (Node::List(_), Node::List(_))

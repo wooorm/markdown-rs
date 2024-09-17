@@ -1,4 +1,4 @@
-use markdown::mdast::{BlockQuote, Node, Paragraph, Text, ThematicBreak};
+use markdown::mdast::{Blockquote, Node, Paragraph, Text, ThematicBreak};
 use mdast_util_to_markdown::to_markdown as to;
 
 use pretty_assertions::assert_eq;
@@ -6,7 +6,7 @@ use pretty_assertions::assert_eq;
 #[test]
 fn block_quote() {
     assert_eq!(
-        to(&Node::BlockQuote(BlockQuote {
+        to(&Node::Blockquote(Blockquote {
             children: vec![],
             position: None,
         }))
@@ -16,7 +16,7 @@ fn block_quote() {
     );
 
     assert_eq!(
-        to(&Node::BlockQuote(BlockQuote {
+        to(&Node::Blockquote(Blockquote {
             children: vec![Node::Text(Text {
                 value: String::from("a"),
                 position: None
@@ -29,7 +29,7 @@ fn block_quote() {
     );
 
     assert_eq!(
-        to(&Node::BlockQuote(BlockQuote {
+        to(&Node::Blockquote(Blockquote {
             children: vec![
                 Node::Paragraph(Paragraph {
                     children: vec![Node::Text(Text {
