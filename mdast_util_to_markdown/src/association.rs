@@ -1,5 +1,5 @@
 use alloc::string::String;
-use markdown::mdast::Definition;
+use markdown::mdast::{Definition, ImageReference};
 
 pub trait Association {
     fn identifier(&self) -> &String;
@@ -7,6 +7,16 @@ pub trait Association {
 }
 
 impl Association for Definition {
+    fn identifier(&self) -> &String {
+        &self.identifier
+    }
+
+    fn label(&self) -> &Option<String> {
+        &self.label
+    }
+}
+
+impl Association for ImageReference {
     fn identifier(&self) -> &String {
         &self.identifier
     }
