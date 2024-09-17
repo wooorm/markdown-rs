@@ -7,7 +7,7 @@ use message::Message;
 use state::{Info, State};
 
 extern crate alloc;
-mod association_id;
+mod association;
 mod configure;
 mod construct_name;
 mod handle;
