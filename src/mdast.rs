@@ -448,7 +448,7 @@ impl Node {
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
-    serde(untagged, rename = "mdxJsxExpressionAttribute")
+    serde(untagged)
 )]
 pub enum AttributeContent {
     /// JSX expression.
@@ -457,7 +457,7 @@ pub enum AttributeContent {
     /// > | <a {...b} />
     ///        ^^^^^^
     /// ```
-    Expression { value: String, stops: Vec<Stop> },
+    Expression(MdxJsxExpressionAttribute),
     /// JSX property.
     ///
     /// ```markdown
@@ -1233,6 +1233,25 @@ pub struct MdxJsxAttribute {
     pub name: String,
     /// Value.
     pub value: Option<AttributeValue>,
+}
+
+/// MDX: JSX expression attribute.
+///
+/// ```markdown
+/// > | <a {...b} />
+///        ^
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxExpressionAttribute")
+)]
+pub struct MdxJsxExpressionAttribute {
+    /// Value.
+    pub value: String,
+    /// Stops
+    pub stops: Vec<Stop>,
 }
 
 #[cfg(test)]

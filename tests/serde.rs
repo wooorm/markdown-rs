@@ -126,6 +126,12 @@ fn serde_mdx_jsx_flow_element() -> Result<(), Error> {
 fn serde_mdx_jsx_flow_element_attributes() -> Result<(), Error> {
     assert_jq(
         "<a {...b}/>",
+        ".children[0].attributes[0].type",
+        "mdxJsxExpressionAttribute",
+        None,
+    )?;
+    assert_jq(
+        "<a {...b}/>",
         ".children[0].attributes[0].value",
         "...b",
         None,
@@ -148,8 +154,47 @@ fn serde_mdx_jsx_flow_element_attributes_expressions() -> Result<(), Error> {
         "mdxJsxAttributeValueExpression",
         None,
     )?;
+    assert_jq(
+        source,
+        ".children[0].attributes[1].type",
+        "mdxJsxAttribute",
+        None,
+    )?;
     assert_jq(source, ".children[0].attributes[1].name", "class", None)?;
     assert_jq(source, ".children[0].attributes[1].value", "test", None)
+}
+
+#[cfg_attr(feature = "serde", test)]
+fn serde_mdx_jsx_flow_element_attributes_combined() -> Result<(), Error> {
+    let source = r#"<Test id={id} class="test" {...b} />"#;
+    assert_jq(
+        source,
+        ".children[0].attributes[0].type",
+        "mdxJsxAttribute",
+        None,
+    )?;
+    assert_jq(source, ".children[0].attributes[0].name", "id", None)?;
+    assert_jq(
+        source,
+        ".children[0].attributes[0].value.type",
+        "mdxJsxAttributeValueExpression",
+        None,
+    )?;
+    assert_jq(
+        source,
+        ".children[0].attributes[1].type",
+        "mdxJsxAttribute",
+        None,
+    )?;
+    assert_jq(source, ".children[0].attributes[1].name", "class", None)?;
+    assert_jq(source, ".children[0].attributes[1].value", "test", None)?;
+    assert_jq(
+        source,
+        ".children[0].attributes[2].type",
+        "mdxJsxExpressionAttribute",
+        None,
+    )?;
+    assert_jq(source, ".children[0].attributes[2].value", "...b", None)
 }
 
 #[cfg_attr(feature = "serde", test)]
