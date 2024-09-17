@@ -44,11 +44,14 @@ mod subtokenize;
 mod to_html;
 mod to_mdast;
 mod tokenizer;
-pub mod util;
+mod util;
 
 pub mod mdast; // To do: externalize?
 pub mod message; // To do: externalize.
 pub mod unist; // To do: externalize.
+
+#[doc(hidden)]
+pub use util::character_reference::{decode_named, decode_numeric};
 
 #[doc(hidden)]
 pub use util::identifier::{id_cont, id_start};

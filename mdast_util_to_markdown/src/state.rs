@@ -21,7 +21,6 @@ use crate::{
 use alloc::string::ToString;
 use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use markdown::mdast::Node;
-use markdown::util::character_reference::{decode_named, decode_numeric};
 use regex::{Captures, Regex, RegexBuilder};
 
 #[allow(dead_code)]
@@ -484,10 +483,10 @@ impl<'a> State<'a> {
                 } else {
                     &capture[1..]
                 };
-                return decode_numeric(numeric_encoded, radix);
+                return markdown::decode_numeric(numeric_encoded, radix);
             }
         }
 
-        decode_named(&caps[2], true).unwrap_or(caps[0].to_string())
+        markdown::decode_named(&caps[2], true).unwrap_or(caps[0].to_string())
     }
 }
