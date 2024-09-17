@@ -1,3 +1,4 @@
+use crate::association_id::AssociationId;
 use crate::construct_name::ConstructName;
 use crate::handle::emphasis::peek_emphasis;
 use crate::handle::html::peek_html;
@@ -17,9 +18,11 @@ use crate::{
         safe::{escape_backslashes, EscapeInfos, SafeConfig},
     },
 };
+use alloc::string::ToString;
 use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use markdown::mdast::Node;
-use regex::Regex;
+use markdown::util::character_reference::{decode_named, decode_numeric};
+use regex::{Captures, Regex, RegexBuilder};
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -94,11 +97,12 @@ impl<'a> State<'a> {
             Node::Image(image) => image.handle(self, info, parent, node),
             Node::Link(link) => link.handle(self, info, parent, node),
             Node::InlineCode(inline_code) => inline_code.handle(self, info, parent, node),
+            Node::Definition(definition) => definition.handle(self, info, parent, node),
             _ => Err("Cannot handle node".into()),
         }
     }
 
-    pub fn safe(&mut self, input: &String, config: &SafeConfig) -> String {
+    pub fn safe(&mut self, input: &str, config: &SafeConfig) -> String {
         let value = format!("{}{}{}", config.before, input, config.after);
         let mut positions: Vec<usize> = Vec::new();
         let mut result: String = String::new();
@@ -444,5 +448,46 @@ impl<'a> State<'a> {
                 | (Node::Paragraph(_), Node::Paragraph(_))
                 | (Node::Table(_), Node::Table(_))
         )
+    }
+
+    pub fn association(&self, node: &impl AssociationId) -> String {
+        if node.label().is_some() || node.identifier().is_empty() {
+            return node.label().clone().unwrap_or_default();
+        }
+
+        let character_escape_or_reference =
+            RegexBuilder::new(r"\\([!-/:-@\[-`{-~])|&(#(?:\d{1,7}|x[\da-f]{1,6})|[\da-z]{1,31});")
+                .case_insensitive(true)
+                .build()
+                .unwrap();
+
+        character_escape_or_reference
+            .replace_all(node.identifier(), Self::decode)
+            .into_owned()
+    }
+
+    fn decode(caps: &Captures) -> String {
+        if let Some(first_cap) = caps.get(1) {
+            return String::from(first_cap.as_str());
+        }
+
+        if let Some(head) = &caps[2].chars().nth(0) {
+            if *head == '#' {
+                let radix = match caps[2].chars().nth(1) {
+                    Some('x') | Some('X') => 16,
+                    _ => 10,
+                };
+
+                let capture = &caps[2];
+                let numeric_encoded = if radix == 16 {
+                    &capture[2..]
+                } else {
+                    &capture[1..]
+                };
+                return decode_numeric(numeric_encoded, radix);
+            }
+        }
+
+        decode_named(&caps[2], true).unwrap_or(caps[0].to_string())
     }
 }

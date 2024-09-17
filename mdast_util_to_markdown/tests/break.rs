@@ -4,7 +4,7 @@ use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
 use mdast_util_to_markdown::{to_markdown as to, Options};
 use pretty_assertions::assert_eq;
 
-#2[test]
+#[test]
 fn r#break() {
     assert_eq!(
         to(&Node::Break(Break { position: None })).unwrap(),

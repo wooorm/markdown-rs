@@ -5,6 +5,7 @@ use markdown::mdast::Node;
 mod blockquote;
 mod r#break;
 mod code;
+mod definition;
 pub mod emphasis;
 mod heading;
 pub mod html;
