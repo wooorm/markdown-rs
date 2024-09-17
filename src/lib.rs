@@ -44,7 +44,7 @@ mod subtokenize;
 mod to_html;
 mod to_mdast;
 mod tokenizer;
-mod util;
+pub mod util;
 
 pub mod mdast; // To do: externalize?
 pub mod message; // To do: externalize.
