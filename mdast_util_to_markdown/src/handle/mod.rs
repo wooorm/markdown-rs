@@ -13,6 +13,7 @@ pub mod image;
 pub mod image_reference;
 pub mod inline_code;
 pub mod link;
+pub mod link_reference;
 mod list;
 mod list_item;
 mod paragraph;

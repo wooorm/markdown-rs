@@ -6,6 +6,7 @@ use crate::handle::image::peek_image;
 use crate::handle::image_reference::peek_image_reference;
 use crate::handle::inline_code::peek_inline_code;
 use crate::handle::link::peek_link;
+use crate::handle::link_reference::peek_link_reference;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
 use crate::message::Message;
@@ -101,6 +102,7 @@ impl<'a> State<'a> {
             Node::ImageReference(image_reference) => {
                 image_reference.handle(self, info, parent, node)
             }
+            Node::LinkReference(link_reference) => link_reference.handle(self, info, parent, node),
             _ => Err("Cannot handle node".into()),
         }
     }
@@ -342,6 +344,7 @@ impl<'a> State<'a> {
             Node::Link(link) => Some(peek_link(link, node, self)),
             Node::InlineCode(_) => Some(peek_inline_code()),
             Node::ImageReference(_) => Some(peek_image_reference()),
+            Node::LinkReference(_) => Some(peek_link_reference()),
             _ => None,
         }
     }
