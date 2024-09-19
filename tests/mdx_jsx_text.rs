@@ -1,8 +1,8 @@
 mod test_utils;
 use markdown::{
     mdast::{
-        AttributeContent, AttributeValue, AttributeValueExpression, Emphasis, MdxJsxAttribute,
-        MdxJsxTextElement, Node, Paragraph, Root, Text,
+        AttributeContent, AttributeValue, AttributeValueExpression, Emphasis, MdxFlowExpression,
+        MdxJsxAttribute, MdxJsxFlowElement, MdxJsxTextElement, Node, Paragraph, Root, Text,
     },
     message, to_html_with_options, to_mdast,
     unist::Position,
@@ -46,6 +46,45 @@ fn mdx_jsx_text_core() -> Result<(), message::Message> {
         to_html_with_options("a <b>*b*</b> c.", &mdx)?,
         "<p>a <em>b</em> c.</p>",
         "should support markdown inside elements"
+    );
+
+    assert_eq!(
+        to_mdast("{1}<a/>", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![
+                Node::MdxFlowExpression(MdxFlowExpression {
+                    value: "1".into(),
+                    position: Some(Position::new(1, 1, 0, 1, 4, 3)),
+                    stops: vec![(0, 1)]
+                }),
+                Node::MdxJsxFlowElement(MdxJsxFlowElement {
+                    name: Some("a".into()),
+                    attributes: vec![],
+                    children: vec![],
+                    position: Some(Position::new(1, 4, 3, 1, 8, 7))
+                })
+            ],
+            position: Some(Position::new(1, 1, 0, 1, 8, 7))
+        }),
+        "should support mdx jsx (text) with expression child"
+    );
+
+    assert_eq!(
+        to_mdast("<a>{1}</a>", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![Node::MdxJsxFlowElement(MdxJsxFlowElement {
+                name: Some("a".into()),
+                attributes: vec![],
+                children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                    value: "1".into(),
+                    position: Some(Position::new(1, 4, 3, 1, 7, 6)),
+                    stops: vec![(0, 4)]
+                })],
+                position: Some(Position::new(1, 1, 0, 1, 11, 10))
+            }),],
+            position: Some(Position::new(1, 1, 0, 1, 11, 10))
+        }),
+        "should support mdx jsx (text) with expression child"
     );
 
     assert_eq!(

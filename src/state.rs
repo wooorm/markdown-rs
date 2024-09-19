@@ -357,7 +357,6 @@ pub enum Name {
     MdxExpressionFlowBefore,
     MdxExpressionFlowAfter,
     MdxExpressionFlowEnd,
-    MdxExpressionFlowNok,
 
     MdxExpressionStart,
     MdxExpressionBefore,
@@ -844,7 +843,6 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::MdxExpressionFlowBefore => construct::mdx_expression_flow::before,
         Name::MdxExpressionFlowAfter => construct::mdx_expression_flow::after,
         Name::MdxExpressionFlowEnd => construct::mdx_expression_flow::end,
-        Name::MdxExpressionFlowNok => construct::mdx_expression_flow::nok,
 
         Name::MdxExpressionTextStart => construct::mdx_expression_text::start,
         Name::MdxExpressionTextAfter => construct::mdx_expression_text::after,
