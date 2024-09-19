@@ -8,7 +8,7 @@ pub fn check_bullet_ordered(state: &mut State) -> Result<char, Message> {
     if marker != '.' && marker != ')' {
         return Err(Message {
             reason: format!(
-                "Cannot serialize items with `' {} '` for `options.bulletOrdered`, expected `.` or `)`",
+                "Cannot serialize items with `' {} '` for `options.bullet_ordered`, expected `.` or `)`",
                 marker
             ),
         });
