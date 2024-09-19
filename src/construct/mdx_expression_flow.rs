@@ -150,9 +150,10 @@ pub fn end(tokenizer: &mut Tokenizer) -> State {
         Some(b'<') if tokenizer.parse_state.options.constructs.mdx_jsx_flow => {
             // We can’t just say: fine.
             // Lines of blocks have to be parsed until an eol/eof.
+            tokenizer.tokenize_state.token_1 = Name::MdxJsxFlowTag;
             tokenizer.attempt(
-                State::Next(StateName::MdxExpressionFlowAfter),
-                State::Next(StateName::MdxExpressionFlowNok),
+                State::Next(StateName::MdxJsxFlowAfter),
+                State::Next(StateName::MdxJsxFlowNok),
             );
             State::Retry(StateName::MdxJsxStart)
         }
@@ -169,17 +170,6 @@ pub fn end(tokenizer: &mut Tokenizer) -> State {
             State::Nok
         }
     }
-}
-
-/// At something that wasn’t an MDX expression (flow).
-///
-/// ```markdown
-/// > | {A} x
-///     ^
-/// ```
-pub fn nok(tokenizer: &mut Tokenizer) -> State {
-    reset(tokenizer);
-    State::Nok
 }
 
 /// Reset state.
