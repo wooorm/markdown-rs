@@ -5,9 +5,9 @@ use crate::mdast::{
     AttributeContent, AttributeValue, AttributeValueExpression, Blockquote, Break, Code,
     Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference, Heading, Html, Image,
     ImageReference, InlineCode, InlineMath, Link, LinkReference, List, ListItem, Math,
-    MdxFlowExpression, MdxJsxAttribute, MdxJsxFlowElement, MdxJsxTextElement, MdxTextExpression,
-    MdxjsEsm, Node, Paragraph, ReferenceKind, Root, Strong, Table, TableCell, TableRow, Text,
-    ThematicBreak, Toml, Yaml,
+    MdxFlowExpression, MdxJsxAttribute, MdxJsxExpressionAttribute, MdxJsxFlowElement,
+    MdxJsxTextElement, MdxTextExpression, MdxjsEsm, Node, Paragraph, ReferenceKind, Root, Strong,
+    Table, TableCell, TableRow, Text, ThematicBreak, Toml, Yaml,
 };
 use crate::message;
 use crate::unist::{Point, Position};
@@ -858,7 +858,10 @@ fn on_enter_mdx_jsx_tag_attribute_expression(
         .as_mut()
         .expect("expected tag")
         .attributes
-        .push(AttributeContent::Expression { value, stops });
+        .push(AttributeContent::Expression(MdxJsxExpressionAttribute {
+            value,
+            stops,
+        }));
 
     context.buffer();
 

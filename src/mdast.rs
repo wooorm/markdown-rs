@@ -448,7 +448,7 @@ impl Node {
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
-    serde(untagged, rename = "mdxJsxExpressionAttribute")
+    serde(untagged)
 )]
 pub enum AttributeContent {
     /// JSX expression.
@@ -457,7 +457,7 @@ pub enum AttributeContent {
     /// > | <a {...b} />
     ///        ^^^^^^
     /// ```
-    Expression { value: String, stops: Vec<Stop> },
+    Expression(MdxJsxExpressionAttribute),
     /// JSX property.
     ///
     /// ```markdown
@@ -515,6 +515,7 @@ pub struct Root {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -531,6 +532,7 @@ pub struct Paragraph {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -547,6 +549,7 @@ pub struct Heading {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Extra.
     /// Rank (between `1` and `6`, both including).
@@ -564,6 +567,7 @@ pub struct Heading {
 pub struct ThematicBreak {
     // Void.
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -580,6 +584,7 @@ pub struct Blockquote {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -596,12 +601,14 @@ pub struct List {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Extra.
     /// Ordered (`true`) or unordered (`false`).
     pub ordered: bool,
     /// Starting number of the list.
     /// `None` when unordered.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub start: Option<u32>,
     /// One or more of its children are separated with a blank line from its
     /// siblings (when `true`), or not (when `false`).
@@ -621,6 +628,7 @@ pub struct ListItem {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Extra.
     /// The item contains two or more children separated by a blank line
@@ -628,6 +636,7 @@ pub struct ListItem {
     pub spread: bool,
     /// GFM: whether the item is done (when `true`), not done (when `false`),
     /// or indeterminate or not applicable (`None`).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub checked: Option<bool>,
 }
 
@@ -644,6 +653,7 @@ pub struct Html {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -664,11 +674,14 @@ pub struct Code {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Extra.
     /// The language of computer code being marked up.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lang: Option<String>,
     /// Custom info relating to the node.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<String>,
 }
 
@@ -689,9 +702,11 @@ pub struct Math {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Extra.
     /// Custom info relating to the node.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<String>,
 }
 
@@ -706,12 +721,14 @@ pub struct Math {
 pub struct Definition {
     // Void.
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Resource.
     /// URL to the referenced resource.
     pub url: String,
     /// Advisory info for the resource, such as something that would be
     /// appropriate for a tooltip.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     // Association.
     /// Value that can match another node.
@@ -725,6 +742,7 @@ pub struct Definition {
     /// To normalize a value, collapse markdown whitespace (`[\t\n\r ]+`) to a
     /// space, trim the optional initial and/or final space, and perform
     /// case-folding.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 
@@ -741,6 +759,7 @@ pub struct Text {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -757,6 +776,7 @@ pub struct Emphasis {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -773,6 +793,7 @@ pub struct Strong {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -789,6 +810,7 @@ pub struct InlineCode {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -805,6 +827,7 @@ pub struct InlineMath {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -820,6 +843,7 @@ pub struct InlineMath {
 pub struct Break {
     // Void.
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -836,12 +860,14 @@ pub struct Link {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Resource.
     /// URL to the referenced resource.
     pub url: String,
     /// Advisory info for the resource, such as something that would be
     /// appropriate for a tooltip.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
 }
 
@@ -856,6 +882,7 @@ pub struct Link {
 pub struct Image {
     // Void.
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Alternative.
     /// Equivalent content for environments that cannot represent the node as
@@ -866,6 +893,7 @@ pub struct Image {
     pub url: String,
     /// Advisory info for the resource, such as something that would be
     /// appropriate for a tooltip.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
 }
 
@@ -882,6 +910,7 @@ pub struct LinkReference {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Reference.
     /// Explicitness of a reference.
@@ -899,6 +928,7 @@ pub struct LinkReference {
     /// To normalize a value, collapse markdown whitespace (`[\t\n\r ]+`) to a
     /// space, trim the optional initial and/or final space, and perform
     /// case-folding.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 
@@ -913,6 +943,7 @@ pub struct LinkReference {
 pub struct ImageReference {
     // Void.
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Alternative.
     /// Equivalent content for environments that cannot represent the node as
@@ -934,6 +965,7 @@ pub struct ImageReference {
     /// To normalize a value, collapse markdown whitespace (`[\t\n\r ]+`) to a
     /// space, trim the optional initial and/or final space, and perform
     /// case-folding.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 
@@ -950,6 +982,7 @@ pub struct FootnoteDefinition {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Association.
     /// Value that can match another node.
@@ -963,6 +996,7 @@ pub struct FootnoteDefinition {
     /// To normalize a value, collapse markdown whitespace (`[\t\n\r ]+`) to a
     /// space, trim the optional initial and/or final space, and perform
     /// case-folding.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 
@@ -977,6 +1011,7 @@ pub struct FootnoteDefinition {
 pub struct FootnoteReference {
     // Void.
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Association.
     /// Value that can match another node.
@@ -990,6 +1025,7 @@ pub struct FootnoteReference {
     /// To normalize a value, collapse markdown whitespace (`[\t\n\r ]+`) to a
     /// space, trim the optional initial and/or final space, and perform
     /// case-folding.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 
@@ -1008,6 +1044,7 @@ pub struct Table {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // Extra.
     /// Represents how cells in columns are aligned.
@@ -1027,6 +1064,7 @@ pub struct TableRow {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -1043,6 +1081,7 @@ pub struct TableCell {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -1059,6 +1098,7 @@ pub struct Delete {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -1079,6 +1119,7 @@ pub struct Yaml {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -1099,6 +1140,7 @@ pub struct Toml {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
 
@@ -1115,6 +1157,7 @@ pub struct MdxjsEsm {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 
     // Custom data on where each slice of `value` came from.
@@ -1134,6 +1177,7 @@ pub struct MdxFlowExpression {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 
     // Custom data on where each slice of `value` came from.
@@ -1153,6 +1197,7 @@ pub struct MdxTextExpression {
     /// Content model.
     pub value: String,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 
     // Custom data on where each slice of `value` came from.
@@ -1176,11 +1221,13 @@ pub struct MdxJsxFlowElement {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // JSX element.
     /// Name.
     ///
     /// Fragments have no name.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     /// Attributes.
     pub attributes: Vec<AttributeContent>,
@@ -1203,11 +1250,13 @@ pub struct MdxJsxTextElement {
     /// Content model.
     pub children: Vec<Node>,
     /// Positional info.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
     // JSX element.
     /// Name.
     ///
     /// Fragments have no name.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     /// Attributes.
     pub attributes: Vec<AttributeContent>,
@@ -1232,7 +1281,27 @@ pub struct MdxJsxAttribute {
     /// Key.
     pub name: String,
     /// Value.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<AttributeValue>,
+}
+
+/// MDX: JSX expression attribute.
+///
+/// ```markdown
+/// > | <a {...b} />
+///        ^
+/// ```
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", rename = "mdxJsxExpressionAttribute")
+)]
+pub struct MdxJsxExpressionAttribute {
+    /// Value.
+    pub value: String,
+    /// Stops
+    pub stops: Vec<Stop>,
 }
 
 #[cfg(test)]
