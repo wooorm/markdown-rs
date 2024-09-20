@@ -606,26 +606,30 @@ fn serde_heading() -> Result<(), Error> {
 fn serde_table() -> Result<(), Error> {
     // To do: `"none"` should serialize in serde as `null`.
     assert_serde(
-        "| a | b |\n| - | -: |\n| 1 | 2 |",
+        "| a | b | c | d |\n| - | :- | -: | :-: |\n| 1 | 2 | 3 | 4 |",
         r#"{
   "type": "root",
   "children": [
     {
       "type": "table",
-      "align": ["none", "right"],
+      "align": [null, "left", "right", "center"],
       "children": [
         {
           "type": "tableRow",
           "children": [
             {"type": "tableCell", "children": [{"type": "text", "value": "a"}]},
-            {"type": "tableCell", "children": [{"type": "text", "value": "b"}]}
+            {"type": "tableCell", "children": [{"type": "text", "value": "b"}]},
+            {"type": "tableCell", "children": [{"type": "text", "value": "c"}]},
+            {"type": "tableCell", "children": [{"type": "text", "value": "d"}]}
           ]
         },
         {
           "type": "tableRow",
           "children": [
             {"type": "tableCell","children": [{"type": "text", "value": "1"}]},
-            {"type": "tableCell","children": [{"type": "text", "value": "2"}]}
+            {"type": "tableCell","children": [{"type": "text", "value": "2"}]},
+            {"type": "tableCell","children": [{"type": "text", "value": "3"}]},
+            {"type": "tableCell","children": [{"type": "text", "value": "4"}]}
           ]
         }
       ]
