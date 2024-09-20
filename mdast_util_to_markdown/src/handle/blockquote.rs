@@ -25,13 +25,11 @@ impl Handle for Blockquote {
 }
 
 fn map(line: &str, _index: usize, blank: bool) -> String {
+    let mut result = String::with_capacity(2 + line.len());
     let marker = ">";
-    let total_allocation = marker.len() + line.len() + 1;
-    let mut result = String::with_capacity(total_allocation);
     result.push_str(marker);
     if !blank {
-        let blank_str = " ";
-        result.push_str(blank_str);
+        result.push_str(" ");
     }
     result.push_str(line);
     result

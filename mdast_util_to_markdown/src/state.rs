@@ -27,9 +27,9 @@ use regex::{Captures, Regex, RegexBuilder};
 
 #[derive(Debug)]
 enum Join {
-    True,
-    False,
-    Number(usize),
+    Break,
+    HTMLComment,
+    Lines(usize),
 }
 
 pub struct State<'a> {
@@ -370,7 +370,7 @@ impl<'a> State<'a> {
             results.push_str(&self.handle(child, &Info::new("\n", "\n"), Some(parent))?);
 
             if let Some(next_child) = children_iter.peek() {
-                self.set_between(child, next_child, parent, &mut results);
+                self.join(child, next_child, parent, &mut results);
             }
 
             index += 1;
@@ -381,41 +381,75 @@ impl<'a> State<'a> {
         Ok(results)
     }
 
-    fn set_between(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
-        match self.join_defaults(left, right, parent) {
-            Join::Number(n) => {
-                results.push_str("\n".repeat(1 + n).as_ref());
-            }
-            Join::False => {
-                results.push_str("\n\n<!---->\n\n");
-            }
-            Join::True => results.push_str("\n\n"),
+    fn join(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
+        let joins: [Join; 2] = [
+            self.join_defaults(left, right, parent),
+            self.tight_definition(left, right),
+        ];
+
+        let mut index = 0;
+        if self.options.tight_definitions {
+            index += 1;
         }
+
+        loop {
+            if let Join::Break = joins[index] {
+                results.push_str("\n\n");
+                return;
+            }
+
+            if let Join::Lines(n) = joins[index] {
+                if n == 1 {
+                    results.push_str("\n\n");
+                    return;
+                }
+                results.push_str("\n".repeat(1 + n).as_ref());
+                return;
+            }
+
+            if let Join::HTMLComment = joins[index] {
+                results.push_str("\n\n<!---->\n\n");
+                return;
+            }
+
+            if index == 0 {
+                break;
+            }
+
+            index -= 1;
+        }
+    }
+
+    fn tight_definition(&self, left: &Node, right: &Node) -> Join {
+        if matches!(left, Node::Definition(_)) && Self::matches((left, right)) {
+            return Join::Lines(0);
+        }
+        Join::Break
     }
 
     fn join_defaults(&self, left: &Node, right: &Node, parent: &Node) -> Join {
         if let Node::Code(code) = right {
             if format_code_as_indented(code, self) && matches!(left, Node::List(_)) {
-                return Join::False;
+                return Join::HTMLComment;
             }
 
             if let Node::Code(code) = left {
                 if format_code_as_indented(code, self) {
-                    return Join::False;
+                    return Join::HTMLComment;
                 }
             }
         }
 
         if matches!(parent, Node::List(_) | Node::ListItem(_)) {
-            if matches!(left, Node::Paragraph(_)) && Self::matches((left, right))
-                || matches!(right, Node::Definition(_))
-            {
-                return Join::True;
-            }
+            if matches!(left, Node::Paragraph(_)) {
+                if Self::matches((left, right)) || matches!(right, Node::Definition(_)) {
+                    return Join::Break;
+                }
 
-            if let Node::Heading(heading) = right {
-                if format_heading_as_setext(heading, self) {
-                    return Join::True;
+                if let Node::Heading(heading) = right {
+                    if format_heading_as_setext(heading, self) {
+                        return Join::Break;
+                    }
                 }
             }
 
@@ -428,13 +462,13 @@ impl<'a> State<'a> {
             };
 
             if spread {
-                return Join::Number(1);
+                return Join::Lines(1);
             }
 
-            return Join::Number(0);
+            return Join::Lines(0);
         }
 
-        Join::True
+        Join::Break
     }
 
     fn matches(nodes: (&Node, &Node)) -> bool {
@@ -442,6 +476,7 @@ impl<'a> State<'a> {
             nodes,
             (Node::Root(_), Node::Root(_))
                 | (Node::Blockquote(_), Node::Blockquote(_))
+                | (Node::Definition(_), Node::Definition(_))
                 | (Node::FootnoteDefinition(_), Node::FootnoteDefinition(_))
                 | (Node::Heading(_), Node::Heading(_))
                 | (Node::List(_), Node::List(_))
