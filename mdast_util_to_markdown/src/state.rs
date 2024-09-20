@@ -25,7 +25,6 @@ use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use markdown::mdast::Node;
 use regex::{Captures, Regex, RegexBuilder};
 
-#[allow(dead_code)]
 #[derive(Debug)]
 enum Join {
     True,
@@ -33,7 +32,6 @@ enum Join {
     Number(usize),
 }
 
-#[allow(dead_code)]
 pub struct State<'a> {
     pub stack: Vec<ConstructName>,
     pub index_stack: Vec<usize>,
@@ -54,7 +52,6 @@ impl<'a> Info<'a> {
     }
 }
 
-#[allow(dead_code)]
 impl<'a> State<'a> {
     pub fn new(options: &'a Options) -> Self {
         State {
@@ -127,7 +124,6 @@ impl<'a> State<'a> {
                         .get(1)
                         .map(|captured_group| captured_group.len())
                         .unwrap_or(0);
-
                     let before = pattern.before.is_some() || pattern.at_break;
                     let after = pattern.after.is_some();
                     let position = full_match.start() + if before { captured_group_len } else { 0 };
@@ -153,7 +149,6 @@ impl<'a> State<'a> {
 
         let mut start = config.before.len();
         let end = value.len() - config.after.len();
-
         for (index, position) in positions.iter().enumerate() {
             if *position < start || *position >= end {
                 continue;
@@ -183,7 +178,6 @@ impl<'a> State<'a> {
             if start != *position {
                 result.push_str(&escape_backslashes(&value[start..*position], r"\"));
             }
-
             start = *position;
 
             let char_at_pos = value.chars().nth(*position);
@@ -275,8 +269,9 @@ impl<'a> State<'a> {
     }
 
     pub fn container_phrasing(&mut self, parent: &Node, info: &Info) -> Result<String, Message> {
-        let children = parent.children().expect("To be a parent.");
-
+        let children = parent
+            .children()
+            .expect("The node to be a phrasing parent.");
         let mut results: String = String::new();
         let mut index = 0;
         let mut children_iter = children.iter().peekable();
@@ -350,8 +345,7 @@ impl<'a> State<'a> {
     }
 
     pub fn container_flow(&mut self, parent: &Node) -> Result<String, Message> {
-        let children = parent.children().expect("To be a parent.");
-
+        let children = parent.children().expect("The node to be a flow parent.");
         let mut results: String = String::new();
         let mut children_iter = children.iter().peekable();
         let mut index = 0;
@@ -457,6 +451,23 @@ impl<'a> State<'a> {
         )
     }
 
+    pub fn indent_lines(&self, value: &str, map: impl Fn(&str, usize, bool) -> String) -> String {
+        let mut result = String::new();
+        let mut start = 0;
+        let mut line = 0;
+        let eol = Regex::new(r"\r?\n|\r").unwrap();
+        for m in eol.captures_iter(value) {
+            let full_match = m.get(0).unwrap();
+            let value_slice = &value[start..full_match.start()];
+            result.push_str(&map(value_slice, line, value_slice.is_empty()));
+            result.push_str(full_match.as_str());
+            start = full_match.start() + full_match.len();
+            line += 1;
+        }
+        result.push_str(&map(&value[start..], line, value.is_empty()));
+        result
+    }
+
     pub fn association(&self, node: &impl Association) -> String {
         if node.label().is_some() || node.identifier().is_empty() {
             return node.label().clone().unwrap_or_default();
@@ -484,7 +495,6 @@ impl<'a> State<'a> {
                     Some('x') | Some('X') => 16,
                     _ => 10,
                 };
-
                 let capture = &caps[2];
                 let numeric_encoded = if radix == 16 {
                     &capture[2..]

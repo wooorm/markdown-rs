@@ -6,7 +6,7 @@ license = "MIT"
 
 [dependencies]
 markdown = { path = "../" }
-regex = { version = "1.7.3" }
+regex = { version = "1" }
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 pub struct Options {
     pub bullet: char,
     pub bullet_other: char,
@@ -19,7 +18,6 @@ pub struct Options {
     pub rule_repetition: u32,
 }
 
-#[allow(dead_code)]
 #[derive(Copy, Clone)]
 pub enum IndentOptions {
     Mixed,

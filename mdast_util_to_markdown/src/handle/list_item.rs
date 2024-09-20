@@ -9,7 +9,7 @@ use crate::{
     construct_name::ConstructName,
     message::Message,
     state::{Info, State},
-    util::{check_bullet::check_bullet, indent_lines::indent_lines},
+    util::check_bullet::check_bullet,
 };
 
 use super::Handle;
@@ -59,7 +59,8 @@ impl Handle for ListItem {
 
         state.enter(ConstructName::ListItem);
 
-        let value = indent_lines(&state.container_flow(node)?, |line, index, blank| {
+        let value = state.container_flow(node)?;
+        let value = state.indent_lines(&value, |line, index, blank| {
             if index > 0 {
                 if blank {
                     String::new()

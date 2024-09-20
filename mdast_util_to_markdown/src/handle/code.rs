@@ -10,7 +10,7 @@ use crate::{
     state::{Info, State},
     util::{
         check_fence::check_fence, format_code_as_indented::format_code_as_indented,
-        indent_lines::indent_lines, longest_char_streak::longest_char_streak, safe::SafeConfig,
+        longest_char_streak::longest_char_streak, safe::SafeConfig,
     },
 };
 
@@ -28,7 +28,7 @@ impl Handle for Code {
 
         if format_code_as_indented(self, state) {
             state.enter(ConstructName::CodeIndented);
-            let value = indent_lines(&self.value, map);
+            let value = state.indent_lines(&self.value, map);
             state.exit();
             return Ok(value);
         }
@@ -81,10 +81,10 @@ impl Handle for Code {
     }
 }
 
-fn map(value: &str, _line: usize, blank: bool) -> String {
+fn map(line: &str, _index: usize, blank: bool) -> String {
     if blank {
         String::new()
     } else {
-        format!("    {}", value)
+        format!("    {}", line)
     }
 }
