@@ -382,41 +382,31 @@ impl<'a> State<'a> {
     }
 
     fn join(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
-        let joins: [Join; 2] = [
-            self.join_defaults(left, right, parent),
-            self.tight_definition(left, right),
-        ];
-
-        let mut index = 0;
         if self.options.tight_definitions {
-            index += 1;
+            Self::set_between(&self.tight_definition(left, right), results)
+        } else {
+            Self::set_between(&self.join_defaults(left, right, parent), results)
+        }
+    }
+
+    fn set_between(join: &Join, results: &mut String) -> () {
+        if let Join::Break = join {
+            results.push_str("\n\n");
+            return;
         }
 
-        loop {
-            if let Join::Break = joins[index] {
+        if let Join::Lines(n) = join {
+            if *n == 1 {
                 results.push_str("\n\n");
                 return;
             }
+            results.push_str("\n".repeat(1 + n).as_ref());
+            return;
+        }
 
-            if let Join::Lines(n) = joins[index] {
-                if n == 1 {
-                    results.push_str("\n\n");
-                    return;
-                }
-                results.push_str("\n".repeat(1 + n).as_ref());
-                return;
-            }
-
-            if let Join::HTMLComment = joins[index] {
-                results.push_str("\n\n<!---->\n\n");
-                return;
-            }
-
-            if index == 0 {
-                break;
-            }
-
-            index -= 1;
+        if let Join::HTMLComment = join {
+            results.push_str("\n\n<!---->\n\n");
+            return;
         }
     }
 
