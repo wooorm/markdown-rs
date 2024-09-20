@@ -78,6 +78,7 @@ pub enum AlignKind {
     /// > | | --- |
     ///       ^^^
     /// ```
+    // To do: this should serialize in serde as `null`.
     None,
 }
 
@@ -475,6 +476,7 @@ pub enum AttributeContent {
 )]
 pub struct AttributeValueExpression {
     pub value: String,
+    #[cfg_attr(feature = "serde", serde(rename = "_markdownRsStops"))]
     pub stops: Vec<Stop>,
 }
 
@@ -1161,6 +1163,7 @@ pub struct MdxjsEsm {
     pub position: Option<Position>,
 
     // Custom data on where each slice of `value` came from.
+    #[cfg_attr(feature = "serde", serde(rename = "_markdownRsStops"))]
     pub stops: Vec<Stop>,
 }
 
@@ -1181,6 +1184,7 @@ pub struct MdxFlowExpression {
     pub position: Option<Position>,
 
     // Custom data on where each slice of `value` came from.
+    #[cfg_attr(feature = "serde", serde(rename = "_markdownRsStops"))]
     pub stops: Vec<Stop>,
 }
 
@@ -1201,6 +1205,7 @@ pub struct MdxTextExpression {
     pub position: Option<Position>,
 
     // Custom data on where each slice of `value` came from.
+    #[cfg_attr(feature = "serde", serde(rename = "_markdownRsStops"))]
     pub stops: Vec<Stop>,
 }
 
@@ -1301,6 +1306,7 @@ pub struct MdxJsxExpressionAttribute {
     /// Value.
     pub value: String,
     /// Stops
+    #[cfg_attr(feature = "serde", serde(rename = "_markdownRsStops"))]
     pub stops: Vec<Stop>,
 }
 

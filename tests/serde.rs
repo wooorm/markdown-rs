@@ -1,15 +1,15 @@
-use markdown::mdast::Node;
-
+use markdown::{mdast::Node, message::Message, Constructs, ParseOptions};
+use test_utils::swc::{parse_esm, parse_expression};
 mod test_utils;
 
 #[allow(unused)]
 #[derive(Debug)]
 enum Error {
-    Mdast(markdown::message::Message),
+    Mdast(Message),
     Serde(serde_json::Error),
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_blockquote() -> Result<(), Error> {
     assert_serde(
         "> a",
@@ -21,23 +21,18 @@ fn serde_blockquote() -> Result<(), Error> {
       "children": [
         {
           "type": "paragraph",
-          "children": [
-            {
-              "type": "text",
-              "value": "a"
-            }
-          ]
+          "children": [{"type": "text", "value": "a"}]
         }
       ]
     }
   ]
 }
 "#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_footnote_definition() -> Result<(), Error> {
     assert_serde(
         "[^a]: b",
@@ -46,77 +41,64 @@ fn serde_footnote_definition() -> Result<(), Error> {
   "children": [
     {
       "type": "footnoteDefinition",
+      "identifier": "a",
+      "label": "a",
       "children": [
         {
           "type": "paragraph",
-          "children": [
-            {
-              "type": "text",
-              "value": "b"
-            }
-          ]
-        }
-      ],
-      "identifier": "a",
-      "label": "a"
-    }
-  ]
-}"#,
-        None,
-    )
-}
-
-#[cfg_attr(feature = "serde", test)]
-fn serde_mdx_jsx_flow_element() -> Result<(), Error> {
-    let source = r#"<Test id={id} class="test" {...b} />"#;
-    assert_serde(
-        source,
-        r#"{
-  "type": "root",
-  "children": [
-    {
-      "type": "mdxJsxFlowElement",
-      "children": [],
-      "name": "Test",
-      "attributes": [
-        {
-          "type": "mdxJsxAttribute",
-          "name": "id",
-          "value": {
-            "type": "mdxJsxAttributeValueExpression",
-            "value": "id",
-            "stops": [
-              [
-                0,
-                10
-              ]
-            ]
-          }
-        },
-        {
-          "type": "mdxJsxAttribute",
-          "name": "class",
-          "value": "test"
-        },
-        {
-          "type": "mdxJsxExpressionAttribute",
-          "value": "...b",
-          "stops": [
-            [
-              0,
-              28
-            ]
-          ]
+          "children": [{"type": "text", "value": "b"}]
         }
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::gfm(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
+fn serde_mdx_jsx_flow_element() -> Result<(), Error> {
+    let options = ParseOptions {
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
+        ..ParseOptions::mdx()
+    };
+
+    assert_serde(
+        "<a b c={d} e=\"f\" {...g} />",
+        r#"{
+  "type": "root",
+  "children": [
+    {
+      "type": "mdxJsxFlowElement",
+      "name": "a",
+      "attributes": [
+        {"type": "mdxJsxAttribute", "name": "b"},
+        {
+          "type": "mdxJsxAttribute",
+          "name": "c",
+          "value": {
+            "_markdownRsStops": [[0, 8]],
+            "type": "mdxJsxAttributeValueExpression",
+            "value": "d"
+          }
+        },
+        {"type": "mdxJsxAttribute", "name": "e", "value": "f"},
+        {
+          "_markdownRsStops": [[0, 18]],
+          "type": "mdxJsxExpressionAttribute",
+          "value": "...g"
+        }
+      ],
+      "children": []
+    }
+  ]
+}"#,
+        options,
+    )
+}
+
+#[test]
 fn serde_list() -> Result<(), Error> {
     assert_serde(
         "* a",
@@ -125,130 +107,109 @@ fn serde_list() -> Result<(), Error> {
   "children": [
     {
       "type": "list",
+      "ordered": false,
+      "spread": false,
       "children": [
         {
           "type": "listItem",
+          "spread": false,
           "children": [
             {
               "type": "paragraph",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "a"
-                }
-              ]
+              "children": [{"type": "text", "value": "a"}]
             }
-          ],
-          "spread": false
+          ]
         }
-      ],
-      "ordered": false,
-      "spread": false
-    }
-  ]
-}"#,
-        None,
-    )
-}
-
-#[cfg_attr(feature = "serde", test)]
-fn serde_mdxjs_esm() -> Result<(), Error> {
-    assert_serde(
-        r#"
-import Test from 'test';
-"#,
-        r#"{
-  "type": "root",
-  "children": [
-    {
-      "type": "mdxjsEsm",
-      "value": "import Test from 'test';",
-      "stops": [
-        [
-          0,
-          1
-        ]
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
+fn serde_mdxjs_esm() -> Result<(), Error> {
+    let options = ParseOptions {
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
+        ..ParseOptions::mdx()
+    };
+
+    assert_serde(
+        "import a, {b} from 'c'",
+        r#"{
+  "type": "root",
+  "children": [
+    {
+      "_markdownRsStops": [[0, 0]],
+      "type": "mdxjsEsm",
+      "value": "import a, {b} from 'c'"
+    }
+  ]
+}"#,
+        options,
+    )
+}
+
+#[test]
 fn serde_toml() -> Result<(), Error> {
     assert_serde(
-        r#"+++
-a: b
-+++
-"#,
+        "+++\na: b\n+++",
         r#"{
   "type": "root",
-  "children": [
-    {
-      "type": "toml",
-      "value": "a: b"
-    }
-  ]
+  "children": [{"type": "toml", "value": "a: b"}]
 }"#,
-        None,
+        ParseOptions {
+            constructs: Constructs {
+                frontmatter: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
+        },
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_yaml() -> Result<(), Error> {
     assert_serde(
-        r#"---
-a: b
----
-"#,
+        "---\na: b\n---",
         r#"{
   "type": "root",
-  "children": [
-    {
-      "type": "yaml",
-      "value": "a: b"
-    }
-  ]
+  "children": [{"type": "yaml", "value": "a: b"}]
 }"#,
-        None,
+        ParseOptions {
+            constructs: Constructs {
+                frontmatter: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
+        },
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_break() -> Result<(), Error> {
-    let source = r#"a\
-b
-"#;
     assert_serde(
-        source,
+        "a\\\nb",
         r#"{
   "type": "root",
   "children": [
     {
       "type": "paragraph",
       "children": [
-        {
-          "type": "text",
-          "value": "a"
-        },
-        {
-          "type": "break"
-        },
-        {
-          "type": "text",
-          "value": "b"
-        }
+        {"type": "text", "value": "a"},
+        {"type": "break"},
+        {"type": "text", "value": "b"}
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_inline_code() -> Result<(), Error> {
     assert_serde(
         "`a`",
@@ -257,20 +218,15 @@ fn serde_inline_code() -> Result<(), Error> {
   "children": [
     {
       "type": "paragraph",
-      "children": [
-        {
-          "type": "inlineCode",
-          "value": "a"
-        }
-      ]
+      "children": [{"type": "inlineCode", "value": "a"}]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_inline_math() -> Result<(), Error> {
     assert_serde(
         "$a$",
@@ -279,20 +235,21 @@ fn serde_inline_math() -> Result<(), Error> {
   "children": [
     {
       "type": "paragraph",
-      "children": [
-        {
-          "type": "inlineMath",
-          "value": "a"
-        }
-      ]
+      "children": [{"type": "inlineMath","value": "a"}]
     }
   ]
 }"#,
-        None,
+        ParseOptions {
+            constructs: Constructs {
+                math_text: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
+        },
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_delete() -> Result<(), Error> {
     assert_serde(
         "~~a~~",
@@ -304,22 +261,17 @@ fn serde_delete() -> Result<(), Error> {
       "children": [
         {
           "type": "delete",
-          "children": [
-            {
-              "type": "text",
-              "value": "a"
-            }
-          ]
+          "children": [{"type": "text","value": "a"}]
         }
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::gfm(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_emphasis() -> Result<(), Error> {
     assert_serde(
         "*a*",
@@ -331,23 +283,24 @@ fn serde_emphasis() -> Result<(), Error> {
       "children": [
         {
           "type": "emphasis",
-          "children": [
-            {
-              "type": "text",
-              "value": "a"
-            }
-          ]
+          "children": [{"type": "text","value": "a"}]
         }
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_mdx_text_expression() -> Result<(), Error> {
+    let options = ParseOptions {
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
+        ..ParseOptions::mdx()
+    };
+
     assert_serde(
         "a {b}",
         r#"{
@@ -356,95 +309,63 @@ fn serde_mdx_text_expression() -> Result<(), Error> {
     {
       "type": "paragraph",
       "children": [
+        {"type": "text","value": "a "},
         {
-          "type": "text",
-          "value": "a "
-        },
-        {
+          "_markdownRsStops": [[0,3]],
           "type": "mdxTextExpression",
-          "value": "b",
-          "stops": [
-            [
-              0,
-              3
-            ]
-          ]
+          "value": "b"
         }
       ]
     }
   ]
 }"#,
-        None,
+        options,
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_footnote_reference() -> Result<(), Error> {
-    let source = r#"Refer to [^a]
-[^a]: b
-"#;
     assert_serde(
-        source,
+        "[^a]\n\n[^a]: b",
         r#"{
   "type": "root",
   "children": [
     {
       "type": "paragraph",
       "children": [
-        {
-          "type": "text",
-          "value": "Refer to "
-        },
-        {
-          "type": "footnoteReference",
-          "identifier": "a",
-          "label": "a"
-        }
+        {"type": "footnoteReference", "identifier": "a", "label": "a"}
       ]
     },
     {
       "type": "footnoteDefinition",
+      "identifier": "a",
+      "label": "a",
       "children": [
         {
           "type": "paragraph",
-          "children": [
-            {
-              "type": "text",
-              "value": "b"
-            }
-          ]
+          "children": [{"type": "text", "value": "b"}]
         }
-      ],
-      "identifier": "a",
-      "label": "a"
+      ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::gfm(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_html() -> Result<(), Error> {
     assert_serde(
         "<a>",
         r#"{
   "type": "root",
-  "children": [
-    {
-      "type": "html",
-      "value": "<a>"
-    }
-  ]
+  "children": [{"type": "html", "value": "<a>"}]
 }"#,
-        Some(markdown::ParseOptions {
-            constructs: markdown::Constructs::gfm(),
-            ..markdown::ParseOptions::gfm()
-        }),
+        ParseOptions::gfm(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_image() -> Result<(), Error> {
     assert_serde(
         "![a](b)",
@@ -453,201 +374,120 @@ fn serde_image() -> Result<(), Error> {
   "children": [
     {
       "type": "paragraph",
-      "children": [
-        {
-          "type": "image",
-          "alt": "a",
-          "url": "b"
-        }
-      ]
+      "children": [{"type": "image", "url": "b", "alt": "a"}]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_image_reference() -> Result<(), Error> {
-    let source = r#"[x]: y
-a ![x] b
-"#;
     assert_serde(
-        source,
+        "![a]\n\n[a]: b",
         r#"{
   "type": "root",
   "children": [
     {
-      "type": "definition",
-      "url": "y",
-      "identifier": "x",
-      "label": "x"
-    },
-    {
       "type": "paragraph",
       "children": [
-        {
-          "type": "text",
-          "value": "a "
-        },
         {
           "type": "imageReference",
-          "alt": "x",
-          "referenceType": "shortcut",
-          "identifier": "x",
-          "label": "x"
-        },
-        {
-          "type": "text",
-          "value": " b"
+          "alt": "a",
+          "label": "a",
+          "identifier": "a",
+          "referenceType": "shortcut"
         }
       ]
-    }
+    },
+    {"type": "definition", "url": "b", "identifier": "a", "label": "a"}
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_mdx_jsx_text_element() -> Result<(), Error> {
-    let source = r#"text <Test id={id} class="test" {...b} />"#;
     assert_serde(
-        source,
+        "a <b c />",
         r#"{
   "type": "root",
   "children": [
     {
       "type": "paragraph",
       "children": [
-        {
-          "type": "text",
-          "value": "text "
-        },
+        {"type": "text", "value": "a "},
         {
           "type": "mdxJsxTextElement",
-          "children": [],
-          "name": "Test",
-          "attributes": [
-            {
-              "type": "mdxJsxAttribute",
-              "name": "id",
-              "value": {
-                "type": "mdxJsxAttributeValueExpression",
-                "value": "id",
-                "stops": [
-                  [
-                    0,
-                    15
-                  ]
-                ]
-              }
-            },
-            {
-              "type": "mdxJsxAttribute",
-              "name": "class",
-              "value": "test"
-            },
-            {
-              "type": "mdxJsxExpressionAttribute",
-              "value": "...b",
-              "stops": [
-                [
-                  0,
-                  33
-                ]
-              ]
-            }
-          ]
+          "name": "b",
+          "attributes": [{"type": "mdxJsxAttribute", "name": "c"}],
+          "children": []
         }
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::mdx(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_link() -> Result<(), Error> {
     assert_serde(
-        "link [a](b)",
+        "[a](b)",
         r#"{
   "type": "root",
   "children": [
     {
       "type": "paragraph",
       "children": [
-        {
-          "type": "text",
-          "value": "link "
-        },
         {
           "type": "link",
-          "children": [
-            {
-              "type": "text",
-              "value": "a"
-            }
-          ],
-          "url": "b"
+          "url": "b",
+          "children": [{"type": "text", "value": "a"}]
         }
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_link_reference() -> Result<(), Error> {
-    let source = r#"[x]: y
-a [x] b
-"#;
     assert_serde(
-        source,
+        "[a]\n\n[a]: b",
         r#"{
   "type": "root",
   "children": [
     {
-      "type": "definition",
-      "url": "y",
-      "identifier": "x",
-      "label": "x"
-    },
-    {
       "type": "paragraph",
       "children": [
         {
-          "type": "text",
-          "value": "a "
-        },
-        {
           "type": "linkReference",
-          "children": [
-            {
-              "type": "text",
-              "value": "x"
-            }
-          ],
+          "identifier": "a",
+          "label": "a",
           "referenceType": "shortcut",
-          "identifier": "x",
-          "label": "x"
-        },
-        {
-          "type": "text",
-          "value": " b"
+          "children": [{"type": "text", "value": "a"}]
         }
       ]
+    },
+    {
+      "type": "definition",
+      "url": "b",
+      "identifier": "a",
+      "label": "a"
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_strong() -> Result<(), Error> {
     assert_serde(
         "**a**",
@@ -659,126 +499,92 @@ fn serde_strong() -> Result<(), Error> {
       "children": [
         {
           "type": "strong",
-          "children": [
-            {
-              "type": "text",
-              "value": "a"
-            }
-          ]
+          "children": [{"type": "text", "value": "a"}]
         }
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_text() -> Result<(), Error> {
     assert_serde(
         "a",
         r#"{
   "type": "root",
   "children": [
-    {
-      "type": "paragraph",
-      "children": [
-        {
-          "type": "text",
-          "value": "a"
-        }
-      ]
-    }
+    {"type": "paragraph", "children": [{"type": "text", "value": "a"}]}
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_code() -> Result<(), Error> {
-    let source = r#"~~~
-let a = b;
-~~~
-"#;
     assert_serde(
-        source,
+        "~~~js eval\nconsole.log(1)\n~~~",
         r#"{
   "type": "root",
   "children": [
-    {
-      "type": "code",
-      "value": "let a = b;"
-    }
+    {"type": "code", "lang": "js", "meta": "eval", "value": "console.log(1)"}
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )?;
-    let source = r#"```
-let a = b;
-```
-"#;
+
     assert_serde(
-        source,
+        "```\nconsole.log(1)\n```",
         r#"{
   "type": "root",
-  "children": [
-    {
-      "type": "code",
-      "value": "let a = b;"
-    }
-  ]
+  "children": [{"type": "code", "value": "console.log(1)"}]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_math() -> Result<(), Error> {
-    let source = r#"$$
-1 + 1 = 2
-$$
-"#;
     assert_serde(
-        source,
+        "$$\n1 + 1 = 2\n$$",
         r#"{
   "type": "root",
-  "children": [
-    {
-      "type": "math",
-      "value": "1 + 1 = 2"
-    }
-  ]
+  "children": [{"type": "math", "value": "1 + 1 = 2"}]
 }"#,
-        None,
+        ParseOptions {
+            constructs: Constructs {
+                math_flow: true,
+                ..Constructs::default()
+            },
+            ..ParseOptions::default()
+        },
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_mdx_flow_expression() -> Result<(), Error> {
+    let options = ParseOptions {
+        mdx_esm_parse: Some(Box::new(parse_esm)),
+        mdx_expression_parse: Some(Box::new(parse_expression)),
+        ..ParseOptions::mdx()
+    };
+
     assert_serde(
         "{a}",
         r#"{
   "type": "root",
   "children": [
-    {
-      "type": "mdxFlowExpression",
-      "value": "a",
-      "stops": [
-        [
-          0,
-          1
-        ]
-      ]
-    }
+    {"_markdownRsStops": [[0, 1]], "type": "mdxFlowExpression", "value": "a"}
   ]
 }"#,
-        None,
+        options,
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_heading() -> Result<(), Error> {
     assert_serde(
         "# a",
@@ -787,153 +593,73 @@ fn serde_heading() -> Result<(), Error> {
   "children": [
     {
       "type": "heading",
-      "children": [
-        {
-          "type": "text",
-          "value": "a"
-        }
-      ],
-      "depth": 1
+      "depth": 1,
+      "children": [{"type": "text", "value": "a"}]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_table() -> Result<(), Error> {
-    let source = r#"| a   | b   |
-|-----|-----|
-| c11 | c12 |
-| c21 | c22 |
-"#;
+    // To do: `"none"` should serialize in serde as `null`.
     assert_serde(
-        source,
+        "| a | b |\n| - | -: |\n| 1 | 2 |",
         r#"{
   "type": "root",
   "children": [
     {
       "type": "table",
+      "align": ["none", "right"],
       "children": [
         {
           "type": "tableRow",
           "children": [
-            {
-              "type": "tableCell",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "a"
-                }
-              ]
-            },
-            {
-              "type": "tableCell",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "b"
-                }
-              ]
-            }
+            {"type": "tableCell", "children": [{"type": "text", "value": "a"}]},
+            {"type": "tableCell", "children": [{"type": "text", "value": "b"}]}
           ]
         },
         {
           "type": "tableRow",
           "children": [
-            {
-              "type": "tableCell",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "c11"
-                }
-              ]
-            },
-            {
-              "type": "tableCell",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "c12"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "tableRow",
-          "children": [
-            {
-              "type": "tableCell",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "c21"
-                }
-              ]
-            },
-            {
-              "type": "tableCell",
-              "children": [
-                {
-                  "type": "text",
-                  "value": "c22"
-                }
-              ]
-            }
+            {"type": "tableCell","children": [{"type": "text", "value": "1"}]},
+            {"type": "tableCell","children": [{"type": "text", "value": "2"}]}
           ]
         }
-      ],
-      "align": [
-        "none",
-        "none"
       ]
     }
   ]
 }"#,
-        None,
+        ParseOptions::gfm(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_thematic_break() -> Result<(), Error> {
     assert_serde(
         "***",
-        r#"{
-  "type": "root",
-  "children": [
-    {
-      "type": "thematicBreak"
-    }
-  ]
-}"#,
-        None,
+        r#"{"type": "root", "children": [{"type": "thematicBreak"}]}"#,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_definition() -> Result<(), Error> {
     assert_serde(
-        "[a]: # (b)",
+        "[a]: b",
         r###"{
   "type": "root",
   "children": [
-    {
-      "type": "definition",
-      "url": "#",
-      "title": "b",
-      "identifier": "a",
-      "label": "a"
-    }
+    {"type": "definition", "url": "b", "identifier": "a", "label": "a"}
   ]
 }"###,
-        None,
+        ParseOptions::default(),
     )
 }
 
-#[cfg_attr(feature = "serde", test)]
+#[test]
 fn serde_paragraph() -> Result<(), Error> {
     assert_serde(
         "a",
@@ -942,73 +668,55 @@ fn serde_paragraph() -> Result<(), Error> {
   "children": [
     {
       "type": "paragraph",
-      "children": [
-        {
-          "type": "text",
-          "value": "a"
-        }
-      ]
+      "children": [{"type": "text", "value": "a"}]
     }
   ]
 }"#,
-        None,
+        ParseOptions::default(),
     )
 }
 
 /// Assert serde of Mdast constructs.
 ///
 /// Refer below links for the MDAST JSON construct types.
-/// * https://github.com/syntax-tree/mdast#nodes
-/// * https://github.com/syntax-tree/mdast-util-mdx-jsx?tab=readme-ov-file#returns-1
+/// * <https://github.com/syntax-tree/mdast#nodes>
+/// * <https://github.com/syntax-tree/mdast-util-mdx#syntax-tree>
+/// * <https://github.com/syntax-tree/mdast-util-frontmatter#syntax-tree>
 #[cfg(feature = "serde")]
-fn assert_serde(
-    input: &str,
-    expected: &str,
-    options: Option<markdown::ParseOptions>,
-) -> Result<(), Error> {
-    // Parse Mdast with default options of MDX and GFM
-    use test_utils::swc::{parse_esm, parse_expression};
-    let mut source = markdown::to_mdast(
-        input,
-        &options.unwrap_or(markdown::ParseOptions {
-            constructs: markdown::Constructs {
-                frontmatter: true,
-                gfm_autolink_literal: true,
-                gfm_footnote_definition: true,
-                gfm_label_start_footnote: true,
-                gfm_strikethrough: true,
-                gfm_table: true,
-                gfm_task_list_item: true,
-                math_flow: true,
-                math_text: true,
-                ..markdown::Constructs::mdx()
-            },
-            mdx_esm_parse: Some(Box::new(parse_esm)),
-            mdx_expression_parse: Some(Box::new(parse_expression)),
-            ..markdown::ParseOptions::gfm()
-        }),
-    )
-    .map_err(Error::Mdast)?;
+fn assert_serde(input: &str, expected: &str, options: ParseOptions) -> Result<(), Error> {
+    use pretty_assertions::assert_eq;
+
+    let mut source = markdown::to_mdast(input, &options).map_err(Error::Mdast)?;
 
     remove_position(&mut source);
     // Serialize to JSON
     let actual_value: serde_json::Value = serde_json::to_value(&source).map_err(Error::Serde)?;
     let expected_value: serde_json::Value = serde_json::from_str(expected).map_err(Error::Serde)?;
-    // Assert serialization
-    pretty_assertions::assert_eq!(actual_value, expected_value);
-    // Assert deserialization
-    pretty_assertions::assert_eq!(
+
+    // Assert serialization.
+    assert_eq!(actual_value, expected_value);
+
+    // Assert deserialization.
+    assert_eq!(
         source,
         serde_json::from_value(actual_value).map_err(Error::Serde)?
     );
     Ok(())
 }
 
+#[cfg(not(feature = "serde"))]
+#[allow(unused_variables)]
+fn assert_serde(input: &str, expected: &str, options: ParseOptions) -> Result<(), Error> {
+    Ok(())
+}
+
+#[allow(dead_code)]
 fn remove_position(node: &mut Node) {
     if let Some(children) = node.children_mut() {
         for child in children {
             remove_position(child);
         }
     }
+
     node.position_set(None);
 }
