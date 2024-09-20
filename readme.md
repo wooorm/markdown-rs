@@ -258,7 +258,7 @@ The following bash scripts are useful when working on this project:
     ```
 *   lint:
     ```sh
-    cargo fmt --check && cargo clippy --examples --tests --benches --all-features --all-features
+    cargo fmt --check && cargo clippy --examples --tests --benches --all-features
     ```
 *   test:
     ```sh
