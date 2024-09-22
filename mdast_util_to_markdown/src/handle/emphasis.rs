@@ -1,9 +1,11 @@
 use alloc::format;
-use markdown::mdast::{Emphasis, Node};
+use markdown::{
+    mdast::{Emphasis, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::check_emphasis::check_emphasis,
 };

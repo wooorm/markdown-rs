@@ -1,11 +1,11 @@
 use alloc::{format, string::String};
-use markdown::mdast::{InlineCode, Node};
+use markdown::{
+    mdast::{InlineCode, Node},
+    message::Message,
+};
 use regex::Regex;
 
-use crate::{
-    message::Message,
-    state::{Info, State},
-};
+use crate::state::{Info, State};
 
 use super::Handle;
 

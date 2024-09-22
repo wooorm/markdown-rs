@@ -1,9 +1,11 @@
 use alloc::format;
-use markdown::mdast::{Heading, Node};
+use markdown::{
+    mdast::{Heading, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::format_heading_as_setext::format_heading_as_setext,
 };

@@ -1,10 +1,10 @@
 use alloc::string::String;
-use markdown::mdast::{Node, Root};
-
-use crate::{
+use markdown::{
+    mdast::{Node, Root},
     message::Message,
-    state::{Info, State},
 };
+
+use crate::state::{Info, State};
 
 use super::Handle;
 

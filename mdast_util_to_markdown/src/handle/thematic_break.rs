@@ -1,8 +1,10 @@
 use alloc::format;
-use markdown::mdast::{Node, ThematicBreak};
+use markdown::{
+    mdast::{Node, ThematicBreak},
+    message::Message,
+};
 
 use crate::{
-    message::Message,
     state::{Info, State},
     util::{check_rule::check_rule, check_rule_repetition::check_rule_repetition},
 };

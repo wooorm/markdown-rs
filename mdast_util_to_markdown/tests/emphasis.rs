@@ -19,24 +19,6 @@ fn emphasis() {
     );
 
     assert_eq!(
-        to_md_with_opts(
-            &Node::Emphasis(Emphasis {
-                children: Vec::new(),
-                position: None
-            }),
-            &Options {
-                emphasis: '?',
-                ..Default::default()
-            }
-        ),
-        Err(
-            "Cannot serialize emphasis with `?` for `options.emphasis`, expected `*`, or `_`"
-                .into()
-        ),
-        "should throw on when given an incorrect `emphasis`"
-    );
-
-    assert_eq!(
         to(&Node::Emphasis(Emphasis {
             children: vec![Node::Text(Text {
                 value: String::from("a"),

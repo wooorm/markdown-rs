@@ -1,9 +1,11 @@
 use alloc::format;
-use markdown::mdast::{Node, Strong};
+use markdown::{
+    mdast::{Node, Strong},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::check_strong::check_strong,
 };

@@ -2,11 +2,13 @@ use alloc::{
     format,
     string::{String, ToString},
 };
-use markdown::mdast::{Code, Node};
+use markdown::{
+    mdast::{Code, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::{
         check_fence::check_fence, format_code_as_indented::format_code_as_indented,

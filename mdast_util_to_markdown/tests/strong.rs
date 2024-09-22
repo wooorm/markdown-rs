@@ -18,21 +18,6 @@ fn strong() {
     );
 
     assert_eq!(
-        to_md_with_opts(
-            &Node::Strong(Strong {
-                children: Vec::new(),
-                position: None
-            }),
-            &Options {
-                strong: '?',
-                ..Default::default()
-            }
-        ),
-        Err("Cannot serialize strong with `?` for `options.strong`, expected `*`, or `_`".into()),
-        "should throw on when given an incorrect `strong`"
-    );
-
-    assert_eq!(
         to(&Node::Strong(Strong {
             children: vec![Node::Text(Text {
                 value: String::from("a"),

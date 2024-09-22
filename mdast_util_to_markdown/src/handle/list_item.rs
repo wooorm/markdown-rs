@@ -2,12 +2,14 @@ use alloc::{
     format,
     string::{String, ToString},
 };
-use markdown::mdast::{ListItem, Node};
+use markdown::{
+    mdast::{ListItem, Node},
+    message::Message,
+};
 
 use crate::{
     configure::IndentOptions,
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::check_bullet::check_bullet,
 };

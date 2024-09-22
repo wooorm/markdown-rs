@@ -1,8 +1,10 @@
-use markdown::mdast::{Node, Paragraph};
+use markdown::{
+    mdast::{Node, Paragraph},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
 };
 

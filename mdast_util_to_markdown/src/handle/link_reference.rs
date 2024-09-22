@@ -1,11 +1,13 @@
 use core::mem;
 
 use alloc::string::String;
-use markdown::mdast::{LinkReference, Node, ReferenceKind};
+use markdown::{
+    mdast::{LinkReference, Node, ReferenceKind},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::safe::SafeConfig,
 };

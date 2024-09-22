@@ -1,9 +1,11 @@
 use alloc::string::String;
-use markdown::mdast::{Image, Node};
+use markdown::{
+    mdast::{Image, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::{check_quote::check_quote, safe::SafeConfig},
 };

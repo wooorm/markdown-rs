@@ -1,6 +1,7 @@
-use alloc::format;
+use alloc::{boxed::Box, format};
+use markdown::message::Message;
 
-use crate::{message::Message, state::State};
+use crate::state::State;
 
 use super::check_bullet::check_bullet;
 
@@ -14,6 +15,9 @@ pub fn check_bullet_other(state: &mut State) -> Result<char, Message> {
                 "Cannot serialize items with `' {} '` for `options.bullet_other`, expected `*`, `+`, or `-`",
                 bullet_other
             ),
+            rule_id: Box::new("unexpected-marker".into()),
+            source: Box::new("mdast-util-to_markdown".into()),
+            place: None,
         });
     }
 
@@ -23,6 +27,9 @@ pub fn check_bullet_other(state: &mut State) -> Result<char, Message> {
                 "Expected `bullet` (`' {} '`) and `bullet_other` (`' {} '`) to be different",
                 bullet, bullet_other
             ),
+            rule_id: Box::new("bullet-match-bullet_other".into()),
+            source: Box::new("mdast-util-to_markdown".into()),
+            place: None,
         });
     }
 

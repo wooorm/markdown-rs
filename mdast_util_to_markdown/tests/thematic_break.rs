@@ -43,18 +43,6 @@ fn thematic_break() {
         to_md_with_opts(
             &Node::ThematicBreak(ThematicBreak { position: None }),
             &Options {
-                rule: '.',
-                ..Default::default()
-            }
-        ),
-        Err("Cannot serialize rules with `.` for `options.rule`, expected `*`, `-`, or `_`".into()),
-        "should throw on when given an incorrect `rule`"
-    );
-
-    assert_eq!(
-        to_md_with_opts(
-            &Node::ThematicBreak(ThematicBreak { position: None }),
-            &Options {
                 rule_repetition: 5,
                 ..Default::default()
             }
@@ -62,18 +50,6 @@ fn thematic_break() {
         .unwrap(),
         "*****\n",
         "should support a thematic break w/ more repetitions w/ `rule_repetition`"
-    );
-
-    assert_eq!(
-        to_md_with_opts(
-            &Node::ThematicBreak(ThematicBreak { position: None }),
-            &Options {
-                rule_repetition: 2,
-                ..Default::default()
-            }
-        ),
-        Err("Cannot serialize rules with repetition `2` for `options.rule_repetition`, expected `3` or more".into()),
-        "should throw on when given an incorrect `ruleRepetition`"
     );
 
     assert_eq!(

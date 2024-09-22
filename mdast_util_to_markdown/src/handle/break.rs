@@ -1,8 +1,10 @@
 use alloc::string::ToString;
-use markdown::mdast::{Break, Node};
+use markdown::{
+    mdast::{Break, Node},
+    message::Message,
+};
 
 use crate::{
-    message::Message,
     state::{Info, State},
     util::pattern_in_scope::pattern_in_scope,
 };

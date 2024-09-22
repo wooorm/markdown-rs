@@ -1,11 +1,13 @@
 use core::mem;
 
 use alloc::string::String;
-use markdown::mdast::{Link, Node};
+use markdown::{
+    mdast::{Link, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::{
         check_quote::check_quote, format_link_as_auto_link::format_link_as_auto_link,

@@ -1,9 +1,9 @@
-use markdown::mdast::{Html, Node};
-
-use crate::{
+use markdown::{
+    mdast::{Html, Node},
     message::Message,
-    state::{Info, State},
 };
+
+use crate::state::{Info, State};
 
 use super::Handle;
 

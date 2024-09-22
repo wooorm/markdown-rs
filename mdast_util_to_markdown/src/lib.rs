@@ -2,8 +2,7 @@
 
 use alloc::string::String;
 pub use configure::{IndentOptions, Options};
-use markdown::mdast::Node;
-use message::Message;
+use markdown::{mdast::Node, message::Message};
 use state::{Info, State};
 
 extern crate alloc;
@@ -11,7 +10,6 @@ mod association;
 mod configure;
 mod construct_name;
 mod handle;
-mod message;
 mod state;
 mod r#unsafe;
 mod util;

@@ -1,9 +1,11 @@
 use alloc::string::String;
-use markdown::mdast::{Blockquote, Node};
+use markdown::{
+    mdast::{Blockquote, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
 };
 

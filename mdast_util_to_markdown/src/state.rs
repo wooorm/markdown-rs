@@ -9,7 +9,6 @@ use crate::handle::link::peek_link;
 use crate::handle::link_reference::peek_link_reference;
 use crate::handle::strong::peek_strong;
 use crate::handle::Handle;
-use crate::message::Message;
 use crate::Options;
 use crate::{
     r#unsafe::Unsafe,
@@ -20,9 +19,11 @@ use crate::{
         safe::{escape_backslashes, EscapeInfos, SafeConfig},
     },
 };
+use alloc::boxed::Box;
 use alloc::string::ToString;
 use alloc::{collections::BTreeMap, format, string::String, vec::Vec};
 use markdown::mdast::Node;
+use markdown::message::Message;
 use regex::{Captures, Regex, RegexBuilder};
 
 #[derive(Debug)]
@@ -100,7 +101,12 @@ impl<'a> State<'a> {
                 image_reference.handle(self, info, parent, node)
             }
             Node::LinkReference(link_reference) => link_reference.handle(self, info, parent, node),
-            _ => Err("Cannot handle node".into()),
+            _ => Err(Message {
+                reason: format!("Can't handle node",),
+                rule_id: Box::new("unexpected-marker".into()),
+                source: Box::new("mdast-util-to_markdown".into()),
+                place: None,
+            }),
         }
     }
 
@@ -370,7 +376,7 @@ impl<'a> State<'a> {
             results.push_str(&self.handle(child, &Info::new("\n", "\n"), Some(parent))?);
 
             if let Some(next_child) = children_iter.peek() {
-                self.join(child, next_child, parent, &mut results);
+                self.betweenn(child, next_child, parent, &mut results);
             }
 
             index += 1;
@@ -381,7 +387,7 @@ impl<'a> State<'a> {
         Ok(results)
     }
 
-    fn join(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
+    fn betweenn(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
         if self.options.tight_definitions {
             Self::set_between(&self.tight_definition(left, right), results)
         } else {

@@ -1,7 +1,9 @@
-use markdown::mdast::{Node, Text};
+use markdown::{
+    mdast::{Node, Text},
+    message::Message,
+};
 
 use crate::{
-    message::Message,
     state::{Info, State},
     util::safe::SafeConfig,
 };

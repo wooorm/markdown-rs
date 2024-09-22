@@ -1,8 +1,10 @@
-use markdown::mdast::{List, Node};
+use markdown::{
+    mdast::{List, Node},
+    message::Message,
+};
 
 use crate::{
     construct_name::ConstructName,
-    message::Message,
     state::{Info, State},
     util::{
         check_bullet::check_bullet, check_bullet_ordered::check_bullet_ordered,
