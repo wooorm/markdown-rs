@@ -103,8 +103,8 @@ impl<'a> State<'a> {
             Node::LinkReference(link_reference) => link_reference.handle(self, info, parent, node),
             _ => Err(Message {
                 reason: format!("Can't handle node",),
-                rule_id: Box::new("unexpected-marker".into()),
-                source: Box::new("mdast-util-to_markdown".into()),
+                rule_id: Box::new("unexpected-node".into()),
+                source: Box::new("mdast-util-to-markdown".into()),
                 place: None,
             }),
         }

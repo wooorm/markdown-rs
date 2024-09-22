@@ -13,7 +13,7 @@ pub fn check_strong(state: &State) -> Result<char, Message> {
                 marker
             ),
             rule_id: Box::new("unexpected-marker".into()),
-            source: Box::new("mdast-util-to_markdown".into()),
+            source: Box::new("mdast-util-to-markdown".into()),
             place: None,
         });
     }

@@ -13,7 +13,7 @@ pub fn check_rule_repetition(state: &State) -> Result<u32, Message> {
                 repetition
             ),
             rule_id: Box::new("unexpected-marker".into()),
-            source: Box::new("mdast-util-to_markdown".into()),
+            source: Box::new("mdast-util-to-markdown".into()),
             place: None,
         });
     }
