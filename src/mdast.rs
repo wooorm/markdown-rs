@@ -76,7 +76,7 @@ pub enum AlignKind {
     None,
 }
 
-/// Implement serde according to <https://github.com/syntax-tree/mdast?tab=readme-ov-file#aligntype>
+/// Implement serde according to <https://github.com/syntax-tree/mdast#aligntype>
 #[cfg(feature = "serde")]
 impl serde::ser::Serialize for AlignKind {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
