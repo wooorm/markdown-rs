@@ -51,10 +51,14 @@ impl Handle for ListItem {
             }
 
             size = bullet.len() + 1;
+        }
 
-            if matches!(list_item_indent, IndentOptions::Tab)
-                || (matches!(list_item_indent, IndentOptions::Mixed) && list.spread || self.spread)
-            {
+        if matches!(list_item_indent, IndentOptions::Tab) || self.spread {
+            size = compute_size(size);
+        }
+
+        if let Some(Node::List(list)) = parent {
+            if matches!(list_item_indent, IndentOptions::Mixed) && list.spread {
                 size = compute_size(size);
             }
         }
@@ -85,6 +89,7 @@ impl Handle for ListItem {
                 result
             }
         });
+        state.exit();
 
         Ok(value)
     }

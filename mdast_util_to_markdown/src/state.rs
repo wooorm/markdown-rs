@@ -438,7 +438,11 @@ impl<'a> State<'a> {
 
         if matches!(parent, Node::List(_) | Node::ListItem(_)) {
             if matches!(left, Node::Paragraph(_)) {
-                if Self::matches((left, right)) || matches!(right, Node::Definition(_)) {
+                if Self::matches((left, right)) {
+                    return Join::Break;
+                }
+
+                if matches!(right, Node::Definition(_)) {
                     return Join::Break;
                 }
 
