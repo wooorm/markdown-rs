@@ -22,6 +22,7 @@ impl Handle for Blockquote {
         state.enter(ConstructName::Blockquote);
         let value = state.container_flow(node)?;
         let value = state.indent_lines(&value, map);
+        state.exit();
         Ok(value)
     }
 }

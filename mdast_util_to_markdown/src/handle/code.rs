@@ -78,6 +78,7 @@ impl Handle for Code {
         }
 
         value.push_str(&sequence);
+        state.exit();
 
         Ok(value)
     }
