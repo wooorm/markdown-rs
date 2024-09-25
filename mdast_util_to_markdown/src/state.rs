@@ -102,7 +102,7 @@ impl<'a> State<'a> {
             }
             Node::LinkReference(link_reference) => link_reference.handle(self, info, parent, node),
             _ => Err(Message {
-                reason: format!("Can't handle node"),
+                reason: String::from("Can't handle node"),
                 rule_id: Box::new("unexpected-node".into()),
                 source: Box::new("mdast-util-to-markdown".into()),
                 place: None,
@@ -395,24 +395,18 @@ impl<'a> State<'a> {
         }
     }
 
-    fn set_between(join: &Join, results: &mut String) -> () {
+    fn set_between(join: &Join, results: &mut String) {
         if let Join::Break = join {
             results.push_str("\n\n");
-            return;
-        }
-
-        if let Join::Lines(n) = join {
+        } else if let Join::Lines(n) = join {
             if *n == 1 {
                 results.push_str("\n\n");
                 return;
             }
             results.push_str("\n".repeat(1 + n).as_ref());
             return;
-        }
-
-        if let Join::HTMLComment = join {
+        } else if let Join::HTMLComment = join {
             results.push_str("\n\n<!---->\n\n");
-            return;
         }
     }
 

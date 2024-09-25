@@ -32,7 +32,7 @@ fn map(line: &str, _index: usize, blank: bool) -> String {
     let marker = ">";
     result.push_str(marker);
     if !blank {
-        result.push_str(" ");
+        result.push(' ');
     }
     result.push_str(line);
     result
