@@ -102,7 +102,7 @@ impl<'a> State<'a> {
             }
             Node::LinkReference(link_reference) => link_reference.handle(self, info, parent, node),
             _ => Err(Message {
-                reason: format!("Can't handle node",),
+                reason: format!("Can't handle node"),
                 rule_id: Box::new("unexpected-node".into()),
                 source: Box::new("mdast-util-to-markdown".into()),
                 place: None,
@@ -376,7 +376,7 @@ impl<'a> State<'a> {
             results.push_str(&self.handle(child, &Info::new("\n", "\n"), Some(parent))?);
 
             if let Some(next_child) = children_iter.peek() {
-                self.betweenn(child, next_child, parent, &mut results);
+                self.between(child, next_child, parent, &mut results);
             }
 
             index += 1;
@@ -387,7 +387,7 @@ impl<'a> State<'a> {
         Ok(results)
     }
 
-    fn betweenn(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
+    fn between(&self, left: &Node, right: &Node, parent: &Node, results: &mut String) {
         if self.options.tight_definitions {
             Self::set_between(&self.tight_definition(left, right), results)
         } else {
