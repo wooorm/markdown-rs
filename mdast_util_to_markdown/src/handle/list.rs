@@ -54,7 +54,7 @@ impl Handle for List {
                 && self.children[0]
                     .children()
                     .map(|inner| inner.is_empty())
-                    .unwrap();
+                    .expect("There's at least one list item.");
 
             if is_valid_bullet
                 && is_within_bounds
