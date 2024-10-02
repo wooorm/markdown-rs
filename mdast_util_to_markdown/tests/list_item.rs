@@ -108,7 +108,7 @@ fn list_item() {
         )
         .unwrap(),
         "* a\n  ***\n",
-        "should use one space after the bullet for `listItemIndent: \"one\"`"
+        "should use one space after the bullet for `list_item_indent: \"IndentOptions::One\"`"
     );
 
     assert_eq!(
@@ -132,7 +132,7 @@ fn list_item() {
         )
         .unwrap(),
         "* a\n",
-        "should use one space after the bullet for `listItemIndent: \"mixed\"`, when the item is not spread"
+        "should use one space after the bullet for `list_item_indent: \"IndentOptions::Mixed\"`, when the item is not spread"
     );
 
     assert_eq!(
@@ -157,7 +157,7 @@ fn list_item() {
         )
         .unwrap(),
         "*   a\n\n    ***\n",
-        "should use a tab stop of spaces after the bullet for `listItemIndent: \"mixed\"`, when the item is spread"
+        "should use a tab stop of spaces after the bullet for `list_item_indent: \"IndentOptions::Mixed\"`, when the item is spread"
     );
 
     assert_eq!(
