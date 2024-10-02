@@ -410,7 +410,6 @@ impl<'a> State<'a> {
                 return;
             }
             results.push_str("\n".repeat(1 + n).as_ref());
-            return;
         } else if let Join::HTMLComment = join {
             results.push_str("\n\n<!---->\n\n");
         }

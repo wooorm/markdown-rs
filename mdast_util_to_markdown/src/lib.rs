@@ -27,6 +27,5 @@ pub fn to_markdown_with_options(tree: &Node, options: &Options) -> Result<String
             result.push('\n');
         }
     }
-
     Ok(result)
 }
