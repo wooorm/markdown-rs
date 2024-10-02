@@ -7,7 +7,11 @@ use super::check_bullet::check_bullet;
 
 pub fn check_bullet_other(state: &mut State) -> Result<char, Message> {
     let bullet = check_bullet(state)?;
-    let bullet_other = state.options.bullet_other;
+    let mut bullet_other = state.options.bullet_other;
+
+    if bullet != '*' {
+        bullet_other = '*';
+    }
 
     if bullet_other != '*' && bullet_other != '+' && bullet_other != '-' {
         return Err(Message {

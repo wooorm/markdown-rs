@@ -278,13 +278,16 @@ impl<'a> State<'a> {
         let children = parent
             .children()
             .expect("The node to be a phrasing parent.");
+
+        if children.is_empty() {
+            return Ok(String::new());
+        }
+
         let mut results: String = String::new();
         let mut index = 0;
         let mut children_iter = children.iter().peekable();
 
-        if !children.is_empty() {
-            self.index_stack.push(0);
-        }
+        self.index_stack.push(0);
 
         while let Some(child) = children_iter.next() {
             if index > 0 {
@@ -352,13 +355,16 @@ impl<'a> State<'a> {
 
     pub fn container_flow(&mut self, parent: &Node) -> Result<String, Message> {
         let children = parent.children().expect("The node to be a flow parent.");
+
+        if children.is_empty() {
+            return Ok(String::new());
+        }
+
         let mut results: String = String::new();
         let mut children_iter = children.iter().peekable();
         let mut index = 0;
 
-        if !children.is_empty() {
-            self.index_stack.push(0);
-        }
+        self.index_stack.push(0);
 
         while let Some(child) = children_iter.next() {
             if index > 0 {
@@ -369,7 +375,7 @@ impl<'a> State<'a> {
                 *top = index;
             }
 
-            if matches!(child, Node::List(_)) {
+            if !matches!(child, Node::List(_)) {
                 self.bullet_last_used = None;
             }
 

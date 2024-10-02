@@ -46,13 +46,19 @@ impl Handle for List {
             use_different_marker = bullet == bullet_last_used;
         }
 
-        if !self.ordered && !self.children.is_empty() {
+        if !self.ordered {
             let is_valid_bullet = bullet == '*' || bullet == '-';
-            let first_child_has_no_children = self.children[0].children().is_none();
             let is_within_bounds = state.stack.len() >= 4 && state.index_stack.len() >= 3;
+
+            let first_list_item_has_no_children = !self.children.is_empty()
+                && self.children[0]
+                    .children()
+                    .map(|inner| inner.is_empty())
+                    .unwrap();
+
             if is_valid_bullet
-                && first_child_has_no_children
                 && is_within_bounds
+                && first_list_item_has_no_children
                 && state.stack[state.stack.len() - 1] == ConstructName::List
                 && state.stack[state.stack.len() - 2] == ConstructName::ListItem
                 && state.stack[state.stack.len() - 3] == ConstructName::List
@@ -63,17 +69,17 @@ impl Handle for List {
             {
                 use_different_marker = true;
             }
-        }
 
-        if check_rule(state)? == bullet {
-            for child in self.children.iter() {
-                if let Some(child_children) = child.children() {
-                    if !child_children.is_empty()
-                        && matches!(child, Node::ListItem(_))
-                        && matches!(child_children[0], Node::ThematicBreak(_))
-                    {
-                        use_different_marker = true;
-                        break;
+            if check_rule(state)? == bullet {
+                for child in self.children.iter() {
+                    if let Some(child_children) = child.children() {
+                        if !child_children.is_empty()
+                            && matches!(child, Node::ListItem(_))
+                            && matches!(child_children[0], Node::ThematicBreak(_))
+                        {
+                            use_different_marker = true;
+                            break;
+                        }
                     }
                 }
             }
