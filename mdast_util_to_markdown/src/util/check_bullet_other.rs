@@ -32,7 +32,7 @@ pub fn check_bullet_other(state: &mut State) -> Result<char, Message> {
                 bullet, bullet_other
             ),
             rule_id: Box::new("bullet-match-bullet_other".into()),
-            source: Box::new("mdast-util-to_markdown".into()),
+            source: Box::new("mdast-util-to-markdown".into()),
             place: None,
         });
     }
