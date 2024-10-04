@@ -408,7 +408,6 @@ fn remove_pos(node: &mut Node) {
     node.position_set(None);
     if let Some(children) = node.children_mut() {
         for child in children {
-            child.position_set(None);
             remove_pos(child);
         }
     }
