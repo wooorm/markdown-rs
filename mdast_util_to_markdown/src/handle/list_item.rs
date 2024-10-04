@@ -30,9 +30,6 @@ impl Handle for ListItem {
             .unwrap_or(check_bullet(state)?)
             .to_string();
 
-        // This is equal to bullet.len() + 1, since we know bullet is always one byte long we can
-        // safely assign 2 to size.
-        let mut size = 2;
         if let Some(Node::List(list)) = parent {
             if list.ordered {
                 let bullet_number = if let Some(start) = list.start {
@@ -48,21 +45,25 @@ impl Handle for ListItem {
                 } else {
                     bullet = format!("{}{}", bullet_number, bullet);
                 }
-
-                size = bullet.len() + 1;
             }
         }
 
-        if matches!(list_item_indent, IndentOptions::Tab) {
-            size = compute_size(size);
-        } else if matches!(list_item_indent, IndentOptions::Mixed) {
-            if let Some(Node::List(list)) = parent {
-                if list.spread || self.spread {
-                    size = compute_size(size);
+        let mut size = bullet.len() + 1;
+
+        let should_compute_size = match list_item_indent {
+            IndentOptions::Tab => true,
+            IndentOptions::Mixed => {
+                if let Some(Node::List(list)) = parent {
+                    list.spread || self.spread
+                } else {
+                    self.spread
                 }
-            } else if self.spread {
-                size = compute_size(size);
             }
+            _ => false,
+        };
+
+        if should_compute_size {
+            size = compute_size(size);
         }
 
         state.enter(ConstructName::ListItem);
@@ -71,7 +72,7 @@ impl Handle for ListItem {
         let value = state.indent_lines(&value, |line, index, blank| {
             if index > 0 {
                 if blank {
-                    String::new()
+                    String::from(line)
                 } else {
                     let blank = " ".repeat(size);
                     let mut result = String::with_capacity(blank.len() + line.len());
