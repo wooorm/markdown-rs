@@ -48,17 +48,19 @@ impl Handle for ListItem {
                 } else {
                     bullet = format!("{}{}", bullet_number, bullet);
                 }
+
+                size = bullet.len() + 1;
             }
-
-            size = bullet.len() + 1;
         }
 
-        if matches!(list_item_indent, IndentOptions::Tab) || self.spread {
+        if matches!(list_item_indent, IndentOptions::Tab) {
             size = compute_size(size);
-        }
-
-        if let Some(Node::List(list)) = parent {
-            if matches!(list_item_indent, IndentOptions::Mixed) && list.spread {
+        } else if matches!(list_item_indent, IndentOptions::Mixed) {
+            if let Some(Node::List(list)) = parent {
+                if list.spread || self.spread {
+                    size = compute_size(size);
+                }
+            } else if self.spread {
                 size = compute_size(size);
             }
         }
@@ -78,7 +80,10 @@ impl Handle for ListItem {
                     result
                 }
             } else if blank {
-                bullet.clone()
+                let mut result = String::with_capacity(bullet.len() + line.len());
+                result.push_str(&bullet);
+                result.push_str(line);
+                result
             } else {
                 // size - bullet.len() will never panic because size > bullet.len() always.
                 let blank = " ".repeat(size - bullet.len());
