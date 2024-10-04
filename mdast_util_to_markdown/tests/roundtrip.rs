@@ -154,9 +154,6 @@ fn round_trip() {
     let doc = "- ***\n";
     assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
 
-    let doc = "- ***\n";
-    assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
-
     let mut tree = from("* a\n- b", &Default::default()).unwrap();
     assert_eq!(
         remove_pos(&mut tree),
