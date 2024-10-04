@@ -6,7 +6,7 @@ use pretty_assertions::assert_eq;
 use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
 
 #[test]
-fn round_trip() {
+fn roundtrip() {
     let doc: String = document(vec![
         "> * Lorem ipsum dolor sit amet",
         ">",
