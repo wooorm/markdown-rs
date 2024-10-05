@@ -10,7 +10,7 @@ pub struct Options {
     pub emphasis: char,
     // Marker to use for fenced code ('`' or '~', default: '`').
     pub fence: char,
-    /// Whether to use fenced code always (boolean, default: true).
+    /// Whether to use fenced code always (bool, default: true).
     /// The default is to use fenced code if there is a language defined,
     /// if the code is empty, or if it starts or ends in blank lines.
     pub fences: bool,
@@ -27,7 +27,7 @@ pub struct Options {
     /// Whether to add the same number of number signs (#) at the end of an ATX heading as the
     /// opening sequence (bool, default: false).
     pub close_atx: bool,
-    /// Whether to always use resource links (boolean, default: false). The default is to use
+    /// Whether to always use resource links (bool, default: false). The default is to use
     /// autolinks (<https://example.com>) when possible and resource links ([text](url)) otherwise.
     pub resource_link: bool,
     /// Whether to add spaces between markers in thematic breaks (bool, default: false).
