@@ -1,6 +1,5 @@
 use markdown::mdast::{Html, Node, Paragraph, Text};
 use mdast_util_to_markdown::to_markdown as to;
-
 use pretty_assertions::assert_eq;
 
 #[test]

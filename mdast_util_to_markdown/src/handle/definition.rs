@@ -1,16 +1,19 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/definition.js
+
+use super::Handle;
+use crate::{
+    construct_name::ConstructName,
+    state::{Info, State},
+    util::{
+        check_quote::check_quote, contains_control_or_whitespace::contains_control_or_whitespace,
+        safe::SafeConfig,
+    },
+};
 use alloc::string::String;
 use markdown::{
     mdast::{Definition, Node},
     message::Message,
 };
-
-use crate::{
-    construct_name::ConstructName,
-    state::{Info, State},
-    util::{check_quote::check_quote, safe::SafeConfig},
-};
-
-use super::Handle;
 
 impl Handle for Definition {
     fn handle(
@@ -36,7 +39,7 @@ impl Handle for Definition {
 
         state.exit();
 
-        if self.url.is_empty() || contain_control_char_or_whitespace(&self.url) {
+        if self.url.is_empty() || contains_control_or_whitespace(&self.url) {
             state.enter(ConstructName::DestinationLiteral);
             value.push('<');
             value.push_str(&state.safe(&self.url, &SafeConfig::new(&value, ">", None)));
@@ -72,8 +75,4 @@ impl Handle for Definition {
 
         Ok(value)
     }
-}
-
-fn contain_control_char_or_whitespace(value: &str) -> bool {
-    value.chars().any(|c| c.is_whitespace() || c.is_control())
 }

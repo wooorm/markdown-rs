@@ -1,18 +1,17 @@
-use core::mem;
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/image-reference.js
 
-use alloc::string::String;
-use markdown::{
-    mdast::{ImageReference, Node, ReferenceKind},
-    message::Message,
-};
-
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
     util::safe::SafeConfig,
 };
-
-use super::Handle;
+use alloc::string::String;
+use core::mem;
+use markdown::{
+    mdast::{ImageReference, Node, ReferenceKind},
+    message::Message,
+};
 
 impl Handle for ImageReference {
     fn handle(

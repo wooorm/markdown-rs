@@ -1,6 +1,5 @@
 use markdown::mdast::{LinkReference, Node, Paragraph, ReferenceKind, Text};
 use mdast_util_to_markdown::to_markdown as to;
-
 use pretty_assertions::assert_eq;
 
 #[test]

@@ -1,11 +1,11 @@
-[package]
-name = "markdown-generate"
-version = "0.0.0"
-authors = ["Titus Wormer <tituswormer@gmail.com>"]
-edition = "2018"
-publish = false
-
 [dependencies]
 regex = "1"
 reqwest = "0.12"
-tokio = { version = "1", features = ["full"] }
+tokio = { features = ["full"], version = "1" }
+
+[package]
+authors = ["Titus Wormer <tituswormer@gmail.com>"]
+edition = "2018"
+name = "markdown-generate"
+publish = false
+version = "0.0.0"

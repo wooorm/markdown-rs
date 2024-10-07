@@ -1,27 +1,30 @@
+//! JS equivalent https://github.com/syntax-tree/mdast-util-to-markdown/blob/fd6a508/lib/util/safe.js
+
 use alloc::{format, string::String, vec::Vec};
 use regex::Regex;
 
+pub struct EscapeInfos {
+    pub after: bool,
+    pub before: bool,
+}
+
 pub struct SafeConfig<'a> {
-    pub before: &'a str,
     pub after: &'a str,
+    pub before: &'a str,
     pub encode: Option<char>,
 }
 
 impl<'a> SafeConfig<'a> {
     pub(crate) fn new(before: &'a str, after: &'a str, encode: Option<char>) -> Self {
         SafeConfig {
-            before,
             after,
+            before,
             encode,
         }
     }
 }
 
-pub struct EscapeInfos {
-    pub before: bool,
-    pub after: bool,
-}
-
+/// JS: <https://github.com/syntax-tree/mdast-util-to-markdown/blob/fd6a508/lib/util/safe.js#L148>.
 pub fn escape_backslashes(value: &str, after: &str) -> String {
     let expression = Regex::new(r"\\[!-/:-@\[-`{-~]").unwrap();
     let mut results: String = String::new();

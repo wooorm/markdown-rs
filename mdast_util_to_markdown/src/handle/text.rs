@@ -1,14 +1,14 @@
-use markdown::{
-    mdast::{Node, Text},
-    message::Message,
-};
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/text.js
 
+use super::Handle;
 use crate::{
     state::{Info, State},
     util::safe::SafeConfig,
 };
-
-use super::Handle;
+use markdown::{
+    mdast::{Node, Text},
+    message::Message,
+};
 
 impl Handle for Text {
     fn handle(

@@ -1,47 +1,47 @@
+[[bench]]
+harness = false
+name = "bench"
+path = "benches/bench.rs"
+
+[dependencies]
+log = { optional = true, version = "0.4" }
+serde = { features = ["derive"], optional = true, version = "1" }
+unicode-id = { features = ["no_std"], version = "0.3" }
+
+[dev-dependencies]
+criterion = "0.5"
+env_logger = "0.11"
+pretty_assertions = { workspace = true }
+serde_json = { version = "1" }
+swc_core = { version = "0.100", features = [
+  "common",
+  "ecma_ast",
+  "ecma_parser",
+  "ecma_visit",
+] }
+
+[features]
+default = []
+json = ["serde"]
+log = ["dep:log"]
+serde = ["dep:serde"]
+
 [package]
-name = "markdown"
-version = "1.0.0-alpha.21"
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
-edition = "2018"
-rust-version = "1.56"
-description = "CommonMark compliant markdown parser in Rust with ASTs and extensions"
-homepage = "https://github.com/wooorm/markdown-rs"
-repository = "https://github.com/wooorm/markdown-rs"
-license = "MIT"
-keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
 categories = ["compilers", "encoding", "parser-implementations", "parsing", "text-processing"]
+description = "CommonMark compliant markdown parser in Rust with ASTs and extensions"
+edition = "2018"
+homepage = "https://github.com/wooorm/markdown-rs"
 include = ["src/", "license"]
+keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
+license = "MIT"
+name = "markdown"
+repository = "https://github.com/wooorm/markdown-rs"
+rust-version = "1.56"
+version = "1.0.0-alpha.21"
 
 [workspace]
 members = ["generate", "mdast_util_to_markdown"]
 
 [workspace.dependencies]
 pretty_assertions = "1"
-
-[[bench]]
-name = "bench"
-path = "benches/bench.rs"
-harness = false
-
-[features]
-default = []
-json = ["serde"]
-serde = ["dep:serde"]
-log = ["dep:log"]
-
-[dependencies]
-log = { version = "0.4", optional = true }
-unicode-id = { version = "0.3", features = ["no_std"] }
-serde = { version = "1", features = ["derive"], optional = true }
-
-[dev-dependencies]
-env_logger = "0.11"
-criterion = "0.5"
-pretty_assertions = { workspace = true }
-serde_json = { version = "1" }
-swc_core = { version = "0.100", features = [
-  "ecma_ast",
-  "ecma_visit",
-  "ecma_parser",
-  "common",
-] }

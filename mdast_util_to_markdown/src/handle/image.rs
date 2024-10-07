@@ -1,16 +1,19 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/image.js
+
+use super::Handle;
+use crate::{
+    construct_name::ConstructName,
+    state::{Info, State},
+    util::{
+        check_quote::check_quote, contains_control_or_whitespace::contains_control_or_whitespace,
+        safe::SafeConfig,
+    },
+};
 use alloc::string::String;
 use markdown::{
     mdast::{Image, Node},
     message::Message,
 };
-
-use crate::{
-    construct_name::ConstructName,
-    state::{Info, State},
-    util::{check_quote::check_quote, safe::SafeConfig},
-};
-
-use super::Handle;
 
 impl Handle for Image {
     fn handle(
@@ -33,8 +36,7 @@ impl Handle for Image {
         value.push_str("](");
         state.exit();
 
-        if self.url.is_empty() && self.title.is_some()
-            || contain_control_char_or_whitespace(&self.url)
+        if self.url.is_empty() && self.title.is_some() || contains_control_or_whitespace(&self.url)
         {
             state.enter(ConstructName::DestinationLiteral);
             value.push('<');
@@ -72,10 +74,6 @@ impl Handle for Image {
 
         Ok(value)
     }
-}
-
-fn contain_control_char_or_whitespace(value: &str) -> bool {
-    value.chars().any(|c| c.is_whitespace() || c.is_control())
 }
 
 pub fn peek_image() -> char {

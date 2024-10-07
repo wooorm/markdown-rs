@@ -1,14 +1,16 @@
+//! Names of the things being serialized.
+//!
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/fd6a508/index.d.ts#L18.
+
 #[derive(Clone, PartialEq)]
 pub enum ConstructName {
+    /// Whole autolink.
     ///
-    //// Whole autolink.
-    ////
-    //// ```markdown
-    //// > | <https://example.com> and <admin@example.com>
-    ////     ^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^
-    //// ```
+    /// ```markdown
+    /// > | <https://example.com> and <admin@example.com>
+    ///     ^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^
+    /// ```
     Autolink,
-    ///
     /// Whole block quote.
     ///
     /// ```markdown
@@ -18,7 +20,6 @@ pub enum ConstructName {
     ///     ^
     /// ```
     Blockquote,
-    ///
     /// Whole code (indented).
     ///
     /// ```markdown
@@ -26,7 +27,6 @@ pub enum ConstructName {
     /// ^^^^^^^^^^^^^^^^^^
     /// ```
     CodeIndented,
-    ///
     /// Whole code (fenced).
     ///
     /// ````markdown
@@ -38,7 +38,6 @@ pub enum ConstructName {
     ///     ^^^
     /// ````
     CodeFenced,
-    ///
     /// Code (fenced) language, when fenced with grave accents.
     ///
     /// ````markdown
@@ -48,7 +47,6 @@ pub enum ConstructName {
     ///   | ```
     /// ````
     CodeFencedLangGraveAccent,
-    ///
     /// Code (fenced) language, when fenced with tildes.
     ///
     /// ````markdown
@@ -58,7 +56,6 @@ pub enum ConstructName {
     ///   | ~~~
     /// ````
     CodeFencedLangTilde,
-    ///
     /// Code (fenced) meta string, when fenced with grave accents.
     ///
     /// ````markdown
@@ -68,7 +65,6 @@ pub enum ConstructName {
     ///   | ```
     /// ````
     CodeFencedMetaGraveAccent,
-    ///
     /// Code (fenced) meta string, when fenced with tildes.
     ///
     /// ````markdown
@@ -78,7 +74,6 @@ pub enum ConstructName {
     ///   | ~~~
     /// ````
     CodeFencedMetaTilde,
-    ///
     /// Whole definition.
     ///
     /// ```markdown
@@ -86,7 +81,6 @@ pub enum ConstructName {
     ///     ^^^^^^^^^^
     /// ```
     Definition,
-    ///
     /// Destination (literal) (occurs in definition, image, link).
     ///
     /// ```markdown
@@ -96,7 +90,6 @@ pub enum ConstructName {
     ///            ^^^
     /// ```
     DestinationLiteral,
-    ///
     /// Destination (raw) (occurs in definition, image, link).
     ///
     /// ```markdown
@@ -106,7 +99,6 @@ pub enum ConstructName {
     ///            ^
     /// ```
     DestinationRaw,
-    ///
     /// Emphasis.
     ///
     /// ```markdown
@@ -114,7 +106,6 @@ pub enum ConstructName {
     ///     ^^^
     /// ```
     Emphasis,
-    ///
     /// Whole heading (atx).
     ///
     /// ```markdown
@@ -122,7 +113,6 @@ pub enum ConstructName {
     ///     ^^^^^^^
     /// ```
     HeadingAtx,
-    ///
     /// Whole heading (setext).
     ///
     /// ```markdown
@@ -132,7 +122,6 @@ pub enum ConstructName {
     ///     ^^^^^
     /// ```
     HeadingSetext,
-    ///
     /// Whole image.
     ///
     /// ```markdown
@@ -142,7 +131,6 @@ pub enum ConstructName {
     ///     ^^^^
     /// ```
     Image,
-    ///
     /// Whole image reference.
     ///
     /// ```markdown
@@ -150,7 +138,6 @@ pub enum ConstructName {
     ///     ^^^^
     /// ```
     ImageReference,
-    ///
     /// Label (occurs in definitions, image reference, image, link reference,
     /// link).
     ///
@@ -165,7 +152,6 @@ pub enum ConstructName {
     ///       ^^^
     /// ```
     Label,
-    ///
     /// Whole link.
     ///
     /// ```markdown
@@ -175,7 +161,6 @@ pub enum ConstructName {
     ///     ^^^
     /// ```
     Link,
-    ///
     /// Whole link reference.
     ///
     /// ```markdown
@@ -183,7 +168,6 @@ pub enum ConstructName {
     ///     ^^^
     /// ```
     LinkReference,
-    ///
     /// List.
     ///
     /// ```markdown
@@ -193,7 +177,6 @@ pub enum ConstructName {
     ///     ^^^^
     /// ```
     List,
-    ///
     /// List item.
     ///
     /// ```markdown
@@ -203,7 +186,6 @@ pub enum ConstructName {
     ///     ^^^^
     /// ```
     ListItem,
-    ///
     /// Paragraph.
     ///
     /// ```markdown
@@ -213,7 +195,6 @@ pub enum ConstructName {
     ///     ^^
     /// ```
     Paragraph,
-    ///
     /// Phrasing (occurs in headings, paragraphs, etc).
     ///
     /// ```markdown
@@ -221,7 +202,6 @@ pub enum ConstructName {
     ///     ^
     /// ```
     Phrasing,
-    ///
     /// Reference (occurs in image, link).
     ///
     /// ```markdown
@@ -229,7 +209,6 @@ pub enum ConstructName {
     ///        ^^
     /// ```
     Reference,
-    ///
     /// Strong.
     ///
     /// ```markdown
@@ -237,7 +216,6 @@ pub enum ConstructName {
     ///     ^^^^^
     /// ```
     Strong,
-    ///
     /// Title using single quotes (occurs in definition, image, link).
     ///
     /// ```markdown
@@ -245,7 +223,6 @@ pub enum ConstructName {
     ///           ^^^
     /// ```
     TitleApostrophe,
-    ///
     /// Title using double quotes (occurs in definition, image, link).
     ///
     /// ```markdown

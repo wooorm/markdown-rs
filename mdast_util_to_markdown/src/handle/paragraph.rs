@@ -1,14 +1,14 @@
-use markdown::{
-    mdast::{Node, Paragraph},
-    message::Message,
-};
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/paragraph.js
 
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
 };
-
-use super::Handle;
+use markdown::{
+    mdast::{Node, Paragraph},
+    message::Message,
+};
 
 impl Handle for Paragraph {
     fn handle(
@@ -19,12 +19,9 @@ impl Handle for Paragraph {
         node: &Node,
     ) -> Result<alloc::string::String, Message> {
         state.enter(ConstructName::Paragraph);
-
         state.enter(ConstructName::Phrasing);
         let value = state.container_phrasing(node, info)?;
-        // exit phrasing
         state.exit();
-        // exit paragarph
         state.exit();
         Ok(value)
     }

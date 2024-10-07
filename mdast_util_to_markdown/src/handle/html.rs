@@ -1,11 +1,11 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/html.js
+
+use super::Handle;
+use crate::state::{Info, State};
 use markdown::{
     mdast::{Html, Node},
     message::Message,
 };
-
-use crate::state::{Info, State};
-
-use super::Handle;
 
 impl Handle for Html {
     fn handle(

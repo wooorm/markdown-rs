@@ -7,6 +7,7 @@ pub mod check_quote;
 pub mod check_rule;
 pub mod check_rule_repetition;
 pub mod check_strong;
+pub mod contains_control_or_whitespace;
 pub mod format_code_as_indented;
 pub mod format_heading_as_setext;
 pub mod format_link_as_auto_link;

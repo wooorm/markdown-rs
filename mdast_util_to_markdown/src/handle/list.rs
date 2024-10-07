@@ -1,8 +1,6 @@
-use markdown::{
-    mdast::{List, Node},
-    message::Message,
-};
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/list.js
 
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
@@ -11,8 +9,10 @@ use crate::{
         check_bullet_other::check_bullet_other, check_rule::check_rule,
     },
 };
-
-use super::Handle;
+use markdown::{
+    mdast::{List, Node},
+    message::Message,
+};
 
 impl Handle for List {
     fn handle(

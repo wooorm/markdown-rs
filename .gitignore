@@ -2,7 +2,7 @@
 *.log
 *.lock
 coverage/
-target
+target/
 commonmark-data.txt
 unicode-data.txt
 fuzz/target

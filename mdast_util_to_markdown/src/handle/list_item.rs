@@ -1,3 +1,12 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/list-item.js
+
+use super::Handle;
+use crate::{
+    configure::IndentOptions,
+    construct_name::ConstructName,
+    state::{Info, State},
+    util::check_bullet::check_bullet,
+};
 use alloc::{
     format,
     string::{String, ToString},
@@ -6,15 +15,6 @@ use markdown::{
     mdast::{ListItem, Node},
     message::Message,
 };
-
-use crate::{
-    configure::IndentOptions,
-    construct_name::ConstructName,
-    state::{Info, State},
-    util::check_bullet::check_bullet,
-};
-
-use super::Handle;
 
 impl Handle for ListItem {
     fn handle(
@@ -51,7 +51,6 @@ impl Handle for ListItem {
         let mut size = bullet.len() + 1;
 
         let should_compute_size = match list_item_indent {
-            IndentOptions::Tab => true,
             IndentOptions::Mixed => {
                 if let Some(Node::List(list)) = parent {
                     list.spread || self.spread
@@ -59,6 +58,7 @@ impl Handle for ListItem {
                     self.spread
                 }
             }
+            IndentOptions::Tab => true,
             _ => false,
         };
 

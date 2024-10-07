@@ -1,21 +1,20 @@
-use core::mem;
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/link.js
 
-use alloc::string::String;
-use markdown::{
-    mdast::{Link, Node},
-    message::Message,
-};
-
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
     util::{
-        check_quote::check_quote, format_link_as_auto_link::format_link_as_auto_link,
-        safe::SafeConfig,
+        check_quote::check_quote, contains_control_or_whitespace::contains_control_or_whitespace,
+        format_link_as_auto_link::format_link_as_auto_link, safe::SafeConfig,
     },
 };
-
-use super::Handle;
+use alloc::string::String;
+use core::mem;
+use markdown::{
+    mdast::{Link, Node},
+    message::Message,
+};
 
 impl Handle for Link {
     fn handle(
@@ -45,8 +44,7 @@ impl Handle for Link {
         value.push_str("](");
         state.exit();
 
-        if self.url.is_empty() && self.title.is_some()
-            || contain_control_char_or_whitespace(&self.url)
+        if self.url.is_empty() && self.title.is_some() || contains_control_or_whitespace(&self.url)
         {
             state.enter(ConstructName::DestinationLiteral);
             value.push('<');
@@ -84,10 +82,6 @@ impl Handle for Link {
 
         Ok(value)
     }
-}
-
-fn contain_control_char_or_whitespace(value: &str) -> bool {
-    value.chars().any(|c| c.is_whitespace() || c.is_control())
 }
 
 pub fn peek_link(link: &Link, node: &Node, state: &State) -> char {

@@ -1,7 +1,10 @@
-use markdown::mdast::{Break, Heading, Node, Text};
-use markdown::to_mdast as from;
-use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
-use mdast_util_to_markdown::{to_markdown as to, Options};
+use markdown::{
+    mdast::{Break, Heading, Node, Text},
+    to_mdast as from,
+};
+use mdast_util_to_markdown::{
+    to_markdown as to, to_markdown_with_options as to_md_with_opts, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]

@@ -1,12 +1,6 @@
-use alloc::{
-    format,
-    string::{String, ToString},
-};
-use markdown::{
-    mdast::{Code, Node},
-    message::Message,
-};
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/code.js
 
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
@@ -15,8 +9,14 @@ use crate::{
         longest_char_streak::longest_char_streak, safe::SafeConfig,
     },
 };
-
-use super::Handle;
+use alloc::{
+    format,
+    string::{String, ToString},
+};
+use markdown::{
+    mdast::{Code, Node},
+    message::Message,
+};
 
 impl Handle for Code {
     fn handle(

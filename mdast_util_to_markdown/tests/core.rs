@@ -1,7 +1,9 @@
-use markdown::mdast::{Break, Code, Definition, Heading, List, ListItem};
-use markdown::mdast::{Node, Paragraph, Root, Text, ThematicBreak};
-use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
-use mdast_util_to_markdown::{to_markdown as to, Options};
+use markdown::mdast::{
+    Break, Code, Definition, Heading, List, ListItem, Node, Paragraph, Root, Text, ThematicBreak,
+};
+use mdast_util_to_markdown::{
+    to_markdown as to, to_markdown_with_options as to_md_with_opts, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]

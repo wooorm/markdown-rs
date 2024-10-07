@@ -1,16 +1,16 @@
-use alloc::format;
-use markdown::{
-    mdast::{Heading, Node},
-    message::Message,
-};
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/heading.js
 
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
     util::format_heading_as_setext::format_heading_as_setext,
 };
-
-use super::Handle;
+use alloc::format;
+use markdown::{
+    mdast::{Heading, Node},
+    message::Message,
+};
 
 impl Handle for Heading {
     fn handle(

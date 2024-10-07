@@ -1,15 +1,15 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/thematic-break.js
+
+use super::Handle;
+use crate::{
+    state::{Info, State},
+    util::{check_rule::check_rule, check_rule_repetition::check_rule_repetition},
+};
 use alloc::format;
 use markdown::{
     mdast::{Node, ThematicBreak},
     message::Message,
 };
-
-use crate::{
-    state::{Info, State},
-    util::{check_rule::check_rule, check_rule_repetition::check_rule_repetition},
-};
-
-use super::Handle;
 
 impl Handle for ThematicBreak {
     fn handle(
@@ -25,7 +25,8 @@ impl Handle for ThematicBreak {
             format!("{}{}", marker, space).repeat(check_rule_repetition(state)? as usize);
 
         if state.options.rule_spaces {
-            value.pop(); // remove the last space
+            // Remove the last space.
+            value.pop();
             Ok(value)
         } else {
             Ok(value)

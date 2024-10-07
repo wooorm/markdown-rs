@@ -1,3 +1,5 @@
+//! JS equivalent https://github.com/wooorm/longest-streak/blob/main/index.js
+
 pub fn longest_char_streak(haystack: &str, needle: char) -> usize {
     let mut max = 0;
     let mut chars = haystack.chars();
@@ -20,7 +22,7 @@ pub fn longest_char_streak(haystack: &str, needle: char) -> usize {
 }
 
 #[cfg(test)]
-mod longest_char_streak {
+mod tests {
     use super::*;
 
     #[test]

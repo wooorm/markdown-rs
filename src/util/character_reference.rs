@@ -12,8 +12,8 @@ use core::str;
 /// Turn the name coming from a named character reference (without the `&` or
 /// `;`) into a string.
 /// This looks the given string up at `0` in the tuples of
-/// [`CHARACTER_REFERENCES`][] (or [`CHARACTER_REFERENCES_HTML_4`][]) and then
-/// takes the corresponding value from `1`.
+/// `CHARACTER_REFERENCES` (or `CHARACTER_REFERENCES_HTML_4`)
+/// and then takes the corresponding value from `1`.
 ///
 /// The `html5` boolean is used for named character references, and specifier
 /// whether the 2125 names from HTML 5 or the 252 names from HTML 4 are

@@ -1,16 +1,16 @@
-use alloc::format;
-use markdown::{
-    mdast::{Emphasis, Node},
-    message::Message,
-};
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/emphasis.js
 
+use super::Handle;
 use crate::{
     construct_name::ConstructName,
     state::{Info, State},
     util::check_emphasis::check_emphasis,
 };
-
-use super::Handle;
+use alloc::format;
+use markdown::{
+    mdast::{Emphasis, Node},
+    message::Message,
+};
 
 impl Handle for Emphasis {
     fn handle(

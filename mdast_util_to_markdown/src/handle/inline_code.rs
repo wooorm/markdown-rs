@@ -1,13 +1,13 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/inline-code.js
+
+use super::Handle;
+use crate::state::{Info, State};
 use alloc::{format, string::String};
 use markdown::{
     mdast::{InlineCode, Node},
     message::Message,
 };
 use regex::Regex;
-
-use crate::state::{Info, State};
-
-use super::Handle;
 
 impl Handle for InlineCode {
     fn handle(
@@ -30,6 +30,7 @@ impl Handle for InlineCode {
         let ends_with_whitespace = value.ends_with(char::is_whitespace);
         let starts_with_tick = value.starts_with('`');
         let ends_with_tick = value.ends_with('`');
+
         if no_whitespaces
             && ((starts_with_whitespace && ends_with_whitespace)
                 || starts_with_tick

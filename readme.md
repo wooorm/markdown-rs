@@ -250,23 +250,23 @@ The following bash scripts are useful when working on this project:
     ```
 *   run examples:
     ```sh
-    RUST_BACKTRACE=1 RUST_LOG=trace cargo run --features log --example lib
+    RUST_BACKTRACE=1 RUST_LOG=trace cargo run --example lib --features log
     ```
 *   format:
     ```sh
-    cargo fmt && cargo fix --all-targets --all-features
+    cargo fmt && cargo fix --all-features --all-targets --workspace
     ```
 *   lint:
     ```sh
-    cargo fmt --check && cargo clippy --examples --tests --benches --all-features
+    cargo fmt --check && cargo clippy --all-features --all-targets --workspace
     ```
 *   test:
     ```sh
-    RUST_BACKTRACE=1 cargo test --all-features
+    RUST_BACKTRACE=1 cargo test --all-features --workspace
     ```
 *   docs:
     ```sh
-    cargo doc --document-private-items
+    cargo doc --document-private-items --examples --workspace
     ```
 *   fuzz:
     ```sh

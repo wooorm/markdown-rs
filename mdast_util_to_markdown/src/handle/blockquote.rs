@@ -1,15 +1,15 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/blockquote.js
+
+use super::Handle;
+use crate::{
+    construct_name::ConstructName,
+    state::{Info, State},
+};
 use alloc::string::String;
 use markdown::{
     mdast::{Blockquote, Node},
     message::Message,
 };
-
-use crate::{
-    construct_name::ConstructName,
-    state::{Info, State},
-};
-
-use super::Handle;
 
 impl Handle for Blockquote {
     fn handle(

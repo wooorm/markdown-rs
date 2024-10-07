@@ -1,13 +1,11 @@
 use markdown::mdast::{
-    Blockquote, Break, Code, Heading, Html, Image, ImageReference, InlineCode, Link, LinkReference,
-    List, ListItem, Node, Paragraph, ReferenceKind, Strong, Text, ThematicBreak,
+    Blockquote, Break, Code, Definition, Emphasis, Heading, Html, Image, ImageReference,
+    InlineCode, Link, LinkReference, List, ListItem, Node, Paragraph, ReferenceKind, Strong, Text,
+    ThematicBreak,
 };
-use markdown::mdast::{Definition, Emphasis};
-
-use mdast_util_to_markdown::to_markdown as to;
-use mdast_util_to_markdown::to_markdown_with_options as to_md_with_opts;
-
-use mdast_util_to_markdown::Options;
+use mdast_util_to_markdown::{
+    to_markdown as to, to_markdown_with_options as to_md_with_opts, Options,
+};
 use pretty_assertions::assert_eq;
 
 #[test]
