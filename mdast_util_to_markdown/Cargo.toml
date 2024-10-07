@@ -1,0 +1,12 @@
+[package]
+name = "mdast_util_to_markdown"
+version = "0.0.0"
+edition = "2018"
+license = "MIT"
+
+[dependencies]
+markdown = { path = "../" }
+regex = { version = "1" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

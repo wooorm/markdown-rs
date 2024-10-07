@@ -12,6 +12,12 @@ keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
 categories = ["compilers", "encoding", "parser-implementations", "parsing", "text-processing"]
 include = ["src/", "license"]
 
+[workspace]
+members = ["generate", "mdast_util_to_markdown"]
+
+[workspace.dependencies]
+pretty_assertions = "1"
+
 [[bench]]
 name = "bench"
 path = "benches/bench.rs"
@@ -31,7 +37,7 @@ serde = { version = "1", features = ["derive"], optional = true }
 [dev-dependencies]
 env_logger = "0.11"
 criterion = "0.5"
-pretty_assertions = "1"
+pretty_assertions = { workspace = true }
 serde_json = { version = "1" }
 swc_core = { version = "0.100", features = [
   "ecma_ast",
@@ -39,6 +45,3 @@ swc_core = { version = "0.100", features = [
   "ecma_parser",
   "common",
 ] }
-
-[workspace]
-members = ["generate"]

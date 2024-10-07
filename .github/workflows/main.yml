@@ -13,6 +13,8 @@ jobs:
           components: rustfmt, clippy
       - run: cargo fmt --check && cargo clippy --examples --tests --benches --all-features
       - run: cargo test --all-features
+      - run: cargo clippy -p mdast_util_to_markdown
+      - run: cargo test -p mdast_util_to_markdown
   coverage:
     runs-on: ubuntu-latest
     steps:
