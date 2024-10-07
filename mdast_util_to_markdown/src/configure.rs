@@ -1,43 +1,44 @@
 pub struct Options {
-    /// Marker to use for bullets of items in unordered lists ('*', '+', or '-', default: '*').
+    /// Marker to use for bullets of items in unordered lists `*`, `+`, or `-`, the default is `*`.
     pub bullet: char,
     /// Marker to use in certain cases where the primary bullet doesn’t work
-    /// ('*', '+', or '-', default: '-' when bullet is '*', '*' otherwise).
+    /// `*`, `+`, or `-`, the default is `-` when bullet is `*`, `*` otherwise.
     pub bullet_other: char,
-    /// Marker to use for bullets of items in ordered lists ('.' or ')', default: '.').
+    /// Marker to use for bullets of items in ordered lists `.` or `)`, the default is `.`.
     pub bullet_ordered: char,
-    /// Marker to use for emphasis ('*' or '_', default: '*').
+    /// Marker to use for emphasis `*` or `_`, the default is `*`.
     pub emphasis: char,
-    /// Marker to use for fenced code ('`' or '~', default: '`').
+    /// Marker to use for fenced code `` ` `` or `~`, the default is `` ` ``.
     pub fence: char,
-    /// Whether to use fenced code always (bool, default: true). The default is to use fenced code
+    /// Whether to use fenced code always (the default is `true`). The default is to use fenced code
     /// if there is a language defined, if the code is empty, or if it starts or ends in blank lines.
     pub fences: bool,
-    /// How to indent the content of list items (default: 'IndentOptions::One').
+    /// How to indent the content of list items the default is [`IndentOptions::One`].
     pub list_item_indent: IndentOptions,
-    /// Marker to use for titles ('"' or "'", default: '"').
+    /// Marker to use for titles `"` or `` ` ``, the default is `"`.
     pub quote: char,
-    /// Marker to use for thematic breaks ('*', '-', or '_', default: '*').
+    /// Marker to use for thematic breaks `*`, `-`, or `_`, the default is `*`.
     pub rule: char,
-    /// Marker to use for strong ('*' or '_', default: '*').
+    /// Marker to use for strong `*` or `_`, the default `*`.
     pub strong: char,
-    /// Whether to increment the counter of ordered lists items (bool, default: true).
+    /// Whether to increment the counter of ordered lists items the default is `true`.
     pub increment_list_marker: bool,
-    /// Whether to add the same number of number signs (#) at the end of an ATX heading as the
-    /// opening sequence (bool, default: false).
+    /// Whether to add the same number of number signs `#` at the end of an ATX heading as the
+    /// opening sequence the default `false`.
     pub close_atx: bool,
     /// Whether to always use resource links (bool, default: false). The default is to use autolinks
-    /// (<https://example.com>) when possible and resource links ([text](url)) otherwise.
+    /// `<https://example.com>` when possible and resource links `[text](url)` otherwise.
     pub resource_link: bool,
-    /// Whether to add spaces between markers in thematic breaks (bool, default: false).
+    /// Whether to add spaces between markers in thematic breaks the default is `false`.
     pub rule_spaces: bool,
-    /// Whether to use setext headings when possible (bool, default: false). The default is to always
-    /// use ATX headings (# heading) instead of setext headings (heading\n=======). Setext headings
-    /// cannot be used for empty headings or headings with a rank of three or more.
+    /// Whether to use setext headings when possible the default option is `false`.
+    /// The default is to always use ATX headings `# heading` instead of setext headings
+    /// `heading\n=======`. Setext headings cannot be used for empty headings or headings
+    /// with a rank of three or more.
     pub setext: bool,
-    /// Whether to join definitions without a blank line (bool, default: false).
+    /// Whether to join definitions without a blank line the default is `false`.
     pub tight_definitions: bool,
-    /// Number of markers to use for thematic breaks (u32, default: 3, min: 3).
+    /// Number of markers to use for thematic breaks the default is `3` and min is `3`.
     pub rule_repetition: u32,
 }
 
