@@ -122,23 +122,23 @@ fn roundtrip() {
     let step1 = "\\ \\\\ \\\\\\ \\\\\\\\";
     let step2 = "\\ \\ \\\\\\ \\\\\\\\\n";
     assert_eq!(
-        to(&from(&step1, &Default::default()).unwrap()).unwrap(),
+        to(&from(step1, &Default::default()).unwrap()).unwrap(),
         step2
     );
     assert_eq!(
-        to(&from(&step2, &Default::default()).unwrap()).unwrap(),
+        to(&from(step2, &Default::default()).unwrap()).unwrap(),
         step2
     );
 
     let doc = "\\\\\\*a\n";
-    assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
+    assert_eq!(to(&from(doc, &Default::default()).unwrap()).unwrap(), doc);
 
     let doc = "\\\\*a\\\\\\*";
     assert_eq!(
         remove_pos(&mut from(doc, &Default::default()).unwrap()),
         remove_pos(
             &mut from(
-                &to(&from(&doc, &Default::default()).unwrap()).unwrap(),
+                &to(&from(doc, &Default::default()).unwrap()).unwrap(),
                 &Default::default()
             )
             .unwrap()
@@ -146,13 +146,13 @@ fn roundtrip() {
     );
 
     let doc = "```\n	\n```\n";
-    assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
+    assert_eq!(to(&from(doc, &Default::default()).unwrap()).unwrap(), doc);
 
     let doc = "* * -\n";
-    assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
+    assert_eq!(to(&from(doc, &Default::default()).unwrap()).unwrap(), doc);
 
     let doc = "- ***\n";
-    assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
+    assert_eq!(to(&from(doc, &Default::default()).unwrap()).unwrap(), doc);
 
     let mut tree = from("* a\n- b", &Default::default()).unwrap();
     assert_eq!(

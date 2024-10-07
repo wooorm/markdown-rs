@@ -1,12 +1,12 @@
 #[derive(Clone, PartialEq)]
 pub enum ConstructName {
     ///
-    //// Whole autolink.
-    ////
-    //// ```markdown
-    //// > | <https://example.com> and <admin@example.com>
-    ////     ^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^
-    //// ```
+    /// Whole autolink.
+    ///
+    /// ```markdown
+    /// > | <https://example.com> and <admin@example.com>
+    ///     ^^^^^^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^
+    /// ```
     Autolink,
     ///
     /// Whole block quote.

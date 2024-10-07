@@ -20,7 +20,7 @@ pub fn longest_char_streak(haystack: &str, needle: char) -> usize {
 }
 
 #[cfg(test)]
-mod longest_char_streak {
+mod test {
     use super::*;
 
     #[test]
