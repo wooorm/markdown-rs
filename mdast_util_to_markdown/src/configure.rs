@@ -10,7 +10,7 @@ pub struct Options {
     pub emphasis: char,
     /// Marker to use for fenced code `` ` `` or `~`, the default is `` ` ``.
     pub fence: char,
-    /// Whether to use fenced code always (the default is `true`). The default is to use fenced code
+    /// Whether to use fenced code always the default is `true`. The default is to use fenced code
     /// if there is a language defined, if the code is empty, or if it starts or ends in blank lines.
     pub fences: bool,
     /// How to indent the content of list items the default is [`IndentOptions::One`].
@@ -26,8 +26,9 @@ pub struct Options {
     /// Whether to add the same number of number signs `#` at the end of an ATX heading as the
     /// opening sequence the default `false`.
     pub close_atx: bool,
-    /// Whether to always use resource links (bool, default: false). The default is to use autolinks
-    /// `<https://example.com>` when possible and resource links `[text](url)` otherwise.
+    /// Whether to always use resource links the default option is `false`.
+    /// The default is to use autolinks `<https://example.com>` when possible and resource links
+    /// `[text](url)` otherwise.
     pub resource_link: bool,
     /// Whether to add spaces between markers in thematic breaks the default is `false`.
     pub rule_spaces: bool,
@@ -38,14 +39,14 @@ pub struct Options {
     pub setext: bool,
     /// Whether to join definitions without a blank line the default is `false`.
     pub tight_definitions: bool,
-    /// Number of markers to use for thematic breaks the default is `3` and min is `3`.
+    /// Number of markers to use for thematic breaks the default is `3` and the minimum is `3`.
     pub rule_repetition: u32,
 }
 
 #[derive(Copy, Clone)]
 pub enum IndentOptions {
-    /// Depends on the item and its parent list uses 'One' if the item and list are tight and 'Tab'
-    /// otherwise.
+    /// Depends on the item and its parent list uses [`IndentOptions::One`] if the item and list are
+    /// tight and [`IndentOptions::Tab`] otherwise.
     Mixed,
     /// The size of the bullet plus one space.
     One,
