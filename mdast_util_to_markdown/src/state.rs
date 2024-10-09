@@ -322,6 +322,7 @@ impl<'a> State<'a> {
             Node::Strong(strong) => strong.handle(self, info, parent, node),
             Node::Text(text) => text.handle(self, info, parent, node),
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
+            Node::Math(math) => math.handle(self, info, parent, node),
             _ => Err(Message {
                 place: None,
                 reason: format!("Unexpected node type `{:?}`", node),
@@ -409,7 +410,7 @@ impl<'a> State<'a> {
             index_stack: Vec::new(),
             options,
             stack: Vec::new(),
-            r#unsafe: Unsafe::get_default_unsafe(),
+            r#unsafe: Unsafe::get_default_unsafe(options),
         }
     }
 

@@ -230,4 +230,24 @@ pub enum ConstructName {
     ///           ^^^
     /// ```
     TitleQuote,
+    /// Math (flow).
+    ///
+    /// ```markdown
+    /// > | $$
+    ///     ^^
+    /// > | a
+    ///     ^
+    /// > | $$
+    ///     ^^
+    /// ```
+    MathFlow,
+    /// Math (flow) meta flag.
+    ///
+    /// ```markdown
+    /// > | $$a
+    ///       ^
+    ///   | b
+    ///   | $$
+    /// ```
+    MathFlowMeta,
 }
