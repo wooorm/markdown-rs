@@ -3,7 +3,7 @@
 //! JS equivalent: <https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/unsafe.js>.
 //! Also: <https://github.com/syntax-tree/mdast-util-to-markdown/blob/fd6a508/lib/types.js#L287-L305>.
 
-use crate::construct_name::ConstructName;
+use crate::{construct_name::ConstructName, Options};
 use alloc::{vec, vec::Vec};
 use regex::Regex;
 
@@ -38,7 +38,7 @@ impl<'a> Unsafe<'a> {
         }
     }
 
-    pub fn get_default_unsafe() -> Vec<Self> {
+    pub fn get_default_unsafe(options: &Options) -> Vec<Self> {
         let full_phrasing_spans = vec![
             ConstructName::Autolink,
             ConstructName::DestinationLiteral,
@@ -87,6 +87,7 @@ impl<'a> Unsafe<'a> {
                     ConstructName::CodeFencedMetaTilde,
                     ConstructName::DestinationLiteral,
                     ConstructName::HeadingAtx,
+                    ConstructName::MathFlowMeta,
                 ],
                 vec![],
                 false,
@@ -102,6 +103,7 @@ impl<'a> Unsafe<'a> {
                     ConstructName::CodeFencedMetaTilde,
                     ConstructName::DestinationLiteral,
                     ConstructName::HeadingAtx,
+                    ConstructName::MathFlowMeta,
                 ],
                 vec![],
                 false,
@@ -308,6 +310,27 @@ impl<'a> Unsafe<'a> {
                 false,
             ),
             Self::new('~', None, None, vec![], vec![], true),
+            Self::new(
+                '$',
+                None,
+                if options.single_dollar_text_math {
+                    None
+                } else {
+                    "\\$".into()
+                },
+                vec![ConstructName::Phrasing],
+                vec![],
+                false,
+            ),
+            Self::new(
+                '$',
+                None,
+                None,
+                vec![ConstructName::MathFlowMeta],
+                vec![],
+                false,
+            ),
+            Self::new('$', None, "\\$".into(), vec![], vec![], true),
         ]
     }
 

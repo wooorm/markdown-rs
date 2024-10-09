@@ -70,6 +70,7 @@ pub struct Options {
     /// Whether to join definitions without a blank line (`bool`, default:
     /// `false`).
     pub tight_definitions: bool,
+    pub single_dollar_text_math: bool,
 }
 
 impl Default for Options {
@@ -92,6 +93,7 @@ impl Default for Options {
             setext: false,
             strong: '*',
             tight_definitions: false,
+            single_dollar_text_math: true,
         }
     }
 }

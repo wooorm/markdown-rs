@@ -16,6 +16,7 @@ pub mod link;
 pub mod link_reference;
 mod list;
 mod list_item;
+mod math;
 mod paragraph;
 mod root;
 pub mod strong;
