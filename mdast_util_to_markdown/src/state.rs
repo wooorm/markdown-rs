@@ -7,8 +7,9 @@ use crate::{
     construct_name::ConstructName,
     handle::{
         emphasis::peek_emphasis, html::peek_html, image::peek_image,
-        image_reference::peek_image_reference, inline_code::peek_inline_code, link::peek_link,
-        link_reference::peek_link_reference, strong::peek_strong, Handle,
+        image_reference::peek_image_reference, inline_code::peek_inline_code,
+        inline_math::peek_inline_math, link::peek_link, link_reference::peek_link_reference,
+        strong::peek_strong, Handle,
     },
     r#unsafe::Unsafe,
     util::{
@@ -322,6 +323,8 @@ impl<'a> State<'a> {
             Node::Strong(strong) => strong.handle(self, info, parent, node),
             Node::Text(text) => text.handle(self, info, parent, node),
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
+            Node::Math(math) => math.handle(self, info, parent, node),
+            Node::InlineMath(inline_math) => inline_math.handle(self, info, parent, node),
             _ => Err(Message {
                 place: None,
                 reason: format!("Unexpected node type `{:?}`", node),
@@ -409,7 +412,7 @@ impl<'a> State<'a> {
             index_stack: Vec::new(),
             options,
             stack: Vec::new(),
-            r#unsafe: Unsafe::get_default_unsafe(),
+            r#unsafe: Unsafe::get_default_unsafe(options),
         }
     }
 
@@ -424,6 +427,7 @@ impl<'a> State<'a> {
             Node::LinkReference(_) => Some(peek_link_reference()),
             Node::Link(link) => Some(peek_link(link, node, self)),
             Node::Strong(_) => Some(peek_strong(self)),
+            Node::InlineMath(_) => Some(peek_inline_math()),
             _ => None,
         }
     }
