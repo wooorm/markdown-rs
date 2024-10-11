@@ -35,6 +35,7 @@ fn phrasing(child: &Node) -> bool {
             | Node::Emphasis(_)
             | Node::ImageReference(_)
             | Node::Image(_)
+            | Node::InlineMath(_)
             | Node::InlineCode(_)
             | Node::LinkReference(_)
             | Node::Link(_)
