@@ -12,7 +12,7 @@ pub mod html;
 pub mod image;
 pub mod image_reference;
 pub mod inline_code;
-mod inline_math;
+pub mod inline_math;
 pub mod link;
 pub mod link_reference;
 mod list;

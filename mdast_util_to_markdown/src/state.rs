@@ -7,8 +7,9 @@ use crate::{
     construct_name::ConstructName,
     handle::{
         emphasis::peek_emphasis, html::peek_html, image::peek_image,
-        image_reference::peek_image_reference, inline_code::peek_inline_code, link::peek_link,
-        link_reference::peek_link_reference, strong::peek_strong, Handle,
+        image_reference::peek_image_reference, inline_code::peek_inline_code,
+        inline_math::peek_inline_math, link::peek_link, link_reference::peek_link_reference,
+        strong::peek_strong, Handle,
     },
     r#unsafe::Unsafe,
     util::{
@@ -426,6 +427,7 @@ impl<'a> State<'a> {
             Node::LinkReference(_) => Some(peek_link_reference()),
             Node::Link(link) => Some(peek_link(link, node, self)),
             Node::Strong(_) => Some(peek_strong(self)),
+            Node::InlineMath(_) => Some(peek_inline_math()),
             _ => None,
         }
     }

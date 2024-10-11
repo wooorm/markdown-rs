@@ -1,3 +1,5 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/inline-code.js
+
 use super::Handle;
 use crate::state::{Info, State};
 use alloc::format;
@@ -73,4 +75,8 @@ impl Handle for InlineMath {
 
         Ok(format!("{}{}{}", sequence, value, sequence))
     }
+}
+
+pub fn peek_inline_math() -> char {
+    '$'
 }
