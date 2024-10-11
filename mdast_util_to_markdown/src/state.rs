@@ -323,6 +323,7 @@ impl<'a> State<'a> {
             Node::Text(text) => text.handle(self, info, parent, node),
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
             Node::Math(math) => math.handle(self, info, parent, node),
+            Node::InlineMath(inline_math) => inline_math.handle(self, info, parent, node),
             _ => Err(Message {
                 place: None,
                 reason: format!("Unexpected node type `{:?}`", node),
