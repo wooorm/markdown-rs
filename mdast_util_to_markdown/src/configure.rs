@@ -70,6 +70,9 @@ pub struct Options {
     /// Whether to join definitions without a blank line (`bool`, default:
     /// `false`).
     pub tight_definitions: bool,
+    /// (`bool`, default: `true`) — whether to support math (text) with a single dollar.
+    /// Single dollars work in Pandoc and many other places, but often interfere with “normal”
+    /// dollars in text. If you turn this off, you can still use two or more dollars for text math
     pub single_dollar_text_math: bool,
 }
 
