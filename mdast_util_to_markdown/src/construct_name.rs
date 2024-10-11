@@ -20,13 +20,6 @@ pub enum ConstructName {
     ///     ^
     /// ```
     Blockquote,
-    /// Whole code (indented).
-    ///
-    /// ```markdown
-    /// ␠␠␠␠console.log(1)
-    /// ^^^^^^^^^^^^^^^^^^
-    /// ```
-    CodeIndented,
     /// Whole code (fenced).
     ///
     /// ````markdown
@@ -74,6 +67,13 @@ pub enum ConstructName {
     ///   | ~~~
     /// ````
     CodeFencedMetaTilde,
+    /// Whole code (indented).
+    ///
+    /// ```markdown
+    /// ␠␠␠␠console.log(1)
+    /// ^^^^^^^^^^^^^^^^^^
+    /// ```
+    CodeIndented,
     /// Whole definition.
     ///
     /// ```markdown
@@ -186,6 +186,26 @@ pub enum ConstructName {
     ///     ^^^^
     /// ```
     ListItem,
+    /// Math (flow).
+    ///
+    /// ```markdown
+    /// > | $$
+    ///     ^^
+    /// > | a
+    ///     ^
+    /// > | $$
+    ///     ^^
+    /// ```
+    MathFlow,
+    /// Math (flow) meta flag.
+    ///
+    /// ```markdown
+    /// > | $$a
+    ///       ^
+    ///   | b
+    ///   | $$
+    /// ```
+    MathFlowMeta,
     /// Paragraph.
     ///
     /// ```markdown
@@ -230,24 +250,4 @@ pub enum ConstructName {
     ///           ^^^
     /// ```
     TitleQuote,
-    /// Math (flow).
-    ///
-    /// ```markdown
-    /// > | $$
-    ///     ^^
-    /// > | a
-    ///     ^
-    /// > | $$
-    ///     ^^
-    /// ```
-    MathFlow,
-    /// Math (flow) meta flag.
-    ///
-    /// ```markdown
-    /// > | $$a
-    ///       ^
-    ///   | b
-    ///   | $$
-    /// ```
-    MathFlowMeta,
 }

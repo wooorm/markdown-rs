@@ -65,15 +65,15 @@ pub struct Options {
     /// Setext headings cannot be used for empty headings or headings with a
     /// rank of three or more.
     pub setext: bool,
+    /// (`bool`, default: `true`) — whether to support math (text) with a single dollar.
+    /// Single dollars work in Pandoc and many other places, but often interfere with “normal”
+    /// dollars in text. If you turn this off, you can still use two or more dollars for text math
+    pub single_dollar_text_math: bool,
     /// Marker to use for strong (`'*'` or `'_'`, default: `'*'`).
     pub strong: char,
     /// Whether to join definitions without a blank line (`bool`, default:
     /// `false`).
     pub tight_definitions: bool,
-    /// (`bool`, default: `true`) — whether to support math (text) with a single dollar.
-    /// Single dollars work in Pandoc and many other places, but often interfere with “normal”
-    /// dollars in text. If you turn this off, you can still use two or more dollars for text math
-    pub single_dollar_text_math: bool,
 }
 
 impl Default for Options {
@@ -94,9 +94,9 @@ impl Default for Options {
             rule_repetition: 3,
             rule_spaces: false,
             setext: false,
+            single_dollar_text_math: true,
             strong: '*',
             tight_definitions: false,
-            single_dollar_text_math: true,
         }
     }
 }
