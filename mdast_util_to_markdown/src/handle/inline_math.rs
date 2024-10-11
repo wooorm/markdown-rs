@@ -1,4 +1,4 @@
-//! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/handle/inline-code.js
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-math/blob/main/lib/index.js#L241
 
 use super::Handle;
 use crate::state::{Info, State};

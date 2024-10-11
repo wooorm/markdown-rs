@@ -1,3 +1,5 @@
+//! JS equivalent: https://github.com/syntax-tree/mdast-util-math/blob/main/lib/index.js#L204
+
 use super::Handle;
 use crate::{
     construct_name::ConstructName,
