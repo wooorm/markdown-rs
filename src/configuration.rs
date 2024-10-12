@@ -31,6 +31,11 @@ use alloc::{boxed::Box, fmt, string::String};
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub struct Constructs {
     /// Attention.
     ///
@@ -467,6 +472,11 @@ impl Constructs {
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default, rename_all = "camelCase")
+)]
 pub struct CompileOptions {
     /// Whether to allow (dangerous) HTML.
     ///
@@ -967,6 +977,11 @@ impl CompileOptions {
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default, rename_all = "camelCase")
+)]
 pub struct ParseOptions {
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
     /// Which constructs to enable and disable.
@@ -1005,6 +1020,7 @@ pub struct ParseOptions {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
     pub constructs: Constructs,
 
     /// Whether to support GFM strikethrough with a single tilde
@@ -1057,6 +1073,7 @@ pub struct ParseOptions {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
     pub gfm_strikethrough_single_tilde: bool,
 
     /// Whether to support math (text) with a single dollar
@@ -1118,6 +1135,7 @@ pub struct ParseOptions {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
     pub math_text_single_dollar: bool,
 
     /// Function to parse expressions with.
@@ -1130,6 +1148,7 @@ pub struct ParseOptions {
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub mdx_expression_parse: Option<Box<MdxExpressionParse>>,
 
     /// Function to parse ESM with.
@@ -1146,6 +1165,8 @@ pub struct ParseOptions {
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
+    ///
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub mdx_esm_parse: Option<Box<MdxEsmParse>>,
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
 }
@@ -1247,6 +1268,11 @@ impl ParseOptions {
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default)
+)]
 pub struct Options {
     /// Configuration that describes how to parse from markdown.
     pub parse: ParseOptions,
