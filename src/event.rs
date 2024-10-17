@@ -3376,6 +3376,8 @@ pub enum Name {
     ///     ^ ^ ^
     /// ```
     ThematicBreakSequence,
+
+    LinePrefix,
 }
 
 /// List of void events, used to make sure everything is working well.
