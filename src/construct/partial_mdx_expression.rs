@@ -201,7 +201,6 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         // the start of the expression and move past whitespace.
         // For future lines, we’d move at most to
         // `line_start_shifted.column + 4`.
-        //State::Retry(space_or_tab_min_max(tokenizer, 0, TAB_SIZE))
         tokenizer.enter(Name::LinePrefix);
         prefix(tokenizer)
     } else {
@@ -220,7 +219,6 @@ pub fn prefix(tokenizer: &mut Tokenizer) -> State {
 
     tokenizer.exit(Name::LinePrefix);
     tokenizer.tokenize_state.size_c = 0;
-
     State::Retry(StateName::MdxExpressionBefore)
 }
 
