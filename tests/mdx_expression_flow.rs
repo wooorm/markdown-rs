@@ -154,7 +154,7 @@ fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
             })],
             position: Some(Position::new(1, 1, 0, 3, 5, 15))
         }),
-        "should support mdx expressions (flow) as `MdxFlowExpression`s in mdast"
+        "should support indent in `MdxFlowExpression` in mdast"
     );
 
     Ok(())
