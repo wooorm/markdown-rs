@@ -1,6 +1,6 @@
 mod test_utils;
 use markdown::{
-    mdast::{MdxFlowExpression, Node, Root},
+    mdast::{MdxFlowExpression, MdxTextExpression, Node, Paragraph, Root, Text},
     message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
@@ -140,6 +140,19 @@ fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
                 stops: vec![(0, 1), (7, 8), (8, 9)]
             })],
             position: Some(Position::new(1, 1, 0, 2, 7, 15))
+        }),
+        "should support mdx expressions (flow) as `MdxFlowExpression`s in mdast"
+    );
+
+    assert_eq!(
+        to_mdast("  {`\n    a\n  `}", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                value: "`\n  a\n`".into(),
+                position: Some(Position::new(1, 3, 2, 3, 5, 15)),
+                stops: vec![(0, 3), (1, 4), (2, 7), (5, 10), (6, 13)]
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 5, 15))
         }),
         "should support mdx expressions (flow) as `MdxFlowExpression`s in mdast"
     );
