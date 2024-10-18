@@ -201,7 +201,7 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         // For future lines, we’d move at most to
         // `line_start_shifted.column + 4`.
         tokenizer.enter(Name::LinePrefix);
-        return State::Retry(StateName::MdxExpressionPrefix);
+        State::Retry(StateName::MdxExpressionPrefix)
     } else {
         State::Retry(StateName::MdxExpressionBefore)
     }
