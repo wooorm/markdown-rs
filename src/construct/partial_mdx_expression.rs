@@ -56,7 +56,6 @@
 //! [mdx_expression_text]: crate::construct::mdx_expression_text
 //! [interleaving]: https://mdxjs.com/docs/what-is-mdx/#interleaving
 
-use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::Name;
 use crate::message;
 use crate::state::{Name as StateName, State};
@@ -202,7 +201,7 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         // For future lines, we’d move at most to
         // `line_start_shifted.column + 4`.
         tokenizer.enter(Name::LinePrefix);
-        prefix(tokenizer)
+        return State::Retry(StateName::MdxExpressionPrefix);
     } else {
         State::Retry(StateName::MdxExpressionBefore)
     }

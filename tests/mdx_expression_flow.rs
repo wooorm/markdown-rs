@@ -1,6 +1,6 @@
 mod test_utils;
 use markdown::{
-    mdast::{MdxFlowExpression, MdxTextExpression, Node, Paragraph, Root, Text},
+    mdast::{MdxFlowExpression, Node, Root},
     message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
