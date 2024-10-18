@@ -144,6 +144,19 @@ fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
         "should support mdx expressions (flow) as `MdxFlowExpression`s in mdast"
     );
 
+    assert_eq!(
+        to_mdast("  {`\n    a\n  `}", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                value: "`\n  a\n`".into(),
+                position: Some(Position::new(1, 3, 2, 3, 5, 15)),
+                stops: vec![(0, 3), (1, 4), (2, 7), (5, 10), (6, 13)]
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 5, 15))
+        }),
+        "should support indent in `MdxFlowExpression` in mdast"
+    );
+
     Ok(())
 }
 
