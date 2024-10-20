@@ -39,6 +39,7 @@ fn phrasing(child: &Node) -> bool {
             | Node::InlineMath(_)
             | Node::Link(_)
             | Node::LinkReference(_)
+            | Node::MdxTextExpression(_)
             | Node::Strong(_)
             | Node::Text(_)
     )

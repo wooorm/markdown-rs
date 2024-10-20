@@ -325,6 +325,13 @@ impl<'a> State<'a> {
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
             Node::Math(math) => math.handle(self, info, parent, node),
             Node::InlineMath(inline_math) => inline_math.handle(self, info, parent, node),
+            Node::MdxFlowExpression(mdx_flow_expression) => {
+                mdx_flow_expression.handle(self, info, parent, node)
+            }
+            Node::MdxTextExpression(mdx_text_expression) => {
+                mdx_text_expression.handle(self, info, parent, node)
+            }
+            Node::MdxjsEsm(mdx_js_esm) => mdx_js_esm.handle(self, info, parent, node),
             _ => Err(Message {
                 place: None,
                 reason: format!("Unexpected node type `{:?}`", node),
@@ -350,7 +357,8 @@ impl<'a> State<'a> {
             line += 1;
         }
 
-        result.push_str(&map(&value[start..], line, value.is_empty()));
+        let value_slice = &value[start..];
+        result.push_str(&map(value_slice, line, value_slice.is_empty()));
         result
     }
 

@@ -233,10 +233,11 @@ impl<'a> Unsafe<'a> {
                 '<',
                 None,
                 None,
-                vec![ConstructName::DestinationLiteral],
+                vec![ConstructName::DestinationLiteral, ConstructName::Phrasing],
                 vec![],
                 false,
             ),
+            Self::new('<', None, None, vec![], vec![], true),
             Self::new('=', None, None, vec![], vec![], true),
             Self::new('>', None, None, vec![], vec![], true),
             Self::new(
@@ -331,6 +332,15 @@ impl<'a> Unsafe<'a> {
                 false,
             ),
             Self::new('$', None, "\\$".into(), vec![], vec![], true),
+            Self::new(
+                '{',
+                None,
+                None,
+                vec![ConstructName::Phrasing],
+                vec![],
+                false,
+            ),
+            Self::new('{', None, None, vec![], vec![], true),
         ]
     }
 
