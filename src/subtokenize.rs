@@ -78,7 +78,7 @@ pub fn link_to(events: &mut [Event], previous: usize, next: usize) {
 pub fn subtokenize(
     events: &mut Vec<Event>,
     parse_state: &ParseState,
-    filter: &Option<Content>,
+    filter: Option<&Content>,
 ) -> Result<Subresult, message::Message> {
     let mut map = EditMap::new();
     let mut index = 0;
@@ -97,9 +97,7 @@ pub fn subtokenize(
             debug_assert_eq!(event.kind, Kind::Enter);
 
             // No need to enter linked events again.
-            if link.previous.is_none()
-                && (filter.is_none() || &link.content == filter.as_ref().unwrap())
-            {
+            if link.previous.is_none() && (filter.is_none() || link.content == *filter.unwrap()) {
                 // Index into `events` pointing to a chunk.
                 let mut link_index = Some(index);
                 // Subtokenizer.

@@ -304,26 +304,24 @@ pub fn containers_after(tokenizer: &mut Tokenizer) -> State {
         != tokenizer.tokenize_state.document_container_stack.len();
     child.define_skip(tokenizer.point.clone());
 
-    match tokenizer.current {
-        // Note: EOL is part of data.
-        None => State::Retry(StateName::DocumentFlowEnd),
-        Some(_) => {
-            let current = tokenizer.events.len();
-            let previous = tokenizer.tokenize_state.document_data_index;
-            if let Some(previous) = previous {
-                tokenizer.events[previous].link.as_mut().unwrap().next = Some(current);
-            }
-            tokenizer.tokenize_state.document_data_index = Some(current);
-            tokenizer.enter_link(
-                Name::Data,
-                Link {
-                    previous,
-                    next: None,
-                    content: Content::Flow,
-                },
-            );
-            State::Retry(StateName::DocumentFlowInside)
+    if tokenizer.current.is_some() {
+        let current = tokenizer.events.len();
+        let previous = tokenizer.tokenize_state.document_data_index;
+        if let Some(previous) = previous {
+            tokenizer.events[previous].link.as_mut().unwrap().next = Some(current);
         }
+        tokenizer.tokenize_state.document_data_index = Some(current);
+        tokenizer.enter_link(
+            Name::Data,
+            Link {
+                previous,
+                next: None,
+                content: Content::Flow,
+            },
+        );
+        State::Retry(StateName::DocumentFlowInside)
+    } else {
+        State::Retry(StateName::DocumentFlowEnd)
     }
 }
 
@@ -450,23 +448,20 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
         debug_assert!(result.is_ok(), "did not expect error when exiting");
     }
 
-    match tokenizer.current {
-        None => {
-            tokenizer.tokenize_state.document_continued = 0;
-            if let Err(message) = exit_containers(tokenizer, &Phase::Eof) {
-                return State::Error(message);
-            }
-            resolve(tokenizer);
-            State::Ok
+    if tokenizer.current.is_some() {
+        tokenizer.tokenize_state.document_continued = 0;
+        tokenizer.tokenize_state.document_lazy_accepting_before =
+            document_lazy_continuation_current;
+        // Containers would only be interrupting if we’ve continued.
+        tokenizer.interrupt = false;
+        State::Retry(StateName::DocumentContainerExistingBefore)
+    } else {
+        tokenizer.tokenize_state.document_continued = 0;
+        if let Err(message) = exit_containers(tokenizer, &Phase::Eof) {
+            return State::Error(message);
         }
-        Some(_) => {
-            tokenizer.tokenize_state.document_continued = 0;
-            tokenizer.tokenize_state.document_lazy_accepting_before =
-                document_lazy_continuation_current;
-            // Containers would only be interrupting if we’ve continued.
-            tokenizer.interrupt = false;
-            State::Retry(StateName::DocumentContainerExistingBefore)
-        }
+        resolve(tokenizer);
+        State::Ok
     }
 }
 
