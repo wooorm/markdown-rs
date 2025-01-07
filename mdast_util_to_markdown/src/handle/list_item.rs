@@ -102,5 +102,6 @@ impl Handle for ListItem {
 }
 
 fn compute_size(a: usize) -> usize {
-    ((a + 4 - 1) / 4) * 4
+    // `a.div_ceil(4)` is `((a + 4 - 1) / 4)`
+    a.div_ceil(4) * 4
 }
