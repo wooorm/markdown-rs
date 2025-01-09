@@ -129,5 +129,13 @@ fn fuzz() -> Result<(), message::Message> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert!(
+        matches!(
+            to_mdast("=\n=\n=\na\n=", &Default::default()),
+            Ok(mdast::Node::Root(_))
+        ),
+        "yy: setext headings next to each other (GH-31)"
+    );
+
     Ok(())
 }
