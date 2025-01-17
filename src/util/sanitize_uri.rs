@@ -55,7 +55,7 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
     let value = sanitize(value);
 
     let end = value.find(|c| matches!(c, '?' | '#' | '/'));
-    let mut colon = value.find(|c| matches!(c, ':'));
+    let mut colon = value.find(':');
 
     // If the first colon is after `?`, `#`, or `/`, it’s not a protocol.
     if let Some(end) = end {

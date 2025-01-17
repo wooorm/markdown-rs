@@ -182,7 +182,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, message::
     let result = subtokenize(
         &mut tokenizer.events,
         tokenizer.parse_state,
-        &Some(Content::Content),
+        Some(&Content::Content),
     )?;
 
     Ok(Some(result))

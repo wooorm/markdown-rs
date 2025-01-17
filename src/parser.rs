@@ -74,6 +74,6 @@ pub fn parse<'a>(
             return Ok((events, parse_state));
         }
 
-        result = subtokenize(&mut events, &parse_state, &None)?;
+        result = subtokenize(&mut events, &parse_state, None)?;
     }
 }

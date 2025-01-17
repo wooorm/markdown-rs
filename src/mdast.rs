@@ -96,7 +96,7 @@ impl serde::ser::Serialize for AlignKind {
 struct AlignKindVisitor;
 
 #[cfg(feature = "serde")]
-impl<'de> serde::de::Visitor<'de> for AlignKindVisitor {
+impl serde::de::Visitor<'_> for AlignKindVisitor {
     type Value = AlignKind;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
