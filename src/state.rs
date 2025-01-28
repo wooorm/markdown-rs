@@ -360,6 +360,7 @@ pub enum Name {
 
     MdxExpressionStart,
     MdxExpressionBefore,
+    MdxExpressionPrefix,
     MdxExpressionInside,
     MdxExpressionEolAfter,
 
@@ -835,6 +836,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::MdxEsmAtEnd => construct::mdx_esm::at_end,
 
         Name::MdxExpressionStart => construct::partial_mdx_expression::start,
+        Name::MdxExpressionPrefix => construct::partial_mdx_expression::prefix,
         Name::MdxExpressionBefore => construct::partial_mdx_expression::before,
         Name::MdxExpressionInside => construct::partial_mdx_expression::inside,
         Name::MdxExpressionEolAfter => construct::partial_mdx_expression::eol_after,

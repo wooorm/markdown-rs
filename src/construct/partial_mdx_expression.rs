@@ -56,14 +56,15 @@
 //! [mdx_expression_text]: crate::construct::mdx_expression_text
 //! [interleaving]: https://mdxjs.com/docs/what-is-mdx/#interleaving
 
-use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::Name;
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::{constant::TAB_SIZE, mdx_collect::collect};
+use crate::util::mdx_collect::collect;
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
 use alloc::boxed::Box;
+
+pub const INDENT_SIZE: usize = 4;
 
 /// Start of an MDX expression.
 ///
@@ -180,7 +181,6 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
             }
         )
     } else if matches!(tokenizer.current, Some(b'\t' | b' ')) {
-        tokenizer.attempt(State::Next(StateName::MdxExpressionBefore), State::Nok);
         // Idea: investigate if we’d need to use more complex stripping.
         // Take this example:
         //
@@ -200,10 +200,25 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         // the start of the expression and move past whitespace.
         // For future lines, we’d move at most to
         // `line_start_shifted.column + 4`.
-        State::Retry(space_or_tab_min_max(tokenizer, 0, TAB_SIZE))
+        tokenizer.enter(Name::LinePrefix);
+        State::Retry(StateName::MdxExpressionPrefix)
     } else {
         State::Retry(StateName::MdxExpressionBefore)
     }
+}
+
+pub fn prefix(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.size_c += 1;
+    if matches!(tokenizer.current, Some(b'\t' | b' '))
+        && tokenizer.tokenize_state.size_c < INDENT_SIZE - 1
+    {
+        tokenizer.consume();
+        return State::Next(StateName::MdxExpressionPrefix);
+    }
+
+    tokenizer.exit(Name::LinePrefix);
+    tokenizer.tokenize_state.size_c = 0;
+    State::Retry(StateName::MdxExpressionBefore)
 }
 
 /// Parse an expression with a given function.
