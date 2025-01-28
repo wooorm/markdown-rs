@@ -64,7 +64,12 @@ use crate::util::mdx_collect::collect;
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
 use alloc::boxed::Box;
 
-pub const INDENT_SIZE: usize = 4;
+// Tab-size to eat has to be the same as what we serialize as.
+// While in some places in markdown that’s 4, in JS it’s more common as 2.
+// Which is what’s also in `mdast-util-mdx-jsx`:
+// <https://github.com/syntax-tree/mdast-util-mdx-jsx/blob/40b951b/lib/index.js#L52>
+// <https://github.com/micromark/micromark-extension-mdx-expression/blob/7c305ff/packages/micromark-factory-mdx-expression/dev/index.js#L37>
+pub const INDENT_SIZE: usize = 2;
 
 /// Start of an MDX expression.
 ///
@@ -191,15 +196,8 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         // ```
         //
         // Currently, the “paragraph” starts at `> | aaa`, so for the next line
-        // here we split it into `>␠|␠␠␠␠|␠d` (prefix, this indent here,
+        // here we split it into `>␠|␠␠|␠␠␠d` (prefix, this indent here,
         // expression data).
-        // The intention above is likely for the split to be as `>␠␠|␠␠␠␠|d`,
-        // which is impossible, but we can mimick it with `>␠|␠␠␠␠␠|d`.
-        //
-        // To improve the situation, we could take `tokenizer.line_start` at
-        // the start of the expression and move past whitespace.
-        // For future lines, we’d move at most to
-        // `line_start_shifted.column + 4`.
         tokenizer.enter(Name::LinePrefix);
         State::Retry(StateName::MdxExpressionPrefix)
     } else {
