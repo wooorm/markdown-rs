@@ -1,6 +1,6 @@
 mod test_utils;
 use markdown::{
-    mdast::{MdxTextExpression, Node, Paragraph, Root, Text},
+    mdast::{Blockquote, MdxTextExpression, Node, Paragraph, Root, Text},
     message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
@@ -8,8 +8,10 @@ use markdown::{
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
+/// Note: these tests are also in `micromark/micromark-extension-mdx-expression`
+/// at `tests/index.js`.
 #[test]
-fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
+fn mdx_expression() -> Result<(), message::Message> {
     let swc = Options {
         parse: ParseOptions {
             constructs: Constructs::mdx(),
@@ -59,7 +61,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
     assert_eq!(
         to_html_with_options("a {/*b*/c} d", &swc)?,
         "<p>a  d</p>",
-        "should support a multiline comment (4)"
+        "should support a multiline comment (5)"
     );
 
     assert_eq!(
@@ -87,7 +89,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
     );
 
     assert_eq!(
-        to_html_with_options("a {// b\nd} d", &swc)?,
+        to_html_with_options("a {// b\nc} d", &swc)?,
         "<p>a  d</p>",
         "should support a line comment followed by a line ending and an expression"
     );
@@ -101,7 +103,7 @@ fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
     assert_eq!(
         to_html_with_options("a {/*b*/ // c\n} d", &swc)?,
         "<p>a  d</p>",
-        "should support comments (1)"
+        "should support comments"
     );
 
     assert_eq!(
@@ -158,6 +160,8 @@ fn mdx_expression_text_gnostic_core() -> Result<(), message::Message> {
     Ok(())
 }
 
+/// Note: these tests are also in `micromark/micromark-extension-mdx-expression`
+/// at `tests/index.js`.
 #[test]
 fn mdx_expression_text_agnostic() -> Result<(), message::Message> {
     let mdx = Options {
@@ -241,6 +245,8 @@ fn mdx_expression_text_agnostic() -> Result<(), message::Message> {
     Ok(())
 }
 
+/// Note: these tests are also in `micromark/micromark-extension-mdx-expression`
+/// at `tests/index.js`.
 #[test]
 fn mdx_expression_text_gnostic() -> Result<(), message::Message> {
     let swc = Options {
@@ -320,6 +326,50 @@ fn mdx_expression_text_gnostic() -> Result<(), message::Message> {
         to_html_with_options("a { /* } */ } b", &swc)?,
         "<p>a  b</p>",
         "should support an unbalanced closing brace (if JS permits)"
+    );
+
+    assert_eq!(
+        to_mdast(
+            "> alpha {`\n> bravo\n>  charlie\n>   delta\n>    echo\n> `} foxtrot.",
+            &swc.parse
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Blockquote(Blockquote {
+                children: vec![Node::Paragraph(Paragraph {
+                    children: vec![
+                        Node::Text(Text {
+                            value: "alpha ".into(),
+                            position: Some(Position::new(1, 3, 2, 1, 9, 8)),
+                        }),
+                        Node::MdxTextExpression(MdxTextExpression {
+                            value: "`\nbravo\ncharlie\ndelta\n echo\n`".into(),
+                            position: Some(Position::new(1, 9, 8, 6, 5, 54)),
+                            stops: vec![
+                                (0, 9),
+                                (1, 10),
+                                (2, 13),
+                                (7, 18),
+                                (8, 22),
+                                (15, 29),
+                                (16, 34),
+                                (21, 39),
+                                (22, 44),
+                                (27, 49),
+                                (28, 52)
+                            ]
+                        }),
+                        Node::Text(Text {
+                            value: " foxtrot.".into(),
+                            position: Some(Position::new(6, 5, 54, 6, 14, 63)),
+                        }),
+                    ],
+                    position: Some(Position::new(1, 3, 2, 6, 14, 63))
+                })],
+                position: Some(Position::new(1, 1, 0, 6, 14, 63))
+            })],
+            position: Some(Position::new(1, 1, 0, 6, 14, 63))
+        }),
+        "should keep the correct number of spaces in a blockquote (text)"
     );
 
     Ok(())

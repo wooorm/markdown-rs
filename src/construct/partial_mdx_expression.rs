@@ -64,13 +64,6 @@ use crate::util::mdx_collect::collect;
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
 use alloc::boxed::Box;
 
-// Tab-size to eat has to be the same as what we serialize as.
-// While in some places in markdown that’s 4, in JS it’s more common as 2.
-// Which is what’s also in `mdast-util-mdx-jsx`:
-// <https://github.com/syntax-tree/mdast-util-mdx-jsx/blob/40b951b/lib/index.js#L52>
-// <https://github.com/micromark/micromark-extension-mdx-expression/blob/7c305ff/packages/micromark-factory-mdx-expression/dev/index.js#L37>
-pub const INDENT_SIZE: usize = 2;
-
 /// Start of an MDX expression.
 ///
 /// ```markdown
@@ -206,10 +199,13 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
 }
 
 pub fn prefix(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.size_c += 1;
-    if matches!(tokenizer.current, Some(b'\t' | b' '))
-        && tokenizer.tokenize_state.size_c < INDENT_SIZE - 1
-    {
+    // Tab-size to eat has to be the same as what we serialize as.
+    // While in some places in markdown that’s 4, in JS it’s more common as 2.
+    // Which is what’s also in `mdast-util-mdx-jsx`:
+    // <https://github.com/syntax-tree/mdast-util-mdx-jsx/blob/40b951b/lib/index.js#L52>
+    // <https://github.com/micromark/micromark-extension-mdx-expression/blob/7c305ff/packages/micromark-factory-mdx-expression/dev/index.js#L37>
+    if matches!(tokenizer.current, Some(b'\t' | b' ')) && tokenizer.tokenize_state.size_c < 2 {
+        tokenizer.tokenize_state.size_c += 1;
         tokenizer.consume();
         return State::Next(StateName::MdxExpressionPrefix);
     }

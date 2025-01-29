@@ -1,6 +1,9 @@
 mod test_utils;
 use markdown::{
-    mdast::{MdxFlowExpression, Node, Root},
+    mdast::{
+        AttributeContent, AttributeValue, AttributeValueExpression, Blockquote, MdxFlowExpression,
+        MdxJsxAttribute, MdxJsxTextElement, MdxTextExpression, Node, Paragraph, Root, Text,
+    },
     message, to_html_with_options, to_mdast,
     unist::Position,
     Constructs, Options, ParseOptions,
@@ -8,6 +11,8 @@ use markdown::{
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
 
+/// Note: these tests are also in `micromark/micromark-extension-mdx-expression`
+/// at `tests/index.js`.
 #[test]
 fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
     let mdx = Options {
@@ -100,7 +105,7 @@ fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
     assert_eq!(
         to_html_with_options("a\n\n* b", &mdx)?,
         "<p>a</p>\n<ul>\n<li>b</li>\n</ul>",
-        "should support lists after non-expressions (GH-11)"
+        "should support lists after non-expressions (wooorm/markdown-rs#11)"
     );
 
     assert_eq!(
@@ -160,6 +165,8 @@ fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
     Ok(())
 }
 
+/// Note: these tests are also in `micromark/micromark-extension-mdx-expression`
+/// at `tests/index.js`.
 #[test]
 fn mdx_expression_flow_gnostic() -> Result<(), message::Message> {
     let swc = Options {
@@ -235,9 +242,165 @@ fn mdx_expression_flow_gnostic() -> Result<(), message::Message> {
         "should support expressions padded w/ parens and comments"
     );
 
+    assert_eq!(
+        to_mdast("{`\n\t`}", &swc.parse)?,
+        Node::Root(Root {
+            children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                value: "`\n  `".into(),
+                position: Some(Position::new(1, 1, 0, 2, 7, 6)),
+                stops: vec![(0, 1), (1, 2), (2, 3)]
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 7, 6))
+        }),
+        "should use correct positional info when tabs are used (1, indent)"
+    );
+
+    assert_eq!(
+        to_mdast("{`\nalpha\t`}", &swc.parse)?,
+        Node::Root(Root {
+            children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                value: "`\nalpha\t`".into(),
+                position: Some(Position::new(1, 1, 0, 2, 11, 11)),
+                stops: vec![(0, 1), (1, 2), (2, 3)]
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 11, 11))
+        }),
+        "should use correct positional info when tabs are used (2, content)"
+    );
+
+    assert_eq!(
+        to_mdast(">  aaa <b c={`\n>      d\n>  `} /> eee", &swc.parse)?,
+        Node::Root(Root {
+            children: vec![Node::Blockquote(Blockquote {
+                children: vec![Node::Paragraph(Paragraph {
+                    children: vec![
+                        Node::Text(Text {
+                            value: "aaa ".into(),
+                            position: Some(Position::new(1, 4, 3, 1, 8, 7))
+                        }),
+                        Node::MdxJsxTextElement(MdxJsxTextElement {
+                            children: vec![],
+                            name: Some("b".into()),
+                            attributes: vec![AttributeContent::Property(MdxJsxAttribute {
+                                name: "c".into(),
+                                value: Some(AttributeValue::Expression(AttributeValueExpression {
+                                    value: "`\n   d\n`".into(),
+                                    stops: vec![(0, 13), (1, 14), (2, 19), (6, 23), (7, 27)]
+                                }))
+                            })],
+                            position: Some(Position::new(1, 8, 7, 3, 9, 32))
+                        }),
+                        Node::Text(Text {
+                            value: " eee".into(),
+                            position: Some(Position::new(3, 9, 32, 3, 13, 36))
+                        })
+                    ],
+                    position: Some(Position::new(1, 3, 2, 3, 13, 36))
+                })],
+                position: Some(Position::new(1, 1, 0, 3, 13, 36))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 13, 36))
+        }),
+        "should support template strings in JSX (text) in block quotes"
+    );
+
+    assert_eq!(
+        to_mdast("> ab {`\n>\t`}", &swc.parse)?,
+        Node::Root(Root {
+            children: vec![Node::Blockquote(Blockquote {
+                children: vec![Node::Paragraph(Paragraph {
+                    children: vec![
+                        Node::Text(Text {
+                            value: "ab ".into(),
+                            position: Some(Position::new(1, 3, 2, 1, 6, 5))
+                        }),
+                        Node::MdxTextExpression(MdxTextExpression {
+                            value: "`\n`".into(),
+                            stops: vec![(0, 6), (1, 7), (2, 10)],
+                            position: Some(Position::new(1, 6, 5, 2, 7, 12))
+                        })
+                    ],
+                    position: Some(Position::new(1, 3, 2, 2, 7, 12))
+                })],
+                position: Some(Position::new(1, 1, 0, 2, 7, 12))
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 7, 12))
+        }),
+        "should use correct positional when there are virtual spaces due to a block quote"
+    );
+
+    assert_eq!(
+        to_mdast(
+            "> {`\n> alpha\n>  bravo\n>   charlie\n>    delta\n> `}",
+            &swc.parse
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Blockquote(Blockquote {
+                children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                    value: "`\nalpha\nbravo\ncharlie\n delta\n`".into(),
+                    position: Some(Position::new(1, 3, 2, 6, 5, 49)),
+                    stops: vec![
+                        (0, 3),
+                        (1, 4),
+                        (2, 7),
+                        (7, 12),
+                        (8, 16),
+                        (13, 21),
+                        (14, 26),
+                        (21, 33),
+                        (22, 38),
+                        (28, 44),
+                        (29, 47)
+                    ]
+                })],
+                position: Some(Position::new(1, 1, 0, 6, 5, 49))
+            })],
+            position: Some(Position::new(1, 1, 0, 6, 5, 49))
+        }),
+        "should keep the correct number of spaces in a blockquote (flow)"
+    );
+
+    assert_eq!(
+        to_mdast(
+            "> {`\n> alpha\n>  bravo\n>   charlie\n>    delta\n> `}",
+            &swc.parse
+        )?,
+        Node::Root(Root {
+            children: vec![Node::Blockquote(Blockquote {
+                children: vec![Node::MdxFlowExpression(MdxFlowExpression {
+                    value: "`\nalpha\nbravo\ncharlie\n delta\n`".into(),
+                    position: Some(Position::new(1, 3, 2, 6, 5, 49)),
+                    stops: vec![
+                        (0, 3),
+                        (1, 4),
+                        (2, 7),
+                        (7, 12),
+                        (8, 16),
+                        (13, 21),
+                        (14, 26),
+                        (21, 33),
+                        (22, 38),
+                        (28, 44),
+                        (29, 47)
+                    ]
+                })],
+                position: Some(Position::new(1, 1, 0, 6, 5, 49))
+            })],
+            position: Some(Position::new(1, 1, 0, 6, 5, 49))
+        }),
+        "should keep the correct number of spaces in a blockquote (flow)"
+    );
+
+    // Note: the weird character test has to go in mdxjs-rs.
+
     Ok(())
 }
 
+/// Note: these tests are also in `micromark/micromark-extension-mdx-expression`
+/// at `tests/index.js`.
+/// This project includes *all* extensions which means that it can use JSX.
+/// There we test something that does not exist in actual MDX but which is used
+/// by the separate JSX extension.
 #[test]
 fn mdx_expression_spread() -> Result<(), message::Message> {
     let swc = Options {
@@ -253,7 +416,7 @@ fn mdx_expression_spread() -> Result<(), message::Message> {
     assert_eq!(
         to_html_with_options("<a {...b} />", &swc)?,
         "",
-        "should support spreads for attribute expression"
+        "should support a spread"
     );
 
     assert_eq!(
@@ -272,24 +435,31 @@ fn mdx_expression_spread() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options("<a {b=c}={} d>", &swc).err().unwrap().to_string(),
+        "1:5: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
+        "should crash on an incorrect spread that looks like an assignment"
+    );
+
+    assert_eq!(
         to_html_with_options("<a {...b,c} d>", &swc).err().unwrap().to_string(),
         "1:5: Unexpected extra content in spread (such as `{...x,y}`): only a single spread is supported (such as `{...x}`) (mdx:swc)",
         "should crash if a spread and other things"
     );
 
     assert_eq!(
-        to_html_with_options("<a {} />", &swc).err().unwrap().to_string(),
-        "1:9: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
-        "should crash on an empty spread"
-    );
-
-    assert_eq!(
-        to_html_with_options("<a {a=b} />", &swc)
+        to_html_with_options("<a {b=c} />", &swc)
             .err()
             .unwrap()
             .to_string(),
         "1:12: Could not parse expression with swc: assignment property is invalid syntax (mdx:swc)",
         "should crash if not an identifier"
+    );
+
+    // Note: `markdown-rs` has no `allowEmpty`.
+    assert_eq!(
+        to_html_with_options("<a {} />", &swc).err().unwrap().to_string(),
+        "1:9: Unexpected prop in spread (such as `{x}`): only a spread is supported (such as `{...x}`) (mdx:swc)",
+        "should crash on an empty spread"
     );
 
     assert_eq!(
