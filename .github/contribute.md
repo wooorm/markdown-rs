@@ -71,6 +71,8 @@ and how to run useful scripts.
 *   `git commit --all --message 1.2.3 && git tag 1.2.3 && git push && git push --tags`
 *   `cargo publish`
 
+(similar for `mdast_util_to_markdown`)
+
 ## Resources
 
 *   [how to contribute to open source](https://opensource.guide/how-to-contribute/)
