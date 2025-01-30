@@ -13,7 +13,7 @@ criterion = "0.5"
 env_logger = "0.11"
 pretty_assertions = { workspace = true }
 serde_json = { version = "1" }
-swc_core = { version = "11", features = [
+swc_core = { version = "12", features = [
   "common",
   "ecma_ast",
   "ecma_parser",
