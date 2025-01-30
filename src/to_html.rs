@@ -743,6 +743,7 @@ fn on_exit_break(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`BlankLineEnding`][Name::BlankLineEnding].
 fn on_exit_blank_line_ending(context: &mut CompileContext) {
+    context.slurp_one_line_ending = false;
     if context.index == context.events.len() - 1 {
         context.line_ending_if_needed();
     }

@@ -92,6 +92,12 @@ fn frontmatter() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options("---\n---\na\nb", &frontmatter)?,
+        "<p>a\nb</p>",
+        "should support line endings after frontmatter"
+    );
+
+    assert_eq!(
         to_html_with_options("--- a\n---", &frontmatter)?,
         "<h2>--- a</h2>",
         "should not support content after opening fence"
