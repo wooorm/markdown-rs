@@ -45,7 +45,7 @@ See [Project][] for more info.
 *   include as much information as possible: steps to reproduce the issue,
     error message, version, operating system, etcetera
 *   the more time you put into an issue, the better help you can get
-*   the best issue report is a [failing test][unit-test] proving it
+*   the best issue report is a failing test] proving it
 
 ## Submitting a pull request
 
@@ -89,8 +89,6 @@ and how to run useful scripts.
 [license]: https://creativecommons.org/licenses/by/4.0/
 
 [author]: https://wooorm.com
-
-[unit-test]: https://twitter.com/sindresorhus/status/579306280495357953
 
 [support]: support.md
 
