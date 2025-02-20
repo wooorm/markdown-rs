@@ -274,7 +274,7 @@ pub const SAFE_PROTOCOL_HREF: [&str; 6] = ["http", "https", "irc", "ircs", "mail
 /// List of protocols allowed, when operating safely, as `src` on `img`.
 ///
 /// This list is based on what is allowed by GitHub.
-pub const SAFE_PROTOCOL_SRC: [&str; 2] = ["http", "https"];
+pub const SAFE_PROTOCOL_SRC: [&str; 3] = ["http", "https", "data"];
 
 /// The number of characters that form a tab stop.
 ///

@@ -285,7 +285,7 @@ The following bash scripts are useful when working on this project:
 The typical security aspect discussed for markdown is [cross-site scripting
 (XSS)][xss] attacks.
 Markdown itself is safe if it does not include embedded HTML or dangerous
-protocols in links/images (such as `javascript:` or `data:`).
+protocols in links/images (such as `javascript:`).
 `markdown-rs` makes any markdown safe by default, even if HTML is embedded or
 dangerous protocols are used, as it encodes or drops them.
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for

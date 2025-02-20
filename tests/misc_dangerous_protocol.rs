@@ -113,6 +113,12 @@ fn dangerous_protocol_image() {
         "<p><img src=\"a/b:c\" alt=\"\" /></p>",
         "should allow a colon in a path"
     );
+
+    assert_eq!(
+        to_html("![](data:image/png;base64,abc)"),
+        "<p><img src=\"data:image/png;base64,abc\" alt=\"\" /></p>",
+        "should allow data URIs"
+    );
 }
 
 #[test]
