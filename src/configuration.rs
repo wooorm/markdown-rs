@@ -585,7 +585,8 @@ pub struct CompileOptions {
     ///     "<p><img src=\"\" alt=\"\" /></p>"
     /// );
     ///
-    /// // Turn `allow_any_img_src` on to allow all protocols in images:
+    /// // Turn `allow_any_img_src` on to allow all values as `src` on images.
+    /// // This is safe because browsers do not execute code in images.
     /// assert_eq!(
     ///     to_html_with_options(
     ///         "![](javascript:alert(1))",
