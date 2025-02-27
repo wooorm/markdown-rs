@@ -289,16 +289,16 @@ protocols in links/images (such as `javascript:`).
 `markdown-rs` makes any markdown safe by default, even if HTML is embedded or
 dangerous protocols are used, as it encodes or drops them.
 
-You should be able to set `allow_any_src` safely.
+Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
+user-provided markdown opens you up to XSS attacks.
+
+Additionnally, you should be able to set `allow_any_img_src` safely.
 The default is to allow only `http:`, `https:`, and relative images,
-which is what GitHub does.
-But it should be safe to allow any value on `src`.
+which is what GitHub does. But it should be safe to allow any value on `src`.
+
 The [HTML specification][whatwg-html-image] prohibits dangerous scripts in
 images and all modern browsers respect this and are thus safe.
 Opera 12 (from 2012) is a notable browser that did not respect this.
-
-Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
-user-provided markdown opens you up to XSS attacks.
 
 An aspect related to XSS for security is syntax errors: markdown itself has no
 syntax errors.
