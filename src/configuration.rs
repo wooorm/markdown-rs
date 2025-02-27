@@ -522,8 +522,15 @@ pub struct CompileOptions {
     /// `ircs`, `mailto`, `xmpp`), are safe.
     /// All other URLs are dangerous and dropped.
     ///
-    /// When the crate feature `allow_all_protocols_in_img` is enabled, `allow_dangerous_protocol` will only apply to links.
-    /// The [HTML specification](https://html.spec.whatwg.org/multipage/images.html#images-processing-model) does not allow the execution of scripts in images, whatever the protocol they use. All modern browsers respect this.
+     /// When the option `allow_all_protocols_in_img` is enabled,
+     /// `allow_dangerous_protocol` only applies to links.
+     ///
+     /// This is safe because the
+     /// [HTML specification][whatwg-html-image-processing]
+     /// does not allow executable code in images.
+     /// All modern browsers respect this.
+     ///
+     /// [whatwg-html-image-processing]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
     ///
     /// ## Examples
     ///
