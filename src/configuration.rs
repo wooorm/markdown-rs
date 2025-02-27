@@ -597,7 +597,7 @@ pub struct CompileOptions {
     ///             },
     ///             ..Options::default()
     ///         }
-    ///     )?, // This is safe because browsers do not execute scripts in image sources.
+    ///     )?,
     ///     "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>"
     /// );
     /// # Ok(())
