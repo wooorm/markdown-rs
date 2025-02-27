@@ -290,8 +290,9 @@ protocols in links/images (such as `javascript:`).
 dangerous protocols are used, as it encodes or drops them.
 
 Some very old browsers (such as Opera 12 from 2012) did not respect the HTML
-specification and executed scripts in images, making the use of external images
-dangerous. However, all modern browsers respect the HTML specification and 
+specification and executed scripts in images, rendering sites with user-controlled
+images vulnerable to XSS attacks.
+However, all modern browsers respect the HTML specification and 
 prevent this, making the use of external images safe.
 
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
