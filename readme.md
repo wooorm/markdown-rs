@@ -297,10 +297,6 @@ prevent this, making the use of external images safe.
 
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
 user-provided markdown opens you up to XSS attacks.
- - `allow_dangerous_html` allows HTML tags to be rendered, including tags that may trigger the execution of scripts
- - `allow_dangerous_protocol` allows the use of protocols like `javascript:`, in links/images
-   - when the option `allow_any_img_src` is enabled, `allow_dangerous_protocol` will only apply to links.
-     - The [HTML specification](https://html.spec.whatwg.org/multipage/images.html#images-processing-model) does not allow the execution of scripts in images, whatever the protocol they use. All modern browsers respect this.
 
 An aspect related to XSS for security is syntax errors: markdown itself has no
 syntax errors.
