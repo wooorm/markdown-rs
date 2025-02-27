@@ -556,13 +556,19 @@ pub struct CompileOptions {
     /// ```
     pub allow_dangerous_protocol: bool,
 
-    /// Whether to allow all protocols in images.
-    ///
-    /// The default is `false`, which means `allow_dangerous_protocol` controls protocol safety for both links and images.
-    ///
-    /// Pass `true` to allow all protocols in images, regardless of the `allow_dangerous_protocol` setting.
-    /// This is safe because the [HTML specification](https://html.spec.whatwg.org/multipage/images.html#images-processing-model)
-    /// does not allow the execution of scripts in images, whatever the protocol they use.
+     /// Whether to allow all values in images.
+     ///
+     /// The default is `false`,
+     /// which lets `allow_dangerous_protocol` control protocol safety for
+     /// both links and images.
+     ///
+     /// Pass `true` to allow all values as `src` on images,
+     /// regardless of `allow_dangerous_protocol`.
+     /// This is safe because the
+     /// [HTML specification][whatwg-html-image-processing]
+     /// does not allow executable code in images.
+     /// 
+     /// [whatwg-html-image-processing]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
     ///
     /// ## Examples
     ///
