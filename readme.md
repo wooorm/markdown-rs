@@ -289,11 +289,13 @@ protocols in links/images (such as `javascript:`).
 `markdown-rs` makes any markdown safe by default, even if HTML is embedded or
 dangerous protocols are used, as it encodes or drops them.
 
-Some very old browsers (such as Opera 12 from 2012) did not respect the HTML
-specification and executed scripts in images, rendering sites with user-controlled
-images vulnerable to XSS attacks.
-However, all modern browsers respect the HTML specification and 
-prevent this, making the use of external images safe.
+You should be able to set `allow_any_src` safely.
+The default is to allow only `http:`, `https:`, and relative images,
+which is what GitHub does.
+But it should be safe to allow any value on `src`.
+The [HTML specification][whatwg-html-image] prohibits dangerous scripts in
+images and all modern browsers respect this and are thus safe.
+Opera 12 (from 2012) is a notable browser that did not respect this.
 
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
 user-provided markdown opens you up to XSS attacks.
@@ -420,3 +422,5 @@ Special thanks go out to:
 [support]: .github/support.md
 
 [coc]: .github/code-of-conduct.md
+
+[whatwg-html-image]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
