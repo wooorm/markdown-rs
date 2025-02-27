@@ -36,7 +36,6 @@ fn dangerous_protocol_autolink() {
 
 #[test]
 fn dangerous_protocol_image() {
-    #[cfg(not(feature = "allow_all_protocols_in_img"))]
     assert_eq!(
         to_html("![](javascript:alert(1))"),
         "<p><img src=\"\" alt=\"\" /></p>",
@@ -55,14 +54,12 @@ fn dangerous_protocol_image() {
         "should allow `https:`"
     );
 
-    #[cfg(not(feature = "allow_all_protocols_in_img"))]
     assert_eq!(
         to_html("![](irc:///help)"),
         "<p><img src=\"\" alt=\"\" /></p>",
         "should not allow `irc:`"
     );
 
-    #[cfg(not(feature = "allow_all_protocols_in_img"))]
     assert_eq!(
         to_html("![](mailto:a)"),
         "<p><img src=\"\" alt=\"\" /></p>",
@@ -199,14 +196,13 @@ fn dangerous_protocol_link() {
     );
 }
 
-#[cfg(feature = "allow_all_protocols_in_img")]
 #[test]
-fn dangerous_protocol_image_with_feature() {
+fn dangerous_protocol_image_with_option() {
     use markdown::{to_html_with_options, CompileOptions, Options};
 
     let options = Options {
         compile: CompileOptions {
-            allow_dangerous_protocol: true,
+            allow_any_img_src: true,
             ..Default::default()
         },
         ..Default::default()
@@ -215,18 +211,18 @@ fn dangerous_protocol_image_with_feature() {
     let result = to_html_with_options("![](javascript:alert(1))", &options).unwrap();
     assert_eq!(
         result, "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
-        "should allow javascript protocol with allow_all_protocols_in_img feature"
+        "should allow javascript protocol with allow_any_img_src option"
     );
 
     let result = to_html_with_options("![](irc:///help)", &options).unwrap();
     assert_eq!(
         result, "<p><img src=\"irc:///help\" alt=\"\" /></p>",
-        "should allow irc protocol with allow_all_protocols_in_img feature"
+        "should allow irc protocol with allow_any_img_src option"
     );
 
     let result = to_html_with_options("![](mailto:a)", &options).unwrap();
     assert_eq!(
         result, "<p><img src=\"mailto:a\" alt=\"\" /></p>",
-        "should allow mailto protocol with allow_all_protocols_in_img feature"
+        "should allow mailto protocol with allow_any_img_src option"
     );
 }

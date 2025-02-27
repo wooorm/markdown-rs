@@ -285,14 +285,20 @@ The following bash scripts are useful when working on this project:
 The typical security aspect discussed for markdown is [cross-site scripting
 (XSS)][xss] attacks.
 Markdown itself is safe if it does not include embedded HTML or dangerous
-protocols in links/images (such as `javascript:` or `data:`).
+protocols in links/images (such as `javascript:`).
 `markdown-rs` makes any markdown safe by default, even if HTML is embedded or
 dangerous protocols are used, as it encodes or drops them.
+
+Some very old browsers (such as Opera 12 from 2012) did not respect the HTML
+specification and executed scripts in images, making the use of external images
+dangerous. However, all modern browsers respect the HTML specification and 
+prevent this, making the use of external images safe.
+
 Turning on the `allow_dangerous_html` or `allow_dangerous_protocol` options for
 user-provided markdown opens you up to XSS attacks.
  - `allow_dangerous_html` allows HTML tags to be rendered, including tags that may trigger the execution of scripts
  - `allow_dangerous_protocol` allows the use of protocols like `javascript:`, in links/images
-   - when the crate feature `allow_all_protocols_in_img` is enabled, `allow_dangerous_protocol` will only apply to links.
+   - when the option `allow_any_img_src` is enabled, `allow_dangerous_protocol` will only apply to links.
      - The [HTML specification](https://html.spec.whatwg.org/multipage/images.html#images-processing-model) does not allow the execution of scripts in images, whatever the protocol they use. All modern browsers respect this.
 
 An aspect related to XSS for security is syntax errors: markdown itself has no

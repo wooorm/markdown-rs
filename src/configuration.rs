@@ -556,6 +556,48 @@ pub struct CompileOptions {
     /// ```
     pub allow_dangerous_protocol: bool,
 
+    /// Whether to allow all protocols in images.
+    ///
+    /// The default is `false`, which means `allow_dangerous_protocol` controls protocol safety for both links and images.
+    ///
+    /// Pass `true` to allow all protocols in images, regardless of the `allow_dangerous_protocol` setting.
+    /// This is safe because the [HTML specification](https://html.spec.whatwg.org/multipage/images.html#images-processing-model)
+    /// does not allow the execution of scripts in images, whatever the protocol they use.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // By default, some protocols in image sources are dropped:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "![](data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==)",
+    ///         &Options::default()
+    ///     )?,
+    ///     "<p><img src=\"\" alt=\"\" /></p>"
+    /// );
+    ///
+    /// // Turn `allow_any_img_src` on to allow all protocols in images:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "![](javascript:alert(1))",
+    ///         &Options {
+    ///             compile: CompileOptions {
+    ///               allow_any_img_src: true,
+    ///               ..CompileOptions::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     )?, // This is safe because browsers do not execute scripts in image sources.
+    ///     "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub allow_any_img_src: bool,
+
     // To do: `doc_markdown` is broken.
     #[allow(clippy::doc_markdown)]
     /// Default line ending to use when compiling to HTML, for line endings not

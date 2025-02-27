@@ -214,7 +214,6 @@ fn image() -> Result<(), message::Message> {
         "should support turning off label start (image)"
     );
 
-    #[cfg(not(feature = "allow_all_protocols_in_img"))]
     assert_eq!(
         to_html("![](javascript:alert(1))"),
         "<p><img src=\"\" alt=\"\" /></p>",
@@ -236,20 +235,20 @@ fn image() -> Result<(), message::Message> {
         "should allow non-http protocols w/ `allowDangerousProtocol`"
     );
 
-    #[cfg(feature = "allow_all_protocols_in_img")]
     assert_eq!(
         to_html_with_options(
             "![](javascript:alert(1))",
             &Options {
                 compile: CompileOptions {
                     allow_dangerous_protocol: false,
+                    allow_any_img_src: true,
                     ..Default::default()
                 },
                 ..Default::default()
             }
         )?,
         "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
-        "should allow non-http protocols w/ `allowDangerousProtocol` when allow_all_protocols_in_img feature is enabled"
+        "should allow non-http protocols with the `allow_any_img_src` option"
     );
 
     assert_eq!(

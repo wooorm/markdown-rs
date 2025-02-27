@@ -276,11 +276,6 @@ pub const SAFE_PROTOCOL_HREF: [&str; 6] = ["http", "https", "irc", "ircs", "mail
 /// This list is based on what is allowed by GitHub.
 pub const SAFE_PROTOCOL_SRC: [&str; 2] = ["http", "https"];
 
-#[cfg(feature = "allow_all_protocols_in_img")]
-pub const ALLOW_ALL_PROTOCOLS_IN_IMG: bool = true;
-#[cfg(not(feature = "allow_all_protocols_in_img"))]
-pub const ALLOW_ALL_PROTOCOLS_IN_IMG: bool = false;
-
 /// The number of characters that form a tab stop.
 ///
 /// This relates to the number of whitespace characters needed to form certain

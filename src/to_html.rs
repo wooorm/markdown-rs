@@ -1,7 +1,6 @@
 //! Turn events into a string of HTML.
 use crate::event::{Event, Kind, Name};
 use crate::mdast::AlignKind;
-use crate::util::constant::ALLOW_ALL_PROTOCOLS_IN_IMG;
 use crate::util::{
     character_reference::decode as decode_character_reference,
     constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
@@ -1459,7 +1458,7 @@ fn on_exit_media(context: &mut CompileContext) {
 
         if let Some(destination) = destination {
             let allow_dangerous_protocol = context.options.allow_dangerous_protocol
-                || (ALLOW_ALL_PROTOCOLS_IN_IMG && media.image);
+                || (context.options.allow_any_img_src && media.image);
 
             let url = if allow_dangerous_protocol {
                 sanitize(destination)

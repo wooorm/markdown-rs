@@ -25,7 +25,6 @@ default = []
 json = ["serde"]
 log = ["dep:log"]
 serde = ["dep:serde"]
-allow_all_protocols_in_img = []
 
 [package]
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
