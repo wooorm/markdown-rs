@@ -1457,7 +1457,10 @@ fn on_exit_media(context: &mut CompileContext) {
         };
 
         if let Some(destination) = destination {
-            let url = if context.options.allow_dangerous_protocol {
+            let allow_dangerous_protocol = context.options.allow_dangerous_protocol
+                || (context.options.allow_any_img_src && media.image);
+
+            let url = if allow_dangerous_protocol {
                 sanitize(destination)
             } else {
                 sanitize_with_protocols(

@@ -522,6 +522,16 @@ pub struct CompileOptions {
     /// `ircs`, `mailto`, `xmpp`), are safe.
     /// All other URLs are dangerous and dropped.
     ///
+    /// When the option `allow_all_protocols_in_img` is enabled,
+    /// `allow_dangerous_protocol` only applies to links.
+    ///
+    /// This is safe because the
+    /// [HTML specification][whatwg-html-image-processing]
+    /// does not allow executable code in images.
+    /// All modern browsers respect this.
+    ///
+    /// [whatwg-html-image-processing]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
+    ///
     /// ## Examples
     ///
     /// ```
@@ -552,6 +562,55 @@ pub struct CompileOptions {
     /// # }
     /// ```
     pub allow_dangerous_protocol: bool,
+
+    /// Whether to allow all values in images.
+    ///
+    /// The default is `false`,
+    /// which lets `allow_dangerous_protocol` control protocol safety for
+    /// both links and images.
+    ///
+    /// Pass `true` to allow all values as `src` on images,
+    /// regardless of `allow_dangerous_protocol`.
+    /// This is safe because the
+    /// [HTML specification][whatwg-html-image-processing]
+    /// does not allow executable code in images.
+    ///
+    /// [whatwg-html-image-processing]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // By default, some protocols in image sources are dropped:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "![](data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==)",
+    ///         &Options::default()
+    ///     )?,
+    ///     "<p><img src=\"\" alt=\"\" /></p>"
+    /// );
+    ///
+    /// // Turn `allow_any_img_src` on to allow all values as `src` on images.
+    /// // This is safe because browsers do not execute code in images.
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "![](javascript:alert(1))",
+    ///         &Options {
+    ///             compile: CompileOptions {
+    ///               allow_any_img_src: true,
+    ///               ..CompileOptions::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     )?,
+    ///     "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub allow_any_img_src: bool,
 
     // To do: `doc_markdown` is broken.
     #[allow(clippy::doc_markdown)]

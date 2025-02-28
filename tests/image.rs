@@ -236,6 +236,22 @@ fn image() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options(
+            "![](javascript:alert(1))",
+            &Options {
+                compile: CompileOptions {
+                    allow_dangerous_protocol: false,
+                    allow_any_img_src: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>",
+        "should allow non-http protocols with the `allow_any_img_src` option"
+    );
+
+    assert_eq!(
         to_mdast(
             "a ![alpha]() b ![bravo](charlie 'delta') c.",
             &Default::default()
