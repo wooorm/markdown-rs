@@ -242,7 +242,9 @@ impl<'a> State<'a> {
                     results.push(' ');
                     new_info.before = " ";
                 } else {
-                    new_info.before = &results[results.len() - 1..];
+                    if let Some(last_char) = results.chars().last() {
+                        new_info.before = &results[results.len() - last_char.len_utf8()..];
+                    }
                 }
             }
 

@@ -398,6 +398,15 @@ a _\\__ is this emphasis? _\\__"
     .unwrap())
     .unwrap();
     assert_eq!(to(&from(&doc, &Default::default()).unwrap()).unwrap(), doc);
+
+    let doc = "𝄞[some](another)";
+    let tree = markdown::to_mdast(&doc, &markdown::ParseOptions::default()).unwrap();
+
+    assert_eq!(
+        to(&tree).unwrap(),
+        "𝄞[some](another)\n",
+        "should support utf8 in boundries when serializing"
+    );
 }
 
 fn remove_pos(node: &mut Node) {
