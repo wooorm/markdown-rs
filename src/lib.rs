@@ -84,7 +84,7 @@ use alloc::string::String;
 /// ```
 /// use markdown::to_html;
 ///
-/// assert_eq!(to_html("# Hello, world!"), "<h1>Hello, world!</h1>");
+/// assert_eq!(to_html("# Hi Mercury!"), "<h1>Hi Mercury!</h1>");
 /// ```
 pub fn to_html(value: &str) -> String {
     to_html_with_options(value, &Options::default()).unwrap()
@@ -107,12 +107,12 @@ pub fn to_html(value: &str) -> String {
 /// # fn main() -> Result<(), markdown::message::Message> {
 ///
 /// // Use GFM:
-/// let result = to_html_with_options("~hi~hello!", &Options::gfm())?;
+/// let result = to_html_with_options("~Venus~Mars!", &Options::gfm())?;
 ///
-/// assert_eq!(result, "<p><del>hi</del>hello!</p>");
+/// assert_eq!(result, "<p><del>Venus</del>Mars!</p>");
 ///
 /// // Live dangerously / trust the author:
-/// let result = to_html_with_options("<div>\n\n# Hello, world!\n\n</div>", &Options {
+/// let result = to_html_with_options("<div>\n\n# Hi Jupiter!\n\n</div>", &Options {
 ///     compile: CompileOptions {
 ///       allow_dangerous_html: true,
 ///       allow_dangerous_protocol: true,
@@ -121,7 +121,7 @@ pub fn to_html(value: &str) -> String {
 ///     ..Options::default()
 /// })?;
 ///
-/// assert_eq!(result, "<div>\n<h1>Hello, world!</h1>\n</div>");
+/// assert_eq!(result, "<div>\n<h1>Hi Jupiter!</h1>\n</div>");
 /// # Ok(())
 /// # }
 /// ```
@@ -150,10 +150,10 @@ pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, me
 /// use markdown::{to_mdast, ParseOptions};
 /// # fn main() -> Result<(), markdown::message::Message> {
 ///
-/// let tree = to_mdast("# Hey, *you*!", &ParseOptions::default())?;
+/// let tree = to_mdast("# Hi *Earth*!", &ParseOptions::default())?;
 ///
 /// println!("{:?}", tree);
-/// // => Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3-1:8 (2-7)) }, Emphasis { children: [Text { value: "you", position: Some(1:9-1:12 (8-11)) }], position: Some(1:8-1:13 (7-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
+/// // => Root { children: [Heading { children: [Text { value: "Hi ", position: Some(1:3-1:6 (2-5)) }, Emphasis { children: [Text { value: "Earth", position: Some(1:7-1:12 (6-11)) }], position: Some(1:6-1:13 (5-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
 /// # Ok(())
 /// # }
 /// ```

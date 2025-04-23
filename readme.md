@@ -120,14 +120,14 @@ cargo add markdown@1.0.0-alpha.23
 
 ```rs
 fn main() {
-    println!("{}", markdown::to_html("## Hello, *world*!"));
+    println!("{}", markdown::to_html("## Hi, *Saturn*! 🪐"));
 }
 ```
 
 Yields:
 
 ```html
-<h2>Hello, <em>world</em>!</h2>
+<h2>Hi, <em>Saturn</em>! 🪐</h2>
 ```
 
 Extensions (in this case GFM):
@@ -137,7 +137,7 @@ fn main() -> Result<(), markdown::message::Message> {
     println!(
         "{}",
         markdown::to_html_with_options(
-            "* [x] contact@example.com ~~strikethrough~~",
+            "* [x] contact ~Mercury~Venus at hi@venus.com!",
             &markdown::Options::gfm()
         )?
     );
@@ -152,8 +152,7 @@ Yields:
 <ul>
   <li>
     <input checked="" disabled="" type="checkbox" />
-    <a href="mailto:contact@example.com">contact@example.com</a>
-    <del>strikethrough</del>
+    contact <del>Mercury</del>Venus at <a href="mailto:hi@venus.com">hi@venus.com</a>!
   </li>
 </ul>
 ```
@@ -164,7 +163,7 @@ Syntax tree ([mdast][]):
 fn main() -> Result<(), markdown::message::Message> {
     println!(
         "{:?}",
-        markdown::to_mdast("# Hey, *you*!", &markdown::ParseOptions::default())?
+        markdown::to_mdast("# Hi *Earth*!", &markdown::ParseOptions::default())?
     );
 
     Ok(())
@@ -174,7 +173,7 @@ fn main() -> Result<(), markdown::message::Message> {
 Yields:
 
 ```text
-Root { children: [Heading { children: [Text { value: "Hey, ", position: Some(1:3-1:8 (2-7)) }, Emphasis { children: [Text { value: "you", position: Some(1:9-1:12 (8-11)) }], position: Some(1:8-1:13 (7-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
+Root { children: [Heading { children: [Text { value: "Hi ", position: Some(1:3-1:6 (2-5)) }, Emphasis { children: [Text { value: "Earth", position: Some(1:7-1:12 (6-11)) }], position: Some(1:6-1:13 (5-12)) }, Text { value: "!", position: Some(1:13-1:14 (12-13)) }], position: Some(1:1-1:14 (0-13)), depth: 1 }], position: Some(1:1-1:14 (0-13)) }
 ```
 
 ## API
