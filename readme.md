@@ -8,11 +8,8 @@
 
 # markdown-rs
 
-[![Build][build-badge]][build]
-[![Coverage][coverage-badge]][coverage]
-[![GitHub][repo-badge]][repo]
-[![docs.rs][docs-badge]][docs]
-[![crates.io][crate-badge]][crate]
+[![Build][badge-build-image]][badge-build-url]
+[![Coverage][badge-coverage-image]][badge-coverage-url]
 
 > 👉 **Note**:
 > this is a new crate that reuses an old name.
@@ -34,6 +31,12 @@ CommonMark compliant markdown parser in Rust with ASTs and extensions.
   (2300+ tests, 100% coverage, fuzz testing)
 * [x] **[ast][mdast]**
   (mdast)
+
+## Links
+
+* [GitHub: `wooorm/markdown-rs`][repo]
+* [`crates.io`: `markdown`][crate]
+* [`docs.rs`: `markdown`][docs]
 
 ## When should I use this?
 
@@ -74,7 +77,7 @@ use [`mdxjs-rs`][mdxjs-rs].
 * for the API,
   see the [crate docs][docs]
 * for questions,
-  see [Discussions][chat]
+  see [Discussions][]
 * to help,
   see [contribute][] or [sponsor][] below
 
@@ -389,27 +392,21 @@ Special thanks go out to:
 
 [MIT][license] © [Titus Wormer][author]
 
-[build-badge]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
+[badge-build-image]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 
-[build]: https://github.com/wooorm/markdown-rs/actions
+[badge-build-url]: https://github.com/wooorm/markdown-rs/actions
 
-[coverage-badge]: https://img.shields.io/codecov/c/github/wooorm/markdown-rs.svg
+[badge-coverage-image]: https://img.shields.io/codecov/c/github/wooorm/markdown-rs.svg
 
-[coverage]: https://codecov.io/github/wooorm/markdown-rs
-
-[repo-badge]: https://img.shields.io/badge/GitHub-wooorm%2Fmarkdown--rs-brightgreen
-
-[repo]: https://github.com/wooorm/markdown-rs
-
-[docs-badge]: https://img.shields.io/docsrs/markdown
+[badge-coverage-url]: https://codecov.io/github/wooorm/markdown-rs
 
 [docs]: https://docs.rs/markdown/1.0.0-alpha.23/markdown/
 
-[crate-badge]: https://img.shields.io/crates/v/markdown
-
 [crate]: https://crates.io/crates/markdown/1.0.0-alpha.23
 
-[chat]: https://github.com/wooorm/markdown-rs/discussions
+[repo]: https://github.com/wooorm/markdown-rs
+
+[discussions]: https://github.com/wooorm/markdown-rs/discussions
 
 [commonmark]: https://spec.commonmark.org
 
