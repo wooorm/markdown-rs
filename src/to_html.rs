@@ -1448,7 +1448,7 @@ fn on_exit_media(context: &mut CompileContext) {
             context.push("<img src=\"");
         } else {
             context.push("<a href=\"");
-        };
+        }
 
         let destination = if let Some(index) = definition_index {
             context.definitions[index].destination.as_ref()
@@ -1477,7 +1477,7 @@ fn on_exit_media(context: &mut CompileContext) {
 
         if media.image {
             context.push("\" alt=\"");
-        };
+        }
     }
 
     if media.image {
@@ -1497,7 +1497,7 @@ fn on_exit_media(context: &mut CompileContext) {
             context.push(" title=\"");
             context.push(&title);
             context.push("\"");
-        };
+        }
 
         if media.image {
             context.push(" /");

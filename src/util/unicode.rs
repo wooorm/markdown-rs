@@ -15,7 +15,7 @@
 /// ## References
 ///
 /// *   [*§ 2.1 Characters and lines* in `CommonMark`](https://spec.commonmark.org/0.31.2/#unicode-punctuation-character)
-pub const PUNCTUATION: [char; 8617] = [
+pub static PUNCTUATION: [char; 8617] = [
     '\u{0021}',
     '\u{0022}',
     '\u{0023}',

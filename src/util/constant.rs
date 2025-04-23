@@ -306,7 +306,7 @@ pub const THEMATIC_BREAK_MARKER_COUNT_MIN: usize = 3;
 /// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
 ///
 /// [character_reference]: crate::construct::character_reference
-pub const CHARACTER_REFERENCES: [(&str, &str); 2125] = [
+pub static CHARACTER_REFERENCES: [(&str, &str); 2125] = [
     ("AElig", "Æ"),
     ("AMP", "&"),
     ("Aacute", "Á"),

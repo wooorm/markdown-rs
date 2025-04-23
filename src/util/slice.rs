@@ -75,7 +75,7 @@ impl<'a> Slice<'a> {
         if before > 0 {
             before = TAB_SIZE - before;
             start += 1;
-        };
+        }
 
         // If we have virtual spaces after, it means that character is included,
         // and one less virtual space.

@@ -153,7 +153,7 @@ async fn punctuation() {
 /// ## References
 ///
 /// *   [*§ 2.1 Characters and lines* in `CommonMark`](https://spec.commonmark.org/0.31.2/#unicode-punctuation-character)
-pub const PUNCTUATION: [char; {}] = [
+pub static PUNCTUATION: [char; {}] = [
 {}
 ];
 ",

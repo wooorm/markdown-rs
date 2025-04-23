@@ -756,7 +756,7 @@ fn push_impl(
 
                     tokenizer.expect(byte);
                     state = call(tokenizer, name);
-                };
+                }
             }
             State::Retry(name) => {
                 #[cfg(feature = "log")]
