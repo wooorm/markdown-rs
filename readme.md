@@ -15,7 +15,7 @@
 > this is a new crate that reuses an old name.
 > The old crate (`0.3.0` and lower) has a bunch of problems.
 > Make sure to use the new crate,
-> currently in alpha at `1.0.0-alpha.23`.
+> currently in alpha at `1.0.0-alpha.24`.
 
 CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
@@ -106,7 +106,7 @@ With [Rust][]
 install with `cargo`:
 
 ```sh
-cargo add markdown@1.0.0-alpha.23
+cargo add markdown@1.0.0-alpha.24
 ```
 
 > 👉 **Note**:
@@ -114,7 +114,7 @@ cargo add markdown@1.0.0-alpha.23
 > The old crate (`0.3.0` and lower)
 > has a bunch of problems.
 > Make sure to use the new crate,
-> currently in alpha at `1.0.0-alpha.23`.
+> currently in alpha at `1.0.0-alpha.24`.
 
 ## Use
 
@@ -179,10 +179,10 @@ Root { children: [Heading { children: [Text { value: "Hi ", position: Some(1:3-1
 ## API
 
 `markdown-rs` exposes
-[`to_html`](https://docs.rs/markdown/1.0.0-alpha.23/markdown/fn.to_html.html),
-[`to_html_with_options`](https://docs.rs/markdown/1.0.0-alpha.23/markdown/fn.to_html_with_options.html),
-[`to_mdast`](https://docs.rs/markdown/1.0.0-alpha.23/markdown/fn.to_mdast.html),
-[`Options`](https://docs.rs/markdown/1.0.0-alpha.23/markdown/struct.Options.html),
+[`to_html`](https://docs.rs/markdown/1.0.0-alpha.24/markdown/fn.to_html.html),
+[`to_html_with_options`](https://docs.rs/markdown/1.0.0-alpha.24/markdown/fn.to_html_with_options.html),
+[`to_mdast`](https://docs.rs/markdown/1.0.0-alpha.24/markdown/fn.to_mdast.html),
+[`Options`](https://docs.rs/markdown/1.0.0-alpha.24/markdown/struct.Options.html),
 and a few other structs and enums.
 
 See the [crate docs][docs] for more info.
@@ -399,9 +399,9 @@ Special thanks go out to:
 
 [badge-coverage-url]: https://codecov.io/github/wooorm/markdown-rs
 
-[docs]: https://docs.rs/markdown/1.0.0-alpha.23/markdown/
+[docs]: https://docs.rs/markdown/1.0.0-alpha.24/markdown/
 
-[crate]: https://crates.io/crates/markdown/1.0.0-alpha.23
+[crate]: https://crates.io/crates/markdown/1.0.0-alpha.24
 
 [repo]: https://github.com/wooorm/markdown-rs
 
