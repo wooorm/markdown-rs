@@ -242,7 +242,7 @@ impl<'a> State<'a> {
                     results.push(' ');
                     new_info.before = " ";
                 } else {
-                    new_info.before = &results[results.len() - 1..];
+                    new_info.before = &results;
                 }
             }
 
