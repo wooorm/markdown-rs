@@ -31,6 +31,11 @@ use alloc::{boxed::Box, fmt, string::String};
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(rename_all = "camelCase")
+)]
 pub struct Constructs {
     /// Attention.
     ///
@@ -459,15 +464,69 @@ impl Constructs {
 ///
 /// // In French:
 /// let enFrançais = CompileOptions {
-///   gfm_footnote_label: Some("Notes de bas de page".into()),
 ///   gfm_footnote_back_label: Some("Arrière".into()),
+///   gfm_footnote_label: Some("Notes de bas de page".into()),
 ///   ..CompileOptions::default()
 /// };
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default, rename_all = "camelCase")
+)]
 pub struct CompileOptions {
+    /// Whether to allow all values in images.
+    ///
+    /// The default is `false`,
+    /// which lets `allow_dangerous_protocol` control protocol safety for
+    /// both links and images.
+    ///
+    /// Pass `true` to allow all values as `src` on images,
+    /// regardless of `allow_dangerous_protocol`.
+    /// This is safe because the
+    /// [HTML specification][whatwg-html-image-processing]
+    /// does not allow executable code in images.
+    ///
+    /// [whatwg-html-image-processing]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // By default, some protocols in image sources are dropped:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "![](data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==)",
+    ///         &Options::default()
+    ///     )?,
+    ///     "<p><img src=\"\" alt=\"\" /></p>"
+    /// );
+    ///
+    /// // Turn `allow_any_img_src` on to allow all values as `src` on images.
+    /// // This is safe because browsers do not execute code in images.
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "![](javascript:alert(1))",
+    ///         &Options {
+    ///             compile: CompileOptions {
+    ///               allow_any_img_src: true,
+    ///               ..CompileOptions::default()
+    ///             },
+    ///             ..Options::default()
+    ///         }
+    ///     )?,
+    ///     "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub allow_any_img_src: bool,
+
     /// Whether to allow (dangerous) HTML.
     ///
     /// The default is `false`, which still parses the HTML according to
@@ -563,55 +622,6 @@ pub struct CompileOptions {
     /// ```
     pub allow_dangerous_protocol: bool,
 
-    /// Whether to allow all values in images.
-    ///
-    /// The default is `false`,
-    /// which lets `allow_dangerous_protocol` control protocol safety for
-    /// both links and images.
-    ///
-    /// Pass `true` to allow all values as `src` on images,
-    /// regardless of `allow_dangerous_protocol`.
-    /// This is safe because the
-    /// [HTML specification][whatwg-html-image-processing]
-    /// does not allow executable code in images.
-    ///
-    /// [whatwg-html-image-processing]: https://html.spec.whatwg.org/multipage/images.html#images-processing-model
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options};
-    /// # fn main() -> Result<(), markdown::message::Message> {
-    ///
-    /// // By default, some protocols in image sources are dropped:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "![](data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==)",
-    ///         &Options::default()
-    ///     )?,
-    ///     "<p><img src=\"\" alt=\"\" /></p>"
-    /// );
-    ///
-    /// // Turn `allow_any_img_src` on to allow all values as `src` on images.
-    /// // This is safe because browsers do not execute code in images.
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "![](javascript:alert(1))",
-    ///         &Options {
-    ///             compile: CompileOptions {
-    ///               allow_any_img_src: true,
-    ///               ..CompileOptions::default()
-    ///             },
-    ///             ..Options::default()
-    ///         }
-    ///     )?,
-    ///     "<p><img src=\"javascript:alert(1)\" alt=\"\" /></p>"
-    /// );
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub allow_any_img_src: bool,
-
     // To do: `doc_markdown` is broken.
     #[allow(clippy::doc_markdown)]
     /// Default line ending to use when compiling to HTML, for line endings not
@@ -657,144 +667,6 @@ pub struct CompileOptions {
     /// # }
     /// ```
     pub default_line_ending: LineEnding,
-
-    /// Textual label to use for the footnotes section.
-    ///
-    /// The default value is `"Footnotes"`.
-    /// Change it when the markdown is not in English.
-    ///
-    /// This label is typically hidden visually (assuming a `sr-only` CSS class
-    /// is defined that does that), and thus affects screen readers only.
-    /// If you do have such a class, but want to show this section to everyone,
-    /// pass different attributes with the `gfm_footnote_label_attributes`
-    /// option.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), markdown::message::Message> {
-    ///
-    /// // `"Footnotes"` is used by default:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "[^a]\n\n[^a]: b",
-    ///         &Options::gfm()
-    ///     )?,
-    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
-    /// );
-    ///
-    /// // Pass `gfm_footnote_label` to use something else:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_label: Some("Notes de bas de page".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
-    ///     )?,
-    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Notes de bas de page</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
-    /// );
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub gfm_footnote_label: Option<String>,
-
-    /// HTML tag name to use for the footnote label element.
-    ///
-    /// The default value is `"h2"`.
-    /// Change it to match your document structure.
-    ///
-    /// This label is typically hidden visually (assuming a `sr-only` CSS class
-    /// is defined that does that), and thus affects screen readers only.
-    /// If you do have such a class, but want to show this section to everyone,
-    /// pass different attributes with the `gfm_footnote_label_attributes`
-    /// option.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), markdown::message::Message> {
-    ///
-    /// // `"h2"` is used by default:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "[^a]\n\n[^a]: b",
-    ///         &Options::gfm()
-    ///     )?,
-    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
-    /// );
-    ///
-    /// // Pass `gfm_footnote_label_tag_name` to use something else:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_label_tag_name: Some("h1".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
-    ///     )?,
-    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
-    /// );
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub gfm_footnote_label_tag_name: Option<String>,
-
-    /// Attributes to use on the footnote label.
-    ///
-    /// The default value is `"class=\"sr-only\""`.
-    /// Change it to show the label and add other attributes.
-    ///
-    /// This label is typically hidden visually (assuming a `sr-only` CSS class
-    /// is defined that does that), and thus affects screen readers only.
-    /// If you do have such a class, but want to show this section to everyone,
-    /// pass an empty string.
-    /// You can also add different attributes.
-    ///
-    /// > 👉 **Note**: `id="footnote-label"` is always added, because footnote
-    /// > calls use it with `aria-describedby` to provide an accessible label.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
-    /// # fn main() -> Result<(), markdown::message::Message> {
-    ///
-    /// // `"class=\"sr-only\""` is used by default:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "[^a]\n\n[^a]: b",
-    ///         &Options::gfm()
-    ///     )?,
-    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
-    /// );
-    ///
-    /// // Pass `gfm_footnote_label_attributes` to use something else:
-    /// assert_eq!(
-    ///     to_html_with_options(
-    ///         "[^a]\n\n[^a]: b",
-    ///         &Options {
-    ///             parse: ParseOptions::gfm(),
-    ///             compile: CompileOptions {
-    ///               gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
-    ///               ..CompileOptions::gfm()
-    ///             }
-    ///         }
-    ///     )?,
-    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
-    /// );
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub gfm_footnote_label_attributes: Option<String>,
 
     /// Textual label to describe the backreference back to footnote calls.
     ///
@@ -894,6 +766,144 @@ pub struct CompileOptions {
     /// # }
     /// ```
     pub gfm_footnote_clobber_prefix: Option<String>,
+
+    /// Attributes to use on the footnote label.
+    ///
+    /// The default value is `"class=\"sr-only\""`.
+    /// Change it to show the label and add other attributes.
+    ///
+    /// This label is typically hidden visually (assuming a `sr-only` CSS class
+    /// is defined that does that), and thus affects screen readers only.
+    /// If you do have such a class, but want to show this section to everyone,
+    /// pass an empty string.
+    /// You can also add different attributes.
+    ///
+    /// > 👉 **Note**: `id="footnote-label"` is always added, because footnote
+    /// > calls use it with `aria-describedby` to provide an accessible label.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // `"class=\"sr-only\""` is used by default:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "[^a]\n\n[^a]: b",
+    ///         &Options::gfm()
+    ///     )?,
+    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
+    /// );
+    ///
+    /// // Pass `gfm_footnote_label_attributes` to use something else:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "[^a]\n\n[^a]: b",
+    ///         &Options {
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_label_attributes: Some("class=\"footnote-heading\"".into()),
+    ///               ..CompileOptions::gfm()
+    ///             }
+    ///         }
+    ///     )?,
+    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"footnote-heading\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub gfm_footnote_label_attributes: Option<String>,
+
+    /// HTML tag name to use for the footnote label element.
+    ///
+    /// The default value is `"h2"`.
+    /// Change it to match your document structure.
+    ///
+    /// This label is typically hidden visually (assuming a `sr-only` CSS class
+    /// is defined that does that), and thus affects screen readers only.
+    /// If you do have such a class, but want to show this section to everyone,
+    /// pass different attributes with the `gfm_footnote_label_attributes`
+    /// option.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // `"h2"` is used by default:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "[^a]\n\n[^a]: b",
+    ///         &Options::gfm()
+    ///     )?,
+    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
+    /// );
+    ///
+    /// // Pass `gfm_footnote_label_tag_name` to use something else:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "[^a]\n\n[^a]: b",
+    ///         &Options {
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_label_tag_name: Some("h1".into()),
+    ///               ..CompileOptions::gfm()
+    ///             }
+    ///         }
+    ///     )?,
+    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h1 id=\"footnote-label\" class=\"sr-only\">Footnotes</h1>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub gfm_footnote_label_tag_name: Option<String>,
+
+    /// Textual label to use for the footnotes section.
+    ///
+    /// The default value is `"Footnotes"`.
+    /// Change it when the markdown is not in English.
+    ///
+    /// This label is typically hidden visually (assuming a `sr-only` CSS class
+    /// is defined that does that), and thus affects screen readers only.
+    /// If you do have such a class, but want to show this section to everyone,
+    /// pass different attributes with the `gfm_footnote_label_attributes`
+    /// option.
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // `"Footnotes"` is used by default:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "[^a]\n\n[^a]: b",
+    ///         &Options::gfm()
+    ///     )?,
+    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
+    /// );
+    ///
+    /// // Pass `gfm_footnote_label` to use something else:
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "[^a]\n\n[^a]: b",
+    ///         &Options {
+    ///             parse: ParseOptions::gfm(),
+    ///             compile: CompileOptions {
+    ///               gfm_footnote_label: Some("Notes de bas de page".into()),
+    ///               ..CompileOptions::gfm()
+    ///             }
+    ///         }
+    ///     )?,
+    ///     "<p><sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Notes de bas de page</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub gfm_footnote_label: Option<String>,
 
     /// Whether or not GFM task list html `<input>` items are enabled.
     ///
@@ -1026,6 +1036,11 @@ impl CompileOptions {
 /// # }
 /// ```
 #[allow(clippy::struct_excessive_bools)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default, rename_all = "camelCase")
+)]
 pub struct ParseOptions {
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
     /// Which constructs to enable and disable.
@@ -1064,6 +1079,7 @@ pub struct ParseOptions {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
     pub constructs: Constructs,
 
     /// Whether to support GFM strikethrough with a single tilde
@@ -1116,6 +1132,7 @@ pub struct ParseOptions {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
     pub gfm_strikethrough_single_tilde: bool,
 
     /// Whether to support math (text) with a single dollar
@@ -1177,6 +1194,7 @@ pub struct ParseOptions {
     /// # Ok(())
     /// # }
     /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
     pub math_text_single_dollar: bool,
 
     /// Function to parse expressions with.
@@ -1189,6 +1207,7 @@ pub struct ParseOptions {
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub mdx_expression_parse: Option<Box<MdxExpressionParse>>,
 
     /// Function to parse ESM with.
@@ -1205,6 +1224,7 @@ pub struct ParseOptions {
     ///
     /// For an example that adds support for JavaScript with SWC, see
     /// `tests/test_utils/mod.rs`.
+    #[cfg_attr(feature = "serde", serde(skip))]
     pub mdx_esm_parse: Option<Box<MdxEsmParse>>,
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
 }
@@ -1306,6 +1326,11 @@ impl ParseOptions {
 /// ```
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(default)
+)]
 pub struct Options {
     /// Configuration that describes how to parse from markdown.
     pub parse: ParseOptions,

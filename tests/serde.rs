@@ -10,6 +10,45 @@ enum Error {
 }
 
 #[test]
+#[cfg(feature = "serde")]
+fn serde_constructs() -> Result<(), Error> {
+    use pretty_assertions::assert_eq;
+
+    assert_eq!(
+        serde_json::to_string(&Constructs::default()).unwrap(),
+        r#"{"attention":true,"autolink":true,"blockQuote":true,"characterEscape":true,"characterReference":true,"codeIndented":true,"codeFenced":true,"codeText":true,"definition":true,"frontmatter":false,"gfmAutolinkLiteral":false,"gfmFootnoteDefinition":false,"gfmLabelStartFootnote":false,"gfmStrikethrough":false,"gfmTable":false,"gfmTaskListItem":false,"hardBreakEscape":true,"hardBreakTrailing":true,"headingAtx":true,"headingSetext":true,"htmlFlow":true,"htmlText":true,"labelStartImage":true,"labelStartLink":true,"labelEnd":true,"listItem":true,"mathFlow":false,"mathText":false,"mdxEsm":false,"mdxExpressionFlow":false,"mdxExpressionText":false,"mdxJsxFlow":false,"mdxJsxText":false,"thematicBreak":true}"#
+    );
+
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn serde_compile_options() -> Result<(), Error> {
+    use pretty_assertions::assert_eq;
+
+    assert_eq!(
+        serde_json::to_string(&markdown::CompileOptions::gfm()).unwrap(),
+        r#"{"allowAnyImgSrc":false,"allowDangerousHtml":false,"allowDangerousProtocol":false,"defaultLineEnding":"\n","gfmFootnoteBackLabel":null,"gfmFootnoteClobberPrefix":null,"gfmFootnoteLabelAttributes":null,"gfmFootnoteLabelTagName":null,"gfmFootnoteLabel":null,"gfmTaskListItemCheckable":false,"gfmTagfilter":true}"#
+    );
+
+    Ok(())
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn serde_parse_options() -> Result<(), Error> {
+    use pretty_assertions::assert_eq;
+
+    assert_eq!(
+        serde_json::to_string(&ParseOptions::gfm()).unwrap(),
+        r#"{"constructs":{"attention":true,"autolink":true,"blockQuote":true,"characterEscape":true,"characterReference":true,"codeIndented":true,"codeFenced":true,"codeText":true,"definition":true,"frontmatter":false,"gfmAutolinkLiteral":true,"gfmFootnoteDefinition":true,"gfmLabelStartFootnote":true,"gfmStrikethrough":true,"gfmTable":true,"gfmTaskListItem":true,"hardBreakEscape":true,"hardBreakTrailing":true,"headingAtx":true,"headingSetext":true,"htmlFlow":true,"htmlText":true,"labelStartImage":true,"labelStartLink":true,"labelEnd":true,"listItem":true,"mathFlow":false,"mathText":false,"mdxEsm":false,"mdxExpressionFlow":false,"mdxExpressionText":false,"mdxJsxFlow":false,"mdxJsxText":false,"thematicBreak":true},"gfmStrikethroughSingleTilde":true,"mathTextSingleDollar":true}"#
+    );
+
+    Ok(())
+}
+
+#[test]
 fn serde_blockquote() -> Result<(), Error> {
     assert_serde(
         "> a",
@@ -680,9 +719,9 @@ fn serde_paragraph() -> Result<(), Error> {
     )
 }
 
-/// Assert serde of Mdast constructs.
+/// Assert serde of mdast constructs.
 ///
-/// Refer below links for the MDAST JSON construct types.
+/// Refer below links for the mdast JSON construct types.
 /// * <https://github.com/syntax-tree/mdast#nodes>
 /// * <https://github.com/syntax-tree/mdast-util-mdx#syntax-tree>
 /// * <https://github.com/syntax-tree/mdast-util-frontmatter#syntax-tree>
@@ -705,6 +744,7 @@ fn assert_serde(input: &str, expected: &str, options: ParseOptions) -> Result<()
         source,
         serde_json::from_value(actual_value).map_err(Error::Serde)?
     );
+
     Ok(())
 }
 

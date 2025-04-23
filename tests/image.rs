@@ -240,8 +240,8 @@ fn image() -> Result<(), message::Message> {
             "![](javascript:alert(1))",
             &Options {
                 compile: CompileOptions {
-                    allow_dangerous_protocol: false,
                     allow_any_img_src: true,
+                    allow_dangerous_protocol: false,
                     ..Default::default()
                 },
                 ..Default::default()

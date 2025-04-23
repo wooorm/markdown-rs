@@ -20,7 +20,7 @@
 //!   — enable logging (includes `dep:log`);
 //!   you can show logs with `RUST_LOG=debug`
 //! * **`serde`**
-//!   — enable serde to serialize the AST (includes `dep:serde`)
+//!   — enable serde to serialize ASTs and configuration (includes `dep:serde`)
 
 #![no_std]
 #![deny(clippy::pedantic)]
