@@ -535,6 +535,12 @@ impl<'a> State<'a> {
             };
         }
 
+        // Some of the operations above seem to end up right in a utf8 boundary
+        // (see GH-170 for more info).
+        // Move back.
+        while !value.is_char_boundary(start) {
+            start -= 1;
+        }
         result.push_str(&escape_backslashes(&value[start..end], config.after));
 
         result

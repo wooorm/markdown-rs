@@ -104,4 +104,17 @@ fn paragraph() {
         "a\t&#x9;\n&#x9;\tb\n",
         "should encode spaces around line endings in paragraphs"
     );
+
+    assert_eq!(
+        to(&Node::Paragraph(Paragraph {
+            children: vec![Node::Text(Text {
+                value: String::from("я_я"),
+                position: None
+            })],
+            position: None
+        }))
+        .unwrap(),
+        "я&#x44F;я\n",
+        "should support escaping around non-ascii"
+    );
 }
