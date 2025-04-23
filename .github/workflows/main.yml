@@ -8,7 +8,7 @@ jobs:
           toolchain: stable
       - run: cargo install cargo-tarpaulin
       - run: cargo tarpaulin --features json --out xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
   main:
     runs-on: ubuntu-latest
     steps:
