@@ -17,14 +17,14 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`MdxEsm`][Name::MdxEsm]
-//! *   [`MdxEsmData`][Name::MdxEsmData]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`MdxEsm`][Name::MdxEsm]
+//! * [`MdxEsmData`][Name::MdxEsmData]
 //!
 //! ## References
 //!
-//! *   [`syntax.js` in `micromark-extension-mdxjs-esm`](https://github.com/micromark/micromark-extension-mdxjs-esm/blob/main/dev/lib/syntax.js)
-//! *   [`mdxjs.com`](https://mdxjs.com)
+//! * [`syntax.js` in `micromark-extension-mdxjs-esm`](https://github.com/micromark/micromark-extension-mdxjs-esm/blob/main/dev/lib/syntax.js)
+//! * [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [flow]: crate::construct::flow
 //! [parse_options]: crate::ParseOptions

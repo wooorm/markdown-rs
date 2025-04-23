@@ -20,9 +20,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`MdxJsxFlowTag`][Name::MdxJsxFlowTag]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
-//! *   see [`mdx_jsx`][mdx_jsx] for more
+//! * [`MdxJsxFlowTag`][Name::MdxJsxFlowTag]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
+//! * see [`mdx_jsx`][mdx_jsx] for more
 //!
 //! ## Recommendation
 //!
@@ -30,8 +30,8 @@
 //!
 //! ## References
 //!
-//! *   [`jsx-flow.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-flow.js)
-//! *   [`mdxjs.com`](https://mdxjs.com)
+//! * [`jsx-flow.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-flow.js)
+//! * [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [flow]: crate::construct::flow
 //! [mdx_jsx]: crate::construct::partial_mdx_jsx

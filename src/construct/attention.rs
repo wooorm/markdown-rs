@@ -51,25 +51,25 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Emphasis`][Name::Emphasis]
-//! *   [`EmphasisSequence`][Name::EmphasisSequence]
-//! *   [`EmphasisText`][Name::EmphasisText]
-//! *   [`GfmStrikethrough`][Name::GfmStrikethrough]
-//! *   [`GfmStrikethroughSequence`][Name::GfmStrikethroughSequence]
-//! *   [`GfmStrikethroughText`][Name::GfmStrikethroughText]
-//! *   [`Strong`][Name::Strong]
-//! *   [`StrongSequence`][Name::StrongSequence]
-//! *   [`StrongText`][Name::StrongText]
+//! * [`Emphasis`][Name::Emphasis]
+//! * [`EmphasisSequence`][Name::EmphasisSequence]
+//! * [`EmphasisText`][Name::EmphasisText]
+//! * [`GfmStrikethrough`][Name::GfmStrikethrough]
+//! * [`GfmStrikethroughSequence`][Name::GfmStrikethroughSequence]
+//! * [`GfmStrikethroughText`][Name::GfmStrikethroughText]
+//! * [`Strong`][Name::Strong]
+//! * [`StrongSequence`][Name::StrongSequence]
+//! * [`StrongText`][Name::StrongText]
 //!
 //! > 👉 **Note**: while parsing, [`AttentionSequence`][Name::AttentionSequence]
 //! > is used, which is later compiled away.
 //!
 //! ## References
 //!
-//! *   [`attention.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/attention.js)
-//! *   [`micromark-extension-gfm-strikethrough`](https://github.com/micromark/micromark-extension-gfm-strikethrough)
-//! *   [*§ 6.2 Emphasis and strong emphasis* in `CommonMark`](https://spec.commonmark.org/0.31/#emphasis-and-strong-emphasis)
-//! *   [*§ 6.5 Strikethrough (extension)* in `GFM`](https://github.github.com/gfm/#strikethrough-extension-)
+//! * [`attention.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/attention.js)
+//! * [`micromark-extension-gfm-strikethrough`](https://github.com/micromark/micromark-extension-gfm-strikethrough)
+//! * [*§ 6.2 Emphasis and strong emphasis* in `CommonMark`](https://spec.commonmark.org/0.31/#emphasis-and-strong-emphasis)
+//! * [*§ 6.5 Strikethrough (extension)* in `GFM`](https://github.github.com/gfm/#strikethrough-extension-)
 //!
 //! [text]: crate::construct::text
 //! [html-em]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element

@@ -127,37 +127,37 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Data`][Name::Data]
-//! *   [`GfmFootnoteCall`][Name::GfmFootnoteCall]
-//! *   [`Image`][Name::Image]
-//! *   [`Label`][Name::Label]
-//! *   [`LabelEnd`][Name::LabelEnd]
-//! *   [`LabelMarker`][Name::LabelMarker]
-//! *   [`LabelText`][Name::LabelText]
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`Link`][Name::Link]
-//! *   [`Reference`][Name::Reference]
-//! *   [`ReferenceMarker`][Name::ReferenceMarker]
-//! *   [`ReferenceString`][Name::ReferenceString]
-//! *   [`Resource`][Name::Resource]
-//! *   [`ResourceDestination`][Name::ResourceDestination]
-//! *   [`ResourceDestinationLiteral`][Name::ResourceDestinationLiteral]
-//! *   [`ResourceDestinationLiteralMarker`][Name::ResourceDestinationLiteralMarker]
-//! *   [`ResourceDestinationRaw`][Name::ResourceDestinationRaw]
-//! *   [`ResourceDestinationString`][Name::ResourceDestinationString]
-//! *   [`ResourceMarker`][Name::ResourceMarker]
-//! *   [`ResourceTitle`][Name::ResourceTitle]
-//! *   [`ResourceTitleMarker`][Name::ResourceTitleMarker]
-//! *   [`ResourceTitleString`][Name::ResourceTitleString]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`Data`][Name::Data]
+//! * [`GfmFootnoteCall`][Name::GfmFootnoteCall]
+//! * [`Image`][Name::Image]
+//! * [`Label`][Name::Label]
+//! * [`LabelEnd`][Name::LabelEnd]
+//! * [`LabelMarker`][Name::LabelMarker]
+//! * [`LabelText`][Name::LabelText]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`Link`][Name::Link]
+//! * [`Reference`][Name::Reference]
+//! * [`ReferenceMarker`][Name::ReferenceMarker]
+//! * [`ReferenceString`][Name::ReferenceString]
+//! * [`Resource`][Name::Resource]
+//! * [`ResourceDestination`][Name::ResourceDestination]
+//! * [`ResourceDestinationLiteral`][Name::ResourceDestinationLiteral]
+//! * [`ResourceDestinationLiteralMarker`][Name::ResourceDestinationLiteralMarker]
+//! * [`ResourceDestinationRaw`][Name::ResourceDestinationRaw]
+//! * [`ResourceDestinationString`][Name::ResourceDestinationString]
+//! * [`ResourceMarker`][Name::ResourceMarker]
+//! * [`ResourceTitle`][Name::ResourceTitle]
+//! * [`ResourceTitleMarker`][Name::ResourceTitleMarker]
+//! * [`ResourceTitleString`][Name::ResourceTitleString]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`label-end.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-end.js)
-//! *   [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-footnote)
-//! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.31/#link-reference-definitions)
-//! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.31/#links)
-//! *   [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.31/#images)
+//! * [`label-end.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-end.js)
+//! * [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-footnote)
+//! * [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.31/#link-reference-definitions)
+//! * [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.31/#links)
+//! * [*§ 6.4 Images* in `CommonMark`](https://spec.commonmark.org/0.31/#images)
 //!
 //! > 👉 **Note**: Footnotes are not specified in GFM yet.
 //! > See [`github/cmark-gfm#270`](https://github.com/github/cmark-gfm/issues/270)

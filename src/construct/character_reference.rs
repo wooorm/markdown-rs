@@ -49,17 +49,17 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CharacterReference`][Name::CharacterReference]
-//! *   [`CharacterReferenceMarker`][Name::CharacterReferenceMarker]
-//! *   [`CharacterReferenceMarkerHexadecimal`][Name::CharacterReferenceMarkerHexadecimal]
-//! *   [`CharacterReferenceMarkerNumeric`][Name::CharacterReferenceMarkerNumeric]
-//! *   [`CharacterReferenceMarkerSemi`][Name::CharacterReferenceMarkerSemi]
-//! *   [`CharacterReferenceValue`][Name::CharacterReferenceValue]
+//! * [`CharacterReference`][Name::CharacterReference]
+//! * [`CharacterReferenceMarker`][Name::CharacterReferenceMarker]
+//! * [`CharacterReferenceMarkerHexadecimal`][Name::CharacterReferenceMarkerHexadecimal]
+//! * [`CharacterReferenceMarkerNumeric`][Name::CharacterReferenceMarkerNumeric]
+//! * [`CharacterReferenceMarkerSemi`][Name::CharacterReferenceMarkerSemi]
+//! * [`CharacterReferenceValue`][Name::CharacterReferenceValue]
 //!
 //! ## References
 //!
-//! *   [`character-reference.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-reference.js)
-//! *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
+//! * [`character-reference.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/character-reference.js)
+//! * [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
 //!
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text

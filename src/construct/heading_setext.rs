@@ -51,15 +51,15 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HeadingSetext`][Name::HeadingSetext]
-//! *   [`HeadingSetextText`][Name::HeadingSetextText]
-//! *   [`HeadingSetextUnderline`][Name::HeadingSetextUnderline]
-//! *   [`HeadingSetextUnderlineSequence`][Name::HeadingSetextUnderlineSequence]
+//! * [`HeadingSetext`][Name::HeadingSetext]
+//! * [`HeadingSetextText`][Name::HeadingSetextText]
+//! * [`HeadingSetextUnderline`][Name::HeadingSetextUnderline]
+//! * [`HeadingSetextUnderlineSequence`][Name::HeadingSetextUnderlineSequence]
 //!
 //! ## References
 //!
-//! *   [`setext-underline.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/setext-underline.js)
-//! *   [*§ 4.3 Setext headings* in `CommonMark`](https://spec.commonmark.org/0.31/#setext-headings)
+//! * [`setext-underline.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/setext-underline.js)
+//! * [*§ 4.3 Setext headings* in `CommonMark`](https://spec.commonmark.org/0.31/#setext-headings)
 //!
 //! [flow]: crate::construct::flow
 //! [paragraph]: crate::construct::paragraph

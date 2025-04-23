@@ -13,9 +13,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`MdxExpressionMarker`][Name::MdxExpressionMarker]
-//! *   [`MdxExpressionData`][Name::MdxExpressionData]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`MdxExpressionMarker`][Name::MdxExpressionMarker]
+//! * [`MdxExpressionData`][Name::MdxExpressionData]
 //!
 //! ## Recommendation
 //!
@@ -49,8 +49,8 @@
 //!
 //! ## References
 //!
-//! *   [`micromark-factory-mdx-expression`](https://github.com/micromark/micromark-extension-mdx-expression/blob/main/packages/micromark-factory-mdx-expression/dev/index.js)
-//! *   [`mdxjs.com`](https://mdxjs.com)
+//! * [`micromark-factory-mdx-expression`](https://github.com/micromark/micromark-extension-mdx-expression/blob/main/packages/micromark-factory-mdx-expression/dev/index.js)
+//! * [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [mdx_expression_flow]: crate::construct::mdx_expression_flow
 //! [mdx_expression_text]: crate::construct::mdx_expression_text

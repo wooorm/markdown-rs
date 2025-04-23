@@ -13,7 +13,7 @@
 //!
 //! ## References
 //!
-//! *   [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
+//! * [`micromark-factory-space/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-space/dev/index.js)
 //!
 //! [destination]: crate::construct::partial_destination
 //! [label]: crate::construct::partial_label

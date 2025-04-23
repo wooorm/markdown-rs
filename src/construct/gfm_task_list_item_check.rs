@@ -31,15 +31,15 @@
 //!
 //! ## Tokens
 //!
-//! *   [`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck]
-//! *   [`GfmTaskListItemMarker`][Name::GfmTaskListItemMarker]
-//! *   [`GfmTaskListItemValueChecked`][Name::GfmTaskListItemValueChecked]
-//! *   [`GfmTaskListItemValueUnchecked`][Name::GfmTaskListItemValueUnchecked]
+//! * [`GfmTaskListItemCheck`][Name::GfmTaskListItemCheck]
+//! * [`GfmTaskListItemMarker`][Name::GfmTaskListItemMarker]
+//! * [`GfmTaskListItemValueChecked`][Name::GfmTaskListItemValueChecked]
+//! * [`GfmTaskListItemValueUnchecked`][Name::GfmTaskListItemValueUnchecked]
 //!
 //! ## References
 //!
-//! *   [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-task-list-item)
-//! *   [*§ 5.3 Task list items (extension)* in `GFM`](https://github.github.com/gfm/#task-list-items-extension-)
+//! * [`micromark-extension-gfm-task-list-item`](https://github.com/micromark/micromark-extension-gfm-task-list-item)
+//! * [*§ 5.3 Task list items (extension)* in `GFM`](https://github.github.com/gfm/#task-list-items-extension-)
 //!
 //! [text]: crate::construct::text
 //! [html-input-checkbox]: https://html.spec.whatwg.org/multipage/input.html#checkbox-state-(type=checkbox)

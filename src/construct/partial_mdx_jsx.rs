@@ -70,26 +70,26 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace]
-//! *   [`MdxJsxTagMarker`][Name::MdxJsxTagMarker]
-//! *   [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker]
-//! *   [`MdxJsxTagName`][Name::MdxJsxTagName]
-//! *   [`MdxJsxTagNamePrimary`][Name::MdxJsxTagNamePrimary]
-//! *   [`MdxJsxTagNameMemberMarker`][Name::MdxJsxTagNameMemberMarker]
-//! *   [`MdxJsxTagNamePrefixMarker`][Name::MdxJsxTagNamePrefixMarker]
-//! *   [`MdxJsxTagNameMember`][Name::MdxJsxTagNameMember]
-//! *   [`MdxJsxTagNameLocal`][Name::MdxJsxTagNameLocal]
-//! *   [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute]
-//! *   [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
-//! *   [`MdxJsxTagAttributePrimaryName`][Name::MdxJsxTagAttributePrimaryName]
-//! *   [`MdxJsxTagAttributeNamePrefixMarker`][Name::MdxJsxTagAttributeNamePrefixMarker]
-//! *   [`MdxJsxTagAttributeNameLocal`][Name::MdxJsxTagAttributeNameLocal]
-//! *   [`MdxJsxTagAttributeInitializerMarker`][Name::MdxJsxTagAttributeInitializerMarker]
-//! *   [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral]
-//! *   [`MdxJsxTagAttributeValueLiteralMarker`][Name::MdxJsxTagAttributeValueLiteralMarker]
-//! *   [`MdxJsxTagAttributeValueLiteralValue`][Name::MdxJsxTagAttributeValueLiteralValue]
-//! *   [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`MdxJsxEsWhitespace`][Name::MdxJsxEsWhitespace]
+//! * [`MdxJsxTagMarker`][Name::MdxJsxTagMarker]
+//! * [`MdxJsxTagClosingMarker`][Name::MdxJsxTagClosingMarker]
+//! * [`MdxJsxTagName`][Name::MdxJsxTagName]
+//! * [`MdxJsxTagNamePrimary`][Name::MdxJsxTagNamePrimary]
+//! * [`MdxJsxTagNameMemberMarker`][Name::MdxJsxTagNameMemberMarker]
+//! * [`MdxJsxTagNamePrefixMarker`][Name::MdxJsxTagNamePrefixMarker]
+//! * [`MdxJsxTagNameMember`][Name::MdxJsxTagNameMember]
+//! * [`MdxJsxTagNameLocal`][Name::MdxJsxTagNameLocal]
+//! * [`MdxJsxTagAttribute`][Name::MdxJsxTagAttribute]
+//! * [`MdxJsxTagAttributeName`][Name::MdxJsxTagAttributeName]
+//! * [`MdxJsxTagAttributePrimaryName`][Name::MdxJsxTagAttributePrimaryName]
+//! * [`MdxJsxTagAttributeNamePrefixMarker`][Name::MdxJsxTagAttributeNamePrefixMarker]
+//! * [`MdxJsxTagAttributeNameLocal`][Name::MdxJsxTagAttributeNameLocal]
+//! * [`MdxJsxTagAttributeInitializerMarker`][Name::MdxJsxTagAttributeInitializerMarker]
+//! * [`MdxJsxTagAttributeValueLiteral`][Name::MdxJsxTagAttributeValueLiteral]
+//! * [`MdxJsxTagAttributeValueLiteralMarker`][Name::MdxJsxTagAttributeValueLiteralMarker]
+//! * [`MdxJsxTagAttributeValueLiteralValue`][Name::MdxJsxTagAttributeValueLiteralValue]
+//! * [`MdxJsxTagSelfClosingMarker`][Name::MdxJsxTagSelfClosingMarker]
 //!
 //! ## Recommendation
 //!
@@ -154,8 +154,8 @@
 //!
 //! ## References
 //!
-//! *   [`jsx-flow.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-flow.js)
-//! *   [`mdxjs.com`](https://mdxjs.com)
+//! * [`jsx-flow.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-flow.js)
+//! * [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [mdx_jsx_flow]: crate::construct::mdx_jsx_flow
 //! [mdx_jsx_text]: crate::construct::mdx_jsx_text

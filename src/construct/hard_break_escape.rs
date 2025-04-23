@@ -31,12 +31,12 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HardBreakEscape`][Name::HardBreakEscape]
+//! * [`HardBreakEscape`][Name::HardBreakEscape]
 //!
 //! ## References
 //!
-//! *   [`hard-break-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/hard-break-escape.js)
-//! *   [*§ 6.7 Hard line breaks* in `CommonMark`](https://spec.commonmark.org/0.31/#hard-line-breaks)
+//! * [`hard-break-escape.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/hard-break-escape.js)
+//! * [*§ 6.7 Hard line breaks* in `CommonMark`](https://spec.commonmark.org/0.31/#hard-line-breaks)
 //!
 //! [text]: crate::construct::text
 //! [character_escape]: crate::construct::character_escape

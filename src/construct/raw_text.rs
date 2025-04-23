@@ -92,19 +92,19 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeText`][Name::CodeText]
-//! *   [`CodeTextData`][Name::CodeTextData]
-//! *   [`CodeTextSequence`][Name::CodeTextSequence]
-//! *   [`MathText`][Name::MathText]
-//! *   [`MathTextData`][Name::MathTextData]
-//! *   [`MathTextSequence`][Name::MathTextSequence]
-//! *   [`LineEnding`][Name::LineEnding]
+//! * [`CodeText`][Name::CodeText]
+//! * [`CodeTextData`][Name::CodeTextData]
+//! * [`CodeTextSequence`][Name::CodeTextSequence]
+//! * [`MathText`][Name::MathText]
+//! * [`MathTextData`][Name::MathTextData]
+//! * [`MathTextSequence`][Name::MathTextSequence]
+//! * [`LineEnding`][Name::LineEnding]
 //!
 //! ## References
 //!
-//! *   [`code-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-text.js)
-//! *   [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
-//! *   [*§ 6.1 Code spans* in `CommonMark`](https://spec.commonmark.org/0.31/#code-spans)
+//! * [`code-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-text.js)
+//! * [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
+//! * [*§ 6.1 Code spans* in `CommonMark`](https://spec.commonmark.org/0.31/#code-spans)
 //!
 //! > 👉 **Note**: math is not specified anywhere.
 //!

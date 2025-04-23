@@ -37,7 +37,7 @@ use alloc::string::String;
 ///
 /// ## References
 ///
-/// *   [`micromark-util-normalize-identifier` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-normalize-identifier)
+/// * [`micromark-util-normalize-identifier` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-normalize-identifier)
 ///
 /// [definition]: crate::construct::definition
 /// [label_end]: crate::construct::label_end

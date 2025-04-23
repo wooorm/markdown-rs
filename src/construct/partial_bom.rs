@@ -15,11 +15,11 @@
 //!
 //! ## Tokens
 //!
-//! *   [`ByteOrderMark`][Name::ByteOrderMark]
+//! * [`ByteOrderMark`][Name::ByteOrderMark]
 //!
 //! ## References
 //!
-//! *   [`micromark/lib/preprocess.js` in `micromark`](https://github.com/micromark/micromark/blob/ed23453/packages/micromark/dev/lib/preprocess.js#L54-L60)
+//! * [`micromark/lib/preprocess.js` in `micromark`](https://github.com/micromark/micromark/blob/ed23453/packages/micromark/dev/lib/preprocess.js#L54-L60)
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};

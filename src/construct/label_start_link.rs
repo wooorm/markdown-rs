@@ -19,13 +19,13 @@
 //!
 //! ## Tokens
 //!
-//! *   [`LabelLink`][Name::LabelLink]
-//! *   [`LabelMarker`][Name::LabelMarker]
+//! * [`LabelLink`][Name::LabelLink]
+//! * [`LabelMarker`][Name::LabelMarker]
 //!
 //! ## References
 //!
-//! *   [`label-start-link.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-start-link.js)
-//! *   [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.31/#links)
+//! * [`label-start-link.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/label-start-link.js)
+//! * [*§ 6.3 Links* in `CommonMark`](https://spec.commonmark.org/0.31/#links)
 //!
 //! [text]: crate::construct::text
 //! [label_end]: crate::construct::label_end

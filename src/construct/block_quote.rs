@@ -32,15 +32,15 @@
 //!
 //! ## Tokens
 //!
-//! *   [`BlockQuote`][Name::BlockQuote]
-//! *   [`BlockQuoteMarker`][Name::BlockQuoteMarker]
-//! *   [`BlockQuotePrefix`][Name::BlockQuotePrefix]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`BlockQuote`][Name::BlockQuote]
+//! * [`BlockQuoteMarker`][Name::BlockQuoteMarker]
+//! * [`BlockQuotePrefix`][Name::BlockQuotePrefix]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`block-quote.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/block-quote.js)
-//! *   [*§ 5.1 Block quotes* in `CommonMark`](https://spec.commonmark.org/0.31/#block-quotes)
+//! * [`block-quote.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/block-quote.js)
+//! * [*§ 5.1 Block quotes* in `CommonMark`](https://spec.commonmark.org/0.31/#block-quotes)
 //!
 //! [document]: crate::construct::document
 //! [html-blockquote]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element

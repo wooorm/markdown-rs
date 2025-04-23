@@ -21,8 +21,8 @@ extern crate std;
 ///
 /// ## References
 ///
-/// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
-/// *   [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
+/// * [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
+/// * [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
 pub fn gfm_tagfilter(value: &str) -> String {
     let bytes = value.as_bytes();
     // It’ll grow a bit bigger for each encoded `<`.

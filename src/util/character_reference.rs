@@ -34,8 +34,8 @@ use core::str;
 ///
 /// ## References
 ///
-/// *   [`wooorm/decode-named-character-reference`](https://github.com/wooorm/decode-named-character-reference)
-/// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
+/// * [`wooorm/decode-named-character-reference`](https://github.com/wooorm/decode-named-character-reference)
+/// * [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
 pub fn decode_named(value: &str, html5: bool) -> Option<String> {
     let mut iter = if html5 {
         CHARACTER_REFERENCES.iter()
@@ -77,8 +77,8 @@ pub fn decode_named(value: &str, html5: bool) -> Option<String> {
 ///
 /// ## References
 ///
-/// *   [`micromark-util-decode-numeric-character-reference` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-decode-numeric-character-reference)
-/// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
+/// * [`micromark-util-decode-numeric-character-reference` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-decode-numeric-character-reference)
+/// * [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
 pub fn decode_numeric(value: &str, radix: u32) -> String {
     if let Some(char) = char::from_u32(u32::from_str_radix(value, radix).unwrap()) {
         if !matches!(char,

@@ -3,24 +3,24 @@
 //! This module exposes primarily [`to_html()`][].
 //! It also exposes [`to_html_with_options()`][] and [`to_mdast()`][].
 //!
-//! *   [`to_html()`][]
-//!     — safe way to transform (untrusted?) markdown into HTML
-//! *   [`to_html_with_options()`][]
-//!     — like `to_html` but lets you configure how markdown is turned into
-//!     HTML, such as allowing dangerous HTML or turning on/off different
-//!     constructs (GFM, MDX, and the like)
-//! *   [`to_mdast()`][]
-//!     — turn markdown into a syntax tree
+//! * [`to_html()`][]
+//!   — safe way to transform (untrusted?) markdown into HTML
+//! * [`to_html_with_options()`][]
+//!   — like `to_html` but lets you configure how markdown is turned into
+//!   HTML, such as allowing dangerous HTML or turning on/off different
+//!   constructs (GFM, MDX, and the like)
+//! * [`to_mdast()`][]
+//!   — turn markdown into a syntax tree
 //!
 //! ## Features
 //!
-//! *   **`default`**
-//!     — nothing is enabled by default
-//! *   **`serde`**
-//!     — enable serde to serialize the AST (includes `dep:serde`)
-//! *   **`log`**
-//!     — enable logging (includes `dep:log`);
-//!     you can show logs with `RUST_LOG=debug`
+//! * **`default`**
+//!   — nothing is enabled by default
+//! * **`serde`**
+//!   — enable serde to serialize the AST (includes `dep:serde`)
+//! * **`log`**
+//!   — enable logging (includes `dep:log`);
+//!   you can show logs with `RUST_LOG=debug`
 
 #![no_std]
 #![deny(clippy::pedantic)]

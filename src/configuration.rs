@@ -979,8 +979,8 @@ pub struct CompileOptions {
     ///
     /// ## References
     ///
-    /// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
-    /// *   [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
+    /// * [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
+    /// * [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
     pub gfm_tagfilter: bool,
 }
 
@@ -1006,9 +1006,9 @@ impl CompileOptions {
 ///
 /// You can use this:
 ///
-/// *   To control what markdown constructs are turned on and off
-/// *   To control some of those constructs
-/// *   To add support for certain programming languages when parsing MDX
+/// * To control what markdown constructs are turned on and off
+/// * To control some of those constructs
+/// * To add support for certain programming languages when parsing MDX
 ///
 /// In most cases, you will want to use the default trait or `gfm` method.
 ///

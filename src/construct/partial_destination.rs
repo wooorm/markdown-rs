@@ -34,8 +34,8 @@
 //! The angle brackets can be encoded as a character reference, character
 //! escape, or percent encoding:
 //!
-//! *   `<` as `&lt;`, `\<`, or `%3c`
-//! *   `>` as `&gt;`, `\>`, or `%3e`
+//! * `<` as `&lt;`, `\<`, or `%3c`
+//! * `>` as `&gt;`, `\>`, or `%3e`
 //!
 //! The grammar for raw destinations (`x`) prohibits space (` `) and all
 //! [ASCII control][u8::is_ascii_control] characters, which thus must be
@@ -43,8 +43,8 @@
 //! Unbalanced parens can be encoded as a character reference, character escape,
 //! or percent encoding:
 //!
-//! *   `(` as `&lpar;`, `\(`, or `%28`
-//! *   `)` as `&rpar;`, `\)`, or `%29`
+//! * `(` as `&lpar;`, `\(`, or `%28`
+//! * `)` as `&rpar;`, `\)`, or `%29`
 //!
 //! There are several cases where incorrect encoding of URLs would, in other
 //! languages, result in a parse error.
@@ -72,7 +72,7 @@
 //!
 //! ## References
 //!
-//! *   [`micromark-factory-destination/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-destination/dev/index.js)
+//! * [`micromark-factory-destination/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-destination/dev/index.js)
 //!
 //! [definition]: crate::construct::definition
 //! [string]: crate::construct::string

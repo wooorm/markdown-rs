@@ -86,7 +86,7 @@ pub fn kind_after_index(bytes: &[u8], index: usize) -> Kind {
 ///
 /// ## References
 ///
-/// *   [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
+/// * [`micromark-util-classify-character` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-util-classify-character/dev/index.js)
 pub fn classify(char: char) -> Kind {
     // Unicode whitespace.
     if char.is_whitespace() {

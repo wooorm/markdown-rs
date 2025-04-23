@@ -152,7 +152,7 @@ async fn punctuation() {
 ///
 /// ## References
 ///
-/// *   [*§ 2.1 Characters and lines* in `CommonMark`](https://spec.commonmark.org/0.31.2/#unicode-punctuation-character)
+/// * [*§ 2.1 Characters and lines* in `CommonMark`](https://spec.commonmark.org/0.31.2/#unicode-punctuation-character)
 pub static PUNCTUATION: [char; {}] = [
 {}
 ];

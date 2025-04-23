@@ -86,7 +86,7 @@ pub const GFM_HTML_TAGFILTER_SIZE_MAX: usize = 9;
 ///
 /// ## References
 ///
-/// *   [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
+/// * [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
 pub const GFM_HTML_TAGFILTER_NAMES: [&str; 9] = [
     "iframe",
     "noembed",
@@ -129,8 +129,8 @@ pub const HEADING_ATX_OPENING_FENCE_SIZE_MAX: usize = 6;
 ///
 /// ## References
 ///
-/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
-/// *   [*Remove source element as HTML block start condition* as `commonmark/commonmark-spec#710`](https://github.com/commonmark/commonmark-spec/pull/710)
+/// * [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
+/// * [*Remove source element as HTML block start condition* as `commonmark/commonmark-spec#710`](https://github.com/commonmark/commonmark-spec/pull/710)
 ///
 /// [html_flow]: crate::construct::html_flow
 pub const HTML_BLOCK_NAMES: [&str; 62] = [
@@ -222,7 +222,7 @@ pub const HTML_CDATA_PREFIX: [u8; 6] = [b'C', b'D', b'A', b'T', b'A', b'['];
 ///
 /// ## References
 ///
-/// *   [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
+/// * [*§ 4.6 HTML blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#html-blocks)
 ///
 /// [html_flow]: crate::construct::html_flow
 pub const HTML_RAW_NAMES: [&str; 4] = ["pre", "script", "style", "textarea"];
@@ -244,7 +244,7 @@ pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 ///
 /// ## References
 ///
-/// *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.31/#ordered-list-marker)
+/// * [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.31/#ordered-list-marker)
 ///
 /// [list-item]: crate::construct::list_item
 pub const LIST_ITEM_VALUE_SIZE_MAX: usize = 10;
@@ -303,7 +303,7 @@ pub const THEMATIC_BREAK_MARKER_COUNT_MIN: usize = 3;
 ///
 /// ## References
 ///
-/// *   [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
+/// * [*§ 2.5 Entity and numeric character references* in `CommonMark`](https://spec.commonmark.org/0.31/#entity-and-numeric-character-references)
 ///
 /// [character_reference]: crate::construct::character_reference
 pub static CHARACTER_REFERENCES: [(&str, &str); 2125] = [
@@ -2446,7 +2446,7 @@ pub static CHARACTER_REFERENCES: [(&str, &str); 2125] = [
 ///
 /// ## References
 ///
-/// *   [*§ 1.5.2 HTML Character References* in `JSX`](https://facebook.github.io/jsx/#sec-HTMLCharacterReference)
+/// * [*§ 1.5.2 HTML Character References* in `JSX`](https://facebook.github.io/jsx/#sec-HTMLCharacterReference)
 pub const CHARACTER_REFERENCES_HTML_4: [(&str, &str); 252] = [
     ("AElig", "Æ"),
     ("Aacute", "Á"),

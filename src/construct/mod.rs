@@ -8,10 +8,10 @@
 //!
 //! The following content types are found in markdown:
 //!
-//! *   [document][]
-//! *   [flow][]
-//! *   [string][]
-//! *   [text][]
+//! * [document][]
+//! * [flow][]
+//! * [string][]
+//! * [text][]
 //!
 //! Content types also have a *rest* thing: after all things are parsed,
 //! there’s something left.
@@ -34,59 +34,59 @@
 //!
 //! The following constructs are found in markdown (`CommonMark`):
 //!
-//! *   [attention][] (strong, emphasis, extension: GFM strikethrough)
-//! *   [autolink][]
-//! *   [blank line][blank_line]
-//! *   [block quote][block_quote]
-//! *   [character escape][character_escape]
-//! *   [character reference][character_reference]
-//! *   [code (indented)][code_indented]
-//! *   [content][]
-//! *   [definition][]
-//! *   [hard break (escape)][hard_break_escape]
-//! *   [heading (atx)][heading_atx]
-//! *   [heading (setext)][heading_setext]
-//! *   [html (flow)][html_flow]
-//! *   [html (text)][html_text]
-//! *   [label end][label_end]
-//! *   [label start (image)][label_start_image]
-//! *   [label start (link)][label_start_link]
-//! *   [list item][list_item]
-//! *   [paragraph][]
-//! *   [raw (flow)][raw_flow] (code (fenced), extensions: math (flow))
-//! *   [raw (text)][raw_text] (code (text), extensions: math (text))
-//! *   [thematic break][thematic_break]
+//! * [attention][] (strong, emphasis, extension: GFM strikethrough)
+//! * [autolink][]
+//! * [blank line][blank_line]
+//! * [block quote][block_quote]
+//! * [character escape][character_escape]
+//! * [character reference][character_reference]
+//! * [code (indented)][code_indented]
+//! * [content][]
+//! * [definition][]
+//! * [hard break (escape)][hard_break_escape]
+//! * [heading (atx)][heading_atx]
+//! * [heading (setext)][heading_setext]
+//! * [html (flow)][html_flow]
+//! * [html (text)][html_text]
+//! * [label end][label_end]
+//! * [label start (image)][label_start_image]
+//! * [label start (link)][label_start_link]
+//! * [list item][list_item]
+//! * [paragraph][]
+//! * [raw (flow)][raw_flow] (code (fenced), extensions: math (flow))
+//! * [raw (text)][raw_text] (code (text), extensions: math (text))
+//! * [thematic break][thematic_break]
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
 //! > [whitespace][partial_whitespace].
 //!
 //! The following constructs are extensions found in markdown:
 //!
-//! *   [frontmatter][]
-//! *   [gfm autolink literal][gfm_autolink_literal]
-//! *   [gfm footnote definition][gfm_footnote_definition]
-//! *   [gfm label start footnote][gfm_label_start_footnote]
-//! *   [gfm table][gfm_table]
-//! *   [gfm task list item check][gfm_task_list_item_check]
-//! *   [mdx esm][mdx_esm]
-//! *   [mdx expression (flow)][mdx_expression_flow]
-//! *   [mdx expression (text)][mdx_expression_text]
-//! *   [mdx jsx (flow)][mdx_jsx_flow]
-//! *   [mdx jsx (text)][mdx_jsx_text]
+//! * [frontmatter][]
+//! * [gfm autolink literal][gfm_autolink_literal]
+//! * [gfm footnote definition][gfm_footnote_definition]
+//! * [gfm label start footnote][gfm_label_start_footnote]
+//! * [gfm table][gfm_table]
+//! * [gfm task list item check][gfm_task_list_item_check]
+//! * [mdx esm][mdx_esm]
+//! * [mdx expression (flow)][mdx_expression_flow]
+//! * [mdx expression (text)][mdx_expression_text]
+//! * [mdx jsx (flow)][mdx_jsx_flow]
+//! * [mdx jsx (text)][mdx_jsx_text]
 //!
 //! There are also several small subroutines typically used in different places:
 //!
-//! *   [bom][partial_bom]
-//! *   [data][partial_data]
-//! *   [destination][partial_destination]
-//! *   [label][partial_label]
-//! *   [mdx expression][partial_mdx_expression]
-//! *   [mdx jsx][partial_mdx_jsx]
-//! *   [non lazy continuation][partial_non_lazy_continuation]
-//! *   [space or tab][partial_space_or_tab]
-//! *   [space or tab, eol][partial_space_or_tab_eol]
-//! *   [title][partial_title]
-//! *   [whitespace][partial_whitespace]
+//! * [bom][partial_bom]
+//! * [data][partial_data]
+//! * [destination][partial_destination]
+//! * [label][partial_label]
+//! * [mdx expression][partial_mdx_expression]
+//! * [mdx jsx][partial_mdx_jsx]
+//! * [non lazy continuation][partial_non_lazy_continuation]
+//! * [space or tab][partial_space_or_tab]
+//! * [space or tab, eol][partial_space_or_tab_eol]
+//! * [title][partial_title]
+//! * [whitespace][partial_whitespace]
 //!
 //! ## Grammar
 //!

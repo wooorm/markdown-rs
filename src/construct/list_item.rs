@@ -39,18 +39,18 @@
 //!
 //! ## Tokens
 //!
-//! *   [`ListItem`][Name::ListItem]
-//! *   [`ListItemMarker`][Name::ListItemMarker]
-//! *   [`ListItemPrefix`][Name::ListItemPrefix]
-//! *   [`ListItemValue`][Name::ListItemValue]
-//! *   [`ListOrdered`][Name::ListOrdered]
-//! *   [`ListUnordered`][Name::ListUnordered]
+//! * [`ListItem`][Name::ListItem]
+//! * [`ListItemMarker`][Name::ListItemMarker]
+//! * [`ListItemPrefix`][Name::ListItemPrefix]
+//! * [`ListItemValue`][Name::ListItemValue]
+//! * [`ListOrdered`][Name::ListOrdered]
+//! * [`ListUnordered`][Name::ListUnordered]
 //!
 //! ## References
 //!
-//! *   [`list.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/list.js)
-//! *   [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.31/#list-items)
-//! *   [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.31/#lists)
+//! * [`list.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/list.js)
+//! * [*§ 5.2 List items* in `CommonMark`](https://spec.commonmark.org/0.31/#list-items)
+//! * [*§ 5.3 Lists* in `CommonMark`](https://spec.commonmark.org/0.31/#lists)
 //!
 //! [document]: crate::construct::document
 //! [html_li]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element

@@ -191,28 +191,28 @@
 //! This bug is not present in this project.
 //! The issue relating to tables is:
 //!
-//! *   [GFM tables: escaped escapes are incorrectly treated as escapes](https://github.com/github/cmark-gfm/issues/277)
+//! * [GFM tables: escaped escapes are incorrectly treated as escapes](https://github.com/github/cmark-gfm/issues/277)
 //!
 //! ## Tokens
 //!
-//! *   [`GfmTable`][Name::GfmTable]
-//! *   [`GfmTableBody`][Name::GfmTableBody]
-//! *   [`GfmTableCell`][Name::GfmTableCell]
-//! *   [`GfmTableCellDivider`][Name::GfmTableCellDivider]
-//! *   [`GfmTableCellText`][Name::GfmTableCellText]
-//! *   [`GfmTableDelimiterCell`][Name::GfmTableDelimiterCell]
-//! *   [`GfmTableDelimiterCellValue`][Name::GfmTableDelimiterCellValue]
-//! *   [`GfmTableDelimiterFiller`][Name::GfmTableDelimiterFiller]
-//! *   [`GfmTableDelimiterMarker`][Name::GfmTableDelimiterMarker]
-//! *   [`GfmTableDelimiterRow`][Name::GfmTableDelimiterRow]
-//! *   [`GfmTableHead`][Name::GfmTableHead]
-//! *   [`GfmTableRow`][Name::GfmTableRow]
-//! *   [`LineEnding`][Name::LineEnding]
+//! * [`GfmTable`][Name::GfmTable]
+//! * [`GfmTableBody`][Name::GfmTableBody]
+//! * [`GfmTableCell`][Name::GfmTableCell]
+//! * [`GfmTableCellDivider`][Name::GfmTableCellDivider]
+//! * [`GfmTableCellText`][Name::GfmTableCellText]
+//! * [`GfmTableDelimiterCell`][Name::GfmTableDelimiterCell]
+//! * [`GfmTableDelimiterCellValue`][Name::GfmTableDelimiterCellValue]
+//! * [`GfmTableDelimiterFiller`][Name::GfmTableDelimiterFiller]
+//! * [`GfmTableDelimiterMarker`][Name::GfmTableDelimiterMarker]
+//! * [`GfmTableDelimiterRow`][Name::GfmTableDelimiterRow]
+//! * [`GfmTableHead`][Name::GfmTableHead]
+//! * [`GfmTableRow`][Name::GfmTableRow]
+//! * [`LineEnding`][Name::LineEnding]
 //!
 //! ## References
 //!
-//! *   [`micromark-extension-gfm-table`](https://github.com/micromark/micromark-extension-gfm-table)
-//! *   [*§ 4.10 Tables (extension)* in `GFM`](https://github.github.com/gfm/#tables-extension-)
+//! * [`micromark-extension-gfm-table`](https://github.com/micromark/micromark-extension-gfm-table)
+//! * [*§ 4.10 Tables (extension)* in `GFM`](https://github.github.com/gfm/#tables-extension-)
 //!
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text

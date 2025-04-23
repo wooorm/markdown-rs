@@ -67,26 +67,26 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Definition`][Name::Definition]
-//! *   [`DefinitionDestination`][Name::DefinitionDestination]
-//! *   [`DefinitionDestinationLiteral`][Name::DefinitionDestinationLiteral]
-//! *   [`DefinitionDestinationLiteralMarker`][Name::DefinitionDestinationLiteralMarker]
-//! *   [`DefinitionDestinationRaw`][Name::DefinitionDestinationRaw]
-//! *   [`DefinitionDestinationString`][Name::DefinitionDestinationString]
-//! *   [`DefinitionLabel`][Name::DefinitionLabel]
-//! *   [`DefinitionLabelMarker`][Name::DefinitionLabelMarker]
-//! *   [`DefinitionLabelString`][Name::DefinitionLabelString]
-//! *   [`DefinitionMarker`][Name::DefinitionMarker]
-//! *   [`DefinitionTitle`][Name::DefinitionTitle]
-//! *   [`DefinitionTitleMarker`][Name::DefinitionTitleMarker]
-//! *   [`DefinitionTitleString`][Name::DefinitionTitleString]
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`Definition`][Name::Definition]
+//! * [`DefinitionDestination`][Name::DefinitionDestination]
+//! * [`DefinitionDestinationLiteral`][Name::DefinitionDestinationLiteral]
+//! * [`DefinitionDestinationLiteralMarker`][Name::DefinitionDestinationLiteralMarker]
+//! * [`DefinitionDestinationRaw`][Name::DefinitionDestinationRaw]
+//! * [`DefinitionDestinationString`][Name::DefinitionDestinationString]
+//! * [`DefinitionLabel`][Name::DefinitionLabel]
+//! * [`DefinitionLabelMarker`][Name::DefinitionLabelMarker]
+//! * [`DefinitionLabelString`][Name::DefinitionLabelString]
+//! * [`DefinitionMarker`][Name::DefinitionMarker]
+//! * [`DefinitionTitle`][Name::DefinitionTitle]
+//! * [`DefinitionTitleMarker`][Name::DefinitionTitleMarker]
+//! * [`DefinitionTitleString`][Name::DefinitionTitleString]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`definition.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/definition.js)
-//! *   [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.31/#link-reference-definitions)
+//! * [`definition.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/definition.js)
+//! * [*§ 4.7 Link reference definitions* in `CommonMark`](https://spec.commonmark.org/0.31/#link-reference-definitions)
 //!
 //! [content]: crate::construct::content
 //! [string]: crate::construct::string

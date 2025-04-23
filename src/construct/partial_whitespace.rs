@@ -42,13 +42,13 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HardBreakTrailing`][Name::HardBreakTrailing]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`HardBreakTrailing`][Name::HardBreakTrailing]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`initialize/text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark/dev/lib/initialize/text.js)
-//! *   [*§ 6.7 Hard line breaks* in `CommonMark`](https://spec.commonmark.org/0.31/#hard-line-breaks)
+//! * [`initialize/text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark/dev/lib/initialize/text.js)
+//! * [*§ 6.7 Hard line breaks* in `CommonMark`](https://spec.commonmark.org/0.31/#hard-line-breaks)
 //!
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text

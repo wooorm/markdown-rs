@@ -27,7 +27,7 @@
 //!
 //! ## References
 //!
-//! *   [`micromark-factory-title/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-title/dev/index.js)
+//! * [`micromark-factory-title/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-title/dev/index.js)
 //!
 //! [definition]: crate::construct::definition
 //! [string]: crate::construct::string

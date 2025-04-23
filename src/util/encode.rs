@@ -22,7 +22,7 @@ use alloc::string::String;
 ///
 /// ## References
 ///
-/// *   [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
+/// * [`micromark-util-encode` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode)
 pub fn encode(value: &str, encode_html: bool) -> String {
     // It’ll grow a bit bigger for each dangerous character.
     let mut result = String::with_capacity(value.len());

@@ -102,15 +102,15 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Autolink`][Name::Autolink]
-//! *   [`AutolinkEmail`][Name::AutolinkEmail]
-//! *   [`AutolinkMarker`][Name::AutolinkMarker]
-//! *   [`AutolinkProtocol`][Name::AutolinkProtocol]
+//! * [`Autolink`][Name::Autolink]
+//! * [`AutolinkEmail`][Name::AutolinkEmail]
+//! * [`AutolinkMarker`][Name::AutolinkMarker]
+//! * [`AutolinkProtocol`][Name::AutolinkProtocol]
 //!
 //! ## References
 //!
-//! *   [`autolink.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/autolink.js)
-//! *   [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.31/#autolinks)
+//! * [`autolink.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/autolink.js)
+//! * [*§ 6.4 Autolinks* in `CommonMark`](https://spec.commonmark.org/0.31/#autolinks)
 //!
 //! [text]: crate::construct::text
 //! [definition]: crate::construct::definition

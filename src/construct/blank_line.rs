@@ -37,12 +37,12 @@
 //!
 //! ## Tokens
 //!
-//! *   [`SpaceOrTab`][crate::event::Name::SpaceOrTab]
+//! * [`SpaceOrTab`][crate::event::Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`blank-line.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/blank-line.js)
-//! *   [*§ 4.9 Blank lines* in `CommonMark`](https://spec.commonmark.org/0.31/#blank-lines)
+//! * [`blank-line.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/blank-line.js)
+//! * [*§ 4.9 Blank lines* in `CommonMark`](https://spec.commonmark.org/0.31/#blank-lines)
 //!
 //! [heading_atx]: crate::construct::heading_atx
 //! [list_item]: crate::construct::list_item

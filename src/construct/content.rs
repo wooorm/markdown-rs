@@ -5,19 +5,19 @@
 //!
 //! The constructs found in flow are:
 //!
-//! *   [Definition][crate::construct::definition]
-//! *   [Paragraph][crate::construct::paragraph]
+//! * [Definition][crate::construct::definition]
+//! * [Paragraph][crate::construct::paragraph]
 //!
 //! ## Tokens
 //!
-//! *   [`Content`][Name::Content]
+//! * [`Content`][Name::Content]
 //!
 //! > 👉 **Note**: while parsing, [`Content`][Name::Content]
 //! > is used, which is later compiled away.
 //!
 //! ## References
 //!
-//! *   [`content.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/content.js)
+//! * [`content.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/content.js)
 //!
 //! [flow]: crate::construct::flow
 //! [definition]: crate::construct::definition

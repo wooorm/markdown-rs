@@ -7,8 +7,8 @@
 //!
 //! The constructs found in string are:
 //!
-//! *   [Character escape][crate::construct::character_escape]
-//! *   [Character reference][crate::construct::character_reference]
+//! * [Character escape][crate::construct::character_escape]
+//! * [Character reference][crate::construct::character_reference]
 //!
 //! [text]: crate::construct::text
 

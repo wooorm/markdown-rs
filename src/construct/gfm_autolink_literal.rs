@@ -113,25 +113,25 @@
 //! Two main bugs are not present in this project.
 //! The issues relating to autolink literals are:
 //!
-//! *   [GFM autolink extension (`www.`, `https?://` parts): links don’t work when after bracket](https://github.com/github/cmark-gfm/issues/278)\
-//!     fixed here ✅
-//! *   [GFM autolink extension (`www.` part): uppercase does not match on issues/PRs/comments](https://github.com/github/cmark-gfm/issues/280)\
-//!     fixed here ✅
-//! *   [GFM autolink extension (`www.` part): the word `www` matches](https://github.com/github/cmark-gfm/issues/279)\
-//!     present here for consistency
+//! * [GFM autolink extension (`www.`, `https?://` parts): links don’t work when after bracket](https://github.com/github/cmark-gfm/issues/278)\
+//!   fixed here ✅
+//! * [GFM autolink extension (`www.` part): uppercase does not match on issues/PRs/comments](https://github.com/github/cmark-gfm/issues/280)\
+//!   fixed here ✅
+//! * [GFM autolink extension (`www.` part): the word `www` matches](https://github.com/github/cmark-gfm/issues/279)\
+//!   present here for consistency
 //!
 //! ## Tokens
 //!
-//! *   [`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail]
-//! *   [`GfmAutolinkLiteralMailto`][Name::GfmAutolinkLiteralMailto]
-//! *   [`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol]
-//! *   [`GfmAutolinkLiteralWww`][Name::GfmAutolinkLiteralWww]
-//! *   [`GfmAutolinkLiteralXmpp`][Name::GfmAutolinkLiteralXmpp]
+//! * [`GfmAutolinkLiteralEmail`][Name::GfmAutolinkLiteralEmail]
+//! * [`GfmAutolinkLiteralMailto`][Name::GfmAutolinkLiteralMailto]
+//! * [`GfmAutolinkLiteralProtocol`][Name::GfmAutolinkLiteralProtocol]
+//! * [`GfmAutolinkLiteralWww`][Name::GfmAutolinkLiteralWww]
+//! * [`GfmAutolinkLiteralXmpp`][Name::GfmAutolinkLiteralXmpp]
 //!
 //! ## References
 //!
-//! *   [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)
-//! *   [*§ 6.9 Autolinks (extension)* in `GFM`](https://github.github.com/gfm/#autolinks-extension-)
+//! * [`micromark-extension-gfm-autolink-literal`](https://github.com/micromark/micromark-extension-gfm-autolink-literal)
+//! * [*§ 6.9 Autolinks (extension)* in `GFM`](https://github.github.com/gfm/#autolinks-extension-)
 //!
 //! > 👉 **Note**: `mailto:` and `xmpp:` protocols before email autolinks were
 //! > added in `cmark-gfm@0.29.0.gfm.5` and are as of yet undocumented.

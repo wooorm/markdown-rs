@@ -43,16 +43,16 @@
 //!
 //! ## Tokens
 //!
-//! *   [`Frontmatter`][Name::Frontmatter]
-//! *   [`FrontmatterFence`][Name::FrontmatterFence]
-//! *   [`FrontmatterSequence`][Name::FrontmatterSequence]
-//! *   [`FrontmatterChunk`][Name::FrontmatterChunk]
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`Frontmatter`][Name::Frontmatter]
+//! * [`FrontmatterFence`][Name::FrontmatterFence]
+//! * [`FrontmatterSequence`][Name::FrontmatterSequence]
+//! * [`FrontmatterChunk`][Name::FrontmatterChunk]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`micromark-extension-frontmatter`](https://github.com/micromark/micromark-extension-frontmatter)
+//! * [`micromark-extension-frontmatter`](https://github.com/micromark/micromark-extension-frontmatter)
 //!
 //! [constructs]: crate::Constructs
 

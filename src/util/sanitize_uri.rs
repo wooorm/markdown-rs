@@ -21,7 +21,7 @@ use alloc::{format, string::String, vec::Vec};
 ///
 /// ## References
 ///
-/// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
+/// * [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 #[must_use]
 pub fn sanitize(value: &str) -> String {
     encode(&normalize(value), true)
@@ -50,7 +50,7 @@ pub fn sanitize(value: &str) -> String {
 ///
 /// ## References
 ///
-/// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
+/// * [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
     let value = sanitize(value);
 
@@ -95,7 +95,7 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
 ///
 /// ## References
 ///
-/// *   [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
+/// * [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
 ///
 /// [definition]: crate::construct::definition
 /// [label_end]: crate::construct::label_end

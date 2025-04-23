@@ -48,7 +48,7 @@
 //!
 //! ## References
 //!
-//! *   [`micromark-factory-label/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-label/dev/index.js)
+//! * [`micromark-factory-label/index.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-factory-label/dev/index.js)
 //!
 //! [definition]: crate::construct::definition
 //! [string]: crate::construct::string

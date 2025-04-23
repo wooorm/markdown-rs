@@ -39,13 +39,13 @@
 //!
 //! ## Tokens
 //!
-//! *   [`HtmlText`][Name::HtmlText]
-//! *   [`HtmlTextData`][Name::HtmlTextData]
+//! * [`HtmlText`][Name::HtmlText]
+//! * [`HtmlTextData`][Name::HtmlTextData]
 //!
 //! ## References
 //!
-//! *   [`html-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-text.js)
-//! *   [*§ 6.6 Raw HTML* in `CommonMark`](https://spec.commonmark.org/0.31/#raw-html)
+//! * [`html-text.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/html-text.js)
+//! * [*§ 6.6 Raw HTML* in `CommonMark`](https://spec.commonmark.org/0.31/#raw-html)
 //!
 //! [text]: crate::construct::text
 //! [html_flow]: crate::construct::html_flow

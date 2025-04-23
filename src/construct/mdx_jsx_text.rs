@@ -15,8 +15,8 @@
 //!
 //! ## Tokens
 //!
-//! *   [`MdxJsxTextTag`][Name::MdxJsxTextTag]
-//! *   see [`mdx_jsx`][mdx_jsx] for more
+//! * [`MdxJsxTextTag`][Name::MdxJsxTextTag]
+//! * see [`mdx_jsx`][mdx_jsx] for more
 //!
 //! ## Recommendation
 //!
@@ -24,8 +24,8 @@
 //!
 //! ## References
 //!
-//! *   [`jsx-text.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-text.js)
-//! *   [`mdxjs.com`](https://mdxjs.com)
+//! * [`jsx-text.js` in `micromark-extension-mdx-jsx`](https://github.com/micromark/micromark-extension-mdx-jsx/blob/main/dev/lib/jsx-text.js)
+//! * [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [text]: crate::construct::text
 //! [mdx_jsx]: crate::construct::partial_mdx_jsx

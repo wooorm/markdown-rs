@@ -5,9 +5,9 @@
 //!
 //! The constructs found in flow are:
 //!
-//! *   [Block quote][crate::construct::block_quote]
-//! *   [List item][crate::construct::list_item]
-//! *   [GFM: Footnote definition][crate::construct::gfm_footnote_definition]
+//! * [Block quote][crate::construct::block_quote]
+//! * [List item][crate::construct::list_item]
+//! * [GFM: Footnote definition][crate::construct::gfm_footnote_definition]
 
 use crate::event::{Content, Event, Kind, Link, Name};
 use crate::message;

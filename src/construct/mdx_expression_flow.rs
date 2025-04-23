@@ -18,9 +18,9 @@
 //!
 //! ## Tokens
 //!
-//! *   [`MdxFlowExpression`][Name::MdxFlowExpression]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
-//! *   see [`mdx_expression`][mdx_expression] for more
+//! * [`MdxFlowExpression`][Name::MdxFlowExpression]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
+//! * see [`mdx_expression`][mdx_expression] for more
 //!
 //! ## Recommendation
 //!
@@ -28,8 +28,8 @@
 //!
 //! ## References
 //!
-//! *   [`syntax.js` in `micromark-extension-mdx-expression`](https://github.com/micromark/micromark-extension-mdx-expression/blob/main/packages/micromark-extension-mdx-expression/dev/lib/syntax.js)
-//! *   [`mdxjs.com`](https://mdxjs.com)
+//! * [`syntax.js` in `micromark-extension-mdx-expression`](https://github.com/micromark/micromark-extension-mdx-expression/blob/main/packages/micromark-extension-mdx-expression/dev/lib/syntax.js)
+//! * [`mdxjs.com`](https://mdxjs.com)
 //!
 //! [flow]: crate::construct::flow
 //! [mdx_expression]: crate::construct::partial_mdx_expression

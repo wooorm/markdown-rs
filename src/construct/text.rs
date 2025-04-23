@@ -6,20 +6,20 @@
 //!
 //! The constructs found in text are:
 //!
-//! *   [Attention][crate::construct::attention] (emphasis, gfm strikethrough, strong)
-//! *   [Autolink][crate::construct::autolink]
-//! *   [Character escape][crate::construct::character_escape]
-//! *   [Character reference][crate::construct::character_reference]
-//! *   [Raw (text)][crate::construct::raw_text] (code (text), math (text))
-//! *   [GFM: Label start (footnote)][crate::construct::gfm_label_start_footnote]
-//! *   [GFM: Task list item check][crate::construct::gfm_task_list_item_check]
-//! *   [Hard break (escape)][crate::construct::hard_break_escape]
-//! *   [HTML (text)][crate::construct::html_text]
-//! *   [Label start (image)][crate::construct::label_start_image]
-//! *   [Label start (link)][crate::construct::label_start_link]
-//! *   [Label end][crate::construct::label_end]
-//! *   [MDX: expression (text)][crate::construct::mdx_expression_text]
-//! *   [MDX: JSX (text)][crate::construct::mdx_jsx_text]
+//! * [Attention][crate::construct::attention] (emphasis, gfm strikethrough, strong)
+//! * [Autolink][crate::construct::autolink]
+//! * [Character escape][crate::construct::character_escape]
+//! * [Character reference][crate::construct::character_reference]
+//! * [Raw (text)][crate::construct::raw_text] (code (text), math (text))
+//! * [GFM: Label start (footnote)][crate::construct::gfm_label_start_footnote]
+//! * [GFM: Task list item check][crate::construct::gfm_task_list_item_check]
+//! * [Hard break (escape)][crate::construct::hard_break_escape]
+//! * [HTML (text)][crate::construct::html_text]
+//! * [Label start (image)][crate::construct::label_start_image]
+//! * [Label start (link)][crate::construct::label_start_link]
+//! * [Label end][crate::construct::label_end]
+//! * [MDX: expression (text)][crate::construct::mdx_expression_text]
+//! * [MDX: JSX (text)][crate::construct::mdx_jsx_text]
 //!
 //! > 👉 **Note**: for performance reasons, hard break (trailing) is formed by
 //! > [whitespace][crate::construct::partial_whitespace].

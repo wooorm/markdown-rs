@@ -36,15 +36,15 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeIndented`][Name::CodeIndented]
-//! *   [`CodeFlowChunk`][Name::CodeFlowChunk]
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`CodeIndented`][Name::CodeIndented]
+//! * [`CodeFlowChunk`][Name::CodeFlowChunk]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`code-indented.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-indented.js)
-//! *   [*§ 4.4 Indented code blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#indented-code-blocks)
+//! * [`code-indented.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-indented.js)
+//! * [*§ 4.4 Indented code blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#indented-code-blocks)
 //!
 //! [flow]: crate::construct::flow
 //! [text]: crate::construct::text

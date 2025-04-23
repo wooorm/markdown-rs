@@ -106,25 +106,25 @@
 //!
 //! ## Tokens
 //!
-//! *   [`CodeFenced`][Name::CodeFenced]
-//! *   [`CodeFencedFence`][Name::CodeFencedFence]
-//! *   [`CodeFencedFenceInfo`][Name::CodeFencedFenceInfo]
-//! *   [`CodeFencedFenceMeta`][Name::CodeFencedFenceMeta]
-//! *   [`CodeFencedFenceSequence`][Name::CodeFencedFenceSequence]
-//! *   [`CodeFlowChunk`][Name::CodeFlowChunk]
-//! *   [`LineEnding`][Name::LineEnding]
-//! *   [`MathFlow`][Name::MathFlow]
-//! *   [`MathFlowFence`][Name::MathFlowFence]
-//! *   [`MathFlowFenceMeta`][Name::MathFlowFenceMeta]
-//! *   [`MathFlowFenceSequence`][Name::MathFlowFenceSequence]
-//! *   [`MathFlowChunk`][Name::MathFlowChunk]
-//! *   [`SpaceOrTab`][Name::SpaceOrTab]
+//! * [`CodeFenced`][Name::CodeFenced]
+//! * [`CodeFencedFence`][Name::CodeFencedFence]
+//! * [`CodeFencedFenceInfo`][Name::CodeFencedFenceInfo]
+//! * [`CodeFencedFenceMeta`][Name::CodeFencedFenceMeta]
+//! * [`CodeFencedFenceSequence`][Name::CodeFencedFenceSequence]
+//! * [`CodeFlowChunk`][Name::CodeFlowChunk]
+//! * [`LineEnding`][Name::LineEnding]
+//! * [`MathFlow`][Name::MathFlow]
+//! * [`MathFlowFence`][Name::MathFlowFence]
+//! * [`MathFlowFenceMeta`][Name::MathFlowFenceMeta]
+//! * [`MathFlowFenceSequence`][Name::MathFlowFenceSequence]
+//! * [`MathFlowChunk`][Name::MathFlowChunk]
+//! * [`SpaceOrTab`][Name::SpaceOrTab]
 //!
 //! ## References
 //!
-//! *   [`code-fenced.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-fenced.js)
-//! *   [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
-//! *   [*§ 4.5 Fenced code blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#fenced-code-blocks)
+//! * [`code-fenced.js` in `micromark`](https://github.com/micromark/micromark/blob/main/packages/micromark-core-commonmark/dev/lib/code-fenced.js)
+//! * [`micromark-extension-math`](https://github.com/micromark/micromark-extension-math)
+//! * [*§ 4.5 Fenced code blocks* in `CommonMark`](https://spec.commonmark.org/0.31/#fenced-code-blocks)
 //!
 //! > 👉 **Note**: math is not specified anywhere.
 //!
