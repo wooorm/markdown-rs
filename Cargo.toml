@@ -38,7 +38,7 @@ license = "MIT"
 name = "markdown"
 repository = "https://github.com/wooorm/markdown-rs"
 rust-version = "1.56"
-version = "1.0.0-alpha.24"
+version = "1.0.0"
 
 [workspace]
 members = ["generate", "mdast_util_to_markdown"]
