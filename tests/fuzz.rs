@@ -129,5 +129,17 @@ fn fuzz() -> Result<(), message::Message> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert_eq!(
+        to_html("[:]:a\n-\na\n-"),
+        "<h2>-\na</h2>",
+        "xx: handle link in heading (GH-22)"
+    );
+
+    assert_eq!(
+        to_html("a\n-\n--\na\n-"),
+        "<h2>a</h2>\n<h2>--\na</h2>",
+        "xx: two setext headings next to each other (GH-22)"
+    );
+
     Ok(())
 }
