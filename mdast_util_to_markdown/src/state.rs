@@ -510,7 +510,7 @@ impl<'a> State<'a> {
             }
             start = *position;
 
-            let char_at_pos = value.chars().nth(*position);
+            let char_at_pos = value[*position..].chars().next();
             match char_at_pos {
                 Some('!'..='/') | Some(':'..='@') | Some('['..='`') | Some('{'..='~') => {
                     if let Some(encode) = &config.encode {
