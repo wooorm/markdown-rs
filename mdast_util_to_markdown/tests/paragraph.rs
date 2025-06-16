@@ -114,7 +114,20 @@ fn paragraph() {
             position: None
         }))
         .unwrap(),
-        "я&#x44F;я\n",
+        "я\\_я\n",
         "should support escaping around non-ascii"
+    );
+
+    assert_eq!(
+        to(&Node::Paragraph(Paragraph {
+            children: vec![Node::Text(Text {
+                value: String::from("테스트 [테스트] → [테스트]"),
+                position: None
+            })],
+            position: None
+        }))
+        .unwrap(),
+        "테스트 \\[테스트] → \\[테스트]\n",
+        "should support escaping of a shortcut reference in non-ascii text"
     );
 }
