@@ -1,0 +1,7 @@
+{
+  "name": "root",
+  "dependencies": {
+    "@napi-rs/cli": "3.0.0-alpha.89"
+  },
+  "packageManager": "pnpm@10.12.1"
+}

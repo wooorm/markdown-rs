@@ -1,0 +1,57 @@
+{
+  "name": "@xmorse/markdown-rs",
+  "description": "Fast markdown and mdx parser written in Rust. Supports WASM",
+  "version": "0.0.5",
+  "main": "index.js",
+  "browser": "browser.js",
+  "scripts": {
+    "build:debug": "pnpm napi build --platform --manifest-path Cargo.toml",
+    "test": "pnpm vitest",
+    "benchmark": "pnpm tsx tests/benchmark.ts",
+    "build": "pnpm run build:debug --release"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "https://github.com/remorses/markdown-rs",
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "browser.js",
+    "webcontainer-fallback.js"
+  ],
+  "napi": {
+    "binaryName": "markdown-rs",
+    "packageName": "@xmorse/markdown-rs-binding",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
+      "armv7-unknown-linux-gnueabihf",
+      "s390x-unknown-linux-gnu",
+      "riscv64gc-unknown-linux-gnu",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "wasm32-wasip1-threads"
+    ],
+    "wasm": {
+      "initialMemory": 4000
+    }
+  },
+  "devDependencies": {
+    "@emnapi/runtime": "^1.4.3",
+    "@napi-rs/cli": "3.0.0-alpha.89",
+    "@napi-rs/wasm-runtime": "^0.2.7",
+    "emnapi": "^1.4.3",
+    "mitata": "^1.0.34",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-html": "^16.0.1",
+    "remark-mdx": "^3.0.1",
+    "tsx": "^4.20.3",
+    "vitest": "^1.5.0"
+  }
+}

@@ -433,6 +433,7 @@ impl Constructs {
             mdx_expression_flow: true,
             mdx_expression_text: true,
             mdx_jsx_flow: true,
+
             mdx_jsx_text: true,
             ..Self::default()
         }

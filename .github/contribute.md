@@ -36,6 +36,14 @@ It’s probably a good idea to first post a question or open an issue to report 
 bug or suggest a new feature before creating a pull request.
 See [Project][] for more info.
 
+## `napi` folder
+
+This is the package that handles NAPI bindings for markdown-rs. It also supports WASM. It uses napi-rs to generate the npm packages published on npm.
+
+Tests use vitest, expect().toMatchInlineSnapshot() mostly. Most tests should be run with `pnpm vitest --run -u` to update snapshots, then read the test file again and make sure they have the expected result.
+
+When making changes in rust run `pnpm build:debug` to make sure the Rust code compiles.
+
 ## Submitting an issue
 
 * the issue tracker is for issues, discussions are for questions
