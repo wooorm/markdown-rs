@@ -250,4 +250,29 @@ pub enum ConstructName {
     ///           ^^^
     /// ```
     TitleQuote,
+    /// Table.
+    ///
+    /// ```markdown
+    /// > | | a | b |
+    ///     ^^^^^^^^^
+    /// > | | - | - |
+    ///     ^^^^^^^^^
+    /// > | | c | d |
+    ///     ^^^^^^^^^
+    /// ```
+    Table,
+    /// Table row.
+    ///
+    /// ```markdown
+    /// > | | a | b |
+    ///     ^^^^^^^^^
+    /// ```
+    TableRow,
+    /// Table cell.
+    ///
+    /// ```markdown
+    /// > | | a | b |
+    ///       ^   ^
+    /// ```
+    TableCell,
 }

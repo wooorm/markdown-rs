@@ -325,6 +325,9 @@ impl<'a> State<'a> {
             Node::ThematicBreak(thematic_break) => thematic_break.handle(self, info, parent, node),
             Node::Math(math) => math.handle(self, info, parent, node),
             Node::InlineMath(inline_math) => inline_math.handle(self, info, parent, node),
+            Node::Table(table) => table.handle(self, info, parent, node),
+            Node::TableRow(table_row) => table_row.handle(self, info, parent, node),
+            Node::TableCell(table_cell) => table_cell.handle(self, info, parent, node),
             _ => Err(Message {
                 place: None,
                 reason: format!("Unexpected node type `{:?}`", node),

@@ -1,6 +1,11 @@
 [dependencies]
 markdown = { path = "../", version = "1.0.0" }
 regex = { version = "1" }
+unicode-width = { version = "0.1", optional = true }
+
+[features]
+default = []
+unicode-width = ["dep:unicode-width"]
 
 [dev-dependencies]
 pretty_assertions = { workspace = true }

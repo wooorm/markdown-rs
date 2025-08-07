@@ -21,6 +21,7 @@ mod math;
 mod paragraph;
 mod root;
 pub mod strong;
+mod table;
 mod text;
 mod thematic_break;
 
