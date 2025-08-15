@@ -10,3 +10,6 @@ fuzz/corpus
 fuzz/artifacts
 fuzz/hfuzz_target
 fuzz/hfuzz_workspace
+node_modules/
+pnpm-lock.yaml
+pnpm-debug.log*

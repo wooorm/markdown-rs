@@ -1,0 +1,10 @@
+{
+  "name": "markdown-rs-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "cargo fmt --all && cargo clippy --all-features --all-targets --workspace"
+  },
+  "packageManager": "pnpm@8.15.1"
+}

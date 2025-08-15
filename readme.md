@@ -373,6 +373,8 @@ Special thanks go out to:
   — same as `markdown-rs` but in JavaScript
 * [`mdxjs-rs`][mdxjs-rs]
   — wraps `markdown-rs` to *compile* MDX to JavaScript
+* [`@wooorm/markdown-wasm`](https://www.npmjs.com/package/@wooorm/markdown-wasm)
+  — WASM bindings for `markdown-rs`
 
 ## License
 
