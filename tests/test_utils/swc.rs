@@ -8,6 +8,7 @@ use swc_core::common::{
     source_map::SmallPos,
     BytePos, FileName, SourceFile, Span, Spanned,
 };
+use bytes_str::BytesStr;
 use swc_core::ecma::ast::{EsVersion, Expr, Module, PropOrSpread};
 use swc_core::ecma::parser::{
     error::Error as SwcError, parse_file_as_expr, parse_file_as_module, EsSyntax, Syntax,
@@ -269,7 +270,7 @@ fn create_config(source: String) -> (SourceFile, Syntax, EsVersion) {
             FileName::Anon.into(),
             false,
             FileName::Anon.into(),
-            source,
+            BytesStr::from(source),
             BytePos::from_usize(1),
         ),
         // Syntax.
