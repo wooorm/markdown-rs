@@ -143,10 +143,9 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(Name::MdxExpressionData);
         State::Retry(StateName::MdxExpressionBefore)
     } else {
-        // Don’t count if gnostic.
-        if tokenizer.current == Some(b'{')
-            && tokenizer.parse_state.options.mdx_expression_parse.is_none()
-        {
+        // Count braces even when external parser is present.
+        // Original check skipped nested braces, breaking `{{ x: 1 }}`.
+        if tokenizer.current == Some(b'{') {
             tokenizer.tokenize_state.size += 1;
         } else if tokenizer.current == Some(b'}') {
             tokenizer.tokenize_state.size -= 1;

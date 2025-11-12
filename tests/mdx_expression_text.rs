@@ -372,5 +372,29 @@ fn mdx_expression_text_gnostic() -> Result<(), message::Message> {
         "should keep the correct number of spaces in a blockquote (text)"
     );
 
+    assert_eq!(
+        to_html_with_options("a {{}} b", &swc)?,
+        "<p>a  b</p>",
+        "should support nested empty object literal"
+    );
+
+    assert_eq!(
+        to_html_with_options("a {{ x: 1 }} b", &swc)?,
+        "<p>a  b</p>",
+        "should support nested object literal with property"
+    );
+
+    assert_eq!(
+        to_html_with_options("a {func({ x: 1 })} b", &swc)?,
+        "<p>a  b</p>",
+        "should support function call with nested object"
+    );
+
+    assert_eq!(
+        to_html_with_options("a {f({ x: g({ y: 2 }) })} b", &swc)?,
+        "<p>a  b</p>",
+        "should support double nested function calls"
+    );
+
     Ok(())
 }
