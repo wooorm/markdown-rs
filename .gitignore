@@ -1,6 +1,5 @@
 .DS_Store
 *.log
-*.lock
 coverage/
 target/
 commonmark-data.txt

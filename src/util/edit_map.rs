@@ -9,7 +9,7 @@
 //! through another tokenizer and inject the result.
 
 use crate::event::Event;
-use alloc::{vec, vec::Vec};
+use alloc::{collections::BTreeMap, vec::Vec};
 
 /// Shift `previous` and `next` links according to `jumps`.
 ///
@@ -58,13 +58,15 @@ fn shift_links(events: &mut [Event], jumps: &[(usize, usize, usize)]) {
 #[derive(Debug)]
 pub struct EditMap {
     /// Record of changes.
-    map: Vec<(usize, usize, Vec<Event>)>,
+    map: BTreeMap<usize, (usize, Vec<Event>)>,
 }
 
 impl EditMap {
     /// Create a new edit map.
     pub fn new() -> EditMap {
-        EditMap { map: vec![] }
+        EditMap {
+            map: BTreeMap::new(),
+        }
     }
     /// Create an edit: a remove and/or add at a certain place.
     pub fn add(&mut self, index: usize, remove: usize, add: Vec<Event>) {
@@ -76,36 +78,28 @@ impl EditMap {
     }
     /// Done, change the events.
     pub fn consume(&mut self, events: &mut Vec<Event>) {
-        self.map
-            .sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-
         if self.map.is_empty() {
             return;
         }
 
         // Calculate jumps: where items in the current list move to.
         let mut jumps = Vec::with_capacity(self.map.len());
-        let mut index = 0;
         let mut add_acc = 0;
         let mut remove_acc = 0;
-        while index < self.map.len() {
-            let (at, remove, add) = &self.map[index];
+        for (at, (remove, add)) in &self.map {
             remove_acc += remove;
             add_acc += add.len();
             jumps.push((*at, remove_acc, add_acc));
-            index += 1;
         }
 
         shift_links(events, &jumps);
 
         let len_before = events.len();
-        let mut index = self.map.len();
-        let mut vecs = Vec::with_capacity(index * 2 + 1);
-        while index > 0 {
-            index -= 1;
-            vecs.push(events.split_off(self.map[index].0 + self.map[index].1));
-            vecs.push(self.map[index].2.split_off(0));
-            events.truncate(self.map[index].0);
+        let mut vecs = Vec::with_capacity(self.map.len() * 2 + 1);
+        for (at, (remove, add)) in self.map.iter_mut().rev() {
+            vecs.push(events.split_off(at + *remove));
+            vecs.push(add.split_off(0));
+            events.truncate(*at);
         }
         vecs.push(events.split_off(0));
 
@@ -115,34 +109,28 @@ impl EditMap {
             events.append(&mut slice);
         }
 
-        self.map.truncate(0);
+        self.map.clear();
     }
 }
 
 /// Create an edit.
 fn add_impl(edit_map: &mut EditMap, at: usize, remove: usize, mut add: Vec<Event>, before: bool) {
-    let mut index = 0;
-
     if remove == 0 && add.is_empty() {
         return;
     }
 
-    while index < edit_map.map.len() {
-        if edit_map.map[index].0 == at {
-            edit_map.map[index].1 += remove;
-
+    match edit_map.map.get_mut(&at) {
+        Some(edit) => {
+            edit.0 += remove;
             if before {
-                add.append(&mut edit_map.map[index].2);
-                edit_map.map[index].2 = add;
+                add.append(&mut edit.1);
+                edit.1 = add;
             } else {
-                edit_map.map[index].2.append(&mut add);
+                edit.1.append(&mut add);
             }
-
-            return;
         }
-
-        index += 1;
+        None => {
+            edit_map.map.insert(at, (remove, add));
+        }
     }
-
-    edit_map.map.push((at, remove, add));
 }
