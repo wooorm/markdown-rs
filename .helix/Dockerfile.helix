@@ -1,0 +1,12 @@
+FROM rust:1.75
+
+RUN apt-get update && apt-get install -y \
+    git \
+    ca-certificates \
+    build-essential \
+    pkg-config \
+    libssl-dev
+
+WORKDIR /app
+
+COPY . .

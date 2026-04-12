@@ -1,0 +1,22 @@
+[
+  {
+    "instance_id": "handshake",
+    "task_title": "handshake",
+    "problem_statement": "",
+    "hints": "",
+    "repo": "handshake",
+    "repo_path_or_url": "handshake",
+    "FAIL_TO_PASS": "",
+    "PASS_TO_PASS": "",
+    "language": "rust",
+    "docker_file": ".helix/Dockerfile.helix",
+    "run_script": ".helix/run-tests-eval.sh",
+    "task_type": "handshake",
+    "task_category": "handshake",
+    "repo_category": "handshake",
+    "version": "1.0",
+    "container_mem": "512m",
+    "container_memswap": "1g",
+    "container_network_needed": "false"
+  }
+]
