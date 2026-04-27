@@ -129,5 +129,13 @@ fn fuzz() -> Result<(), message::Message> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert!(
+        matches!(
+            to_html_with_options("[x](/x \"> \n\")", &Options::default()),
+            Ok(_)
+        ),
+        "13: link title with bare `>` and newline should not panic subtokenize"
+    );
+
     Ok(())
 }
