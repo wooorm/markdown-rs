@@ -135,5 +135,27 @@ fn fuzz() -> Result<(), String> {
         "yy: link and title with newline (GH-79)"
     );
 
+    // Additional shape variants of the same `subtokenize.rs:149` panic
+    // ("expected link"), found via fuzzing. All three reach the same
+    // chain-walker that calls `enter.link.as_ref().expect("expected link")`
+    // on an event whose `link` field is `None` (added by `attention.rs`
+    // without a `Link` payload).
+
+    assert!(
+        matches!(
+            to_html_with_options("[x](/x \"> \n\")", &Options::default()),
+            Ok(_)
+        ),
+        "yy: link with quoted title containing `> ` and newline (GH-79 variant)"
+    );
+
+    assert!(
+        matches!(
+            to_html_with_options("[][a \n]\n\n[a ]:\0", &Options::default()),
+            Ok(_)
+        ),
+        "yy: collapsed-reference link with space-newline label and NUL url (GH-79 variant)"
+    );
+
     Ok(())
 }
