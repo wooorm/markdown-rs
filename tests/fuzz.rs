@@ -141,5 +141,34 @@ fn fuzz() -> Result<(), String> {
         "xx: two setext headings next to each other (GH-22)"
     );
 
+    // Additional shape variants of the same `to_html.rs:197` panic, found via
+    // fuzzing. All hit `expect("at least one buffer should exist")` in
+    // `CompileContext::line_ending_if_needed` reached from
+    // `on_exit_heading_setext_underline_sequence`.
+
+    assert!(
+        matches!(
+            to_html_with_options("x\n=\n=\nx\n=\n", &Options::default()),
+            Ok(_)
+        ),
+        "xx: setext underlines alternating with paragraphs (GH-22 variant)"
+    );
+
+    assert!(
+        matches!(
+            to_html_with_options("Foo *bar*\n=========\n---------\nr*\n=========\n--------", &Options::default()),
+            Ok(_)
+        ),
+        "xx: setext underlines mixed with attention runs (GH-22 variant)"
+    );
+
+    assert!(
+        matches!(
+            to_html_with_options("a\n-\n--\na\n-", &Options::gfm()),
+            Ok(_)
+        ),
+        "xx: same shape as GH-22 case 2 also panics with gfm options (GH-22 variant)"
+    );
+
     Ok(())
 }
