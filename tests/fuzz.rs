@@ -129,5 +129,13 @@ fn fuzz() -> Result<(), message::Message> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert!(
+        matches!(
+            to_html_with_options("[][a \n]\n\n[a ]:\0", &Options::default()),
+            Ok(_)
+        ),
+        "13: collapsed-reference link with space-newline label and NUL-byte url should not panic subtokenize"
+    );
+
     Ok(())
 }
