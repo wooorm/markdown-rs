@@ -137,5 +137,18 @@ fn fuzz() -> Result<(), String> {
         "yy: setext headings next to each other (GH-31)"
     );
 
+    // Same input also panics through `to_html` at `src/to_html.rs:197`
+    // ("at least one buffer should exist") — the bug surfaces on both the
+    // `to_mdast` path (covered above) and the `to_html` path. Fixing the
+    // resolver/buffer lifecycle should close both. See also GH-22 which
+    // reports the same `to_html.rs:197` panic for similar inputs.
+    assert!(
+        matches!(
+            to_html_with_options("=\n=\n=\na\n=", &Options::default()),
+            Ok(_)
+        ),
+        "yy: same input as above also panics via to_html (GH-31 variant)"
+    );
+
     Ok(())
 }
