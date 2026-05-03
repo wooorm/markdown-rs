@@ -992,6 +992,45 @@ pub struct CompileOptions {
     /// * [*§ 6.1 Disallowed Raw HTML (extension)* in GFM](https://github.github.com/gfm/#disallowed-raw-html-extension-)
     /// * [`cmark-gfm#extensions/tagfilter.c`](https://github.com/github/cmark-gfm/blob/master/extensions/tagfilter.c)
     pub gfm_tagfilter: bool,
+
+    /// Whether to not use `<p>` elements to surround free text
+    ///
+    /// The default is `false`
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, CompileOptions, Options, ParseOptions};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    ///
+    /// // With `no_paragraphs` set to `false`, normal text is surrounded with `<p>` elements
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "Hello",
+    ///         &Options::default(),
+    ///     )?,
+    ///     "<p>Hello</p>"
+    /// );
+    ///
+    /// // Pass `no_paragraphs: true` to remove them
+    /// assert_eq!(
+    ///     to_html_with_options(
+    ///         "Hello",
+    ///         &Options {
+    ///             parse: ParseOptions::default(),
+    ///             compile: CompileOptions {
+    ///               no_paragraphs: true,
+    ///               ..CompileOptions::default()
+    ///             }
+    ///         }
+    ///     )?,
+    ///     "Hello"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    pub no_paragraphs: bool,
 }
 
 impl CompileOptions {
