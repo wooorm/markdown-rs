@@ -679,7 +679,7 @@ fn on_enter_list_item_marker(context: &mut CompileContext) {
 fn on_enter_paragraph(context: &mut CompileContext) {
     let tight = context.tight_stack.last().unwrap_or(&false);
 
-    if !tight {
+    if !tight && !context.options.no_paragraphs {
         context.line_ending_if_needed();
         context.push("<p>");
     }
@@ -1519,7 +1519,7 @@ fn on_exit_media(context: &mut CompileContext) {
 fn on_exit_paragraph(context: &mut CompileContext) {
     let tight = context.tight_stack.last().unwrap_or(&false);
 
-    if *tight {
+    if *tight || context.options.no_paragraphs {
         context.slurp_one_line_ending = true;
     } else {
         context.push("</p>");
