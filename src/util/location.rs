@@ -54,28 +54,19 @@ impl Location {
     /// Port of <https://github.com/vfile/vfile-location/blob/main/index.js>
     #[must_use]
     pub fn to_point(&self, offset: usize) -> Option<Point> {
-        let mut index = 0;
+        let end = self.indices.last()?;
 
-        if let Some(end) = self.indices.last() {
-            if offset < *end {
-                while index < self.indices.len() {
-                    if self.indices[index] > offset {
-                        break;
-                    }
-
-                    index += 1;
-                }
-
-                let previous = if index > 0 {
-                    self.indices[index - 1]
-                } else {
-                    0
-                };
-                return Some(Point::new(index + 1, offset + 1 - previous, offset));
-            }
+        if offset >= *end {
+            return None;
         }
 
-        None
+        let index = self.indices.partition_point(|start| *start <= offset);
+        let previous = if index > 0 {
+            self.indices[index - 1]
+        } else {
+            0
+        };
+        Some(Point::new(index + 1, offset + 1 - previous, offset))
     }
 
     /// Like `to_point`, but takes a relative offset from a certain string
