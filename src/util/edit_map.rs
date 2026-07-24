@@ -9,7 +9,9 @@
 //! through another tokenizer and inject the result.
 
 use crate::event::Event;
-use alloc::{vec, vec::Vec};
+use alloc::{collections::BTreeMap, vec, vec::Vec};
+
+const INDEX_THRESHOLD: usize = 32;
 
 /// Shift `previous` and `next` links according to `jumps`.
 ///
@@ -59,12 +61,17 @@ fn shift_links(events: &mut [Event], jumps: &[(usize, usize, usize)]) {
 pub struct EditMap {
     /// Record of changes.
     map: Vec<(usize, usize, Vec<Event>)>,
+    /// Index into `map` for edit maps that grow large.
+    indices: Option<BTreeMap<usize, usize>>,
 }
 
 impl EditMap {
     /// Create a new edit map.
     pub fn new() -> EditMap {
-        EditMap { map: vec![] }
+        EditMap {
+            map: vec![],
+            indices: None,
+        }
     }
     /// Create an edit: a remove and/or add at a certain place.
     pub fn add(&mut self, index: usize, remove: usize, add: Vec<Event>) {
@@ -116,33 +123,45 @@ impl EditMap {
         }
 
         self.map.truncate(0);
+        self.indices = None;
     }
 }
 
 /// Create an edit.
 fn add_impl(edit_map: &mut EditMap, at: usize, remove: usize, mut add: Vec<Event>, before: bool) {
-    let mut index = 0;
-
     if remove == 0 && add.is_empty() {
         return;
     }
 
-    while index < edit_map.map.len() {
-        if edit_map.map[index].0 == at {
-            edit_map.map[index].1 += remove;
+    let existing = if let Some(indices) = &edit_map.indices {
+        indices.get(&at).copied()
+    } else {
+        edit_map.map.iter().position(|edit| edit.0 == at)
+    };
 
-            if before {
-                add.append(&mut edit_map.map[index].2);
-                edit_map.map[index].2 = add;
-            } else {
-                edit_map.map[index].2.append(&mut add);
-            }
+    if let Some(index) = existing {
+        edit_map.map[index].1 += remove;
 
-            return;
+        if before {
+            add.append(&mut edit_map.map[index].2);
+            edit_map.map[index].2 = add;
+        } else {
+            edit_map.map[index].2.append(&mut add);
         }
 
-        index += 1;
+        return;
     }
 
+    let index = edit_map.map.len();
     edit_map.map.push((at, remove, add));
+
+    if let Some(indices) = &mut edit_map.indices {
+        indices.insert(at, index);
+    } else if edit_map.map.len() == INDEX_THRESHOLD {
+        let mut indices = BTreeMap::new();
+        for (index, edit) in edit_map.map.iter().enumerate() {
+            indices.insert(edit.0, index);
+        }
+        edit_map.indices = Some(indices);
+    }
 }
