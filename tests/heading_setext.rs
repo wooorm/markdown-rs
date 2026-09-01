@@ -315,3 +315,26 @@ fn heading_setext() -> Result<(), message::Message> {
 
     Ok(())
 }
+
+#[test]
+fn heading_setext_mdx_unclosed_jsx() {
+    let mdx = ParseOptions::mdx();
+
+    assert_eq!(
+        to_mdast("Hi <>\n======", &mdx)
+            .err()
+            .unwrap()
+            .to_string(),
+        "2:7: Expected a closing tag for `<>` (1:4) before the end of `HeadingSetext` (markdown-rs:end-tag-mismatch)",
+        "should not panic on a setext heading with an unclosed JSX fragment (GH-139)"
+    );
+
+    assert_eq!(
+        to_mdast("Hi <a>\n======", &mdx)
+            .err()
+            .unwrap()
+            .to_string(),
+        "2:7: Expected a closing tag for `<a>` (1:4) before the end of `HeadingSetext` (markdown-rs:end-tag-mismatch)",
+        "should not panic on a setext heading with an unclosed JSX element (GH-139)"
+    );
+}

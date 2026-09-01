@@ -1271,7 +1271,14 @@ fn on_exit_heading_setext_underline_sequence(context: &mut CompileContext) {
     let head = context.bytes[position.start.index];
     let depth = if head == b'-' { 2 } else { 1 };
 
-    if let Node::Heading(node) = context.tail_mut() {
+    // The underline comes after heading content, so unclosed JSX (or other)
+    // nodes can still be the tail. Walk up to the heading.
+    let path_len = {
+        let (tree, stack, _) = context.trees.last().expect("Cannot get tail w/o tree");
+        heading_path_len(tree, stack).unwrap_or_else(|| unreachable!("expected heading on stack"))
+    };
+    let (tree, stack, _) = context.trees.last_mut().expect("Cannot get tail w/o tree");
+    if let Node::Heading(node) = delve_mut(tree, &stack[..path_len]) {
         node.depth = depth;
     } else {
         unreachable!("expected heading on stack");
@@ -1723,6 +1730,24 @@ fn delve_mut<'tree>(mut node: &'tree mut Node, stack: &'tree [usize]) -> &'tree 
         stack_index += 1;
     }
     node
+}
+
+/// Path length to the nearest heading ancestor (inclusive).
+fn heading_path_len(mut node: &Node, stack: &[usize]) -> Option<usize> {
+    let mut last = if let Node::Heading(_) = node {
+        Some(0)
+    } else {
+        None
+    };
+    let mut index = 0;
+    while index < stack.len() {
+        node = node.children()?.get(stack[index])?;
+        index += 1;
+        if let Node::Heading(_) = node {
+            last = Some(index);
+        }
+    }
+    last
 }
 
 /// Remove initial/final EOLs.
