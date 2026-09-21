@@ -3,7 +3,6 @@
 use crate::util::constant::{GFM_HTML_TAGFILTER_NAMES, GFM_HTML_TAGFILTER_SIZE_MAX};
 use alloc::string::String;
 use core::str;
-extern crate std;
 
 /// Make dangerous HTML a tiny bit safer.
 ///
