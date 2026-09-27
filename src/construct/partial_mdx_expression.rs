@@ -92,7 +92,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             let problem = tokenizer.tokenize_state.mdx_last_parse_error.take()
                         .unwrap_or_else(|| ("Unexpected end of file in expression, expected a corresponding closing brace for `{`".into(), "markdown-rs".into(), "unexpected-eof".into()));
 
-            State::Error(message::Message {
+            State::error(message::Message {
                 place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
                 reason: problem.0,
                 rule_id: Box::new(problem.2),
@@ -113,7 +113,7 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
                 State::Ok
             };
 
-            if state == State::Ok {
+            if matches!(state, State::Ok) {
                 tokenizer.tokenize_state.start = 0;
                 tokenizer.enter(Name::MdxExpressionMarker);
                 tokenizer.consume();
@@ -170,7 +170,7 @@ pub fn eol_after(tokenizer: &mut Tokenizer) -> State {
         || tokenizer.tokenize_state.token_2 == Name::MdxJsxFlowTag)
         && tokenizer.lazy
     {
-        State::Error(
+        State::error(
             message::Message {
                 place: Some(Box::new(message::Place::Point(tokenizer.point.to_unist()))),
                 reason: "Unexpected lazy line in expression in container, expected line to be prefixed with `>` when in a block quote, whitespace when in a list, etc".into(),
@@ -246,7 +246,7 @@ fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> St
                 .relative_to_point(&result.stops, relative)
                 .unwrap_or_else(|| tokenizer.point.to_unist());
 
-            State::Error(message::Message {
+            State::error(message::Message {
                 place: Some(Box::new(message::Place::Point(point))),
                 reason,
                 rule_id,

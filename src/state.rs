@@ -3,14 +3,15 @@
 use crate::construct;
 use crate::message;
 use crate::tokenizer::Tokenizer;
+use alloc::boxed::Box;
 
 /// Result of a state.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum State {
     /// Syntax error.
     ///
     /// Only used by MDX.
-    Error(message::Message),
+    Error(Box<message::Message>),
     /// Move to [`Name`][] next.
     Next(Name),
     /// Retry in [`Name`][].
@@ -22,6 +23,12 @@ pub enum State {
 }
 
 impl State {
+    /// Create a syntax error, boxed so every other state stays small.
+    #[cold]
+    pub fn error(message: message::Message) -> State {
+        State::Error(Box::new(message))
+    }
+
     /// Turn a final state into a result.
     ///
     /// This doesn’t work on future states ([`State::Next`], [`State::Retry`]),
@@ -34,7 +41,7 @@ impl State {
                 unreachable!("cannot turn intermediate state into result")
             }
             State::Ok => Ok(()),
-            State::Error(x) => Err(x.clone()),
+            State::Error(x) => Err(x.as_ref().clone()),
         }
     }
 }
@@ -968,4 +975,19 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
     };
 
     func(tokenizer)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_state_size() {
+        // Every state transition moves a `State`.
+        assert!(
+            core::mem::size_of::<State>() <= 16,
+            "expected `State` to stay small ({} bytes)",
+            core::mem::size_of::<State>()
+        );
+    }
 }
