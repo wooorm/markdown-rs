@@ -93,7 +93,10 @@ pub fn classify(char: char) -> Kind {
         Kind::Whitespace
     }
     // Unicode punctuation.
-    else if char.is_ascii_punctuation() || PUNCTUATION.contains(&char) {
+    // `PUNCTUATION` is sorted, and its ASCII part is exactly ASCII punctuation.
+    else if char.is_ascii_punctuation()
+        || (!char.is_ascii() && PUNCTUATION.binary_search(&char).is_ok())
+    {
         Kind::Punctuation
     }
     // Everything else.
@@ -158,6 +161,24 @@ pub fn format_byte(byte: u8) -> String {
 mod tests {
     use super::*;
     use alloc::string::ToString;
+
+    #[test]
+    fn test_punctuation_table() {
+        assert!(
+            PUNCTUATION.windows(2).all(|pair| pair[0] < pair[1]),
+            "should keep the punctuation table sorted, for binary search"
+        );
+
+        for byte in 0..=0x7F_u8 {
+            let char = char::from(byte);
+            assert_eq!(
+                PUNCTUATION.contains(&char),
+                char.is_ascii_punctuation(),
+                "should list exactly the ASCII punctuation ({:?})",
+                char
+            );
+        }
+    }
 
     #[test]
     fn test_classify() {
