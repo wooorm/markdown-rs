@@ -477,5 +477,35 @@ to_html_with_options("<x> a", &danger)?,
         "should support HTML (text) as `Html`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options("a <!-- b <!A c>", &danger)?,
+        "<p>a &lt;!-- b <!A c></p>",
+        "should support a declaration after an unclosed comment"
+    );
+
+    assert_eq!(
+        to_html_with_options("a <?b <!-- c -->", &danger)?,
+        "<p>a &lt;?b <!-- c --></p>",
+        "should support a comment after an unclosed instruction"
+    );
+
+    assert_eq!(
+        to_html_with_options("a <![CDATA[ b <?c?>", &danger)?,
+        "<p>a &lt;![CDATA[ b <?c?></p>",
+        "should support an instruction after unclosed CDATA"
+    );
+
+    assert_eq!(
+        to_html_with_options("a <!-- b\n\nc <!-- d -->", &danger)?,
+        "<p>a &lt;!-- b</p>\n<p>c <!-- d --></p>",
+        "should support a comment after an unclosed comment in another paragraph"
+    );
+
+    assert_eq!(
+        to_html_with_options("a <!-- b <!-- c", &danger)?,
+        "<p>a &lt;!-- b &lt;!-- c</p>",
+        "should not support comments without a closer"
+    );
+
     Ok(())
 }

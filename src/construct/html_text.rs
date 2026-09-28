@@ -65,6 +65,7 @@ use crate::util::constant::HTML_CDATA_PREFIX;
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     if Some(b'<') == tokenizer.current && tokenizer.parse_state.options.constructs.html_text {
+        tokenizer.tokenize_state.html_text_start = tokenizer.point.index;
         tokenizer.enter(Name::HtmlText);
         tokenizer.enter(Name::HtmlTextData);
         tokenizer.consume();
@@ -94,7 +95,7 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::HtmlTextTagCloseStart)
         }
-        Some(b'?') => {
+        Some(b'?') if !known_unclosed(tokenizer, INSTRUCTION) => {
             tokenizer.consume();
             State::Next(StateName::HtmlTextInstruction)
         }
@@ -119,16 +120,16 @@ pub fn open(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn declaration_open(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'-') => {
+        Some(b'-') if !known_unclosed(tokenizer, COMMENT) => {
             tokenizer.consume();
             State::Next(StateName::HtmlTextCommentOpenInside)
         }
         // ASCII alphabetical.
-        Some(b'A'..=b'Z' | b'a'..=b'z') => {
+        Some(b'A'..=b'Z' | b'a'..=b'z') if !known_unclosed(tokenizer, DECLARATION) => {
             tokenizer.consume();
             State::Next(StateName::HtmlTextDeclaration)
         }
-        Some(b'[') => {
+        Some(b'[') if !known_unclosed(tokenizer, CDATA) => {
             tokenizer.consume();
             State::Next(StateName::HtmlTextCdataOpenInside)
         }
@@ -160,7 +161,7 @@ pub fn comment_open_inside(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn comment(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Nok,
+        None => unclosed(tokenizer, COMMENT),
         Some(b'\n') => {
             tokenizer.attempt(State::Next(StateName::HtmlTextComment), State::Nok);
             State::Retry(StateName::HtmlTextLineEndingBefore)
@@ -235,7 +236,7 @@ pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn cdata(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Nok,
+        None => unclosed(tokenizer, CDATA),
         Some(b'\n') => {
             tokenizer.attempt(State::Next(StateName::HtmlTextCdata), State::Nok);
             State::Retry(StateName::HtmlTextLineEndingBefore)
@@ -289,7 +290,8 @@ pub fn cdata_end(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn declaration(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None | Some(b'>') => State::Retry(StateName::HtmlTextEnd),
+        None => unclosed(tokenizer, DECLARATION),
+        Some(b'>') => State::Retry(StateName::HtmlTextEnd),
         Some(b'\n') => {
             tokenizer.attempt(State::Next(StateName::HtmlTextDeclaration), State::Nok);
             State::Retry(StateName::HtmlTextLineEndingBefore)
@@ -309,7 +311,7 @@ pub fn declaration(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn instruction(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        None => State::Nok,
+        None => unclosed(tokenizer, INSTRUCTION),
         Some(b'\n') => {
             tokenizer.attempt(State::Next(StateName::HtmlTextInstruction), State::Nok);
             State::Retry(StateName::HtmlTextLineEndingBefore)
@@ -656,4 +658,22 @@ pub fn line_ending_after(tokenizer: &mut Tokenizer) -> State {
 pub fn line_ending_after_prefix(tokenizer: &mut Tokenizer) -> State {
     tokenizer.enter(Name::HtmlTextData);
     State::Ok
+}
+
+/// Kinds of HTML (text) with a closer, as indices into `html_text_unclosed`.
+const COMMENT: usize = 0;
+const CDATA: usize = 1;
+const DECLARATION: usize = 2;
+const INSTRUCTION: usize = 3;
+
+/// Whether an earlier HTML (text) of `kind` found no closer after here.
+fn known_unclosed(tokenizer: &Tokenizer, kind: usize) -> bool {
+    tokenizer.tokenize_state.html_text_start >= tokenizer.tokenize_state.html_text_unclosed[kind]
+}
+
+/// At the end without a closer: remember it for later starts of `kind`.
+fn unclosed(tokenizer: &mut Tokenizer, kind: usize) -> State {
+    let state = &mut tokenizer.tokenize_state;
+    state.html_text_unclosed[kind] = state.html_text_unclosed[kind].min(state.html_text_start);
+    State::Nok
 }

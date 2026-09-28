@@ -218,6 +218,10 @@ pub struct TokenizeState<'a> {
     ///
     /// Used when tokenizing [text content][crate::construct::text].
     pub label_starts: Vec<LabelStart>,
+    /// Where the current HTML (text) starts.
+    pub html_text_start: usize,
+    /// Per HTML (text) kind with a closer: starts from here find none.
+    pub html_text_unclosed: [usize; 4],
     /// List of unusable label starts.
     ///
     /// Used when tokenizing [text content][crate::construct::text].
@@ -354,6 +358,8 @@ impl<'a> Tokenizer<'a> {
                 mdx_last_parse_error: None,
                 end: 0,
                 label_starts: vec![],
+                html_text_start: 0,
+                html_text_unclosed: [usize::MAX; 4],
                 label_starts_loose: vec![],
                 marker: 0,
                 marker_b: 0,
