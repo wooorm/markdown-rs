@@ -18,7 +18,7 @@ use crate::subtokenize::Subresult;
 #[cfg(feature = "log")]
 use crate::util::char::format_byte_opt;
 
-use crate::util::{constant::TAB_SIZE, edit_map::EditMap};
+use crate::util::{constant::TAB_SIZE, edit_map::EditMap, mdx_collect};
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
 /// Containers.
@@ -234,6 +234,9 @@ pub struct TokenizeState<'a> {
 
     // Last error message provided at an EOF of an expression.
     pub mdx_last_parse_error: Option<(String, String, String)>,
+    /// Body of the current MDX expression or ESM so far, and the next event to
+    /// collect.
+    pub mdx_collect: Option<Box<(usize, mdx_collect::Result)>>,
 
     /// Whether to connect events.
     pub connect: bool,
@@ -352,6 +355,7 @@ impl<'a> Tokenizer<'a> {
                 definitions: vec![],
                 gfm_footnote_definitions: vec![],
                 mdx_last_parse_error: None,
+                mdx_collect: None,
                 end: 0,
                 label_starts: vec![],
                 label_starts_loose: vec![],
@@ -820,5 +824,20 @@ fn byte_action(bytes: &[u8], point: &Point) -> ByteAction {
         }
     } else {
         unreachable!("out of bounds")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tokenizer_size() {
+        // Boxed per document; glibc allocates larger boxes on a slower path.
+        assert!(
+            core::mem::size_of::<Tokenizer>() <= 1000,
+            "expected `Tokenizer` to stay small enough to allocate as small ({} bytes)",
+            core::mem::size_of::<Tokenizer>()
+        );
     }
 }

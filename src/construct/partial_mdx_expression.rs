@@ -60,7 +60,7 @@ use crate::event::Name;
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
-use crate::util::mdx_collect::collect;
+use crate::util::mdx_collect::{collect_new, collected, reset_collect};
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
 use alloc::boxed::Box;
 
@@ -77,6 +77,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.consume();
     tokenizer.exit(Name::MdxExpressionMarker);
     tokenizer.tokenize_state.start = tokenizer.events.len() - 1;
+    reset_collect(tokenizer);
     State::Next(StateName::MdxExpressionBefore)
 }
 
@@ -218,13 +219,8 @@ pub fn prefix(tokenizer: &mut Tokenizer) -> State {
 /// Parse an expression with a given function.
 fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> State {
     // Collect the body of the expression and positional info for each run of it.
-    let result = collect(
-        &tokenizer.events,
-        tokenizer.parse_state.bytes,
-        tokenizer.tokenize_state.start,
-        &[Name::MdxExpressionData, Name::LineEnding],
-        &[],
-    );
+    collect_new(tokenizer, &[Name::MdxExpressionData, Name::LineEnding]);
+    let result = collected(tokenizer);
 
     // Turn the name of the expression into a kind.
     let kind = match tokenizer.tokenize_state.token_1 {
