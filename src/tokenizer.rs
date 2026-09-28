@@ -544,7 +544,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         #[cfg(feature = "log")]
-        log::debug!("exit:    `{:?}`", name);
+        log::debug!("exit:    `{name:?}`");
 
         let event = Event {
             kind: Kind::Exit,
@@ -676,7 +676,7 @@ fn enter_impl(tokenizer: &mut Tokenizer, name: Name, link: Option<Link>) {
     move_point_back(tokenizer, &mut point);
 
     #[cfg(feature = "log")]
-    log::debug!("enter:   `{:?}`", name);
+    log::debug!("enter:   `{name:?}`");
 
     tokenizer.stack.push(name.clone());
     tokenizer.events.push(Event {
@@ -723,7 +723,7 @@ fn push_impl(
                     };
 
                     #[cfg(feature = "log")]
-                    log::trace!("attempt: `{:?}` -> `{:?}`", state, next);
+                    log::trace!("attempt: `{state:?}` -> `{next:?}`");
 
                     state = next;
                 } else {
@@ -760,7 +760,7 @@ fn push_impl(
             }
             State::Retry(name) => {
                 #[cfg(feature = "log")]
-                log::trace!("retry:   `{:?}`", name);
+                log::trace!("retry:   `{name:?}`");
 
                 state = call(tokenizer, name);
             }
