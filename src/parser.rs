@@ -65,10 +65,19 @@ pub fn parse<'a>(
     let mut events = tokenizer.events;
 
     loop {
+        // Sorted and unique, so `label_end` can binary search them.
         let fn_defs = &mut parse_state.gfm_footnote_definitions;
         let defs = &mut parse_state.definitions;
-        fn_defs.append(&mut result.gfm_footnote_definitions);
-        defs.append(&mut result.definitions);
+        if !result.gfm_footnote_definitions.is_empty() {
+            fn_defs.append(&mut result.gfm_footnote_definitions);
+            fn_defs.sort_unstable();
+            fn_defs.dedup();
+        }
+        if !result.definitions.is_empty() {
+            defs.append(&mut result.definitions);
+            defs.sort_unstable();
+            defs.dedup();
+        }
 
         if result.done {
             return Ok((events, parse_state));

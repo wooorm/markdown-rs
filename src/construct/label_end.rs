@@ -265,7 +265,12 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 
     // See if this matches a footnote definition.
     if start.kind == LabelKind::GfmFootnote {
-        if tokenizer.parse_state.gfm_footnote_definitions.contains(&id) {
+        if tokenizer
+            .parse_state
+            .gfm_footnote_definitions
+            .binary_search(&id)
+            .is_ok()
+        {
             return State::Retry(StateName::LabelEndOk);
         }
 
@@ -277,7 +282,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         id = new_id;
     }
 
-    let defined = tokenizer.parse_state.definitions.contains(&id);
+    let defined = tokenizer.parse_state.definitions.binary_search(&id).is_ok();
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
@@ -594,7 +599,7 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
         .parse_state
         .definitions
         // We don’t care about virtual spaces, so `as_str` is fine.
-        .contains(&normalize_identifier(
+        .binary_search(&normalize_identifier(
             Slice::from_position(
                 tokenizer.parse_state.bytes,
                 &Position::from_exit_event(
@@ -608,6 +613,7 @@ pub fn reference_full_after(tokenizer: &mut Tokenizer) -> State {
             )
             .as_str(),
         ))
+        .is_ok()
     {
         State::Ok
     } else {

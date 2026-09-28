@@ -235,6 +235,10 @@ pub const HTML_RAW_SIZE_MAX: usize = 8;
 /// To safeguard performance, labels are capped at a large number: `999`.
 pub const LINK_REFERENCE_SIZE_MAX: usize = 999;
 
+/// Number of distinct GFM footnote calls the HTML compiler searches linearly;
+/// above it, it builds an index.
+pub const GFM_FOOTNOTE_CALL_LINEAR_MAX: usize = 16;
+
 /// The max number of decimals allowed to form an (ordered)
 /// [list item][list-item].
 ///

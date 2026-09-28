@@ -307,9 +307,7 @@ pub fn after_whitespace(tokenizer: &mut Tokenizer) -> State {
         None | Some(b'\n') => {
             tokenizer.exit(Name::Definition);
 
-            // Note: we don’t care about uniqueness.
-            // It’s likely that that doesn’t happen very frequently.
-            // It is more likely that it wastes precious time.
+            // Note: duplicates are removed by the parser, once per pass.
             tokenizer.tokenize_state.definitions.push(
                 // Note: we don’t care about virtual spaces, so `as_str` is fine.
                 normalize_identifier(

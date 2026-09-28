@@ -3,7 +3,7 @@ use crate::event::{Event, Kind, Name};
 use crate::mdast::AlignKind;
 use crate::util::{
     character_reference::decode as decode_character_reference,
-    constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
+    constant::{GFM_FOOTNOTE_CALL_LINEAR_MAX, SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
     encode::encode,
     gfm_tagfilter::gfm_tagfilter,
     infer::{gfm_table_align, list_loose},
@@ -14,6 +14,7 @@ use crate::util::{
 };
 use crate::{CompileOptions, LineEnding};
 use alloc::{
+    collections::BTreeMap,
     format,
     string::{String, ToString},
     vec,
@@ -109,6 +110,8 @@ struct CompileContext<'a> {
     /// List of definitions.
     gfm_footnote_definitions: Vec<(String, String)>,
     gfm_footnote_definition_calls: Vec<(String, usize)>,
+    /// Index into `gfm_footnote_definition_calls` by identifier, once large.
+    gfm_footnote_definition_call_index: Option<BTreeMap<String, usize>>,
     gfm_footnote_definition_stack: Vec<(usize, usize)>,
     /// Whether we are in a GFM table head.
     gfm_table_in_head: bool,
@@ -153,6 +156,7 @@ impl<'a> CompileContext<'a> {
             definitions: vec![],
             gfm_footnote_definitions: vec![],
             gfm_footnote_definition_calls: vec![],
+            gfm_footnote_definition_call_index: None,
             gfm_footnote_definition_stack: vec![],
             gfm_table_in_head: false,
             gfm_table_align: None,
@@ -264,6 +268,14 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> Stri
 
         index += 1;
     }
+
+    // Sorted by identifier, first definition first, for binary search.
+    context
+        .definitions
+        .sort_by(|left, right| left.id.cmp(&right.id));
+    context
+        .definitions
+        .dedup_by(|right, left| left.id == right.id);
 
     let mut index = 0;
     let jump_default = (events.len(), events.len());
@@ -1069,20 +1081,37 @@ fn on_exit_gfm_footnote_call(context: &mut CompileContext) {
     let id =
         normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str());
     let safe_id = sanitize(&id.to_lowercase());
-    let mut call_index = 0;
+    let calls = &mut context.gfm_footnote_definition_calls;
 
     // See if this has been called before.
-    while call_index < context.gfm_footnote_definition_calls.len() {
-        if context.gfm_footnote_definition_calls[call_index].0 == id {
-            break;
-        }
-        call_index += 1;
-    }
+    let found = if let Some(call_index) = &context.gfm_footnote_definition_call_index {
+        call_index.get(&id).copied()
+    } else {
+        calls.iter().position(|call| call.0 == id)
+    };
 
-    // New.
-    if call_index == context.gfm_footnote_definition_calls.len() {
-        context.gfm_footnote_definition_calls.push((id, 0));
-    }
+    let call_index = if let Some(call_index) = found {
+        call_index
+    } else {
+        // New.
+        let call_index = calls.len();
+        if let Some(index) = &mut context.gfm_footnote_definition_call_index {
+            index.insert(id.clone(), call_index);
+        }
+        calls.push((id, 0));
+        if context.gfm_footnote_definition_call_index.is_none()
+            && calls.len() > GFM_FOOTNOTE_CALL_LINEAR_MAX
+        {
+            context.gfm_footnote_definition_call_index = Some(
+                calls
+                    .iter()
+                    .enumerate()
+                    .map(|(index, call)| (call.0.clone(), index))
+                    .collect(),
+            );
+        }
+        call_index
+    };
 
     // Increment.
     context.gfm_footnote_definition_calls[call_index].1 += 1;
@@ -1427,17 +1456,12 @@ fn on_exit_media(context: &mut CompileContext) {
 
     let definition_index = if media.destination.is_none() {
         id.map(|id| {
-            let mut index = 0;
-
-            while index < context.definitions.len() && context.definitions[index].id != id {
-                index += 1;
-            }
-
-            debug_assert!(
-                index < context.definitions.len(),
-                "expected defined definition"
-            );
-            index
+            // Past the end when missing, which is only used out of image alts.
+            let found = context
+                .definitions
+                .binary_search_by(|definition| definition.id.as_str().cmp(&id));
+            debug_assert!(found.is_ok(), "expected defined definition");
+            found.unwrap_or(context.definitions.len())
         })
     } else {
         None
@@ -1592,6 +1616,14 @@ fn generate_footnote_section(context: &mut CompileContext) {
     context.line_ending();
     context.push("<ol>");
 
+    // Sorted by identifier, first definition first, for binary search.
+    context
+        .gfm_footnote_definitions
+        .sort_by(|left, right| left.0.cmp(&right.0));
+    context
+        .gfm_footnote_definitions
+        .dedup_by(|right, left| left.0 == right.0);
+
     let mut index = 0;
     while index < context.gfm_footnote_definition_calls.len() {
         generate_footnote_item(context, index);
@@ -1611,19 +1643,10 @@ fn generate_footnote_item(context: &mut CompileContext, index: usize) {
     let safe_id = sanitize(&id.to_lowercase());
 
     // Find definition: we’ll always find it.
-    let mut definition_index = 0;
-    while definition_index < context.gfm_footnote_definitions.len() {
-        if &context.gfm_footnote_definitions[definition_index].0 == id {
-            break;
-        }
-        definition_index += 1;
-    }
-
-    debug_assert_ne!(
-        definition_index,
-        context.gfm_footnote_definitions.len(),
-        "expected definition"
-    );
+    let definition_index = context
+        .gfm_footnote_definitions
+        .binary_search_by(|definition| definition.0.as_str().cmp(id))
+        .expect("expected definition");
 
     context.line_ending();
     context.push("<li id=\"");
