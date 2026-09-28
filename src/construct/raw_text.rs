@@ -117,7 +117,8 @@
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{RawTextRuns, Tokenizer};
+use alloc::boxed::Box;
 
 /// Start of raw (text).
 ///
@@ -168,10 +169,11 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.consume();
         State::Next(StateName::RawTextSequenceOpen)
     }
-    // Not enough markers in the sequence.
-    else if tokenizer.tokenize_state.marker == b'$'
+    // Not enough markers in the sequence, or no closing sequence of that size.
+    else if (tokenizer.tokenize_state.marker == b'$'
         && tokenizer.tokenize_state.size == 1
-        && !tokenizer.parse_state.options.math_text_single_dollar
+        && !tokenizer.parse_state.options.math_text_single_dollar)
+        || !has_closing_run(tokenizer)
     {
         tokenizer.tokenize_state.marker = 0;
         tokenizer.tokenize_state.size = 0;
@@ -180,6 +182,13 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
         tokenizer.tokenize_state.token_3 = Name::Data;
         State::Nok
     } else {
+        let index = tokenizer.point.index;
+        // Once complete, later scans would record older runs.
+        if let Some(runs) = runs_mut(tokenizer) {
+            if runs.complete_from.is_none() {
+                runs.recording = Some(index);
+            }
+        }
         tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
         State::Retry(StateName::RawTextBetween)
     }
@@ -194,6 +203,10 @@ pub fn sequence_open(tokenizer: &mut Tokenizer) -> State {
 pub fn between(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         None => {
+            let runs = runs_mut(tokenizer).get_or_insert_with(Box::default);
+            if let Some(from) = runs.recording.take() {
+                runs.complete_from = Some(from);
+            }
             tokenizer.tokenize_state.marker = 0;
             tokenizer.tokenize_state.size = 0;
             tokenizer.tokenize_state.token_1 = Name::Data;
@@ -251,6 +264,9 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
     } else {
         tokenizer.exit(tokenizer.tokenize_state.token_2.clone());
         if tokenizer.tokenize_state.size == tokenizer.tokenize_state.size_b {
+            if let Some(runs) = runs_mut(tokenizer) {
+                runs.recording = None;
+            }
             tokenizer.exit(tokenizer.tokenize_state.token_1.clone());
             tokenizer.tokenize_state.marker = 0;
             tokenizer.tokenize_state.size = 0;
@@ -261,11 +277,40 @@ pub fn sequence_close(tokenizer: &mut Tokenizer) -> State {
             State::Ok
         } else {
             // More or less accents: mark as data.
+            let size = tokenizer.tokenize_state.size_b;
+            let start = tokenizer.point.index - size;
+            if let Some(runs) = runs_mut(tokenizer) {
+                if runs.recording.is_some() {
+                    match runs.last_start.binary_search_by_key(&size, |run| run.0) {
+                        Ok(position) => runs.last_start[position].1 = start,
+                        Err(position) => runs.last_start.insert(position, (size, start)),
+                    }
+                }
+            }
             let len = tokenizer.events.len();
             tokenizer.events[len - 2].name = tokenizer.tokenize_state.token_3.clone();
             tokenizer.events[len - 1].name = tokenizer.tokenize_state.token_3.clone();
             tokenizer.tokenize_state.size_b = 0;
             State::Retry(StateName::RawTextBetween)
         }
+    }
+}
+
+/// Runs of the current marker.
+fn runs_mut<'a>(tokenizer: &'a mut Tokenizer) -> &'a mut Option<Box<RawTextRuns>> {
+    let index = usize::from(tokenizer.tokenize_state.marker == b'$');
+    &mut tokenizer.tokenize_state.raw_text_runs[index]
+}
+
+/// Whether a closer of the opening size may follow, as far as the runs show.
+fn has_closing_run(tokenizer: &mut Tokenizer) -> bool {
+    let index = tokenizer.point.index;
+    let size = tokenizer.tokenize_state.size;
+    match runs_mut(tokenizer) {
+        Some(runs) if runs.complete_from.map_or(false, |from| from <= index) => runs
+            .last_start
+            .binary_search_by_key(&size, |run| run.0)
+            .map_or(false, |position| runs.last_start[position].1 >= index),
+        _ => true,
     }
 }

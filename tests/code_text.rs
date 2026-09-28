@@ -235,5 +235,17 @@ fn code_text() -> Result<(), message::Message> {
         "should not strip any whitespace if `InlineCode` is all whitespace"
     );
 
+    assert_eq!(
+        to_html("`a ```b ``c `` d"),
+        "<p>`a ```b <code>c </code> d</p>",
+        "should find a closing sequence after other openers found none"
+    );
+
+    assert_eq!(
+        to_html("``` ```` ``a`b`` `c`"),
+        "<p>``` ```` <code>a`b</code> <code>c</code></p>",
+        "should find a closing sequence after a scan that found one"
+    );
+
     Ok(())
 }

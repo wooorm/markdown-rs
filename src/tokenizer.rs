@@ -106,6 +106,17 @@ pub enum LabelKind {
     GfmUndefinedFootnote,
 }
 
+/// Marker runs seen while code (text) or math (text) looked for a closer.
+#[derive(Debug, Default)]
+pub struct RawTextRuns {
+    /// Start of the current look for a closer, while it records runs.
+    pub recording: Option<usize>,
+    /// All runs from this byte index to the end are in `last_start`.
+    pub complete_from: Option<usize>,
+    /// Per run size, sorted: the start of the last run seen of that size.
+    pub last_start: Vec<(usize, usize)>,
+}
+
 /// Label start, looking for an end.
 #[derive(Debug)]
 pub struct LabelStart {
@@ -218,6 +229,8 @@ pub struct TokenizeState<'a> {
     ///
     /// Used when tokenizing [text content][crate::construct::text].
     pub label_starts: Vec<LabelStart>,
+    /// Marker runs seen by code (text) and math (text), for `` ` `` and `$`.
+    pub raw_text_runs: [Option<Box<RawTextRuns>>; 2],
     /// List of unusable label starts.
     ///
     /// Used when tokenizing [text content][crate::construct::text].
@@ -354,6 +367,7 @@ impl<'a> Tokenizer<'a> {
                 mdx_last_parse_error: None,
                 end: 0,
                 label_starts: vec![],
+                raw_text_runs: [None, None],
                 label_starts_loose: vec![],
                 marker: 0,
                 marker_b: 0,
