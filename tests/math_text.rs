@@ -232,5 +232,23 @@ fn math_text() -> Result<(), message::Message> {
         "should support math (text) as `InlineMath`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "a$b$",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        code_text: false,
+                        math_text: true,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p>a<code class=\"language-math math-inline\">b</code></p>",
+        "should support math (text) with code (text) turned off"
+    );
     Ok(())
 }

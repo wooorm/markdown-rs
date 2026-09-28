@@ -28,7 +28,7 @@ use crate::message;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::{subtokenize, Subresult};
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{Tokenizer, LINE_STOP};
 use alloc::vec;
 
 /// Before a content chunk.
@@ -70,7 +70,7 @@ pub fn chunk_inside(tokenizer: &mut Tokenizer) -> State {
             State::Ok
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_run(&LINE_STOP);
             State::Next(StateName::ContentChunkInside)
         }
     }

@@ -118,5 +118,22 @@ fn character_escape() -> Result<(), message::Message> {
         "should support character escapes as `Text`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "a\\*b",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        hard_break_escape: false,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p>a*b</p>",
+        "should support character escapes with hard break (escape) turned off"
+    );
     Ok(())
 }

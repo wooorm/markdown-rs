@@ -2,7 +2,7 @@ use markdown::{
     mdast::{FootnoteDefinition, FootnoteReference, Node, Paragraph, Root, Text},
     message, to_html, to_html_with_options, to_mdast,
     unist::Position,
-    CompileOptions, Options, ParseOptions,
+    CompileOptions, Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -1661,5 +1661,22 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
         "should support GFM footnotes as `FootnoteDefinition`, `FootnoteReference`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "a[^a]\n\n[^a]: b",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        label_start_link: false,
+                        ..Constructs::gfm()
+                    },
+                    ..ParseOptions::gfm()
+                },
+                compile: CompileOptions::gfm()
+            }
+        )?,
+        "<p>a<sup><a href=\"#user-content-fn-a\" id=\"user-content-fnref-a\" data-footnote-ref=\"\" aria-describedby=\"footnote-label\">1</a></sup></p>\n<section data-footnotes=\"\" class=\"footnotes\"><h2 id=\"footnote-label\" class=\"sr-only\">Footnotes</h2>\n<ol>\n<li id=\"user-content-fn-a\">\n<p>b <a href=\"#user-content-fnref-a\" data-footnote-backref=\"\" aria-label=\"Back to content\" class=\"data-footnote-backref\">↩</a></p>\n</li>\n</ol>\n</section>\n",
+        "should support footnote calls after text with link starts turned off"
+    );
     Ok(())
 }

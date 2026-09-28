@@ -230,9 +230,12 @@ use crate::event::{Content, Event, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{with_bytes, ByteSet, Tokenizer, LINE_STOP};
 use crate::util::{constant::TAB_SIZE, skip::opt_back as skip_opt_back};
 use alloc::vec;
+
+/// Bytes that data in a cell stops at.
+const CELL_STOP: ByteSet = with_bytes(LINE_STOP, b" \\|");
 
 /// Start of a GFM table.
 ///
@@ -399,14 +402,13 @@ pub fn head_row_data(tokenizer: &mut Tokenizer) -> State {
             tokenizer.exit(Name::Data);
             State::Retry(StateName::GfmTableHeadRowBreak)
         }
-        _ => {
-            let name = if tokenizer.current == Some(b'\\') {
-                StateName::GfmTableHeadRowEscape
-            } else {
-                StateName::GfmTableHeadRowData
-            };
+        Some(b'\\') => {
             tokenizer.consume();
-            State::Next(name)
+            State::Next(StateName::GfmTableHeadRowEscape)
+        }
+        _ => {
+            tokenizer.consume_run(&CELL_STOP);
+            State::Next(StateName::GfmTableHeadRowData)
         }
     }
 }

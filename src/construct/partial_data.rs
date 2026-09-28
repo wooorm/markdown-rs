@@ -6,6 +6,7 @@
 //! [string]: crate::construct::string
 //! [text]: crate::construct::text
 
+use crate::construct::text;
 use crate::event::{Kind, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
@@ -21,7 +22,7 @@ use alloc::vec;
 pub fn start(tokenizer: &mut Tokenizer) -> State {
     // Make sure to eat the first `markers`.
     if let Some(byte) = tokenizer.current {
-        if tokenizer.tokenize_state.markers.contains(&byte) {
+        if is_marker(tokenizer, byte) {
             tokenizer.enter(Name::Data);
             tokenizer.consume();
             return State::Next(StateName::DataInside);
@@ -39,7 +40,7 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn at_break(tokenizer: &mut Tokenizer) -> State {
     if let Some(byte) = tokenizer.current {
-        if !tokenizer.tokenize_state.markers.contains(&byte) {
+        if !is_marker(tokenizer, byte) {
             if byte == b'\n' {
                 tokenizer.enter(Name::LineEnding);
                 tokenizer.consume();
@@ -62,14 +63,19 @@ pub fn at_break(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn inside(tokenizer: &mut Tokenizer) -> State {
     if let Some(byte) = tokenizer.current {
-        if byte != b'\n' && !tokenizer.tokenize_state.markers.contains(&byte) {
-            tokenizer.consume();
+        if byte != b'\n' && !is_marker(tokenizer, byte) {
+            tokenizer.consume_run(tokenizer.tokenize_state.markers);
             return State::Next(StateName::DataInside);
         }
     }
 
     tokenizer.exit(Name::Data);
     State::Retry(StateName::DataAtBreak)
+}
+
+/// Whether `byte` may start a construct here (text can start more than string).
+fn is_marker(tokenizer: &Tokenizer, byte: u8) -> bool {
+    tokenizer.tokenize_state.markers[usize::from(byte)] && text::may_start(tokenizer, byte)
 }
 
 /// Merge adjacent data events.

@@ -117,7 +117,13 @@
 
 use crate::event::Name;
 use crate::state::{Name as StateName, State};
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{with_bytes, ByteSet, Tokenizer, LINE_STOP};
+
+/// Bytes that data in code (text) stops at.
+const CODE_STOP: ByteSet = with_bytes(LINE_STOP, b"`");
+
+/// Bytes that data in math (text) stops at.
+const MATH_STOP: ByteSet = with_bytes(LINE_STOP, b"$");
 
 /// Start of raw (text).
 ///
@@ -232,7 +238,11 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
         tokenizer.exit(tokenizer.tokenize_state.token_3.clone());
         State::Retry(StateName::RawTextBetween)
     } else {
-        tokenizer.consume();
+        tokenizer.consume_run(if tokenizer.tokenize_state.marker == b'$' {
+            &MATH_STOP
+        } else {
+            &CODE_STOP
+        });
         State::Next(StateName::RawTextData)
     }
 }

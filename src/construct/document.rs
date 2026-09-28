@@ -13,7 +13,7 @@ use crate::event::{Content, Event, Kind, Link, Name};
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::divide_events;
-use crate::tokenizer::{Container, ContainerState, Tokenizer};
+use crate::tokenizer::{Container, ContainerState, Tokenizer, LINE_STOP};
 use crate::util::skip;
 use alloc::{boxed::Box, vec::Vec};
 
@@ -344,7 +344,7 @@ pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::DocumentFlowEnd)
         }
         Some(_) => {
-            tokenizer.consume();
+            tokenizer.consume_run(&LINE_STOP);
             State::Next(StateName::DocumentFlowInside)
         }
     }

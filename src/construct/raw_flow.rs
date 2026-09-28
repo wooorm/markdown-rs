@@ -141,7 +141,7 @@
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{Tokenizer, LINE_STOP};
 use crate::util::{
     constant::{CODE_FENCED_SEQUENCE_SIZE_MIN, MATH_FLOW_SEQUENCE_SIZE_MIN, TAB_SIZE},
     slice::{Position, Slice},
@@ -630,7 +630,7 @@ pub fn content_chunk(tokenizer: &mut Tokenizer) -> State {
             State::Retry(StateName::RawFlowBeforeContentChunk)
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_run(&LINE_STOP);
             State::Next(StateName::RawFlowContentChunk)
         }
     }

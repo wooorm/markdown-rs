@@ -7,7 +7,7 @@ use markdown::{
     mdast::{Delete, Node, Paragraph, Root, Text},
     message, to_html, to_html_with_options, to_mdast,
     unist::Position,
-    Options, ParseOptions,
+    Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 
@@ -433,5 +433,22 @@ u ~**xxx**~ zzz
         "should support GFM strikethrough as `Delete`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "a~~b~~",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        attention: false,
+                        ..Constructs::gfm()
+                    },
+                    ..ParseOptions::gfm()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p>a<del>b</del></p>",
+        "should support strikethrough with emphasis and strong turned off"
+    );
     Ok(())
 }

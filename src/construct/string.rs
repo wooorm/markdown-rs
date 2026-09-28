@@ -16,10 +16,13 @@ use crate::construct::partial_whitespace::resolve_whitespace;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{with_bytes, ByteSet, Tokenizer, LINE_STOP};
 
 /// Characters that can start something in string.
 const MARKERS: [u8; 2] = [b'&', b'\\'];
+
+/// Bytes that data stops at.
+const STOP: ByteSet = with_bytes(LINE_STOP, &MARKERS);
 
 /// Start of string.
 ///
@@ -28,7 +31,7 @@ const MARKERS: [u8; 2] = [b'&', b'\\'];
 ///        ^
 /// ````
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.markers = &MARKERS;
+    tokenizer.tokenize_state.markers = &STOP;
     State::Retry(StateName::StringBefore)
 }
 

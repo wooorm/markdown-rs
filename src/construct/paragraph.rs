@@ -44,7 +44,7 @@
 use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link;
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{Tokenizer, LINE_STOP};
 
 /// Paragraph start.
 ///
@@ -108,7 +108,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::ParagraphLineStart)
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_run(&LINE_STOP);
             State::Next(StateName::ParagraphInside)
         }
     }

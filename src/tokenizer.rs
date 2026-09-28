@@ -241,8 +241,8 @@ pub struct TokenizeState<'a> {
     pub marker: u8,
     /// Secondary marker.
     pub marker_b: u8,
-    /// Several markers.
-    pub markers: &'static [u8],
+    /// Bytes that data stops at: markers, and the bytes in `LINE_STOP`.
+    pub markers: &'a ByteSet,
     /// Whether something was seen.
     pub seen: bool,
     /// Size.
@@ -286,6 +286,8 @@ pub struct Tokenizer<'a> {
     consumed: bool,
     /// Stack of how to handle attempts.
     attempts: Vec<Attempt>,
+    /// Index of the end of what is being pushed.
+    push_end: usize,
     /// Current byte.
     pub current: Option<u8>,
     /// Previous byte.
@@ -335,6 +337,7 @@ impl<'a> Tokenizer<'a> {
             line_start: point.clone(),
             consumed: true,
             attempts: vec![],
+            push_end: 0,
             point,
             stack: vec![],
             events: vec![],
@@ -357,7 +360,7 @@ impl<'a> Tokenizer<'a> {
                 label_starts_loose: vec![],
                 marker: 0,
                 marker_b: 0,
-                markers: &[],
+                markers: &LINE_STOP,
                 labels: vec![],
                 seen: false,
                 size: 0,
@@ -455,6 +458,28 @@ impl<'a> Tokenizer<'a> {
         self.current = None;
         // Mark as consumed.
         self.consumed = true;
+    }
+
+    /// Consume the current byte and following bytes up to one in `stop`, which
+    /// must include `\n`, `\r`, and `\t`.
+    pub fn consume_run(&mut self, stop: &ByteSet) {
+        debug_assert!(
+            stop[usize::from(b'\n')] && stop[usize::from(b'\r')] && stop[usize::from(b'\t')]
+        );
+        self.consume();
+        let bytes = self.parse_state.bytes;
+        let start = self.point.index;
+        let mut index = start;
+
+        while index < self.push_end && !stop[usize::from(bytes[index])] {
+            index += 1;
+        }
+
+        if index > start {
+            self.point.index = index;
+            self.point.column += index - start;
+            self.previous = Some(bytes[index - 1]);
+        }
     }
 
     /// Move to the next (virtual) byte.
@@ -702,6 +727,7 @@ fn push_impl(
     );
 
     tokenizer.move_to(from);
+    tokenizer.push_end = to.0;
 
     loop {
         match state {
@@ -779,6 +805,22 @@ fn push_impl(
     }
 
     state
+}
+
+/// Set of bytes, as a table.
+pub type ByteSet = [bool; 256];
+
+/// Bytes that move differently than others: runs stop at them.
+pub const LINE_STOP: ByteSet = with_bytes([false; 256], b"\n\r\t");
+
+/// `set` with `bytes` added.
+pub const fn with_bytes(mut set: ByteSet, bytes: &[u8]) -> ByteSet {
+    let mut index = 0;
+    while index < bytes.len() {
+        set[bytes[index] as usize] = true;
+        index += 1;
+    }
+    set
 }
 
 /// Figure out how to handle a byte.

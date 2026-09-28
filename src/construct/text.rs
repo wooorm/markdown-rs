@@ -25,31 +25,63 @@
 //! > [whitespace][crate::construct::partial_whitespace].
 
 use crate::construct::gfm_autolink_literal::resolve as resolve_gfm_autolink_literal;
+use crate::construct::gfm_autolink_literal::{protocol_may_start, www_may_start};
 use crate::construct::partial_whitespace::resolve_whitespace;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{with_bytes, ByteSet, Tokenizer, LINE_STOP};
 
-/// Characters that can start something in text.
-const MARKERS: [u8; 16] = [
+/// Characters that can start something in text, apart from autolink literals.
+const MARKERS: [u8; 12] = [
     b'!',  // `label_start_image`
     b'$',  // `raw_text` (math (text))
     b'&',  // `character_reference`
     b'*',  // `attention` (emphasis, strong)
     b'<',  // `autolink`, `html_text`, `mdx_jsx_text`
-    b'H',  // `gfm_autolink_literal` (`protocol` kind)
-    b'W',  // `gfm_autolink_literal` (`www.` kind)
-    b'[',  // `label_start_link`
+    b'[',  // `label_start_link`, `gfm_label_start_footnote`
     b'\\', // `character_escape`, `hard_break_escape`
-    b']',  // `label_end`, `gfm_label_start_footnote`
+    b']',  // `label_end`
     b'_',  // `attention` (emphasis, strong)
     b'`',  // `raw_text` (code (text))
-    b'h',  // `gfm_autolink_literal` (`protocol` kind)
-    b'w',  // `gfm_autolink_literal` (`www.` kind)
     b'{',  // `mdx_expression_text`
     b'~',  // `attention` (gfm strikethrough)
 ];
+
+/// Characters that can start GFM autolink literals.
+const LITERAL_MARKERS: [u8; 4] = [
+    b'H', // `gfm_autolink_literal` (`protocol` kind)
+    b'W', // `gfm_autolink_literal` (`www.` kind)
+    b'h', // `gfm_autolink_literal` (`protocol` kind)
+    b'w', // `gfm_autolink_literal` (`www.` kind)
+];
+
+/// Bytes that data stops at, without the letters of autolink literals.
+const STOP_WITHOUT_LITERALS: ByteSet = with_bytes(LINE_STOP, &MARKERS);
+
+/// Bytes that data stops at.
+const STOP: ByteSet = with_bytes(STOP_WITHOUT_LITERALS, &LITERAL_MARKERS);
+
+/// Whether an enabled construct can start at `byte`, as dispatched by `before`.
+pub fn may_start(tokenizer: &Tokenizer, byte: u8) -> bool {
+    let constructs = &tokenizer.parse_state.options.constructs;
+    match byte {
+        b'!' => constructs.label_start_image,
+        b'$' => constructs.math_text,
+        b'&' => constructs.character_reference,
+        b'*' | b'_' => constructs.attention,
+        b'<' => constructs.autolink || constructs.html_text || constructs.mdx_jsx_text,
+        b'H' | b'h' => constructs.gfm_autolink_literal && protocol_may_start(tokenizer.previous),
+        b'W' | b'w' => constructs.gfm_autolink_literal && www_may_start(tokenizer.previous),
+        b'[' => constructs.label_start_link || constructs.gfm_label_start_footnote,
+        b'\\' => constructs.character_escape || constructs.hard_break_escape,
+        b']' => constructs.label_end,
+        b'`' => constructs.code_text,
+        b'{' => constructs.mdx_expression_text,
+        b'~' => constructs.gfm_strikethrough,
+        _ => false,
+    }
+}
 
 /// Start of text.
 ///
@@ -62,7 +94,16 @@ const MARKERS: [u8; 16] = [
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.markers = &MARKERS;
+    tokenizer.tokenize_state.markers = if tokenizer
+        .parse_state
+        .options
+        .constructs
+        .gfm_autolink_literal
+    {
+        &STOP
+    } else {
+        &STOP_WITHOUT_LITERALS
+    };
     tokenizer.attempt(
         State::Next(StateName::TextBefore),
         State::Next(StateName::TextBefore),
