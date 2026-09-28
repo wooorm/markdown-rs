@@ -165,7 +165,7 @@
 //! [html_section]: https://html.spec.whatwg.org/multipage/sections.html#the-section-element
 //! [html_sup]: https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-sub-and-sup-elements
 
-use crate::construct::partial_space_or_tab::space_or_tab_min_max;
+use crate::construct::{blank_line, partial_space_or_tab::space_or_tab_min_max};
 use crate::event::{Content, Link, Name};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
@@ -384,11 +384,11 @@ pub fn whitespace_after(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(
-        State::Next(StateName::GfmFootnoteDefinitionContBlank),
-        State::Next(StateName::GfmFootnoteDefinitionContFilled),
-    );
-    State::Retry(StateName::BlankLineStart)
+    if blank_line::rest_is_blank(tokenizer) {
+        State::Retry(StateName::GfmFootnoteDefinitionContBlank)
+    } else {
+        State::Retry(StateName::GfmFootnoteDefinitionContFilled)
+    }
 }
 
 /// Start of footnote definition continuation, at a blank line.

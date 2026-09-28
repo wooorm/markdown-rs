@@ -706,3 +706,98 @@ fn list() -> Result<(), message::Message> {
 
     Ok(())
 }
+
+#[test]
+fn list_container_edge_cases() -> Result<(), message::Message> {
+    assert_eq!(
+        to_html("- a\n \r\n  b"),
+        "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
+        "should see a line with a space and a CRLF as blank in a list item"
+    );
+
+    assert_eq!(
+        to_html("- - a\n\t\n    b"),
+        "<ul>\n<li>\n<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>\n</li>\n</ul>",
+        "should see a line with a tab as blank in nested list items"
+    );
+
+    assert_eq!(
+        to_html("- a\n\n\n  b"),
+        "<ul>\n<li>\n<p>a</p>\n<p>b</p>\n</li>\n</ul>",
+        "should continue a list item over several blank lines"
+    );
+
+    assert_eq!(
+        to_html("- > a\n\n\n  b"),
+        "<ul>\n<li>\n<blockquote>\n<p>a</p>\n</blockquote>\n<p>b</p>\n</li>\n</ul>",
+        "should close a block quote in a list item at a blank line"
+    );
+
+    assert_eq!(
+        to_html("-\n\n\n  a"),
+        "<ul>\n<li></li>\n</ul>\n<p>a</p>",
+        "should not continue a list item that started blank over blank lines"
+    );
+
+    assert_eq!(
+        to_html("- a\r\r\r  b"),
+        "<ul>\r<li>\r<p>a</p>\r<p>b</p>\r</li>\r</ul>",
+        "should continue a list item over blank lines ending in CR"
+    );
+
+    assert_eq!(
+        to_html("- a\n  - b\n\n\n    c\n\n\n  d\n\n\ne"),
+        "<ul>\n<li>\n<p>a</p>\n<ul>\n<li>\n<p>b</p>\n<p>c</p>\n</li>\n</ul>\n<p>d</p>\n</li>\n</ul>\n<p>e</p>",
+        "should continue nested list items over blank lines, then close them"
+    );
+
+    assert_eq!(
+        to_html("- - -"),
+        "<hr />",
+        "should prefer a thematic break over list items"
+    );
+
+    assert_eq!(
+        to_html("- - - a"),
+        "<ul>\n<li>\n<ul>\n<li>\n<ul>\n<li>a</li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
+        "should see list items when a line cannot be a thematic break"
+    );
+
+    assert_eq!(
+        to_html("- * * *"),
+        "<ul>\n<li>\n<hr />\n</li>\n</ul>",
+        "should see a thematic break of another marker in a list item"
+    );
+
+    assert_eq!(
+        to_html_with_options(
+            "- - -",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        thematic_break: false,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<ul>\n<li>\n<ul>\n<li>\n<ul>\n<li></li>\n</ul>\n</li>\n</ul>\n</li>\n</ul>",
+        "should see list items when thematic breaks are off"
+    );
+
+    assert_eq!(
+        to_html("- ~~~a\n\n- }\n\n  b"),
+        "<ul>\n<li>\n<pre><code class=\"language-a\">\n\n</code></pre>\n</li>\n<ul>\n<li>\n<p>}</p>\n<p>b</p>\n</li>\n</ul>\n</ul>",
+        "should keep separate lists for items right after an unclosed fence"
+    );
+
+    assert_eq!(
+        to_html("* a\n\n  * b\n* c\n  * d"),
+        "<ul>\n<li>\n<p>a</p>\n<ul>\n<li>b</li>\n</ul>\n</li>\n<li>\n<p>c</p>\n<ul>\n<li>d</li>\n</ul>\n</li>\n</ul>",
+        "should merge items of one list around nested lists"
+    );
+
+    Ok(())
+}

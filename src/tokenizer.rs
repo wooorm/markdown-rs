@@ -20,6 +20,7 @@ use crate::util::char::format_byte_opt;
 
 use crate::util::{constant::TAB_SIZE, edit_map::EditMap};
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
+use core::ops::Range;
 
 /// Containers.
 ///
@@ -201,6 +202,15 @@ pub struct TokenizeState<'a> {
     /// a list item.
     /// Used for GFM task list items.
     pub document_at_first_paragraph_of_list_item: bool,
+    /// Start and end of the last scan for a blank rest of line.
+    pub document_blank_scan: (usize, usize),
+    /// Container index at which this line was first seen to be empty.
+    pub document_blank_from: Option<usize>,
+    /// Containers from this index continued on the previous, empty, line, so
+    /// they continue on an empty line again; `usize::MAX` if unknown.
+    pub document_blank_skip: usize,
+    /// Range in which list item markers cannot start a thematic break.
+    pub document_thematic_break_scan: Range<usize>,
 
     // Couple of very frequent settings for parsing whitespace.
     pub space_or_tab_eol_content: Option<Content>,
@@ -344,6 +354,10 @@ impl<'a> Tokenizer<'a> {
                 document_container_stack: vec![],
                 document_exits: vec![],
                 document_continued: 0,
+                document_blank_scan: (usize::MAX, 0),
+                document_blank_from: None,
+                document_blank_skip: usize::MAX,
+                document_thematic_break_scan: 0..0,
                 document_lazy_accepting_before: false,
                 document_data_index: None,
                 document_child_state: None,

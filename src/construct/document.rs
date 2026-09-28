@@ -92,6 +92,23 @@ pub fn before_frontmatter(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn container_existing_before(tokenizer: &mut Tokenizer) -> State {
+    // On an empty line, skip containers that continued on the previous one.
+    if tokenizer.current == Some(b'\n') {
+        let state = &mut tokenizer.tokenize_state;
+
+        if state.document_blank_from.is_none() {
+            state.document_blank_from = Some(state.document_continued);
+        }
+
+        if state.document_continued >= state.document_blank_skip {
+            debug_assert!(
+                state.document_blank_skip <= state.document_container_stack.len(),
+                "expected the stack to not change on an empty line"
+            );
+            state.document_continued = state.document_container_stack.len();
+        }
+    }
+
     // If there are more existing containers, check whether the next one continues.
     if tokenizer.tokenize_state.document_continued
         < tokenizer.tokenize_state.document_container_stack.len()
@@ -358,6 +375,13 @@ pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
 ///     ^  ^
 /// ```
 pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
+    // Only when all containers continued.
+    let state = &mut tokenizer.tokenize_state;
+    state.document_blank_skip = match state.document_blank_from.take() {
+        Some(from) if state.document_continued == state.document_container_stack.len() => from,
+        _ => usize::MAX,
+    };
+
     let child = tokenizer.tokenize_state.document_child.as_mut().unwrap();
     let state = tokenizer
         .tokenize_state

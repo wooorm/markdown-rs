@@ -58,14 +58,14 @@
 //! [html_ul]: https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
 //! [commonmark_block]: https://spec.commonmark.org/0.31/#phase-1-block-structure
 
-use crate::construct::partial_space_or_tab::space_or_tab_min_max;
-use crate::event::{Kind, Name};
+use crate::construct::{blank_line, partial_space_or_tab::space_or_tab_min_max};
+use crate::event::{Event, Kind, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
 use crate::tokenizer::Tokenizer;
 use crate::util::{
-    constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE},
+    constant::{LIST_ITEM_VALUE_SIZE_MAX, TAB_SIZE, THEMATIC_BREAK_MARKER_COUNT_MIN},
     skip,
     slice::{Position, Slice},
 };
@@ -109,8 +109,12 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     // Unordered.
     if matches!(tokenizer.current, Some(b'*' | b'-')) {
-        tokenizer.check(State::Nok, State::Next(StateName::ListItemBeforeUnordered));
-        State::Retry(StateName::ThematicBreakStart)
+        if may_be_thematic_break(tokenizer) {
+            tokenizer.check(State::Nok, State::Next(StateName::ListItemBeforeUnordered));
+            State::Retry(StateName::ThematicBreakStart)
+        } else {
+            State::Retry(StateName::ListItemBeforeUnordered)
+        }
     } else if tokenizer.current == Some(b'+') {
         State::Retry(StateName::ListItemBeforeUnordered)
     }
@@ -121,6 +125,48 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
         State::Retry(StateName::ListItemBeforeOrdered)
     } else {
         State::Nok
+    }
+}
+
+/// Whether the rest of the line, from the current marker, may be a thematic
+/// break; only `false` is final.
+fn may_be_thematic_break(tokenizer: &mut Tokenizer) -> bool {
+    if !tokenizer.parse_state.options.constructs.thematic_break {
+        return false;
+    }
+
+    let bytes = tokenizer.parse_state.bytes;
+    let index = tokenizer.point.index;
+    if tokenizer
+        .tokenize_state
+        .document_thematic_break_scan
+        .contains(&index)
+    {
+        return false;
+    }
+
+    let marker = bytes[index];
+    debug_assert_eq!(tokenizer.current, Some(marker), "expected current marker");
+    let mut count = 0;
+    let mut position = index;
+
+    while position < bytes.len() {
+        match bytes[position] {
+            b'\n' | b'\r' => break,
+            b'\t' | b' ' => {}
+            byte if byte == marker => count += 1,
+            _ => break,
+        }
+        position += 1;
+    }
+
+    let found = position == bytes.len() || matches!(bytes[position], b'\n' | b'\r');
+
+    if found && count >= THEMATIC_BREAK_MARKER_COUNT_MIN {
+        true
+    } else {
+        tokenizer.tokenize_state.document_thematic_break_scan = index..position;
+        false
     }
 }
 
@@ -197,12 +243,12 @@ pub fn marker(tokenizer: &mut Tokenizer) -> State {
 ///       ^
 /// ```
 pub fn marker_after(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.tokenize_state.size = 1;
-    tokenizer.check(
-        State::Next(StateName::ListItemAfter),
-        State::Next(StateName::ListItemMarkerAfterFilled),
-    );
-    State::Retry(StateName::BlankLineStart)
+    if blank_line::rest_is_blank(tokenizer) {
+        tokenizer.tokenize_state.size = 1;
+        State::Retry(StateName::ListItemAfter)
+    } else {
+        State::Retry(StateName::ListItemMarkerAfterFilled)
+    }
 }
 
 /// After list item marker.
@@ -318,11 +364,11 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
 ///     ^
 /// ```
 pub fn cont_start(tokenizer: &mut Tokenizer) -> State {
-    tokenizer.check(
-        State::Next(StateName::ListItemContBlank),
-        State::Next(StateName::ListItemContFilled),
-    );
-    State::Retry(StateName::BlankLineStart)
+    if blank_line::rest_is_blank(tokenizer) {
+        State::Retry(StateName::ListItemContBlank)
+    } else {
+        State::Retry(StateName::ListItemContFilled)
+    }
 }
 
 /// Start of blank list item continuation.
@@ -370,8 +416,47 @@ pub fn cont_filled(tokenizer: &mut Tokenizer) -> State {
     }
 }
 
+/// Where each list item ends, in the order the items start.
+fn list_item_ends(events: &[Event]) -> Vec<(usize, usize)> {
+    let mut items: Vec<(usize, usize)> = vec![];
+    let mut open: Vec<usize> = vec![];
+
+    for (index, event) in events.iter().enumerate() {
+        if event.name == Name::ListItem {
+            if event.kind == Kind::Enter {
+                open.push(items.len());
+                items.push((index, index));
+            } else if let Some(item) = open.pop() {
+                items[item].1 = index;
+            }
+        }
+    }
+
+    debug_assert!(open.is_empty(), "expected every item to exit");
+
+    let mut item = items.len();
+    while item > 0 {
+        item -= 1;
+        let after = items[item].1 + 1;
+        if after < events.len()
+            && events[after].name == Name::ListItem
+            && events[after].kind == Kind::Enter
+        {
+            let next = items.partition_point(|(enter, _)| *enter < after);
+            items[item].1 = items[next].1;
+        }
+    }
+
+    items
+}
+
 /// Find adjacent list items with the same marker.
+///
+/// Balances in `lists_wip` never decrease from bottom to top, so the search
+/// stops at the first list with a lower balance.
 pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
+    let ends = list_item_ends(&tokenizer.events);
+    let mut next_item = 0;
     let mut lists_wip: Vec<(u8, usize, usize, usize)> = vec![];
     let mut lists: Vec<(u8, usize, usize, usize)> = vec![];
     let mut index = 0;
@@ -383,7 +468,9 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
 
         if event.name == Name::ListItem {
             if event.kind == Kind::Enter {
-                let end = skip::opt(&tokenizer.events, index, &[Name::ListItem]) - 1;
+                debug_assert_eq!(ends[next_item].0, index, "expected items in order");
+                let end = ends[next_item].1;
+                next_item += 1;
                 let marker = skip::to(&tokenizer.events, index, &[Name::ListItemMarker]);
                 // Guaranteed to be a valid ASCII byte.
                 let marker = tokenizer.parse_state.bytes[tokenizer.events[marker].point.index];
@@ -395,23 +482,30 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                 while list_index > 0 {
                     list_index -= 1;
                     let previous = &lists_wip[list_index];
-                    let before = skip::opt(
-                        &tokenizer.events,
-                        previous.3 + 1,
-                        &[
-                            Name::SpaceOrTab,
-                            Name::LineEnding,
-                            Name::BlankLineEnding,
-                            Name::BlockQuotePrefix,
-                        ],
-                    );
 
-                    if previous.0 == current.0 && previous.1 == current.1 && before == current.2 {
-                        let previous_mut = &mut lists_wip[list_index];
-                        previous_mut.3 = current.3;
-                        lists.append(&mut lists_wip.split_off(list_index + 1));
-                        matched = true;
+                    if previous.1 < current.1 {
                         break;
+                    }
+
+                    if previous.0 == current.0 && previous.1 == current.1 {
+                        let before = skip::opt(
+                            &tokenizer.events,
+                            previous.3 + 1,
+                            &[
+                                Name::SpaceOrTab,
+                                Name::LineEnding,
+                                Name::BlankLineEnding,
+                                Name::BlockQuotePrefix,
+                            ],
+                        );
+
+                        if before == current.2 {
+                            let previous_mut = &mut lists_wip[list_index];
+                            previous_mut.3 = current.3;
+                            lists.append(&mut lists_wip.split_off(list_index + 1));
+                            matched = true;
+                            break;
+                        }
                     }
                 }
 
@@ -436,6 +530,10 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                         lists.append(&mut lists_wip.split_off(exit));
                     }
 
+                    debug_assert!(
+                        lists_wip.last().map_or(true, |list| list.1 <= current.1),
+                        "expected balances to not decrease"
+                    );
                     lists_wip.push(current);
                 }
 

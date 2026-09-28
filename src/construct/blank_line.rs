@@ -86,3 +86,29 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         _ => State::Nok,
     }
 }
+
+/// Whether the rest of the line, from the current byte, is blank, as a check
+/// for [`start`][] would find.
+pub fn rest_is_blank(tokenizer: &mut Tokenizer) -> bool {
+    let bytes = tokenizer.parse_state.bytes;
+    let index = tokenizer.point.index;
+    debug_assert_eq!(
+        tokenizer.current.is_none(),
+        index == bytes.len(),
+        "expected all bytes to be available"
+    );
+    let (from, found) = tokenizer.tokenize_state.document_blank_scan;
+
+    let found = if from <= index && index <= found {
+        found
+    } else {
+        let mut found = index;
+        while found < bytes.len() && matches!(bytes[found], b'\t' | b' ') {
+            found += 1;
+        }
+        tokenizer.tokenize_state.document_blank_scan = (index, found);
+        found
+    };
+
+    found == bytes.len() || matches!(bytes[found], b'\n' | b'\r')
+}
