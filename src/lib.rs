@@ -60,6 +60,9 @@ pub use util::identifier::{id_cont, id_start};
 pub use util::sanitize_uri::sanitize;
 
 #[doc(hidden)]
+pub use util::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
+
+#[doc(hidden)]
 pub use util::location::Location;
 
 pub use util::line_ending::LineEnding;

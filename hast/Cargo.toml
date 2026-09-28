@@ -1,0 +1,18 @@
+[dependencies]
+markdown = { path = "../", version = "1.0.0" }
+serde = { features = ["derive"], optional = true, version = "1" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+serde_json = { version = "1" }
+
+[features]
+default = []
+serde = ["dep:serde", "markdown/serde"]
+
+[package]
+description = "hast (HTML syntax tree) types"
+edition = "2018"
+license = "MIT"
+name = "hast"
+version = "0.0.0"
