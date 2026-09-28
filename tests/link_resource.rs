@@ -416,6 +416,48 @@ fn link_resource() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("[a](b (c(d))"),
+        "<p>[a](b (c(d))</p>",
+        "should not support an unescaped `(` in a link title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a](b (())"),
+        "<p>[a](b (())</p>",
+        "should not support an unescaped `(` at the start of a link title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a](b (c\n(d))"),
+        "<p>[a](b (c\n(d))</p>",
+        "should not support an unescaped `(` on a later line of a link title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a](b (c\\(d))"),
+        "<p><a href=\"b\" title=\"c(d\">a</a></p>",
+        "should support an escaped `(` in a link title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a](b (c\\\\(d))"),
+        "<p>[a](b (c\\(d))</p>",
+        "should not support an unescaped `(` after an escaped backslash in a link title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a](b \"c(d\")"),
+        "<p><a href=\"b\" title=\"c(d\">a</a></p>",
+        "should support `(` in a link title in double quotes"
+    );
+
+    assert_eq!(
+        to_html("[a](b 'c(d')"),
+        "<p><a href=\"b\" title=\"c(d\">a</a></p>",
+        "should support `(` in a link title in single quotes"
+    );
+
+    assert_eq!(
         to_html("[&amp;&copy;&](example.com/&amp;&copy;& \"&amp;&copy;&\")"),
         "<p><a href=\"example.com/&amp;%C2%A9&amp;\" title=\"&amp;©&amp;\">&amp;©&amp;</a></p>",
         "should support character references in links"

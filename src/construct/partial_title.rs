@@ -8,9 +8,10 @@
 //! ```bnf
 //! ; Restriction: no blank lines.
 //! ; Restriction: markers must match (in case of `(` with `)`).
+//! ; Restriction: in case of `(`, `title_byte` excludes both `(` and `)`.
 //! title ::= marker *(title_byte | title_escape) marker
 //! title_byte ::= code - '\\' - marker
-//! title_escape ::= '\\' ['\\' | marker]
+//! title_escape ::= '\\' ['\\' | '"' | '\'' | '(' | ')']
 //! marker ::= '"' | '\'' | '('
 //! ```
 //!
@@ -168,6 +169,10 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
     {
         tokenizer.exit(Name::Data);
         State::Retry(StateName::TitleAtBreak)
+    }
+    // No unescaped `(` in parentheses.
+    else if tokenizer.tokenize_state.marker == b')' && tokenizer.current == Some(b'(') {
+        State::Retry(StateName::TitleNok)
     } else {
         let name = if tokenizer.current == Some(b'\\') {
             StateName::TitleEscape
@@ -182,12 +187,12 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
 /// After `\`, at a special character.
 ///
 /// ```markdown
-/// > | "a\*b"
-///      ^
+/// > | "a\"b"
+///        ^
 /// ```
 pub fn escape(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
-        Some(b'"' | b'\'' | b')' | b'\\') => {
+        Some(b'"' | b'\'' | b'(' | b')' | b'\\') => {
             tokenizer.consume();
             State::Next(StateName::TitleInside)
         }

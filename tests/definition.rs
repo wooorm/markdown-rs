@@ -327,6 +327,30 @@ fn definition() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("[a]: b (c(d)\n\n[a]"),
+        "<p>[a]: b (c(d)</p>\n<p>[a]</p>",
+        "should not support an unescaped `(` in a definition title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a]: b (c\n(d)\n\n[a]"),
+        "<p>[a]: b (c\n(d)</p>\n<p>[a]</p>",
+        "should not support an unescaped `(` on a later line of a definition title in parentheses"
+    );
+
+    assert_eq!(
+        to_html("[a]: b\n(c(d)\n\n[a]"),
+        "<p>(c(d)</p>\n<p><a href=\"b\">a</a></p>",
+        "should support a definition without its title, when the title on the next line has an unescaped `(`"
+    );
+
+    assert_eq!(
+        to_html("[a]: b (c\\(d)\n\n[a]"),
+        "<p><a href=\"b\" title=\"c(d\">a</a></p>",
+        "should support an escaped `(` in a definition title in parentheses"
+    );
+
+    assert_eq!(
         to_html("[x]: a(()\n\n[x]"),
         "<p>[x]: a(()</p>\n<p>[x]</p>",
         "should not support more opening than closing parens in the destination"
