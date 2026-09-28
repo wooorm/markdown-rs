@@ -113,11 +113,6 @@ pub struct LabelStart {
     pub kind: LabelKind,
     /// Indices of where the label starts and ends in `events`.
     pub start: (usize, usize),
-    /// A boolean used internally to figure out if a (link) label start can’t
-    /// be used anymore (because it would contain another link).
-    /// That link start is still looking for a balanced closing bracket though,
-    /// so we can’t remove it just yet.
-    pub inactive: bool,
 }
 
 /// Valid label.
@@ -218,6 +213,9 @@ pub struct TokenizeState<'a> {
     ///
     /// Used when tokenizing [text content][crate::construct::text].
     pub label_starts: Vec<LabelStart>,
+    /// Link starts below this index in `label_starts` are inactive; they stay
+    /// to balance brackets.
+    pub label_starts_inactive: usize,
     /// List of unusable label starts.
     ///
     /// Used when tokenizing [text content][crate::construct::text].
@@ -354,6 +352,7 @@ impl<'a> Tokenizer<'a> {
                 mdx_last_parse_error: None,
                 end: 0,
                 label_starts: vec![],
+                label_starts_inactive: 0,
                 label_starts_loose: vec![],
                 marker: 0,
                 marker_b: 0,
