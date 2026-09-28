@@ -5,7 +5,6 @@ use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::Tokenizer;
-use crate::util::location::Location;
 use crate::ParseOptions;
 use alloc::{string::String, vec, vec::Vec};
 
@@ -15,8 +14,6 @@ use alloc::{string::String, vec, vec::Vec};
 /// It also references the input value as bytes (`u8`).
 #[derive(Debug)]
 pub struct ParseState<'a> {
-    /// Configuration.
-    pub location: Option<Location>,
     /// Configuration.
     pub options: &'a ParseOptions,
     /// List of chars.
@@ -39,11 +36,6 @@ pub fn parse<'a>(
     let mut parse_state = ParseState {
         options,
         bytes,
-        location: if options.mdx_esm_parse.is_some() || options.mdx_expression_parse.is_some() {
-            Some(Location::new(bytes))
-        } else {
-            None
-        },
         definitions: vec![],
         gfm_footnote_definitions: vec![],
     };

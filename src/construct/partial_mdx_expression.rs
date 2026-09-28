@@ -60,6 +60,7 @@ use crate::event::Name;
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use crate::util::location::Location;
 use crate::util::mdx_collect::collect;
 use crate::{MdxExpressionKind, MdxExpressionParse, MdxSignal};
 use alloc::boxed::Box;
@@ -238,11 +239,7 @@ fn parse_expression(tokenizer: &mut Tokenizer, parse: &MdxExpressionParse) -> St
     match parse(&result.value, &kind) {
         MdxSignal::Ok => State::Ok,
         MdxSignal::Error(reason, relative, source, rule_id) => {
-            let point = tokenizer
-                .parse_state
-                .location
-                .as_ref()
-                .expect("expected location index if aware mdx is on")
+            let point = Location::new(tokenizer.parse_state.bytes)
                 .relative_to_point(&result.stops, relative)
                 .unwrap_or_else(|| tokenizer.point.to_unist());
 

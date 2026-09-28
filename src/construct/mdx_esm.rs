@@ -33,6 +33,7 @@ use crate::event::Name;
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use crate::util::location::Location;
 use crate::util::{mdx_collect::collect, slice::Slice};
 use crate::MdxSignal;
 use alloc::boxed::Box;
@@ -207,11 +208,7 @@ fn parse_esm(tokenizer: &mut Tokenizer) -> State {
     match parse(&result.value) {
         MdxSignal::Ok => State::Ok,
         MdxSignal::Error(message, relative, source, rule_id) => {
-            let point = tokenizer
-                .parse_state
-                .location
-                .as_ref()
-                .expect("expected location index if aware mdx is on")
+            let point = Location::new(tokenizer.parse_state.bytes)
                 .relative_to_point(&result.stops, relative)
                 .expect("expected non-empty string");
             State::Error(message::Message {
