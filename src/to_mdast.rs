@@ -36,6 +36,8 @@ struct Reference {
     reference_kind: Option<ReferenceKind>,
     identifier: String,
     label: String,
+    /// Exit of the label text, if any; its identifier is made only if needed.
+    label_text_exit: Option<usize>,
 }
 
 /// Info on a tag.
@@ -77,6 +79,7 @@ impl Reference {
             reference_kind: Some(ReferenceKind::Shortcut),
             identifier: String::new(),
             label: String::new(),
+            label_text_exit: None,
         }
     }
 }
@@ -1283,18 +1286,13 @@ fn on_exit_label_text(context: &mut CompileContext) {
     let mut fragment = context.resume();
     let label = fragment.to_string();
     let children = fragment.children_mut().unwrap().split_off(0);
-    let slice = Slice::from_position(
-        context.bytes,
-        &SlicePosition::from_exit_event(context.events, context.index),
-    );
-    let identifier = normalize_identifier(slice.as_str()).to_lowercase();
 
     let reference = context
         .media_reference_stack
         .last_mut()
         .expect("expected reference on media stack");
     reference.label.clone_from(&label);
-    reference.identifier = identifier;
+    reference.label_text_exit = Some(context.index);
 
     match context.tail_mut() {
         Node::Link(node) => node.children = children,
@@ -1354,7 +1352,7 @@ fn on_exit_html(context: &mut CompileContext) -> Result<(), message::Message> {
 
 /// Handle [`Exit`][Kind::Exit]:{[`GfmFootnoteCall`][Name::GfmFootnoteCall],[`Image`][Name::Image],[`Link`][Name::Link]}.
 fn on_exit_media(context: &mut CompileContext) -> Result<(), message::Message> {
-    let reference = context
+    let mut reference = context
         .media_reference_stack
         .pop()
         .expect("expected reference on media stack");
@@ -1362,6 +1360,17 @@ fn on_exit_media(context: &mut CompileContext) -> Result<(), message::Message> {
 
     // It’s a reference.
     if let Some(kind) = reference.reference_kind {
+        // Full references got their identifier from the reference string.
+        if kind != ReferenceKind::Full {
+            if let Some(exit) = reference.label_text_exit {
+                let slice = Slice::from_position(
+                    context.bytes,
+                    &SlicePosition::from_exit_event(context.events, exit),
+                );
+                reference.identifier = normalize_identifier(slice.as_str()).to_lowercase();
+            }
+        }
+
         let parent = context.tail_mut();
         let siblings = parent.children_mut().unwrap();
 

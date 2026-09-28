@@ -29,10 +29,10 @@ struct Media {
     /// Whether this represents an image (`true`) or a link or definition
     /// (`false`).
     image: bool,
-    /// The text between the brackets (`x` in `![x]()` and `[x]()`).
-    ///
-    /// Not interpreted.
-    label_id: Option<(usize, usize)>,
+    /// Whether the label ends up in the output: images and links.
+    writes_label: bool,
+    /// Exit of the text between the brackets (`x` in `![x]()` and `[x]()`).
+    label_text_exit: Option<usize>,
     /// The result of interpreting the text between the brackets
     /// (`x` in `![x]()` and `[x]()`).
     ///
@@ -320,7 +320,6 @@ fn enter(context: &mut CompileContext) {
         | Name::GfmFootnoteDefinitionPrefix
         | Name::HeadingAtxText
         | Name::HeadingSetextText
-        | Name::Label
         | Name::MdxEsm
         | Name::MdxFlowExpression
         | Name::MdxTextExpression
@@ -355,6 +354,7 @@ fn enter(context: &mut CompileContext) {
         Name::Paragraph => on_enter_paragraph(context),
         Name::Resource => on_enter_resource(context),
         Name::ResourceDestinationString => on_enter_resource_destination_string(context),
+        Name::Label => on_enter_label(context),
         Name::Strong => on_enter_strong(context),
         _ => {}
     }
@@ -492,9 +492,10 @@ fn on_enter_raw_text(context: &mut CompileContext) {
 fn on_enter_definition(context: &mut CompileContext) {
     context.buffer();
     context.media_stack.push(Media {
+        writes_label: false,
         image: false,
         label: None,
-        label_id: None,
+        label_text_exit: None,
         reference_id: None,
         destination: None,
         title: None,
@@ -527,8 +528,9 @@ fn on_enter_gfm_footnote_definition(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`GfmFootnoteCall`][Name::GfmFootnoteCall].
 fn on_enter_gfm_footnote_call(context: &mut CompileContext) {
     context.media_stack.push(Media {
+        writes_label: false,
         image: false,
-        label_id: None,
+        label_text_exit: None,
         label: None,
         reference_id: None,
         destination: None,
@@ -626,8 +628,9 @@ fn on_enter_html_text(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`Image`][Name::Image].
 fn on_enter_image(context: &mut CompileContext) {
     context.media_stack.push(Media {
+        writes_label: true,
         image: true,
-        label_id: None,
+        label_text_exit: None,
         label: None,
         reference_id: None,
         destination: None,
@@ -639,8 +642,9 @@ fn on_enter_image(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:[`Link`][Name::Link].
 fn on_enter_link(context: &mut CompileContext) {
     context.media_stack.push(Media {
+        writes_label: true,
         image: false,
-        label_id: None,
+        label_text_exit: None,
         label: None,
         reference_id: None,
         destination: None,
@@ -1065,7 +1069,8 @@ fn on_exit_gfm_autolink_literal_xmpp(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:[`GfmFootnoteCall`][Name::GfmFootnoteCall].
 fn on_exit_gfm_footnote_call(context: &mut CompileContext) {
-    let indices = context.media_stack.pop().unwrap().label_id.unwrap();
+    let media = context.media_stack.pop().unwrap();
+    let indices = label_id(context, media.label_text_exit).unwrap();
     let id =
         normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str());
     let safe_id = sanitize(&id.to_lowercase());
@@ -1310,16 +1315,38 @@ fn on_exit_html_data(context: &mut CompileContext) {
     context.push(&encoded);
 }
 
+/// Whether the label of the current media goes straight into an image alt.
+fn label_streams_into_alt(context: &CompileContext) -> bool {
+    let end = context.media_stack.len() - 1;
+    context.media_stack[end].writes_label
+        && context.media_stack[..end].iter().any(|media| media.image)
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`Label`][Name::Label].
+fn on_enter_label(context: &mut CompileContext) {
+    if !label_streams_into_alt(context) {
+        context.buffer();
+    }
+}
+
 /// Handle [`Exit`][Kind::Exit]:[`Label`][Name::Label].
 fn on_exit_label(context: &mut CompileContext) {
-    let buf = context.resume();
-    context.media_stack.last_mut().unwrap().label = Some(buf);
+    let label = if label_streams_into_alt(context) {
+        String::new()
+    } else {
+        context.resume()
+    };
+    context.media_stack.last_mut().unwrap().label = Some(label);
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`LabelText`][Name::LabelText].
 fn on_exit_label_text(context: &mut CompileContext) {
-    context.media_stack.last_mut().unwrap().label_id =
-        Some(Position::from_exit_event(context.events, context.index).to_indices());
+    context.media_stack.last_mut().unwrap().label_text_exit = Some(context.index);
+}
+
+/// Indices of the label text that exits at `label_text_exit`, if any.
+fn label_id(context: &CompileContext, label_text_exit: Option<usize>) -> Option<(usize, usize)> {
+    label_text_exit.map(|exit| Position::from_exit_event(context.events, exit).to_indices())
 }
 
 /// Handle [`Exit`][Kind::Exit]:[`LineEnding`][Name::LineEnding].
@@ -1421,11 +1448,17 @@ fn on_exit_media(context: &mut CompileContext) {
 
     let media = context.media_stack.pop().unwrap();
     let label = media.label.unwrap();
-    let id = media.reference_id.or(media.label_id).map(|indices| {
-        normalize_identifier(Slice::from_indices(context.bytes, indices.0, indices.1).as_str())
-    });
 
     let definition_index = if media.destination.is_none() {
+        let label_text_exit = media.label_text_exit;
+        let id = media
+            .reference_id
+            .or_else(|| label_id(context, label_text_exit))
+            .map(|indices| {
+                normalize_identifier(
+                    Slice::from_indices(context.bytes, indices.0, indices.1).as_str(),
+                )
+            });
         id.map(|id| {
             let mut index = 0;
 
