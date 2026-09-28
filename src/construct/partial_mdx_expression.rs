@@ -56,6 +56,7 @@
 //! [mdx_expression_text]: crate::construct::mdx_expression_text
 //! [interleaving]: https://mdxjs.com/docs/what-is-mdx/#interleaving
 
+use crate::construct::mdx_expression_flow::fails_after;
 use crate::event::Name;
 use crate::message;
 use crate::state::{Name as StateName, State};
@@ -77,6 +78,9 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.consume();
     tokenizer.exit(Name::MdxExpressionMarker);
     tokenizer.tokenize_state.start = tokenizer.events.len() - 1;
+    if let Some(braces) = &mut tokenizer.tokenize_state.mdx_braces {
+        braces.recording = tokenizer.point.index > braces.until;
+    }
     State::Next(StateName::MdxExpressionBefore)
 }
 
@@ -114,6 +118,13 @@ pub fn before(tokenizer: &mut Tokenizer) -> State {
             };
 
             if state == State::Ok {
+                if let Some(braces) = &mut tokenizer.tokenize_state.mdx_braces {
+                    if braces.recording {
+                        debug_assert!(braces.open.is_empty(), "expected braces to pair up");
+                        braces.recording = false;
+                        braces.until = tokenizer.point.index;
+                    }
+                }
                 tokenizer.tokenize_state.start = 0;
                 tokenizer.enter(Name::MdxExpressionMarker);
                 tokenizer.consume();
@@ -148,8 +159,22 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             && tokenizer.parse_state.options.mdx_expression_parse.is_none()
         {
             tokenizer.tokenize_state.size += 1;
+            if let Some(braces) = &mut tokenizer.tokenize_state.mdx_braces {
+                if braces.recording {
+                    braces.open.push(braces.opening.len());
+                    braces.opening.push((tokenizer.point.index, false));
+                }
+            }
         } else if tokenizer.current == Some(b'}') {
             tokenizer.tokenize_state.size -= 1;
+            if let Some(braces) = &mut tokenizer.tokenize_state.mdx_braces {
+                if braces.recording {
+                    if let Some(position) = braces.open.pop() {
+                        braces.opening[position].1 =
+                            fails_after(tokenizer.parse_state, tokenizer.point.index + 1);
+                    }
+                }
+            }
         }
 
         tokenizer.consume();

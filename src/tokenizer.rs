@@ -106,6 +106,19 @@ pub enum LabelKind {
     GfmUndefinedFootnote,
 }
 
+/// Braces counted by MDX expressions (flow) without a JavaScript parser.
+#[derive(Debug, Default)]
+pub struct MdxBraces {
+    /// Whether the current expression records its braces.
+    pub recording: bool,
+    /// Opening braces, sorted, and whether an expression there fails.
+    pub opening: Vec<(usize, bool)>,
+    /// Indices into `opening` of braces not yet closed.
+    pub open: Vec<usize>,
+    /// End of the last recorded expression; earlier starts do not record.
+    pub until: usize,
+}
+
 /// Label start, looking for an end.
 #[derive(Debug)]
 pub struct LabelStart {
@@ -234,6 +247,8 @@ pub struct TokenizeState<'a> {
 
     // Last error message provided at an EOF of an expression.
     pub mdx_last_parse_error: Option<(String, String, String)>,
+    /// MDX expression (flow) braces, once one fails after its closing brace.
+    pub mdx_braces: Option<Box<MdxBraces>>,
 
     /// Whether to connect events.
     pub connect: bool,
@@ -352,6 +367,7 @@ impl<'a> Tokenizer<'a> {
                 definitions: vec![],
                 gfm_footnote_definitions: vec![],
                 mdx_last_parse_error: None,
+                mdx_braces: None,
                 end: 0,
                 label_starts: vec![],
                 label_starts_loose: vec![],

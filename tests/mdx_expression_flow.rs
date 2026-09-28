@@ -162,6 +162,50 @@ fn mdx_expression_flow_agnostic() -> Result<(), message::Message> {
         "should support indent in `MdxFlowExpression` in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options("{\n{\n{\n}}}x", &mdx)?,
+        "<p>x</p>",
+        "should not support expressions (flow) with text after them, inside each other"
+    );
+
+    // In these, the first line is not an expression (flow), and the code
+    // makes `{` on the third line text.
+    assert_eq!(
+        to_html_with_options("{a}b\n`\n{`\n{c}\n}x", &mdx)?,
+        "<p>b\n<code> {</code></p>\n<p>}x</p>",
+        "should support an expression (flow) inside one with text after it"
+    );
+
+    assert_eq!(
+        to_html_with_options("{a}b\n`\n{`\n{c} \t\n}x", &mdx)?,
+        "<p>b\n<code> {</code></p>\n<p>}x</p>",
+        "should support an expression (flow) with whitespace after it, inside one with text after it"
+    );
+
+    assert_eq!(
+        to_html_with_options("{a}b\n`\n{`\n{c}\r\n}x", &mdx)?,
+        "<p>b\n<code> {</code></p>\n<p>}x</p>",
+        "should support an expression (flow) before a carriage return and line feed, inside one with text after it"
+    );
+
+    assert_eq!(
+        to_html_with_options("{a}b\n`\n{`\n{c}\r}x", &mdx)?,
+        "<p>b\n<code> {</code></p>\n<p>}x</p>",
+        "should support an expression (flow) before a carriage return, inside one with text after it"
+    );
+
+    assert_eq!(
+        to_html_with_options("{a}b\n`\n{`\n{c}<a/>\n}x", &mdx)?,
+        "<p>b\n<code> {</code></p>\n<p>}x</p>",
+        "should support an expression (flow) and a tag inside an expression with text after it"
+    );
+
+    assert_eq!(
+        to_html_with_options("{a}b\n`\n{`\n{c}d\n}x", &mdx)?,
+        "<p>b\n<code> {</code>\nd\n}x</p>",
+        "should not support an expression (flow) with text after it, inside one with text after it"
+    );
+
     Ok(())
 }
 

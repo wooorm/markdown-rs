@@ -36,9 +36,11 @@
 
 use crate::construct::partial_space_or_tab::{space_or_tab, space_or_tab_min_max};
 use crate::event::Name;
+use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
 use crate::util::constant::TAB_SIZE;
+use alloc::boxed::Box;
 
 /// Start of an MDX expression (flow).
 ///
@@ -76,9 +78,14 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 /// ```
 pub fn before(tokenizer: &mut Tokenizer) -> State {
     if Some(b'{') == tokenizer.current {
-        tokenizer.concrete = true;
-        tokenizer.attempt(State::Next(StateName::MdxExpressionFlowAfter), State::Nok);
-        State::Retry(StateName::MdxExpressionStart)
+        if known_nok(tokenizer) {
+            reset(tokenizer);
+            State::Nok
+        } else {
+            tokenizer.concrete = true;
+            tokenizer.attempt(State::Next(StateName::MdxExpressionFlowAfter), State::Nok);
+            State::Retry(StateName::MdxExpressionStart)
+        }
     } else {
         State::Nok
     }
@@ -166,9 +173,44 @@ pub fn end(tokenizer: &mut Tokenizer) -> State {
         //     State::Retry(StateName::MdxExpressionFlowStart)
         // }
         _ => {
+            // Only brace counting records.
+            if tokenizer.parse_state.options.mdx_expression_parse.is_none() {
+                tokenizer
+                    .tokenize_state
+                    .mdx_braces
+                    .get_or_insert_with(Box::default);
+            }
             reset(tokenizer);
             State::Nok
         }
+    }
+}
+
+/// Whether an expression closing before `index` fails at `end`: something
+/// other than a line ending or tag follows on its line.
+pub fn fails_after(parse_state: &ParseState, index: usize) -> bool {
+    let bytes = parse_state.bytes;
+    let mut index = index;
+
+    while index < bytes.len() && matches!(bytes[index], b'\t' | b' ') {
+        index += 1;
+    }
+
+    match bytes.get(index).copied() {
+        None | Some(b'\n' | b'\r') => false,
+        Some(b'<') => !parse_state.options.constructs.mdx_jsx_flow,
+        Some(_) => true,
+    }
+}
+
+/// Whether an earlier expression that counted past here found this one fails.
+fn known_nok(tokenizer: &Tokenizer) -> bool {
+    match &tokenizer.tokenize_state.mdx_braces {
+        Some(braces) if !tokenizer.lazy => braces
+            .opening
+            .binary_search_by_key(&tokenizer.point.index, |brace| brace.0)
+            .map_or(false, |position| braces.opening[position].1),
+        _ => false,
     }
 }
 
