@@ -15,7 +15,7 @@ use crate::util::{
     character_reference::{
         decode as decode_character_reference, parse as parse_character_reference,
     },
-    infer::{gfm_table_align, list_item_loose, list_loose},
+    infer::{gfm_table_align, ListSpread},
     mdx_collect::{collect, Result as CollectResult},
     normalize_identifier::normalize_identifier,
     slice::{Position as SlicePosition, Slice},
@@ -100,9 +100,12 @@ struct CompileContext<'a> {
     jsx_tag: Option<JsxTag>,
     media_reference_stack: Vec<Reference>,
     raw_flow_fence_seen: bool,
+    /// Spread of lists and items, found when the first list starts.
+    list_spread: Option<ListSpread>,
     // Intermediate results.
-    /// Primary tree and buffers.
-    trees: Vec<(Node, Vec<usize>, Vec<usize>)>,
+    /// Primary tree and buffers: each a root, and its open nodes with their
+    /// enter index, deepest last.
+    trees: Vec<(Node, Vec<(Node, usize)>)>,
     /// Current event index.
     index: usize,
 }
@@ -137,7 +140,8 @@ impl<'a> CompileContext<'a> {
             jsx_tag: None,
             media_reference_stack: vec![],
             raw_flow_fence_seen: false,
-            trees: vec![(tree, vec![], vec![])],
+            list_spread: None,
+            trees: vec![(tree, vec![])],
             index: 0,
         }
     }
@@ -150,71 +154,90 @@ impl<'a> CompileContext<'a> {
                 position: None,
             }),
             vec![],
-            vec![],
         ));
     }
 
     /// Pop a buffer, returning its value.
     fn resume(&mut self) -> Node {
-        if let Some((node, stack_a, stack_b)) = self.trees.pop() {
-            debug_assert_eq!(
-                stack_a.len(),
-                0,
-                "expected stack (nodes in tree) to be drained"
-            );
-            debug_assert_eq!(
-                stack_b.len(),
-                0,
-                "expected stack (opening events) to be drained"
-            );
-            node
+        if let Some((mut root, mut open)) = self.trees.pop() {
+            debug_assert_eq!(open.len(), 0, "expected open nodes to be closed");
+            // Without debug assertions, keep unclosed nodes, such as an
+            // unclosed JSX element in a label, where they are in the tree.
+            while let Some((node, _)) = open.pop() {
+                let parent = match open.last_mut() {
+                    Some((parent, _)) => parent,
+                    None => &mut root,
+                };
+                parent
+                    .children_mut()
+                    .expect("Cannot push to non-parent")
+                    .push(node);
+            }
+            root
         } else {
             unreachable!("Cannot resume w/o buffer")
         }
     }
 
     fn tail_mut(&mut self) -> &mut Node {
-        let (tree, stack, _) = self.trees.last_mut().expect("Cannot get tail w/o tree");
-        delve_mut(tree, stack)
+        let (root, open) = self.trees.last_mut().expect("Cannot get tail w/o tree");
+        match open.last_mut() {
+            Some((node, _)) => node,
+            None => root,
+        }
     }
 
+    /// The parent of the tail, whose children do not include the tail yet.
     fn tail_penultimate_mut(&mut self) -> &mut Node {
-        let (tree, stack, _) = self.trees.last_mut().expect("Cannot get tail w/o tree");
-        delve_mut(tree, &stack[0..(stack.len() - 1)])
+        let (root, open) = self.trees.last_mut().expect("Cannot get tail w/o tree");
+        let len = open.len();
+        debug_assert!(len > 0, "expected an open node");
+        if len > 1 {
+            &mut open[len - 2].0
+        } else {
+            root
+        }
     }
 
+    /// Open `child` as the new tail; it is added to its parent when it closes.
     fn tail_push(&mut self, mut child: Node) {
         if child.position().is_none() {
             child.position_set(Some(position_from_event(&self.events[self.index])));
         }
 
-        let (tree, stack, event_stack) = self.trees.last_mut().expect("Cannot get tail w/o tree");
-        let node = delve_mut(tree, stack);
-        let children = node.children_mut().expect("Cannot push to non-parent");
-        let index = children.len();
-        children.push(child);
-        stack.push(index);
-        event_stack.push(self.index);
+        let (_, open) = self.trees.last_mut().expect("Cannot get tail w/o tree");
+        open.push((child, self.index));
     }
 
+    /// Reopen the last child of the tail.
     fn tail_push_again(&mut self) {
-        let (tree, stack, event_stack) = self.trees.last_mut().expect("Cannot get tail w/o tree");
-        let node = delve_mut(tree, stack);
-        let children = node.children().expect("Cannot push to non-parent");
-        stack.push(children.len() - 1);
-        event_stack.push(self.index);
+        let child = self
+            .tail_mut()
+            .children_mut()
+            .expect("Cannot push to non-parent")
+            .pop()
+            .expect("Cannot reopen w/o child");
+        let (_, open) = self.trees.last_mut().expect("Cannot get tail w/o tree");
+        open.push((child, self.index));
     }
 
     fn tail_pop(&mut self) -> Result<(), message::Message> {
         let ev = &self.events[self.index];
         let end = ev.point.to_unist();
-        let (tree, stack, event_stack) = self.trees.last_mut().expect("Cannot get tail w/o tree");
-        let node = delve_mut(tree, stack);
+        let (root, open) = self.trees.last_mut().expect("Cannot get tail w/o tree");
+        let (mut node, left_index) = open.pop().expect("Cannot pop w/o open node");
         let pos = node.position_mut().expect("Cannot pop manually added node");
         pos.end = end;
 
-        stack.pop().unwrap();
-        let left_index = event_stack.pop().unwrap();
+        let parent = match open.last_mut() {
+            Some((parent, _)) => parent,
+            None => root,
+        };
+        parent
+            .children_mut()
+            .expect("Cannot push to non-parent")
+            .push(node);
+
         let left = &self.events[left_index];
         if left.name != ev.name {
             on_mismatch_error(self, Some(ev), left)?;
@@ -235,9 +258,9 @@ pub fn compile(events: &[Event], bytes: &[u8]) -> Result<Node, message::Message>
     }
 
     debug_assert_eq!(context.trees.len(), 1, "expected 1 final tree");
-    let (tree, _, event_stack) = context.trees.pop().unwrap();
+    let (tree, open) = context.trees.pop().unwrap();
 
-    if let Some(index) = event_stack.last() {
+    if let Some((_, index)) = open.last() {
         let event = &events[*index];
         on_mismatch_error(&mut context, None, event)?;
     }
@@ -743,7 +766,11 @@ fn on_enter_link(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:{[`ListOrdered`][Name::ListOrdered],[`ListUnordered`][Name::ListUnordered]}.
 fn on_enter_list(context: &mut CompileContext) {
     let ordered = context.events[context.index].name == Name::ListOrdered;
-    let spread = list_loose(context.events, context.index, false);
+    let events = context.events;
+    let spread = context
+        .list_spread
+        .get_or_insert_with(|| ListSpread::new(events))
+        .spread(context.index);
 
     context.tail_push(Node::List(List {
         ordered,
@@ -756,7 +783,11 @@ fn on_enter_list(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:[`ListItem`][Name::ListItem].
 fn on_enter_list_item(context: &mut CompileContext) {
-    let spread = list_item_loose(context.events, context.index);
+    let events = context.events;
+    let spread = context
+        .list_spread
+        .get_or_insert_with(|| ListSpread::new(events))
+        .spread(context.index);
 
     context.tail_push(Node::ListItem(ListItem {
         spread,
@@ -1712,17 +1743,6 @@ fn position_from_event(event: &Event) -> Position {
         start: end.clone(),
         end,
     }
-}
-
-/// Resolve the current stack on the tree.
-fn delve_mut<'tree>(mut node: &'tree mut Node, stack: &'tree [usize]) -> &'tree mut Node {
-    let mut stack_index = 0;
-    while stack_index < stack.len() {
-        let index = stack[stack_index];
-        node = &mut node.children_mut().expect("Cannot delve into non-parent")[index];
-        stack_index += 1;
-    }
-    node
 }
 
 /// Remove initial/final EOLs.

@@ -6,140 +6,136 @@ use crate::event::{Event, Kind, Name};
 use crate::mdast::AlignKind;
 use alloc::{vec, vec::Vec};
 
-/// Figure out if a list is spread or not.
-///
-/// When `include_items: true` is passed, infers whether the list as a whole
-/// is “loose”.
-pub fn list_loose(events: &[Event], mut index: usize, include_items: bool) -> bool {
-    let mut balance = 0;
-    let name = &events[index].name;
-    debug_assert!(
-        matches!(name, Name::ListOrdered | Name::ListUnordered),
-        "expected list"
-    );
-
-    while index < events.len() {
-        let event = &events[index];
-
-        if event.kind == Kind::Enter {
-            balance += 1;
-
-            if include_items
-                && balance == 2
-                && event.name == Name::ListItem
-                && list_item_loose(events, index)
-            {
-                return true;
-            }
-        } else {
-            balance -= 1;
-
-            if balance == 1 && event.name == Name::BlankLineEnding {
-                // Blank line directly after item, which is just a prefix.
-                //
-                // ```markdown
-                // > | -␊
-                //      ^
-                //   | - a
-                // ```
-                let mut at_empty_list_item = false;
-                // Blank line at block quote prefix:
-                //
-                // ```markdown
-                // > | * >␊
-                //        ^
-                //   | * a
-                // ```
-                let mut at_empty_block_quote = false;
-
-                // List.
-                let mut before = index - 2;
-
-                if events[before].name == Name::ListItem {
-                    before -= 1;
-
-                    if events[before].name == Name::SpaceOrTab {
-                        before -= 2;
-                    }
-
-                    if events[before].name == Name::BlockQuote
-                        && events[before - 1].name == Name::BlockQuotePrefix
-                    {
-                        at_empty_block_quote = true;
-                    } else if events[before].name == Name::ListItemPrefix {
-                        at_empty_list_item = true;
-                    }
-                }
-
-                if !at_empty_list_item && !at_empty_block_quote {
-                    return true;
-                }
-            }
-
-            // Done.
-            if balance == 0 && event.name == *name {
-                break;
-            }
-        }
-
-        index += 1;
-    }
-
-    false
+/// Whether lists and list items are spread (loose), found in one pass.
+#[derive(Debug)]
+pub struct ListSpread {
+    /// For each list and item enter, in order: `(enter, spread, loose)`.
+    entries: Vec<(usize, bool, bool)>,
 }
 
-/// Figure out if an item is spread or not.
-pub fn list_item_loose(events: &[Event], mut index: usize) -> bool {
-    debug_assert!(
-        matches!(events[index].name, Name::ListItem),
-        "expected list item"
-    );
-    let mut balance = 0;
+impl ListSpread {
+    pub fn new(events: &[Event]) -> ListSpread {
+        let mut entries: Vec<(usize, bool, bool)> = vec![];
+        // Per open event: the entry of a list or item.
+        let mut open: Vec<Option<usize>> = vec![];
 
-    while index < events.len() {
-        let event = &events[index];
-
-        if event.kind == Kind::Enter {
-            balance += 1;
-        } else {
-            balance -= 1;
-
-            if balance == 1 && event.name == Name::BlankLineEnding {
-                // Blank line directly after a prefix:
-                //
-                // ```markdown
-                // > | -␊
-                //      ^
-                //   |   a
-                // ```
-                let mut at_prefix = false;
-
-                // List item.
-                let mut before = index - 2;
-
-                if events[before].name == Name::SpaceOrTab {
-                    before -= 2;
-                }
-
-                if events[before].name == Name::ListItemPrefix {
-                    at_prefix = true;
-                }
-
-                if !at_prefix {
-                    return true;
-                }
+        for (index, event) in events.iter().enumerate() {
+            if event.kind == Kind::Enter {
+                let entry = if matches!(
+                    event.name,
+                    Name::ListOrdered | Name::ListUnordered | Name::ListItem
+                ) {
+                    entries.push((index, false, false));
+                    Some(entries.len() - 1)
+                } else {
+                    None
+                };
+                open.push(entry);
+                continue;
             }
 
-            // Done.
-            if balance == 0 && event.name == Name::ListItem {
-                break;
+            let entry = open.pop().flatten();
+
+            if let Some(Some(parent)) = open.last() {
+                let parent = *parent;
+                let is_item = events[entries[parent].0].name == Name::ListItem;
+
+                if event.name == Name::BlankLineEnding
+                    && !(if is_item {
+                        item_blank_after_prefix(events, index)
+                    } else {
+                        list_blank_after_empty(events, index)
+                    })
+                {
+                    entries[parent].1 = true;
+                    entries[parent].2 = true;
+                }
+
+                if let Some(entry) = entry {
+                    if !is_item
+                        && events[entries[entry].0].name == Name::ListItem
+                        && entries[entry].1
+                    {
+                        entries[parent].2 = true;
+                    }
+                }
             }
         }
 
-        index += 1;
+        ListSpread { entries }
     }
 
-    false
+    fn entry(&self, enter: usize) -> (usize, bool, bool) {
+        let position = self
+            .entries
+            .binary_search_by_key(&enter, |entry| entry.0)
+            .expect("expected list or list item");
+        self.entries[position]
+    }
+
+    /// Whether the list or item entered at `enter` is spread.
+    pub fn spread(&self, enter: usize) -> bool {
+        self.entry(enter).1
+    }
+
+    /// Whether the list entered at `enter` is spread or has a spread item.
+    pub fn loose(&self, enter: usize) -> bool {
+        self.entry(enter).2
+    }
+}
+
+/// Whether the blank line ending at `index`, directly in a list, is right
+/// after an empty item or block quote prefix.
+fn list_blank_after_empty(events: &[Event], index: usize) -> bool {
+    // Blank line directly after item, which is just a prefix.
+    //
+    // ```markdown
+    // > | -␊
+    //      ^
+    //   | - a
+    // ```
+    //
+    // Blank line at block quote prefix:
+    //
+    // ```markdown
+    // > | * >␊
+    //        ^
+    //   | * a
+    // ```
+    let mut before = index - 2;
+
+    if events[before].name == Name::ListItem {
+        before -= 1;
+
+        if events[before].name == Name::SpaceOrTab {
+            before -= 2;
+        }
+
+        (events[before].name == Name::BlockQuote
+            && events[before - 1].name == Name::BlockQuotePrefix)
+            || events[before].name == Name::ListItemPrefix
+    } else {
+        false
+    }
+}
+
+/// Whether the blank line ending at `index`, directly in a list item, is right
+/// after its prefix.
+fn item_blank_after_prefix(events: &[Event], index: usize) -> bool {
+    // Blank line directly after a prefix:
+    //
+    // ```markdown
+    // > | -␊
+    //      ^
+    //   |   a
+    // ```
+    let mut before = index - 2;
+
+    if events[before].name == Name::SpaceOrTab {
+        before -= 2;
+    }
+
+    events[before].name == Name::ListItemPrefix
 }
 
 /// Figure out the alignment of a GFM table.

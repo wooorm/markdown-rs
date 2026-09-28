@@ -6,7 +6,7 @@ use crate::util::{
     constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC},
     encode::encode,
     gfm_tagfilter::gfm_tagfilter,
-    infer::{gfm_table_align, list_loose},
+    infer::{gfm_table_align, ListSpread},
     normalize_identifier::normalize_identifier,
     sanitize_uri::{sanitize, sanitize_with_protocols},
     skip,
@@ -104,6 +104,8 @@ struct CompileContext<'a> {
     media_stack: Vec<Media>,
     /// Stack of containers.
     tight_stack: Vec<bool>,
+    /// Looseness of lists, found when the first list starts.
+    list_spread: Option<ListSpread>,
     /// List of definitions.
     definitions: Vec<Definition>,
     /// List of definitions.
@@ -158,6 +160,7 @@ impl<'a> CompileContext<'a> {
             gfm_table_align: None,
             gfm_table_column: 0,
             tight_stack: vec![],
+            list_spread: None,
             slurp_one_line_ending: false,
             image_alt_inside: false,
             encode_html: true,
@@ -650,7 +653,11 @@ fn on_enter_link(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:{[`ListOrdered`][Name::ListOrdered],[`ListUnordered`][Name::ListUnordered]}.
 fn on_enter_list(context: &mut CompileContext) {
-    let loose = list_loose(context.events, context.index, true);
+    let events = context.events;
+    let loose = context
+        .list_spread
+        .get_or_insert_with(|| ListSpread::new(events))
+        .loose(context.index);
     context.tight_stack.push(!loose);
     context.line_ending_if_needed();
 
