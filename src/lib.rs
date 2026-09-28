@@ -57,7 +57,7 @@ pub use util::character_reference::{decode_named, decode_numeric};
 pub use util::identifier::{id_cont, id_start};
 
 #[doc(hidden)]
-pub use util::sanitize_uri::sanitize;
+pub use util::sanitize_uri::{normalize as normalize_uri, sanitize};
 
 #[doc(hidden)]
 pub use util::constant::{SAFE_PROTOCOL_HREF, SAFE_PROTOCOL_SRC};
