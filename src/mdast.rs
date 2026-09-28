@@ -297,54 +297,46 @@ impl fmt::Debug for Node {
     }
 }
 
-fn children_to_string(children: &[Node]) -> String {
-    children.iter().map(ToString::to_string).collect()
-}
-
 // To do: clippy may be right but that’s a breaking change.
 #[allow(clippy::to_string_trait_impl)]
 impl ToString for Node {
     fn to_string(&self) -> String {
-        match self {
-            // Parents.
-            Node::Root(x) => children_to_string(&x.children),
-            Node::Blockquote(x) => children_to_string(&x.children),
-            Node::FootnoteDefinition(x) => children_to_string(&x.children),
-            Node::MdxJsxFlowElement(x) => children_to_string(&x.children),
-            Node::List(x) => children_to_string(&x.children),
-            Node::Delete(x) => children_to_string(&x.children),
-            Node::Emphasis(x) => children_to_string(&x.children),
-            Node::MdxJsxTextElement(x) => children_to_string(&x.children),
-            Node::Link(x) => children_to_string(&x.children),
-            Node::LinkReference(x) => children_to_string(&x.children),
-            Node::Strong(x) => children_to_string(&x.children),
-            Node::Heading(x) => children_to_string(&x.children),
-            Node::Table(x) => children_to_string(&x.children),
-            Node::TableRow(x) => children_to_string(&x.children),
-            Node::TableCell(x) => children_to_string(&x.children),
-            Node::ListItem(x) => children_to_string(&x.children),
-            Node::Paragraph(x) => children_to_string(&x.children),
+        // A stack instead of recursion, so deep trees do not overflow.
+        let mut value = String::new();
+        let mut stack = Vec::new();
+        let mut siblings = match self.children() {
+            Some(children) => children.iter(),
+            None => core::slice::from_ref(self).iter(),
+        };
 
-            // Literals.
-            Node::MdxjsEsm(x) => x.value.clone(),
-            Node::Toml(x) => x.value.clone(),
-            Node::Yaml(x) => x.value.clone(),
-            Node::InlineCode(x) => x.value.clone(),
-            Node::InlineMath(x) => x.value.clone(),
-            Node::MdxTextExpression(x) => x.value.clone(),
-            Node::Html(x) => x.value.clone(),
-            Node::Text(x) => x.value.clone(),
-            Node::Code(x) => x.value.clone(),
-            Node::Math(x) => x.value.clone(),
-            Node::MdxFlowExpression(x) => x.value.clone(),
-
-            // Voids.
-            Node::Break(_)
-            | Node::FootnoteReference(_)
-            | Node::Image(_)
-            | Node::ImageReference(_)
-            | Node::ThematicBreak(_)
-            | Node::Definition(_) => String::new(),
+        loop {
+            if let Some(node) = siblings.next() {
+                if let Some(children) = node.children() {
+                    stack.push(core::mem::replace(&mut siblings, children.iter()));
+                } else {
+                    value.push_str(match node {
+                        // Literals.
+                        Node::MdxjsEsm(x) => &x.value,
+                        Node::Toml(x) => &x.value,
+                        Node::Yaml(x) => &x.value,
+                        Node::InlineCode(x) => &x.value,
+                        Node::InlineMath(x) => &x.value,
+                        Node::MdxTextExpression(x) => &x.value,
+                        Node::Html(x) => &x.value,
+                        Node::Text(x) => &x.value,
+                        Node::Code(x) => &x.value,
+                        Node::Math(x) => &x.value,
+                        Node::MdxFlowExpression(x) => &x.value,
+                        // Voids, such as images, and parents, which have
+                        // children.
+                        _ => "",
+                    });
+                }
+            } else if let Some(parent_siblings) = stack.pop() {
+                siblings = parent_siblings;
+            } else {
+                break value;
+            }
         }
     }
 }
@@ -1391,6 +1383,51 @@ mod tests {
     use super::*;
     use crate::unist::Position;
     use alloc::{format, string::ToString, vec};
+
+    #[test]
+    fn to_string_nested() {
+        let node = Node::Paragraph(Paragraph {
+            position: None,
+            children: vec![
+                Node::Text(Text {
+                    value: "a".into(),
+                    position: None,
+                }),
+                Node::Emphasis(Emphasis {
+                    position: None,
+                    children: vec![
+                        Node::Image(Image {
+                            position: None,
+                            alt: "x".into(),
+                            url: "y".into(),
+                            title: None,
+                        }),
+                        Node::Strong(Strong {
+                            position: None,
+                            children: vec![Node::Text(Text {
+                                value: "b".into(),
+                                position: None,
+                            })],
+                        }),
+                        Node::InlineCode(InlineCode {
+                            value: "c".into(),
+                            position: None,
+                        }),
+                    ],
+                }),
+                Node::Text(Text {
+                    value: "d".into(),
+                    position: None,
+                }),
+            ],
+        });
+
+        assert_eq!(
+            node.to_string(),
+            "abcd",
+            "should support `ToString` on nested parents, in order, without voids"
+        );
+    }
 
     // Literals.
 

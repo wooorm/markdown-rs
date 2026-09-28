@@ -5,6 +5,7 @@ use markdown::{
     Constructs, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
+use std::thread;
 
 #[test]
 fn block_quote() -> Result<(), message::Message> {
@@ -237,4 +238,42 @@ fn block_quote() -> Result<(), message::Message> {
     );
 
     Ok(())
+}
+
+#[test]
+fn block_quote_to_string_deep() {
+    let mut node = Node::Text(Text {
+        value: "a".into(),
+        position: None,
+    });
+    for _ in 0..20_000 {
+        node = Node::Blockquote(Blockquote {
+            children: vec![node],
+            position: None,
+        });
+    }
+
+    // Too small for a frame per level.
+    let (node, value) = thread::Builder::new()
+        .stack_size(1 << 16)
+        .spawn(move || {
+            let value = node.to_string();
+            (node, value)
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+
+    assert_eq!(
+        value, "a",
+        "should support `ToString` on deeply nested block quotes"
+    );
+
+    // Dropping still recurses, see GH-226.
+    thread::Builder::new()
+        .stack_size(1 << 28)
+        .spawn(move || drop(node))
+        .unwrap()
+        .join()
+        .unwrap();
 }
