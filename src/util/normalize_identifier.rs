@@ -76,3 +76,27 @@ pub fn normalize_identifier(value: &str) -> String {
 
     result.to_lowercase().to_uppercase()
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::string::ToString;
+
+    #[test]
+    fn test_normalize_identifier_keeps_brackets() {
+        // `label_end` relies on this: a label with an unescaped bracket never
+        // normalizes to the identifier of a definition, which has none.
+        for code in 0..=0x10_FFFF_u32 {
+            if let Some(char) = char::from_u32(code) {
+                if matches!(char, '[' | ']' | '\\') {
+                    continue;
+                }
+                let folded = char.to_string().to_lowercase().to_uppercase();
+                assert!(
+                    !folded.contains(['[', ']', '\\']),
+                    "should not fold {:?} into a bracket or backslash",
+                    char
+                );
+            }
+        }
+    }
+}

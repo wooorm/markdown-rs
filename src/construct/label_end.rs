@@ -252,20 +252,31 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
 pub fn after(tokenizer: &mut Tokenizer) -> State {
     let start_index = tokenizer.tokenize_state.label_starts.len() - 1;
     let start = &tokenizer.tokenize_state.label_starts[start_index];
+    let is_footnote = start.kind == LabelKind::GfmFootnote;
+    let parse_state = tokenizer.parse_state;
 
-    let indices = (
-        tokenizer.events[start.start.1].point.index,
-        tokenizer.events[tokenizer.tokenize_state.end].point.index,
-    );
+    // With character escapes, a label with another label start in it cannot
+    // be defined; without them, text also starts labels at `\[`.
+    let may_be_defined = !(parse_state.options.constructs.character_escape
+        && has_label_start_after(tokenizer, start.start.0))
+        && (!parse_state.definitions.is_empty()
+            || (is_footnote && !parse_state.gfm_footnote_definitions.is_empty()));
 
-    // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
-    let mut id = normalize_identifier(
-        Slice::from_indices(tokenizer.parse_state.bytes, indices.0, indices.1).as_str(),
-    );
+    let mut id = if may_be_defined {
+        let indices = (
+            tokenizer.events[start.start.1].point.index,
+            tokenizer.events[tokenizer.tokenize_state.end].point.index,
+        );
+
+        // We don’t care about virtual spaces, so `indices` and `as_str` are fine.
+        normalize_identifier(Slice::from_indices(parse_state.bytes, indices.0, indices.1).as_str())
+    } else {
+        String::new()
+    };
 
     // See if this matches a footnote definition.
-    if start.kind == LabelKind::GfmFootnote {
-        if tokenizer.parse_state.gfm_footnote_definitions.contains(&id) {
+    if is_footnote {
+        if may_be_defined && parse_state.gfm_footnote_definitions.contains(&id) {
             return State::Retry(StateName::LabelEndOk);
         }
 
@@ -277,7 +288,7 @@ pub fn after(tokenizer: &mut Tokenizer) -> State {
         id = new_id;
     }
 
-    let defined = tokenizer.parse_state.definitions.contains(&id);
+    let defined = may_be_defined && parse_state.definitions.contains(&id);
 
     match tokenizer.current {
         // Resource (`[asd](fgh)`)?
@@ -370,6 +381,19 @@ pub fn ok(tokenizer: &mut Tokenizer) -> State {
     tokenizer.tokenize_state.end = 0;
     tokenizer.register_resolver_before(ResolveName::Label);
     State::Ok
+}
+
+/// Whether a label start was pushed after the one at event `start`.
+fn has_label_start_after(tokenizer: &Tokenizer, start: usize) -> bool {
+    let state = &tokenizer.tokenize_state;
+    state
+        .labels
+        .last()
+        .map_or(false, |label| label.start.0 > start)
+        || state
+            .label_starts_loose
+            .last()
+            .map_or(false, |loose| loose.start.0 > start)
 }
 
 /// Done, it’s nothing.

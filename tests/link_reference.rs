@@ -493,5 +493,23 @@ fn link_reference() -> Result<(), message::Message> {
         "should support link (reference) as `LinkReference`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "[\\[\\]]\n\n[\\[\\]]: /u",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        character_escape: false,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p><a href=\"/u\">\\[\\]</a></p>\n",
+        "should match definitions with brackets escaped for definitions when character escapes are off in text"
+    );
+
     Ok(())
 }
