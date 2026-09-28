@@ -160,6 +160,7 @@ use alloc::vec::Vec;
 ///     ^
 /// ```
 pub fn protocol_start(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.gfm_autolink_literal_www_start = usize::MAX;
     if tokenizer
         .parse_state
         .options
@@ -272,7 +273,9 @@ pub fn www_start(tokenizer: &mut Tokenizer) -> State {
         matches!(tokenizer.current, Some(b'W' | b'w'))
             // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
             && matches!(tokenizer.previous, None | Some(b'\t' | b'\n' | b' ' | b'(' | b'*' | b'_' | b'[' | b']' | b'~'))
+            && !www_known_nok(tokenizer)
     {
+        tokenizer.tokenize_state.gfm_autolink_literal_www_start = tokenizer.point.index;
         tokenizer.enter(Name::GfmAutolinkLiteralWww);
         tokenizer.attempt(
             State::Next(StateName::GfmAutolinkLiteralWwwAfter),
@@ -353,6 +356,10 @@ pub fn domain_inside(tokenizer: &mut Tokenizer) -> State {
         // marker, optionally followed by more trailing markers, and then
         // followed by an end.
         Some(b'.' | b'_') => {
+            if trail_known_nok(tokenizer) {
+                return State::Retry(StateName::GfmAutolinkLiteralDomainAtPunctuation);
+            }
+            tokenizer.tokenize_state.gfm_autolink_literal_trail_start = tokenizer.point.index;
             tokenizer.check(
                 State::Next(StateName::GfmAutolinkLiteralDomainAfter),
                 State::Next(StateName::GfmAutolinkLiteralDomainAtPunctuation),
@@ -416,6 +423,7 @@ pub fn domain_after(tokenizer: &mut Tokenizer) -> State {
     // Note: that’s GH says a dot is needed, but it’s not true:
     // <https://github.com/github/cmark-gfm/issues/279>
     {
+        www_nok(tokenizer);
         State::Nok
     } else {
         State::Retry(StateName::GfmAutolinkLiteralPathInside)
@@ -455,6 +463,9 @@ pub fn path_inside(tokenizer: &mut Tokenizer) -> State {
             b'!' | b'"' | b'&' | b'\'' | b')' | b'*' | b',' | b'.' | b':' | b';' | b'<' | b'?'
             | b']' | b'_' | b'~',
         ) => {
+            if trail_known_nok(tokenizer) {
+                return State::Retry(StateName::GfmAutolinkLiteralPathAtPunctuation);
+            }
             let next = if tokenizer.current == Some(b')')
                 && tokenizer.tokenize_state.size_b < tokenizer.tokenize_state.size
             {
@@ -462,6 +473,7 @@ pub fn path_inside(tokenizer: &mut Tokenizer) -> State {
             } else {
                 StateName::GfmAutolinkLiteralPathAfter
             };
+            tokenizer.tokenize_state.gfm_autolink_literal_trail_start = tokenizer.point.index;
             tokenizer.check(
                 State::Next(next),
                 State::Next(StateName::GfmAutolinkLiteralPathAtPunctuation),
@@ -549,7 +561,7 @@ pub fn trail(tokenizer: &mut Tokenizer) -> State {
             {
                 State::Ok
             } else {
-                State::Nok
+                trail_nok(tokenizer)
             }
         }
     }
@@ -587,7 +599,7 @@ pub fn trail_char_ref_start(tokenizer: &mut Tokenizer) -> State {
     if matches!(tokenizer.current, Some(b'A'..=b'Z' | b'a'..=b'z')) {
         State::Retry(StateName::GfmAutolinkLiteralTrailCharRefInside)
     } else {
-        State::Nok
+        trail_nok(tokenizer)
     }
 }
 
@@ -608,8 +620,57 @@ pub fn trail_char_ref_inside(tokenizer: &mut Tokenizer) -> State {
             tokenizer.consume();
             State::Next(StateName::GfmAutolinkLiteralTrail)
         }
-        _ => State::Nok,
+        _ => trail_nok(tokenizer),
     }
+}
+
+/// Whether an earlier invalid `www.` domain covers a literal starting here.
+fn www_known_nok(tokenizer: &Tokenizer) -> bool {
+    tokenizer
+        .tokenize_state
+        .gfm_autolink_literal_www_nok
+        .contains(&tokenizer.point.index)
+}
+
+/// At an invalid `www.` domain: remember up to where later starts fail too.
+fn www_nok(tokenizer: &mut Tokenizer) {
+    let start = tokenizer.tokenize_state.gfm_autolink_literal_www_start;
+
+    if start == usize::MAX {
+        return;
+    }
+
+    debug_assert!(tokenizer.tokenize_state.seen, "expected letters in `www.`");
+    let bytes = tokenizer.parse_state.bytes;
+    let mut index = tokenizer.point.index;
+    let mut dots = 0;
+
+    while index > start && dots < 2 {
+        index -= 1;
+        match bytes[index] {
+            b'.' => dots += 1,
+            b'_' => {
+                tokenizer.tokenize_state.gfm_autolink_literal_www_nok = start..index + 1;
+                return;
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Whether an earlier failed trailing punctuation check covers this place.
+fn trail_known_nok(tokenizer: &Tokenizer) -> bool {
+    tokenizer
+        .tokenize_state
+        .gfm_autolink_literal_trail_nok
+        .contains(&tokenizer.point.index)
+}
+
+/// Trailing punctuation not at the end: remember where this check failed.
+fn trail_nok(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.gfm_autolink_literal_trail_nok =
+        tokenizer.tokenize_state.gfm_autolink_literal_trail_start..tokenizer.point.index;
+    State::Nok
 }
 
 /// Resolve: postprocess text to find email autolink literals.

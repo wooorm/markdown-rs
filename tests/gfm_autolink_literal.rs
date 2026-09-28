@@ -2824,5 +2824,41 @@ www.a/~
         "should support GFM autolink literals as `Link`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options("http://a.b/&a! x", &Options::gfm())?,
+        "<p><a href=\"http://a.b/&amp;a\">http://a.b/&amp;a</a>! x</p>",
+        "should end a literal before trailing punctuation after an unfinished character reference"
+    );
+
+    assert_eq!(
+        to_html_with_options("www.a.b/c!!!!d! e", &Options::gfm())?,
+        "<p><a href=\"http://www.a.b/c!!!!d\">www.a.b/c!!!!d</a>! e</p>",
+        "should keep trailing punctuation followed by more of the url"
+    );
+
+    assert_eq!(
+        to_html_with_options("http://a.b/c]]!x] y", &Options::gfm())?,
+        "<p><a href=\"http://a.b/c%5D%5D!x\">http://a.b/c]]!x</a>] y</p>",
+        "should keep brackets followed by more of the url"
+    );
+
+    assert_eq!(
+        to_html_with_options("www.a.b/(c)!!)x)! z", &Options::gfm())?,
+        "<p><a href=\"http://www.a.b/(c)!!)x\">www.a.b/(c)!!)x</a>)! z</p>",
+        "should balance parens around trailing punctuation"
+    );
+
+    assert_eq!(
+        to_html_with_options("www.a.b_www.c", &Options::gfm())?,
+        "<p>www.a.b_<a href=\"http://www.c\">www.c</a></p>",
+        "should support a literal right after the underscore that made an earlier domain invalid"
+    );
+
+    assert_eq!(
+        to_html_with_options("www.a_b.c_www.d", &Options::gfm())?,
+        "<p>www.a_b.c_<a href=\"http://www.d\">www.d</a></p>",
+        "should support a literal after an invalid domain with underscores in two segments"
+    );
+
     Ok(())
 }

@@ -20,6 +20,7 @@ use crate::util::char::format_byte_opt;
 
 use crate::util::{constant::TAB_SIZE, edit_map::EditMap};
 use alloc::{boxed::Box, string::String, vec, vec::Vec};
+use core::ops::Range;
 
 /// Containers.
 ///
@@ -218,6 +219,14 @@ pub struct TokenizeState<'a> {
     ///
     /// Used when tokenizing [text content][crate::construct::text].
     pub label_starts: Vec<LabelStart>,
+    /// Start of the current trailing punctuation check of an autolink literal.
+    pub gfm_autolink_literal_trail_start: usize,
+    /// Last failed trailing punctuation check; checks starting in it fail too.
+    pub gfm_autolink_literal_trail_nok: Range<usize>,
+    /// Start of the current `www.` domain; `usize::MAX` for a protocol literal.
+    pub gfm_autolink_literal_www_start: usize,
+    /// Last invalid `www.` domain; domains starting in it are invalid too.
+    pub gfm_autolink_literal_www_nok: Range<usize>,
     /// List of unusable label starts.
     ///
     /// Used when tokenizing [text content][crate::construct::text].
@@ -354,6 +363,10 @@ impl<'a> Tokenizer<'a> {
                 mdx_last_parse_error: None,
                 end: 0,
                 label_starts: vec![],
+                gfm_autolink_literal_trail_start: 0,
+                gfm_autolink_literal_trail_nok: 0..0,
+                gfm_autolink_literal_www_start: usize::MAX,
+                gfm_autolink_literal_www_nok: 0..0,
                 label_starts_loose: vec![],
                 marker: 0,
                 marker_b: 0,
