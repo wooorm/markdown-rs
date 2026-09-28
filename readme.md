@@ -96,7 +96,7 @@ use [`mdxjs-rs`][mdxjs-rs].
 ## Install
 
 With [Rust][]
-(rust edition 2018+, ±version 1.56+),
+(rust edition 2018+, ±version 1.62+),
 install with `cargo`:
 
 ```sh
