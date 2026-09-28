@@ -1226,6 +1226,21 @@ pub struct ParseOptions {
     /// `tests/test_utils/mod.rs`.
     #[cfg_attr(feature = "serde", serde(skip))]
     pub mdx_esm_parse: Option<Box<MdxEsmParse>>,
+
+    /// How much of expressions and ESM may be read, as a multiple of the size
+    /// of the document.
+    ///
+    /// Finding where an expression or ESM ends can read it again and again,
+    /// which grows with the square of its size.
+    /// With `Some(k)`, parsing fails with `mdx-parse-budget` past `k` times
+    /// the size of the document.
+    ///
+    /// With the parse functions above, each `}` reads the expression so far
+    /// again: an expression with an array of 100 small objects needs 51.
+    ///
+    /// The default, `None`, sets no limit.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub mdx_parse_budget_factor: Option<usize>,
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
 }
 
@@ -1246,6 +1261,7 @@ impl fmt::Debug for ParseOptions {
                 "mdx_esm_parse",
                 &self.mdx_esm_parse.as_ref().map(|_d| "[Function]"),
             )
+            .field("mdx_parse_budget_factor", &self.mdx_parse_budget_factor)
             .finish()
     }
 }
@@ -1259,6 +1275,7 @@ impl Default for ParseOptions {
             math_text_single_dollar: true,
             mdx_expression_parse: None,
             mdx_esm_parse: None,
+            mdx_parse_budget_factor: None,
         }
     }
 }
@@ -1456,7 +1473,7 @@ mod tests {
 
         assert_eq!(
             format!("{:?}", ParseOptions::default()),
-            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None }",
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None, mdx_parse_budget_factor: None }",
             "should support `Debug` trait"
         );
         assert_eq!(
@@ -1469,7 +1486,7 @@ mod tests {
                 })),
                 ..Default::default()
             }),
-            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\") }",
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\"), mdx_parse_budget_factor: None }",
             "should support `Debug` trait on mdx functions"
         );
     }

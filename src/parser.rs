@@ -8,6 +8,7 @@ use crate::tokenizer::Tokenizer;
 use crate::util::location::Location;
 use crate::ParseOptions;
 use alloc::{string::String, vec, vec::Vec};
+use core::cell::Cell;
 
 /// Info needed, in all content types, when parsing markdown.
 ///
@@ -19,6 +20,8 @@ pub struct ParseState<'a> {
     pub location: Option<Location>,
     /// Configuration.
     pub options: &'a ParseOptions,
+    /// Bytes of MDX expressions and ESM that may still be read, if limited.
+    pub mdx_parse_budget: Option<Cell<usize>>,
     /// List of chars.
     pub bytes: &'a [u8],
     /// Set of defined definition identifiers.
@@ -44,6 +47,9 @@ pub fn parse<'a>(
         } else {
             None
         },
+        mdx_parse_budget: options
+            .mdx_parse_budget_factor
+            .map(|factor| Cell::new(factor.saturating_mul(bytes.len()))),
         definitions: vec![],
         gfm_footnote_definitions: vec![],
     };
