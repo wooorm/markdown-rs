@@ -719,6 +719,90 @@ fn serde_paragraph() -> Result<(), Error> {
     )
 }
 
+#[test]
+#[cfg(feature = "serde")]
+fn serde_custom() -> Result<(), Error> {
+    use markdown::mdast::{Custom, Text};
+    use pretty_assertions::assert_eq;
+
+    let parent = Node::Custom(Custom {
+        value: None,
+        children: vec![Node::Text(Text {
+            value: "b".into(),
+            position: None,
+        })],
+        position: None,
+        name: "alert".into(),
+        fields: vec![("kind".into(), "note".into())].into_iter().collect(),
+        attributes: vec![("class".into(), "c".into())].into_iter().collect(),
+    });
+    let expected: serde_json::Value = serde_json::from_str(
+        r#"{
+  "type": "custom",
+  "children": [{"type": "text", "value": "b"}],
+  "name": "alert",
+  "fields": {"kind": "note"},
+  "attributes": {"class": "c"}
+}"#,
+    )
+    .map_err(Error::Serde)?;
+    let actual = serde_json::to_value(&parent).map_err(Error::Serde)?;
+
+    assert_eq!(
+        actual, expected,
+        "should serialize fields and attributes as objects"
+    );
+    assert_eq!(
+        parent,
+        serde_json::from_value(actual).map_err(Error::Serde)?,
+        "should deserialize"
+    );
+
+    let literal = Node::Custom(Custom {
+        value: Some("a".into()),
+        name: "b".into(),
+        ..Custom::default()
+    });
+    let expected: serde_json::Value = serde_json::from_str(
+        r#"{
+  "type": "custom",
+  "value": "a",
+  "children": [],
+  "name": "b",
+  "fields": {},
+  "attributes": {}
+}"#,
+    )
+    .map_err(Error::Serde)?;
+    let actual = serde_json::to_value(&literal).map_err(Error::Serde)?;
+
+    assert_eq!(
+        actual, expected,
+        "should serialize empty fields and attributes"
+    );
+    assert_eq!(
+        literal,
+        serde_json::from_value(actual).map_err(Error::Serde)?,
+        "should deserialize a value"
+    );
+    assert!(
+        serde_json::from_str::<Node>(
+            r#"{"type": "custom", "children": [], "name": "a", "attributes": {}}"#
+        )
+        .is_err(),
+        "should require fields"
+    );
+    assert!(
+        serde_json::from_str::<Node>(
+            r#"{"type": "custom", "children": [], "name": "a", "fields": {}}"#
+        )
+        .is_err(),
+        "should require attributes"
+    );
+
+    Ok(())
+}
+
 /// Assert serde of mdast constructs.
 ///
 /// Refer below links for the mdast JSON construct types.
