@@ -1,0 +1,15 @@
+[dependencies]
+hast = { path = "../hast", version = "0.0.0" }
+hast_util_to_html = { path = "../hast_util_to_html", version = "0.0.0" }
+markdown = { path = "../", version = "1.0.0" }
+mdast_util_to_hast = { path = "../mdast_util_to_hast", version = "0.0.0" }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+
+[package]
+description = "Process markdown with plugins: markdown to mdast to hast to HTML"
+edition = "2018"
+license = "MIT"
+name = "markdown_processor"
+version = "0.0.0"

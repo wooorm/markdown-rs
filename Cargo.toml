@@ -41,7 +41,7 @@ rust-version = "1.62"
 version = "1.0.0"
 
 [workspace]
-members = ["generate", "hast", "hast_util_to_html", "mdast_util_to_hast", "mdast_util_to_markdown"]
+members = ["generate", "hast", "hast_util_to_html", "markdown_processor", "mdast_util_to_hast", "mdast_util_to_markdown"]
 
 [workspace.dependencies]
 pretty_assertions = "1"
