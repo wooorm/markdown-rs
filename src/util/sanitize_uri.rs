@@ -78,8 +78,7 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
     value
 }
 
-/// Normalize a URL (such as used in [definitions][definition],
-/// [references][label_end]).
+/// Normalize a URL (such as used in definitions and references).
 ///
 /// It encodes unsafe characters with percent-encoding, skipping already encoded
 /// sequences.
@@ -89,17 +88,14 @@ pub fn sanitize_with_protocols(value: &str, protocols: &[&str]) -> String {
 /// ```rust ignore
 /// use markdown::util::sanitize_uri::normalize;
 ///
-/// assert_eq!(sanitize_uri("https://example.com"), "https://example.com");
-/// assert_eq!(sanitize_uri("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");
+/// assert_eq!(normalize("https://example.com"), "https://example.com");
+/// assert_eq!(normalize("https://a👍b.c/%20/%"), "https://a%F0%9F%91%8Db.c/%20/%25");
 /// ```
 ///
 /// ## References
 ///
 /// * [`micromark-util-sanitize-uri` in `micromark`](https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri)
-///
-/// [definition]: crate::construct::definition
-/// [label_end]: crate::construct::label_end
-fn normalize(value: &str) -> String {
+pub fn normalize(value: &str) -> String {
     let chars = value.chars().collect::<Vec<_>>();
     // Note: it’ll grow bigger for each non-ascii or non-safe character.
     let mut result = String::with_capacity(value.len());
