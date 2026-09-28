@@ -1062,25 +1062,8 @@ fn on_exit_raw_text(context: &mut CompileContext) -> Result<(), message::Message
     // To do: share with `to_html`.
     // If we are in a GFM table, we need to decode escaped pipes.
     // This is a rather weird GFM feature.
-    if context.gfm_table_inside {
-        let mut bytes = value.as_bytes().to_vec();
-        let mut index = 0;
-        let mut len = bytes.len();
-        let mut replace = false;
-
-        while index < len {
-            if index + 1 < len && bytes[index] == b'\\' && bytes[index + 1] == b'|' {
-                replace = true;
-                bytes.remove(index);
-                len -= 1;
-            }
-
-            index += 1;
-        }
-
-        if replace {
-            value = str::from_utf8(&bytes).unwrap().into();
-        }
+    if context.gfm_table_inside && value.contains("\\|") {
+        value = value.replace("\\|", "|");
     }
 
     let value_bytes = value.as_bytes();

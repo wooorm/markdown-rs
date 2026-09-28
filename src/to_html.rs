@@ -868,49 +868,26 @@ fn on_exit_raw_flow(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit]:{[`CodeText`][Name::CodeText],[`MathText`][Name::MathText]}.
 fn on_exit_raw_text(context: &mut CompileContext) {
-    let result = context.resume();
+    let mut value = context.resume();
     // To do: share with `to_mdast`.
-    let mut bytes = result.as_bytes().to_vec();
-
     // If we are in a GFM table, we need to decode escaped pipes.
     // This is a rather weird GFM feature.
-    if context.gfm_table_align.is_some() {
-        let mut index = 0;
-        let mut len = bytes.len();
-
-        while index < len {
-            if index + 1 < len && bytes[index] == b'\\' && bytes[index + 1] == b'|' {
-                bytes.remove(index);
-                len -= 1;
-            }
-
-            index += 1;
-        }
+    if context.gfm_table_align.is_some() && value.contains("\\|") {
+        value = value.replace("\\|", "|");
     }
 
-    let mut trim = false;
-    let mut index = 0;
-    let mut end = bytes.len();
-
-    if end > 2 && bytes[index] == b' ' && bytes[end - 1] == b' ' {
-        index += 1;
-        end -= 1;
-        while index < end && !trim {
-            if bytes[index] != b' ' {
-                trim = true;
-                break;
-            }
-            index += 1;
-        }
-    }
-
-    if trim {
-        bytes.remove(0);
-        bytes.pop();
-    }
+    let bytes = value.as_bytes();
+    let trim = bytes.len() > 2
+        && bytes[0] == b' '
+        && bytes[bytes.len() - 1] == b' '
+        && bytes[1..bytes.len() - 1].iter().any(|byte| *byte != b' ');
 
     context.raw_text_inside = false;
-    context.push(str::from_utf8(&bytes).unwrap());
+    context.push(if trim {
+        &value[1..value.len() - 1]
+    } else {
+        &value
+    });
 
     if !context.image_alt_inside {
         context.push("</code>");
