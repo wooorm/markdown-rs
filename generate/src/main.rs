@@ -4,6 +4,8 @@
 // cargo run --manifest-path generate/Cargo.toml
 // ```
 
+#![forbid(unsafe_code)]
+
 use regex::Regex;
 use std::fs;
 

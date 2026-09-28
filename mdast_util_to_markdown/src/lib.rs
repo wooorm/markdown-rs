@@ -3,6 +3,7 @@
 //! JS equivalent: https://github.com/syntax-tree/mdast-util-to-markdown/blob/main/lib/index.js.
 
 #![no_std]
+#![forbid(unsafe_code)]
 
 use alloc::string::String;
 pub use configure::{IndentOptions, Options};
