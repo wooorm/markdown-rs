@@ -37,6 +37,24 @@ fn attention() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("a*_*"),
+        "<p>a*_*</p>",
+        "should not support emphasis if the opening is preceded by something else and followed by another marker (`_`)"
+    );
+
+    assert_eq!(
+        to_html("*x_*a"),
+        "<p>*x_*a</p>",
+        "should not support emphasis if the closing is preceded by another marker (`_`) and followed by something else"
+    );
+
+    assert_eq!(
+        to_html("a*~b~*c"),
+        "<p>a*~b~*c</p>",
+        "should not loosen flanking around `~` w/o GFM strikethrough"
+    );
+
+    assert_eq!(
         to_html("* a *"),
         "<p>* a *</p>",
         "should not support emphasis unicode whitespace either"
@@ -195,6 +213,18 @@ fn attention() -> Result<(), message::Message> {
     "<p>a**&quot;foo&quot;**</p>",
     "should not support strong emphasis if the opening is preceded by something else and followed by punctuation"
   );
+
+    assert_eq!(
+        to_html("a**_**"),
+        "<p>a**_**</p>",
+        "should not support strong emphasis if the opening is preceded by something else and followed by another marker (`_`)"
+    );
+
+    assert_eq!(
+        to_html("**x_**a"),
+        "<p>**x_**a</p>",
+        "should not support strong emphasis if the closing is preceded by another marker (`_`) and followed by something else"
+    );
 
     assert_eq!(
         to_html("foo**bar**"),
