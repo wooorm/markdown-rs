@@ -92,10 +92,11 @@ use alloc::{vec, vec::Vec};
 struct Sequence {
     /// Marker as a byte (`u8`) used in this sequence.
     marker: u8,
-    /// We track whether sequences are in balanced events, and where those
-    /// events start, so that one attention doesn’t start in say, one link, and
-    /// end in another.
-    stack: Vec<usize>,
+    /// The innermost event that this sequence is in, so that one attention
+    /// doesn’t start in say, one link, and end in another.
+    scope: Option<usize>,
+    /// How many events this sequence is in.
+    depth: usize,
     /// The index into events where this sequence’s `Enter` currently resides.
     index: usize,
     /// The (shifted) point where this sequence starts.
@@ -155,69 +156,60 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
     let mut sequences = get_sequences(tokenizer);
 
     // Now walk through them and match them.
+    // Openers that can still match, nearest last, grouped by scope.
+    let mut openers: Vec<usize> = vec![];
+    let mut frames: Vec<Frame> = vec![];
     let mut close = 0;
 
     while close < sequences.len() {
-        let sequence_close = &sequences[close];
-        let mut next_index = close + 1;
+        enter_scope(&mut frames, &mut openers, &sequences[close]);
+        let frame = frames.last_mut().unwrap();
 
-        // Find a sequence that can close.
-        if sequence_close.close {
-            let mut open = close;
+        if sequences[close].close {
+            while let Some(kind) = category(tokenizer, &sequences[close]) {
+                let found = (frame.bottom[kind]..openers.len())
+                    .rev()
+                    .find(|position| can_match(&sequences[openers[*position]], &sequences[close]));
 
-            // Now walk back to find an opener.
-            while open > 0 {
-                open -= 1;
+                if let Some(position) = found {
+                    let open = openers[position];
+                    // Openers in between can no longer open, or attention
+                    // would misnest.
+                    openers.truncate(position + 1);
+                    match_sequences(tokenizer, &mut sequences, open, close);
 
-                let sequence_open = &sequences[open];
-
-                // An opener matching our closer:
-                if sequence_open.open
-                    && sequence_close.marker == sequence_open.marker
-                    && sequence_close.stack == sequence_open.stack
-                {
-                    // If the opening can close or the closing can open,
-                    // and the close size *is not* a multiple of three,
-                    // but the sum of the opening and closing size *is*
-                    // multiple of three, then **don’t** match.
-                    if (sequence_open.close || sequence_close.open)
-                        && sequence_close.size % 3 != 0
-                        && (sequence_open.size + sequence_close.size) % 3 == 0
-                    {
-                        continue;
+                    if sequences[open].size == 0 {
+                        openers.pop();
                     }
 
-                    // For GFM strikethrough:
-                    // * both sequences must have the same size
-                    // * more than 2 markers don’t work
-                    // * one marker is prohibited by the spec, but supported by GH
-                    if sequence_close.marker == b'~'
-                        && (sequence_close.size != sequence_open.size
-                            || sequence_close.size > 2
-                            || sequence_close.size == 1
-                                && !tokenizer.parse_state.options.gfm_strikethrough_single_tilde)
-                    {
-                        continue;
+                    // The opener changed, so every category may match it again.
+                    for bottom in &mut frame.bottom {
+                        *bottom = (*bottom).min(position);
                     }
 
-                    // We found a match!
-                    next_index = match_sequences(tokenizer, &mut sequences, open, close);
-
+                    if sequences[close].size == 0 {
+                        break;
+                    }
+                } else {
+                    frame.bottom[kind] = openers.len();
                     break;
                 }
             }
         }
 
-        close = next_index;
+        if sequences[close].open && sequences[close].size > 0 {
+            openers.push(close);
+        }
+
+        close += 1;
     }
 
     // Mark remaining sequences as data.
-    let mut index = 0;
-    while index < sequences.len() {
-        let sequence = &sequences[index];
-        tokenizer.events[sequence.index].name = Name::Data;
-        tokenizer.events[sequence.index + 1].name = Name::Data;
-        index += 1;
+    for sequence in &sequences {
+        if sequence.size > 0 {
+            tokenizer.events[sequence.index].name = Name::Data;
+            tokenizer.events[sequence.index + 1].name = Name::Data;
+        }
     }
 
     tokenizer.map.consume(&mut tokenizer.events);
@@ -258,7 +250,8 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
 
                 sequences.push(Sequence {
                     index,
-                    stack: stack.clone(),
+                    scope: stack.last().copied(),
+                    depth: stack.len(),
                     start_point: enter.point.clone(),
                     end_point: exit.point.clone(),
                     size: exit.point.index - enter.point.index,
@@ -287,45 +280,91 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
     sequences
 }
 
+/// Closer categories: marker, can open, and size modulo 3; then `~` sizes.
+const CATEGORIES: usize = 2 * 2 * 3 + 2;
+
+/// Openers of one scope, and where searches for each closer category stop.
+struct Frame {
+    /// Scope of the sequences in this frame.
+    scope: Option<usize>,
+    /// Depth of the sequences in this frame.
+    depth: usize,
+    /// Where this frame’s openers start in the opener stack.
+    start: usize,
+    /// Per closer category: no opener below this stack position can match.
+    bottom: [usize; CATEGORIES],
+}
+
+/// Use the frame for the scope of `sequence`, dropping frames of ended scopes.
+fn enter_scope(frames: &mut Vec<Frame>, openers: &mut Vec<usize>, sequence: &Sequence) {
+    while let Some(frame) = frames.last() {
+        if frame.depth > sequence.depth
+            || (frame.depth == sequence.depth && frame.scope != sequence.scope)
+        {
+            openers.truncate(frame.start);
+            frames.pop();
+        } else {
+            break;
+        }
+    }
+
+    if !matches!(frames.last(), Some(frame) if frame.depth == sequence.depth) {
+        frames.push(Frame {
+            scope: sequence.scope,
+            depth: sequence.depth,
+            start: openers.len(),
+            bottom: [openers.len(); CATEGORIES],
+        });
+    }
+}
+
+/// Closers in one category match the same openers; `None` if none can.
+fn category(tokenizer: &Tokenizer, close: &Sequence) -> Option<usize> {
+    if close.marker == b'~' {
+        match close.size {
+            2 => Some(CATEGORIES - 1),
+            1 if tokenizer.parse_state.options.gfm_strikethrough_single_tilde => {
+                Some(CATEGORIES - 2)
+            }
+            _ => None,
+        }
+    } else {
+        Some(usize::from(close.marker == b'_') * 6 + usize::from(close.open) * 3 + close.size % 3)
+    }
+}
+
+/// Whether `open` can be closed by `close`, of the same scope.
+fn can_match(open: &Sequence, close: &Sequence) -> bool {
+    if open.marker != close.marker {
+        return false;
+    }
+
+    // If the opening can close or the closing can open,
+    // and the close size *is not* a multiple of three,
+    // but the sum of the opening and closing size *is*
+    // multiple of three, then **don’t** match.
+    if (open.close || close.open) && close.size % 3 != 0 && (open.size + close.size) % 3 == 0 {
+        return false;
+    }
+
+    // For GFM strikethrough, both sequences must have the same size.
+    close.marker != b'~' || close.size == open.size
+}
+
 /// Match two sequences.
 #[allow(clippy::too_many_lines)]
 fn match_sequences(
     tokenizer: &mut Tokenizer,
-    sequences: &mut Vec<Sequence>,
+    sequences: &mut [Sequence],
     open: usize,
     close: usize,
-) -> usize {
-    // Where to move to next.
-    // Stay on this closing sequence for the next iteration: it
-    // might close more things.
-    // It’s changed if sequences are removed.
-    let mut next = close;
-
+) {
     // Number of markers to use from the sequence.
     let take = if sequences[open].size > 1 && sequences[close].size > 1 {
         2
     } else {
         1
     };
-
-    // We’re *on* a closing sequence, with a matching opening
-    // sequence.
-    // Now we make sure that we can’t have misnested attention:
-    //
-    // ```html
-    // <em>a <strong>b</em> c</strong>
-    // ```
-    //
-    // Do that by marking everything between it as no longer
-    // possible to open anything.
-    // Theoretically we should mark as `close: false` too, but
-    // we don’t look for closers backwards, so it’s not needed.
-    let mut between = open + 1;
-
-    while between < close {
-        sequences[between].open = false;
-        between += 1;
-    }
 
     let (group_name, seq_name, text_name) = if sequences[open].marker == b'~' {
         (
@@ -417,7 +456,6 @@ fn match_sequences(
 
     // Remove closing sequence if fully used.
     if sequences[close].size == 0 {
-        sequences.remove(close);
         tokenizer.map.add(close_index, 2, vec![]);
     } else {
         // Shift remaining closing sequence forward.
@@ -428,13 +466,8 @@ fn match_sequences(
     }
 
     if sequences[open].size == 0 {
-        sequences.remove(open);
         tokenizer.map.add(open_index, 2, vec![]);
-        // Everything shifts one to the left, account for it in next iteration.
-        next -= 1;
     } else {
         tokenizer.events[open_index + 1].point = sequences[open].end_point.clone();
     }
-
-    next
 }

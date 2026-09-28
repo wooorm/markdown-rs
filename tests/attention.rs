@@ -838,6 +838,66 @@ fn attention() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("a****b c** d*  e**"),
+        "<p>a*<strong><em>b c** d</em>  e</strong></p>",
+        "should apply the rule of 3 to what is left of a partly used opener"
+    );
+
+    assert_eq!(
+        to_html("*a [*b](c) d*"),
+        "<p><em>a <a href=\"c\">*b</a> d</em></p>",
+        "should match around a link, leaving its content alone"
+    );
+
+    assert_eq!(
+        to_html("[*a](b) [c*](d)"),
+        "<p><a href=\"b\">*a</a> <a href=\"d\">c*</a></p>",
+        "should not match across two links"
+    );
+
+    assert_eq!(
+        to_html("*[a*](b)"),
+        "<p>*<a href=\"b\">a*</a></p>",
+        "should not match into a link"
+    );
+
+    assert_eq!(
+        to_html("[a ![b *c](d) e*](f)"),
+        "<p><a href=\"f\">a <img src=\"d\" alt=\"b *c\" /> e*</a></p>",
+        "should not match out of an image into its parent link"
+    );
+
+    assert_eq!(
+        to_html("*a [b*](c) d*"),
+        "<p><em>a <a href=\"c\">b*</a> d</em></p>",
+        "should match around a link whose closer failed inside it"
+    );
+
+    assert_eq!(
+        to_html("**a*b* c*"),
+        "<p>*<em>a<em>b</em> c</em></p>",
+        "should keep closers that can open apart from those that cannot"
+    );
+
+    assert_eq!(
+        to_html("_a b* c_"),
+        "<p><em>a b* c</em></p>",
+        "should keep markers apart"
+    );
+
+    assert_eq!(
+        to_html("*a **b** c*"),
+        "<p><em>a <strong>b</strong> c</em></p>",
+        "should match nested attention with the same marker"
+    );
+
+    assert_eq!(
+        to_html("**a*b***"),
+        "<p><strong>a<em>b</em></strong></p>",
+        "should close several openers with one closer"
+    );
+
+    assert_eq!(
         to_mdast("a *alpha* b **bravo** c.", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

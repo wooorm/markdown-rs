@@ -26,6 +26,18 @@ fn gfm_strikethrough() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options("~a ~~b~ c~~", &Options::gfm())?,
+        "<p><del>a ~~b</del> c~~</p>",
+        "should only match tildes of the same size"
+    );
+
+    assert_eq!(
+        to_html_with_options("~~a b~ c~~", &Options::gfm())?,
+        "<p><del>a b~ c</del></p>",
+        "should keep one tilde apart from two"
+    );
+
+    assert_eq!(
         to_html_with_options("a ~~b~~", &Options::gfm())?,
         "<p>a <del>b</del></p>",
         "should support strikethrough w/ two tildes"
