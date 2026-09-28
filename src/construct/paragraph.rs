@@ -108,7 +108,7 @@ pub fn inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::ParagraphLineStart)
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_line_run();
             State::Next(StateName::ParagraphInside)
         }
     }

@@ -344,7 +344,7 @@ pub fn flow_inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::DocumentFlowEnd)
         }
         Some(_) => {
-            tokenizer.consume();
+            tokenizer.consume_line_run();
             State::Next(StateName::DocumentFlowInside)
         }
     }

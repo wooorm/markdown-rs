@@ -70,7 +70,7 @@ pub fn chunk_inside(tokenizer: &mut Tokenizer) -> State {
             State::Ok
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_line_run();
             State::Next(StateName::ContentChunkInside)
         }
     }

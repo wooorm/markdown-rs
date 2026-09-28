@@ -321,5 +321,22 @@ fn autolink() -> Result<(), message::Message> {
         "should support autolinks as `Link`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "s<a@b.c>",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        html_text: false,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p>s<a href=\"mailto:a@b.c\">a@b.c</a></p>",
+        "should support autolinks with HTML (text) turned off"
+    );
     Ok(())
 }

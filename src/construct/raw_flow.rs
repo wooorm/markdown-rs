@@ -630,7 +630,7 @@ pub fn content_chunk(tokenizer: &mut Tokenizer) -> State {
             State::Retry(StateName::RawFlowBeforeContentChunk)
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_line_run();
             State::Next(StateName::RawFlowContentChunk)
         }
     }

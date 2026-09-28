@@ -153,6 +153,21 @@ use crate::util::{
 };
 use alloc::vec::Vec;
 
+/// Whether a protocol literal can start after `previous`: not in a word.
+pub fn protocol_may_start(previous: Option<u8>) -> bool {
+    // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L214>.
+    !matches!(previous, Some(b'A'..=b'Z' | b'a'..=b'z'))
+}
+
+/// Whether a `www.` literal can start after `previous`.
+pub fn www_may_start(previous: Option<u8>) -> bool {
+    // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
+    matches!(
+        previous,
+        None | Some(b'\t' | b'\n' | b' ' | b'(' | b'*' | b'_' | b'[' | b']' | b'~')
+    )
+}
+
 /// Start of protocol autolink literal.
 ///
 /// ```markdown
@@ -164,10 +179,9 @@ pub fn protocol_start(tokenizer: &mut Tokenizer) -> State {
         .parse_state
         .options
         .constructs
-        .gfm_autolink_literal &&
-        matches!(tokenizer.current, Some(b'H' | b'h'))
-            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L214>.
-            && !matches!(tokenizer.previous, Some(b'A'..=b'Z' | b'a'..=b'z'))
+        .gfm_autolink_literal
+        && matches!(tokenizer.current, Some(b'H' | b'h'))
+        && protocol_may_start(tokenizer.previous)
     {
         tokenizer.enter(Name::GfmAutolinkLiteralProtocol);
         tokenizer.attempt(
@@ -268,10 +282,9 @@ pub fn www_start(tokenizer: &mut Tokenizer) -> State {
         .parse_state
         .options
         .constructs
-        .gfm_autolink_literal &&
-        matches!(tokenizer.current, Some(b'W' | b'w'))
-            // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L156>.
-            && matches!(tokenizer.previous, None | Some(b'\t' | b'\n' | b' ' | b'(' | b'*' | b'_' | b'[' | b']' | b'~'))
+        .gfm_autolink_literal
+        && matches!(tokenizer.current, Some(b'W' | b'w'))
+        && www_may_start(tokenizer.previous)
     {
         tokenizer.enter(Name::GfmAutolinkLiteralWww);
         tokenizer.attempt(

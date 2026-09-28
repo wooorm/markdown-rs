@@ -86,5 +86,22 @@ fn hard_break_escape() -> Result<(), message::Message> {
         "should support hard break (escape) as `Break`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options(
+            "a\\\nb",
+            &Options {
+                parse: ParseOptions {
+                    constructs: Constructs {
+                        character_escape: false,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )?,
+        "<p>a<br />\nb</p>",
+        "should support hard break (escape) with character escapes turned off"
+    );
     Ok(())
 }

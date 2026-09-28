@@ -5,6 +5,8 @@ path = "benches/bench.rs"
 
 [dependencies]
 log = { optional = true, version = "0.4" }
+# Needs Rust 1.61.
+memchr = { default-features = false, optional = true, version = "2.7" }
 serde = { features = ["derive"], optional = true, version = "1" }
 unicode-id = { features = ["no_std"], version = "0.3" }
 
@@ -24,6 +26,7 @@ swc_core = { version = "22", features = [
 default = []
 json = ["serde"]
 log = ["dep:log"]
+memchr = ["dep:memchr"]
 serde = ["dep:serde"]
 
 [package]

@@ -67,9 +67,12 @@ use crate::event::{Content, Event, Kind, Link, Name};
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::Subresult;
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{with_bytes, ByteSet, Tokenizer, LINE_STOP};
 use crate::util::constant::{HEADING_ATX_OPENING_FENCE_SIZE_MAX, TAB_SIZE};
 use alloc::vec;
+
+/// Bytes that data stops at.
+const DATA_STOP: ByteSet = with_bytes(LINE_STOP, b" ");
 
 /// Start of a heading (atx).
 ///
@@ -208,7 +211,7 @@ pub fn data(tokenizer: &mut Tokenizer) -> State {
             State::Retry(StateName::HeadingAtxAtBreak)
         }
         _ => {
-            tokenizer.consume();
+            tokenizer.consume_run(&DATA_STOP);
             State::Next(StateName::HeadingAtxData)
         }
     }
