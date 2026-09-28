@@ -127,12 +127,12 @@ pub fn format(char: char) -> String {
     let representation = format!("U+{:>04X}", char as u32);
     let printable = match char {
         '`' => Some("`` ` ``".into()),
-        '!'..='~' => Some(format!("`{}`", char)),
+        '!'..='~' => Some(format!("`{char}`")),
         _ => None,
     };
 
     if let Some(char) = printable {
-        format!("{} ({})", char, representation)
+        format!("{char} ({representation})")
     } else {
         representation
     }
@@ -140,7 +140,7 @@ pub fn format(char: char) -> String {
 
 /// Format a byte (`u8`).
 pub fn format_byte(byte: u8) -> String {
-    let representation = format!("U+{:>04X}", byte);
+    let representation = format!("U+{byte:>04X}");
     let printable = match byte {
         b'`' => Some("`` ` ``".into()),
         b'!'..=b'~' => Some(format!("`{}`", str::from_utf8(&[byte]).unwrap())),
@@ -148,7 +148,7 @@ pub fn format_byte(byte: u8) -> String {
     };
 
     if let Some(char) = printable {
-        format!("{} ({})", char, representation)
+        format!("{char} ({representation})")
     } else {
         representation
     }

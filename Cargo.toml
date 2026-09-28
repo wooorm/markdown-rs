@@ -37,7 +37,7 @@ keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
 license = "MIT"
 name = "markdown"
 repository = "https://github.com/wooorm/markdown-rs"
-rust-version = "1.56"
+rust-version = "1.62"
 version = "1.0.0"
 
 [workspace]

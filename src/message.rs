@@ -16,7 +16,7 @@ pub struct Message {
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref place) = self.place {
-            write!(f, "{}: ", place)?;
+            write!(f, "{place}: ")?;
         }
 
         write!(f, "{} ({}:{})", self.reason, self.source, self.rule_id)

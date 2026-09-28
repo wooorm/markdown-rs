@@ -1402,7 +1402,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Text { value: \"a\", position: None }",
             "should support `Debug`"
         );
@@ -1413,7 +1413,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Text { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1427,7 +1427,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "InlineCode { value: \"a\", position: None }",
             "should support `Debug`"
         );
@@ -1438,7 +1438,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "InlineCode { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1454,7 +1454,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Code { value: \"a\", position: None, lang: None, meta: None }",
             "should support `Debug`"
         );
@@ -1465,7 +1465,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Code { value: \"a\", position: Some(1:1-1:2 (0-1)), lang: None, meta: None }",
             "should support `position_set`"
         );
@@ -1479,7 +1479,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "InlineMath { value: \"a\", position: None }",
             "should support `Debug`"
         );
@@ -1490,7 +1490,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "InlineMath { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1505,7 +1505,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Math { value: \"a\", position: None, meta: None }",
             "should support `Debug`"
         );
@@ -1516,7 +1516,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Math { value: \"a\", position: Some(1:1-1:2 (0-1)), meta: None }",
             "should support `position_set`"
         );
@@ -1530,7 +1530,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Html { value: \"a\", position: None }",
             "should support `Debug`"
         );
@@ -1541,7 +1541,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Html { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1556,7 +1556,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxTextExpression { value: \"a\", position: None, stops: [] }",
             "should support `Debug`"
         );
@@ -1567,7 +1567,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxTextExpression { value: \"a\", position: Some(1:1-1:2 (0-1)), stops: [] }",
             "should support `position_set`"
         );
@@ -1582,7 +1582,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxFlowExpression { value: \"a\", position: None, stops: [] }",
             "should support `Debug`"
         );
@@ -1593,7 +1593,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxFlowExpression { value: \"a\", position: Some(1:1-1:2 (0-1)), stops: [] }",
             "should support `position_set`"
         );
@@ -1608,7 +1608,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxjsEsm { value: \"a\", position: None, stops: [] }",
             "should support `Debug`"
         );
@@ -1619,7 +1619,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxjsEsm { value: \"a\", position: Some(1:1-1:2 (0-1)), stops: [] }",
             "should support `position_set`"
         );
@@ -1633,7 +1633,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Toml { value: \"a\", position: None }",
             "should support `Debug`"
         );
@@ -1644,7 +1644,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Toml { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1658,7 +1658,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Yaml { value: \"a\", position: None }",
             "should support `Debug`"
         );
@@ -1669,7 +1669,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Yaml { value: \"a\", position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1682,7 +1682,7 @@ mod tests {
         let mut node = Node::Break(Break { position: None });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Break { position: None }",
             "should support `Debug`"
         );
@@ -1693,7 +1693,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Break { position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1704,7 +1704,7 @@ mod tests {
         let mut node = Node::ThematicBreak(ThematicBreak { position: None });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "ThematicBreak { position: None }",
             "should support `Debug`"
         );
@@ -1715,7 +1715,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "ThematicBreak { position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1730,7 +1730,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "FootnoteReference { position: None, identifier: \"a\", label: Some(\"b\") }",
             "should support `Debug`"
         );
@@ -1741,7 +1741,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "FootnoteReference { position: Some(1:1-1:2 (0-1)), identifier: \"a\", label: Some(\"b\") }",
             "should support `position_set`"
         );
@@ -1758,7 +1758,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "ImageReference { position: None, alt: \"a\", reference_kind: Full, identifier: \"b\", label: Some(\"c\") }",
             "should support `Debug`"
         );
@@ -1769,7 +1769,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "ImageReference { position: Some(1:1-1:2 (0-1)), alt: \"a\", reference_kind: Full, identifier: \"b\", label: Some(\"c\") }",
             "should support `position_set`"
         );
@@ -1785,7 +1785,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Image { position: None, alt: \"a\", url: \"b\", title: None }",
             "should support `Debug`"
         );
@@ -1796,7 +1796,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Image { position: Some(1:1-1:2 (0-1)), alt: \"a\", url: \"b\", title: None }",
             "should support `position_set`"
         );
@@ -1813,7 +1813,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Definition { position: None, url: \"b\", title: None, identifier: \"a\", label: None }",
             "should support `Debug`"
         );
@@ -1824,7 +1824,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Definition { position: Some(1:1-1:2 (0-1)), url: \"b\", title: None, identifier: \"a\", label: None }",
             "should support `position_set`"
         );
@@ -1840,7 +1840,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Root { children: [], position: None }",
             "should support `Debug`"
         );
@@ -1855,7 +1855,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Root { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1869,7 +1869,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Blockquote { children: [], position: None }",
             "should support `Debug`"
         );
@@ -1884,7 +1884,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Blockquote { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1898,7 +1898,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Delete { children: [], position: None }",
             "should support `Debug`"
         );
@@ -1913,7 +1913,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Delete { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1927,7 +1927,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Emphasis { children: [], position: None }",
             "should support `Debug`"
         );
@@ -1942,7 +1942,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Emphasis { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1956,7 +1956,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Strong { children: [], position: None }",
             "should support `Debug`"
         );
@@ -1971,7 +1971,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Strong { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -1985,7 +1985,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Paragraph { children: [], position: None }",
             "should support `Debug`"
         );
@@ -2000,7 +2000,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Paragraph { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -2014,7 +2014,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "TableRow { children: [], position: None }",
             "should support `Debug`"
         );
@@ -2029,7 +2029,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "TableRow { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -2043,7 +2043,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "TableCell { children: [], position: None }",
             "should support `Debug`"
         );
@@ -2058,7 +2058,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "TableCell { children: [], position: Some(1:1-1:2 (0-1)) }",
             "should support `position_set`"
         );
@@ -2073,7 +2073,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Heading { children: [], position: None, depth: 1 }",
             "should support `Debug`"
         );
@@ -2088,7 +2088,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Heading { children: [], position: Some(1:1-1:2 (0-1)), depth: 1 }",
             "should support `position_set`"
         );
@@ -2103,7 +2103,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Table { children: [], position: None, align: [] }",
             "should support `Debug`"
         );
@@ -2118,7 +2118,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Table { children: [], position: Some(1:1-1:2 (0-1)), align: [] }",
             "should support `position_set`"
         );
@@ -2134,7 +2134,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "ListItem { children: [], position: None, spread: false, checked: None }",
             "should support `Debug`"
         );
@@ -2149,7 +2149,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "ListItem { children: [], position: Some(1:1-1:2 (0-1)), spread: false, checked: None }",
             "should support `position_set`"
         );
@@ -2166,7 +2166,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "List { children: [], position: None, ordered: false, start: None, spread: false }",
             "should support `Debug`"
         );
@@ -2181,7 +2181,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "List { children: [], position: Some(1:1-1:2 (0-1)), ordered: false, start: None, spread: false }",
             "should support `position_set`"
         );
@@ -2198,7 +2198,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "LinkReference { children: [], position: None, reference_kind: Full, identifier: \"a\", label: None }",
             "should support `Debug`"
         );
@@ -2213,7 +2213,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "LinkReference { children: [], position: Some(1:1-1:2 (0-1)), reference_kind: Full, identifier: \"a\", label: None }",
             "should support `position_set`"
         );
@@ -2229,7 +2229,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Link { children: [], position: None, url: \"a\", title: None }",
             "should support `Debug`"
         );
@@ -2244,7 +2244,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "Link { children: [], position: Some(1:1-1:2 (0-1)), url: \"a\", title: None }",
             "should support `position_set`"
         );
@@ -2260,7 +2260,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "FootnoteDefinition { children: [], position: None, identifier: \"a\", label: None }",
             "should support `Debug`"
         );
@@ -2275,7 +2275,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "FootnoteDefinition { children: [], position: Some(1:1-1:2 (0-1)), identifier: \"a\", label: None }",
             "should support `position_set`"
         );
@@ -2291,7 +2291,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxJsxFlowElement { children: [], position: None, name: None, attributes: [] }",
             "should support `Debug`"
         );
@@ -2306,7 +2306,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxJsxFlowElement { children: [], position: Some(1:1-1:2 (0-1)), name: None, attributes: [] }",
             "should support `position_set`"
         );
@@ -2322,7 +2322,7 @@ mod tests {
         });
 
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxJsxTextElement { children: [], position: None, name: None, attributes: [] }",
             "should support `Debug`"
         );
@@ -2337,7 +2337,7 @@ mod tests {
         assert_eq!(node.position_mut(), None, "should support `position`");
         node.position_set(Some(Position::new(1, 1, 0, 1, 2, 1)));
         assert_eq!(
-            format!("{:?}", node),
+            format!("{node:?}"),
             "MdxJsxTextElement { children: [], position: Some(1:1-1:2 (0-1)), name: None, attributes: [] }",
             "should support `position_set`"
         );
