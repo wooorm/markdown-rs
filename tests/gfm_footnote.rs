@@ -185,6 +185,18 @@ fn gfm_footnote() -> Result<(), message::Message> {
         "should support an empty image with caret (as link)"
     );
 
+    assert_eq!(
+        to_html_with_options("[^ a]: b\n\n[^ a]", &Options::gfm())?,
+        "<p><a href=\"b\">^ a</a></p>",
+        "should match a link label with whitespace after the caret"
+    );
+
+    assert_eq!(
+        to_html_with_options("[^a ]: b\n\n[^ a]", &Options::gfm())?,
+        "<p>[^ a]</p>",
+        "should not match a link label that differs by whitespace after the caret"
+    );
+
     // <https://github.com/github/cmark-gfm/issues/239>
     assert_eq!(
         to_html_with_options("Call.[^a\\+b].\n\n[^a\\+b]: y", &Options::gfm())?,

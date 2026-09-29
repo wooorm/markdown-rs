@@ -28,11 +28,11 @@ use alloc::string::String;
 /// ```rust ignore
 /// markdown::util::normalize_identifier::normalize_identifier;
 ///
-/// assert_eq!(normalize_identifier(" a "), "a");
-/// assert_eq!(normalize_identifier("a\t\r\nb"), "a b");
-/// assert_eq!(normalize_identifier("ПРИВЕТ"), "привет");
-/// assert_eq!(normalize_identifier("Привет"), "привет");
-/// assert_eq!(normalize_identifier("привет"), "привет");
+/// assert_eq!(normalize_identifier(" a "), "A");
+/// assert_eq!(normalize_identifier("a\t\r\nb"), "A B");
+/// assert_eq!(normalize_identifier("ПРИВЕТ"), "ПРИВЕТ");
+/// assert_eq!(normalize_identifier("Привет"), "ПРИВЕТ");
+/// assert_eq!(normalize_identifier("привет"), "ПРИВЕТ");
 /// ```
 ///
 /// ## References
@@ -59,7 +59,7 @@ pub fn normalize_identifier(value: &str) -> String {
         }
         // First non-whitespace we see after whitespace.
         else if in_whitespace {
-            if start != 0 {
+            if !result.is_empty() {
                 result.push(' ');
             }
 
@@ -75,4 +75,29 @@ pub fn normalize_identifier(value: &str) -> String {
     }
 
     result.to_lowercase().to_uppercase()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_identifier() {
+        assert_eq!(
+            normalize_identifier("a b"),
+            "A B",
+            "should keep a space between words"
+        );
+        assert_eq!(
+            normalize_identifier(" a  b "),
+            "A B",
+            "should collapse and trim whitespace"
+        );
+        assert_eq!(
+            normalize_identifier("a\t\r\nb"),
+            "A B",
+            "should collapse markdown whitespace"
+        );
+        assert_eq!(normalize_identifier("ẞ"), "SS", "should fold case");
+    }
 }

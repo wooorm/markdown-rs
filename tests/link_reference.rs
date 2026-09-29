@@ -340,6 +340,18 @@ fn link_reference() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("[ab]: x\n\n[a b]"),
+        "<p>[a b]</p>",
+        "should not match a label that differs by whitespace between words (1)"
+    );
+
+    assert_eq!(
+        to_html("[a b]: x\n\n[ab]"),
+        "<p>[ab]</p>",
+        "should not match a label that differs by whitespace between words (2)"
+    );
+
+    assert_eq!(
         to_html(
             "[*f*][]
 [&semi;][]
