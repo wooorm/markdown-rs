@@ -616,6 +616,32 @@ fn list() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_mdast("* a\n\n", &Default::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: false,
+                start: None,
+                children: vec![Node::ListItem(ListItem {
+                    checked: None,
+                    spread: false,
+                    children: vec![Node::Paragraph(Paragraph {
+                        children: vec![Node::Text(Text {
+                            value: "a".into(),
+                            position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                        }),],
+                        position: Some(Position::new(1, 3, 2, 1, 4, 3))
+                    })],
+                    position: Some(Position::new(1, 1, 0, 1, 4, 3))
+                })],
+                position: Some(Position::new(1, 1, 0, 1, 4, 3))
+            })],
+            position: Some(Position::new(1, 1, 0, 3, 1, 5))
+        }),
+        "should end lists and list items before trailing blank lines in mdast"
+    );
+
+    assert_eq!(
         to_mdast("3. a\n4. b", &Default::default())?,
         Node::Root(Root {
             children: vec![Node::List(List {

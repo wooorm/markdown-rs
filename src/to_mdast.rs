@@ -207,9 +207,46 @@ impl<'a> CompileContext<'a> {
 
     fn tail_pop(&mut self) -> Result<(), message::Message> {
         let ev = &self.events[self.index];
-        let end = ev.point.to_unist();
+        let mut end = ev.point.to_unist();
         let (tree, stack, event_stack) = self.trees.last_mut().expect("Cannot get tail w/o tree");
         let node = delve_mut(tree, stack);
+
+        // Containers end before trailing line endings, as in `mdast-util-from-markdown`.
+        if matches!(
+            ev.name,
+            Name::GfmFootnoteDefinition | Name::ListItem | Name::ListOrdered | Name::ListUnordered
+        ) {
+            let mut index = self.index;
+            while index > 0 {
+                let event = &self.events[index - 1];
+                match event.name {
+                    Name::LineEnding | Name::BlankLineEnding => {
+                        if event.kind == Kind::Enter {
+                            end = event.point.to_unist();
+                        }
+                    }
+                    Name::SpaceOrTab => {}
+                    Name::GfmFootnoteDefinition
+                    | Name::ListItem
+                    | Name::ListOrdered
+                    | Name::ListUnordered
+                        if event.kind == Kind::Exit =>
+                    {
+                        // That container is the last child, its end already moved.
+                        if let Some(child) = node.children().and_then(|children| children.last()) {
+                            let child_end = &child.position().unwrap().end;
+                            if child_end.offset < event.point.index {
+                                end = child_end.clone();
+                            }
+                        }
+                        break;
+                    }
+                    _ => break,
+                }
+                index -= 1;
+            }
+        }
+
         let pos = node.position_mut().expect("Cannot pop manually added node");
         pos.end = end;
 

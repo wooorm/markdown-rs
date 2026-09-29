@@ -1635,7 +1635,7 @@ multi-paragraph list items. <a href="#user-content-fnref-longnote" data-footnote
                     })],
                     identifier: "a".into(),
                     label: Some("a".into()),
-                    position: Some(Position::new(1, 1, 0, 3, 1, 11))
+                    position: Some(Position::new(1, 1, 0, 2, 6, 10))
                 }),
                 Node::Paragraph(Paragraph {
                     children: vec![
