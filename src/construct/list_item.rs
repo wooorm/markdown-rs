@@ -383,7 +383,20 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
 
         if event.name == Name::ListItem {
             if event.kind == Kind::Enter {
-                let end = skip::opt(&tokenizer.events, index, &[Name::ListItem]) - 1;
+                // Not `skip::opt`: it would also skip an adjacent next item.
+                let mut end = index;
+                let mut open = 0;
+                loop {
+                    if tokenizer.events[end].kind == Kind::Enter {
+                        open += 1;
+                    } else {
+                        open -= 1;
+                    }
+                    if open == 0 {
+                        break;
+                    }
+                    end += 1;
+                }
                 let marker = skip::to(&tokenizer.events, index, &[Name::ListItemMarker]);
                 // Guaranteed to be a valid ASCII byte.
                 let marker = tokenizer.parse_state.bytes[tokenizer.events[marker].point.index];

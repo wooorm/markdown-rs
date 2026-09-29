@@ -1,5 +1,5 @@
 use markdown::{
-    mdast::{List, ListItem, Node, Paragraph, Root, Text},
+    mdast::{Code, List, ListItem, Node, Paragraph, Root, Text},
     message, to_html, to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
@@ -569,6 +569,84 @@ fn list() -> Result<(), message::Message> {
         to_html_with_options("* a\n\n<!---->\n\n* b", &danger)?,
         "<ul>\n<li>a</li>\n</ul>\n<!---->\n<ul>\n<li>b</li>\n</ul>",
         "should support the common list breaking comment method"
+    );
+
+    assert_eq!(
+        to_mdast("- ```\n- b", &Default::default())?,
+        Node::Root(Root {
+            children: vec![Node::List(List {
+                ordered: false,
+                spread: false,
+                start: None,
+                children: vec![
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Code(Code {
+                            lang: None,
+                            meta: None,
+                            value: "".into(),
+                            position: Some(Position::new(1, 3, 2, 2, 1, 6))
+                        })],
+                        position: Some(Position::new(1, 1, 0, 2, 1, 6))
+                    }),
+                    Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Paragraph(Paragraph {
+                            children: vec![Node::Text(Text {
+                                value: "b".into(),
+                                position: Some(Position::new(2, 3, 8, 2, 4, 9))
+                            })],
+                            position: Some(Position::new(2, 3, 8, 2, 4, 9))
+                        })],
+                        position: Some(Position::new(2, 1, 6, 2, 4, 9))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 2, 4, 9))
+            })],
+            position: Some(Position::new(1, 1, 0, 2, 4, 9))
+        }),
+        "should support an item after an item ending in unclosed code in mdast (GH-23)"
+    );
+
+    assert_eq!(
+        to_mdast("*\t~~~\n1.", &Default::default())?,
+        Node::Root(Root {
+            children: vec![
+                Node::List(List {
+                    ordered: false,
+                    spread: false,
+                    start: None,
+                    children: vec![Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![Node::Code(Code {
+                            lang: None,
+                            meta: None,
+                            value: "".into(),
+                            position: Some(Position::new(1, 5, 2, 2, 1, 6))
+                        })],
+                        position: Some(Position::new(1, 1, 0, 2, 1, 6))
+                    })],
+                    position: Some(Position::new(1, 1, 0, 2, 1, 6))
+                }),
+                Node::List(List {
+                    ordered: true,
+                    spread: false,
+                    start: Some(1),
+                    children: vec![Node::ListItem(ListItem {
+                        checked: None,
+                        spread: false,
+                        children: vec![],
+                        position: Some(Position::new(2, 1, 6, 2, 3, 8))
+                    })],
+                    position: Some(Position::new(2, 1, 6, 2, 3, 8))
+                })
+            ],
+            position: Some(Position::new(1, 1, 0, 2, 3, 8))
+        }),
+        "should support a different list after an item ending in unclosed code in mdast (GH-23)"
     );
 
     assert_eq!(
