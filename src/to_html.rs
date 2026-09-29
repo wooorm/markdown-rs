@@ -144,8 +144,9 @@ struct CompileContext<'a> {
 struct HtmlMatch {
     /// Index of the last event of the match.
     end: usize,
-    /// Enter and exit indices of content tokens, in order.
-    contents: Vec<(usize, usize)>,
+    /// Enter and exit indices of content tokens, and whether the content is
+    /// a document, in order.
+    contents: Vec<(usize, usize, bool)>,
     /// Index in `contents` of the next content token.
     content: usize,
     /// Events left out of the construct’s text.
@@ -282,7 +283,8 @@ pub(crate) fn compile(
     while index < events.len() {
         let event = &events[index];
 
-        if definition_inside {
+        // Tokens of constructs in a definition are prefixes in content.
+        if definition_inside && event.name != Name::Extension {
             handle(&mut context, index);
         }
 
@@ -360,11 +362,12 @@ fn enter(context: &mut CompileContext) {
                 return;
             }
         } else {
-            if top
+            if let Some((_, _, is_document)) = top
                 .contents
                 .get(top.content)
-                .map_or(false, |(enter, _)| *enter == index)
+                .filter(|(enter, _, _)| *enter == index)
             {
+                let is_document = *is_document;
                 top.inside = true;
                 let text = own_text(
                     context.events,
@@ -375,6 +378,10 @@ fn enter(context: &mut CompileContext) {
                 );
                 let value = encode(&text, context.encode_html);
                 context.push(&value);
+                // A document is not tight, like the content of a block quote.
+                if is_document {
+                    context.tight_stack.push(false);
+                }
             }
             return;
         }
@@ -392,7 +399,7 @@ fn enter(context: &mut CompileContext) {
             contents: found
                 .contents
                 .iter()
-                .map(|(_, enter, exit)| (*enter, *exit))
+                .map(|(_, enter, exit, is_document)| (*enter, *exit, *is_document))
                 .collect(),
             content: 0,
             excluded: found.excluded,
@@ -464,14 +471,18 @@ fn exit(context: &mut CompileContext) {
     }
     if let Some(top) = context.extension_matches.last_mut() {
         if top.inside {
-            if top
+            if let Some((_, _, is_document)) = top
                 .contents
                 .get(top.content)
-                .map_or(false, |(_, exit)| *exit == index)
+                .filter(|(_, exit, _)| *exit == index)
             {
+                let is_document = *is_document;
                 top.inside = false;
                 top.content += 1;
                 top.cursor = index;
+                if is_document {
+                    context.tight_stack.pop();
+                }
                 return;
             }
         } else {

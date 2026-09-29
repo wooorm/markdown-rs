@@ -112,6 +112,7 @@ pub fn subtokenize(
                 // Substate.
                 let mut state = State::Next(match link.content {
                     Content::Content => StateName::ContentDefinitionBefore,
+                    Content::Document => StateName::DocumentStartNested,
                     Content::String => StateName::StringStart,
                     _ => StateName::TextStart,
                 });

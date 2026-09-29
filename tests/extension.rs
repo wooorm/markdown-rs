@@ -375,7 +375,7 @@ impl Construct for Scripted {
 
 /// The node of a scripted construct: its first value, the names of its
 /// tokens, the values of its other tokens, and its content.
-fn scripted_node(tokens: Vec<Token<'_, Tok>>) -> Node {
+fn scripted_node<T: TokenType>(tokens: Vec<Token<'_, T>>) -> Node {
     Node::Custom(Custom {
         name: "scripted".into(),
         value: Some(tokens[0].value.clone().into_owned()),
@@ -3146,4 +3146,504 @@ fn flow_content_leaves_its_last_line_ending_out() {
             input
         );
     }
+}
+
+/// Tokens of scripted flow constructs with bodies.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DocTok {
+    A,
+    /// `b`, as document content.
+    B,
+    Container,
+    ContainerFence,
+    ContainerContent,
+    F,
+    Open,
+    Body,
+    Prefix,
+    Close,
+    Bars,
+    BarsBody,
+    BarsPrefix,
+}
+
+impl TokenType for DocTok {
+    const ALL: &'static [Self] = &[
+        Self::A,
+        Self::B,
+        Self::Container,
+        Self::ContainerFence,
+        Self::ContainerContent,
+        Self::F,
+        Self::Open,
+        Self::Body,
+        Self::Prefix,
+        Self::Close,
+        Self::Bars,
+        Self::BarsBody,
+        Self::BarsPrefix,
+    ];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::A => "a",
+            Self::B => "b",
+            Self::Container => "container",
+            Self::ContainerFence => "containerFence",
+            Self::ContainerContent => "containerContent",
+            Self::F => "f",
+            Self::Open => "open",
+            Self::Body => "body",
+            Self::Prefix => "prefix",
+            Self::Close => "close",
+            Self::Bars => "bars",
+            Self::BarsBody => "barsBody",
+            Self::BarsPrefix => "barsPrefix",
+        }
+    }
+
+    fn content(self) -> Option<ContentType> {
+        match self {
+            Self::B | Self::ContainerContent | Self::Body | Self::BarsBody => {
+                Some(ContentType::Document)
+            }
+            _ => None,
+        }
+    }
+}
+
+/// A step of a scripted flow construct with a body.
+type DocFn = fn(u16, Ctx<'_, '_, ScriptedDoc>) -> Step<ScriptedDoc>;
+
+/// A flow construct with a body, scripted by a function.
+struct ScriptedDoc {
+    marker: u8,
+    step: DocFn,
+}
+
+impl Construct for ScriptedDoc {
+    type Place = Flow;
+    type State = u16;
+    type Token = DocTok;
+
+    fn markers(&self) -> &[u8] {
+        core::slice::from_ref(&self.marker)
+    }
+
+    fn start(&self) -> u16 {
+        0
+    }
+
+    fn step(&self, state: u16, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        (self.step)(state, t)
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, DocTok>>) -> Node {
+        scripted_node(tokens)
+    }
+}
+
+fn scripted_doc(marker: u8, step: DocFn) -> ParseOptions {
+    ParseOptions {
+        flow_constructs: vec![construct(ScriptedDoc { marker, step })],
+        ..ParseOptions::default()
+    }
+}
+
+/// A text construct with a token of document content.
+struct TextWithDocument;
+
+impl Construct for TextWithDocument {
+    type Place = Text;
+    type State = u16;
+    type Token = DocTok;
+
+    fn markers(&self) -> &[u8] {
+        b"{"
+    }
+
+    fn start(&self) -> u16 {
+        0
+    }
+
+    fn step(&self, state: u16, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match state {
+            0 => t.enter(DocTok::A).consume().enter(DocTok::B).next(1),
+            _ => t.consume().exit().exit().ok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, DocTok>>) -> Node {
+        scripted_node(tokens)
+    }
+}
+
+#[test]
+fn document_content_in_text_leaves_text() {
+    let parse = ParseOptions {
+        text_constructs: vec![construct(TextWithDocument)],
+        ..ParseOptions::default()
+    };
+
+    if let Some(tree) = breaking("document-content-in-text", || {
+        to_mdast("x {yz", &parse).unwrap()
+    }) {
+        assert_eq!(
+            tree.to_string(),
+            "x {yz",
+            "should not match a text construct that enters document content"
+        );
+    }
+}
+
+/// `:::`, a body parsed as a document, and `:::`, which is tried as an
+/// attempt at each line.
+fn container(state: u16, t: Ctx<'_, '_, ScriptedDoc>) -> Step<ScriptedDoc> {
+    match (state, t.current()) {
+        (0, Some(b':')) => t
+            .enter(DocTok::Container)
+            .enter(DocTok::ContainerFence)
+            .consume()
+            .next(1),
+        (1 | 2, Some(b':')) => t.consume().next(state + 1),
+        (3, Some(b':')) => t.consume().next(3),
+        (3, None | Some(b'\n')) => t.exit().retry(4),
+        (4, Some(b'\n')) => t.consume().next(5),
+        (4 | 5, None) => t.exit().ok(),
+        (5, Some(_)) => t.enter(DocTok::ContainerContent).retry(10),
+        (10, Some(_)) => t.attempt(20, 30, 11),
+        (10 | 11, None) => t.exit().exit().ok(),
+        (11, Some(b'\n')) => t.consume().next(10),
+        (11, Some(_)) => t.consume().next(11),
+        (20, Some(b':')) => t.enter(DocTok::ContainerFence).consume().next(21),
+        (21 | 22, Some(b':')) => t.consume().next(state + 1),
+        (23, Some(b':')) => t.consume().next(23),
+        (23, None | Some(b'\n')) => t.exit().ok(),
+        (30, _) => t.exit().exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+fn container_body(input: &str) -> Vec<Node> {
+    let tree = to_mdast(input, &scripted_doc(b':', container)).unwrap();
+    find_scripted(&tree)
+        .expect("expected a match")
+        .children
+        .clone()
+}
+
+#[test]
+fn parses_a_body_as_a_document() {
+    assert!(
+        matches!(
+            &container_body(":::\n> *a*\n:::")[..],
+            [Node::Blockquote(_)]
+        ),
+        "should parse containers in the body"
+    );
+
+    let body = container_body("> :::\n> - a\n>\n>   b\n> :::");
+    assert!(
+        matches!(&body[..], [Node::List(list)] if matches!(&list.children[..], [Node::ListItem(item)] if item.spread && item.children.len() == 2)),
+        "should parse a spread list item in a body in a block quote, got {:?}",
+        body
+    );
+    assert_eq!(
+        body[0].children().unwrap()[0].children().unwrap()[0].position(),
+        Some(&Position::new(2, 5, 10, 2, 6, 11)),
+        "should start the first line of a body after its prefixes"
+    );
+
+    let tree = to_mdast(":::\na\n:::\nb", &scripted_doc(b':', container)).unwrap();
+    assert_eq!(
+        find_scripted(&tree).and_then(|node| node.fields.get("tokens").cloned()),
+        Some("container,containerFence,containerContent".into()),
+        "should not give tokens in content, such as the closing fence, to `to_mdast`"
+    );
+    assert!(
+        matches!(tree.children().unwrap().last(), Some(Node::Paragraph(_))),
+        "should end at the closing fence"
+    );
+}
+
+#[test]
+fn resolves_definitions_across_bodies() {
+    for input in [":::\n[x]: /u\n:::\n\n[x]", "[x]\n\n:::\n[x]: /u\n:::"] {
+        let tree = to_mdast(input, &scripted_doc(b':', container)).unwrap();
+        assert!(
+            format!("{:?}", tree).contains("LinkReference"),
+            "should resolve a reference with a definition in a body: {:?}",
+            input
+        );
+    }
+}
+
+#[test]
+fn ends_a_flow_construct_at_a_lazy_line_or_the_end() {
+    let tree = to_mdast("> :::\n> a\nb", &scripted_doc(b':', container)).unwrap();
+    assert!(
+        matches!(
+            &tree.children().unwrap()[..],
+            [Node::Blockquote(_), Node::Paragraph(_)]
+        ),
+        "should end before a lazy line, got {:?}",
+        tree
+    );
+
+    assert!(
+        matches!(&container_body(":::\na\n\n")[..], [Node::Paragraph(_)]),
+        "should run to the end without a closing fence"
+    );
+}
+
+/// `{` and `}` fences around a document whose lines can start with a two
+/// space prefix, a token in content.
+fn braced(state: u16, t: Ctx<'_, '_, ScriptedDoc>) -> Step<ScriptedDoc> {
+    match (state, t.current()) {
+        (0, Some(b'{')) => t
+            .enter(DocTok::F)
+            .enter(DocTok::Open)
+            .consume()
+            .exit()
+            .next(1),
+        (1, Some(b'\n')) => t.consume().next(2),
+        (2, _) => t.enter(DocTok::Body).retry(3),
+        (3, None) => t.exit().exit().ok(),
+        (3, _) => t.attempt(10, 20, 4),
+        (4, Some(b' ')) => t.enter(DocTok::Prefix).consume().next(5),
+        (4, _) => t.retry(6),
+        (5, Some(b' ')) => t.consume().exit().next(6),
+        (5, _) => t.exit().retry(6),
+        (6, Some(b'\n')) => t.consume().next(3),
+        (6, None) => t.retry(3),
+        (6, Some(_)) => t.consume().next(6),
+        (10, Some(b'}')) => t.enter(DocTok::Close).consume().exit().next(11),
+        (11, None | Some(b'\n')) => t.ok(),
+        (20, _) => t.exit().exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn leaves_prefixes_of_an_outer_match_out_of_an_inner_one() {
+    let tree = to_mdast("{\n  {\n  a\n  }\n}", &scripted_doc(b'{', braced)).unwrap();
+    let outer = find_scripted(&tree).expect("expected a match");
+    let inner = outer
+        .children
+        .iter()
+        .find_map(find_scripted)
+        .expect("expected a nested match");
+
+    assert_eq!(
+        (
+            inner.fields.get("tokens").map(String::as_str),
+            inner.value.as_deref()
+        ),
+        (Some("f,open,body"), Some("{\n")),
+        "should leave the prefix of the outer match out of the inner one"
+    );
+}
+
+#[test]
+fn allows_blank_lines_in_a_body() {
+    assert!(
+        matches!(
+            &container_body(":::\na\n\nb\n:::")[..],
+            [Node::Paragraph(_), Node::Paragraph(_)]
+        ),
+        "should parse blank lines in a document"
+    );
+}
+
+#[test]
+fn parses_an_indented_body_of_lines() {
+    let body = container_body("  :::\n  a\n  b\n:::");
+
+    assert!(
+        matches!(&body[..], [Node::Paragraph(_)]),
+        "should parse the lines of an indented body, got {:?}",
+        body
+    );
+    assert_eq!(body[0].to_string(), "a\nb");
+}
+
+/// `!` and a line ending, then lines with a `|` prefix, whose rest is a
+/// document; with `TAKE_EOL`, a prefix takes the line ending of a line that
+/// has nothing else. State 2 is a line before the body, 6 a line in it.
+fn bars<const TAKE_EOL: bool>(state: u16, t: Ctx<'_, '_, ScriptedDoc>) -> Step<ScriptedDoc> {
+    match (state, t.current()) {
+        (0, Some(b'!')) => t.enter(DocTok::Bars).consume().next(1),
+        (1, Some(b'\n')) => t.consume().next(2),
+        (2 | 6, Some(b'|')) => {
+            let t = if state == 2 {
+                t.enter(DocTok::BarsBody)
+            } else {
+                t
+            };
+            t.enter(DocTok::BarsPrefix).consume().next(3)
+        }
+        (3, Some(b'\n')) if TAKE_EOL => t.consume().next(5),
+        (5, _) => t.exit().retry(6),
+        (3, _) => t.exit().retry(4),
+        (4, Some(b'\n')) => t.consume().next(6),
+        (4, Some(_)) => t.consume().next(4),
+        (4 | 6, None) => t.exit().exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn keeps_line_endings_of_a_body_in_the_body() {
+    let tree = to_mdast("!\n|a\n|\n|b", &scripted_doc(b'!', bars::<false>)).unwrap();
+    assert!(
+        matches!(
+            &find_scripted(&tree).expect("expected a match").children[..],
+            [Node::Paragraph(_), Node::Paragraph(_)]
+        ),
+        "should parse a line with only a prefix as a blank line"
+    );
+
+    let parse = scripted_doc(b'!', bars::<true>);
+    if let Some(result) = breaking("line-ending-in-document", || {
+        to_mdast("!\n|a\n|\n|b", &parse)
+    }) {
+        assert!(
+            result.is_ok(),
+            "should end a construct whose token in a body takes a line ending, without an error"
+        );
+    }
+}
+
+#[test]
+fn writes_bodies_as_html() {
+    assert_eq!(
+        html("{\n[a]:\n b", scripted_doc(b'{', braced)),
+        "{\n",
+        "should skip prefixes in definitions in a body"
+    );
+    assert!(
+        html("- :::\n  a\n  :::", scripted_doc(b':', container)).contains("<p>a</p>"),
+        "should not make a body in a tight list tight"
+    );
+}
+
+#[test]
+fn ends_a_construct_at_the_end_of_a_body() {
+    let parse = ParseOptions {
+        flow_constructs: vec![
+            construct(ScriptedDoc {
+                marker: b':',
+                step: container,
+            }),
+            construct(ScriptedFlow {
+                marker: b'%',
+                step: fenced,
+            }),
+        ],
+        ..ParseOptions::default()
+    };
+    let tree = to_mdast(":::\n%%%\nx\n:::", &parse).unwrap();
+    let body = &find_scripted(&tree).expect("expected a match").children;
+
+    assert_eq!(
+        body.iter()
+            .find_map(find_scripted)
+            .and_then(|node| node.value.as_deref()),
+        Some("%%%\nx"),
+        "should end before the last line ending of a body, as at the end"
+    );
+}
+
+#[test]
+fn parses_more_in_bodies() {
+    assert!(
+        matches!(&container_body(":::\r\na\r\n:::")[..], [Node::Paragraph(paragraph)] if paragraph.children[0].to_string() == "a"),
+        "should support CR+LF"
+    );
+
+    let parse = ParseOptions {
+        constructs: Constructs::gfm(),
+        ..scripted_doc(b':', container)
+    };
+    let tree = to_mdast(":::\n[^a]: b\n:::\n\nc[^a]", &parse).unwrap();
+    assert!(
+        format!("{:?}", tree).contains("FootnoteReference"),
+        "should resolve a footnote with a definition in a body"
+    );
+
+    let late: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().next(1),
+        (1, Some(b'\n')) => t.consume().next(2),
+        (1, Some(_)) => t.consume().next(1),
+        _ => t.nok(),
+    };
+    let parse = ParseOptions {
+        flow_constructs: vec![
+            construct(ScriptedDoc {
+                marker: b':',
+                step: container,
+            }),
+            construct(ScriptedFlow {
+                marker: b'%',
+                step: late,
+            }),
+        ],
+        ..ParseOptions::default()
+    };
+    if let Some(result) = breaking("nok-after-first-line", || {
+        to_mdast(":::\n%a\nb\n:::", &parse)
+    }) {
+        assert!(
+            result.is_ok(),
+            "should end a construct that fails late in a body, without an error"
+        );
+    }
+}
+
+#[test]
+fn limits_the_depth_of_bodies() {
+    let parse = |levels: usize| {
+        let mut input = String::new();
+        for level in 0..levels {
+            input.push_str(&format!("{}{{\n", "  ".repeat(level)));
+        }
+        input.push_str(&format!("{}a\n", "  ".repeat(levels)));
+        for level in (0..levels).rev() {
+            input.push_str(&format!("{}}}\n", "  ".repeat(level)));
+        }
+        to_mdast(&input, &scripted_doc(b'{', braced))
+    };
+    assert_eq!(depth(&parse(32).unwrap()), 32, "should nest bodies 32 deep");
+    assert_eq!(
+        depth(&parse(33).expect("should not error for bodies deeper than that")),
+        33,
+        "should end the deepest construct before a body that is too deep, which is then other markdown"
+    );
+}
+
+/// Like [`braced`], with a prefix of two columns of spaces or tabs, which can
+/// take part of a tab.
+fn braced_columns(state: u16, t: Ctx<'_, '_, ScriptedDoc>) -> Step<ScriptedDoc> {
+    match (state, t.current()) {
+        (4, Some(b'\t' | b' ')) => t.enter(DocTok::Prefix).consume().next(5),
+        (5, Some(b'\t' | b' ')) => t.consume().exit().next(6),
+        _ => braced(state, t),
+    }
+}
+
+#[test]
+fn takes_part_of_a_tab_in_a_line_prefix() {
+    let tree = to_mdast("{\n\ta\n\t\tb\n}", &scripted_doc(b'{', braced_columns)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+    assert!(
+        matches!(&node.children[..], [Node::Paragraph(_)]),
+        "should take two columns of a tab as a prefix, got {:?}",
+        node.children
+    );
+    // As in `>\ta`, the rest of a tab stays a tab in the text.
+    assert_eq!(
+        node.children[0].to_string(),
+        "\ta\n\tb",
+        "should leave the rest of the tab to the content"
+    );
 }

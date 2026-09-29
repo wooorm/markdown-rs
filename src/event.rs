@@ -3503,6 +3503,8 @@ pub const VOID_EVENTS: [Name; 77] = [
 /// Embedded content type.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Content {
+    /// Represents a nested [document][crate::construct::document].
+    Document,
     /// Represents [flow content][crate::construct::flow].
     Flow,
     /// Represents [content][crate::construct::content].

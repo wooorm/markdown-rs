@@ -68,6 +68,23 @@ pub fn start(tokenizer: &mut Tokenizer) -> State {
     State::Retry(StateName::BomStart)
 }
 
+/// Start of a document inside a construct of a syntax extension: without a
+/// byte order mark or frontmatter.
+///
+/// ```markdown
+/// > | :::
+///   | a
+///     ^
+///   | :::
+/// ```
+pub fn start_nested(tokenizer: &mut Tokenizer) -> State {
+    tokenizer.tokenize_state.document_child = Some(Box::new(Tokenizer::new(
+        tokenizer.point.clone(),
+        tokenizer.parse_state,
+    )));
+    State::Retry(StateName::DocumentContainerNewBefore)
+}
+
 /// At optional frontmatter.
 ///
 /// ```markdown
@@ -367,9 +384,16 @@ pub fn flow_end(tokenizer: &mut Tokenizer) -> State {
 
     tokenizer.tokenize_state.document_exits.push(None);
 
+    // In a nested document, the prefix of the next line may already be
+    // skipped: stop right after the line ending.
+    let end = if tokenizer.current.is_some() {
+        &tokenizer.line_start
+    } else {
+        &tokenizer.point
+    };
     let state = child.push(
         (child.point.index, child.point.vs),
-        (tokenizer.point.index, tokenizer.point.vs),
+        (end.index, end.vs),
         state,
     );
 

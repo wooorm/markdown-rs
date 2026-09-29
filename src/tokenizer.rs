@@ -450,8 +450,11 @@ impl<'a> Tokenizer<'a> {
     /// ending, which has a skip defined.
     fn account_for_potential_skip(&mut self) {
         let at = self.point.line - self.first_line;
+        // A tokenizer can start mid line, in a nested document.
+        let is_line_start = self.point.column == 1
+            || (self.point.index == self.line_start.index && self.point.vs == self.line_start.vs);
 
-        if self.point.column == 1 && at != self.column_start.len() {
+        if is_line_start && at != self.column_start.len() {
             self.move_to(self.column_start[at]);
         }
     }

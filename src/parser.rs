@@ -1,7 +1,7 @@
 //! Turn bytes of markdown into events.
 
 use crate::construct::text::MARKERS as TEXT_MARKERS;
-use crate::event::{Event, Point};
+use crate::event::{Content, Event, Point};
 use crate::extension::{text_markers, token_count, TokenName};
 use crate::message;
 use crate::state::{Name as StateName, State};
@@ -33,8 +33,7 @@ pub struct ParseState<'a> {
     pub text_markers: Vec<u8>,
     /// Names of the tokens of constructs, which events refer to by index.
     pub(crate) extension_names: RefCell<Vec<TokenName>>,
-    /// Pass of `subtokenize`, which is how deep in content its tokenizers
-    /// are.
+    /// Passes of `subtokenize` so far, for documents first and then for text.
     pub content_depth: usize,
 }
 
@@ -101,6 +100,21 @@ pub fn parse<'a>(
     );
     let mut result = tokenizer.flush(state, true)?;
     let mut events = tokenizer.events;
+
+    // Documents inside constructs first, so their definitions are known in
+    // all text.
+    if !options.flow_constructs.is_empty() {
+        loop {
+            parse_state.content_depth += 1;
+            let mut nested = subtokenize(&mut events, &parse_state, Some(&Content::Document))?;
+            let fn_defs = &mut parse_state.gfm_footnote_definitions;
+            fn_defs.append(&mut nested.gfm_footnote_definitions);
+            parse_state.definitions.append(&mut nested.definitions);
+            if nested.done {
+                break;
+            }
+        }
+    }
 
     loop {
         let fn_defs = &mut parse_state.gfm_footnote_definitions;

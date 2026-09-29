@@ -115,6 +115,7 @@ pub enum Name {
     DestinationRawEscape,
 
     DocumentStart,
+    DocumentStartNested,
     DocumentBeforeFrontmatter,
     DocumentContainerExistingBefore,
     DocumentContainerExistingAfter,
@@ -131,6 +132,8 @@ pub enum Name {
     ExtensionAttemptOk,
     ExtensionAttemptNok,
     ExtensionIndentAfter,
+    ExtensionLineEnding,
+    ExtensionLineAfter,
     ExtensionNonLazy,
     ExtensionLazy,
 
@@ -555,6 +558,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DestinationRawEscape => construct::partial_destination::raw_escape,
 
         Name::DocumentStart => construct::document::start,
+        Name::DocumentStartNested => construct::document::start_nested,
         Name::DocumentBeforeFrontmatter => construct::document::before_frontmatter,
         Name::DocumentContainerExistingBefore => construct::document::container_existing_before,
         Name::DocumentContainerExistingAfter => construct::document::container_existing_after,
@@ -577,6 +581,8 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::ExtensionAttemptOk => crate::extension::attempt_ok,
         Name::ExtensionAttemptNok => crate::extension::attempt_nok,
         Name::ExtensionIndentAfter => crate::extension::indent_after,
+        Name::ExtensionLineEnding => crate::extension::line_ending,
+        Name::ExtensionLineAfter => crate::extension::line_after,
         Name::ExtensionNonLazy => crate::extension::at_non_lazy,
         Name::ExtensionLazy => crate::extension::at_lazy,
 
