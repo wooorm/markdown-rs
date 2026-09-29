@@ -176,6 +176,30 @@
 //! # }
 //! ```
 //!
+//! `attempt` does not consume:
+//!
+//! ```compile_fail,E0599
+//! # use markdown::extension::{Construct, Ctx, Step, Text, Token, TokenType};
+//! # #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+//! # enum T { A }
+//! # impl TokenType for T {
+//! #     const ALL: &'static [Self] = &[T::A];
+//! #     fn name(self) -> &'static str { "a" }
+//! # }
+//! # struct C;
+//! # impl Construct for C {
+//! #     type Place = Text;
+//! #     type State = u8;
+//! #     type Token = T;
+//! #     fn markers(&self) -> &[u8] { b"a" }
+//! #     fn start(&self) -> u8 { 0 }
+//! #     fn to_mdast(&self, _: Vec<Token<'_, T>>) -> markdown::mdast::Node { unimplemented!() }
+//! fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+//!     t.enter(T::A).consume().attempt(1, 2, 3)
+//! }
+//! # }
+//! ```
+//!
 //! `exit` closes the innermost token, so it takes no name:
 //!
 //! ```compile_fail,E0061
@@ -211,8 +235,12 @@ use crate::ParseOptions;
 use alloc::{borrow::Cow, boxed::Box, string::String, vec, vec::Vec};
 use core::{any::Any, convert::TryFrom, fmt, marker::PhantomData, str};
 
-/// Most steps a construct can take in a row without consuming a byte.
-const RETRY_MAX: u16 = 256;
+/// Most steps a match takes for each byte from its start through the furthest
+/// point it reached.
+const STEP_MAX: usize = 256;
+
+/// Most attempts a construct can be in at once.
+const ATTEMPT_MAX: usize = 256;
 
 /// Most levels of content around content, built-in levels included: each
 /// level is parsed once more.
@@ -317,8 +345,8 @@ pub enum Reach {
 /// endings).
 ///
 /// A construct that breaks one of these rules does not match, so its bytes
-/// stay what they would otherwise be; with the `test-util` feature, it
-/// panics instead, naming the rule:
+/// stay what they would otherwise be (in an attempt, the attempt fails);
+/// with the `test-util` feature, it panics instead, naming the rule:
 ///
 /// * every token entered is in [`TokenType::ALL`] (`token-not-in-all`)
 /// * every consumed byte is inside a token, and one token holds the others
@@ -332,19 +360,24 @@ pub enum Reach {
 /// * inside content, a token holds no content (`content-in-content`), and
 ///   starts before the content of its line, like a line prefix
 ///   (`token-after-content`)
-/// * `exit` has a token to close (`exit-without-token`)
+/// * `exit` has a token to close (`exit-without-token`); an attempt closes
+///   only tokens it opened (`exit-before-attempt`)
 /// * after consuming a line ending, a step returns `next`, and can first
 ///   `exit` tokens that end there (`enter-after-line-ending`,
 ///   `ok-after-line-ending`)
 /// * `ok` comes after at least one byte, with every token closed
-///   (`ok-without-bytes`, `ok-with-open-tokens`)
+///   (`ok-without-bytes`, `ok-with-open-tokens`); in an attempt, with the
+///   tokens it opened closed
 /// * tokens start and end between characters, not inside one; a tab is
 ///   one character, but a line can start inside it, after container
 ///   prefixes (`token-inside-character`)
 ///
-/// A step that does not consume, which [`Ctx::retry`] makes, can run at
-/// most 256 times in a row, and a match reads at most as far as
-/// [`reach`][Self::reach] allows; past that, it does not match.
+/// A match takes at most 256 steps for each byte from its start through the
+/// furthest point it reached, failed attempts included, and moving past a
+/// container prefix counts a step for each of its bytes; and a match reads
+/// at most as far as [`reach`][Self::reach] allows; past either, it does
+/// not match.
+/// Attempts nest at most 256 deep; a deeper attempt fails.
 /// Content nests at most 32 deep, counting the content of built-in
 /// constructs, such as the text of a paragraph; deeper content does not
 /// match.
@@ -423,6 +456,7 @@ impl<C: Construct + ?Sized> fmt::Debug for Step<C> {
 enum StepKind<S> {
     Next(S),
     Retry(S),
+    Attempt { state: S, ok: S, nok: S },
     Ok,
     Nok,
 }
@@ -521,6 +555,7 @@ pub(crate) type TokenName = (u8, u16, &'static str, TokenKind);
 enum RawStep {
     Next,
     Retry,
+    Attempt,
     Ok,
     Nok,
 }
@@ -536,6 +571,9 @@ trait ErasedConstruct {
     fn start(&self, slot: &mut Option<Box<dyn Any>>);
     /// Take a step from the state in `slot`, and store the next one there.
     fn step(&self, slot: &mut Option<Box<dyn Any>>, inner: Inner<'_, '_>) -> (RawStep, Report);
+    /// End the innermost attempt in `slot`: go on in its `ok` or `nok`
+    /// state.
+    fn resume(&self, slot: &mut Option<Box<dyn Any>>, ok: bool);
     fn to_mdast(&self, tokens: Vec<RawToken>) -> mdast::Node;
 }
 
@@ -545,6 +583,8 @@ struct Wrap<C>(C);
 /// Where a construct keeps its state between steps.
 struct Machine<S> {
     state: Option<S>,
+    /// The `ok` and `nok` states of the attempts it is in.
+    attempts: Vec<(S, S)>,
 }
 
 impl<C: Construct> ErasedConstruct for Wrap<C> {
@@ -574,8 +614,16 @@ impl<C: Construct> ErasedConstruct for Wrap<C> {
         {
             // Reused for every match, so a state without data allocates
             // nothing, and one with data allocates once per parse.
-            Some(machine) => machine.state = state,
-            None => *slot = Some(Box::new(Machine { state })),
+            Some(machine) => {
+                machine.state = state;
+                machine.attempts.clear();
+            }
+            None => {
+                *slot = Some(Box::new(Machine {
+                    state,
+                    attempts: Vec::new(),
+                }));
+            }
         }
     }
 
@@ -601,10 +649,24 @@ impl<C: Construct> ErasedConstruct for Wrap<C> {
                 machine.state = Some(state);
                 RawStep::Retry
             }
+            StepKind::Attempt { state, ok, nok } => {
+                machine.state = Some(state);
+                machine.attempts.push((ok, nok));
+                RawStep::Attempt
+            }
             StepKind::Ok => RawStep::Ok,
             StepKind::Nok => RawStep::Nok,
         };
         (raw, step.report)
+    }
+
+    fn resume(&self, slot: &mut Option<Box<dyn Any>>, ok: bool) {
+        let machine = slot
+            .as_mut()
+            .and_then(|slot| slot.downcast_mut::<Machine<C::State>>())
+            .expect("expected state of construct");
+        let next = machine.attempts.pop().expect("expected attempt");
+        machine.state = Some(if ok { next.0 } else { next.1 });
     }
 
     fn to_mdast(&self, tokens: Vec<RawToken>) -> mdast::Node {
@@ -643,8 +705,15 @@ pub(crate) struct ExtensionState {
     start: usize,
     /// Number of events when the current construct started.
     events: usize,
-    /// Steps the current construct took without consuming.
-    retries: u16,
+    /// Steps the current match took, where a step that moved past more than
+    /// one byte, such as a container prefix, counts each byte.
+    steps: usize,
+    /// Where the last step of the current match was.
+    at: usize,
+    /// Furthest byte a step of the current match was at.
+    furthest: usize,
+    /// Attempts the current construct is in.
+    attempts: Vec<AttemptFrame>,
     /// Construct being tried.
     index: u8,
     /// Construct to try next at the current byte.
@@ -670,6 +739,28 @@ pub(crate) struct ExtensionState {
     /// Where the open content is in its blank lines and lines of text.
     content_lines: ContentLines,
     /// Enter of the last chunk of the current content token.
+    last_chunk: Option<usize>,
+}
+
+/// An attempt a construct is in, and what undoing it restores.
+#[derive(Debug)]
+struct AttemptFrame {
+    /// Open tokens of the match when the attempt started.
+    open_len: usize,
+    /// Start of the line when the attempt started, which the tokenizer does
+    /// not restore.
+    line_start: Point,
+    /// Line of the last byte of content when the attempt started.
+    content_line: usize,
+    /// Whether the line of content was blank when the attempt started.
+    content_blank: bool,
+    /// Where the content was in its lines when the attempt started.
+    content_lines: ContentLines,
+    /// Enter of the content token when the attempt started.
+    content_enter: usize,
+    /// Line endings of the content when the attempt started.
+    content_eols: usize,
+    /// Last chunk when the attempt started.
     last_chunk: Option<usize>,
 }
 
@@ -799,6 +890,20 @@ impl<'t, 'a, C: Construct + ?Sized> Ctx<'t, 'a, C> {
     pub fn retry(self, state: C::State) -> Step<C> {
         Step {
             kind: StepKind::Retry(state),
+            report: self.inner.report,
+        }
+    }
+
+    /// Try `state` at the current byte, like micromark’s `effects.attempt`:
+    /// if it reaches `ok`, go to `ok` where the attempt stopped; if it
+    /// reaches `nok`, undo it, and go to `nok` at the byte where it started.
+    ///
+    /// The states are values, so `nok` goes on with what the construct knew
+    /// when the attempt started.
+    #[must_use]
+    pub fn attempt(self, state: C::State, ok: C::State, nok: C::State) -> Step<C> {
+        Step {
+            kind: StepKind::Attempt { state, ok, nok },
             report: self.inner.report,
         }
     }
@@ -950,8 +1055,15 @@ fn exit(inner: &mut Inner) {
             TokenKind::Content(_)
         )
     });
+    let state = ext(tokenizer);
+    // An attempt cannot close tokens opened before it.
+    let is_before_attempt = state
+        .attempts
+        .last()
+        .map_or(false, |frame| state.open.len() <= frame.open_len);
     let rule = match is_content {
         None => Some("exit-without-token"),
+        Some(_) if is_before_attempt => Some("exit-before-attempt"),
         Some(_) if !at_boundary(tokenizer) => Some("token-inside-character"),
         _ => None,
     };
@@ -1259,9 +1371,13 @@ pub(crate) fn start(tokenizer: &mut Tokenizer, index: u8) -> State {
     let state = ext_mut(tokenizer);
     state.start = start;
     state.events = events;
-    state.retries = 0;
+    state.steps = 0;
+    state.at = start;
+    state.furthest = start;
     state.index = index;
     state.open.clear();
+    state.attempts.clear();
+    state.last_chunk = None;
     let slot = usize::from(index);
     if state.slots.len() <= slot {
         state.slots.resize_with(slot + 1, || None);
@@ -1270,9 +1386,61 @@ pub(crate) fn start(tokenizer: &mut Tokenizer, index: u8) -> State {
     State::Retry(StateName::ExtensionStep)
 }
 
+/// After an attempt of a construct that succeeded.
+pub(crate) fn attempt_ok(tokenizer: &mut Tokenizer) -> State {
+    let options = tokenizer.parse_state.options;
+    let state = ext_mut(tokenizer);
+    state.attempts.pop().expect("expected attempt");
+    let index = state.index;
+    erased(options, index).resume(&mut state.slots[usize::from(index)], true);
+    State::Retry(StateName::ExtensionStep)
+}
+
+/// After an attempt of a construct that failed, and was undone.
+pub(crate) fn attempt_nok(tokenizer: &mut Tokenizer) -> State {
+    let options = tokenizer.parse_state.options;
+    let state = ext_mut(tokenizer);
+    let frame = state.attempts.pop().expect("expected attempt");
+    state.open.truncate(frame.open_len);
+    state.content_line = frame.content_line;
+    state.content_blank = frame.content_blank;
+    state.content_lines = frame.content_lines;
+    state.content_enter = frame.content_enter;
+    state.content_eols.truncate(frame.content_eols);
+    state.last_chunk = frame.last_chunk;
+    let index = state.index;
+    erased(options, index).resume(&mut state.slots[usize::from(index)], false);
+    tokenizer.line_start = frame.line_start;
+
+    // The undo removed chunks the attempt opened, but not the link to them.
+    if let Some(chunk) = frame.last_chunk {
+        let events_len = tokenizer.events.len();
+        let link = tokenizer.events[chunk]
+            .link
+            .as_mut()
+            .expect("expected link");
+        if link.next.map_or(false, |next| next >= events_len) {
+            link.next = None;
+        }
+    }
+
+    State::Retry(StateName::ExtensionStep)
+}
+
 /// Run the current construct, enforcing the rules of [`Construct`].
 pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
-    let index = ext(tokenizer).index;
+    let point = tokenizer.point.index;
+    let tokenize_state = ext_mut(tokenizer);
+    tokenize_state.steps += point.saturating_sub(tokenize_state.at).max(1);
+    tokenize_state.at = point;
+    tokenize_state.furthest = tokenize_state.furthest.max(point);
+    // Work is linear in the bytes a match reaches, whatever its attempts do.
+    let budget = STEP_MAX.saturating_mul(tokenize_state.furthest - tokenize_state.start + 1);
+    if tokenize_state.steps > budget {
+        return State::Nok;
+    }
+
+    let index = tokenize_state.index;
     let construct = erased(tokenizer.parse_state.options, index);
 
     let within_reach = match construct.reach() {
@@ -1300,16 +1468,33 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     );
     ext_mut(tokenizer).slots[slot] = machine;
     let tokenize_state = ext(tokenizer);
+    let attempt = tokenize_state.attempts.last();
 
     // A limit, such as the depth of content, is no mistake of the
     // construct: it does not match, without a panic.
-    if report.limit {
+    if report.limit
+        || matches!(step, RawStep::Attempt if tokenize_state.attempts.len() >= ATTEMPT_MAX)
+    {
+        if matches!(step, RawStep::Attempt) {
+            // The frame of the attempt that does not start.
+            construct.resume(&mut ext_mut(tokenizer).slots[slot], false);
+        }
         return State::Nok;
     }
 
     let broken = report.broken.or(match step {
-        RawStep::Ok if tokenizer.point.index <= tokenize_state.start => Some("ok-without-bytes"),
-        RawStep::Ok if !tokenize_state.open.is_empty() => Some("ok-with-open-tokens"),
+        // An attempt ends with the tokens it opened closed.
+        RawStep::Ok
+            if attempt.map_or(false, |frame| tokenize_state.open.len() != frame.open_len) =>
+        {
+            Some("ok-with-open-tokens")
+        }
+        RawStep::Ok if attempt.is_none() && tokenizer.point.index <= tokenize_state.start => {
+            Some("ok-without-bytes")
+        }
+        RawStep::Ok if attempt.is_none() && !tokenize_state.open.is_empty() => {
+            Some("ok-with-open-tokens")
+        }
         _ => None,
     });
 
@@ -1319,13 +1504,26 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     }
 
     match step {
-        RawStep::Next => {
-            ext_mut(tokenizer).retries = 0;
-            State::Next(StateName::ExtensionStep)
-        }
-        RawStep::Retry if tokenize_state.retries >= RETRY_MAX => State::Nok,
-        RawStep::Retry => {
-            ext_mut(tokenizer).retries += 1;
+        RawStep::Next => State::Next(StateName::ExtensionStep),
+        RawStep::Retry => State::Retry(StateName::ExtensionStep),
+        RawStep::Attempt => {
+            let line_start = tokenizer.line_start.clone();
+            let tokenize_state = ext_mut(tokenizer);
+            let frame = AttemptFrame {
+                open_len: tokenize_state.open.len(),
+                line_start,
+                content_line: tokenize_state.content_line,
+                content_blank: tokenize_state.content_blank,
+                content_lines: tokenize_state.content_lines,
+                content_enter: tokenize_state.content_enter,
+                content_eols: tokenize_state.content_eols.len(),
+                last_chunk: tokenize_state.last_chunk,
+            };
+            tokenize_state.attempts.push(frame);
+            tokenizer.attempt(
+                State::Next(StateName::ExtensionAttemptOk),
+                State::Next(StateName::ExtensionAttemptNok),
+            );
             State::Retry(StateName::ExtensionStep)
         }
         RawStep::Ok => State::Ok,

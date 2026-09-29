@@ -128,6 +128,8 @@ pub enum Name {
     DocumentFlowEnd,
 
     ExtensionStep,
+    ExtensionAttemptOk,
+    ExtensionAttemptNok,
 
     FlowStart,
     FlowBeforeGfmTable,
@@ -568,6 +570,8 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentFlowInside => construct::document::flow_inside,
 
         Name::ExtensionStep => crate::extension::step,
+        Name::ExtensionAttemptOk => crate::extension::attempt_ok,
+        Name::ExtensionAttemptNok => crate::extension::attempt_nok,
 
         Name::FlowStart => construct::flow::start,
         Name::FlowBeforeGfmTable => construct::flow::before_gfm_table,

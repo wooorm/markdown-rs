@@ -280,7 +280,7 @@ pub struct Tokenizer<'a> {
     // First line where this tokenizer starts.
     first_line: usize,
     /// Current point after the last line ending (excluding jump).
-    line_start: Point,
+    pub line_start: Point,
     /// Track whether the current byte is already consumed (`true`) or expected
     /// to be consumed (`false`).
     ///

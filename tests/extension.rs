@@ -632,7 +632,7 @@ fn tokens_inside_a_character_leave_text() {
 }
 
 #[test]
-fn resets_retries_after_each_byte() {
+fn allows_a_retry_before_each_byte() {
     /// `{`, then `a`s, each after a retry.
     fn retry_each(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
         match (state, t.current()) {
@@ -1946,5 +1946,575 @@ fn skips_prefix_tokens_of_an_outer_match() {
         inner.fields.get("tokens").map(String::as_str),
         Some("braces,raw"),
         "should not give the prefix of the outer match to the inner one"
+    );
+}
+
+#[test]
+fn limits_leave_text() {
+    let cases: Vec<(&str, StepFn)> = vec![
+        (
+            "an attempt that succeeds without progress, forever",
+            |state, t| match state {
+                0 => t.enter(Tok::A).consume().next(1),
+                1 => t.attempt(10, 1, 2),
+                10 => t.ok(),
+                _ => t.nok(),
+            },
+        ),
+        (
+            "an attempt that fails after progress, forever",
+            |state, t| match state {
+                0 => t.enter(Tok::A).consume().next(1),
+                1 => t.attempt(10, 2, 1),
+                10 => t.enter(Tok::B).consume().exit().next(11),
+                _ => t.nok(),
+            },
+        ),
+        (
+            "nested attempts that fail and are tried again",
+            |state, t| {
+                if state == 0 {
+                    t.enter(Tok::A).consume().next(1)
+                } else {
+                    t.attempt(1, 1, 1)
+                }
+            },
+        ),
+    ];
+
+    for (label, step) in cases {
+        let tree = to_mdast("x {yz", &scripted(step)).unwrap();
+        assert!(
+            find_scripted(&tree).is_none(),
+            "should not match past a limit: {}",
+            label
+        );
+        assert_eq!(
+            tree.to_string(),
+            "x {yz",
+            "should keep text past a limit, without a panic: {}",
+            label
+        );
+    }
+}
+
+#[test]
+fn breaking_a_rule_in_an_attempt_leaves_text() {
+    let cases: Vec<(&str, StepFn)> = vec![
+        ("exit-before-attempt", |state, t| match state {
+            0 => t.enter(Tok::A).enter(Tok::B).consume().exit().next(1),
+            1 => t.attempt(10, 2, 2),
+            10 => t.exit().nok(),
+            _ => t.ok(),
+        }),
+        ("exit-before-attempt", |state, t| match state {
+            0 => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+            1 => t.consume().next(2),
+            2 => t.attempt(10, 3, 4),
+            3 => t.exit().exit().ok(),
+            // Closes the content, which the attempt did not open.
+            10 => t.exit().ok(),
+            _ => t.nok(),
+        }),
+        ("ok-with-open-tokens", |state, t| match state {
+            0 => t.enter(Tok::A).consume().next(1),
+            1 => t.attempt(10, 2, 3),
+            10 => t.enter(Tok::B).consume().ok(),
+            2 => t.exit().exit().ok(),
+            _ => t.nok(),
+        }),
+    ];
+
+    for (rule, step) in cases {
+        if let Some(tree) = breaking(rule, || to_mdast("x {yz", &scripted(step)).unwrap()) {
+            assert!(
+                find_scripted(&tree).is_none(),
+                "should not match a construct that breaks `{}` in an attempt",
+                rule
+            );
+            assert_eq!(
+                tree.to_string(),
+                "x {yz",
+                "should keep text for a construct that breaks `{}` in an attempt",
+                rule
+            );
+        }
+    }
+}
+
+#[test]
+fn undoes_a_failed_attempt() {
+    let optional: StepFn = |state, t| match (state, t.current()) {
+        (0, Some(b'{')) => t.enter(Tok::A).consume().next(1),
+        (1, _) => t.attempt(10, 2, 2),
+        (10, Some(b'x')) => t.enter(Tok::B).consume().next(11),
+        (11, Some(b'y')) => t.consume().exit().ok(),
+        (2, Some(b'}')) => t.consume().exit().ok(),
+        (2, Some(_)) => t.consume().next(2),
+        _ => t.nok(),
+    };
+    let tokens = |input| {
+        let tree = to_mdast(input, &scripted(optional)).unwrap();
+        find_scripted(&tree).and_then(|node| node.fields.get("tokens").cloned())
+    };
+
+    assert_eq!(tokens("{xy}"), Some("a,b".into()), "should keep a match");
+    assert_eq!(
+        tokens("{xz}"),
+        Some("a".into()),
+        "should undo a failure, and continue at `nok`"
+    );
+}
+
+#[test]
+fn undoes_a_failed_attempt_that_ends_a_line_of_content() {
+    let step: StepFn = |state, t| match (state, t.current()) {
+        (0, Some(b'{')) => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+        (1, Some(b'x')) => t.consume().next(2),
+        (2, _) => t.attempt(10, 3, 3),
+        (10, Some(b'\n')) => t.consume().next(11),
+        (3, Some(b'}')) => t.exit().consume().exit().ok(),
+        (3, Some(_)) => t.consume().next(3),
+        _ => t.nok(),
+    };
+    let tree = to_mdast("{x\ny}", &scripted(step)).unwrap();
+
+    assert_eq!(
+        find_scripted(&tree).map(|node| Node::Paragraph(Paragraph {
+            children: node.children.clone(),
+            position: None
+        })
+        .to_string()),
+        Some("x\ny".into()),
+        "should keep content before an attempt that consumed a line ending"
+    );
+}
+
+#[test]
+fn keeps_content_across_attempts_in_it() {
+    // `{`, content, and an attempt at `y`, then `}`.
+    let step: StepFn = |state, t| match (state, t.current()) {
+        (0, Some(b'{')) => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+        (1, Some(b'x')) => t.consume().next(2),
+        (2, _) => t.attempt(10, 3, 3),
+        // Content up to `y`, which succeeds, or `}`, which fails.
+        (10, Some(b'y')) => t.consume().next(11),
+        (10, Some(byte)) if byte != b'}' => t.consume().next(10),
+        (11, _) => t.ok(),
+        (3, _) => t.exit().retry(4),
+        (4, Some(b'}')) => t.consume().exit().ok(),
+        (4, Some(_)) => t.consume().next(4),
+        _ => t.nok(),
+    };
+    let content = |input| {
+        let tree = to_mdast(input, &scripted(step)).unwrap();
+        find_scripted(&tree).map(|node| {
+            Node::Paragraph(Paragraph {
+                children: node.children.clone(),
+                position: None,
+            })
+            .to_string()
+        })
+    };
+
+    assert_eq!(
+        content("{xy}"),
+        Some("xy".into()),
+        "should keep content that an attempt added"
+    );
+    assert_eq!(
+        content("{x\nz}"),
+        Some("x".into()),
+        "should undo a line of content that a failed attempt added"
+    );
+}
+
+#[test]
+fn allows_an_attempt_before_each_byte() {
+    /// `{`, then `a`s, each consumed in an attempt.
+    fn attempt_each(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current()) {
+            (0, Some(b'{')) => t.enter(Tok::A).consume().next(1),
+            (1, Some(b'a')) => t.attempt(10, 1, 2),
+            (10, Some(b'a')) => t.enter(Tok::B).consume().exit().next(11),
+            (11, _) => t.ok(),
+            (1 | 2, _) => t.exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    let input = format!("{{{}", "a".repeat(300));
+    let mut found = vec![];
+    values(
+        &to_mdast(&input, &scripted(attempt_each)).unwrap(),
+        &mut found,
+    );
+
+    assert_eq!(
+        found,
+        vec![input],
+        "should allow an attempt before each byte of a long match"
+    );
+}
+
+#[test]
+fn restores_content_after_a_failed_attempt() {
+    /// `{`, content of `x` and a line ending, where an attempt tries to
+    /// take everything up to `}` and fails there, `}`; a `|` token can
+    /// start a line of content.
+    fn step(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current()) {
+            (0, Some(b'{')) => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+            (1, Some(b'x')) => t.consume().next(5),
+            (5, Some(b'\n')) => t.consume().next(2),
+            (2, _) => t.attempt(10, 4, 4),
+            (10, Some(byte)) if byte != b'}' => t.consume().next(10),
+            (3, Some(b'\n')) => t.consume().next(4),
+            (4, Some(b'|')) => t.enter(Tok::BracesPrefix).consume().exit().next(3),
+            (3 | 4, Some(b'}')) => t.exit().consume().exit().ok(),
+            (3 | 4, Some(_)) => t.consume().next(3),
+            _ => t.nok(),
+        }
+    }
+
+    for (input, expected) in [
+        // New chunks after the undo link to the chunk before the attempt.
+        ("{x\nz\nw}", "x\nz\nw"),
+        // The line of the last content is that before the attempt.
+        ("{x\n|z}", "x\nz"),
+    ] {
+        let tree = to_mdast(input, &scripted(step)).unwrap();
+        let node = find_scripted(&tree).expect("expected a match");
+
+        assert_eq!(
+            Node::Paragraph(Paragraph {
+                children: node.children.clone(),
+                position: None
+            })
+            .to_string(),
+            expected,
+            "should continue content after a failed attempt in {:?}",
+            input
+        );
+    }
+}
+
+/// A state of a counting construct: a number, and two counters.
+type Counted = (u16, usize, usize);
+
+/// A step of a counting construct.
+type CountedFn = fn(Counted, Ctx<'_, '_, Counting>) -> Step<Counting>;
+
+/// A construct at `{` whose states carry counts, scripted by a function.
+struct Counting(CountedFn);
+
+impl Construct for Counting {
+    type Place = Text;
+    type State = Counted;
+    type Token = Tok;
+
+    fn markers(&self) -> &[u8] {
+        b"{"
+    }
+
+    fn start(&self) -> Counted {
+        (0, 0, 0)
+    }
+
+    fn step(&self, state: Counted, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        (self.0)(state, t)
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, Tok>>) -> Node {
+        Node::Custom(Custom {
+            name: "scripted".into(),
+            value: Some(tokens[0].value.clone().into_owned()),
+            ..Custom::default()
+        })
+    }
+}
+
+fn counting(step: CountedFn) -> ParseOptions {
+    ParseOptions {
+        text_constructs: vec![construct(Counting(step))],
+        ..ParseOptions::default()
+    }
+}
+
+/// `{` and `a`s, then `N` retries.
+fn spend<const N: usize>(state: Counted, t: Ctx<'_, '_, Counting>) -> Step<Counting> {
+    match (state, t.current()) {
+        ((0, ..), _) => t.enter(Tok::A).consume().next((1, 0, 0)),
+        ((1, ..), Some(b'a')) => t.consume().next((1, 0, 0)),
+        ((_, retries, _), _) if retries < N => t.retry((2, retries + 1, 0)),
+        _ => t.exit().ok(),
+    }
+}
+
+#[test]
+fn limits_steps_per_byte_reached() {
+    // 10 bytes and the end allow 2,816 steps: 11 to consume and end, and
+    // 2,805 retries.
+    let mut found = vec![];
+    values(
+        &to_mdast("{aaaaaaaaa", &counting(spend::<2805>)).unwrap(),
+        &mut found,
+    );
+    assert_eq!(
+        found,
+        vec!["{aaaaaaaaa"],
+        "should allow steps for each byte reached, anywhere in the match"
+    );
+
+    let mut found = vec![];
+    values(
+        &to_mdast(
+            &format!("{{aaaaaaaaa{}{{aaaaaaaaa", " b".repeat(500)),
+            &counting(spend::<2000>),
+        )
+        .unwrap(),
+        &mut found,
+    );
+    assert_eq!(
+        found,
+        vec!["{aaaaaaaaa", "{aaaaaaaaa"],
+        "should count steps for each match, from its start"
+    );
+
+    let mut found = vec![];
+    values(
+        &to_mdast("{aaaaaaaaa", &counting(spend::<2806>)).unwrap(),
+        &mut found,
+    );
+    assert_eq!(
+        found,
+        Vec::<String>::new(),
+        "should not match past 256 steps for each byte reached"
+    );
+
+    // Before `{`, an attempt looks at every byte and fails; elsewhere, 1,000
+    // retries, which one byte does not allow.
+    let look_or_spend: CountedFn = |state, t| match (state, t.current()) {
+        ((0, ..), _) => t.enter(Tok::A).consume().next((1, 0, 0)),
+        ((1, ..), Some(b'{')) => t.attempt((10, 0, 0), (2, 0, 0), (2, 0, 0)),
+        ((10, ..), Some(_)) => t.enter(Tok::B).consume().exit().next((10, 0, 0)),
+        ((1 | 2, retries, _), _) if retries < 1000 => t.retry((2, retries + 1, 0)),
+        ((1 | 2, ..), _) => t.exit().ok(),
+        _ => t.nok(),
+    };
+    let input = format!("{{{{{}", "a".repeat(20));
+
+    let mut found = vec![];
+    values(
+        &to_mdast(&input, &counting(look_or_spend)).unwrap(),
+        &mut found,
+    );
+    assert_eq!(
+        found,
+        vec!["{"],
+        "should count bytes a failed attempt reached, but not in a later match"
+    );
+}
+
+#[test]
+fn restores_the_line_start_after_a_failed_attempt() {
+    /// `{a`, a line ending, and an attempt that takes the next line and
+    /// fails.
+    fn step(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current()) {
+            (0, _) => t.enter(Tok::A).consume().next(1),
+            (1 | 2 | 10 | 11, Some(_)) => t.consume().next(state + 1),
+            (3, _) => t.attempt(10, 4, 4),
+            (4, _) => t.exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    let tree = to_mdast("{a\nb\nc", &scripted(step)).unwrap();
+    assert_eq!(
+        find_scripted(&tree).and_then(|node| node.value.as_deref()),
+        Some("{a\n"),
+        "should end the token where the attempt started"
+    );
+    assert_eq!(
+        html("{a\nb\nc", scripted(step)),
+        "<p>{a\nb\nc</p>",
+        "should continue text where the attempt started"
+    );
+}
+
+#[test]
+fn forgets_the_content_of_an_earlier_match() {
+    /// `{`, then content of `c` and failure, or a failed attempt and `ok`.
+    fn step(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current()) {
+            (0, _) => t.enter(Tok::A).consume().next(1),
+            (1, Some(b'c')) => t.enter(Tok::BText).consume().next(2),
+            (1, _) => t.attempt(10, 3, 3),
+            (3, _) => t.exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    let mut found = vec![];
+    values(&to_mdast("{c {x", &scripted(step)).unwrap(), &mut found);
+    assert_eq!(found, vec!["{"], "should match after an earlier failure");
+}
+
+#[test]
+fn fails_only_the_attempt_that_breaks_a_rule() {
+    let step: StepFn = |state, t| match state {
+        0 => t.enter(Tok::A).consume().next(1),
+        1 => t.attempt(10, 2, 3),
+        // Closes `a`, which the attempt did not open.
+        10 => t.exit().ok(),
+        3 => t.exit().ok(),
+        _ => t.nok(),
+    };
+    let parse = scripted(step);
+
+    if let Some(tree) = breaking("exit-before-attempt", || to_mdast("{x", &parse).unwrap()) {
+        let mut found = vec![];
+        values(&tree, &mut found);
+        assert_eq!(found, vec!["{"], "should continue at `nok`");
+    }
+}
+
+#[test]
+fn nests_attempts() {
+    // The inner attempt fails, the outer one succeeds.
+    let inner_fails: StepFn = |state, t| match state {
+        0 => t.enter(Tok::A).consume().next(1),
+        1 => t.attempt(10, 2, 3),
+        10 => t.enter(Tok::B).consume().next(11),
+        11 => t.attempt(20, 3, 12),
+        20 => t.consume().next(21),
+        12 => t.exit().ok(),
+        2 => t.exit().ok(),
+        _ => t.nok(),
+    };
+    let tree = to_mdast("{xy", &scripted(inner_fails)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert_eq!(
+        (
+            node.value.as_deref(),
+            node.fields.get("tokens").map(String::as_str)
+        ),
+        (Some("{x"), Some("a,b")),
+        "should undo an inner attempt and keep the outer one"
+    );
+
+    // The inner attempt adds content, the outer one fails.
+    let outer_fails: StepFn = |state, t| match state {
+        0 => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+        1 => t.attempt(10, 2, 2),
+        10 => t.attempt(20, 11, 11),
+        20 => t.consume().next(21),
+        21 => t.ok(),
+        11 => t.consume().next(12),
+        2 => t.consume().next(3),
+        3 => t.exit().exit().ok(),
+        _ => t.nok(),
+    };
+    let tree = to_mdast("{xy}", &scripted(outer_fails)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert_eq!(
+        (node.value.as_deref(), node.children[0].to_string()),
+        (Some("{"), "x".into()),
+        "should undo content of an inner attempt with the outer one"
+    );
+}
+
+#[test]
+fn goes_on_with_the_states_given_to_an_attempt() {
+    // Counts the attempts in the first counter: the one in `nok` goes on,
+    // even though the attempt that changed nothing failed.
+    let step: CountedFn = |state, t| match (state, t.current()) {
+        ((0, ..), _) => t.enter(Tok::A).consume().next((1, 0, 0)),
+        ((1, tries, _), _) if tries < 3 => {
+            t.attempt((10, tries, 0), (2, tries, 0), (1, tries + 1, 0))
+        }
+        ((10, ..), _) => t.nok(),
+        ((1, 3, _), Some(b'x')) => t.consume().exit().ok(),
+        _ => t.nok(),
+    };
+    let mut found = vec![];
+    values(&to_mdast("{x", &counting(step)).unwrap(), &mut found);
+
+    assert_eq!(
+        found,
+        vec!["{x"],
+        "should go on in the `nok` state with the data it was given"
+    );
+}
+
+/// `{x`, `N` attempts that cross the line ending and fail, then the line
+/// ending and `y`.
+fn recross<const N: usize>(state: Counted, t: Ctx<'_, '_, Counting>) -> Step<Counting> {
+    match (state, t.current()) {
+        ((0, ..), _) => t.enter(Tok::A).consume().next((1, 0, 0)),
+        ((1, ..), Some(b'x')) => t.consume().next((2, 0, 0)),
+        ((2, tries, _), Some(b'\n')) if tries < N => {
+            t.attempt((10, tries, 0), (3, 0, 0), (2, tries + 1, 0))
+        }
+        ((step @ (2 | 10), ..), Some(b'\n')) => t.consume().next((step + 1, 0, 0)),
+        ((3, ..), Some(b'y')) => t.consume().exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn counts_container_prefixes_it_moves_past() {
+    let prefix = ">".repeat(1000);
+
+    assert!(
+        find_scripted(&to_mdast("{x\ny", &counting(recross::<300>)).unwrap()).is_some(),
+        "should allow 300 attempts across a line ending"
+    );
+    assert!(
+        find_scripted(
+            &to_mdast(
+                &format!("{} {{x\n{} y", prefix, prefix),
+                &counting(recross::<300>)
+            )
+            .unwrap()
+        )
+        .is_none(),
+        "should count the bytes of a container prefix that each attempt moves past"
+    );
+}
+
+/// `{` and `a`s, then `N` attempts, each in the one before it: the first
+/// counter is the attempts started, the second those still open.
+fn nest<const N: usize>(state: Counted, t: Ctx<'_, '_, Counting>) -> Step<Counting> {
+    match (state, t.current()) {
+        ((0, ..), _) => t.enter(Tok::A).consume().next((1, 0, 0)),
+        ((1, ..), Some(b'a')) => t.consume().next((1, 0, 0)),
+        ((1 | 2, started, open), _) if started < N => t.attempt(
+            (2, started + 1, open + 1),
+            (3, started + 1, open),
+            (4, 0, 0),
+        ),
+        // The innermost attempt, and each one around it, succeeds.
+        ((2, _, open), _) if open > 0 => t.ok(),
+        ((3, _, open), _) if open > 0 => t.ok(),
+        ((1..=3, ..), _) => t.exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn limits_attempts_in_attempts() {
+    let input = format!("{{{}", "a".repeat(20));
+
+    assert!(
+        find_scripted(&to_mdast(&input, &counting(nest::<256>)).unwrap()).is_some(),
+        "should allow 256 attempts in each other"
+    );
+    assert!(
+        find_scripted(&to_mdast(&input, &counting(nest::<257>)).unwrap()).is_none(),
+        "should fail an attempt nested more than 256 deep"
     );
 }
