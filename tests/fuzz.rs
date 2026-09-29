@@ -129,5 +129,11 @@ fn fuzz() -> Result<(), message::Message> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    assert_eq!(
+        to_html("<![C&#;"),
+        "<p>&lt;![C&amp;#;</p>",
+        "13: empty numeric character reference after a partial CDATA opening (GH-206)"
+    );
+
     Ok(())
 }

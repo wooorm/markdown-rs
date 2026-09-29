@@ -223,6 +223,7 @@ pub fn cdata_open_inside(tokenizer: &mut Tokenizer) -> State {
             State::Next(StateName::HtmlTextCdataOpenInside)
         }
     } else {
+        tokenizer.tokenize_state.size = 0;
         State::Nok
     }
 }

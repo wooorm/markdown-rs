@@ -240,6 +240,18 @@ fn html_text() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("<![CDA&#1234567;"),
+        "<p>&lt;![CDA�</p>",
+        "should not leak a partial CDATA opening into a character reference"
+    );
+
+    assert_eq!(
+        to_html("<![C`a`"),
+        "<p>&lt;![C<code>a</code></p>",
+        "should not leak a partial CDATA opening into code (text)"
+    );
+
+    assert_eq!(
         to_html_with_options("foo <![CDATA[]]", &danger)?,
         "<p>foo &lt;![CDATA[]]</p>",
         "should not support eof in a CDATA (4)"
