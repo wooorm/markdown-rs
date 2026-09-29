@@ -1,5 +1,7 @@
 use markdown::{
-    extension::{construct, BoxedConstruct, Construct, Ctx, Reach, Step, Text, Token, TokenType},
+    extension::{
+        construct, BoxedConstruct, Construct, ContentType, Ctx, Reach, Step, Text, Token, TokenType,
+    },
     mdast::{Custom, Node, Paragraph, Root, Text as TextNode},
     to_html_with_options, to_mdast,
     unist::Position,
@@ -255,6 +257,18 @@ enum Tok {
     Line,
     Percent,
     Letter,
+    Mid,
+    /// `b`, as text content.
+    BText,
+    /// `c`, as text content.
+    CText,
+    BracesContent,
+    BracesPrefix,
+    Pair,
+    Left,
+    Right,
+    PairPrefix,
+    Raw,
 }
 
 impl TokenType for Tok {
@@ -266,17 +280,45 @@ impl TokenType for Tok {
         Self::Line,
         Self::Percent,
         Self::Letter,
+        Self::Mid,
+        Self::BText,
+        Self::CText,
+        Self::BracesContent,
+        Self::BracesPrefix,
+        Self::Pair,
+        Self::Left,
+        Self::Right,
+        Self::PairPrefix,
+        Self::Raw,
     ];
 
     fn name(self) -> &'static str {
         match self {
             Self::A => "a",
-            Self::B => "b",
+            Self::B | Self::BText => "b",
             Self::Braces => "braces",
             Self::BracesData => "bracesData",
             Self::Line => "line",
             Self::Percent => "percent",
             Self::Letter => "letter",
+            Self::Mid => "mid",
+            Self::CText => "c",
+            Self::BracesContent => "bracesContent",
+            Self::BracesPrefix => "bracesPrefix",
+            Self::Pair => "pair",
+            Self::Left => "left",
+            Self::Right => "right",
+            Self::PairPrefix => "pairPrefix",
+            Self::Raw => "raw",
+        }
+    }
+
+    fn content(self) -> Option<ContentType> {
+        match self {
+            Self::BText | Self::CText | Self::BracesContent | Self::Left | Self::Right => {
+                Some(ContentType::Text)
+            }
+            _ => None,
         }
     }
 }
@@ -324,6 +366,10 @@ impl Construct for Scripted {
             attributes: tokens[1..]
                 .iter()
                 .map(|token| (token.name.name().into(), token.value.clone().into_owned()))
+                .collect(),
+            children: tokens
+                .into_iter()
+                .flat_map(|token| token.children)
                 .collect(),
             ..Custom::default()
         })
@@ -416,10 +462,28 @@ fn broken_constructs_leave_text() {
         ("empty-token", |_, t| {
             t.enter(Tok::A).exit().enter(Tok::B).consume().exit().ok()
         }),
+        ("token-after-content", |state, t| match state {
+            0 => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+            1 => t.consume().next(2),
+            _ => t.enter(Tok::Mid).consume().exit().exit().exit().ok(),
+        }),
+        ("content-in-content", |state, t| match state {
+            0 => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+            1 => t.consume().next(2),
+            _ => t.enter(Tok::CText).consume().exit().exit().exit().ok(),
+        }),
+        // Its content, `{y`, does not match again: without the rule, the
+        // construct matches.
+        ("content-at-start", |state, t| match (state, t.current()) {
+            (0, _) => t.enter(Tok::A).enter(Tok::BText).consume().next(1),
+            (1, _) => t.consume().next(2),
+            (_, Some(b'z')) => t.exit().consume().exit().ok(),
+            _ => t.nok(),
+        }),
     ];
 
     for (rule, step) in cases {
-        if let Some(tree) = breaking(rule, || to_mdast("x {y", &scripted(step)).unwrap()) {
+        if let Some(tree) = breaking(rule, || to_mdast("x {yz", &scripted(step)).unwrap()) {
             assert!(
                 find_scripted(&tree).is_none(),
                 "should not match a construct that breaks `{}`",
@@ -427,7 +491,7 @@ fn broken_constructs_leave_text() {
             );
             assert_eq!(
                 tree.to_string(),
-                "x {y",
+                "x {yz",
                 "should keep text for a construct that breaks `{rule}`"
             );
         }
@@ -1174,23 +1238,23 @@ fn errors_with_more_than_65535_token_names() {
         (0..count).map(|_| construct(ManyNames)).collect()
     };
     let parse = ParseOptions {
-        text_constructs: many(219),
+        text_constructs: many(110),
         ..ParseOptions::default()
     };
 
     assert_eq!(
         to_mdast("@a", &parse).unwrap_err().to_string(),
-        "Unexpected 65700 token names in constructs, expected at most 65,535 (markdown-rs:too-many-construct-tokens)",
+        "Unexpected 66000 token names in constructs, expected at most 65,535 (markdown-rs:too-many-construct-tokens)",
         "should error before parsing when token names do not fit"
     );
 
     let parse = ParseOptions {
-        text_constructs: many(218),
+        text_constructs: many(109),
         ..ParseOptions::default()
     };
     assert!(
         to_mdast("@a", &parse).is_ok(),
-        "should work with 65,400 token names"
+        "should work with 65,400 token names, each counted as a token and as a token in content"
     );
 }
 
@@ -1215,6 +1279,10 @@ impl Construct for FailAfter {
     }
 
     fn step(&self, state: u16, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        // Start at a character, as a token cannot start inside one.
+        if state == 0 && t.current_char().is_none() {
+            return t.nok();
+        }
         let t = if state == 0 { t.enter(Tok::A) } else { t };
         if state >= self.len || t.current().is_none() {
             t.nok()
@@ -1400,4 +1468,483 @@ fn classifies_characters() {
     ] {
         assert_eq!(classify(char), kind, "should classify {:?}", char);
     }
+}
+/// `{{`, content parsed as text, `}}`.
+fn braces_content(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+    match (state, t.current()) {
+        (0, Some(b'{')) => t.enter(Tok::Braces).consume().next(1),
+        (1, Some(b'{')) => t.consume().enter(Tok::BracesContent).next(2),
+        (2, Some(b'}')) => t.exit().consume().next(3),
+        (2, Some(_)) => t.consume().next(2),
+        (3, Some(b'}')) => t.consume().exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+fn html(input: &str, parse: ParseOptions) -> String {
+    to_html_with_options(
+        input,
+        &Options {
+            parse,
+            ..Options::default()
+        },
+    )
+    .unwrap()
+}
+
+#[test]
+fn parses_content_as_markdown() {
+    let children = phrasing(to_mdast("a {{*b*}} c", &scripted(braces_content)).unwrap());
+    let node = custom(&children[1]);
+
+    assert!(
+        matches!(node.children[..], [Node::Emphasis(_)]),
+        "should give the content as children, got {:?}",
+        node.children
+    );
+    assert_eq!(
+        node.value.as_deref(),
+        Some("{{}}"),
+        "should leave content out of the values of other tokens"
+    );
+    assert_eq!(
+        node.attributes.get("bracesContent").map(String::as_str),
+        Some(""),
+        "should give content tokens an empty value"
+    );
+}
+
+#[test]
+fn parses_content_across_lines_without_prefixes() {
+    let tree = to_mdast("> a {{*b\n> c*}} d", &scripted(braces_content)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert_eq!(
+        node.children[0].to_string(),
+        "b\nc",
+        "should parse content across lines, without the `> ` prefix"
+    );
+    assert_eq!(
+        node.children[0].position(),
+        Some(&Position::new(1, 7, 6, 2, 5, 13)),
+        "should give nested nodes positions in the source"
+    );
+}
+
+#[test]
+fn keeps_whitespace_around_content() {
+    let tree = to_mdast("{{ *a* }}", &scripted(braces_content)).unwrap();
+
+    assert_eq!(
+        find_scripted(&tree).unwrap().children.len(),
+        3,
+        "should keep initial and final whitespace, like micromark labels"
+    );
+}
+
+#[test]
+fn parses_constructs_in_content() {
+    let parse = ParseOptions {
+        text_constructs: vec![
+            construct(Scripted {
+                marker: b'{',
+                step: braces_content,
+            }),
+            construct(mention()),
+        ],
+        ..ParseOptions::default()
+    };
+    let tree = to_mdast("{{x @a y}}", &parse).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert!(
+        matches!(&node.children[1], Node::Custom(Custom { name, .. }) if name == "mention"),
+        "should parse other constructs in content, got {:?}",
+        node.children
+    );
+}
+
+#[test]
+fn drops_empty_content() {
+    let empty: StepFn = |state, t| match state {
+        0 => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+        _ => t.exit().exit().ok(),
+    };
+    let tree = to_mdast("{", &scripted(empty)).unwrap();
+
+    assert_eq!(
+        find_scripted(&tree).and_then(|node| node.fields.get("tokens").cloned()),
+        Some("a".into()),
+        "should drop a content token without content"
+    );
+}
+
+#[test]
+fn to_html_renders_content_and_writes_own_text() {
+    assert_eq!(
+        html("a {{*b*}} c", scripted(braces_content)),
+        "<p>a {{<em>b</em>}} c</p>",
+        "should render content once, with the construct text around it"
+    );
+    assert_eq!(
+        html("> a {{*b\n> c*}} d", scripted(braces_content)),
+        "<blockquote>\n<p>a {{<em>b\nc</em>}} d</p>\n</blockquote>",
+        "should write construct text without prefixes"
+    );
+}
+
+/// `braces_content`, with a `|` token at the start of later lines.
+fn braces_prefixed(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+    match (state, t.current()) {
+        (2, Some(b'\n')) => t.consume().next(4),
+        (4, Some(b'|')) => t.enter(Tok::BracesPrefix).consume().exit().next(2),
+        (4, _) => t.retry(2),
+        _ => braces_content(state, t),
+    }
+}
+
+#[test]
+fn keeps_tokens_at_line_starts_out_of_content() {
+    let tree = to_mdast("{{*a\n|b*}}", &scripted(braces_prefixed)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert_eq!(
+        node.children[0].to_string(),
+        "a\nb",
+        "should parse content across the token, without it"
+    );
+    assert_eq!(
+        node.fields.get("tokens").map(String::as_str),
+        Some("braces,bracesContent"),
+        "should not give tokens in content to `to_mdast`"
+    );
+    assert_eq!(
+        html("{{*a\n|b*}}", scripted(braces_prefixed)),
+        "<p>{{<em>a\nb</em>}}</p>",
+        "should leave tokens in content out of HTML"
+    );
+}
+
+#[test]
+fn content_has_no_blank_lines() {
+    // Built-in constructs in text expect no blank lines, as in a paragraph.
+    for input in [
+        "{{a\n|\n|b}}",
+        "{{a\n| \n|b}}",
+        "{{[a](b\n|\n|c)}}",
+        "{{<a\n|\n|b>}}",
+    ] {
+        let parse = scripted(braces_prefixed);
+        if let Some(tree) = breaking("blank-line-in-content", || to_mdast(input, &parse).unwrap()) {
+            assert!(
+                find_scripted(&tree).is_none(),
+                "should not match content with a blank line in {:?}",
+                input
+            );
+            assert_eq!(
+                html(input, scripted(braces_prefixed)),
+                to_html_with_options(input, &Options::default()).unwrap(),
+                "should keep text for content with a blank line in {:?}",
+                input
+            );
+        }
+    }
+}
+
+#[test]
+fn content_can_start_and_end_with_blank_lines() {
+    for (input, value, message) in [
+        ("{{ }}", " ", "should keep whitespace-only content"),
+        ("{{\na}}", "\na", "should keep a line ending at the start"),
+        ("{{a\n}}", "a", "should leave a line ending at the end out"),
+        (
+            "{{a\n|\n|}}",
+            "a",
+            "should leave blank lines at the end out, with their prefixes",
+        ),
+        (
+            "{{[x](\n}}",
+            "[x](",
+            "should leave a line ending at the end out, where text never ends",
+        ),
+        ("> {{a\n> }}", "a", "should leave it out in a container"),
+    ] {
+        let tree = to_mdast(input, &scripted(braces_prefixed)).unwrap();
+        let node = find_scripted(&tree).expect("expected a match");
+        assert_eq!(
+            node.children
+                .iter()
+                .map(ToString::to_string)
+                .collect::<String>(),
+            value,
+            "{} in {:?}",
+            message,
+            input
+        );
+    }
+
+    assert_eq!(
+        html("{{*a*\n|  \n}}", scripted(braces_prefixed)),
+        "<p>{{<em>a</em>}}</p>",
+        "should write content without the line endings and blank lines at its end"
+    );
+}
+
+#[test]
+fn tokens_do_not_end_inside_a_tab() {
+    /// `>` and the next three bytes, which can end inside a tab.
+    fn four_bytes(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match state {
+            0 => t.enter(Tok::A).consume().next(1),
+            1..=3 => t.consume().next(state + 1),
+            _ => t.exit().ok(),
+        }
+    }
+
+    /// `>` and the whitespace after it, character by character.
+    fn whitespace(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current_char()) {
+            (0, _) => t.enter(Tok::A).consume().next(1),
+            // Columns of a tab after its first.
+            (1, None) if t.current().is_some() => t.consume().next(1),
+            (1, Some(' ' | '\t')) => t.consume().next(1),
+            _ => t.exit().ok(),
+        }
+    }
+
+    /// `>` and one tab, read as a character.
+    fn tab(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current_char()) {
+            (0, _) => t.enter(Tok::A).consume().next(1),
+            (1, Some('\t')) => t.consume().next(2),
+            (2, None) if t.current().is_some() => t.consume().next(2),
+            (2, _) => t.exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    let gfm = |step| ParseOptions {
+        text_constructs: vec![construct(Scripted { marker: b'>', step })],
+        ..ParseOptions::gfm()
+    };
+
+    let tree = to_mdast("#>\t z", &gfm(tab)).unwrap();
+    assert_eq!(
+        custom(&tree.children().unwrap()[0].children().unwrap()[1])
+            .value
+            .as_deref(),
+        Some(">\t"),
+        "should give `None` as the character inside a tab"
+    );
+
+    /// The rest of a tab that a line starts inside of.
+    fn rest_of_tab(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current_char()) {
+            (0, Some(' ')) => t.enter(Tok::A).consume().next(1),
+            (1, None) if t.current().is_some() => t.consume().next(1),
+            (1, _) => t.exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    assert!(
+        find_scripted(&to_mdast("- a\n\t@b", &scripted_at(b' ', rest_of_tab)).unwrap()).is_some(),
+        "should start a token where a line starts inside a tab"
+    );
+
+    let input = "#>  \tza@b.c";
+    let parse = gfm(four_bytes);
+    if let Some(tree) = breaking("token-inside-character", || {
+        to_mdast(input, &parse).unwrap()
+    }) {
+        assert_eq!(
+            tree,
+            to_mdast(input, &ParseOptions::gfm()).unwrap(),
+            "should not match a construct that ends inside a tab"
+        );
+    }
+
+    let tree = to_mdast(input, &gfm(whitespace)).unwrap();
+    let paragraph = tree.children().unwrap()[0].children().unwrap();
+
+    assert_eq!(
+        custom(&paragraph[1]).value.as_deref(),
+        Some(">  \t"),
+        "should match a construct that takes the whole tab"
+    );
+    assert_eq!(
+        paragraph[2].position(),
+        Some(&Position::new(1, 9, 5, 1, 15, 11)),
+        "should keep positions after the tab"
+    );
+}
+
+#[test]
+fn ends_gfm_autolink_literals_at_the_end_of_content() {
+    /// `{`, content up to `X`, `X`, `}`.
+    fn up_to_x(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current()) {
+            (0, Some(b'{')) => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+            (1, Some(b'X')) => t.exit().consume().next(2),
+            (1, Some(_)) => t.consume().next(1),
+            (2, Some(b'}')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    let parse = ParseOptions {
+        constructs: Constructs::gfm(),
+        ..scripted(up_to_x)
+    };
+    let tree = to_mdast("{www.aX}", &parse).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert!(
+        matches!(&node.children[..], [Node::Link(link)] if link.children[0].to_string() == "www.a"),
+        "should end a literal where the content ends, got {:?}",
+        node.children
+    );
+}
+
+#[test]
+fn errors_for_mdx_jsx_left_open_in_content() {
+    let parse = ParseOptions {
+        constructs: Constructs::mdx(),
+        ..scripted(braces_content)
+    };
+
+    assert_eq!(
+        to_mdast("a {{<b>}} c", &parse)
+            .unwrap_err()
+            .rule_id
+            .as_str(),
+        "end-tag-mismatch",
+        "should error like a paragraph does"
+    );
+}
+
+#[test]
+fn errors_for_mdx_jsx_closed_in_other_content() {
+    let parse = ParseOptions {
+        constructs: Constructs::mdx(),
+        ..scripted(braces_content)
+    };
+
+    assert_eq!(
+        to_mdast("x <a> {{b</a>}} c", &parse)
+            .unwrap_err()
+            .rule_id
+            .as_str(),
+        "end-tag-mismatch",
+        "should error for a closing tag whose opening tag is outside the content"
+    );
+}
+
+/// Levels of matches of `scripted` in `node`.
+fn depth(node: &Node) -> usize {
+    let own = usize::from(matches!(node, Node::Custom(custom) if custom.name == "scripted"));
+    own + node
+        .children()
+        .map_or(0, |children| children.iter().map(depth).max().unwrap_or(0))
+}
+
+/// `(`, content with balanced parentheses, `)`: the state is the depth.
+fn parens(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+    match (state, t.current()) {
+        (0, Some(b'(')) => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+        (1, Some(b')')) => t.exit().consume().exit().ok(),
+        (depth, Some(b'(')) if depth > 0 => t.consume().next(depth + 1),
+        (depth, Some(b')')) if depth > 0 => t.consume().next(depth - 1),
+        (depth, Some(_)) if depth > 0 => t.consume().next(depth),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn limits_the_depth_of_content() {
+    let parse = scripted_at(b'(', parens);
+    let depth_of = |levels: usize| {
+        let input = format!("{}a{}", "(".repeat(levels), ")".repeat(levels));
+        depth(&to_mdast(&input, &parse).unwrap())
+    };
+    // With the text of the paragraph, 31 levels are 32 levels of content.
+    assert_eq!(depth_of(31), 31, "should nest content 32 deep");
+    assert_eq!(
+        depth_of(40),
+        31,
+        "should not match content deeper than that, without a panic"
+    );
+}
+
+/// `{`, content, `,`, content, `}`, with a `|` token allowed at the start of
+/// the second content: state 2 is its start, 3 is after it.
+fn pair(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+    match (state, t.current()) {
+        (0, Some(b'{')) => t.enter(Tok::Pair).consume().enter(Tok::Left).next(1),
+        (1, Some(b',')) => t.exit().consume().enter(Tok::Right).next(2),
+        (2, Some(b'|')) => t.enter(Tok::PairPrefix).consume().exit().next(3),
+        (2 | 3, Some(b'}')) => t.exit().consume().exit().ok(),
+        (1, Some(_)) => t.consume().next(1),
+        (2 | 3, Some(_)) => t.consume().next(3),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn parses_each_content_token_alone() {
+    let tree = to_mdast("{*a*,*b*}", &scripted(pair)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert!(
+        matches!(node.children[..], [Node::Emphasis(_), Node::Emphasis(_)]),
+        "should parse each content token on its own, got {:?}",
+        node.children
+    );
+    assert_eq!(
+        html("{*a*,*b*}", scripted(pair)),
+        "<p>{<em>a</em>,<em>b</em>}</p>",
+        "should render each content token"
+    );
+
+    let tree = to_mdast("{a,|b}", &scripted(pair)).unwrap();
+    let node = find_scripted(&tree).expect("expected a match");
+
+    assert_eq!(
+        node.fields.get("tokens").map(String::as_str),
+        Some("pair,left,right"),
+        "should allow a token before the content of a later content token"
+    );
+}
+
+#[test]
+fn skips_prefix_tokens_of_an_outer_match() {
+    /// `braces_prefixed`, or `{[`, raw text as a token, `]]`.
+    fn outer_or_raw(state: u16, t: Ctx<'_, '_, Scripted>) -> Step<Scripted> {
+        match (state, t.current()) {
+            (1, Some(b'[')) => t.consume().enter(Tok::Raw).next(20),
+            (20, Some(b']')) => t.exit().consume().next(21),
+            (20, Some(_)) => t.consume().next(20),
+            (21, Some(b']')) => t.consume().exit().ok(),
+            _ => braces_prefixed(state, t),
+        }
+    }
+
+    let tree = to_mdast("{{a {[b\n|c]] d}}", &scripted(outer_or_raw)).unwrap();
+    let outer = find_scripted(&tree).expect("expected a match");
+    let inner = outer
+        .children
+        .iter()
+        .find_map(find_scripted)
+        .expect("expected an inner match");
+
+    assert_eq!(
+        inner.attributes.get("raw").map(String::as_str),
+        Some("b\nc"),
+        "should leave the prefix of the outer match out of the inner one"
+    );
+    assert_eq!(
+        inner.fields.get("tokens").map(String::as_str),
+        Some("braces,raw"),
+        "should not give the prefix of the outer match to the inner one"
+    );
 }

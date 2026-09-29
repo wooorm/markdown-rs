@@ -32,7 +32,10 @@ pub struct ParseState<'a> {
     /// constructs; empty without them.
     pub text_markers: Vec<u8>,
     /// Names of the tokens of constructs, which events refer to by index.
-    pub extension_names: RefCell<Vec<TokenName>>,
+    pub(crate) extension_names: RefCell<Vec<TokenName>>,
+    /// Pass of `subtokenize`, which is how deep in content its tokenizers
+    /// are.
+    pub content_depth: usize,
 }
 
 /// Turn a string of markdown into events.
@@ -80,6 +83,7 @@ pub fn parse<'a>(
         gfm_footnote_definitions: vec![],
         text_markers: text_markers(&TEXT_MARKERS, &options.text_constructs),
         extension_names: RefCell::new(vec![]),
+        content_depth: 0,
     };
 
     let start = Point {
@@ -108,6 +112,7 @@ pub fn parse<'a>(
             return Ok((events, parse_state));
         }
 
+        parse_state.content_depth += 1;
         result = subtokenize(&mut events, &parse_state, None)?;
     }
 }

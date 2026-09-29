@@ -922,6 +922,25 @@ pub enum Name {
     ///     ^^
     /// ```
     Extension,
+    /// Chunk of content of a construct of a syntax extension, linked to the
+    /// other chunks of its content token.
+    ///
+    /// ## Info
+    ///
+    /// * **Context**:
+    ///   [`Extension`][Name::Extension]
+    /// * **Content model**:
+    ///   void
+    /// * **Construct**:
+    ///   [`Construct`][crate::extension::Construct]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | {{a}}
+    ///       ^
+    /// ```
+    ExtensionChunk,
     /// Whole frontmatter.
     ///
     /// ## Info
@@ -3401,7 +3420,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 76] = [
+pub const VOID_EVENTS: [Name; 77] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -3426,6 +3445,7 @@ pub const VOID_EVENTS: [Name; 76] = [
     Name::DefinitionMarker,
     Name::DefinitionTitleMarker,
     Name::EmphasisSequence,
+    Name::ExtensionChunk,
     Name::FrontmatterChunk,
     Name::GfmAutolinkLiteralEmail,
     Name::GfmAutolinkLiteralProtocol,

@@ -328,10 +328,15 @@ pub fn before_data(tokenizer: &mut Tokenizer) -> State {
 
 /// Resolve whitespace.
 pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
+    let keep_whitespace = tokenizer
+        .tokenize_state
+        .extension
+        .as_ref()
+        .map_or(false, |state| state.keep_whitespace);
     resolve_whitespace(
         tokenizer,
         tokenizer.parse_state.options.constructs.hard_break_trailing,
-        true,
+        !keep_whitespace,
     );
 
     if tokenizer

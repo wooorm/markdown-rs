@@ -366,8 +366,9 @@ pub fn domain_inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
-            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-                == CharacterKind::Other
+            if tokenizer.current.is_some()
+                && kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+                    == CharacterKind::Other
             {
                 tokenizer.tokenize_state.seen = true;
                 tokenizer.consume();
