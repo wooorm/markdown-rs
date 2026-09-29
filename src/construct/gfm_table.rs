@@ -442,8 +442,7 @@ pub fn head_delimiter_start(tokenizer: &mut Tokenizer) -> State {
     tokenizer.interrupt = false;
 
     if tokenizer.lazy || tokenizer.pierce {
-        tokenizer.tokenize_state.size = 0;
-        State::Nok
+        State::Retry(StateName::GfmTableHeadDelimiterNok)
     } else {
         tokenizer.enter(Name::GfmTableDelimiterRow);
         // Track if we’ve seen a `:` or `|`.

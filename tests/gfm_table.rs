@@ -370,6 +370,18 @@ fn gfm_table() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options("> | a |\n# b\n\n| c |\n| - |", &Options::gfm())?,
+        "<blockquote>\n<p>| a |</p>\n</blockquote>\n<h1>b</h1>\n<table>\n<thead>\n<tr>\n<th>c</th>\n</tr>\n</thead>\n</table>",
+        "should support a table after a head row followed by a lazy line"
+    );
+
+    assert_eq!(
+        to_html_with_options("> | a |\n# b\n\n<pre>\n\nx</pre>", &Options::gfm())?,
+        "<blockquote>\n<p>| a |</p>\n</blockquote>\n<h1>b</h1>\n&lt;pre&gt;\n\nx&lt;/pre&gt;",
+        "should support HTML (flow) after a head row followed by a lazy line"
+    );
+
+    assert_eq!(
         to_html_with_options("[\na\n:-\n]: b", &Options::gfm())?,
         "<p>[</p>\n<table>\n<thead>\n<tr>\n<th align=\"left\">a</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td align=\"left\">]: b</td>\n</tr>\n</tbody>\n</table>",
         "should prefer GFM tables over definitions"
