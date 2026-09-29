@@ -627,7 +627,9 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                 links += 1;
             }
         } else {
-            if event.name == Name::Data && links == 0 {
+            // Linked data is string content (such as a title), not text.
+            if event.name == Name::Data && links == 0 && tokenizer.events[index - 1].link.is_none()
+            {
                 let slice = Slice::from_position(
                     tokenizer.parse_state.bytes,
                     &Position::from_exit_event(&tokenizer.events, index),

@@ -230,6 +230,18 @@ fn gfm_autolink_literal() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html_with_options("![a](b \"c@d.com\ne\")", &Options::gfm())?,
+        "<p><img src=\"b\" alt=\"a\" title=\"c@d.com\ne\" /></p>",
+        "should not support autolink literals in a title that spans lines"
+    );
+
+    assert_eq!(
+        to_html_with_options("![a](b \"c@d.com &amp; e\")", &Options::gfm())?,
+        "<p><img src=\"b\" alt=\"a\" title=\"c@d.com &amp; e\" /></p>",
+        "should not support autolink literals in a title"
+    );
+
+    assert_eq!(
         to_html_with_options(
             r###"
 mailto:scyther@pokemon.com
