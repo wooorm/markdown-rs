@@ -277,8 +277,6 @@ pub struct Tokenizer<'a> {
     column_start: Vec<(usize, usize)>,
     // First line where this tokenizer starts.
     first_line: usize,
-    /// Current point after the last line ending (excluding jump).
-    line_start: Point,
     /// Track whether the current byte is already consumed (`true`) or expected
     /// to be consumed (`false`).
     ///
@@ -332,7 +330,6 @@ impl<'a> Tokenizer<'a> {
             // To do: reserve size when feeding?
             column_start: vec![],
             first_line: point.line,
-            line_start: point.clone(),
             consumed: true,
             attempts: vec![],
             point,
@@ -481,8 +478,6 @@ impl<'a> Tokenizer<'a> {
                         self.column_start.push((self.point.index, self.point.vs));
                     }
 
-                    self.line_start = self.point.clone();
-
                     self.account_for_potential_skip();
 
                     #[cfg(feature = "log")]
@@ -535,12 +530,18 @@ impl<'a> Tokenizer<'a> {
             );
         }
 
+        move_point_back(self, &mut point);
+
         // A bit weird, but if we exit right after a line ending, we *don’t* want to consider
         // potential skips.
         if matches!(self.previous, Some(b'\n')) {
-            point = self.line_start.clone();
-        } else {
-            move_point_back(self, &mut point);
+            // Move back over the skip, to the start of the line.
+            let bytes = self.parse_state.bytes;
+            point.column = 1;
+            point.vs = 0;
+            while point.index > 0 && !matches!(bytes[point.index - 1], b'\n' | b'\r') {
+                point.index -= 1;
+            }
         }
 
         #[cfg(feature = "log")]
