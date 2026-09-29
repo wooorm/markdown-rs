@@ -155,8 +155,17 @@ pub fn subtokenize(
                     let link_curr = enter.link.as_ref().expect("expected link");
                     debug_assert_eq!(enter.kind, Kind::Enter);
 
-                    if link_curr.previous.is_some() {
-                        tokenizer.define_skip(enter.point.clone());
+                    if let Some(previous) = link_curr.previous {
+                        // A chunk that continues the line of the chunk before
+                        // it, such as its line ending, keeps the skip of that
+                        // line, whose bytes were fed.
+                        if events[previous].point.line == events[previous + 1].point.line
+                            && events[previous + 1].point.index == enter.point.index
+                        {
+                            tokenizer.define_skip_if_missing(enter.point.clone());
+                        } else {
+                            tokenizer.define_skip(enter.point.clone());
+                        }
                     }
 
                     let end = &events[index + 1].point;

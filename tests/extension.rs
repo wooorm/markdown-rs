@@ -1,6 +1,7 @@
 use markdown::{
     extension::{
-        construct, BoxedConstruct, Construct, ContentType, Ctx, Reach, Step, Text, Token, TokenType,
+        construct, BoxedConstruct, Construct, ContentType, Ctx, Flow, Reach, Step, Text, Token,
+        TokenType,
     },
     mdast::{Custom, Node, Paragraph, Root, Text as TextNode},
     to_html_with_options, to_mdast,
@@ -269,6 +270,11 @@ enum Tok {
     Right,
     PairPrefix,
     Raw,
+    Leaf,
+    LeafName,
+    LeafLabel,
+    Fenced,
+    Fence,
 }
 
 impl TokenType for Tok {
@@ -290,6 +296,11 @@ impl TokenType for Tok {
         Self::Right,
         Self::PairPrefix,
         Self::Raw,
+        Self::Leaf,
+        Self::LeafName,
+        Self::LeafLabel,
+        Self::Fenced,
+        Self::Fence,
     ];
 
     fn name(self) -> &'static str {
@@ -310,14 +321,22 @@ impl TokenType for Tok {
             Self::Right => "right",
             Self::PairPrefix => "pairPrefix",
             Self::Raw => "raw",
+            Self::Leaf => "leaf",
+            Self::LeafName => "leafName",
+            Self::LeafLabel => "leafLabel",
+            Self::Fenced => "fenced",
+            Self::Fence => "fence",
         }
     }
 
     fn content(self) -> Option<ContentType> {
         match self {
-            Self::BText | Self::CText | Self::BracesContent | Self::Left | Self::Right => {
-                Some(ContentType::Text)
-            }
+            Self::BText
+            | Self::CText
+            | Self::BracesContent
+            | Self::Left
+            | Self::Right
+            | Self::LeafLabel => Some(ContentType::Text),
             _ => None,
         }
     }
@@ -350,30 +369,36 @@ impl Construct for Scripted {
     }
 
     fn to_mdast(&self, tokens: Vec<Token<'_, Tok>>) -> Node {
-        Node::Custom(Custom {
-            name: "scripted".into(),
-            value: Some(tokens[0].value.clone().into_owned()),
-            fields: vec![(
-                "tokens".into(),
-                tokens
-                    .iter()
-                    .map(|token| token.name.name())
-                    .collect::<Vec<_>>()
-                    .join(","),
-            )]
-            .into_iter()
-            .collect(),
-            attributes: tokens[1..]
-                .iter()
-                .map(|token| (token.name.name().into(), token.value.clone().into_owned()))
-                .collect(),
-            children: tokens
-                .into_iter()
-                .flat_map(|token| token.children)
-                .collect(),
-            ..Custom::default()
-        })
+        scripted_node(tokens)
     }
+}
+
+/// The node of a scripted construct: its first value, the names of its
+/// tokens, the values of its other tokens, and its content.
+fn scripted_node(tokens: Vec<Token<'_, Tok>>) -> Node {
+    Node::Custom(Custom {
+        name: "scripted".into(),
+        value: Some(tokens[0].value.clone().into_owned()),
+        fields: vec![(
+            "tokens".into(),
+            tokens
+                .iter()
+                .map(|token| token.name.name())
+                .collect::<Vec<_>>()
+                .join(","),
+        )]
+        .into_iter()
+        .collect(),
+        attributes: tokens[1..]
+            .iter()
+            .map(|token| (token.name.name().into(), token.value.clone().into_owned()))
+            .collect(),
+        children: tokens
+            .into_iter()
+            .flat_map(|token| token.children)
+            .collect(),
+        ..Custom::default()
+    })
 }
 
 /// `{{`, anything including line endings (as `bracesData`), `}}`.
@@ -1186,6 +1211,15 @@ fn errors_with_more_than_255_constructs() {
     assert!(
         to_mdast("@a", &options((0..255).map(|_| mention()).collect())).is_ok(),
         "should work with 255 constructs"
+    );
+
+    let parse = ParseOptions {
+        flow_constructs: vec![construct(FlowAfter(|_| true))],
+        ..options((0..255).map(|_| mention()).collect())
+    };
+    assert!(
+        to_mdast("@a", &parse).is_err(),
+        "should count text and flow constructs together"
     );
 }
 
@@ -2517,4 +2551,599 @@ fn limits_attempts_in_attempts() {
         find_scripted(&to_mdast(&input, &counting(nest::<257>)).unwrap()).is_none(),
         "should fail an attempt nested more than 256 deep"
     );
+}
+
+/// A step of a scripted flow construct, with numbered states.
+type FlowFn = fn(u16, Ctx<'_, '_, ScriptedFlow>) -> Step<ScriptedFlow>;
+
+/// A flow construct scripted by a function, with the node of [`Scripted`].
+struct ScriptedFlow {
+    marker: u8,
+    step: FlowFn,
+}
+
+impl Construct for ScriptedFlow {
+    type Place = Flow;
+    type State = u16;
+    type Token = Tok;
+
+    fn markers(&self) -> &[u8] {
+        core::slice::from_ref(&self.marker)
+    }
+
+    fn start(&self) -> u16 {
+        0
+    }
+
+    fn step(&self, state: u16, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        (self.step)(state, t)
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, Tok>>) -> Node {
+        scripted_node(tokens)
+    }
+}
+
+fn scripted_flow(marker: u8, step: FlowFn) -> ParseOptions {
+    ParseOptions {
+        flow_constructs: vec![construct(ScriptedFlow { marker, step })],
+        ..ParseOptions::default()
+    }
+}
+
+/// `::name[label]`, with the label parsed as text.
+fn leaf(state: u16, t: Ctx<'_, '_, ScriptedFlow>) -> Step<ScriptedFlow> {
+    match (state, t.current()) {
+        (0 | 1, Some(b':')) => {
+            let t = if state == 0 { t.enter(Tok::Leaf) } else { t };
+            t.consume().next(state + 1)
+        }
+        (2 | 3, Some(b'a'..=b'z')) => {
+            let t = if state == 2 {
+                t.enter(Tok::LeafName)
+            } else {
+                t
+            };
+            t.consume().next(3)
+        }
+        (3, Some(b'[')) => t.exit().consume().next(4),
+        (4, Some(b']')) => t.consume().next(6),
+        (4, Some(_)) => t.enter(Tok::LeafLabel).retry(5),
+        (5, Some(b']')) => t.exit().consume().next(6),
+        (5, Some(byte)) if byte != b'\n' => t.consume().next(5),
+        (6, None | Some(b'\n')) => t.exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn flow_construct_takes_a_line() {
+    let tree = to_mdast("::a[*b*]", &scripted_flow(b':', leaf)).unwrap();
+    assert!(
+        matches!(&tree.children().unwrap()[0], Node::Custom(node) if matches!(node.children[..], [Node::Emphasis(_)])),
+        "should make a block with a parsed label, got {:?}",
+        tree
+    );
+
+    let tree = to_mdast("x\n::a[b]\ny", &scripted_flow(b':', leaf)).unwrap();
+    assert_eq!(
+        tree.children().unwrap().len(),
+        3,
+        "should interrupt a paragraph"
+    );
+
+    let tree = to_mdast("x\n::a[b]\n[c]: d", &scripted_flow(b':', leaf)).unwrap();
+    assert!(
+        matches!(
+            &tree.children().unwrap()[..],
+            [Node::Paragraph(_), Node::Custom(_), Node::Definition(_)]
+        ),
+        "should let a definition follow, got {:?}",
+        tree
+    );
+
+    let parse = ParseOptions {
+        constructs: Constructs::mdx(),
+        mdx_esm_parse: Some(Box::new(|_| markdown::MdxSignal::Ok)),
+        ..scripted_flow(b':', leaf)
+    };
+    let tree = to_mdast("x\n::a[b]\nimport a from 'b'", &parse).unwrap();
+    assert!(
+        matches!(
+            &tree.children().unwrap()[..],
+            [Node::Paragraph(_), Node::Custom(_), Node::MdxjsEsm(_)]
+        ),
+        "should let flow that cannot interrupt a paragraph follow, got {:?}",
+        tree
+    );
+
+    let tree = to_mdast("> ::a[b]\n> c", &scripted_flow(b':', leaf)).unwrap();
+    assert!(
+        matches!(
+            &tree.children().unwrap()[0].children().unwrap()[0],
+            Node::Custom(_)
+        ),
+        "should work in containers"
+    );
+
+    for input in ["::a[b] x", "::a[b\nc]"] {
+        let tree = to_mdast(input, &scripted_flow(b':', leaf)).unwrap();
+        assert!(
+            find_scripted(&tree).is_none(),
+            "should not match a construct that does not end at a line ending: {:?}",
+            input
+        );
+    }
+}
+
+#[test]
+fn flow_construct_skips_indentation() {
+    let tree = to_mdast("   ::a[b]", &scripted_flow(b':', leaf)).unwrap();
+    assert!(
+        find_scripted(&tree).is_some(),
+        "should match after up to 3 columns"
+    );
+
+    let tree = to_mdast("    ::a[b]", &scripted_flow(b':', leaf)).unwrap();
+    assert!(
+        matches!(&tree.children().unwrap()[0], Node::Code(_)),
+        "should leave 4 columns to indented code"
+    );
+
+    let any: FlowFn = |state, t| match (state, t.current()) {
+        (0, _) => t.enter(Tok::A).consume().next(1),
+        (1, None | Some(b'\n')) => t.exit().ok(),
+        _ => t.consume().next(1),
+    };
+    assert!(
+        find_scripted(&to_mdast("  b", &scripted_flow(b':', any)).unwrap()).is_none(),
+        "should not start after indentation without a marker"
+    );
+
+    for input in ["  b", "    b"] {
+        let tree = to_mdast(input, &scripted_flow(b' ', any)).unwrap();
+        assert!(
+            find_scripted(&tree).is_none(),
+            "should not take a space as a marker, which is indentation, in {:?}",
+            input
+        );
+    }
+}
+
+#[test]
+fn ends_a_flow_construct_that_fails_after_its_first_line() {
+    let late: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().next(1),
+        (1, Some(b'\n')) => t.consume().next(2),
+        (1, Some(_)) => t.consume().next(1),
+        _ => t.nok(),
+    };
+    let parse = scripted_flow(b'%', late);
+
+    if let Some(tree) = breaking("nok-after-first-line", || to_mdast("%a\n*b*", &parse)) {
+        let tree = tree.expect("should not error for a failure after the first line");
+        let children = tree.children().unwrap();
+        assert!(
+            matches!(&children[..], [Node::Custom(_), Node::Paragraph(_)]),
+            "should end the construct before the line it fails on, which is then a paragraph, got {:?}",
+            tree
+        );
+        assert_eq!(
+            to_html_with_options(
+                "%a\n*b*",
+                &Options {
+                    parse: scripted_flow(b'%', late),
+                    ..Options::default()
+                }
+            )
+            .unwrap(),
+            "%a\n<p><em>b</em></p>",
+            "should write the line it fails on as other markdown"
+        );
+    }
+
+    let spend: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().next(1),
+        (1, Some(b'\n')) => t.consume().next(2),
+        (1, Some(_)) => t.consume().next(1),
+        _ => t.retry(2),
+    };
+    let tree = to_mdast("%a\nb", &scripted_flow(b'%', spend))
+        .expect("should not error for a construct past its step budget after its first line");
+    assert!(
+        matches!(
+            &tree.children().unwrap()[..],
+            [Node::Custom(_), Node::Paragraph(_)]
+        ),
+        "should end a construct past its step budget before that line, got {:?}",
+        tree
+    );
+    assert!(
+        to_mdast("%a", &parse).is_ok(),
+        "should not error for a failure on the first line"
+    );
+}
+
+#[test]
+fn attempts_in_flow_stay_on_one_line() {
+    let across: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().next(1),
+        (1, _) => t.attempt(10, 2, 2),
+        (10, Some(b'\n')) => t.enter(Tok::B).consume().next(11),
+        (11, _) => t.exit().ok(),
+        (2, None | Some(b'\n')) => t.exit().ok(),
+        _ => t.nok(),
+    };
+    let parse = scripted_flow(b'%', across);
+
+    if let Some(tree) = breaking("line-ending-in-attempt", || {
+        to_mdast("%\nb", &parse).unwrap()
+    }) {
+        assert!(
+            matches!(
+                &tree.children().unwrap()[..],
+                [Node::Custom(_), Node::Paragraph(_)]
+            ),
+            "should fail an attempt that consumes a line ending, got {:?}",
+            tree
+        );
+    }
+
+    let across_then_fail: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().next(1),
+        (1, _) => t.attempt(10, 2, 2),
+        (10, Some(b'\n')) => t.enter(Tok::B).consume().next(11),
+        _ => t.nok(),
+    };
+    let parse = scripted_flow(b'%', across_then_fail);
+
+    if let Some(tree) = breaking("line-ending-in-attempt", || {
+        to_mdast("%\nb", &parse).unwrap()
+    }) {
+        assert!(
+            find_scripted(&tree).is_none(),
+            "should fail on the first line after an attempt that consumes a line ending"
+        );
+    }
+}
+
+/// `%%%`, raw lines as tokens, and `%%%` or the end: a fenced raw block.
+fn fenced(state: u16, t: Ctx<'_, '_, ScriptedFlow>) -> Step<ScriptedFlow> {
+    match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::Fenced).enter(Tok::Fence).consume().next(1),
+        (1 | 2, Some(b'%')) => t.consume().next(state + 1),
+        (3, Some(b'\n')) => t.exit().consume().next(4),
+        // At the start of a line, a closing fence, which is tried, or a
+        // line.
+        (4, Some(b'%')) => t.attempt(10, 7, 5),
+        // A blank line.
+        (4, Some(b'\n')) => t.consume().next(4),
+        (4 | 5, Some(_)) => t.enter(Tok::Line).consume().next(6),
+        (6, Some(b'\n')) => t.exit().consume().next(4),
+        (6, Some(_)) => t.consume().next(6),
+        (6, None) => t.exit().exit().ok(),
+        (3 | 4, None) => {
+            let t = if state == 3 { t.exit() } else { t };
+            t.exit().ok()
+        }
+        (10, Some(b'%')) => t.enter(Tok::Fence).consume().next(11),
+        (11 | 12, Some(b'%')) => t.consume().next(state + 1),
+        (13, None | Some(b'\n')) => t.exit().ok(),
+        (7, None | Some(b'\n')) => t.exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn flow_construct_takes_lines() {
+    let flow = || scripted_flow(b'%', fenced);
+    let tokens = |input: &str| {
+        find_scripted(&to_mdast(input, &flow()).unwrap()).map(|node| {
+            (
+                node.value.clone().unwrap_or_default(),
+                node.fields["tokens"].clone(),
+            )
+        })
+    };
+
+    assert_eq!(
+        tokens("%%%\na\n\nb\n%%%\nc"),
+        Some((
+            "%%%\na\n\nb\n%%%".into(),
+            "fenced,fence,line,line,fence".into()
+        )),
+        "should take lines up to a closing fence, blank ones too"
+    );
+    assert_eq!(
+        tokens("> %%%\n> a\n>\n> %%%"),
+        Some(("%%%\na\n\n%%%".into(), "fenced,fence,line,fence".into())),
+        "should leave container prefixes out of lines"
+    );
+    assert_eq!(
+        tokens("%%%\na"),
+        Some(("%%%\na".into(), "fenced,fence,line".into())),
+        "should end at the end"
+    );
+
+    let tree = to_mdast("> %%%\n> a\nb", &flow()).unwrap();
+    assert!(
+        matches!(
+            &tree.children().unwrap()[..],
+            [Node::Blockquote(_), Node::Paragraph(_)]
+        ),
+        "should end before a lazy line, got {:?}",
+        tree
+    );
+    assert_eq!(
+        find_scripted(&tree).and_then(|node| node.value.as_deref()),
+        Some("%%%\na"),
+        "should end the construct before the lazy line"
+    );
+    assert_eq!(
+        tokens("> %%%\n> - a\n> %%%"),
+        Some(("%%%\n- a\n%%%".into(), "fenced,fence,line,fence".into())),
+        "should not start containers while the construct runs"
+    );
+    assert!(
+        matches!(
+            &to_mdast("%%%\n%%%\n> b", &flow())
+                .unwrap()
+                .children()
+                .unwrap()[..],
+            [Node::Custom(_), Node::Blockquote(_)]
+        ),
+        "should allow containers after the construct"
+    );
+
+    // `%` and a line, then another line, which a lazy line is not.
+    let two_lines: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().next(1),
+        (1, Some(b'\n')) => t.consume().next(2),
+        (1..=3, Some(byte)) if byte != b'\n' => t.consume().next(if state == 1 { 1 } else { 3 }),
+        (3, None | Some(b'\n')) => t.exit().ok(),
+        _ => t.nok(),
+    };
+    let parse = scripted_flow(b'%', two_lines);
+    if let Some(tree) = breaking("nok-after-first-line", || to_mdast("> %a\nb", &parse)) {
+        assert!(
+            matches!(
+                &tree.expect("should not error").children().unwrap()[..],
+                [Node::Blockquote(_), Node::Paragraph(_)]
+            ),
+            "should end a construct that fails at a lazy line before it"
+        );
+    }
+
+    let mut found = vec![];
+    values(
+        &to_mdast("> %%%\n> a\nb\n\n%%%\nc\n%%%\n%d", &flow()).unwrap(),
+        &mut found,
+    );
+    assert_eq!(
+        found,
+        vec!["%%%\na", "%%%\nc\n%%%"],
+        "should start each construct afresh, after one that ended at a lazy line"
+    );
+
+    assert_eq!(
+        html("%%%\n<a>\n%%%", flow()),
+        "%%%\n&lt;a&gt;\n%%%",
+        "should write the source of a flow construct as text"
+    );
+}
+
+/// `@` and a letter on a line of its own, after characters that `allow`
+/// accepts.
+struct FlowAfter(fn(Option<char>) -> bool);
+
+impl Construct for FlowAfter {
+    type Place = Flow;
+    type State = MentionState;
+    type Token = MentionToken;
+
+    fn markers(&self) -> &[u8] {
+        b"@"
+    }
+
+    fn start(&self) -> MentionState {
+        MentionState::Start
+    }
+
+    fn previous(&self, previous: Option<char>) -> bool {
+        (self.0)(previous)
+    }
+
+    fn step(&self, state: MentionState, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (MentionState::Start, Some(b'@')) => t
+                .enter(MentionToken::Mention)
+                .consume()
+                .next(MentionState::Name),
+            (MentionState::Name, Some(b'a'..=b'z')) => t
+                .enter(MentionToken::Name)
+                .consume()
+                .exit()
+                .next(MentionState::Name),
+            (MentionState::Name, None | Some(b'\n')) => t.exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, MentionToken>>) -> Node {
+        mention().to_mdast(tokens)
+    }
+}
+
+#[test]
+fn flow_constructs_see_a_line_ending_before_them() {
+    let after = |allow: fn(Option<char>) -> bool| ParseOptions {
+        flow_constructs: vec![construct(FlowAfter(allow))],
+        ..ParseOptions::default()
+    };
+    let line_ending = after(|previous| previous == Some('\n'));
+    let start = after(|previous| previous.is_none());
+
+    for (input, expected) in [
+        ("@a", false),
+        ("x\n\n@a", true),
+        ("x\n\n  @a", true),
+        ("> x\n>\n> @a", true),
+        ("- x\n\n  @a", true),
+    ] {
+        assert_eq!(
+            has_custom(&to_mdast(input, &line_ending).unwrap()),
+            expected,
+            "should see a line ending before a line, after indentation and prefixes, in {:?}",
+            input
+        );
+    }
+
+    for (input, expected) in [("@a", true), ("  @a", true), ("x\n\n@a", false)] {
+        assert_eq!(
+            has_custom(&to_mdast(input, &start).unwrap()),
+            expected,
+            "should see `None` before the first line in {:?}",
+            input
+        );
+    }
+}
+
+#[test]
+fn broken_flow_constructs_leave_text() {
+    let cases: Vec<(&str, FlowFn)> = vec![
+        ("ok-before-line-end", |state, t| match state {
+            0 => t.enter(Tok::A).consume().next(1),
+            _ => t.exit().ok(),
+        }),
+        ("exit-after-line-ending", |state, t| match state {
+            0 => t.enter(Tok::A).consume().next(1),
+            1 => t.consume().next(2),
+            2 => t.consume().exit().next(3),
+            _ => t.nok(),
+        }),
+    ];
+
+    for (rule, step) in cases {
+        let parse = scripted_flow(b'%', step);
+        if let Some(tree) = breaking(rule, || to_mdast("%b\nc", &parse).unwrap()) {
+            assert!(
+                find_scripted(&tree).is_none(),
+                "should not match a flow construct that breaks `{}`",
+                rule
+            );
+        }
+    }
+}
+
+#[test]
+fn flow_constructs_see_their_indent() {
+    let two: FlowFn = |state, t| {
+        if state == 0 && t.indent() != 2 {
+            t.nok()
+        } else {
+            leaf(state, t)
+        }
+    };
+
+    for (input, expected) in [("  ::a[b]", true), ("::a[b]", false), (" ::a[b]", false)] {
+        assert_eq!(
+            find_scripted(&to_mdast(input, &scripted_flow(b':', two)).unwrap()).is_some(),
+            expected,
+            "should give the columns of indentation in {:?}",
+            input
+        );
+    }
+}
+
+#[test]
+fn parses_flow_content_across_lines() {
+    // `%`, then content up to the end or a lazy line.
+    let rest: FlowFn = |state, t| match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::A).consume().enter(Tok::BText).next(1),
+        (1, Some(_)) => t.consume().next(1),
+        (1, None) => t.exit().exit().ok(),
+        _ => t.nok(),
+    };
+
+    let parse = scripted_flow(b'%', rest);
+    if let Some(tree) = breaking("blank-line-in-content", || to_mdast("%a\n\nb", &parse)) {
+        assert!(
+            matches!(
+                &tree.expect("should not error").children().unwrap()[..],
+                [Node::Custom(_), Node::Paragraph(_)]
+            ),
+            "should break content with a blank line after the first line, ending the construct before it"
+        );
+    }
+
+    for (input, expected) in [
+        ("%`a\nb\nc", "`a\nb\nc"),
+        ("> %`a\n> b\n> c", "`a\nb\nc"),
+        ("%b\n", "b"),
+        ("%b\r\n", "b"),
+        ("> %a\n> b\n", "a\nb"),
+        ("- %a\n", "a"),
+    ] {
+        let tree = to_mdast(input, &scripted_flow(b'%', rest)).unwrap();
+        let node = find_scripted(&tree).expect("expected a match");
+
+        assert_eq!(
+            Node::Paragraph(Paragraph {
+                children: node.children.clone(),
+                position: None
+            })
+            .to_string(),
+            expected,
+            "should keep every line of content, and end before a final line ending, in {:?}",
+            input
+        );
+    }
+
+    for input in ["%*a\nb*", "> %*a\n> b*", "> %*a\n> b*\nc"] {
+        let tree = to_mdast(input, &scripted_flow(b'%', rest)).unwrap();
+        let node = find_scripted(&tree).expect("expected a match");
+
+        assert!(
+            matches!(&node.children[..], [Node::Emphasis(emphasis)] if Node::Emphasis(emphasis.clone()).to_string() == "a\nb"),
+            "should parse content across lines, without prefixes, in {:?}, got {:?}",
+            input,
+            node.children
+        );
+    }
+}
+
+/// `%`, text content across lines, `%`, then the end of its line.
+fn percent_across_lines(state: u16, t: Ctx<'_, '_, ScriptedFlow>) -> Step<ScriptedFlow> {
+    match (state, t.current()) {
+        (0, Some(b'%')) => t.enter(Tok::Leaf).consume().next(1),
+        (1, Some(b'%') | None) => t.nok(),
+        (1, _) => t.enter(Tok::BText).retry(2),
+        (2, Some(b'%')) => t.exit().consume().next(3),
+        (2, Some(_)) => t.consume().next(2),
+        (3, None | Some(b'\n')) => t.exit().ok(),
+        _ => t.nok(),
+    }
+}
+
+#[test]
+fn flow_content_leaves_its_last_line_ending_out() {
+    for (input, value) in [
+        ("%a\n%", "a"),
+        ("%a\nb\n%", "a\nb"),
+        ("%a\n\n%", "a"),
+        ("> %a\n> %", "a"),
+        ("%\n%", ""),
+    ] {
+        let tree = to_mdast(input, &scripted_flow(b'%', percent_across_lines)).unwrap();
+        let node = find_scripted(&tree).expect("expected a match");
+        assert_eq!(
+            node.children
+                .iter()
+                .map(ToString::to_string)
+                .collect::<String>(),
+            value,
+            "should leave the line endings at the end of {:?} out of its content",
+            input
+        );
+    }
 }

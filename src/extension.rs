@@ -3,8 +3,8 @@
 //! A construct is a state machine driven by the built-in tokenizer, like a
 //! micromark construct, so it sees text without container prefixes such as
 //! `> `, across lines.
-//! Pass constructs in [`ParseOptions::text_constructs`][crate::ParseOptions],
-//! each wrapped by [`construct()`].
+//! Pass constructs in `text_constructs` and `flow_constructs` of
+//! [`ParseOptions`], each wrapped by [`construct()`].
 //!
 //! [`to_mdast()`][crate::to_mdast()] turns each match into a node with
 //! [`Construct::to_mdast`].
@@ -14,7 +14,8 @@
 //! The types check what they can: a step that consumes ends in
 //! [`Consumed::next`], so it cannot forget to consume or consume twice;
 //! [`Ctx::exit`] closes the innermost token, so it cannot close the wrong
-//! one; and a construct goes in the list of its [`Place`].
+//! one; a flow construct ends before its line ending, so it has no
+//! [`Consumed::ok`]; and a construct goes in the list of its [`Place`].
 //! The rules that depend on the input are checked as the construct runs,
 //! as [`Construct`] lists them.
 //!
@@ -223,13 +224,65 @@
 //! }
 //! # }
 //! ```
+//!
+//! A flow construct ends before its line ending, not after a consumed byte:
+//!
+//! ```compile_fail,E0599
+//! # use markdown::extension::{construct, Construct, Ctx, Flow, Step, Token, TokenType};
+//! # #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+//! # enum T { A }
+//! # impl TokenType for T {
+//! #     const ALL: &'static [Self] = &[T::A];
+//! #     fn name(self) -> &'static str { "a" }
+//! # }
+//! # struct C;
+//! # impl Construct for C {
+//! #     type Place = Flow;
+//! #     type State = u8;
+//! #     type Token = T;
+//! #     fn markers(&self) -> &[u8] { b"a" }
+//! #     fn start(&self) -> u8 { 0 }
+//! #     fn to_mdast(&self, _: Vec<Token<'_, T>>) -> markdown::mdast::Node { unimplemented!() }
+//! fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+//!     t.enter(T::A).consume().exit().ok()
+//! }
+//! # }
+//! ```
+//!
+//! A construct goes in the list of its place:
+//!
+//! ```compile_fail,E0308
+//! # use markdown::extension::{construct, Construct, Ctx, Flow, Step, Token, TokenType};
+//! # #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+//! # enum T { A }
+//! # impl TokenType for T {
+//! #     const ALL: &'static [Self] = &[T::A];
+//! #     fn name(self) -> &'static str { "a" }
+//! # }
+//! # struct C;
+//! # impl Construct for C {
+//! #     type Place = Flow;
+//! #     type State = u8;
+//! #     type Token = T;
+//! #     fn markers(&self) -> &[u8] { b"a" }
+//! #     fn start(&self) -> u8 { 0 }
+//! #     fn to_mdast(&self, _: Vec<Token<'_, T>>) -> markdown::mdast::Node { unimplemented!() }
+//! #     fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> { t.nok() }
+//! # }
+//! let options = markdown::ParseOptions {
+//!     text_constructs: vec![construct(C)],
+//!     ..markdown::ParseOptions::default()
+//! };
+//! ```
 
+use crate::construct::partial_space_or_tab::space_or_tab_min_max;
 use crate::event::{Content, Event, Kind, Link, Name, Point};
 use crate::mdast;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::link_to;
 use crate::tokenizer::{move_point_back, Tokenizer};
 use crate::unist::Position;
+use crate::util::constant::TAB_SIZE;
 use crate::util::slice::{Position as SlicePosition, Slice};
 use crate::ParseOptions;
 use alloc::{borrow::Cow, boxed::Box, string::String, vec, vec::Vec};
@@ -249,6 +302,9 @@ const CONTENT_MAX: usize = 32;
 mod sealed {
     /// Only this crate defines places.
     pub trait Sealed {}
+
+    /// Places where a match can end with a consumed byte.
+    pub trait OkAfterConsume {}
 }
 
 /// Where a construct runs.
@@ -257,9 +313,11 @@ mod sealed {
 pub enum PlaceKind {
     /// In text.
     Text,
+    /// At the start of a line in flow.
+    Flow,
 }
 
-/// Where a construct runs: [`Text`].
+/// Where a construct runs: [`Text`] or [`Flow`].
 ///
 /// A construct names its place in [`Construct::Place`], and goes in the
 /// list of options for that place, so it cannot run anywhere else.
@@ -278,6 +336,23 @@ impl sealed::Sealed for Text {}
 
 impl Place for Text {
     const KIND: PlaceKind = PlaceKind::Text;
+}
+
+impl sealed::OkAfterConsume for Text {}
+
+/// Flow, at the start of a line, such as where a fenced code block can
+/// start: constructs in
+/// [`ParseOptions::flow_constructs`][crate::ParseOptions].
+///
+/// A flow construct starts after up to 3 columns of indentation, ends
+/// before a line ending or at the end, and decides on its first line.
+#[derive(Clone, Copy, Debug)]
+pub enum Flow {}
+
+impl sealed::Sealed for Flow {}
+
+impl Place for Flow {
+    const KIND: PlaceKind = PlaceKind::Flow;
 }
 
 /// Names of the tokens of a construct.
@@ -340,9 +415,11 @@ pub enum Reach {
 /// A construct, such as a mention.
 ///
 /// Constructs in [`ParseOptions::text_constructs`][crate::ParseOptions] run
-/// in text.
-/// They are tried in order, before built-ins, at their markers (never line
-/// endings).
+/// in text, and those in `flow_constructs` at the start of a line in flow,
+/// after up to 3 columns of indentation.
+/// They are tried in order, before built-ins, at their markers, which are
+/// never line endings, and in flow never spaces or tabs, which are
+/// indentation.
 ///
 /// A construct that breaks one of these rules does not match, so its bytes
 /// stay what they would otherwise be (in an attempt, the attempt fails);
@@ -362,12 +439,15 @@ pub enum Reach {
 ///   (`token-after-content`)
 /// * `exit` has a token to close (`exit-without-token`); an attempt closes
 ///   only tokens it opened (`exit-before-attempt`)
-/// * after consuming a line ending, a step returns `next`, and can first
-///   `exit` tokens that end there (`enter-after-line-ending`,
-///   `ok-after-line-ending`)
+/// * after consuming a line ending, a step returns `next`
+///   (`enter-after-line-ending`, `ok-after-line-ending`); in text, it can
+///   first `exit` tokens that end there (`exit-after-line-ending`)
+/// * in flow, an attempt does not consume a line ending
+///   (`line-ending-in-attempt`)
 /// * `ok` comes after at least one byte, with every token closed
-///   (`ok-without-bytes`, `ok-with-open-tokens`); in an attempt, with the
-///   tokens it opened closed
+///   (`ok-without-bytes`, `ok-with-open-tokens`); in flow, at a line ending
+///   or the end (`ok-before-line-end`); in an attempt, with the tokens it
+///   opened closed
 /// * tokens start and end between characters, not inside one; a tab is
 ///   one character, but a line can start inside it, after container
 ///   prefixes (`token-inside-character`)
@@ -378,11 +458,17 @@ pub enum Reach {
 /// at most as far as [`reach`][Self::reach] allows; past either, it does
 /// not match.
 /// Attempts nest at most 256 deep; a deeper attempt fails.
+/// A flow construct decides on its first line: after it consumed a line
+/// ending, it does not return `nok` outside an attempt
+/// (`nok-after-first-line`).
+/// If it does, or reaches a limit there, it ends before its last line
+/// ending, and the next line is parsed as other markdown: parsing never
+/// fails because of a construct.
 /// Content nests at most 32 deep, counting the content of built-in
 /// constructs, such as the text of a paragraph; deeper content does not
 /// match.
 pub trait Construct: 'static {
-    /// Where the construct runs: [`Text`].
+    /// Where the construct runs: [`Text`] or [`Flow`].
     type Place: Place;
     /// States of the construct, usually an enum; a variant can carry what
     /// the construct has seen, such as the size of an opening fence.
@@ -402,9 +488,14 @@ pub trait Construct: 'static {
     }
 
     /// Whether the construct can start after `previous`, the character
-    /// before it: `None` at the start of text, such as the first line of a
+    /// before it, as in micromark.
+    ///
+    /// In text, it is `None` at the start, such as the first line of a
     /// paragraph, `'\n'` at the start of a later line, after container
-    /// prefixes, and `None` after a character escape, as in micromark.
+    /// prefixes, and `None` after a character escape.
+    /// In flow, it is `None` on the first line of the document, and
+    /// `'\n'` on a later line, before indentation and after container
+    /// prefixes.
     fn previous(&self, previous: Option<char>) -> bool {
         let _ = previous;
         true
@@ -431,8 +522,9 @@ impl<P: Place> fmt::Debug for BoxedConstruct<P> {
     }
 }
 
-/// Wrap a construct, to pass it in the options for its place, such as
-/// [`ParseOptions::text_constructs`][crate::ParseOptions] for [`Text`].
+/// Wrap a construct, to pass it in the options for its place:
+/// [`ParseOptions::text_constructs`][crate::ParseOptions] for [`Text`], and
+/// `flow_constructs` for [`Flow`].
 pub fn construct<C: Construct>(construct: C) -> BoxedConstruct<C::Place> {
     BoxedConstruct {
         inner: Box::new(Wrap(construct)),
@@ -563,6 +655,7 @@ enum RawStep {
 /// A construct, without its types, so constructs of different types can be
 /// stored together.
 trait ErasedConstruct {
+    fn place(&self) -> PlaceKind;
     fn markers(&self) -> &[u8];
     fn reach(&self) -> Reach;
     fn previous(&self, previous: Option<char>) -> bool;
@@ -588,6 +681,10 @@ struct Machine<S> {
 }
 
 impl<C: Construct> ErasedConstruct for Wrap<C> {
+    fn place(&self) -> PlaceKind {
+        C::Place::KIND
+    }
+
     fn markers(&self) -> &[u8] {
         self.0.markers()
     }
@@ -740,6 +837,53 @@ pub(crate) struct ExtensionState {
     content_lines: ContentLines,
     /// Enter of the last chunk of the current content token.
     last_chunk: Option<usize>,
+    /// Where the current flow construct is in its lines.
+    line: FlowLine,
+    /// Where the current flow construct was before its last line ending,
+    /// to end it there if it fails on a later line.
+    line_frame: Option<LineFrame>,
+    /// Open tokens of the current flow construct before its last line
+    /// ending, kept here so a line does not allocate.
+    line_open: Vec<u16>,
+    /// Why the current step does not match, if it does not.
+    nok: NokCause,
+    /// Columns of indentation before the current flow construct.
+    indent: usize,
+}
+
+/// Where a flow construct is in its lines.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum FlowLine {
+    /// On its first line, where it can fail.
+    #[default]
+    First,
+    /// Past a line ending, so it matches, or ends before that line.
+    Committed,
+    /// At a line ending before a lazy line or the end, where it ends.
+    Lazy,
+}
+
+/// Where a flow construct was before its last line ending.
+#[derive(Debug)]
+struct LineFrame {
+    /// The tokenizer.
+    progress: crate::tokenizer::Progress,
+    /// The content, as an attempt keeps it.
+    frame: AttemptFrame,
+    /// Index in `open` of the content token.
+    content_at: usize,
+}
+
+/// Why a step does not match.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum NokCause {
+    /// The construct returned `nok`.
+    #[default]
+    Construct,
+    /// It broke a rule, which `test-util` reports already.
+    Rule,
+    /// It reached a limit.
+    Limit,
 }
 
 /// An attempt a construct is in, and what undoing it restores.
@@ -785,6 +929,7 @@ pub(crate) fn ext_mut<'t>(tokenizer: &'t mut Tokenizer) -> &'t mut ExtensionStat
 struct Inner<'t, 'a> {
     tokenizer: &'t mut Tokenizer<'a>,
     index: u8,
+    place: PlaceKind,
     report: Report,
 }
 
@@ -831,8 +976,10 @@ impl<'t, 'a, C: Construct + ?Sized> Ctx<'t, 'a, C> {
     /// Current byte, or `None` at the end.
     ///
     /// Line endings (CR, LF, CR+LF) are all `b'\n'`.
+    /// In flow, a line ending before a lazy line or the end is `None`: the
+    /// construct ends there.
     pub fn current(&self) -> Option<u8> {
-        self.inner.tokenizer.current
+        current(&self.inner)
     }
 
     /// Current character, or `None` at the end or inside a character.
@@ -857,6 +1004,12 @@ impl<'t, 'a, C: Construct + ?Sized> Ctx<'t, 'a, C> {
     /// micromark’s `parser.constructs`.
     pub fn options(&self) -> &ParseOptions {
         self.inner.tokenizer.parse_state.options
+    }
+
+    /// Columns of indentation (0 to 3) before a flow construct, which it
+    /// starts after, like micromark’s `linePrefix`; `0` in text.
+    pub fn indent(&self) -> usize {
+        ext(self.inner.tokenizer).indent
     }
 
     /// Start a token.
@@ -953,8 +1106,14 @@ impl<C: Construct + ?Sized> Consumed<'_, '_, C> {
             report: self.inner.report,
         }
     }
+}
 
-    /// The construct matched, ending with the consumed byte.
+impl<C: Construct + ?Sized> Consumed<'_, '_, C>
+where
+    C::Place: sealed::OkAfterConsume,
+{
+    /// The construct matched, ending with the consumed byte; in text only,
+    /// as a flow construct ends before its line ending.
     #[must_use]
     pub fn ok(mut self) -> Step<C> {
         if self.inner.report.line_ending {
@@ -964,6 +1123,19 @@ impl<C: Construct + ?Sized> Consumed<'_, '_, C> {
             kind: StepKind::Ok,
             report: self.inner.report,
         }
+    }
+}
+
+/// Current byte, as a construct sees it.
+fn current(inner: &Inner) -> Option<u8> {
+    let tokenizer = &inner.tokenizer;
+    if inner.place == PlaceKind::Flow
+        && tokenizer.current == Some(b'\n')
+        && ext(tokenizer).line == FlowLine::Lazy
+    {
+        None
+    } else {
+        tokenizer.current
     }
 }
 
@@ -1062,6 +1234,10 @@ fn exit(inner: &mut Inner) {
         .last()
         .map_or(false, |frame| state.open.len() <= frame.open_len);
     let rule = match is_content {
+        // In flow, the line ending is consumed after the step.
+        _ if inner.report.line_ending && inner.place == PlaceKind::Flow => {
+            Some("exit-after-line-ending")
+        }
         None => Some("exit-without-token"),
         Some(_) if is_before_attempt => Some("exit-before-attempt"),
         Some(_) if !at_boundary(tokenizer) => Some("token-inside-character"),
@@ -1079,7 +1255,23 @@ fn exit(inner: &mut Inner) {
 
     if is_content && content_of_top(inner.tokenizer) == Content::Text {
         let enter = ext(inner.tokenizer).content_enter;
-        trim_content_end(inner.tokenizer, enter);
+        if let Some(start) = trim_content_end(inner.tokenizer, enter) {
+            // Line endings of flow left out go after the content, which ends
+            // before them, or is no content without anything before them.
+            let tokenizer = &mut *inner.tokenizer;
+            let tail = tokenizer.events.split_off(start);
+            if tokenizer.events.len() == enter + 1 {
+                tokenizer.events.pop();
+                tokenizer.stack.pop();
+                ext_mut(tokenizer).open.pop();
+            } else {
+                exit_token(tokenizer);
+                let exit = tokenizer.events.last_mut().expect("expected exit");
+                exit.point = tail[0].point.clone();
+            }
+            tokenizer.events.extend(tail);
+            return;
+        }
     }
 
     if !top_is_empty(inner.tokenizer) {
@@ -1097,7 +1289,7 @@ fn exit(inner: &mut Inner) {
 
 /// Consume the current byte.
 fn consume(inner: &mut Inner) {
-    if inner.tokenizer.current.is_none() || inner.report.broken.is_some() || inner.report.limit {
+    if current(inner).is_none() || inner.report.broken.is_some() || inner.report.limit {
         return;
     }
 
@@ -1106,12 +1298,12 @@ fn consume(inner: &mut Inner) {
         return;
     }
 
-    let tokenizer = &mut *inner.tokenizer;
-    let is_eol = tokenizer.current == Some(b'\n');
+    let is_eol = inner.tokenizer.current == Some(b'\n');
+    let in_content = is_content_top(inner.tokenizer);
 
-    if is_content_top(tokenizer) {
-        let is_blank = matches!(tokenizer.current, Some(b'\t' | b' '));
-        let state = ext_mut(tokenizer);
+    if in_content {
+        let is_blank = matches!(inner.tokenizer.current, Some(b'\t' | b' '));
+        let state = ext_mut(inner.tokenizer);
         // Blank lines at the start or end of content are fine; one between
         // other lines is found at the first byte of the next line.
         if is_eol && state.content_blank && state.content_lines == ContentLines::Text {
@@ -1124,11 +1316,22 @@ fn consume(inner: &mut Inner) {
             }
             state.content_lines = ContentLines::Text;
         }
+    }
 
+    let tokenizer = &mut *inner.tokenizer;
+
+    // In flow, the line ending is consumed after the step, once the next
+    // line is known to continue the construct.
+    if inner.place == PlaceKind::Flow && is_eol {
+        if !ext(tokenizer).attempts.is_empty() {
+            inner.broke("line-ending-in-attempt");
+            return;
+        }
+    } else if in_content {
         // Content goes into linked chunks, one per line, parsed later.
         if !is_chunk_open(tokenizer) {
             let content = content_of_top(tokenizer);
-            enter_chunk(tokenizer, content);
+            enter_chunk(tokenizer, Name::ExtensionChunk, content);
             tokenizer.stack.pop();
         }
         let (line, is_blank) = (
@@ -1176,7 +1379,10 @@ fn top_is_empty(tokenizer: &Tokenizer) -> bool {
 /// `enter`, and the blank lines after it, out of the content, as the last
 /// line ending of a paragraph is not its text: text never ends after a line
 /// ending.
-fn trim_content_end(tokenizer: &mut Tokenizer, enter: usize) {
+///
+/// Returns where line endings of flow that are left out start, which then go
+/// after the content.
+fn trim_content_end(tokenizer: &mut Tokenizer, enter: usize) -> Option<usize> {
     let bytes = tokenizer.parse_state.bytes;
     let eols = core::mem::take(&mut ext_mut(tokenizer).content_eols);
     let events = &mut tokenizer.events;
@@ -1195,26 +1401,40 @@ fn trim_content_end(tokenizer: &mut Tokenizer, enter: usize) {
         .iter()
         .rposition(|index| !is_blank(events, *index))
         .unwrap_or(0);
-    // Without a line ending, the chunk is the last line.
-    let (chunk, before) = match chunks
+    let is_line_ending = |events: &[Event], index: usize| {
+        let slice = &bytes[events[index].point.index..events[index + 1].point.index];
+        !slice.is_empty() && slice.iter().all(|byte| matches!(byte, b'\n' | b'\r'))
+    };
+    let drop_from = match chunks
         .get(keep)
         .and_then(|chunk| eols.iter().find(|(eol_chunk, _)| eol_chunk == chunk))
     {
-        Some(eol) => eol,
-        None => return,
+        // A line ending at the end of the chunk is left out.
+        Some((chunk, before)) if before.index > events[*chunk].point.index => {
+            events[*chunk + 1].point = before.clone();
+            keep + 1
+        }
+        // A chunk of only a line ending is no content, such as one that a
+        // flow construct crosses lines with.
+        Some(_) => keep,
+        None if chunks
+            .get(keep)
+            .map_or(false, |chunk| is_line_ending(events, *chunk)) =>
+        {
+            keep
+        }
+        None => keep + 1,
     };
-
-    let drop_from = if before.index > events[*chunk].point.index {
-        events[*chunk + 1].point = before.clone();
-        keep + 1
-    } else {
-        // A chunk of only a line ending is no content.
-        keep
-    };
+    if drop_from >= chunks.len() {
+        return None;
+    }
 
     for index in &chunks[drop_from..] {
         for event in &mut events[*index..=*index + 1] {
-            event.name = Name::SpaceOrTab;
+            // A line ending of flow stays one, for the structure around it.
+            if event.name == Name::ExtensionChunk {
+                event.name = Name::SpaceOrTab;
+            }
             event.link = None;
         }
     }
@@ -1222,6 +1442,16 @@ fn trim_content_end(tokenizer: &mut Tokenizer, enter: usize) {
         if let Some(link) = events[chunks[drop_from - 1]].link.as_mut() {
             link.next = None;
         }
+    }
+
+    let start = chunks[drop_from];
+    if events[start..]
+        .iter()
+        .any(|event| event.name == Name::LineEnding)
+    {
+        Some(start)
+    } else {
+        None
     }
 }
 
@@ -1303,9 +1533,9 @@ fn content_of_top(tokenizer: &Tokenizer) -> Content {
 
 /// Enter a chunk of content, linked to the previous chunk of the same
 /// content token, across tokens in it.
-fn enter_chunk(tokenizer: &mut Tokenizer, content: Content) {
+fn enter_chunk(tokenizer: &mut Tokenizer, name: Name, content: Content) {
     tokenizer.enter_link(
-        Name::ExtensionChunk,
+        name,
         Link {
             previous: None,
             next: None,
@@ -1337,10 +1567,10 @@ fn exit_chunk(tokenizer: &mut Tokenizer) {
 /// Number of token names that the constructs in `options` can use, which
 /// events number with a `u16`.
 pub(crate) fn token_count(options: &ParseOptions) -> usize {
-    options
-        .text_constructs
-        .iter()
-        .map(|construct| construct.inner.token_count())
+    let text = options.text_constructs.iter().map(|c| &c.inner);
+    let flow = options.flow_constructs.iter().map(|c| &c.inner);
+    text.chain(flow)
+        .map(|construct| construct.token_count())
         .sum()
 }
 
@@ -1359,30 +1589,100 @@ pub(crate) fn to_mdast(options: &ParseOptions, index: u8, tokens: Vec<RawToken>)
     erased(options, index).to_mdast(tokens)
 }
 
-/// Construct at `index`.
+/// Construct at `index`: text constructs, then flow.
 fn erased(options: &ParseOptions, index: u8) -> &dyn ErasedConstruct {
-    &*options.text_constructs[usize::from(index)].inner
+    let index = usize::from(index);
+    match options.text_constructs.get(index) {
+        Some(construct) => &*construct.inner,
+        None => &*options.flow_constructs[index - options.text_constructs.len()].inner,
+    }
 }
 
 /// Start trying construct `index`.
 pub(crate) fn start(tokenizer: &mut Tokenizer, index: u8) -> State {
-    let (start, events) = (tokenizer.point.index, tokenizer.events.len());
+    let column = tokenizer.point.column;
     let options = tokenizer.parse_state.options;
     let state = ext_mut(tokenizer);
+    state.index = index;
+    state.open.clear();
+    state.attempts.clear();
+    state.last_chunk = None;
+    state.line = FlowLine::First;
+    state.line_frame = None;
+    state.indent = column;
+
+    if erased(options, index).place() == PlaceKind::Flow
+        && matches!(tokenizer.current, Some(b'\t' | b' '))
+    {
+        tokenizer.attempt(State::Next(StateName::ExtensionIndentAfter), State::Nok);
+        return State::Retry(space_or_tab_min_max(tokenizer, 0, TAB_SIZE - 1));
+    }
+
+    indent_after(tokenizer)
+}
+
+/// After the indentation of a flow construct, at its marker.
+pub(crate) fn indent_after(tokenizer: &mut Tokenizer) -> State {
+    let options = tokenizer.parse_state.options;
+    let (start, column) = (tokenizer.point.index, tokenizer.point.column);
+    let events = tokenizer.events.len();
+    let current = tokenizer.current;
+    let state = ext_mut(tokenizer);
+    let construct = erased(options, state.index);
+    state.indent = column - state.indent;
     state.start = start;
     state.events = events;
     state.steps = 0;
     state.at = start;
     state.furthest = start;
-    state.index = index;
-    state.open.clear();
-    state.attempts.clear();
-    state.last_chunk = None;
-    let slot = usize::from(index);
-    if state.slots.len() <= slot {
-        state.slots.resize_with(slot + 1, || None);
+
+    match current {
+        // In flow, spaces and tabs are indentation.
+        Some(b'\t' | b' ') if construct.place() == PlaceKind::Flow => State::Nok,
+        Some(byte) if byte != b'\n' && construct.markers().contains(&byte) => {
+            let slot = usize::from(state.index);
+            if state.slots.len() <= slot {
+                state.slots.resize_with(slot + 1, || None);
+            }
+            construct.start(&mut state.slots[slot]);
+            State::Retry(StateName::ExtensionStep)
+        }
+        _ => State::Nok,
     }
-    erased(options, index).start(&mut state.slots[slot]);
+}
+
+/// After a flow line ending that continues the construct: consume it.
+///
+/// Line endings in flow are real, so containers can count lines; in content,
+/// they are linked chunks.
+pub(crate) fn at_non_lazy(tokenizer: &mut Tokenizer) -> State {
+    // The end right after this line ending, the last byte, is like a lazy
+    // line.
+    if tokenizer.point.index + 1 == tokenizer.parse_state.bytes.len() {
+        return at_lazy(tokenizer);
+    }
+
+    if is_content_top(tokenizer) {
+        let content = content_of_top(tokenizer);
+        if is_chunk_open(tokenizer) {
+            exit_chunk(tokenizer);
+        }
+        enter_chunk(tokenizer, Name::LineEnding, content);
+        let line = tokenizer.point.line;
+        let state = ext_mut(tokenizer);
+        state.content_line = line;
+        state.content_blank = true;
+    } else {
+        tokenizer.enter(Name::LineEnding);
+    }
+    tokenizer.consume();
+    tokenizer.exit(Name::LineEnding);
+    State::Next(StateName::ExtensionStep)
+}
+
+/// After a flow line ending followed by a lazy line or the end.
+pub(crate) fn at_lazy(tokenizer: &mut Tokenizer) -> State {
+    ext_mut(tokenizer).line = FlowLine::Lazy;
     State::Retry(StateName::ExtensionStep)
 }
 
@@ -1436,12 +1736,12 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     tokenize_state.furthest = tokenize_state.furthest.max(point);
     // Work is linear in the bytes a match reaches, whatever its attempts do.
     let budget = STEP_MAX.saturating_mul(tokenize_state.furthest - tokenize_state.start + 1);
-    if tokenize_state.steps > budget {
-        return State::Nok;
-    }
+    let over_budget = tokenize_state.steps > budget;
 
     let index = tokenize_state.index;
     let construct = erased(tokenizer.parse_state.options, index);
+    let place = construct.place();
+    let is_flow = place == PlaceKind::Flow;
 
     let within_reach = match construct.reach() {
         Reach::Unbounded => true,
@@ -1450,8 +1750,11 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
             tokenizer.current.is_none() || tokenizer.point.index - ext(tokenizer).start < bytes
         }
     };
-    if !within_reach {
-        return State::Nok;
+    // Limits, not rules: the construct does not match, without a panic.
+    ext_mut(tokenizer).nok = NokCause::Construct;
+    if over_budget || !within_reach {
+        ext_mut(tokenizer).nok = NokCause::Limit;
+        return finish(tokenizer, RawStep::Nok, is_flow, false);
     }
 
     // The slot is taken out while the step runs, as the step borrows the
@@ -1463,25 +1766,27 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
         Inner {
             tokenizer,
             index,
+            place,
             report: Report::default(),
         },
     );
     ext_mut(tokenizer).slots[slot] = machine;
     let tokenize_state = ext(tokenizer);
-    let attempt = tokenize_state.attempts.last();
 
     // A limit, such as the depth of content, is no mistake of the
-    // construct: it does not match, without a panic.
-    if report.limit
-        || matches!(step, RawStep::Attempt if tokenize_state.attempts.len() >= ATTEMPT_MAX)
-    {
+    // construct either.
+    let limit = report.limit
+        || matches!(step, RawStep::Attempt if tokenize_state.attempts.len() >= ATTEMPT_MAX);
+    if limit {
         if matches!(step, RawStep::Attempt) {
             // The frame of the attempt that does not start.
             construct.resume(&mut ext_mut(tokenizer).slots[slot], false);
         }
-        return State::Nok;
+        ext_mut(tokenizer).nok = NokCause::Limit;
+        return finish(tokenizer, RawStep::Nok, is_flow, false);
     }
 
+    let attempt = tokenize_state.attempts.last();
     let broken = report.broken.or(match step {
         // An attempt ends with the tokens it opened closed.
         RawStep::Ok
@@ -1495,15 +1800,66 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
         RawStep::Ok if attempt.is_none() && !tokenize_state.open.is_empty() => {
             Some("ok-with-open-tokens")
         }
+        // A flow construct ends at a line ending or the end.
+        RawStep::Ok
+            if attempt.is_none() && is_flow && !matches!(tokenizer.current, None | Some(b'\n')) =>
+        {
+            Some("ok-before-line-end")
+        }
         _ => None,
     });
 
     if let Some(rule) = broken {
         broke(rule);
-        return State::Nok;
+        ext_mut(tokenizer).nok = NokCause::Rule;
+        return finish(tokenizer, RawStep::Nok, is_flow, false);
     }
 
+    finish(tokenizer, step, is_flow, report.line_ending)
+}
+
+/// Go on after a step of the current construct, which consumed a line
+/// ending if `line_ending`.
+fn finish(tokenizer: &mut Tokenizer, step: RawStep, is_flow: bool, line_ending: bool) -> State {
+    let in_attempt = !ext(tokenizer).attempts.is_empty();
+
     match step {
+        // Past its first line, a flow construct matches, or ends before the
+        // line it fails on, and containers must not start in the next line
+        // while it is checked.
+        RawStep::Next if is_flow && line_ending => {
+            // The line ending is not consumed yet: keep where the construct
+            // is, to end it here if it fails on the next line.
+            let progress = tokenizer.snapshot();
+            let line_start = tokenizer.line_start.clone();
+            let state = ext_mut(tokenizer);
+            state.line_frame = Some(LineFrame {
+                progress,
+                frame: AttemptFrame {
+                    open_len: state.open.len(),
+                    line_start,
+                    content_line: state.content_line,
+                    content_blank: state.content_blank,
+                    content_lines: state.content_lines,
+                    content_enter: state.content_enter,
+                    content_eols: state.content_eols.len(),
+                    last_chunk: state.last_chunk,
+                },
+                content_at: state.content_at,
+            });
+            let ExtensionState {
+                open, line_open, ..
+            } = state;
+            line_open.clear();
+            line_open.extend_from_slice(open);
+            ext_mut(tokenizer).line = FlowLine::Committed;
+            tokenizer.concrete = true;
+            tokenizer.check(
+                State::Next(StateName::ExtensionNonLazy),
+                State::Next(StateName::ExtensionLazy),
+            );
+            State::Retry(StateName::NonLazyContinuationStart)
+        }
         RawStep::Next => State::Next(StateName::ExtensionStep),
         RawStep::Retry => State::Retry(StateName::ExtensionStep),
         RawStep::Attempt => {
@@ -1526,9 +1882,79 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
             );
             State::Retry(StateName::ExtensionStep)
         }
-        RawStep::Ok => State::Ok,
+        RawStep::Ok => {
+            if is_flow && !in_attempt {
+                tokenizer.interrupt = false;
+                tokenizer.concrete = false;
+            }
+            State::Ok
+        }
+        RawStep::Nok if !in_attempt && ext(tokenizer).line != FlowLine::First => {
+            end_before_line(tokenizer)
+        }
         RawStep::Nok => State::Nok,
     }
+}
+
+/// A flow construct failed after its first line, outside an attempt: end it
+/// before its last line ending, which then starts a line as other markdown
+/// does, rather than an error.
+fn end_before_line(tokenizer: &mut Tokenizer) -> State {
+    if ext(tokenizer).nok == NokCause::Construct {
+        broke("nok-after-first-line");
+    }
+
+    let state = ext_mut(tokenizer);
+    let LineFrame {
+        progress,
+        frame,
+        content_at,
+    } = state
+        .line_frame
+        .take()
+        .expect("expected the line ending of a flow construct");
+    state.open.clear();
+    let ExtensionState {
+        open, line_open, ..
+    } = state;
+    open.extend_from_slice(line_open);
+    state.content_at = content_at;
+    state.content_line = frame.content_line;
+    state.content_blank = frame.content_blank;
+    state.content_lines = frame.content_lines;
+    state.content_enter = frame.content_enter;
+    state.content_eols.truncate(frame.content_eols);
+    state.last_chunk = frame.last_chunk;
+    state.line = FlowLine::First;
+    tokenizer.restore(progress);
+    tokenizer.line_start = frame.line_start;
+
+    // The undo removed chunks after the line ending, but not the link to
+    // them.
+    if let Some(chunk) = frame.last_chunk {
+        let events_len = tokenizer.events.len();
+        if let Some(link) = tokenizer.events[chunk].link.as_mut() {
+            if link.next.map_or(false, |next| next >= events_len) {
+                link.next = None;
+            }
+        }
+    }
+
+    // Close what is open, as the construct would.
+    let index = ext(tokenizer).index;
+    for _ in 0..ext(tokenizer).open.len() {
+        let mut inner = Inner {
+            tokenizer,
+            index,
+            place: PlaceKind::Flow,
+            report: Report::default(),
+        };
+        exit(&mut inner);
+    }
+
+    tokenizer.interrupt = false;
+    tokenizer.concrete = false;
+    State::Ok
 }
 
 /// A construct broke `rule`: it does not match, and with `test-util`, that

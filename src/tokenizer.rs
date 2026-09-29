@@ -161,7 +161,7 @@ struct Attempt {
 /// Not to be confused with states from the state machine, this instead is all
 /// the information on where we currently are and what’s going on.
 #[derive(Clone, Debug)]
-struct Progress {
+pub(crate) struct Progress {
     /// Length of `events`.
     ///
     /// It’s not allowed to remove events, so reverting will just pop stuff off.
@@ -428,6 +428,14 @@ impl<'a> Tokenizer<'a> {
         self.account_for_potential_skip();
     }
 
+    /// Define a jump for the line of `point`, unless one is defined: for a
+    /// chunk that continues the line of the chunk before it.
+    pub fn define_skip_if_missing(&mut self, point: Point) {
+        if point.line - self.first_line >= self.column_start.len() {
+            self.define_skip(point);
+        }
+    }
+
     /// Whether the current point is where a line after the first starts,
     /// after its skip, if any.
     pub fn at_line_start(&self) -> bool {
@@ -575,6 +583,18 @@ impl<'a> Tokenizer<'a> {
             extension: 0,
         };
         self.events.push(event);
+    }
+
+    /// Capture the progress, to go back to it with [`Tokenizer::restore`].
+    pub(crate) fn snapshot(&mut self) -> Progress {
+        self.capture()
+    }
+
+    /// Go back to progress from [`Tokenizer::snapshot`], dropping the events
+    /// after it.
+    pub(crate) fn restore(&mut self, progress: Progress) {
+        self.consumed = false;
+        self.free(progress);
     }
 
     /// Capture the tokenizer progress.
