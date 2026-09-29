@@ -262,6 +262,18 @@ fn code_fenced() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_html("- ```\n  a\n"),
+        "<ul>\n<li>\n<pre><code>a\n</code></pre>\n</li>\n</ul>",
+        "should not add a line ending after the last line when a container closes code"
+    );
+
+    assert_eq!(
+        to_html("- ```\n\n"),
+        "<ul>\n<li>\n<pre><code>\n</code></pre>\n</li>\n</ul>",
+        "should add a line ending for a blank last line when a container closes code"
+    );
+
+    assert_eq!(
         to_html_with_options(
             "```",
             &Options {

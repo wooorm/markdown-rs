@@ -838,8 +838,37 @@ fn on_exit_raw_flow(context: &mut CompileContext) {
         if count == 1
             // In a container.
             && !context.tight_stack.is_empty()
-            // Empty (as the closing is right at the opening fence)
-            && !matches!(context.events[context.index - 1].name, Name::CodeFencedFence | Name::MathFlowFence)
+            // Its last line is blank.
+            && match context.events[context.index - 1].name {
+                // Empty (as the closing is right at the opening fence).
+                Name::CodeFencedFence | Name::MathFlowFence => false,
+                // A blank line after it: only prefixes, then a line ending or the end.
+                Name::LineEnding => {
+                    let mut index = context.index + 1;
+                    let mut prefix = false;
+                    loop {
+                        match context.events.get(index).map(|event| (&event.name, &event.kind)) {
+                            None => break prefix,
+                            Some((Name::LineEnding | Name::BlankLineEnding, _)) => break true,
+                            Some((
+                                Name::BlockQuotePrefix | Name::BlockQuoteMarker | Name::SpaceOrTab,
+                                _,
+                            )) => prefix = true,
+                            Some((
+                                Name::BlockQuote
+                                | Name::GfmFootnoteDefinition
+                                | Name::ListItem
+                                | Name::ListOrdered
+                                | Name::ListUnordered,
+                                Kind::Exit,
+                            )) => {}
+                            _ => break false,
+                        }
+                        index += 1;
+                    }
+                }
+                _ => true,
+            }
         {
             context.line_ending();
         }
