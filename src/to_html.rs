@@ -1,5 +1,6 @@
 //! Turn events into a string of HTML.
 use crate::event::{Event, Kind, Name};
+use crate::extension::{collect_tokens, TokenName};
 use crate::mdast::AlignKind;
 use crate::util::{
     character_reference::decode as decode_character_reference,
@@ -129,6 +130,11 @@ struct CompileContext<'a> {
     buffers: Vec<String>,
     /// Current event index.
     index: usize,
+    /// Names of the tokens of constructs, by interned index.
+    extension_names: &'a [TokenName],
+    /// Last event of the match of a construct being skipped: its source is
+    /// written when it starts.
+    extension_skip: Option<usize>,
 }
 
 impl<'a> CompileContext<'a> {
@@ -138,6 +144,7 @@ impl<'a> CompileContext<'a> {
         bytes: &'a [u8],
         options: &'a CompileOptions,
         line_ending: LineEnding,
+        extension_names: &'a [TokenName],
     ) -> CompileContext<'a> {
         CompileContext {
             events,
@@ -164,6 +171,8 @@ impl<'a> CompileContext<'a> {
             line_ending_default: line_ending,
             buffers: vec![String::new()],
             index: 0,
+            extension_names,
+            extension_skip: None,
             options,
         }
     }
@@ -204,7 +213,12 @@ impl<'a> CompileContext<'a> {
 }
 
 /// Turn events and bytes into a string of HTML.
-pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> String {
+pub fn compile(
+    events: &[Event],
+    bytes: &[u8],
+    options: &CompileOptions,
+    extension_names: &[TokenName],
+) -> String {
     let mut index = 0;
     let mut line_ending_inferred = None;
 
@@ -228,7 +242,8 @@ pub fn compile(events: &[Event], bytes: &[u8], options: &CompileOptions) -> Stri
     let line_ending_default =
         line_ending_inferred.unwrap_or_else(|| options.default_line_ending.clone());
 
-    let mut context = CompileContext::new(events, bytes, options, line_ending_default);
+    let mut context =
+        CompileContext::new(events, bytes, options, line_ending_default, extension_names);
     let mut definition_indices = vec![];
     let mut index = 0;
     let mut definition_inside = false;
@@ -311,6 +326,25 @@ fn handle(context: &mut CompileContext, index: usize) {
 
 /// Handle [`Enter`][Kind::Enter].
 fn enter(context: &mut CompileContext) {
+    let index = context.index;
+    if context.extension_skip.map_or(false, |until| index <= until) {
+        return;
+    }
+
+    // A construct is written as its source, without container prefixes.
+    if context.events[index].name == Name::Extension {
+        let found = collect_tokens(
+            context.events,
+            context.bytes,
+            context.extension_names,
+            index,
+        );
+        let value = encode(&found.tokens[0].value, context.encode_html);
+        context.push(&value);
+        context.extension_skip = Some(found.end);
+        return;
+    }
+
     match context.events[context.index].name {
         Name::CodeFencedFenceInfo
         | Name::CodeFencedFenceMeta
@@ -362,6 +396,15 @@ fn enter(context: &mut CompileContext) {
 
 /// Handle [`Exit`][Kind::Exit].
 fn exit(context: &mut CompileContext) {
+    if let Some(until) = context.extension_skip {
+        if context.index <= until {
+            if context.index == until {
+                context.extension_skip = None;
+            }
+            return;
+        }
+    }
+
     match context.events[context.index].name {
         Name::CodeFencedFenceMeta
         | Name::MathFlowFenceMeta

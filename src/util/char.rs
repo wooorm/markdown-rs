@@ -5,7 +5,7 @@ use alloc::{format, string::String};
 use core::str;
 
 /// Character kinds.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     /// Whitespace.
     ///

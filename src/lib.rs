@@ -37,6 +37,7 @@ extern crate alloc;
 mod configuration;
 mod construct;
 mod event;
+pub mod extension;
 mod parser;
 mod resolve;
 mod state;
@@ -130,11 +131,9 @@ pub fn to_html(value: &str) -> String {
 /// ```
 pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, message::Message> {
     let (events, parse_state) = parser::parse(value, &options.parse)?;
-    Ok(to_html::compile(
-        &events,
-        parse_state.bytes,
-        &options.compile,
-    ))
+    let names = parse_state.extension_names.borrow();
+    let html = to_html::compile(&events, parse_state.bytes, &options.compile, &names);
+    Ok(html)
 }
 
 /// Turn markdown into a syntax tree.
@@ -162,6 +161,11 @@ pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, me
 /// ```
 pub fn to_mdast(value: &str, options: &ParseOptions) -> Result<mdast::Node, message::Message> {
     let (events, parse_state) = parser::parse(value, options)?;
-    let node = to_mdast::compile(&events, parse_state.bytes)?;
+    let node = to_mdast::compile(
+        &events,
+        parse_state.bytes,
+        options,
+        &parse_state.extension_names.borrow(),
+    )?;
     Ok(node)
 }

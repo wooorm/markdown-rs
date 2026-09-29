@@ -25,6 +25,7 @@ default = []
 json = ["serde"]
 log = ["dep:log"]
 serde = ["dep:serde"]
+test-util = []
 
 [package]
 authors = ["Titus Wormer <tituswormer@gmail.com>"]

@@ -196,6 +196,8 @@ They are not enabled by default but can be turned on with options.
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support very common and mostly standardized extensions.
+Other syntax can be added from outside this project, with constructs passed
+in options: see the [`extension` module][docs-extension].
 
 ## Project
 
@@ -224,6 +226,8 @@ The files in `src/` are as follows:
   — helpers often needed when parsing markdown
 * `event.rs`
   — things with meaning happening somewhere
+* `extension.rs`
+  — constructs of syntax extensions, passed in options
 * `lib.rs`
   — public API
 * `mdast.rs`
@@ -387,6 +391,7 @@ Special thanks go out to:
 [badge-coverage-url]: https://codecov.io/github/wooorm/markdown-rs
 
 [docs]: https://docs.rs/markdown/latest/markdown/
+[docs-extension]: https://docs.rs/markdown/latest/markdown/extension/index.html
 
 [crate]: https://crates.io/crates/markdown
 

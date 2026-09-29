@@ -127,6 +127,8 @@ pub enum Name {
     DocumentFlowInside,
     DocumentFlowEnd,
 
+    ExtensionStep,
+
     FlowStart,
     FlowBeforeGfmTable,
     FlowBeforeCodeIndented,
@@ -448,6 +450,7 @@ pub enum Name {
 
     TextStart,
     TextBefore,
+    TextBeforeConstructNext,
     TextBeforeHtml,
     TextBeforeMdxJsx,
     TextBeforeHardBreakEscape,
@@ -563,6 +566,8 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentContainersAfter => construct::document::containers_after,
         Name::DocumentFlowEnd => construct::document::flow_end,
         Name::DocumentFlowInside => construct::document::flow_inside,
+
+        Name::ExtensionStep => crate::extension::step,
 
         Name::FlowStart => construct::flow::start,
         Name::FlowBeforeGfmTable => construct::flow::before_gfm_table,
@@ -947,6 +952,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
 
         Name::TextStart => construct::text::start,
         Name::TextBefore => construct::text::before,
+        Name::TextBeforeConstructNext => construct::text::before_construct_next,
         Name::TextBeforeHtml => construct::text::before_html,
         Name::TextBeforeMdxJsx => construct::text::before_mdx_jsx,
         Name::TextBeforeHardBreakEscape => construct::text::before_hard_break_escape,

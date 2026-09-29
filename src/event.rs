@@ -902,6 +902,26 @@ pub enum Name {
     ///      ^
     /// ```
     EmphasisText,
+    /// Token of a construct of a syntax extension: which one is in
+    /// [`Event::extension`].
+    ///
+    /// ## Info
+    ///
+    /// * **Context**:
+    ///   [text content][crate::construct::text]
+    /// * **Content model**:
+    ///   [`Extension`][Name::Extension],
+    ///   [`LineEnding`][Name::LineEnding]
+    /// * **Construct**:
+    ///   [`Construct`][crate::extension::Construct]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | @a
+    ///     ^^
+    /// ```
+    Extension,
     /// Whole frontmatter.
     ///
     /// ## Info
@@ -3567,4 +3587,7 @@ pub struct Event {
     pub point: Point,
     /// Link to another event.
     pub link: Option<Link>,
+    /// Interned name of the token of a construct of a syntax extension, for
+    /// [`Extension`][Name::Extension].
+    pub extension: u16,
 }

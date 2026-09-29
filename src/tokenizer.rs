@@ -242,7 +242,9 @@ pub struct TokenizeState<'a> {
     /// Secondary marker.
     pub marker_b: u8,
     /// Several markers.
-    pub markers: &'static [u8],
+    pub markers: &'a [u8],
+    /// State of syntax extensions, created when one runs.
+    pub(crate) extension: Option<Box<crate::extension::ExtensionState>>,
     /// Whether something was seen.
     pub seen: bool,
     /// Size.
@@ -358,6 +360,7 @@ impl<'a> Tokenizer<'a> {
                 marker: 0,
                 marker_b: 0,
                 markers: &[],
+                extension: None,
                 labels: vec![],
                 seen: false,
                 size: 0,
@@ -423,6 +426,16 @@ impl<'a> Tokenizer<'a> {
         }
 
         self.account_for_potential_skip();
+    }
+
+    /// Whether the current point is where a line after the first starts,
+    /// after its skip, if any.
+    pub fn at_line_start(&self) -> bool {
+        let at = self.point.line - self.first_line;
+        at > 0
+            && (self.column_start.get(at) == Some(&(self.point.index, self.point.vs))
+                || (self.point.index == self.line_start.index
+                    && self.point.vs == self.line_start.vs))
     }
 
     /// Increment the current positional info if we’re right after a line
@@ -529,6 +542,8 @@ impl<'a> Tokenizer<'a> {
 
         debug_assert!(
             current != previous.name
+                // Tokens of a construct can end together.
+                || (current == Name::Extension && previous.kind == Kind::Exit)
                 || previous.point.index != point.index
                 || previous.point.vs != point.vs,
             "expected non-empty event"
@@ -557,6 +572,7 @@ impl<'a> Tokenizer<'a> {
             name,
             point,
             link: None,
+            extension: 0,
         };
         self.events.push(event);
     }
@@ -665,7 +681,7 @@ impl<'a> Tokenizer<'a> {
 }
 
 /// Move back past ignored bytes.
-fn move_point_back(tokenizer: &mut Tokenizer, point: &mut Point) {
+pub fn move_point_back(tokenizer: &Tokenizer, point: &mut Point) {
     while point.index > 0 {
         point.index -= 1;
         let action = byte_action(tokenizer.parse_state.bytes, point);
@@ -690,6 +706,7 @@ fn enter_impl(tokenizer: &mut Tokenizer, name: Name, link: Option<Link>) {
         name,
         point,
         link,
+        extension: 0,
     });
 }
 

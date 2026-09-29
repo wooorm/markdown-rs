@@ -1,13 +1,16 @@
 //! Turn bytes of markdown into events.
 
+use crate::construct::text::MARKERS as TEXT_MARKERS;
 use crate::event::{Event, Point};
+use crate::extension::{text_markers, token_count, TokenName};
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::subtokenize;
 use crate::tokenizer::Tokenizer;
 use crate::util::location::Location;
 use crate::ParseOptions;
-use alloc::{string::String, vec, vec::Vec};
+use alloc::{boxed::Box, format, string::String, vec, vec::Vec};
+use core::cell::RefCell;
 
 /// Info needed, in all content types, when parsing markdown.
 ///
@@ -25,6 +28,11 @@ pub struct ParseState<'a> {
     pub definitions: Vec<String>,
     /// Set of defined GFM footnote definition identifiers.
     pub gfm_footnote_definitions: Vec<String>,
+    /// Bytes that can start something in text, with the markers of text
+    /// constructs; empty without them.
+    pub text_markers: Vec<u8>,
+    /// Names of the tokens of constructs, which events refer to by index.
+    pub extension_names: RefCell<Vec<TokenName>>,
 }
 
 /// Turn a string of markdown into events.
@@ -36,6 +44,30 @@ pub fn parse<'a>(
 ) -> Result<(Vec<Event>, ParseState<'a>), message::Message> {
     let bytes = value.as_bytes();
 
+    // Constructs are numbered by a `u8`.
+    let constructs = options.text_constructs.len();
+    if constructs > usize::from(u8::MAX) {
+        return Err(message::Message {
+            place: None,
+            reason: format!("Unexpected {constructs} constructs, expected at most 255"),
+            rule_id: Box::new("too-many-constructs".into()),
+            source: Box::new("markdown-rs".into()),
+        });
+    }
+
+    // Token names are numbered by a `u16`.
+    let tokens = token_count(options);
+    if tokens > usize::from(u16::MAX) {
+        return Err(message::Message {
+            place: None,
+            reason: format!(
+                "Unexpected {tokens} token names in constructs, expected at most 65,535"
+            ),
+            rule_id: Box::new("too-many-construct-tokens".into()),
+            source: Box::new("markdown-rs".into()),
+        });
+    }
+
     let mut parse_state = ParseState {
         options,
         bytes,
@@ -46,6 +78,8 @@ pub fn parse<'a>(
         },
         definitions: vec![],
         gfm_footnote_definitions: vec![],
+        text_markers: text_markers(&TEXT_MARKERS, &options.text_constructs),
+        extension_names: RefCell::new(vec![]),
     };
 
     let start = Point {

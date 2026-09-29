@@ -1403,7 +1403,9 @@ pub struct MdxJsxExpressionAttribute {
 
 /// Custom node, such as an alert that a transform makes from a block quote.
 ///
-/// `to_mdast` does not make custom nodes; transforms do.
+/// Syntax extensions make custom nodes with
+/// [`Construct::to_mdast`][crate::extension::Construct::to_mdast], and
+/// transforms can make them too.
 ///
 /// ```markdown
 /// > | > [!NOTE]

@@ -261,12 +261,14 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                                 next: None,
                                 content: Content::Text,
                             }),
+                            extension: 0,
                         },
                         Event {
                             name: Name::Data,
                             kind: Kind::Exit,
                             point: tokenizer.events[exit].point.clone(),
                             link: None,
+                            extension: 0,
                         },
                     ],
                 );

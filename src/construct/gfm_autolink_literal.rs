@@ -674,6 +674,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                     name: Name::Data,
                                     point: point.clone(),
                                     link: None,
+                                    extension: 0,
                                 });
                                 point = point
                                     .shift_to(tokenizer.parse_state.bytes, start_index + range.0);
@@ -682,6 +683,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                     name: Name::Data,
                                     point: point.clone(),
                                     link: None,
+                                    extension: 0,
                                 });
                             }
 
@@ -691,6 +693,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 name: range.2.clone(),
                                 point: point.clone(),
                                 link: None,
+                                extension: 0,
                             });
                             point =
                                 point.shift_to(tokenizer.parse_state.bytes, start_index + range.1);
@@ -699,6 +702,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 name: range.2.clone(),
                                 point: point.clone(),
                                 link: None,
+                                extension: 0,
                             });
                             min = range.1;
                         }
@@ -714,12 +718,14 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                         name: Name::Data,
                         point: point.clone(),
                         link: None,
+                        extension: 0,
                     });
                     replace.push(Event {
                         kind: Kind::Exit,
                         name: Name::Data,
                         point: event.point.clone(),
                         link: None,
+                        extension: 0,
                     });
                 }
 

@@ -1,6 +1,7 @@
 //! Turn events into a syntax tree.
 
 use crate::event::{Event, Kind, Name};
+use crate::extension::{collect_tokens, to_mdast as construct_to_mdast, TokenName};
 use crate::mdast::{
     AttributeContent, AttributeValue, AttributeValueExpression, Blockquote, Break, Code,
     Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference, Heading, Html, Image,
@@ -20,6 +21,7 @@ use crate::util::{
     normalize_identifier::normalize_identifier,
     slice::{Position as SlicePosition, Slice},
 };
+use crate::ParseOptions;
 use alloc::{
     boxed::Box,
     format,
@@ -103,13 +105,25 @@ struct CompileContext<'a> {
     // Intermediate results.
     /// Primary tree and buffers.
     trees: Vec<(Node, Vec<usize>, Vec<usize>)>,
+    /// Options, for constructs of syntax extensions.
+    options: &'a ParseOptions,
+    /// Names of the tokens of constructs, by interned index.
+    extension_names: &'a [TokenName],
+    /// Last event of the match of a construct being skipped: its node is
+    /// added when it starts.
+    extension_skip: Option<usize>,
     /// Current event index.
     index: usize,
 }
 
 impl<'a> CompileContext<'a> {
     /// Create a new compile context.
-    fn new(events: &'a [Event], bytes: &'a [u8]) -> CompileContext<'a> {
+    fn new(
+        events: &'a [Event],
+        bytes: &'a [u8],
+        options: &'a ParseOptions,
+        extension_names: &'a [TokenName],
+    ) -> CompileContext<'a> {
         let tree = Node::Root(Root {
             children: vec![],
             position: Some(Position {
@@ -138,6 +152,9 @@ impl<'a> CompileContext<'a> {
             media_reference_stack: vec![],
             raw_flow_fence_seen: false,
             trees: vec![(tree, vec![], vec![])],
+            options,
+            extension_names,
+            extension_skip: None,
             index: 0,
         }
     }
@@ -225,8 +242,13 @@ impl<'a> CompileContext<'a> {
 }
 
 /// Turn events and bytes into a syntax tree.
-pub fn compile(events: &[Event], bytes: &[u8]) -> Result<Node, message::Message> {
-    let mut context = CompileContext::new(events, bytes);
+pub fn compile(
+    events: &[Event],
+    bytes: &[u8],
+    options: &ParseOptions,
+    extension_names: &[TokenName],
+) -> Result<Node, message::Message> {
+    let mut context = CompileContext::new(events, bytes, options, extension_names);
 
     let mut index = 0;
     while index < events.len() {
@@ -260,6 +282,18 @@ fn handle(context: &mut CompileContext, index: usize) -> Result<(), message::Mes
 
 /// Handle [`Enter`][Kind::Enter].
 fn enter(context: &mut CompileContext) -> Result<(), message::Message> {
+    if context
+        .extension_skip
+        .map_or(false, |until| context.index <= until)
+    {
+        return Ok(());
+    }
+
+    if context.events[context.index].name == Name::Extension {
+        on_enter_extension(context);
+        return Ok(());
+    }
+
     match context.events[context.index].name {
         Name::AutolinkEmail
         | Name::AutolinkProtocol
@@ -338,6 +372,15 @@ fn enter(context: &mut CompileContext) -> Result<(), message::Message> {
 
 /// Handle [`Exit`][Kind::Exit].
 fn exit(context: &mut CompileContext) -> Result<(), message::Message> {
+    if let Some(until) = context.extension_skip {
+        if context.index <= until {
+            if context.index == until {
+                context.extension_skip = None;
+            }
+            return Ok(());
+        }
+    }
+
     match context.events[context.index].name {
         Name::Autolink
         | Name::BlockQuote
@@ -1712,6 +1755,37 @@ fn position_from_event(event: &Event) -> Position {
         start: end.clone(),
         end,
     }
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`Extension`][Name::Extension], first of a
+/// match.
+///
+/// Lets the construct make one node of the match, which is added as a child,
+/// and skips the other events of the match.
+fn on_enter_extension(context: &mut CompileContext) {
+    let start = context.index;
+    let index = context.extension_names[usize::from(context.events[start].extension)].0;
+    let found = collect_tokens(
+        context.events,
+        context.bytes,
+        context.extension_names,
+        start,
+    );
+    let mut node = construct_to_mdast(context.options, index, found.tokens);
+
+    if node.position().is_none() {
+        node.position_set(Some(Position {
+            start: context.events[start].point.to_unist(),
+            end: context.events[found.end].point.to_unist(),
+        }));
+    }
+
+    context
+        .tail_mut()
+        .children_mut()
+        .expect("expected a parent for a construct")
+        .push(node);
+    context.extension_skip = Some(found.end);
 }
 
 /// Resolve the current stack on the tree.

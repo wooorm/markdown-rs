@@ -502,6 +502,7 @@ fn exit_containers(tokenizer: &mut Tokenizer, phase: &Phase) -> Result<(), messa
                 name: name.clone(),
                 point: tokenizer.point.clone(),
                 link: None,
+                extension: 0,
             });
 
             let mut stack_index = tokenizer.stack.len();
