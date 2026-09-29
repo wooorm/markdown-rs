@@ -387,6 +387,32 @@ fn mdx_jsx_text_core() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_mdast("<a b='&amp' />.", &mdx.parse)?,
+        Node::Root(Root {
+            children: vec![Node::Paragraph(Paragraph {
+                children: vec![
+                    Node::MdxJsxTextElement(MdxJsxTextElement {
+                        name: Some("a".into()),
+                        attributes: vec![AttributeContent::Property(MdxJsxAttribute {
+                            name: "b".into(),
+                            value: Some(AttributeValue::Literal("&amp".into())),
+                        })],
+                        children: vec![],
+                        position: Some(Position::new(1, 1, 0, 1, 15, 14))
+                    }),
+                    Node::Text(Text {
+                        value: ".".into(),
+                        position: Some(Position::new(1, 15, 14, 1, 16, 15))
+                    })
+                ],
+                position: Some(Position::new(1, 1, 0, 1, 16, 15))
+            })],
+            position: Some(Position::new(1, 1, 0, 1, 16, 15))
+        }),
+        "should not support an unterminated character reference at the end of an attribute value"
+    );
+
+    assert_eq!(
         to_mdast("<a\u{3000}b \u{3000}c\u{3000} d\u{3000}/>.", &mdx.parse)?,
         Node::Root(Root {
             children: vec![Node::Paragraph(Paragraph {

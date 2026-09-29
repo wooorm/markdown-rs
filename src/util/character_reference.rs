@@ -193,7 +193,7 @@ pub fn parse(value: &str) -> String {
             let value_end = value_start + value_index;
 
             // Non empty and terminated.
-            if value_index > 0 && bytes[value_end] == b';' {
+            if value_index > 0 && value_end < len && bytes[value_end] == b';' {
                 if let Some(decoded) = decode(
                     str::from_utf8(&bytes[value_start..value_end]).unwrap(),
                     marker,
