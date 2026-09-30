@@ -478,6 +478,52 @@ pub enum Reach {
     /// byte after them does not match, so a match that ends before a byte
     /// counts it too.
     Bytes(usize),
+    /// A delimiter run in text, like `==` in `==a==`, with the sizes of a
+    /// run that can pair, with the same size on both sides.
+    ///
+    /// `step` is not used: where `previous` allows, a run of an ASCII
+    /// marker is a sequence, and two sequences of this construct pair
+    /// whole, like GFM strikethrough, with emphasis allowed around them,
+    /// like micromark’s `attentionMarkers`.
+    /// The attention resolver pairs them, so they are linear, as emphasis
+    /// is.
+    /// A pair is a [`RunToken::Run`] token, with [`RunToken::Sequence`]
+    /// tokens around a [`RunToken::Text`] content token, so the construct
+    /// has `RunToken` as its `Token`, and runs in [`Text`]; otherwise
+    /// parsing returns the error `attention-construct`.
+    Attention(&'static [usize]),
+}
+
+/// Tokens of a delimiter run, a construct whose reach is
+/// [`Reach::Attention`].
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum RunToken {
+    /// The pair, `attention`.
+    Run,
+    /// Each sequence of markers, `attentionSequence`.
+    Sequence,
+    /// The text between them, `attentionText`, parsed as text.
+    Text,
+}
+
+impl TokenType for RunToken {
+    const ALL: &'static [Self] = &[Self::Run, Self::Sequence, Self::Text];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Run => "attention",
+            Self::Sequence => "attentionSequence",
+            Self::Text => "attentionText",
+        }
+    }
+
+    fn content(self) -> Option<ContentType> {
+        match self {
+            Self::Text => Some(ContentType::Text),
+            _ => None,
+        }
+    }
 }
 
 /// A construct, such as a mention.
@@ -751,6 +797,9 @@ trait ErasedConstruct {
     fn reach(&self) -> Reach;
     fn previous(&self, previous: Option<char>) -> bool;
     fn token_count(&self) -> usize;
+    /// Whether the construct is a delimiter run whose tokens or place do not
+    /// fit one.
+    fn is_bad_run(&self) -> bool;
     /// Keep the state a container gave for its next line in `slot`, as
     /// container `id`, or as a new one; return its id.
     fn store_container(&self, slot: &mut Option<Box<dyn Any>>, id: Option<usize>) -> usize;
@@ -802,6 +851,12 @@ impl<C: Construct> ErasedConstruct for Wrap<C> {
         // A name can be interned as a token and, inside content, as a token
         // in content.
         C::Token::ALL.len() * 2
+    }
+
+    fn is_bad_run(&self) -> bool {
+        matches!(self.0.reach(), Reach::Attention(_))
+            && (C::Place::KIND != PlaceKind::Text
+                || core::any::TypeId::of::<C::Token>() != core::any::TypeId::of::<RunToken>())
     }
 
     fn store_container(&self, slot: &mut Option<Box<dyn Any>>, id: Option<usize>) -> usize {
@@ -1694,7 +1749,7 @@ fn at_boundary(tokenizer: &Tokenizer, place: PlaceKind, in_document: bool) -> bo
 }
 
 /// Number of a token name in this parse.
-fn intern(
+pub(crate) fn intern(
     tokenizer: &Tokenizer,
     construct: u8,
     token: u16,
@@ -1798,6 +1853,26 @@ fn open_content(tokenizer: &Tokenizer) -> Option<Content> {
     match &tokenizer.parse_state.extension_names.borrow()[usize::from(id)].3 {
         TokenKind::Content(content) => Some(content.clone()),
         _ => None,
+    }
+}
+
+/// Whether a construct in `options` is a delimiter run whose tokens or place
+/// do not fit one.
+pub(crate) fn bad_attention_construct(options: &ParseOptions) -> bool {
+    let text = options.text_constructs.iter().map(|c| &c.inner);
+    let flow = options.flow_constructs.iter().map(|c| &c.inner);
+    let containers = options.document_constructs.iter().map(|c| &c.inner);
+    text.chain(flow)
+        .chain(containers)
+        .any(|construct| construct.is_bad_run())
+}
+
+/// Sizes of the delimiter runs of the construct at `index`, empty if it is
+/// not one.
+pub(crate) fn attention_sizes(options: &ParseOptions, index: u8) -> &'static [usize] {
+    match erased(options, index).reach() {
+        Reach::Attention(sizes) => sizes,
+        _ => &[],
     }
 }
 
@@ -2031,7 +2106,7 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     let is_flow = place == PlaceKind::Flow;
 
     let within_reach = match construct.reach() {
-        Reach::Unbounded => true,
+        Reach::Unbounded | Reach::Attention(_) => true,
         // At the end, there is nothing to read.
         Reach::Bytes(bytes) => {
             tokenizer.current.is_none() || tokenizer.point.index - ext(tokenizer).start < bytes

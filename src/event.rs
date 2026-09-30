@@ -3610,6 +3610,8 @@ pub struct Event {
     /// Link to another event.
     pub link: Option<Link>,
     /// Interned name of the token of a construct of a syntax extension, for
-    /// [`Extension`][Name::Extension].
+    /// [`Extension`][Name::Extension]; for the enter of an
+    /// [`AttentionSequence`][Name::AttentionSequence] of a delimiter run, the
+    /// index of its construct plus one.
     pub extension: u16,
 }

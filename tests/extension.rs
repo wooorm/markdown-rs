@@ -1,7 +1,7 @@
 use markdown::{
     extension::{
-        construct, BoxedConstruct, Construct, Container, ContentType, Ctx, Flow, Reach, Step, Text,
-        Token, TokenType,
+        construct, BoxedConstruct, Construct, Container, ContentType, Ctx, Flow, Reach, RunToken,
+        Step, Text, Token, TokenType,
     },
     mdast::{Blockquote, Custom, Node, Paragraph, Root, Text as TextNode},
     to_html_with_options, to_mdast,
@@ -4722,5 +4722,401 @@ fn keeps_the_budget_of_a_continuation_after_an_outer_one() {
         outline_of(input, &nested(spend_continuation::<255>)),
         "container(container(paragraph),container(paragraph))",
         "should not give a continuation the bytes an earlier one reached"
+    );
+}
+
+/// `=` delimiter runs of the given sizes, such as `==a==`, as `mark` nodes
+/// with the names of their tokens as `tokens`.
+struct Mark {
+    markers: &'static [u8],
+    sizes: &'static [usize],
+    previous: fn(Option<char>) -> bool,
+}
+
+impl Construct for Mark {
+    type Place = Text;
+    type State = ();
+    type Token = RunToken;
+
+    fn markers(&self) -> &[u8] {
+        self.markers
+    }
+
+    fn start(&self) {}
+
+    fn reach(&self) -> Reach {
+        Reach::Attention(self.sizes)
+    }
+
+    fn previous(&self, previous: Option<char>) -> bool {
+        (self.previous)(previous)
+    }
+
+    fn step(&self, (): (), _: Ctx<'_, '_, Self>) -> Step<Self> {
+        unreachable!("expected a delimiter run not to step")
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, RunToken>>) -> Node {
+        let value = tokens[1].value.clone().into_owned();
+        let mut node = scripted_node(tokens);
+        if let Node::Custom(custom) = &mut node {
+            custom.name = "mark".into();
+            custom.value = Some(value);
+        }
+        node
+    }
+}
+
+/// A run construct with `markers`, `sizes`, and a `previous` check.
+fn run(
+    markers: &'static [u8],
+    sizes: &'static [usize],
+    previous: fn(Option<char>) -> bool,
+) -> BoxedConstruct<Text> {
+    construct(Mark {
+        markers,
+        sizes,
+        previous,
+    })
+}
+
+fn marks(sizes: &'static [usize]) -> ParseOptions {
+    ParseOptions {
+        text_constructs: vec![run(b"=", sizes, |_| true)],
+        ..ParseOptions::default()
+    }
+}
+
+/// Minimal HTML of paragraphs, emphasis, marks, and text.
+fn render_marks(node: &Node) -> String {
+    let inner = |children: &[Node]| children.iter().map(render_marks).collect::<String>();
+    match node {
+        Node::Root(root) => inner(&root.children),
+        Node::Blockquote(quote) => inner(&quote.children),
+        Node::Paragraph(paragraph) => format!("<p>{}</p>", inner(&paragraph.children)),
+        Node::Emphasis(emphasis) => format!("<em>{}</em>", inner(&emphasis.children)),
+        Node::Delete(delete) => format!("<del>{}</del>", inner(&delete.children)),
+        Node::Custom(custom) => format!("<mark>{}</mark>", inner(&custom.children)),
+        node => node.to_string(),
+    }
+}
+
+fn marked(input: &str, parse: &ParseOptions) -> String {
+    render_marks(&to_mdast(input, parse).unwrap())
+}
+
+#[test]
+fn pairs_delimiter_runs() {
+    let parse = marks(&[2]);
+
+    for (input, expected, message) in [
+        ("==a==", "<p><mark>a</mark></p>", "should pair runs"),
+        (
+            "==a *b*==",
+            "<p><mark>a <em>b</em></mark></p>",
+            "should parse text in them",
+        ),
+        (
+            "*==a==*",
+            "<p><em><mark>a</mark></em></p>",
+            "should allow emphasis around them",
+        ),
+        (
+            "==*a*==",
+            "<p><mark><em>a</em></mark></p>",
+            "should allow emphasis in them",
+        ),
+        (
+            "==a *b== c*",
+            "<p><mark>a *b</mark> c*</p>",
+            "should not misnest",
+        ),
+        (
+            "==a ==b== c==",
+            "<p><mark>a <mark>b</mark> c</mark></p>",
+            "should nest",
+        ),
+        (
+            "===a===",
+            "<p>===a===</p>",
+            "should not pair sizes it does not allow",
+        ),
+        (
+            "=a=",
+            "<p>=a=</p>",
+            "should not pair a size it does not allow",
+        ),
+        (
+            "==a===",
+            "<p>==a===</p>",
+            "should not pair runs of other sizes",
+        ),
+        (
+            "===a==",
+            "<p>===a==</p>",
+            "should not pair a shorter closing run",
+        ),
+        (
+            "a*==b==*c",
+            "<p>a<em><mark>b</mark></em>c</p>",
+            "should count as markers around emphasis",
+        ),
+        (
+            "a==*b*==c",
+            "<p>a==<em>b</em>==c</p>",
+            "should not see markers around itself, like `~`",
+        ),
+        (
+            "== a ==",
+            "<p>== a ==</p>",
+            "should not open before or close after whitespace",
+        ),
+        (
+            "a==b==c",
+            "<p>a<mark>b</mark>c</p>",
+            "should pair inside words, like `~`",
+        ),
+        (
+            "> ==a\n> b==",
+            "<p><mark>a\nb</mark></p>",
+            "should pair across lines",
+        ),
+    ] {
+        assert_eq!(marked(input, &parse), expected, "{}: {:?}", message, input);
+    }
+
+    assert_eq!(
+        marked("=a= ==b== ===c===", &marks(&[1, 3])),
+        "<p><mark>a</mark> ==b== <mark>c</mark></p>",
+        "should pair each size it allows"
+    );
+}
+
+#[test]
+fn gives_delimiter_runs_their_tokens() {
+    let tree = to_mdast("x ==*a*== y", &marks(&[2])).unwrap();
+    let node = custom(&phrasing(tree)[1]).clone();
+
+    assert_eq!(
+        (
+            node.value.as_deref(),
+            node.fields.get("tokens").map(String::as_str)
+        ),
+        (
+            Some("=="),
+            Some("attention,attentionSequence,attentionText,attentionSequence")
+        ),
+        "should give a run, its sequences, and its text"
+    );
+    assert_eq!(
+        node.position
+            .as_ref()
+            .map(|position| (position.start.offset, position.end.offset)),
+        Some((2, 9)),
+        "should span the run"
+    );
+    assert_eq!(
+        html("x ==*a*== y", marks(&[2])),
+        "<p>x ==<em>a</em>== y</p>",
+        "should write the sequences as text in HTML"
+    );
+}
+
+#[test]
+fn checks_the_character_before_a_delimiter_run() {
+    let parse = ParseOptions {
+        text_constructs: vec![run(b"=", &[2], |previous| previous != Some('a'))],
+        ..ParseOptions::default()
+    };
+
+    assert_eq!(marked("b==c== d", &parse), "<p>b<mark>c</mark> d</p>");
+    assert_eq!(marked("a==c== d", &parse), "<p>a==c== d</p>");
+}
+
+#[test]
+fn delimiter_runs_come_before_builtin_markers() {
+    let parse = ParseOptions {
+        constructs: Constructs::gfm(),
+        text_constructs: vec![run(b"~", &[3], |_| true)],
+        ..ParseOptions::gfm()
+    };
+
+    assert_eq!(
+        marked("x ~~~a~~~ ~~b~~", &parse),
+        "<p>x <mark>a</mark> ~~b~~</p>",
+        "should pair by the sizes of the construct, not strikethrough"
+    );
+    assert_eq!(
+        marked("x ~~~a~~~ ~~b~~", &ParseOptions::gfm()),
+        "<p>x ~~~a~~~ <del>b</del></p>",
+        "should otherwise be strikethrough"
+    );
+}
+
+#[test]
+fn leaves_attention_to_constructs_that_are_not_runs() {
+    let parse = ParseOptions {
+        text_constructs: vec![
+            construct(Scripted {
+                marker: b'*',
+                step: |_, t| t.nok(),
+            }),
+            run(b"=", &[2], |_| true),
+        ],
+        ..ParseOptions::default()
+    };
+
+    assert_eq!(
+        marked("*a* ==b==", &parse),
+        "<p><em>a</em> <mark>b</mark></p>"
+    );
+}
+
+#[test]
+fn delimiter_runs_are_ascii() {
+    for markers in [b"\xC2", b"\xA7"] {
+        let parse = ParseOptions {
+            text_constructs: vec![run(markers, &[1], |_| true)],
+            ..ParseOptions::default()
+        };
+        assert_eq!(
+            marked("\u{a7}a\u{a7}", &parse),
+            "<p>\u{a7}a\u{a7}</p>",
+            "should not start a run inside a character"
+        );
+    }
+}
+
+#[test]
+fn pairs_runs_of_the_same_construct() {
+    let gfm = ParseOptions {
+        text_constructs: vec![run(b"~", &[2], |previous| previous != Some('a'))],
+        ..ParseOptions::gfm()
+    };
+    assert_eq!(
+        marked("a~~ba~~ c", &gfm),
+        "<p>a<del>ba</del> c</p>",
+        "should leave what the construct does not take to the built-ins"
+    );
+    assert_eq!(
+        marked("a~~b~~ c", &gfm),
+        "<p>a~~b~~ c</p>",
+        "should not pair a run with a built-in sequence"
+    );
+    assert_eq!(marked("b~~c~~ d", &gfm), "<p>b<mark>c</mark> d</p>");
+
+    let shared = ParseOptions {
+        text_constructs: vec![
+            run(b"=", &[2], |previous| previous != Some('a')),
+            run(b"=", &[1], |_| true),
+        ],
+        ..ParseOptions::default()
+    };
+    assert_eq!(
+        marked("a=ba= c ==d==", &shared),
+        "<p>a<mark>ba</mark> c <mark>d</mark></p>",
+        "should pair runs of each construct at a marker"
+    );
+}
+
+#[test]
+fn delimiter_runs_flank_like_strikethrough() {
+    let parse = |markers: &'static [u8]| ParseOptions {
+        text_constructs: vec![run(markers, &[1], |_| true)],
+        ..ParseOptions::default()
+    };
+    assert_eq!(
+        marked("a*_b_*c", &parse(b"*")),
+        "<p>a*<em>b</em>*c</p>",
+        "should not see markers around a run at `*`"
+    );
+    assert_eq!(
+        marked("a_b_c", &parse(b"_")),
+        "<p>a<mark>b</mark>c</p>",
+        "should pair inside words at `_`"
+    );
+    assert_eq!(
+        marked("a *\nb*", &parse(b"=\n")),
+        "<p>a *\nb*</p>",
+        "should not take a line ending for a marker"
+    );
+}
+
+/// A delimiter run with its own tokens, which a run cannot have.
+struct RunWithOwnTokens;
+
+impl Construct for RunWithOwnTokens {
+    type Place = Text;
+    type State = ();
+    type Token = Tok;
+
+    fn markers(&self) -> &[u8] {
+        b"="
+    }
+
+    fn start(&self) {}
+
+    fn reach(&self) -> Reach {
+        Reach::Attention(&[2])
+    }
+
+    fn step(&self, (): (), t: Ctx<'_, '_, Self>) -> Step<Self> {
+        t.nok()
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, Tok>>) -> Node {
+        scripted_node(tokens)
+    }
+}
+
+/// A delimiter run in flow, which a run cannot be.
+struct RunInFlow;
+
+impl Construct for RunInFlow {
+    type Place = Flow;
+    type State = ();
+    type Token = RunToken;
+
+    fn markers(&self) -> &[u8] {
+        b"="
+    }
+
+    fn start(&self) {}
+
+    fn reach(&self) -> Reach {
+        Reach::Attention(&[2])
+    }
+
+    fn step(&self, (): (), t: Ctx<'_, '_, Self>) -> Step<Self> {
+        t.nok()
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, RunToken>>) -> Node {
+        scripted_node(tokens)
+    }
+}
+
+#[test]
+fn errors_for_delimiter_runs_without_run_tokens_or_outside_text() {
+    let message = "Unexpected delimiter run with other tokens than `RunToken` or outside text, expected `RunToken` in text (markdown-rs:attention-construct)";
+
+    let parse = ParseOptions {
+        text_constructs: vec![construct(RunWithOwnTokens)],
+        ..ParseOptions::default()
+    };
+    assert_eq!(
+        to_mdast("==a==", &parse).unwrap_err().to_string(),
+        message,
+        "should error for a run whose tokens are not `RunToken`"
+    );
+
+    let parse = ParseOptions {
+        flow_constructs: vec![construct(RunInFlow)],
+        ..ParseOptions::default()
+    };
+    assert_eq!(
+        to_mdast("==a==", &parse).unwrap_err().to_string(),
+        message,
+        "should error for a run outside text"
     );
 }

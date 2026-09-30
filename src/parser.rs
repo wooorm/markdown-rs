@@ -2,7 +2,7 @@
 
 use crate::construct::text::MARKERS as TEXT_MARKERS;
 use crate::event::{Content, Event, Point};
-use crate::extension::{text_markers, token_count, TokenName};
+use crate::extension::{bad_attention_construct, text_markers, token_count, TokenName};
 use crate::message;
 use crate::state::{Name as StateName, State};
 use crate::subtokenize::subtokenize;
@@ -55,6 +55,16 @@ pub fn parse<'a>(
             place: None,
             reason: format!("Unexpected {constructs} constructs, expected at most 255"),
             rule_id: Box::new("too-many-constructs".into()),
+            source: Box::new("markdown-rs".into()),
+        });
+    }
+
+    // A delimiter run has the tokens of one, in text.
+    if bad_attention_construct(options) {
+        return Err(message::Message {
+            place: None,
+            reason: "Unexpected delimiter run with other tokens than `RunToken` or outside text, expected `RunToken` in text".into(),
+            rule_id: Box::new("attention-construct".into()),
             source: Box::new("markdown-rs".into()),
         });
     }
