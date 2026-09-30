@@ -2,7 +2,12 @@
 
 use alloc::{boxed::Box, string::String, vec::Vec};
 use core::fmt;
-use markdown::{mdast, message::Message, to_mdast, ParseOptions};
+use markdown::{
+    extension::{construct, Construct, Container, Flow, Text},
+    mdast,
+    message::Message,
+    to_mdast, ParseOptions,
+};
 use mdast_util_to_hast::to_hast_with_options;
 
 /// A plugin: attaches parser config, transforms, and handlers to a processor.
@@ -49,6 +54,24 @@ impl Processor {
     pub fn plugin(mut self, plugin: impl Plugin) -> Self {
         plugin.attach(&mut self);
         self
+    }
+
+    /// Add a construct to text, tried at its markers before the built-in
+    /// ones, in the order added.
+    pub fn add_text_construct(&mut self, value: impl Construct<Place = Text>) {
+        self.parse.text_constructs.push(construct(value));
+    }
+
+    /// Add a construct to flow, tried at the start of a line before the
+    /// built-in ones, in the order added.
+    pub fn add_flow_construct(&mut self, value: impl Construct<Place = Flow>) {
+        self.parse.flow_constructs.push(construct(value));
+    }
+
+    /// Add a container, tried at the start of a line before the built-in
+    /// ones, such as block quotes, in the order added.
+    pub fn add_document_construct(&mut self, value: impl Construct<Place = Container>) {
+        self.parse.document_constructs.push(construct(value));
     }
 
     /// Add a transform that runs on mdast, in the order added.
