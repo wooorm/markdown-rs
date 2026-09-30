@@ -1,9 +1,9 @@
 use markdown::{
     extension::{
-        construct, BoxedConstruct, Construct, ContentType, Ctx, Flow, Reach, Step, Text, Token,
-        TokenType,
+        construct, BoxedConstruct, Construct, Container, ContentType, Ctx, Flow, Reach, Step, Text,
+        Token, TokenType,
     },
-    mdast::{Custom, Node, Paragraph, Root, Text as TextNode},
+    mdast::{Blockquote, Custom, Node, Paragraph, Root, Text as TextNode},
     to_html_with_options, to_mdast,
     unist::Position,
     CompileOptions, Constructs, Options, ParseOptions,
@@ -1220,6 +1220,15 @@ fn errors_with_more_than_255_constructs() {
     assert!(
         to_mdast("@a", &parse).is_err(),
         "should count text and flow constructs together"
+    );
+
+    let parse = ParseOptions {
+        document_constructs: vec![construct(Contained::new(line_block, Some(10)))],
+        ..options((0..255).map(|_| mention()).collect())
+    };
+    assert!(
+        to_mdast("@a", &parse).is_err(),
+        "should count containers too"
     );
 }
 
@@ -3645,5 +3654,1073 @@ fn takes_part_of_a_tab_in_a_line_prefix() {
         node.children[0].to_string(),
         "\ta\n\tb",
         "should leave the rest of the tab to the content"
+    );
+}
+
+/// Tokens of scripted containers.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ContTok {
+    LineBlock,
+    LineBlockPrefix,
+    LineBlockContent,
+    LineBlockInner,
+    LineBlockSecond,
+    Quote,
+    QuoteContent,
+    QuotePrefix,
+    Spaced,
+    SpacedContent,
+    Look,
+}
+
+impl TokenType for ContTok {
+    const ALL: &'static [Self] = &[
+        Self::LineBlock,
+        Self::LineBlockPrefix,
+        Self::LineBlockContent,
+        Self::LineBlockInner,
+        Self::LineBlockSecond,
+        Self::Quote,
+        Self::QuoteContent,
+        Self::QuotePrefix,
+        Self::Spaced,
+        Self::SpacedContent,
+        Self::Look,
+    ];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::LineBlock => "lineBlock",
+            Self::LineBlockPrefix => "lineBlockPrefix",
+            Self::LineBlockContent => "lineBlockContent",
+            Self::LineBlockInner => "lineBlockInner",
+            Self::LineBlockSecond => "lineBlockSecond",
+            Self::Quote => "quote",
+            Self::QuoteContent => "quoteContent",
+            Self::QuotePrefix => "quotePrefix",
+            Self::Spaced => "spaced",
+            Self::SpacedContent => "spacedContent",
+            Self::Look => "look",
+        }
+    }
+
+    fn content(self) -> Option<ContentType> {
+        match self {
+            Self::LineBlockContent | Self::QuoteContent | Self::SpacedContent => {
+                Some(ContentType::Document)
+            }
+            _ => None,
+        }
+    }
+}
+
+/// The state a scripted container gives for its next line, which it turns
+/// into its continuation, if any.
+const NEXT_LINE: u16 = 1000;
+
+/// A state of a scripted container: a number, and two counters that carry
+/// across lines.
+type ContState = (u16, usize, usize);
+
+/// A step of a scripted container.
+type ContFn = fn(ContState, Ctx<'_, '_, Contained>) -> Step<Contained>;
+
+/// A container, scripted by a function, with `tokens[0].value` as its value
+/// and the names of its tokens as `tokens`.
+struct Contained {
+    markers: &'static [u8],
+    step: ContFn,
+    /// The state that checks a later line, which takes the counters given
+    /// at `NEXT_LINE`; `None` ends the container there.
+    continuation: Option<u16>,
+    allow: fn(Option<char>) -> bool,
+}
+
+impl Contained {
+    fn new(step: ContFn, continuation: Option<u16>) -> Self {
+        Contained {
+            markers: b"|",
+            step,
+            continuation,
+            allow: |_| true,
+        }
+    }
+}
+
+impl Construct for Contained {
+    type Place = Container;
+    type State = ContState;
+    type Token = ContTok;
+
+    fn markers(&self) -> &[u8] {
+        self.markers
+    }
+
+    fn start(&self) -> ContState {
+        (0, 0, 0)
+    }
+
+    fn previous(&self, previous: Option<char>) -> bool {
+        (self.allow)(previous)
+    }
+
+    fn step(&self, state: ContState, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state.0, self.continuation) {
+            (NEXT_LINE, Some(continuation)) => (self.step)((continuation, state.1, state.2), t),
+            (NEXT_LINE, None) => t.nok(),
+            _ => (self.step)(state, t),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, ContTok>>) -> Node {
+        let mut node = scripted_node(tokens);
+        if let Node::Custom(custom) = &mut node {
+            custom.name = "container".into();
+        }
+        node
+    }
+}
+
+fn s(state: u16) -> ContState {
+    (state, 0, 0)
+}
+
+/// `|` and an optional space or column of a tab as the prefix of the lines
+/// of a container, checked from state 10 on later lines.
+fn line_block(state: ContState, t: Ctx<'_, '_, Contained>) -> Step<Contained> {
+    let (number, a, b) = state;
+    match (number, t.current()) {
+        (0, Some(b'|')) => t
+            .enter(ContTok::LineBlock)
+            .enter(ContTok::LineBlockPrefix)
+            .consume()
+            .next(s(1)),
+        (1 | 11, Some(b'\t' | b' ')) => t.consume().exit().next((number + 1, a, b)),
+        (1 | 11, _) => t.exit().retry((number + 1, a, b)),
+        (2, _) => t.enter(ContTok::LineBlockContent).container(s(NEXT_LINE)),
+        (10, Some(b'|')) => t.enter(ContTok::LineBlockPrefix).consume().next((11, a, b)),
+        (12, _) => t.container((NEXT_LINE, a, 0)),
+        _ => t.nok(),
+    }
+}
+
+fn contained(step: ContFn, continuation: Option<u16>) -> ParseOptions {
+    ParseOptions {
+        document_constructs: vec![construct(Contained::new(step, continuation))],
+        ..ParseOptions::default()
+    }
+}
+
+fn line_blocks() -> ParseOptions {
+    contained(line_block, Some(10))
+}
+
+/// Children of the root, with each container as its name and its children.
+fn outline(node: &Node) -> String {
+    node.children()
+        .unwrap()
+        .iter()
+        .map(|child| match child {
+            Node::Custom(_) => format!("container({})", outline(child)),
+            Node::Paragraph(_) => "paragraph".into(),
+            Node::Heading(_) => "heading".into(),
+            Node::List(list) => format!("list{}", list.children.len()),
+            Node::Code(_) => "code".into(),
+            Node::Blockquote(_) => format!("blockquote({})", outline(child)),
+            node => format!("{:?}", node),
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn outline_of(input: &str, parse: &ParseOptions) -> String {
+    outline(&to_mdast(input, parse).unwrap())
+}
+
+#[test]
+fn containers_hold_flow() {
+    let parse = line_blocks();
+
+    for (input, expected, message) in [
+        ("| a", "container(paragraph)", "should start a container"),
+        (
+            "| a\n| b",
+            "container(paragraph)",
+            "should keep one paragraph across prefixes",
+        ),
+        (
+            "| a\n| ===",
+            "container(heading)",
+            "should find a setext heading across prefixes",
+        ),
+        (
+            "| - a\n| - b",
+            "container(list2)",
+            "should keep one list across prefixes",
+        ),
+        (
+            "| a\nb",
+            "container(paragraph)",
+            "should continue a paragraph on a lazy line",
+        ),
+        ("| | a", "container(container(paragraph))", "should nest"),
+        (
+            "| a\n\nb",
+            "container(paragraph),paragraph",
+            "should end at a line without its prefix",
+        ),
+        (
+            "|\ta",
+            "container(paragraph)",
+            "should take a column of a tab",
+        ),
+        (
+            "|\t\ta",
+            "container(code)",
+            "should leave the rest of a tab, like `>`",
+        ),
+        (
+            "> | a\n> | b",
+            "blockquote(container(paragraph))",
+            "should be in block quotes",
+        ),
+        (
+            "| > a\n| > b",
+            "container(blockquote(paragraph))",
+            "should hold block quotes",
+        ),
+        ("- | a\n  | b", "list1", "should be in list items"),
+        (
+            "   | a",
+            "container(paragraph)",
+            "should start after indentation",
+        ),
+        ("    | a", "code", "should not start in indented code"),
+        (
+            "a\n| b",
+            "paragraph,container(paragraph)",
+            "should interrupt a paragraph",
+        ),
+    ] {
+        assert_eq!(
+            outline_of(input, &parse),
+            expected,
+            "{}: {:?}",
+            message,
+            input
+        );
+    }
+
+    let tree = to_mdast("| a\n| b", &parse).unwrap();
+    let node = custom(&tree.children().unwrap()[0]);
+    assert_eq!(
+        (
+            node.value.as_deref(),
+            node.fields.get("tokens").map(String::as_str)
+        ),
+        (
+            Some("| "),
+            Some("lineBlock,lineBlockPrefix,lineBlockContent")
+        ),
+        "should give the tokens of its first line, not the prefixes of later ones"
+    );
+    assert_eq!(
+        node.position
+            .as_ref()
+            .map(|position| (position.start.offset, position.end.offset)),
+        Some((0, 7)),
+        "should span its lines"
+    );
+}
+
+#[test]
+fn separates_lists_across_an_inner_container() {
+    assert_eq!(
+        outline_of("| - a\n| | x\n| - b", &line_blocks()),
+        "container(list1,container(paragraph),list1)",
+        "should not skip an inner container when looking past prefixes"
+    );
+    assert_eq!(
+        outline_of("> - a\n> > x\n> - b", &ParseOptions::default()),
+        "blockquote(list1,blockquote(paragraph),list1)",
+        "should match block quotes"
+    );
+}
+
+#[test]
+fn keeps_list_items_tight_in_containers() {
+    assert!(
+        html("| - a\n|", line_blocks()).contains("<li>a</li>"),
+        "should see past a prefix before the end of a list item"
+    );
+}
+
+#[test]
+fn writes_containers_as_html() {
+    assert_eq!(
+        html("| *a*\n| b", line_blocks()),
+        "| \n<p><em>a</em>\nb</p>",
+        "should write the source of its first line and render its content"
+    );
+}
+
+#[test]
+fn leaves_container_prefixes_out_of_values() {
+    let parse = ParseOptions {
+        text_constructs: vec![construct(Scripted {
+            marker: b'{',
+            step: braces,
+        })],
+        ..line_blocks()
+    };
+    let tree = to_mdast("| {{a\n| b}}", &parse).unwrap();
+
+    assert_eq!(
+        find_scripted(&tree).and_then(|node| node.attributes.get("bracesData").cloned()),
+        Some("a\nb".into()),
+        "should leave out the prefix of a container, like `> `"
+    );
+}
+
+#[test]
+fn ends_a_container_without_a_continuation() {
+    let parse = contained(line_block, None);
+    assert_eq!(
+        outline_of("| a\n| b", &parse),
+        "container(paragraph),container(paragraph)",
+        "should end at the next line"
+    );
+    assert_eq!(
+        outline_of("| a\nb", &parse),
+        "container(paragraph)",
+        "should still continue a paragraph on a lazy line"
+    );
+}
+
+#[test]
+fn tries_the_next_container_after_no_match() {
+    let parse = ParseOptions {
+        document_constructs: vec![
+            construct(Contained::new(|_, t| t.nok(), None)),
+            construct(Contained::new(line_block, Some(10))),
+        ],
+        ..ParseOptions::default()
+    };
+    assert_eq!(outline_of("| a\n| b", &parse), "container(paragraph)");
+}
+
+#[test]
+fn runs_before_builtin_containers() {
+    /// `>` as the prefix of the lines of a container.
+    fn quote(state: ContState, t: Ctx<'_, '_, Contained>) -> Step<Contained> {
+        match (state.0, t.current()) {
+            (0, Some(b'>')) => t.enter(ContTok::Quote).consume().next(s(1)),
+            (1, _) => t.enter(ContTok::QuoteContent).container(s(NEXT_LINE)),
+            (10, Some(b'>')) => t.enter(ContTok::QuotePrefix).consume().exit().next(s(11)),
+            (11, _) => t.container(s(NEXT_LINE)),
+            _ => t.nok(),
+        }
+    }
+
+    let parse = ParseOptions {
+        document_constructs: vec![construct(Contained {
+            markers: b">",
+            ..Contained::new(quote, Some(10))
+        })],
+        ..ParseOptions::default()
+    };
+    assert_eq!(outline_of(">a\n>b", &parse), "container(paragraph)");
+}
+
+#[test]
+fn parses_flow_like_a_block_quote() {
+    let parse = line_blocks();
+
+    for quote in [
+        "> # a\n> b\n> c",
+        "># a\n>b\n> c",
+        "> a\n> - b\n>   c\n>\n> d",
+        "> a\nb\n> c",
+        "> ```\n> a\n\nb",
+        ">     a\n>     b",
+        ">\t\ta",
+        "> - a\n>\n>   b",
+        "> 1. a\n>\n> 2. b",
+        "> [a]: b\n>\n> [a]",
+        "> a\n> ***\n> b",
+        "> <div>\n> a\n\nb",
+        ">\n> a\n>",
+    ] {
+        // Markers at the start of lines.
+        let line_block = quote
+            .split('\n')
+            .map(|line| {
+                let markers = line.len() - line.trim_start_matches('>').len();
+                format!("{}{}", "|".repeat(markers), &line[markers..])
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let quoted = to_mdast(quote, &ParseOptions::default()).unwrap();
+        let contained = to_mdast(&line_block, &parse).unwrap();
+        let first = |tree: &Node| tree.children().unwrap()[0].children().unwrap().to_vec();
+        assert_eq!(
+            first(&contained),
+            first(&quoted),
+            "should parse the content of {:?} like a block quote",
+            line_block
+        );
+    }
+}
+
+#[test]
+fn broken_containers_leave_text() {
+    let cases: [(&str, ContFn, &str); 6] = [
+        (
+            "consume-in-container-content",
+            |state, t| match state.0 {
+                2 => t
+                    .enter(ContTok::LineBlockContent)
+                    .consume()
+                    .container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a",
+        ),
+        (
+            "container-tokens",
+            |state, t| match (state.0, t.current()) {
+                (1, Some(b' ')) => t
+                    .consume()
+                    .enter(ContTok::LineBlockContent)
+                    .container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a",
+        ),
+        (
+            "line-ending-in-container",
+            |state, t| match (state.0, t.current()) {
+                (1, Some(b'\n')) => t.consume().exit().next(s(2)),
+                _ => line_block(state, t),
+            },
+            "|\na",
+        ),
+        (
+            "container-tokens",
+            |state, t| match state.0 {
+                2 => t.container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a",
+        ),
+        (
+            "container-tokens",
+            |state, t| match state.0 {
+                2 => t
+                    .enter(ContTok::LineBlockInner)
+                    .consume()
+                    .container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a",
+        ),
+        (
+            "container-tokens",
+            |state, t| match state.0 {
+                2 => t
+                    .enter(ContTok::LineBlockContent)
+                    .enter(ContTok::LineBlockInner)
+                    .container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a",
+        ),
+    ];
+
+    for (rule, step, input) in cases {
+        let parse = contained(step, Some(10));
+        if let Some(outline) = breaking(rule, || outline_of(input, &parse)) {
+            assert_eq!(
+                outline,
+                outline_of(input, &ParseOptions::default()),
+                "should not match a container that breaks `{}`",
+                rule
+            );
+        }
+    }
+}
+
+#[test]
+fn ok_is_not_how_a_container_ends() {
+    let parse = contained(
+        |state, t| match state.0 {
+            2 => t.enter(ContTok::LineBlockContent).ok(),
+            _ => line_block(state, t),
+        },
+        Some(10),
+    );
+    if let Some(outline) = breaking("ok-in-container", || outline_of("| a", &parse)) {
+        assert_eq!(
+            outline, "paragraph",
+            "should not match a container that ends in `ok`"
+        );
+    }
+
+    let parse = contained(
+        |state, t| match state.0 {
+            2 => t
+                .enter(ContTok::LineBlockContent)
+                .attempt(s(20), s(3), s(3)),
+            20 => t.container(s(NEXT_LINE)),
+            3 => t.container(s(NEXT_LINE)),
+            _ => line_block(state, t),
+        },
+        Some(10),
+    );
+    if let Some(outline) = breaking("container-in-attempt", || outline_of("| a", &parse)) {
+        assert_eq!(
+            outline, "container(paragraph)",
+            "should fail an attempt that ends in `container`, and continue at `nok`"
+        );
+    }
+}
+
+/// A container that enters text content.
+struct TextInContainer;
+
+impl Construct for TextInContainer {
+    type Place = Container;
+    type State = u16;
+    type Token = Tok;
+
+    fn markers(&self) -> &[u8] {
+        b"|"
+    }
+
+    fn start(&self) -> u16 {
+        0
+    }
+
+    fn step(&self, _: u16, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        t.enter(Tok::A).consume().enter(Tok::BText).container(1)
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, Tok>>) -> Node {
+        scripted_node(tokens)
+    }
+}
+
+#[test]
+fn text_content_left_open_breaks_a_container() {
+    let parse = ParseOptions {
+        document_constructs: vec![construct(TextInContainer)],
+        ..ParseOptions::default()
+    };
+
+    if let Some(outline) = breaking("container-tokens", || outline_of("| a", &parse)) {
+        assert_eq!(
+            outline, "paragraph",
+            "should not match a container that ends its first line in text content"
+        );
+    }
+}
+
+/// Tokens of a container with a title.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TitleTok {
+    Block,
+    Prefix,
+    Title,
+    Body,
+}
+
+impl TokenType for TitleTok {
+    const ALL: &'static [Self] = &[Self::Block, Self::Prefix, Self::Title, Self::Body];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Block => "block",
+            Self::Prefix => "blockPrefix",
+            Self::Title => "blockTitle",
+            Self::Body => "blockBody",
+        }
+    }
+
+    fn content(self) -> Option<ContentType> {
+        match self {
+            Self::Title => Some(ContentType::Text),
+            Self::Body => Some(ContentType::Document),
+            _ => None,
+        }
+    }
+}
+
+/// `|`, the rest of its first line as a title, and a body of lines that
+/// start with `|`; with `title_later`, a later line enters text content.
+struct Titled {
+    title_later: bool,
+}
+
+impl Construct for Titled {
+    type Place = Container;
+    type State = u8;
+    type Token = TitleTok;
+
+    fn markers(&self) -> &[u8] {
+        b"|"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'|')) => t
+                .enter(TitleTok::Block)
+                .enter(TitleTok::Prefix)
+                .consume()
+                .exit()
+                .next(1),
+            (1, Some(byte)) if byte != b'\n' => t.enter(TitleTok::Title).consume().next(2),
+            (2, Some(byte)) if byte != b'\n' => t.consume().next(2),
+            (2, _) => t.exit().retry(3),
+            (1 | 3, _) => t.enter(TitleTok::Body).container(10),
+            (10, Some(b'|')) if self.title_later => t.enter(TitleTok::Title).consume().next(11),
+            (10, Some(b'|')) => t.enter(TitleTok::Prefix).consume().exit().next(12),
+            (11, _) => t.exit().container(10),
+            (12, _) => t.container(10),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, TitleTok>>) -> Node {
+        let mut node = scripted_node(tokens);
+        if let Node::Custom(custom) = &mut node {
+            custom.name = "titled".into();
+        }
+        node
+    }
+}
+
+#[test]
+fn takes_text_content_on_the_first_line_of_a_container() {
+    let parse = ParseOptions {
+        document_constructs: vec![construct(Titled { title_later: false })],
+        ..ParseOptions::default()
+    };
+    let tree = to_mdast("|*a* b\n|c\nd", &parse).unwrap();
+    let node = match &tree.children().unwrap()[0] {
+        Node::Custom(node) => node,
+        node => panic!("expected a container, got {:?}", node),
+    };
+    assert!(
+        matches!(
+            &node.children[..],
+            [Node::Emphasis(_), Node::Text(_), Node::Paragraph(_)]
+        ),
+        "should parse the title as text, and the body as a document, got {:?}",
+        node.children
+    );
+    assert_eq!(
+        node.children[2].to_string(),
+        "c\nd",
+        "should keep a lazy line in the body"
+    );
+    let outline = outline_of("> |a\n> |b", &parse);
+    assert!(
+        outline.starts_with("blockquote(container(Text { value: \"a\"")
+            && outline.ends_with("paragraph))"),
+        "should take a title inside a block quote, got {:?}",
+        outline
+    );
+
+    let later = ParseOptions {
+        document_constructs: vec![construct(Titled { title_later: true })],
+        ..ParseOptions::default()
+    };
+    if let Some(outline) = breaking("text-content-in-container", || outline_of("|a\n|b", &later)) {
+        // The later line starts a container of its own.
+        assert_eq!(
+            outline.matches("container(").count(),
+            2,
+            "should end a container at a later line that enters text content, got {:?}",
+            outline
+        );
+    }
+}
+
+#[test]
+fn broken_continuations_end_containers() {
+    let cases: [(&str, ContFn, &str); 4] = [
+        (
+            "container-tokens",
+            |state, t| match state.0 {
+                11 => t.container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a\n| b",
+        ),
+        (
+            "line-ending-in-container",
+            |state, t| match (state.0, t.current()) {
+                (10, Some(b'\n')) => t
+                    .enter(ContTok::LineBlockPrefix)
+                    .consume()
+                    .exit()
+                    .container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a\n\nb",
+        ),
+        (
+            "content-in-content",
+            |state, t| match state.0 {
+                12 => t.enter(ContTok::LineBlockContent).container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a\n| b",
+        ),
+        (
+            "token-after-match",
+            |state, t| match state.0 {
+                12 => t
+                    .enter(ContTok::LineBlockSecond)
+                    .consume()
+                    .exit()
+                    .container(s(NEXT_LINE)),
+                _ => line_block(state, t),
+            },
+            "| a\n| b",
+        ),
+    ];
+
+    for (rule, step, input) in cases {
+        let parse = contained(step, Some(10));
+        if let Some(outline) = breaking(rule, || outline_of(input, &parse)) {
+            assert_eq!(
+                outline,
+                outline_of(input, &contained(line_block, None)),
+                "should end a container whose continuation breaks `{}`",
+                rule
+            );
+        }
+    }
+
+    // The line ending check depends on the container continuing otherwise.
+    assert_eq!(
+        outline_of(
+            "| a\n\nb",
+            &contained(
+                |state, t| match state.0 {
+                    20 => t.container(s(NEXT_LINE)),
+                    _ => line_block(state, t),
+                },
+                Some(20)
+            )
+        ),
+        "container(paragraph,paragraph)",
+        "should continue with a continuation that takes no bytes"
+    );
+}
+
+#[test]
+fn keeps_a_state_for_a_container() {
+    // Lines of at most 3, from state 20: the first counter, which the state
+    // for each next line carries, counts the lines.
+    let parse = contained(
+        |state, t| match state {
+            (20, lines, _) if lines < 2 => t.retry((10, lines + 1, 0)),
+            (20, ..) => t.nok(),
+            _ => line_block(state, t),
+        },
+        Some(20),
+    );
+
+    assert_eq!(
+        outline_of("| a\n| b\n| c\n| d", &parse),
+        "container(paragraph),container(paragraph)",
+        "should keep the state a container gives for its next line"
+    );
+}
+
+#[test]
+fn containers_see_their_indent_on_their_first_line() {
+    let first = contained(
+        |state, t| match state.0 {
+            0 if t.indent() != 2 => t.nok(),
+            _ => line_block(state, t),
+        },
+        Some(10),
+    );
+    assert_eq!(outline_of("  | a", &first), "container(paragraph)");
+    assert_eq!(outline_of("| a", &first), "paragraph");
+
+    let later = contained(
+        |state, t| match state.0 {
+            10 if t.indent() != 0 => t.nok(),
+            _ => line_block(state, t),
+        },
+        Some(10),
+    );
+    assert_eq!(
+        outline_of("  | a\n| b", &later),
+        "container(paragraph)",
+        "should see `0` on later lines"
+    );
+}
+
+#[test]
+fn spaces_and_tabs_are_never_container_markers() {
+    /// A space as the prefix of a container.
+    fn spaced(state: ContState, t: Ctx<'_, '_, Contained>) -> Step<Contained> {
+        match (state.0, t.current()) {
+            (0, Some(b' ' | b'\t')) => t.enter(ContTok::Spaced).consume().next(s(1)),
+            (1, _) => t.enter(ContTok::SpacedContent).container(s(NEXT_LINE)),
+            _ => t.nok(),
+        }
+    }
+
+    let parse = ParseOptions {
+        document_constructs: vec![construct(Contained {
+            markers: b" \t",
+            ..Contained::new(spaced, None)
+        })],
+        ..ParseOptions::default()
+    };
+    assert_eq!(outline_of("    a", &parse), "code");
+    assert_eq!(outline_of("\ta", &parse), "code");
+}
+
+/// From state 20, `N` retries, counted in the second counter, then the
+/// prefix of a line block.
+fn spend_continuation<const N: usize>(
+    state: ContState,
+    t: Ctx<'_, '_, Contained>,
+) -> Step<Contained> {
+    match state {
+        (20, a, retries) if retries < N => t.retry((20, a, retries + 1)),
+        (20, a, _) => t.retry((10, a, 0)),
+        _ => line_block(state, t),
+    }
+}
+
+#[test]
+fn limits_steps_of_a_continuation() {
+    // Retries at its first byte: with the step that consumes `|`, 254 fit
+    // in the 256 steps one byte allows.
+    let lines = |step: ContFn| outline_of("| a\n| b", &contained(step, Some(20)));
+
+    assert_eq!(lines(spend_continuation::<254>), "container(paragraph)");
+    assert_eq!(
+        lines(spend_continuation::<255>),
+        "container(paragraph),container(paragraph)",
+        "should count steps from the start of the continuation"
+    );
+}
+
+#[test]
+fn containers_see_a_line_ending_before_them() {
+    let after = |allow: fn(Option<char>) -> bool| ParseOptions {
+        document_constructs: vec![construct(Contained {
+            allow,
+            ..Contained::new(line_block, Some(10))
+        })],
+        ..ParseOptions::default()
+    };
+    let line_ending = after(|previous| previous == Some('\n'));
+    let start = after(|previous| previous.is_none());
+
+    for (input, expected) in [
+        ("| a", false),
+        ("x\n\n| a", true),
+        ("x\n\n  | a", true),
+        ("> x\n> | a", true),
+        ("- x\n- | a", true),
+    ] {
+        assert_eq!(
+            has_custom(&to_mdast(input, &line_ending).unwrap()),
+            expected,
+            "should see a line ending before a line, after indentation and prefixes, in {:?}",
+            input
+        );
+    }
+
+    for (input, expected) in [
+        ("| a", true),
+        ("  | a", true),
+        ("> | a", true),
+        ("x\n\n| a", false),
+    ] {
+        assert_eq!(
+            has_custom(&to_mdast(input, &start).unwrap()),
+            expected,
+            "should see `None` before the first line in {:?}",
+            input
+        );
+    }
+}
+
+#[test]
+fn nests_containers_in_the_deepest_bodies() {
+    let parse = ParseOptions {
+        flow_constructs: vec![construct(ScriptedDoc {
+            marker: b'{',
+            step: braced,
+        })],
+        ..line_blocks()
+    };
+    let mut input = String::new();
+    for level in 0..32 {
+        input.push_str(&format!("{}{{\n", "  ".repeat(level)));
+    }
+    input.push_str(&format!("{}| a\n", "  ".repeat(32)));
+    for level in (0..32).rev() {
+        input.push_str(&format!("{}}}\n", "  ".repeat(level)));
+    }
+    let tree = to_mdast(&input, &parse).unwrap();
+    let mut node = &tree;
+    while let Some(child) = node.children().and_then(|children| children.first()) {
+        node = child;
+        if matches!(node, Node::Custom(custom) if custom.name == "container") {
+            break;
+        }
+    }
+    assert!(
+        matches!(node, Node::Custom(custom) if custom.name == "container"),
+        "should not count containers toward the depth of content"
+    );
+}
+
+/// Turn containers into block quotes, to compare trees.
+fn as_block_quotes(node: &mut Node) {
+    if let Node::Custom(custom) = node {
+        *node = Node::Blockquote(Blockquote {
+            children: std::mem::take(&mut custom.children),
+            position: custom.position.take(),
+        });
+    }
+    if let Some(children) = node.children_mut() {
+        children.iter_mut().for_each(as_block_quotes);
+    }
+}
+
+/// Like [`line_block`], with up to 3 columns of indentation before `|` on a
+/// later line, as a block quote takes, counted in `state.1`.
+fn indented_line_block(state: ContState, t: Ctx<'_, '_, Contained>) -> Step<Contained> {
+    let (number, columns, b) = state;
+    match (number, t.current()) {
+        // A tab is `\t` at its first column and a space after.
+        (10, Some(b'\t' | b' ')) => t.enter(ContTok::LineBlockPrefix).consume().next((20, 1, b)),
+        (20, Some(b'\t' | b' ')) if columns < 3 => t.consume().next((20, columns + 1, b)),
+        (20, Some(b'|')) => t.consume().next((11, 0, b)),
+        (20, _) => t.nok(),
+        _ => line_block(state, t),
+    }
+}
+
+#[test]
+fn takes_indentation_on_later_lines_like_a_block_quote() {
+    let parse = contained(indented_line_block, Some(10));
+
+    for quote in [
+        "> a\n   > b",
+        "> a\n    > b",
+        "> a\n\t> b",
+        "> a\n \t> b",
+        "> >\n> \t> a",
+        "> >\n>  \t> a",
+        "> >\n>   \t> a",
+        "> >\n> \t > a",
+        "> >\n>\t\t> a",
+        "> >\n>\t \t> a",
+        "> - a\n>  \t> b",
+    ] {
+        let quoted = to_mdast(quote, &ParseOptions::default()).unwrap();
+        let mut contained = to_mdast(&quote.replace('>', "|"), &parse).unwrap();
+        as_block_quotes(&mut contained);
+        // A marker that does not continue is text: `|` where `>` would be.
+        assert_eq!(
+            format!("{:?}", contained).replace('|', ">"),
+            format!("{:?}", quoted),
+            "should take indentation on later lines of {:?} like a block quote",
+            quote
+        );
+    }
+}
+
+#[test]
+fn nests_flow_like_a_block_quote() {
+    let parse = line_blocks();
+
+    for quote in [
+        "* >\n* a",
+        "- >\n\n- a",
+        "1. >\n2. a",
+        "- > a\n  > b\n- c",
+        "- a\n\n  > b\n- c",
+        "> - >\n>   a",
+        "> > a\n> b",
+        "- > - a\n  >\n  > - b",
+        "* > a\n  >\n* b",
+        "- >\n  >\n- b",
+        ">>- a\n>>\n>>-",
+        "* > > a\n  > >\n* b",
+    ] {
+        let quoted = to_mdast(quote, &ParseOptions::default()).unwrap();
+        let mut contained = to_mdast(&quote.replace('>', "|"), &parse).unwrap();
+        as_block_quotes(&mut contained);
+        assert_eq!(
+            contained, quoted,
+            "should parse {:?} like a block quote",
+            quote
+        );
+    }
+}
+
+#[test]
+fn keeps_the_budget_of_a_continuation_after_an_outer_one() {
+    /// `&` as the prefix of the lines of a container, whose continuation
+    /// first tries a token to the end of the line and fails it.
+    fn looking(state: ContState, t: Ctx<'_, '_, Contained>) -> Step<Contained> {
+        match (state.0, t.current()) {
+            (0 | 10, Some(b'&')) => {
+                let t = if state.0 == 0 {
+                    t.enter(ContTok::LineBlock)
+                } else {
+                    t
+                };
+                t.enter(ContTok::LineBlockPrefix)
+                    .consume()
+                    .next(s(state.0 + 1))
+            }
+            (20, _) => t.attempt(s(30), s(10), s(10)),
+            (30, _) => t.enter(ContTok::Look).retry(s(31)),
+            (31, Some(byte)) if byte != b'\n' => t.consume().next(s(31)),
+            (0 | 10 | 31, _) => t.nok(),
+            _ => line_block(state, t),
+        }
+    }
+
+    let nested = |step: ContFn| ParseOptions {
+        document_constructs: vec![
+            construct(Contained {
+                markers: b"&",
+                ..Contained::new(looking, Some(20))
+            }),
+            construct(Contained::new(step, Some(20))),
+        ],
+        ..ParseOptions::default()
+    };
+    let input = "& | a\n& | b";
+
+    assert_eq!(
+        outline_of(input, &nested(spend_continuation::<254>)),
+        "container(container(paragraph))"
+    );
+    assert_eq!(
+        outline_of(input, &nested(spend_continuation::<255>)),
+        "container(container(paragraph),container(paragraph))",
+        "should not give a continuation the bytes an earlier one reached"
     );
 }

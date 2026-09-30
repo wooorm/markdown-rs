@@ -47,7 +47,9 @@ pub fn parse<'a>(
     let bytes = value.as_bytes();
 
     // Constructs are numbered by a `u8`.
-    let constructs = options.text_constructs.len() + options.flow_constructs.len();
+    let constructs = options.text_constructs.len()
+        + options.flow_constructs.len()
+        + options.document_constructs.len();
     if constructs > usize::from(u8::MAX) {
         return Err(message::Message {
             place: None,

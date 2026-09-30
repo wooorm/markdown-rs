@@ -120,6 +120,7 @@ pub enum Name {
     DocumentContainerExistingBefore,
     DocumentContainerExistingAfter,
     DocumentContainerNewBefore,
+    DocumentContainerNewBeforeConstructNext,
     DocumentContainerNewBeforeNotBlockQuote,
     DocumentContainerNewBeforeNotList,
     DocumentContainerNewBeforeNotGfmFootnoteDefinition,
@@ -129,6 +130,7 @@ pub enum Name {
     DocumentFlowEnd,
 
     ExtensionStep,
+    ExtensionContinuation,
     ExtensionAttemptOk,
     ExtensionAttemptNok,
     ExtensionIndentAfter,
@@ -563,6 +565,9 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentContainerExistingBefore => construct::document::container_existing_before,
         Name::DocumentContainerExistingAfter => construct::document::container_existing_after,
         Name::DocumentContainerNewBefore => construct::document::container_new_before,
+        Name::DocumentContainerNewBeforeConstructNext => {
+            construct::document::container_new_before_construct_next
+        }
         Name::DocumentContainerNewBeforeNotBlockQuote => {
             construct::document::container_new_before_not_block_quote
         }
@@ -578,6 +583,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentFlowInside => construct::document::flow_inside,
 
         Name::ExtensionStep => crate::extension::step,
+        Name::ExtensionContinuation => crate::extension::continuation,
         Name::ExtensionAttemptOk => crate::extension::attempt_ok,
         Name::ExtensionAttemptNok => crate::extension::attempt_nok,
         Name::ExtensionIndentAfter => crate::extension::indent_after,

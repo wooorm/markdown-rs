@@ -36,6 +36,9 @@ pub enum Container {
     ListItem,
     /// [GFM: Footnote definition][crate::construct::gfm_footnote_definition].
     GfmFootnoteDefinition,
+    /// Construct of a syntax extension, with the interned names of its token
+    /// and its content token.
+    Extension(u8, u16, u16),
 }
 
 /// Info used to tokenize a container.

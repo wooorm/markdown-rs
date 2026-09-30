@@ -1,6 +1,6 @@
 //! Turn events into a string of HTML.
 use crate::event::{Event, Kind, Name};
-use crate::extension::{balanced_exit, collect_tokens, is_in_content, own_text, TokenName};
+use crate::extension::{collect_tokens, exits, is_in_content, own_text, TokenName};
 use crate::mdast::AlignKind;
 use crate::util::{
     character_reference::decode as decode_character_reference,
@@ -136,6 +136,8 @@ struct CompileContext<'a> {
     extension_matches: Vec<HtmlMatch>,
     /// Last event of a token of a construct in content, which is skipped.
     extension_skip: Option<usize>,
+    /// Exit of each event entered, with constructs.
+    extension_exits: Vec<usize>,
 }
 
 /// A match of a construct being written: its own text as source text, its
@@ -194,6 +196,7 @@ impl<'a> CompileContext<'a> {
             extension_names,
             extension_matches: vec![],
             extension_skip: None,
+            extension_exits: exits(events, extension_names),
             options,
         }
     }
@@ -358,7 +361,7 @@ fn enter(context: &mut CompileContext) {
         if top.inside {
             // A token of a construct in its content, such as a line prefix.
             if is_in_content(context.extension_names, &context.events[index]) {
-                context.extension_skip = Some(balanced_exit(context.events, index));
+                context.extension_skip = Some(context.extension_exits[index]);
                 return;
             }
         } else {
@@ -392,6 +395,7 @@ fn enter(context: &mut CompileContext) {
             context.events,
             context.bytes,
             context.extension_names,
+            &context.extension_exits,
             index,
         );
         context.extension_matches.push(HtmlMatch {
@@ -790,7 +794,7 @@ fn on_enter_link(context: &mut CompileContext) {
 
 /// Handle [`Enter`][Kind::Enter]:{[`ListOrdered`][Name::ListOrdered],[`ListUnordered`][Name::ListUnordered]}.
 fn on_enter_list(context: &mut CompileContext) {
-    let loose = list_loose(context.events, context.index, true);
+    let loose = list_loose(context.events, context.index, true, context.extension_names);
     context.tight_stack.push(!loose);
     context.line_ending_if_needed();
 
@@ -1499,7 +1503,7 @@ fn on_exit_list(context: &mut CompileContext) {
 /// Handle [`Exit`][Kind::Exit]:[`ListItem`][Name::ListItem].
 fn on_exit_list_item(context: &mut CompileContext) {
     let tight = context.tight_stack.last().unwrap_or(&false);
-    let before_item = skip::opt_back(
+    let before_item = skip::opt_back_with_extensions(
         context.events,
         context.index - 1,
         &[
@@ -1511,6 +1515,7 @@ fn on_exit_list_item(context: &mut CompileContext) {
             Name::Definition,
             Name::GfmFootnoteDefinition,
         ],
+        context.extension_names,
     );
     let previous = &context.events[before_item];
     let tight_paragraph = *tight && previous.name == Name::Paragraph;
