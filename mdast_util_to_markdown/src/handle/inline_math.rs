@@ -60,8 +60,8 @@ impl Handle for InlineMath {
                     let position = m.start();
 
                     let position = if position > 0
-                        && &value[position..m.len()] == "\n"
-                        && &value[position - 1..position] == "\r"
+                        && value.as_bytes().get(position) == Some(&b'\n')
+                        && value.as_bytes().get(position - 1) == Some(&b'\r')
                     {
                         position - 1
                     } else {

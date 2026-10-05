@@ -304,4 +304,15 @@ fn math() {
         "$a - b$\n",
         "should prevent breaking out of code (crlf)"
     );
+
+    let prefix = String::from("a").repeat(50);
+    assert_eq!(
+        to(&Node::InlineMath(InlineMath {
+            value: format!("{}\r\n- b", prefix),
+            position: None
+        }))
+        .unwrap(),
+        format!("${} - b$\n", prefix),
+        "should prevent breaking out of math (long crlf)"
+    );
 }
