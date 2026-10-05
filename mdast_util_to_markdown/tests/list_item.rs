@@ -401,6 +401,42 @@ fn list_item() {
     );
 }
 
+#[test]
+fn list_item_checked() {
+    let item = Node::ListItem(ListItem {
+        children: vec![Node::Paragraph(Paragraph {
+            children: vec![Node::Text(Text {
+                value: String::from("a"),
+                position: None,
+            })],
+            position: None,
+        })],
+        position: None,
+        spread: false,
+        checked: Some(true),
+    });
+
+    assert_eq!(to(&item).unwrap(), "* [x] a\n");
+}
+
+#[test]
+fn list_item_unchecked() {
+    let item = Node::ListItem(ListItem {
+        children: vec![Node::Paragraph(Paragraph {
+            children: vec![Node::Text(Text {
+                value: String::from("a"),
+                position: None,
+            })],
+            position: None,
+        })],
+        position: None,
+        spread: false,
+        checked: Some(false),
+    });
+
+    assert_eq!(to(&item).unwrap(), "* [ ] a\n");
+}
+
 trait IntoVecNode {
     fn into_vec(self) -> Vec<Node>;
 }

@@ -48,6 +48,11 @@ impl Handle for ListItem {
             }
         }
 
+        if let Some(checked) = self.checked {
+            let check = if checked { "x" } else { " " };
+            bullet = format!("{} [{}]", bullet, check);
+        }
+
         let mut size = bullet.len() + 1;
 
         let should_compute_size = match list_item_indent {
