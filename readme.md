@@ -193,6 +193,15 @@ They are not enabled by default but can be turned on with options.
   * JSX
 * frontmatter
 * math
+* [CJK-friendly emphasis](https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md)
+
+CJK-friendly emphasis is enabled with `ParseOptions::cjk_friendly_emphasis`.
+It allows emphasis next to Chinese, Japanese, and Korean punctuation,
+while preserving whitespace and escape rules.
+It is off by default, including in the GFM and MDX presets, and does not
+change GFM strikethrough.
+Its character data is pinned to Unicode 17.0.0 and can be regenerated with
+`cargo run --manifest-path generate/Cargo.toml --bin cjk`.
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support very common and mostly standardized extensions.
@@ -377,6 +386,8 @@ Special thanks go out to:
 ## License
 
 [MIT][license] © [Titus Wormer][author]
+
+The generated CJK character data is covered by [Unicode License V3](license-unicode).
 
 [badge-build-image]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 

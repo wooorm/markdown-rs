@@ -1082,6 +1082,36 @@ pub struct ParseOptions {
     #[cfg_attr(feature = "serde", serde(default))]
     pub constructs: Constructs,
 
+    /// Whether to use CJK-friendly emphasis delimiter rules.
+    ///
+    /// This follows the [CJK-friendly amendment] to `CommonMark`, allowing
+    /// emphasis next to Chinese, Japanese, and Korean punctuation. It does
+    /// not relax whitespace rules or change GFM strikethrough.
+    /// Disabled by default, also in the GFM and MDX presets.
+    ///
+    /// [CJK-friendly amendment]: https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use markdown::{to_html_with_options, Options, ParseOptions};
+    /// # fn main() -> Result<(), markdown::message::Message> {
+    /// assert_eq!(
+    ///     to_html_with_options("**意义：**正文", &Options {
+    ///         parse: ParseOptions {
+    ///             cjk_friendly_emphasis: true,
+    ///             ..ParseOptions::default()
+    ///         },
+    ///         ..Options::default()
+    ///     })?,
+    ///     "<p><strong>意义：</strong>正文</p>"
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub cjk_friendly_emphasis: bool,
+
     /// Whether to support GFM strikethrough with a single tilde
     ///
     /// This option does nothing if `gfm_strikethrough` is not turned on in
@@ -1233,6 +1263,7 @@ impl fmt::Debug for ParseOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ParseOptions")
             .field("constructs", &self.constructs)
+            .field("cjk_friendly_emphasis", &self.cjk_friendly_emphasis)
             .field(
                 "gfm_strikethrough_single_tilde",
                 &self.gfm_strikethrough_single_tilde,
@@ -1255,6 +1286,7 @@ impl Default for ParseOptions {
     fn default() -> Self {
         Self {
             constructs: Constructs::default(),
+            cjk_friendly_emphasis: false,
             gfm_strikethrough_single_tilde: true,
             math_text_single_dollar: true,
             mdx_expression_parse: None,
@@ -1456,7 +1488,7 @@ mod tests {
 
         assert_eq!(
             format!("{:?}", ParseOptions::default()),
-            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None }",
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, cjk_friendly_emphasis: false, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None }",
             "should support `Debug` trait"
         );
         assert_eq!(
@@ -1469,7 +1501,7 @@ mod tests {
                 })),
                 ..Default::default()
             }),
-            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\") }",
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, cjk_friendly_emphasis: false, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\") }",
             "should support `Debug` trait on mdx functions"
         );
     }

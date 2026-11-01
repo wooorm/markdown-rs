@@ -2,6 +2,7 @@
 
 pub mod char;
 pub mod character_reference;
+pub mod cjk;
 pub mod constant;
 pub mod edit_map;
 pub mod encode;
@@ -17,3 +18,4 @@ pub mod sanitize_uri;
 pub mod skip;
 pub mod slice;
 pub mod unicode;
+pub mod unicode_cjk;
