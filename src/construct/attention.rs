@@ -85,7 +85,7 @@ use crate::util::char::{
     after_index as char_after_index, before_index as char_before_index, classify_opt,
     Kind as CharacterKind,
 };
-use crate::util::cjk;
+use crate::util::emphasis;
 use alloc::{vec, vec::Vec};
 
 /// Attentention sequence that we can take markers from.
@@ -241,31 +241,30 @@ fn get_sequences(tokenizer: &mut Tokenizer) -> Vec<Sequence> {
 
                 let marker = tokenizer.parse_state.bytes[enter.point.index];
                 let before_char = char_before_index(tokenizer.parse_state.bytes, enter.point.index);
-                // Keep default CommonMark and strikethrough classification untouched.
-                let cjk_enabled =
-                    tokenizer.parse_state.options.cjk_friendly_emphasis && marker != b'~';
-                let (before, before_cjk, before_ivs) = if cjk_enabled {
-                    cjk::classify_before(tokenizer.parse_state.bytes, enter.point.index)
+                // Repair emphasis boundaries by default; strikethrough keeps its own rules.
+                let emphasis_marker = marker != b'~';
+                let (before, before_east_asian, before_ivs) = if emphasis_marker {
+                    emphasis::classify_before(tokenizer.parse_state.bytes, enter.point.index)
                 } else {
                     (classify_opt(before_char), false, false)
                 };
                 let after_char = char_after_index(tokenizer.parse_state.bytes, exit.point.index);
                 let after = classify_opt(after_char);
-                let after_cjk = cjk_enabled && cjk::is_cjk(after_char);
+                let after_east_asian = emphasis_marker && emphasis::is_east_asian(after_char);
                 let open = after == CharacterKind::Other
                     || (after == CharacterKind::Punctuation && before != CharacterKind::Other)
                     // The amendment changes flanking, not matching or whitespace rules.
-                    || (cjk_enabled && after != CharacterKind::Whitespace
-                        && (after_cjk || before_cjk || before_ivs))
+                    || (emphasis_marker && after != CharacterKind::Whitespace
+                        && (after_east_asian || before_east_asian || before_ivs))
                     // For regular attention markers (not strikethrough), the
                     // other attention markers can be used around them
                     || (marker != b'~' && matches!(after_char, Some('*' | '_')))
                     || (marker != b'~' && tokenizer.parse_state.options.constructs.gfm_strikethrough && matches!(after_char, Some('~')));
                 let close = before == CharacterKind::Other
                     || (before == CharacterKind::Punctuation && after != CharacterKind::Other)
-                    || (cjk_enabled
+                    || (emphasis_marker
                         && before != CharacterKind::Whitespace
-                        && (before_cjk || after_cjk))
+                        && (before_east_asian || after_east_asian))
                     || (marker != b'~' && matches!(before_char, Some('*' | '_')))
                     || (marker != b'~'
                         && tokenizer.parse_state.options.constructs.gfm_strikethrough

@@ -42,7 +42,7 @@ fn serde_parse_options() -> Result<(), Error> {
 
     assert_eq!(
         serde_json::to_string(&ParseOptions::gfm()).unwrap(),
-        r#"{"constructs":{"attention":true,"autolink":true,"blockQuote":true,"characterEscape":true,"characterReference":true,"codeIndented":true,"codeFenced":true,"codeText":true,"definition":true,"frontmatter":false,"gfmAutolinkLiteral":true,"gfmFootnoteDefinition":true,"gfmLabelStartFootnote":true,"gfmStrikethrough":true,"gfmTable":true,"gfmTaskListItem":true,"hardBreakEscape":true,"hardBreakTrailing":true,"headingAtx":true,"headingSetext":true,"htmlFlow":true,"htmlText":true,"labelStartImage":true,"labelStartLink":true,"labelEnd":true,"listItem":true,"mathFlow":false,"mathText":false,"mdxEsm":false,"mdxExpressionFlow":false,"mdxExpressionText":false,"mdxJsxFlow":false,"mdxJsxText":false,"thematicBreak":true},"cjkFriendlyEmphasis":false,"gfmStrikethroughSingleTilde":true,"mathTextSingleDollar":true}"#
+        r#"{"constructs":{"attention":true,"autolink":true,"blockQuote":true,"characterEscape":true,"characterReference":true,"codeIndented":true,"codeFenced":true,"codeText":true,"definition":true,"frontmatter":false,"gfmAutolinkLiteral":true,"gfmFootnoteDefinition":true,"gfmLabelStartFootnote":true,"gfmStrikethrough":true,"gfmTable":true,"gfmTaskListItem":true,"hardBreakEscape":true,"hardBreakTrailing":true,"headingAtx":true,"headingSetext":true,"htmlFlow":true,"htmlText":true,"labelStartImage":true,"labelStartLink":true,"labelEnd":true,"listItem":true,"mathFlow":false,"mathText":false,"mdxEsm":false,"mdxExpressionFlow":false,"mdxExpressionText":false,"mdxJsxFlow":false,"mdxJsxText":false,"thematicBreak":true},"gfmStrikethroughSingleTilde":true,"mathTextSingleDollar":true}"#
     );
 
     Ok(())

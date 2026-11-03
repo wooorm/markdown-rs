@@ -1,10 +1,10 @@
-//! Generated Unicode 17.0.0 data for CJK-friendly emphasis.
-//! Regenerate with `cargo run --manifest-path generate/Cargo.toml --bin cjk`.
+//! Generated Unicode 17.0.0 data for emphasis boundary repair.
+//! Regenerate with `cargo run --manifest-path generate/Cargo.toml --bin emphasis`.
 //! Sources: <https://www.unicode.org/Public/17.0.0/ucd/>
 //! Unicode data is used under <https://www.unicode.org/license.txt>.
 
 /// East Asian W/F/H characters excluding `Emoji_Presentation`, plus Hangul.
-pub const CJK: &[(u32, u32)] = &[
+pub const EAST_ASIAN: &[(u32, u32)] = &[
     (0x1100, 0x11FF),
     (0x20A9, 0x20A9),
     (0x2329, 0x232A),
@@ -69,7 +69,7 @@ pub const CJK: &[(u32, u32)] = &[
 ];
 
 /// Ambiguous-width punctuation with a standardized fullwidth variation.
-pub const CJK_AMBIGUOUS_PUNCTUATION: &[(u32, u32)] = &[
+pub const FULLWIDTH_PUNCTUATION_VARIANTS: &[(u32, u32)] = &[
     (0x2018, 0xFE01),
     (0x2019, 0xFE01),
     (0x201C, 0xFE01),

@@ -1,18 +1,8 @@
 use markdown::{mdast::Node, message, to_html_with_options, to_mdast, Options, ParseOptions};
 use pretty_assertions::assert_eq;
 
-fn options() -> Options {
-    Options {
-        parse: ParseOptions {
-            cjk_friendly_emphasis: true,
-            ..ParseOptions::default()
-        },
-        ..Options::default()
-    }
-}
-
 #[test]
-fn cjk_punctuation() -> Result<(), message::Message> {
+fn punctuation_boundaries() -> Result<(), message::Message> {
     for (source, expected) in [
         (
             "**意义：**AI 训练数据",
@@ -43,7 +33,7 @@ fn cjk_punctuation() -> Result<(), message::Message> {
         ),
     ] {
         assert_eq!(
-            to_html_with_options(source, &options())?,
+            to_html_with_options(source, &Options::default())?,
             expected,
             "{}",
             source
@@ -70,7 +60,7 @@ fn nested_inline_content() -> Result<(), message::Message> {
         ),
     ] {
         assert_eq!(
-            to_html_with_options(source, &options())?,
+            to_html_with_options(source, &Options::default())?,
             expected,
             "{}",
             source
@@ -100,9 +90,8 @@ fn whitespace_code_escapes_and_ascii_keep_their_meaning() -> Result<(), message:
         "中_文_字",
         "a_\"b\"_c",
     ] {
-        assert_eq!(
-            to_html_with_options(source, &options())?,
-            to_html_with_options(source, &Options::default())?,
+        assert!(
+            !to_html_with_options(source, &Options::default())?.contains("<strong>"),
             "{}",
             source
         );
@@ -111,7 +100,7 @@ fn whitespace_code_escapes_and_ascii_keep_their_meaning() -> Result<(), message:
 }
 
 #[test]
-fn cjk_and_emoji_are_distinct() -> Result<(), message::Message> {
+fn east_asian_and_emoji_are_distinct() -> Result<(), message::Message> {
     for (source, expected) in [
         ("**好。**😀", "<p><strong>好。</strong>😀</p>"),
         ("**a!**😀", "<p><strong>a!</strong>😀</p>"),
@@ -123,7 +112,7 @@ fn cjk_and_emoji_are_distinct() -> Result<(), message::Message> {
         ("𠮷**(a)**中", "<p>𠮷<strong>(a)</strong>中</p>"),
     ] {
         assert_eq!(
-            to_html_with_options(source, &options())?,
+            to_html_with_options(source, &Options::default())?,
             expected,
             "{}",
             source
@@ -148,21 +137,23 @@ fn variation_selectors() -> Result<(), message::Message> {
         ("**a!\u{E0100}**b", "<p><strong>a!\u{E0100}</strong>b</p>"),
     ] {
         assert_eq!(
-            to_html_with_options(source, &options())?,
+            to_html_with_options(source, &Options::default())?,
             expected,
             "{}",
             source
         );
     }
     for source in ["** \u{FE00}**x", "**\u{FE00}**x", "**\u{E0100}\u{FE00}**x"] {
-        let _ = to_html_with_options(source, &options())?;
+        let _ = to_html_with_options(source, &Options::default())?;
     }
     Ok(())
 }
 
 #[test]
-fn opt_in_for_each_parse() -> Result<(), message::Message> {
+fn default_entry_points_repair_punctuation_boundaries() -> Result<(), message::Message> {
     let source = "**意义：**正文";
+    let expected = "<p><strong>意义：</strong>正文</p>";
+    assert_eq!(markdown::to_html(source), expected);
     for preset in [
         Options::default(),
         Options::gfm(),
@@ -171,34 +162,20 @@ fn opt_in_for_each_parse() -> Result<(), message::Message> {
             ..Options::default()
         },
     ] {
-        assert!(!preset.parse.cjk_friendly_emphasis);
-        assert_eq!(
-            to_html_with_options(source, &preset)?,
-            "<p>**意义：**正文</p>"
-        );
+        assert_eq!(to_html_with_options(source, &preset)?, expected);
     }
-    let mut enabled = options();
-    assert_eq!(
-        to_html_with_options(source, &enabled)?,
-        "<p><strong>意义：</strong>正文</p>"
-    );
-    enabled.parse.cjk_friendly_emphasis = false;
-    assert_eq!(
-        to_html_with_options(source, &enabled)?,
-        "<p>**意义：**正文</p>"
-    );
     Ok(())
 }
 
 #[test]
 fn gfm_strikethrough_is_separate() -> Result<(), message::Message> {
-    let mut enabled = Options::gfm();
-    enabled.parse.cjk_friendly_emphasis = true;
-    for source in ["~~删除。~~后文", "~删除。~后文", "~~a!~~字"] {
-        assert_eq!(
-            to_html_with_options(source, &enabled)?,
-            to_html_with_options(source, &Options::gfm())?
-        );
+    let enabled = Options::gfm();
+    for (source, expected) in [
+        ("~~删除。~~后文", "<p>~~删除。~~后文</p>"),
+        ("~删除。~后文", "<p>~删除。~后文</p>"),
+        ("~~a!~~字", "<p>~~a!~~字</p>"),
+    ] {
+        assert_eq!(to_html_with_options(source, &enabled)?, expected);
     }
     assert_eq!(
         to_html_with_options("~~删除~~，**意义：**正文", &enabled)?,
@@ -211,7 +188,7 @@ fn gfm_strikethrough_is_separate() -> Result<(), message::Message> {
 #[test]
 fn mdast_keeps_original_source_positions() -> Result<(), message::Message> {
     let source = "前 **意义：**正文";
-    let tree = to_mdast(source, &options().parse)?;
+    let tree = to_mdast(source, &ParseOptions::default())?;
     let paragraph = &tree.children().unwrap()[0];
     let children = paragraph.children().unwrap();
     assert!(matches!(children[1], Node::Strong(_)));
@@ -228,24 +205,11 @@ fn mdast_keeps_original_source_positions() -> Result<(), message::Message> {
     );
     assert_eq!(text.to_string(), "意义：");
     assert_eq!(children[2].to_string(), "正文");
-    let mut mdx = ParseOptions::mdx();
-    mdx.cjk_friendly_emphasis = true;
+    let mdx = ParseOptions::mdx();
     let mdx_tree = to_mdast("**意义：**正文", &mdx)?;
     assert!(matches!(
         mdx_tree.children().unwrap()[0].children().unwrap()[0],
         Node::Strong(_)
     ));
     Ok(())
-}
-
-#[test]
-#[cfg(feature = "serde")]
-fn configuration_roundtrip_and_missing_field() {
-    let json = serde_json::to_string(&options().parse).unwrap();
-    assert!(json.contains("\"cjkFriendlyEmphasis\":true"));
-    let restored: ParseOptions = serde_json::from_str(&json).unwrap();
-    assert!(restored.cjk_friendly_emphasis);
-    let old = json.replace("\"cjkFriendlyEmphasis\":true,", "");
-    let restored: ParseOptions = serde_json::from_str(&old).unwrap();
-    assert!(!restored.cjk_friendly_emphasis);
 }
