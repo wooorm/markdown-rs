@@ -4,6 +4,7 @@ reqwest = "0.12"
 tokio = { features = ["full"], version = "1" }
 
 [package]
+default-run = "markdown-generate"
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
 edition = "2018"
 name = "markdown-generate"

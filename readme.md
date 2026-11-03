@@ -15,10 +15,10 @@ CommonMark compliant markdown parser in Rust with ASTs and extensions.
 
 ## Feature highlights
 
-* [x] **[compliant][commonmark]**
-  (100% to CommonMark)
+* [x] **[CommonMark-based][commonmark]**
+  (with punctuation-boundary amendments described below)
 * [x] **[extensions][]**
-  (100% GFM, 100% MDX, frontmatter, math)
+  (GFM, MDX, frontmatter, math)
 * [x] **[safe][security]**
   (100% safe Rust, also 100% safe HTML by default)
 * [x] **[robust][test]**
@@ -193,6 +193,18 @@ They are not enabled by default but can be turned on with options.
   * JSX
 * frontmatter
 * math
+
+### Emphasis punctuation boundaries
+
+Emphasis delimiter classification includes a
+[punctuation-boundary amendment](https://github.com/tats-u/markdown-cjk-friendly/blob/main/specification.md).
+For example, `**意义：**正文` renders as `<strong>意义：</strong>正文`.
+This repair applies through the existing entry points, without a new option.
+It changes default parsing around East Asian characters and punctuation
+compared with strict CommonMark; it is not a language-detection mode.
+Whitespace, escapes, code, matching, and GFM strikethrough keep their rules.
+The character data is pinned to Unicode 17.0.0 and can be regenerated with
+`cargo run --manifest-path generate/Cargo.toml --bin emphasis`.
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support very common and mostly standardized extensions.
@@ -377,6 +389,8 @@ Special thanks go out to:
 ## License
 
 [MIT][license] © [Titus Wormer][author]
+
+The generated East Asian character data is covered by [Unicode License V3](license-unicode).
 
 [badge-build-image]: https://github.com/wooorm/markdown-rs/workflows/main/badge.svg
 

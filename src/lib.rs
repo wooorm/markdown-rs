@@ -75,7 +75,8 @@ use alloc::string::String;
 
 /// Turn markdown into HTML.
 ///
-/// Compiles markdown to HTML according to `CommonMark`.
+/// Compiles markdown to HTML with `CommonMark` constructs and the documented
+/// punctuation-boundary repair for emphasis.
 /// Use [`to_html_with_options()`][] to configure how markdown is turned into
 /// HTML.
 ///
