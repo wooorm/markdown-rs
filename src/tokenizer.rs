@@ -529,8 +529,8 @@ impl<'a> Tokenizer<'a> {
         );
 
         if VOID_EVENTS.iter().any(|d| d == &name) {
-            debug_assert!(
-                current == previous.name,
+            debug_assert_eq!(
+                current, previous.name,
                 "expected event to be void, instead of including something"
             );
         }

@@ -65,7 +65,7 @@ impl Handle for Heading {
         if value.is_empty() {
             value.push_str(&sequence);
         } else {
-            value = format!("{} {}", &sequence, value);
+            value = format!("{} {}", sequence, value);
         }
 
         if state.options.close_atx {
