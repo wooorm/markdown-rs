@@ -115,7 +115,7 @@ impl EditMap {
             events.append(&mut slice);
         }
 
-        self.map.truncate(0);
+        self.map.clear();
     }
 }
 

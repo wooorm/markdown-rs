@@ -41,7 +41,7 @@ pub enum Kind {
 /// In most cases, markdown operates on ASCII bytes.
 /// In a few cases, it is unicode aware, so we need to find an actual char.
 pub fn before_index(bytes: &[u8], index: usize) -> Option<char> {
-    let start = if index < 4 { 0 } else { index - 4 };
+    let start = index.saturating_sub(4);
     String::from_utf8_lossy(&bytes[start..index]).chars().last()
 }
 
