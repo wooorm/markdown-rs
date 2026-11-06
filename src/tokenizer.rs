@@ -477,7 +477,8 @@ impl<'a> Tokenizer<'a> {
                     self.point.line += 1;
                     self.point.column = 1;
 
-                    if self.point.line - self.first_line + 1 > self.column_start.len() {
+                    // Pad a missing first-line entry, so this line's start is at its own index.
+                    while self.point.line - self.first_line >= self.column_start.len() {
                         self.column_start.push((self.point.index, self.point.vs));
                     }
 
