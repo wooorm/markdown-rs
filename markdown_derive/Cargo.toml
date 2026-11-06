@@ -1,0 +1,18 @@
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { default-features = false, features = ["derive", "parsing", "printing", "proc-macro"], version = "2" }
+
+[dev-dependencies]
+markdown = { features = ["derive"], path = "../" }
+
+[lib]
+proc-macro = true
+
+[package]
+description = "Derive macros for markdown"
+edition = "2018"
+license = "MIT"
+name = "markdown_derive"
+rust-version = "1.62"
+version = "1.0.0"

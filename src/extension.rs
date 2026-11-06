@@ -420,6 +420,8 @@ impl sealed::IsContainer for Container {}
 /// Names of the tokens of a construct.
 ///
 /// Usually an enum without data, such as `enum MentionToken { Mention, Name }`.
+/// With the `derive` feature, `#[derive(TokenType)]` writes this impl for
+/// such an enum, with every variant in [`ALL`][Self::ALL].
 pub trait TokenType: Copy + Eq + fmt::Debug + 'static {
     /// Every token, so names can be numbered before parsing.
     ///
@@ -441,6 +443,9 @@ pub trait TokenType: Copy + Eq + fmt::Debug + 'static {
         None
     }
 }
+
+#[cfg(feature = "derive")]
+pub use markdown_derive::TokenType;
 
 /// Kind of markdown inside a content token.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

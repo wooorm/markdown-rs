@@ -198,6 +198,8 @@ It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support very common and mostly standardized extensions.
 Other syntax can be added from outside this project, with constructs passed
 in options: see the [`extension` module][docs-extension].
+The `derive` feature adds `#[derive(TokenType)]`, for the names of their
+tokens.
 
 ## Project
 
