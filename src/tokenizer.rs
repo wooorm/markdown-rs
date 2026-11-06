@@ -494,12 +494,18 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// Move (virtual) bytes.
+    /// Move (virtual) bytes, such as the container prefixes that a skip
+    /// leaves out.
+    ///
+    /// Skipped bytes are not content, so `previous` stays the last byte
+    /// before them, such as the line ending, as in micromark.
     fn move_to(&mut self, to: (usize, usize)) {
         let (to_index, to_vs) = to;
+        let previous = self.previous;
         while self.point.index < to_index || self.point.index == to_index && self.point.vs < to_vs {
             self.move_one();
         }
+        self.previous = previous;
     }
 
     /// Mark the start of a semantic label.
