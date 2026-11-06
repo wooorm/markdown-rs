@@ -163,5 +163,57 @@ fn frontmatter() -> Result<(), message::Message> {
         "should support toml as `Toml`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options("---\na\n- b\n", &frontmatter)?,
+        "<hr />\n<p>a</p>\n<ul>\n<li>b</li>\n</ul>\n",
+        "should support a list interrupting a paragraph after an unclosed opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\na\n\n- b\n- c\n", &frontmatter)?,
+        "<hr />\n<p>a</p>\n<ul>\n<li>b</li>\n<li>c</li>\n</ul>\n",
+        "should support a list after a blank line after an unclosed opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("---\na\n\n> b\n> c\n", &frontmatter)?,
+        "<hr />\n<p>a</p>\n<blockquote>\n<p>b\nc</p>\n</blockquote>\n",
+        "should support a block quote after an unclosed opening fence"
+    );
+
+    assert_eq!(
+        to_html_with_options("+++\na\n- b\n", &frontmatter)?,
+        "<p>+++\na</p>\n<ul>\n<li>b</li>\n</ul>\n",
+        "should support a list interrupting a paragraph after an unclosed opening fence (toml)"
+    );
+
+    let with = |frontmatter, constructs: Constructs| ParseOptions {
+        constructs: Constructs {
+            frontmatter,
+            ..constructs
+        },
+        ..ParseOptions::default()
+    };
+    for constructs in [Constructs::default(), Constructs::gfm()] {
+        for value in [
+            "---\nus\n- a\n",
+            "---\nus\n\n- a\n- b\n\n  c\n",
+            "---\n\nus\n- a\n",
+            "---\na: b\n\n> q\n> r\nlazy\n",
+            "---\na\n```\ncode\n```\nafter\n",
+            "---\n# heading\nb\n===\n",
+            "---\r\nus\r\n- a\r\n",
+            "+++\nus\n- a\n",
+            "--- \t\nus\n1. a\n2. b\n",
+            "---\n[x]: /y\n\n[x] and[^1]\n\n[^1]: note\n    more\n",
+        ] {
+            assert_eq!(
+                to_mdast(value, &with(true, constructs.clone()))?,
+                to_mdast(value, &with(false, constructs.clone()))?,
+                "should parse the same as without frontmatter when no fence closes it: {value:?}"
+            );
+        }
+    }
+
     Ok(())
 }
