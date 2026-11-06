@@ -129,5 +129,65 @@ fn fuzz() -> Result<(), message::Message> {
         "12: mdx: handle invalid mdx without panic (GH-26)"
     );
 
+    // An underline moved into the paragraph after it, which becomes a heading (GH-22).
+    for (input, expected, message) in [
+        (
+            "[l]:x\n-\n1\n-",
+            "<h2>-\n1</h2>",
+            "13-a: an underline moved into a heading",
+        ),
+        ("[l]:x\n=\n1\n=", "<h1>=\n1</h1>", "13-b: the same with `=`"),
+        (
+            "[l]:x\n-\n1\n2\n-",
+            "<h2>-\n1\n2</h2>",
+            "13-c: more lines in between",
+        ),
+        (
+            "[l]:x\n-\n1\n=",
+            "<h1>-\n1</h1>",
+            "13-d: a `=` underline after a `-` one",
+        ),
+        (
+            "[l]:x\n-",
+            "<p>-</p>",
+            "13-e: an underline with no paragraph after it",
+        ),
+        (
+            "[l]:x\n[m]:y\n-\n1\n-",
+            "<h2>-\n1</h2>",
+            "13-f: after two definitions",
+        ),
+        (
+            "a\n-\n--\na\n-",
+            "<h2>a</h2>\n<h2>--\na</h2>",
+            "13-g: after a heading (GH-22)",
+        ),
+        (
+            "x\n=\n=\nx\n=\n",
+            "<h1>x</h1>\n<h1>=\nx</h1>\n",
+            "13-h: the same with `=`",
+        ),
+        (
+            "[:]:a\n-\na\n-",
+            "<h2>-\na</h2>",
+            "13-i: after a definition with an empty-looking label",
+        ),
+    ] {
+        assert_eq!(to_html(input), expected, "{}", message);
+        assert!(
+            matches!(
+                to_mdast(input, &Default::default()),
+                Ok(mdast::Node::Root(_))
+            ),
+            "{}: mdast",
+            message
+        );
+    }
+
+    assert!(
+        to_html_with_options("[^1]: x\n-\n1\n-", &Options::gfm()).is_ok(),
+        "13-j: gfm: the same after a footnote definition"
+    );
+
     Ok(())
 }
