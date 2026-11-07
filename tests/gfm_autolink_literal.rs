@@ -2824,5 +2824,31 @@ www.a/~
         "should support GFM autolink literals as `Link`s in mdast"
     );
 
+    assert_eq!(
+        to_html_with_options("> a\n>www.b.c", &Options::gfm())?,
+        "<blockquote>\n<p>a\n<a href=\"http://www.b.c\">www.b.c</a></p>\n</blockquote>",
+        "should support a www url at the start of a line after a block quote marker without a space"
+    );
+    assert_eq!(
+        to_html_with_options("> a\n> www.b.c", &Options::gfm())?,
+        "<blockquote>\n<p>a\n<a href=\"http://www.b.c\">www.b.c</a></p>\n</blockquote>",
+        "should support a www url at the start of a line after a block quote marker and a space"
+    );
+    assert_eq!(
+        to_html_with_options(">>a\n>>www.b.c", &Options::gfm())?,
+        "<blockquote>\n<blockquote>\n<p>a\n<a href=\"http://www.b.c\">www.b.c</a></p>\n</blockquote>\n</blockquote>",
+        "should support a www url at the start of a line after nested block quote markers"
+    );
+    assert_eq!(
+        to_html_with_options("> a\n>a www.b.c", &Options::gfm())?,
+        "<blockquote>\n<p>a\na <a href=\"http://www.b.c\">www.b.c</a></p>\n</blockquote>",
+        "should support a www url after whitespace on a later line of a block quote"
+    );
+    assert_eq!(
+        to_html_with_options("> a\n>xwww.b.c", &Options::gfm())?,
+        "<blockquote>\n<p>a\nxwww.b.c</p>\n</blockquote>",
+        "should not support a www url after a letter on a later line of a block quote"
+    );
+
     Ok(())
 }
