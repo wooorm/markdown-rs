@@ -7,6 +7,7 @@
 
 extern crate alloc;
 
+pub mod guide;
 mod processor;
 pub mod visit;
 
