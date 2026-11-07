@@ -5120,3 +5120,319 @@ fn errors_for_delimiter_runs_without_run_tokens_or_outside_text() {
         "should error for a run outside text"
     );
 }
+
+/// Tokens of a wiki link.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum WikiToken {
+    Wiki,
+    Target,
+}
+
+impl TokenType for WikiToken {
+    const ALL: &'static [Self] = &[Self::Wiki, Self::Target];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Wiki => "wiki",
+            Self::Target => "wikiTarget",
+        }
+    }
+}
+
+/// `[[`, a target without `|`, and `]]`; with `nests`, a `[[` in the target
+/// needs its own `]]`, and `state.1` counts how deep it is.
+struct Wiki {
+    reach: Reach,
+    nests: bool,
+}
+
+impl Construct for Wiki {
+    type Place = Text;
+    type State = (u8, usize);
+    type Token = WikiToken;
+
+    fn markers(&self) -> &[u8] {
+        b"["
+    }
+
+    fn start(&self) -> (u8, usize) {
+        (0, 0)
+    }
+
+    fn reach(&self) -> Reach {
+        self.reach
+    }
+
+    fn step(&self, (state, depth): (u8, usize), t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'[')) => t.enter(WikiToken::Wiki).consume().next((1, 0)),
+            (1, Some(b'[')) => t.consume().next((2, 0)),
+            (2, None | Some(b']' | b'|')) => t.nok(),
+            (2, Some(_)) => t.enter(WikiToken::Target).retry((3, 0)),
+            // In the target.
+            (3, Some(b']')) if depth == 0 => t.exit().consume().next((4, 0)),
+            (3, Some(b']')) => t.consume().next((5, depth)),
+            (3, Some(b'[')) if self.nests => t.consume().next((6, depth)),
+            (3, Some(byte)) if byte != b'|' => t.consume().next((3, depth)),
+            // After the first `]` of the closer.
+            (4, Some(b']')) => t.consume().exit().ok(),
+            // After a `]` in a nested pair, or a `[`.
+            (5, Some(b']')) => t.consume().next((3, depth - 1)),
+            (6, Some(b'[')) => t.consume().next((3, depth + 1)),
+            (5 | 6, _) => t.retry((3, depth)),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, WikiToken>>) -> Node {
+        Node::Custom(Custom {
+            name: "wiki".into(),
+            value: Some(tokens[1].value.to_string()),
+            ..Custom::default()
+        })
+    }
+}
+
+fn wikis(reach: Reach, nests: bool) -> ParseOptions {
+    ParseOptions {
+        text_constructs: vec![construct(Wiki { reach, nests })],
+        ..ParseOptions::default()
+    }
+}
+
+/// Targets of the wiki links in `node`.
+fn targets(node: &Node) -> Vec<String> {
+    match node {
+        Node::Custom(custom) if custom.name == "wiki" => vec![custom.value.clone().unwrap()],
+        _ => node
+            .children()
+            .map(|children| children.iter().flat_map(targets).collect())
+            .unwrap_or_default(),
+    }
+}
+
+#[test]
+fn pairs_skip_markers_a_failed_match_read() {
+    for (input, expected) in [
+        ("[[a]] [[b]]", vec!["a", "b"]),
+        ("[[a [[b]]", vec!["a [[b"]),
+        ("[[a | [[b]]", vec!["b"]),
+        ("[[a [[b | ]]", vec![]),
+        ("> [[a\n> [[b]]", vec!["a\n[[b"]),
+        ("[[a\n\n[[b]]", vec!["b"]),
+        ("[[a | *[[b]]*", vec!["b"]),
+    ] {
+        for reach in [Reach::Unbounded, Reach::Pair] {
+            assert_eq!(
+                targets(&to_mdast(input, &wikis(reach, false)).unwrap()),
+                expected,
+                "should find the same links in {:?} with {:?}",
+                input,
+                reach
+            );
+        }
+    }
+}
+
+#[test]
+fn pairs_match_like_unbounded_constructs_that_stop_at_the_first_closer() {
+    // A construct that stops at its first closer keeps the promise of
+    // `Reach::Pair`, so skipping changes nothing.
+    let pieces = [
+        "[", "[[", "]", "]]", "a", " ", "|", "\n", "\n\n", "> ", "*", "`", "\\",
+    ];
+    let mut seed: u64 = 7;
+    let mut random = move |below: usize| {
+        seed ^= seed << 13;
+        seed ^= seed >> 7;
+        seed ^= seed << 17;
+        usize::try_from(seed % u64::try_from(below).unwrap()).unwrap()
+    };
+
+    for _ in 0..2000 {
+        let input = (0..random(24))
+            .map(|_| pieces[random(pieces.len())])
+            .collect::<String>();
+        assert_eq!(
+            to_mdast(&input, &wikis(Reach::Pair, false)).unwrap(),
+            to_mdast(&input, &wikis(Reach::Unbounded, false)).unwrap(),
+            "should parse {:?} the same with `Reach::Pair`",
+            input
+        );
+    }
+}
+
+#[test]
+fn pairs_lose_matches_of_constructs_that_nest() {
+    assert_eq!(
+        targets(&to_mdast("[[a [[b]] c]]", &wikis(Reach::Unbounded, true)).unwrap()),
+        vec!["a [[b]] c"],
+        "should nest"
+    );
+    assert_eq!(
+        targets(&to_mdast("[[a [[b]]", &wikis(Reach::Unbounded, true)).unwrap()),
+        vec!["b"],
+        "should find an inner link after the outer one fails"
+    );
+    assert_eq!(
+        targets(&to_mdast("[[a [[b]]", &wikis(Reach::Pair, true)).unwrap()),
+        Vec::<String>::new(),
+        "should lose an inner link with `Reach::Pair`, which a construct that nests breaks"
+    );
+}
+
+/// `[[`, a target without `[`, `]`, or `|`, and `]]`.
+struct PlainWiki(Reach);
+
+impl Construct for PlainWiki {
+    type Place = Text;
+    type State = u8;
+    type Token = WikiToken;
+
+    fn markers(&self) -> &[u8] {
+        b"["
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn reach(&self) -> Reach {
+        self.0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'[')) => t.enter(WikiToken::Wiki).consume().next(1),
+            (1, Some(b'[')) => t.consume().next(2),
+            (2 | 3, Some(b']')) if state == 3 => t.exit().consume().next(4),
+            (2 | 3, Some(byte)) if !matches!(byte, b'[' | b']' | b'|') => {
+                let t = if state == 2 {
+                    t.enter(WikiToken::Target)
+                } else {
+                    t
+                };
+                t.consume().next(3)
+            }
+            (4, Some(b']')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, WikiToken>>) -> Node {
+        Node::Custom(Custom {
+            name: "wiki".into(),
+            value: Some(tokens[1].value.to_string()),
+            ..Custom::default()
+        })
+    }
+}
+
+#[test]
+fn pairs_lose_matches_that_start_inside_an_opener() {
+    let parse = |reach| ParseOptions {
+        text_constructs: vec![construct(PlainWiki(reach))],
+        ..ParseOptions::default()
+    };
+    assert_eq!(
+        targets(&to_mdast("[[[a]]", &parse(Reach::Unbounded)).unwrap()),
+        vec!["a"],
+        "should find a link that starts inside the opener of a failed one"
+    );
+    assert_eq!(
+        targets(&to_mdast("[[[a]]", &parse(Reach::Pair)).unwrap()),
+        Vec::<String>::new(),
+        "should lose it with `Reach::Pair`, which such a construct breaks"
+    );
+}
+
+#[cfg(feature = "test-util")]
+#[test]
+fn constructs_that_stop_at_each_marker_are_linear() {
+    markdown::extension::assert_linear(&ParseOptions {
+        text_constructs: vec![construct(PlainWiki(Reach::Unbounded))],
+        ..ParseOptions::default()
+    });
+}
+
+#[test]
+fn pairs_are_unbounded_in_flow() {
+    let parse = ParseOptions {
+        flow_constructs: vec![construct(ScriptedFlow {
+            marker: b':',
+            step: leaf,
+        })],
+        ..ParseOptions::default()
+    };
+    assert_eq!(
+        to_mdast("::a[b]\n::c[d]", &parse)
+            .unwrap()
+            .children()
+            .unwrap()
+            .len(),
+        2,
+        "should match each line"
+    );
+}
+
+#[cfg(feature = "test-util")]
+#[test]
+fn asserts_linear_steps() {
+    use markdown::extension::assert_linear;
+
+    assert_linear(&wikis(Reach::Pair, false));
+    assert_linear(&wikis(Reach::Bytes(64), false));
+    assert_linear(&wikis(Reach::Bytes(64), true));
+    assert_linear(&marks(&[1, 2]));
+    assert_linear(&scripted_flow(b':', leaf));
+    assert_linear(&line_blocks());
+    assert_linear(&ParseOptions {
+        constructs: Constructs::gfm(),
+        ..wikis(Reach::Pair, false)
+    });
+    assert_linear(&ParseOptions {
+        text_constructs: vec![
+            construct(Wiki {
+                reach: Reach::Pair,
+                nests: false,
+            }),
+            run(b"=", &[2], |_| true),
+        ],
+        flow_constructs: vec![construct(ScriptedFlow {
+            marker: b':',
+            step: leaf,
+        })],
+        document_constructs: vec![construct(Contained::new(line_block, Some(10)))],
+        ..ParseOptions::default()
+    });
+
+    for (name, options) in [
+        ("unbounded", wikis(Reach::Unbounded, false)),
+        ("nesting", wikis(Reach::Unbounded, true)),
+        (
+            "with others",
+            ParseOptions {
+                text_constructs: vec![
+                    run(b"=", &[2], |_| true),
+                    construct(Wiki {
+                        reach: Reach::Unbounded,
+                        nests: false,
+                    }),
+                ],
+                ..ParseOptions::default()
+            },
+        ),
+    ] {
+        let message = catch_unwind(AssertUnwindSafe(|| assert_linear(&options)))
+            .expect_err("expected a panic")
+            .downcast::<String>()
+            .map(|message| *message)
+            .unwrap_or_default();
+        assert!(
+            message.starts_with("expected steps of constructs linear in the size of the document"),
+            "should find a quadratic construct ({}), got {:?}",
+            name,
+            message
+        );
+    }
+}

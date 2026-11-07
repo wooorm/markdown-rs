@@ -28,7 +28,8 @@ use crate::construct::gfm_autolink_literal::resolve as resolve_gfm_autolink_lite
 use crate::construct::partial_whitespace::resolve_whitespace;
 use crate::event::{Kind, Name};
 use crate::extension::{
-    attention_sizes, can_start_after, ext, ext_mut, markers, start as start_construct,
+    attention_sizes, can_start_after, ext, ext_mut, is_pair_skipped, markers,
+    start as start_construct,
 };
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
@@ -128,6 +129,7 @@ pub fn before_construct(tokenizer: &mut Tokenizer, index: u8) -> State {
             if byte != b'\n'
                 && markers(options, at).contains(&byte)
                 && can_start_after(options, at, previous)
+                && !is_pair_skipped(tokenizer, at)
             {
                 // Parsing checks that there are at most 255 constructs.
                 let next = u8::try_from(index + 1).expect("expected at most 255 constructs");

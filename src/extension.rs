@@ -53,7 +53,7 @@
 //! }
 //!
 //! /// States of a mention.
-//! #[derive(Clone, Copy)]
+//! #[derive(Clone, Copy, Debug)]
 //! enum MentionState {
 //!     Start,
 //!     Name,
@@ -473,11 +473,37 @@ pub use crate::util::char::{classify, Kind as CharacterKind};
 pub enum Reach {
     /// No bound (default): parsing can be quadratic on input that makes
     /// matches fail after reading far.
+    /// With the `test-util` feature, `extension::assert_linear` finds that.
     Unbounded,
     /// A match reads at most this many bytes from its start: a step at a
     /// byte after them does not match, so a match that ends before a byte
     /// counts it too.
     Bytes(usize),
+    /// A match scans to a closer, such as `]]` in `[[a]]`, without a bound:
+    /// after a match in text fails, the construct is not tried again at its
+    /// markers before the furthest byte that match read, failed attempts
+    /// included, so each byte is read by at most one failed match, as cmark
+    /// does for runs of backticks, and parsing stays linear.
+    ///
+    /// That is a promise that a match cannot start between them either,
+    /// which holds for a construct that stops at its first closer and whose
+    /// opener cannot start inside the bytes a failed match read.
+    /// A construct that breaks it loses its own matches:
+    ///
+    /// * one that nests, counting `[[` against `]]`: in `[[a [[b]]`, the
+    ///   failed match at the first `[[` reads to the end, so the second is
+    ///   not tried; such a construct needs [`Reach::Bytes`]
+    /// * one that fails at a marker inside its opener: if a target cannot
+    ///   hold `[`, the match at the first `[` of `[[[a]]` fails at the
+    ///   third, so the one at the second is not tried; such a construct
+    ///   can let the failed match end before its opener, or stop at each
+    ///   marker, which keeps it linear without `Pair`
+    ///
+    /// Content of a match is parsed later and apart, so a failure outside it
+    /// never skips markers in it.
+    /// In flow and containers, which are tried once per line, it is the
+    /// same as [`Reach::Unbounded`].
+    Pair,
     /// A delimiter run in text, like `==` in `==a==`, with the sizes of a
     /// run that can pair, with the same size on both sides.
     ///
@@ -589,6 +615,10 @@ impl TokenType for RunToken {
 /// container prefix counts a step for each of its bytes; and a match reads
 /// at most as far as [`reach`][Self::reach] allows; past either, it does
 /// not match.
+/// So a match is linear in the bytes it reads, but a construct that reads
+/// far and then fails, at marker after marker, makes parsing quadratic,
+/// unless its reach is [`Reach::Bytes`] or [`Reach::Pair`]; with the
+/// `test-util` feature, `extension::assert_linear` checks that.
 /// Attempts nest at most 256 deep; a deeper attempt fails.
 /// A flow construct decides on its first line: after it consumed a line
 /// ending, it does not return `nok` outside an attempt
@@ -606,7 +636,7 @@ pub trait Construct: 'static {
     type Place: Place;
     /// States of the construct, usually an enum; a variant can carry what
     /// the construct has seen, such as the size of an opening fence.
-    type State: Clone + 'static;
+    type State: Clone + fmt::Debug + 'static;
     /// Names of its tokens.
     type Token: TokenType;
 
@@ -793,6 +823,12 @@ enum RawStep {
 /// stored together.
 trait ErasedConstruct {
     fn place(&self) -> PlaceKind;
+    /// Name of the construct's type, for traces and panics.
+    #[cfg(feature = "test-util")]
+    fn name(&self) -> &'static str;
+    /// The state of the last step, as `Debug` shows it.
+    #[cfg(feature = "test-util")]
+    fn last_state(&self, slot: Option<&dyn Any>) -> String;
     fn markers(&self) -> &[u8];
     fn reach(&self) -> Reach;
     fn previous(&self, previous: Option<char>) -> bool;
@@ -828,11 +864,29 @@ struct Machine<S> {
     /// The states that open containers of this construct keep for their
     /// next lines, by id, so a line does not allocate.
     containers: Vec<S>,
+    /// The state of the last step, for traces and panics.
+    #[cfg(feature = "test-util")]
+    last: Option<S>,
 }
 
 impl<C: Construct> ErasedConstruct for Wrap<C> {
     fn place(&self) -> PlaceKind {
         C::Place::KIND
+    }
+
+    #[cfg(feature = "test-util")]
+    fn name(&self) -> &'static str {
+        let name = core::any::type_name::<C>();
+        // Without the path or generics.
+        let base = name.split('<').next().unwrap_or(name);
+        base.rsplit("::").next().unwrap_or(base)
+    }
+
+    #[cfg(feature = "test-util")]
+    fn last_state(&self, slot: Option<&dyn Any>) -> String {
+        slot.and_then(|slot| slot.downcast_ref::<Machine<C::State>>())
+            .and_then(|machine| machine.last.as_ref().or(machine.state.as_ref()))
+            .map_or_else(String::new, |state| alloc::format!("{state:?}"))
     }
 
     fn markers(&self) -> &[u8] {
@@ -904,6 +958,8 @@ impl<C: Construct> ErasedConstruct for Wrap<C> {
                     attempts: Vec::new(),
                     container: None,
                     containers: Vec::new(),
+                    #[cfg(feature = "test-util")]
+                    last: None,
                 }));
             }
         }
@@ -915,6 +971,10 @@ impl<C: Construct> ErasedConstruct for Wrap<C> {
             .and_then(|slot| slot.downcast_mut::<Machine<C::State>>())
             .expect("expected state of construct");
         let state = machine.state.take().expect("expected state");
+        #[cfg(feature = "test-util")]
+        {
+            machine.last = Some(state.clone());
+        }
         let step = self.0.step(
             state,
             Ctx {
@@ -1040,6 +1100,9 @@ pub(crate) struct ExtensionState {
     indent: usize,
     /// Whether the current match checks whether a container continues.
     continuation: bool,
+    /// For each construct with [`Reach::Pair`], by index, the byte before
+    /// which its markers are skipped, after a failed match read to it.
+    pair_until: Vec<usize>,
 }
 
 /// Where a flow construct is in its lines.
@@ -1903,6 +1966,371 @@ pub(crate) fn to_mdast(options: &ParseOptions, index: u8, tokens: Vec<RawToken>)
     erased(options, index).to_mdast(tokens)
 }
 
+/// What a construct did at one point of parsing, from [`trace`]
+/// (`test-util` feature).
+#[cfg(feature = "test-util")]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum TraceEvent {
+    /// A construct starts a match at byte `offset`, or, if `continuation`,
+    /// a container checks the prefix of a later line there.
+    Start {
+        /// Name of the construct's type.
+        construct: &'static str,
+        /// Byte offset in the document.
+        offset: usize,
+        /// Whether a container checks a later line.
+        continuation: bool,
+    },
+    /// A step at byte `offset`, from `state`, and what came of it.
+    Step {
+        /// Byte offset in the document.
+        offset: usize,
+        /// The state, as `Debug` shows it.
+        state: String,
+        /// What came of the step.
+        result: StepResult,
+    },
+    /// An attempt ended at byte `offset`: kept if `ok`, undone otherwise.
+    AttemptEnd {
+        /// Byte offset in the document.
+        offset: usize,
+        /// Whether the attempt matched.
+        ok: bool,
+    },
+}
+
+/// What came of a step, in a [`TraceEvent::Step`].
+#[cfg(feature = "test-util")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum StepResult {
+    /// Go on at the next byte.
+    Next,
+    /// Go on at the same byte.
+    Retry,
+    /// Start an attempt.
+    Attempt,
+    /// A container finished a line.
+    Container,
+    /// The match, or the attempt, matched.
+    Ok,
+    /// The match, or the attempt, did not.
+    Nok,
+    /// The step broke a rule, so the match does not match.
+    Broken(&'static str),
+    /// The match reached a limit, such as its reach, so it does not match.
+    Limit,
+}
+
+/// Every step of every construct while parsing `value` with `options`, in
+/// the order they ran: matches in the document first, then in content
+/// (`test-util` feature).
+///
+/// ```
+/// use markdown::{
+///     extension::{construct, trace, Construct, Ctx, Step, StepResult, Text, Token, TokenType, TraceEvent},
+///     mdast::{Custom, Node},
+///     ParseOptions,
+/// };
+///
+/// #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// enum Tok { At }
+///
+/// impl TokenType for Tok {
+///     const ALL: &'static [Self] = &[Tok::At];
+///     fn name(self) -> &'static str { "at" }
+/// }
+///
+/// struct At;
+///
+/// impl Construct for At {
+///     type Place = Text;
+///     type State = u8;
+///     type Token = Tok;
+///     fn markers(&self) -> &[u8] { b"@" }
+///     fn start(&self) -> u8 { 0 }
+///     fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+///         match (state, t.current()) {
+///             (0, Some(b'@')) => t.enter(Tok::At).consume().exit().ok(),
+///             _ => t.nok(),
+///         }
+///     }
+///     fn to_mdast(&self, _: Vec<Token<'_, Tok>>) -> Node {
+///         Node::Custom(Custom::default())
+///     }
+/// }
+///
+/// let options = ParseOptions {
+///     text_constructs: vec![construct(At)],
+///     ..ParseOptions::default()
+/// };
+///
+/// assert_eq!(
+///     trace("a @", &options),
+///     vec![
+///         TraceEvent::Start { construct: "At", offset: 2, continuation: false },
+///         TraceEvent::Step { offset: 2, state: "0".into(), result: StepResult::Ok },
+///     ]
+/// );
+/// ```
+#[cfg(feature = "test-util")]
+pub fn trace(value: &str, options: &ParseOptions) -> Vec<TraceEvent> {
+    crate::parser::trace(value, options)
+}
+
+/// Record `event` if a trace is on.
+#[cfg(feature = "test-util")]
+fn record(tokenizer: &Tokenizer, event: TraceEvent) {
+    if let Some(events) = tokenizer.parse_state.trace.borrow_mut().as_mut() {
+        events.push(event);
+    }
+}
+
+/// Record the step at `offset` of the current construct, with its result.
+#[cfg(feature = "test-util")]
+fn record_step(tokenizer: &Tokenizer, offset: usize, result: StepResult) {
+    if tokenizer.parse_state.trace.borrow().is_none() {
+        return;
+    }
+    let state = ext(tokenizer);
+    let construct = erased(tokenizer.parse_state.options, state.index);
+    let slot = state.slots.get(usize::from(state.index)).unwrap_or(&None);
+    record(
+        tokenizer,
+        TraceEvent::Step {
+            offset,
+            state: construct.last_state(slot.as_deref()),
+            result,
+        },
+    );
+}
+
+/// Check that parsing with the constructs in `options` takes work linear in
+/// the size of the document, in the tests of constructs (`test-util`
+/// feature).
+///
+/// It parses documents made of the ASCII markers of the constructs, each
+/// alone and all together: a marker, twice, and before a letter, repeated
+/// with nothing, spaces, or line endings between, and in a block quote and
+/// in a list item, at 128, 256, and 512 repeats, or more, so that a document
+/// is at least twice as long as the largest [`Reach::Bytes`].
+/// Documents of markers can miss a construct's own worst case, such as an
+/// opener without its closer: [`assert_linear_with`] repeats those too.
+/// It counts the steps that constructs take, not time, so it gives the same
+/// answer on any machine.
+///
+/// ```
+/// use markdown::{
+///     extension::{assert_linear, construct, Construct, Ctx, Reach, Step, Text, Token, TokenType},
+///     mdast::{Custom, Node},
+///     ParseOptions,
+/// };
+///
+/// #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// enum WikiToken {
+///     Wiki,
+///     Target,
+/// }
+///
+/// impl TokenType for WikiToken {
+///     const ALL: &'static [Self] = &[Self::Wiki, Self::Target];
+///
+///     fn name(self) -> &'static str {
+///         match self {
+///             Self::Wiki => "wiki",
+///             Self::Target => "wikiTarget",
+///         }
+///     }
+/// }
+///
+/// /// `[[`, a target, and `]]`.
+/// struct Wiki(Reach);
+///
+/// impl Construct for Wiki {
+///     type Place = Text;
+///     type State = u8;
+///     type Token = WikiToken;
+///
+///     fn markers(&self) -> &[u8] {
+///         b"["
+///     }
+///
+///     fn start(&self) -> u8 {
+///         0
+///     }
+///
+///     fn reach(&self) -> Reach {
+///         self.0
+///     }
+///
+///     fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+///         match (state, t.current()) {
+///             (0, Some(b'[')) => t.enter(WikiToken::Wiki).consume().next(1),
+///             (1, Some(b'[')) => t.consume().next(2),
+///             (2, Some(b']')) => t.nok(),
+///             (2, Some(_)) => t.enter(WikiToken::Target).consume().next(3),
+///             (3, Some(b']')) => t.exit().consume().next(4),
+///             (3, Some(_)) => t.consume().next(3),
+///             (4, Some(b']')) => t.consume().exit().ok(),
+///             _ => t.nok(),
+///         }
+///     }
+///
+///     fn to_mdast(&self, _: Vec<Token<'_, WikiToken>>) -> Node {
+///         Node::Custom(Custom::default())
+///     }
+/// }
+///
+/// let options = |reach| ParseOptions {
+///     text_constructs: vec![construct(Wiki(reach))],
+///     ..ParseOptions::default()
+/// };
+///
+/// // `[[a [[a [[a …` without `]]`: each `[[` reads to the end, unless it
+/// // skips what a failed match read.
+/// assert_linear(&options(Reach::Pair));
+/// assert!(std::panic::catch_unwind(|| assert_linear(&options(Reach::Unbounded))).is_err());
+/// ```
+///
+/// # Panics
+///
+/// If doubling a document more than triples the steps, with the document,
+/// or if parsing with `options` returns an error before it starts, such as
+/// `too-many-constructs`.
+/// With `test-util`, a construct that breaks a rule panics too.
+#[cfg(feature = "test-util")]
+pub fn assert_linear(options: &ParseOptions) {
+    assert_linear_with(options, &[]);
+}
+
+/// [`assert_linear`], with documents of `seeds` as well, such as an opener
+/// without its closer (`test-util` feature).
+///
+/// ```
+/// # use markdown::{extension::{assert_linear_with, construct, Construct, Ctx, Reach, Step, Text, Token, TokenType}, mdast::{Custom, Node}, ParseOptions};
+/// # #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// # enum T { Label }
+/// # impl TokenType for T {
+/// #     const ALL: &'static [Self] = &[T::Label];
+/// #     fn name(self) -> &'static str { "label" }
+/// # }
+/// /// `:[`, anything but `]`, and `]`, at most `max` bytes.
+/// struct Label(usize);
+///
+/// impl Construct for Label {
+///     type Place = Text;
+///     type State = u8;
+///     type Token = T;
+///     fn markers(&self) -> &[u8] { b":" }
+///     fn start(&self) -> u8 { 0 }
+///     fn reach(&self) -> Reach { Reach::Bytes(self.0) }
+///     fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+///         match (state, t.current()) {
+///             (0, Some(b':')) => t.enter(T::Label).consume().next(1),
+///             (1, Some(b'[')) => t.consume().next(2),
+///             (2, Some(b']')) => t.consume().exit().ok(),
+///             (2, Some(_)) => t.consume().next(2),
+///             _ => t.nok(),
+///         }
+///     }
+///     fn to_mdast(&self, _: Vec<Token<'_, T>>) -> Node { Node::Custom(Custom::default()) }
+/// }
+///
+/// let options = |max| ParseOptions {
+///     text_constructs: vec![construct(Label(max))],
+///     ..ParseOptions::default()
+/// };
+///
+/// // `:[:[:[…` without `]`: each `:` reads as far as its reach allows.
+/// assert_linear_with(&options(999), &[":["]);
+/// ```
+///
+/// # Panics
+///
+/// As [`assert_linear`].
+#[cfg(feature = "test-util")]
+pub fn assert_linear_with(options: &ParseOptions, seeds: &[&str]) {
+    let count = options.text_constructs.len()
+        + options.flow_constructs.len()
+        + options.document_constructs.len();
+    let mut markers: Vec<String> = vec![];
+    let mut all = String::new();
+    let mut reach = 0;
+
+    for index in 0..count {
+        let index = u8::try_from(index).unwrap_or(u8::MAX);
+        let construct = erased(options, index);
+        if let Reach::Bytes(bytes) = construct.reach() {
+            reach = reach.max(bytes);
+        }
+        for &byte in construct.markers() {
+            let marker = String::from(char::from(byte));
+            if byte.is_ascii() && byte != b'\n' && byte != b'\r' && !markers.contains(&marker) {
+                all.push(char::from(byte));
+                markers.push(marker);
+            }
+        }
+    }
+
+    if markers.len() > 1 {
+        markers.push(all);
+    }
+
+    let mut units = vec![];
+    for marker in &markers {
+        units.push(marker.clone());
+        units.push(alloc::format!("{marker}{marker}"));
+        units.push(alloc::format!("{marker}a"));
+        units.push(alloc::format!("{marker}{marker}a"));
+    }
+    units.extend(seeds.iter().map(|seed| String::from(*seed)));
+
+    for unit in &units {
+        // Before the document, and between units.
+        for (before, between) in [
+            ("", ""),
+            ("", " "),
+            ("", "\n"),
+            ("> ", "\n> "),
+            ("- ", "\n  "),
+        ] {
+            let document = |size: usize| {
+                let mut document = String::from(before);
+                for index in 0..size {
+                    if index > 0 {
+                        document.push_str(between);
+                    }
+                    document.push_str(unit);
+                }
+                document
+            };
+            // Past the reach of a match, where linear work shows.
+            let base = 128.max(reach * 2 / (unit.len() + between.len()).max(1) + 1);
+            let mut last: Option<(usize, usize)> = None;
+
+            for size in [base, base * 2, base * 4] {
+                let steps = match crate::parser::extension_steps(&document(size), options) {
+                    Ok(steps) => steps,
+                    Err(message) => panic!("expected options that parse, got: {}", message),
+                };
+                if let Some((last_size, last_steps)) = last {
+                    assert!(
+                        steps <= last_steps * 3 + 1024,
+                        "expected steps of constructs linear in the size of the document, but {} repeats of {:?} took {} steps, and {} took {}",
+                        last_size,
+                        alloc::format!("{before}{unit}{between}"),
+                        last_steps,
+                        size,
+                        steps
+                    );
+                }
+                last = Some((size, steps));
+            }
+        }
+    }
+}
+
 /// Construct at `index`: text constructs, then flow, then containers.
 fn erased(options: &ParseOptions, index: u8) -> &dyn ErasedConstruct {
     let mut index = usize::from(index);
@@ -1920,6 +2348,15 @@ fn erased(options: &ParseOptions, index: u8) -> &dyn ErasedConstruct {
 /// Start trying construct `index`.
 pub(crate) fn start(tokenizer: &mut Tokenizer, index: u8) -> State {
     let column = tokenizer.point.column;
+    #[cfg(feature = "test-util")]
+    record(
+        tokenizer,
+        TraceEvent::Start {
+            construct: erased(tokenizer.parse_state.options, index).name(),
+            offset: tokenizer.point.index,
+            continuation: false,
+        },
+    );
     let options = tokenizer.parse_state.options;
     let state = ext_mut(tokenizer);
     state.index = index;
@@ -1997,6 +2434,15 @@ pub(crate) fn continuation(tokenizer: &mut Tokenizer) -> State {
         tokenize_state.slots.resize_with(slot + 1, || None);
     }
     erased(options, index).resume_container(&mut tokenize_state.slots[slot], id);
+    #[cfg(feature = "test-util")]
+    record(
+        tokenizer,
+        TraceEvent::Start {
+            construct: erased(options, index).name(),
+            offset: start,
+            continuation: true,
+        },
+    );
     State::Retry(StateName::ExtensionStep)
 }
 
@@ -2050,6 +2496,14 @@ pub(crate) fn at_lazy(tokenizer: &mut Tokenizer) -> State {
 
 /// After an attempt of a construct that succeeded.
 pub(crate) fn attempt_ok(tokenizer: &mut Tokenizer) -> State {
+    #[cfg(feature = "test-util")]
+    record(
+        tokenizer,
+        TraceEvent::AttemptEnd {
+            offset: tokenizer.point.index,
+            ok: true,
+        },
+    );
     let options = tokenizer.parse_state.options;
     let state = ext_mut(tokenizer);
     state.attempts.pop().expect("expected attempt");
@@ -2060,6 +2514,14 @@ pub(crate) fn attempt_ok(tokenizer: &mut Tokenizer) -> State {
 
 /// After an attempt of a construct that failed, and was undone.
 pub(crate) fn attempt_nok(tokenizer: &mut Tokenizer) -> State {
+    #[cfg(feature = "test-util")]
+    record(
+        tokenizer,
+        TraceEvent::AttemptEnd {
+            offset: tokenizer.point.index,
+            ok: false,
+        },
+    );
     let options = tokenizer.parse_state.options;
     let state = ext_mut(tokenizer);
     let frame = state.attempts.pop().expect("expected attempt");
@@ -2092,8 +2554,15 @@ pub(crate) fn attempt_nok(tokenizer: &mut Tokenizer) -> State {
 /// Run the current construct, enforcing the rules of [`Construct`].
 pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     let point = tokenizer.point.index;
+    #[cfg(feature = "test-util")]
+    let parse_state = tokenizer.parse_state;
     let tokenize_state = ext_mut(tokenizer);
-    tokenize_state.steps += point.saturating_sub(tokenize_state.at).max(1);
+    let steps = point.saturating_sub(tokenize_state.at).max(1);
+    #[cfg(feature = "test-util")]
+    parse_state
+        .extension_steps
+        .set(parse_state.extension_steps.get() + steps);
+    tokenize_state.steps += steps;
     tokenize_state.at = point;
     tokenize_state.furthest = tokenize_state.furthest.max(point);
     // Work is linear in the bytes a match reaches, whatever its attempts do.
@@ -2106,7 +2575,7 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     let is_flow = place == PlaceKind::Flow;
 
     let within_reach = match construct.reach() {
-        Reach::Unbounded | Reach::Attention(_) => true,
+        Reach::Unbounded | Reach::Pair | Reach::Attention(_) => true,
         // At the end, there is nothing to read.
         Reach::Bytes(bytes) => {
             tokenizer.current.is_none() || tokenizer.point.index - ext(tokenizer).start < bytes
@@ -2115,6 +2584,8 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
     // Limits, not rules: the construct does not match, without a panic.
     ext_mut(tokenizer).nok = NokCause::Construct;
     if over_budget || !within_reach {
+        #[cfg(feature = "test-util")]
+        record_step(tokenizer, point, StepResult::Limit);
         ext_mut(tokenizer).nok = NokCause::Limit;
         return finish(tokenizer, RawStep::Nok, is_flow, false);
     }
@@ -2144,6 +2615,8 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
             // The frame of the attempt that does not start.
             construct.resume(&mut ext_mut(tokenizer).slots[slot], false);
         }
+        #[cfg(feature = "test-util")]
+        record_step(tokenizer, point, StepResult::Limit);
         ext_mut(tokenizer).nok = NokCause::Limit;
         return finish(tokenizer, RawStep::Nok, is_flow, false);
     }
@@ -2191,11 +2664,36 @@ pub(crate) fn step(tokenizer: &mut Tokenizer) -> State {
         _ => None,
     });
 
+    #[cfg_attr(not(feature = "test-util"), allow(unused_variables))]
     if let Some(rule) = broken {
-        broke(rule);
+        #[cfg(feature = "test-util")]
+        {
+            record_step(tokenizer, point, StepResult::Broken(rule));
+            let slot = &ext(tokenizer).slots[slot];
+            broke(
+                rule,
+                construct.name(),
+                point,
+                &construct.last_state(slot.as_deref()),
+            );
+        }
         ext_mut(tokenizer).nok = NokCause::Rule;
         return finish(tokenizer, RawStep::Nok, is_flow, false);
     }
+
+    #[cfg(feature = "test-util")]
+    record_step(
+        tokenizer,
+        point,
+        match step {
+            RawStep::Next => StepResult::Next,
+            RawStep::Retry => StepResult::Retry,
+            RawStep::Attempt => StepResult::Attempt,
+            RawStep::Container => StepResult::Container,
+            RawStep::Ok => StepResult::Ok,
+            RawStep::Nok => StepResult::Nok,
+        },
+    );
 
     if let RawStep::Container = step {
         let tokens = match ext(tokenizer).open[..] {
@@ -2299,7 +2797,12 @@ fn finish(tokenizer: &mut Tokenizer, step: RawStep, is_flow: bool, line_ending: 
         RawStep::Nok if !in_attempt && ext(tokenizer).line != FlowLine::First => {
             end_before_line(tokenizer)
         }
-        RawStep::Nok => State::Nok,
+        RawStep::Nok => {
+            if !in_attempt {
+                skip_pairs(tokenizer);
+            }
+            State::Nok
+        }
     }
 }
 
@@ -2307,8 +2810,17 @@ fn finish(tokenizer: &mut Tokenizer, step: RawStep, is_flow: bool, line_ending: 
 /// before its last line ending, which then starts a line as other markdown
 /// does, rather than an error.
 fn end_before_line(tokenizer: &mut Tokenizer) -> State {
+    #[cfg(feature = "test-util")]
     if ext(tokenizer).nok == NokCause::Construct {
-        broke("nok-after-first-line");
+        let state = ext(tokenizer);
+        let construct = erased(tokenizer.parse_state.options, state.index);
+        let slot = &state.slots[usize::from(state.index)];
+        broke(
+            "nok-after-first-line",
+            construct.name(),
+            tokenizer.point.index,
+            &construct.last_state(slot.as_deref()),
+        );
     }
 
     let state = ext_mut(tokenizer);
@@ -2364,12 +2876,41 @@ fn end_before_line(tokenizer: &mut Tokenizer) -> State {
     State::Ok
 }
 
-/// A construct broke `rule`: it does not match, and with `test-util`, that
-/// is a panic, so the tests of a construct find the mistake.
-#[cfg_attr(not(feature = "test-util"), allow(unused_variables))]
-fn broke(rule: &'static str) {
-    #[cfg(feature = "test-util")]
-    panic!("a construct broke the rule `{}`", rule);
+/// After a failed match of a text construct with [`Reach::Pair`], skip its
+/// markers up to the furthest byte the match read.
+fn skip_pairs(tokenizer: &mut Tokenizer) {
+    let options = tokenizer.parse_state.options;
+    let state = ext_mut(tokenizer);
+    let construct = erased(options, state.index);
+    if construct.place() == PlaceKind::Text && construct.reach() == Reach::Pair {
+        let index = usize::from(state.index);
+        if state.pair_until.len() <= index {
+            state.pair_until.resize(index + 1, 0);
+        }
+        state.pair_until[index] = state.pair_until[index].max(state.furthest);
+    }
+}
+
+/// Whether the text construct at `index` is not tried at the current byte,
+/// which a failed match of it with [`Reach::Pair`] read past.
+pub(crate) fn is_pair_skipped(tokenizer: &Tokenizer, index: u8) -> bool {
+    tokenizer
+        .tokenize_state
+        .extension
+        .as_deref()
+        .and_then(|state| state.pair_until.get(usize::from(index)))
+        .map_or(false, |until| tokenizer.point.index < *until)
+}
+
+/// A construct broke `rule` at byte `offset` in `state`: it does not match,
+/// and with `test-util`, that is a panic, so the tests of a construct find
+/// the mistake.
+#[cfg(feature = "test-util")]
+fn broke(rule: &'static str, construct: &str, offset: usize, state: &str) {
+    panic!(
+        "a construct broke the rule `{}`: {} at byte {}, in state {}",
+        rule, construct, offset, state
+    );
 }
 
 /// Whether `event` is of a token of a construct in content, such as a line
