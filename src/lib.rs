@@ -132,7 +132,13 @@ pub fn to_html(value: &str) -> String {
 pub fn to_html_with_options(value: &str, options: &Options) -> Result<String, message::Message> {
     let (events, parse_state) = parser::parse(value, &options.parse)?;
     let names = parse_state.extension_names.borrow();
-    let html = to_html::compile(&events, parse_state.bytes, &options.compile, &names);
+    let html = to_html::compile(
+        &events,
+        parse_state.bytes,
+        &options.compile,
+        &options.parse,
+        &names,
+    );
     Ok(html)
 }
 

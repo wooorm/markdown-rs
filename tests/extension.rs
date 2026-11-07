@@ -1,7 +1,7 @@
 use markdown::{
     extension::{
-        construct, BoxedConstruct, Construct, Container, ContentType, Ctx, Flow, Reach, RunToken,
-        Step, Text, Token, TokenType,
+        construct, BoxedConstruct, Construct, Container, ContentType, Ctx, Flow, HtmlEvent,
+        HtmlWriter, Reach, RunToken, Step, Text, Token, TokenType, Url,
     },
     mdast::{Blockquote, Custom, Node, Paragraph, Root, Text as TextNode},
     to_html_with_options, to_mdast,
@@ -5435,4 +5435,796 @@ fn asserts_linear_steps() {
             message
         );
     }
+}
+
+/// Tokens of the constructs that write their own HTML.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum HtmlTok {
+    Span,
+    SpanMarker,
+    SpanName,
+    Link,
+    LinkTarget,
+    LinkAlias,
+    Line,
+    LineMarker,
+    LineText,
+    Abbr,
+    AbbrLabel,
+}
+
+impl TokenType for HtmlTok {
+    const ALL: &'static [Self] = &[
+        Self::Span,
+        Self::SpanMarker,
+        Self::SpanName,
+        Self::Link,
+        Self::LinkTarget,
+        Self::LinkAlias,
+        Self::Line,
+        Self::LineMarker,
+        Self::LineText,
+        Self::Abbr,
+        Self::AbbrLabel,
+    ];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Span => "span",
+            Self::SpanMarker => "spanMarker",
+            Self::SpanName => "spanName",
+            Self::Link => "link",
+            Self::LinkTarget => "linkTarget",
+            Self::LinkAlias => "linkAlias",
+            Self::Line => "line",
+            Self::LineMarker => "lineMarker",
+            Self::LineText => "lineText",
+            Self::Abbr => "abbr",
+            Self::AbbrLabel => "abbrLabel",
+        }
+    }
+
+    fn content(self) -> Option<ContentType> {
+        match self {
+            Self::LineText | Self::AbbrLabel | Self::LinkAlias => Some(ContentType::Text),
+            _ => None,
+        }
+    }
+}
+
+fn empty_node(_: Vec<Token<'_, HtmlTok>>) -> Node {
+    Node::Custom(Custom::default())
+}
+
+/// `@` and lowercase letters, as `<span class="mention">` with the letters.
+struct SpanMention;
+
+impl Construct for SpanMention {
+    type Place = Text;
+    type State = u8;
+    type Token = HtmlTok;
+
+    fn markers(&self) -> &[u8] {
+        b"@"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'@')) => t
+                .enter(HtmlTok::Span)
+                .enter(HtmlTok::SpanMarker)
+                .consume()
+                .exit()
+                .next(1),
+            (1, Some(b'a'..=b'z')) => t.enter(HtmlTok::SpanName).consume().next(2),
+            (2, Some(b'a'..=b'z')) => t.consume().next(2),
+            (2, _) => t.exit().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+        empty_node(tokens)
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, HtmlTok>,
+        _: &[Token<'_, HtmlTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        match event {
+            HtmlEvent::Enter(token) if token.name == HtmlTok::Span => {
+                w.tag("<span class=\"mention\">");
+            }
+            HtmlEvent::Exit(token) if token.name == HtmlTok::Span => w.tag("</span>"),
+            HtmlEvent::Text(HtmlTok::SpanName, value) => w.text(value),
+            _ => {}
+        }
+    }
+}
+
+/// `[[`, a target without `]`, and `]]`, as a link to the target.
+struct TargetLink;
+
+impl Construct for TargetLink {
+    type Place = Text;
+    type State = u8;
+    type Token = HtmlTok;
+
+    fn markers(&self) -> &[u8] {
+        b"["
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'[')) => t.enter(HtmlTok::Link).consume().next(1),
+            (1, Some(b'[')) => t.consume().next(2),
+            (2, Some(b']') | None) => t.nok(),
+            (2, Some(_)) => t.enter(HtmlTok::LinkTarget).consume().next(3),
+            (3, Some(b']')) => t.exit().consume().next(4),
+            (3, Some(_)) => t.consume().next(3),
+            (4, Some(b']')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+        empty_node(tokens)
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, HtmlTok>,
+        _: &[Token<'_, HtmlTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        if let HtmlEvent::Text(HtmlTok::LinkTarget, value) = event {
+            w.tag("<a href=\"");
+            w.url(value, Url::Href);
+            w.tag("\">");
+            w.text(value);
+            w.tag("</a>");
+        }
+    }
+}
+
+/// `%` and the rest of the line as text, as a paragraph.
+struct ParagraphLine;
+
+impl Construct for ParagraphLine {
+    type Place = Flow;
+    type State = u8;
+    type Token = HtmlTok;
+
+    fn markers(&self) -> &[u8] {
+        b"%"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'%')) => t
+                .enter(HtmlTok::Line)
+                .enter(HtmlTok::LineMarker)
+                .consume()
+                .exit()
+                .next(1),
+            (1, Some(byte)) if byte != b'\n' => t.enter(HtmlTok::LineText).consume().next(2),
+            (2, None | Some(b'\n')) => t.exit().exit().ok(),
+            (2, Some(_)) => t.consume().next(2),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+        empty_node(tokens)
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, HtmlTok>,
+        _: &[Token<'_, HtmlTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        match event {
+            HtmlEvent::Enter(token) if token.name == HtmlTok::Line => w.tag("<p>"),
+            HtmlEvent::Exit(token) if token.name == HtmlTok::Line => w.tag("</p>"),
+            _ => {}
+        }
+    }
+}
+
+/// `{{`, a label as text, and `}}`, as `<abbr>` with the HTML of the label
+/// also in its `title`.
+struct TitledAbbr;
+
+impl Construct for TitledAbbr {
+    type Place = Text;
+    type State = u8;
+    type Token = HtmlTok;
+
+    fn markers(&self) -> &[u8] {
+        b"{"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'{')) => t.enter(HtmlTok::Abbr).consume().next(1),
+            (1, Some(b'{')) => t.consume().next(2),
+            (2, Some(b'}') | None) => t.nok(),
+            (2, Some(_)) => t.enter(HtmlTok::AbbrLabel).consume().next(3),
+            (3, Some(b'}')) => t.exit().consume().next(4),
+            (3, Some(_)) => t.consume().next(3),
+            (4, Some(b'}')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+        empty_node(tokens)
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, HtmlTok>,
+        _: &[Token<'_, HtmlTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        match event {
+            HtmlEvent::Enter(token) if token.name == HtmlTok::AbbrLabel => w.buffer(),
+            HtmlEvent::Exit(token) if token.name == HtmlTok::AbbrLabel => {
+                let label = w.resume();
+                w.tag("<abbr");
+                w.attr("title", label.as_str());
+                w.tag(">");
+                w.html(&label);
+                w.tag("</abbr>");
+            }
+            _ => {}
+        }
+    }
+}
+
+fn html_with(input: &str, parse: ParseOptions, compile: CompileOptions) -> String {
+    to_html_with_options(input, &Options { parse, compile }).unwrap()
+}
+
+fn texts(constructs: Vec<BoxedConstruct<Text>>) -> ParseOptions {
+    ParseOptions {
+        text_constructs: constructs,
+        ..ParseOptions::default()
+    }
+}
+
+#[test]
+fn writes_html_with_handlers() {
+    assert_eq!(
+        html("a @bc d", texts(vec![construct(SpanMention)])),
+        "<p>a <span class=\"mention\">bc</span> d</p>",
+        "should write markup around text, and drop the text it does not write"
+    );
+    assert_eq!(
+        html("> a @b\n> @c", texts(vec![construct(SpanMention)])),
+        "<blockquote>\n<p>a <span class=\"mention\">b</span>\n<span class=\"mention\">c</span></p>\n</blockquote>",
+        "should write matches in containers"
+    );
+    assert_eq!(
+        html("![a @b](c)", texts(vec![construct(SpanMention)])),
+        "<p><img src=\"c\" alt=\"a b\" /></p>",
+        "should leave markup out of the `alt` of an image, as for built-ins"
+    );
+    assert_eq!(
+        html("a {{*b* c}} d", texts(vec![construct(TitledAbbr)])),
+        "<p>a <abbr title=\"&lt;em&gt;b&lt;/em&gt; c\"><em>b</em> c</abbr> d</p>",
+        "should give content written to a buffer"
+    );
+    assert_eq!(
+        html("{{@b}}", texts(vec![construct(TitledAbbr), construct(SpanMention)])),
+        "<p><abbr title=\"&lt;span class=&quot;mention&quot;&gt;b&lt;/span&gt;\"><span class=\"mention\">b</span></abbr></p>",
+        "should write matches in content with their own handlers"
+    );
+}
+
+#[test]
+fn checks_urls_written_by_handlers() {
+    let parse = || texts(vec![construct(TargetLink)]);
+    assert_eq!(
+        html("[[https://a.b]] [[c]]", parse()),
+        "<p><a href=\"https://a.b\">https://a.b</a> <a href=\"c\">c</a></p>",
+        "should write safe URLs"
+    );
+    assert_eq!(
+        html("[[javascript:alert(1)]]", parse()),
+        "<p><a href=\"\">javascript:alert(1)</a></p>",
+        "should empty a URL with a dangerous protocol"
+    );
+    assert_eq!(
+        html_with(
+            "[[javascript:alert(1)]]",
+            parse(),
+            CompileOptions {
+                allow_dangerous_protocol: true,
+                ..CompileOptions::default()
+            }
+        ),
+        "<p><a href=\"javascript:alert(1)\">javascript:alert(1)</a></p>",
+        "should keep it with `allow_dangerous_protocol`"
+    );
+    assert_eq!(
+        html("[[a\"<b>]]", parse()),
+        "<p><a href=\"a%22%3Cb%3E\">a&quot;&lt;b&gt;</a></p>",
+        "should encode URLs and escape text"
+    );
+}
+
+/// `[[`, a target without `]` or `|`, optionally `|` and an alias as text,
+/// and `]]`, as a link to the target with the alias, or else the target.
+struct AliasLink;
+
+impl Construct for AliasLink {
+    type Place = Text;
+    type State = u8;
+    type Token = HtmlTok;
+
+    fn markers(&self) -> &[u8] {
+        b"["
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'[')) => t.enter(HtmlTok::Link).consume().next(1),
+            (1, Some(b'[')) => t.consume().next(2),
+            (2, None | Some(b']' | b'|')) => t.nok(),
+            (2, Some(_)) => t.enter(HtmlTok::LinkTarget).consume().next(3),
+            (3, Some(b'|')) => t.exit().consume().next(4),
+            (3, Some(b']')) => t.exit().consume().next(6),
+            (3, Some(_)) => t.consume().next(3),
+            (4, None | Some(b']')) => t.nok(),
+            (4, Some(_)) => t.enter(HtmlTok::LinkAlias).consume().next(5),
+            (5, Some(b']')) => t.exit().consume().next(6),
+            (5, Some(_)) => t.consume().next(5),
+            (6, Some(b']')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+        empty_node(tokens)
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, HtmlTok>,
+        tokens: &[Token<'_, HtmlTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        match event {
+            // The target and whether there is an alias are known at the start.
+            HtmlEvent::Enter(token) if token.name == HtmlTok::Link => {
+                let target = tokens
+                    .iter()
+                    .find(|token| token.name == HtmlTok::LinkTarget)
+                    .expect("expected a target");
+                w.tag("<a href=\"");
+                w.url(&target.value, Url::Href);
+                w.tag("\">");
+                if !tokens.iter().any(|token| token.name == HtmlTok::LinkAlias) {
+                    w.text(&target.value);
+                }
+            }
+            HtmlEvent::Exit(token) if token.name == HtmlTok::Link => w.tag("</a>"),
+            _ => {}
+        }
+    }
+}
+
+#[test]
+fn gives_handlers_the_tokens_of_the_match() {
+    assert_eq!(
+        html("[[a]] [[b|*c*]]", texts(vec![construct(AliasLink)])),
+        "<p><a href=\"a\">a</a> <a href=\"b\"><em>c</em></a></p>",
+        "should use a later token at the start of a match"
+    );
+}
+
+#[test]
+fn writes_flow_matches_as_blocks() {
+    let parse = || ParseOptions {
+        flow_constructs: vec![construct(ParagraphLine)],
+        ..ParseOptions::default()
+    };
+    // Where no line ending comes before it, a block starts on its own line.
+    for (input, expected, message) in [
+        (
+            "a\n%*b*\nc",
+            "<p>a</p>\n<p><em>b</em></p>\n<p>c</p>",
+            "between paragraphs",
+        ),
+        (
+            "> %a\n> %b",
+            "<blockquote>\n<p>a</p>\n<p>b</p>\n</blockquote>",
+            "at the start of a block quote",
+        ),
+        (
+            "1. %a\n2. %b",
+            "<ol>\n<li>\n<p>a</p>\n</li>\n<li>\n<p>b</p>\n</li>\n</ol>",
+            "in list items",
+        ),
+        (
+            "- a\n\n%b",
+            "<ul>\n<li>a</li>\n</ul>\n<p>b</p>",
+            "after a list",
+        ),
+    ] {
+        assert_eq!(
+            html(input, parse()),
+            expected,
+            "should write a flow match {}",
+            message
+        );
+    }
+
+    let with_containers = || ParseOptions {
+        document_constructs: vec![construct(Contained::new(line_block, Some(10)))],
+        ..parse()
+    };
+    assert_eq!(
+        html("| %a\n| %b", with_containers()),
+        "| \n<p>a</p>\n<p>b</p>",
+        "should write a flow match in a container"
+    );
+    assert_eq!(
+        html("- a\n\n| b", with_containers()),
+        "<ul>\n<li>a</li>\n</ul>\n| \n<p>b</p>",
+        "should write a container on its own line"
+    );
+    assert_eq!(
+        html("> ::b[c]", scripted_flow(b':', leaf)),
+        "<blockquote>\n::b[c]\n</blockquote>",
+        "should write the source of a flow match without a handler on its own line"
+    );
+}
+
+#[test]
+fn resume_without_buffer_panics() {
+    /// `{` as a construct that resumes without a buffer.
+    struct Resuming;
+
+    impl Construct for Resuming {
+        type Place = Text;
+        type State = ();
+        type Token = HtmlTok;
+
+        fn markers(&self) -> &[u8] {
+            b"{"
+        }
+
+        fn start(&self) {}
+
+        fn step(&self, (): (), t: Ctx<'_, '_, Self>) -> Step<Self> {
+            t.enter(HtmlTok::Abbr).consume().exit().ok()
+        }
+
+        fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+            empty_node(tokens)
+        }
+
+        fn html(
+            &self,
+            _: HtmlEvent<'_, HtmlTok>,
+            _: &[Token<'_, HtmlTok>],
+            w: &mut HtmlWriter<'_>,
+        ) {
+            w.resume();
+        }
+    }
+
+    let message = catch_unwind(AssertUnwindSafe(|| {
+        html("{", texts(vec![construct(Resuming)]))
+    }))
+    .expect_err("expected a panic")
+    .downcast::<&str>()
+    .map(|message| *message)
+    .unwrap_or_default();
+    assert_eq!(
+        message, "expected a buffer from `HtmlWriter::buffer` to resume",
+        "should panic, naming the mistake"
+    );
+}
+
+/// `@`, written as an element with the attributes in `ATTRIBUTES`, and the
+/// raw HTML `<b>`.
+struct Attrs;
+
+const ATTRIBUTES: &[(&str, &str)] = &[
+    ("id", "a\"b<c"),
+    ("onclick", "alert(1)"),
+    ("OnLoad", "alert(1)"),
+    ("style", "color: red"),
+    ("srcdoc", "<script>"),
+    ("srcset", "a.png 1x"),
+    ("href", "javascript:alert(1)"),
+    ("src", "https://example.com/a.png"),
+    ("data-x", "1"),
+    ("class", "c"),
+    ("aria-label", "l"),
+    ("x-on:click", "alert(1)"),
+    ("hx-on:click", "alert(1)"),
+    ("data-hx-on:click", "alert(1)"),
+    ("data-ng-click", "alert(1)"),
+    ("data-bind", "text:alert(1)"),
+    ("ng-click", "alert(1)"),
+    ("to", "javascript:alert(1)"),
+    ("a b", "1"),
+    ("1a", "1"),
+    ("x\"y", "1"),
+];
+
+impl Construct for Attrs {
+    type Place = Text;
+    type State = u8;
+    type Token = Tok;
+
+    fn markers(&self) -> &[u8] {
+        b"@"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'@')) => t.enter(Tok::A).consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, _: Vec<Token<'_, Tok>>) -> Node {
+        Node::Custom(Custom::default())
+    }
+
+    fn html(&self, event: HtmlEvent<'_, Tok>, _: &[Token<'_, Tok>], w: &mut HtmlWriter<'_>) {
+        if let HtmlEvent::Enter(_) = event {
+            w.tag("<x");
+            for (name, value) in ATTRIBUTES {
+                w.attr(name, value);
+            }
+            w.tag(">");
+            w.raw("<b>");
+            w.tag("</x>");
+        }
+    }
+}
+
+#[test]
+fn html_writer_keeps_input_out_of_markup() {
+    let parse = || texts(vec![construct(Attrs)]);
+
+    assert_eq!(
+        html_with("@", parse(), CompileOptions::default()),
+        "<p><x id=\"a&quot;b&lt;c\" href=\"\" src=\"https://example.com/a.png\" data-x=\"1\" class=\"c\" aria-label=\"l\">&lt;b&gt;</x></p>",
+        "should write only attributes that cannot run script, escape values, check URLs, leave out names that are not names, and escape raw HTML"
+    );
+
+    assert_eq!(
+        html_with(
+            "@",
+            parse(),
+            CompileOptions {
+                allow_dangerous_html: true,
+                allow_dangerous_protocol: true,
+                ..CompileOptions::default()
+            }
+        ),
+        "<p><x id=\"a&quot;b&lt;c\" onclick=\"alert(1)\" OnLoad=\"alert(1)\" style=\"color: red\" srcdoc=\"&lt;script&gt;\" srcset=\"a.png 1x\" href=\"javascript:alert(1)\" src=\"https://example.com/a.png\" data-x=\"1\" class=\"c\" aria-label=\"l\" x-on:click=\"alert(1)\" hx-on:click=\"alert(1)\" data-hx-on:click=\"alert(1)\" data-ng-click=\"alert(1)\" data-bind=\"text:alert(1)\" ng-click=\"alert(1)\" to=\"javascript:alert(1)\"><b></x></p>",
+        "should write all attributes with names, and raw HTML, when dangerous HTML and protocols are allowed"
+    );
+
+    assert_eq!(
+        html_with("![@](u)", parse(), CompileOptions::default()),
+        "<p><img src=\"u\" alt=\"&lt;b&gt;\" /></p>",
+        "should leave out markup and attributes in the `alt` of an image"
+    );
+}
+
+/// `@`, written with a URL of each kind, buffered HTML, and raw HTML.
+struct Kinds;
+
+impl Construct for Kinds {
+    type Place = Text;
+    type State = u8;
+    type Token = Tok;
+
+    fn markers(&self) -> &[u8] {
+        b"@"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'@')) => t.enter(Tok::A).consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, _: Vec<Token<'_, Tok>>) -> Node {
+        Node::Custom(Custom::default())
+    }
+
+    fn html(&self, event: HtmlEvent<'_, Tok>, _: &[Token<'_, Tok>], w: &mut HtmlWriter<'_>) {
+        if let HtmlEvent::Enter(_) = event {
+            w.tag("<iframe");
+            w.attr("src", "javascript:alert(1)");
+            w.tag("></iframe><img src=\"");
+            w.url("javascript:alert(2)", Url::Image);
+            w.tag("\" />");
+            w.raw("<script>alert(3)</script>");
+        }
+    }
+}
+
+#[test]
+fn html_writer_keeps_script_out_of_urls_and_raw_html() {
+    let parse = || texts(vec![construct(Kinds)]);
+    let compile = |any_img_src, dangerous_html| CompileOptions {
+        allow_any_img_src: any_img_src,
+        allow_dangerous_html: dangerous_html,
+        gfm_tagfilter: true,
+        ..CompileOptions::default()
+    };
+
+    assert_eq!(
+        html_with("@", parse(), compile(true, false)),
+        "<p><iframe src=\"\"></iframe><img src=\"javascript:alert(2)\" />&lt;script&gt;alert(3)&lt;/script&gt;</p>",
+        "should allow any protocol with `allow_any_img_src` only for `Url::Image`, not for `src` on any element"
+    );
+
+    assert_eq!(
+        html_with("@", parse(), compile(false, true)),
+        "<p><iframe src=\"\"></iframe><img src=\"\" />&lt;script>alert(3)&lt;/script></p>",
+        "should filter raw HTML with `gfm_tagfilter`, as `to_html` filters raw HTML in markdown"
+    );
+}
+
+/// `{{`, text content, and `}}`, written back from a buffer; it keeps the
+/// last buffer, which a construct must not do, to check what `html` does
+/// with it in the `alt` of an image.
+struct Kept(std::cell::RefCell<Option<markdown::extension::Html>>);
+
+impl Construct for Kept {
+    type Place = Text;
+    type State = u8;
+    type Token = HtmlTok;
+
+    fn markers(&self) -> &[u8] {
+        b"{"
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0 | 1, Some(b'{')) => {
+                let t = if state == 0 {
+                    t.enter(HtmlTok::Abbr)
+                } else {
+                    t
+                };
+                t.consume().next(state + 1)
+            }
+            (2, Some(byte)) if byte != b'}' => t.enter(HtmlTok::AbbrLabel).retry(3),
+            (3, Some(b'}')) => t.exit().consume().next(4),
+            (3, Some(_)) => t.consume().next(3),
+            (4, Some(b'}')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, HtmlTok>>) -> Node {
+        empty_node(tokens)
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, HtmlTok>,
+        _: &[Token<'_, HtmlTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        match event {
+            HtmlEvent::Enter(token) if token.name == HtmlTok::AbbrLabel => w.buffer(),
+            HtmlEvent::Exit(token) if token.name == HtmlTok::AbbrLabel => {
+                let label = w.resume();
+                let kept = self.0.borrow_mut().replace(label.clone());
+                w.html(&kept.unwrap_or(label));
+            }
+            _ => {}
+        }
+    }
+}
+
+#[test]
+fn html_writer_keeps_markup_out_of_alt() {
+    let parse = texts(vec![construct(Kept(std::cell::RefCell::new(None)))]);
+    assert_eq!(
+        html_with(
+            "{{![q](/onerror=alert(1)//)}} ![b {{c}}](u)",
+            parse,
+            CompileOptions::default()
+        ),
+        "<p><img src=\"/onerror=alert(1)//\" alt=\"q\" /> <img src=\"u\" alt=\"b \" /></p>",
+        "should leave out HTML written with markup in the `alt` of an image"
+    );
+}
+
+#[test]
+fn html_writer_resumes_only_its_own_buffers() {
+    struct Resume;
+
+    impl Construct for Resume {
+        type Place = Text;
+        type State = u8;
+        type Token = Tok;
+
+        fn markers(&self) -> &[u8] {
+            b"@"
+        }
+
+        fn start(&self) -> u8 {
+            0
+        }
+
+        fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+            match (state, t.current()) {
+                (0, Some(b'@')) => t.enter(Tok::A).consume().exit().ok(),
+                _ => t.nok(),
+            }
+        }
+
+        fn to_mdast(&self, _: Vec<Token<'_, Tok>>) -> Node {
+            Node::Custom(Custom::default())
+        }
+
+        fn html(&self, event: HtmlEvent<'_, Tok>, _: &[Token<'_, Tok>], w: &mut HtmlWriter<'_>) {
+            if let HtmlEvent::Enter(_) = event {
+                w.resume();
+            }
+        }
+    }
+
+    let parse = texts(vec![construct(Resume)]);
+    assert!(
+        catch_unwind(AssertUnwindSafe(|| html_with(
+            "![@](u)",
+            parse,
+            CompileOptions::default()
+        )))
+        .is_err(),
+        "should panic when a handler resumes a buffer it did not start, such as that of an `alt`"
+    );
 }

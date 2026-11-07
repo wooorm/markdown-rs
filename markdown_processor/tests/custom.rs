@@ -1,4 +1,9 @@
-use markdown::mdast;
+use markdown::{
+    extension::{
+        construct, Construct, Ctx, HtmlEvent, HtmlWriter, Step, Text, Token, TokenType, Url,
+    },
+    mdast,
+};
 use markdown_processor::{visit::visit_mut, Processor};
 use pretty_assertions::assert_eq;
 use std::borrow::Cow;
@@ -128,4 +133,111 @@ fn custom_node_names_its_element() {
         "<p><a class=\"wiki\" href=\"\">a</a></p>",
         "should render the element `h_name` names, checking the protocol of its URLs"
     );
+}
+
+/// Tokens of a link to a target.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum LinkTok {
+    Link,
+    Target,
+}
+
+impl TokenType for LinkTok {
+    const ALL: &'static [Self] = &[Self::Link, Self::Target];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Link => "link",
+            Self::Target => "linkTarget",
+        }
+    }
+}
+
+/// `[[`, a target without `]`, and `]]`: a link with a class, written by a
+/// handler in `to_html`, and with `h_name` and `attributes` in mdast.
+struct TargetLink;
+
+impl Construct for TargetLink {
+    type Place = Text;
+    type State = u8;
+    type Token = LinkTok;
+
+    fn markers(&self) -> &[u8] {
+        b"["
+    }
+
+    fn start(&self) -> u8 {
+        0
+    }
+
+    fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+        match (state, t.current()) {
+            (0, Some(b'[')) => t.enter(LinkTok::Link).consume().next(1),
+            (1, Some(b'[')) => t.consume().next(2),
+            (2, Some(b']') | None) => t.nok(),
+            (2, Some(_)) => t.enter(LinkTok::Target).consume().next(3),
+            (3, Some(b']')) => t.exit().consume().next(4),
+            (3, Some(_)) => t.consume().next(3),
+            (4, Some(b']')) => t.consume().exit().ok(),
+            _ => t.nok(),
+        }
+    }
+
+    fn to_mdast(&self, tokens: Vec<Token<'_, LinkTok>>) -> mdast::Node {
+        let target = tokens[1].value.to_string();
+        mdast::Node::Custom(mdast::Custom {
+            name: "link".into(),
+            h_name: Some("a".into()),
+            attributes: vec![
+                ("class".to_string(), "wiki".to_string()),
+                ("href".to_string(), target.clone()),
+            ]
+            .into_iter()
+            .collect(),
+            value: Some(target),
+            ..mdast::Custom::default()
+        })
+    }
+
+    fn html(
+        &self,
+        event: HtmlEvent<'_, LinkTok>,
+        _: &[Token<'_, LinkTok>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        if let HtmlEvent::Text(LinkTok::Target, value) = event {
+            w.tag("<a class=\"wiki\" href=\"");
+            w.url(value, Url::Href);
+            w.tag("\">");
+            w.text(value);
+            w.tag("</a>");
+        }
+    }
+}
+
+#[test]
+fn writes_the_same_html_through_handlers_and_h_name() {
+    let processor = Processor::new().plugin(|processor: &mut Processor| {
+        processor.parse.text_constructs.push(construct(TargetLink));
+    });
+    let options = markdown::Options {
+        parse: markdown::ParseOptions {
+            text_constructs: vec![construct(TargetLink)],
+            ..markdown::ParseOptions::default()
+        },
+        ..markdown::Options::default()
+    };
+
+    for input in [
+        "a [[b]] c",
+        "[[https://a.b?c#d]]",
+        "[[javascript:alert(1)]]",
+    ] {
+        assert_eq!(
+            processor.process(input).unwrap(),
+            markdown::to_html_with_options(input, &options).unwrap(),
+            "should write {:?} the same in both paths",
+            input
+        );
+    }
 }

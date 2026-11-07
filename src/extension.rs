@@ -9,8 +9,9 @@
 //!
 //! [`to_mdast()`][crate::to_mdast()] turns each match into a node with
 //! [`Construct::to_mdast`].
-//! HTML has no node to render, so [`to_html()`][crate::to_html()] writes
-//! the source of a match as text.
+//! [`to_html()`][crate::to_html()] writes each match with
+//! [`Construct::html`], whose default writes its source as text and its
+//! content as HTML.
 //!
 //! The types check what they can: a step that consumes ends in
 //! [`Consumed::next`], so it cannot forget to consume or consume twice;
@@ -311,7 +312,7 @@ use crate::tokenizer::{move_point_back, Container as TokenizerContainer, Tokeniz
 use crate::unist::Position;
 use crate::util::constant::TAB_SIZE;
 use crate::util::slice::{Position as SlicePosition, Slice};
-use crate::ParseOptions;
+use crate::{CompileOptions, ParseOptions};
 use alloc::{borrow::Cow, boxed::Box, string::String, vec, vec::Vec};
 use core::{any::Any, convert::TryFrom, fmt, marker::PhantomData, str};
 
@@ -677,6 +678,131 @@ pub trait Construct: 'static {
     ///
     /// `tokens[0]` is the outermost token, the first one entered.
     fn to_mdast(&self, tokens: Vec<Token<'_, Self::Token>>) -> mdast::Node;
+
+    /// Write a match as HTML in [`to_html()`][crate::to_html()], one event
+    /// at a time, like a handler of micromark’s `htmlExtension` (default:
+    /// [`HtmlEvent::Text`] as escaped text, so the match is its source, with
+    /// its content as HTML).
+    ///
+    /// `tokens` are all the tokens of the match, as
+    /// [`to_mdast`][Self::to_mdast] gets them but without children, so a
+    /// handler can use a later token at an earlier event, such as the target
+    /// of a link at its start.
+    /// Content is written as HTML between the enter and exit of its token,
+    /// so a handler writes only what goes around it.
+    /// A flow construct or container starts on its own line, as other
+    /// blocks do.
+    ///
+    /// ```
+    /// use markdown::{
+    ///     extension::{construct, Construct, Ctx, HtmlEvent, HtmlWriter, Step, Text, Token, TokenType},
+    ///     mdast::{Custom, Node},
+    ///     to_html_with_options, Options, ParseOptions,
+    /// };
+    ///
+    /// #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    /// enum MentionToken {
+    ///     Mention,
+    ///     Marker,
+    ///     Name,
+    /// }
+    ///
+    /// impl TokenType for MentionToken {
+    ///     const ALL: &'static [Self] = &[Self::Mention, Self::Marker, Self::Name];
+    ///
+    ///     fn name(self) -> &'static str {
+    ///         match self {
+    ///             Self::Mention => "mention",
+    ///             Self::Marker => "mentionMarker",
+    ///             Self::Name => "mentionName",
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// /// `@` and a lowercase ASCII word, as a `span`, without the `@`.
+    /// struct Mention;
+    ///
+    /// impl Construct for Mention {
+    ///     type Place = Text;
+    ///     type State = u8;
+    ///     type Token = MentionToken;
+    ///
+    ///     fn markers(&self) -> &[u8] {
+    ///         b"@"
+    ///     }
+    ///
+    ///     fn start(&self) -> u8 {
+    ///         0
+    ///     }
+    ///
+    ///     fn step(&self, state: u8, t: Ctx<'_, '_, Self>) -> Step<Self> {
+    ///         match (state, t.current()) {
+    ///             (0, Some(b'@')) => t
+    ///                 .enter(MentionToken::Mention)
+    ///                 .enter(MentionToken::Marker)
+    ///                 .consume()
+    ///                 .exit()
+    ///                 .next(1),
+    ///             (1, Some(b'a'..=b'z')) => t.enter(MentionToken::Name).consume().next(2),
+    ///             (2, Some(b'a'..=b'z')) => t.consume().next(2),
+    ///             (2, _) => t.exit().exit().ok(),
+    ///             _ => t.nok(),
+    ///         }
+    ///     }
+    ///
+    ///     fn to_mdast(&self, tokens: Vec<Token<'_, MentionToken>>) -> Node {
+    ///         Node::Custom(Custom {
+    ///             name: "mention".into(),
+    ///             value: Some(tokens[2].value.to_string()),
+    ///             ..Custom::default()
+    ///         })
+    ///     }
+    ///
+    ///     fn html(
+    ///         &self,
+    ///         event: HtmlEvent<'_, MentionToken>,
+    ///         _: &[Token<'_, MentionToken>],
+    ///         w: &mut HtmlWriter<'_>,
+    ///     ) {
+    ///         match event {
+    ///             HtmlEvent::Enter(token) if token.name == MentionToken::Mention => {
+    ///                 w.tag("<span class=\"mention\">");
+    ///             }
+    ///             HtmlEvent::Exit(token) if token.name == MentionToken::Mention => {
+    ///                 w.tag("</span>");
+    ///             }
+    ///             // The `@` is text of the marker, which is left out.
+    ///             HtmlEvent::Text(MentionToken::Name, value) => w.text(value),
+    ///             _ => {}
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// let options = Options {
+    ///     parse: ParseOptions {
+    ///         text_constructs: vec![construct(Mention)],
+    ///         ..ParseOptions::default()
+    ///     },
+    ///     ..Options::default()
+    /// };
+    ///
+    /// assert_eq!(
+    ///     to_html_with_options("hi @alice", &options)?,
+    ///     "<p>hi <span class=\"mention\">alice</span></p>"
+    /// );
+    /// # Ok::<(), markdown::message::Message>(())
+    /// ```
+    fn html(
+        &self,
+        event: HtmlEvent<'_, Self::Token>,
+        tokens: &[Token<'_, Self::Token>],
+        w: &mut HtmlWriter<'_>,
+    ) {
+        let _ = tokens;
+        if let HtmlEvent::Text(_, value) = event {
+            w.text(value);
+        }
+    }
 }
 
 /// A construct ready to be passed in options, made by [`construct()`].
@@ -751,7 +877,8 @@ pub struct Token<'a, T> {
     pub position: Position,
 }
 
-/// Look up tokens of a match by name, in [`Construct::to_mdast`].
+/// Look up tokens of a match by name, in
+/// [`Construct::to_mdast`] and [`Construct::html`].
 ///
 /// ```
 /// # use markdown::extension::{Token, TokenSlice, TokenType};
@@ -795,6 +922,262 @@ impl<'a, T: TokenType> TokenSlice<'a, T> for [Token<'a, T>] {
 
 /// A token whose name is its index in [`TokenType::ALL`].
 pub(crate) type RawToken<'a> = Token<'a, u16>;
+
+/// What [`Construct::html`] writes, in the order of the source.
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum HtmlEvent<'a, T> {
+    /// A token starts.
+    /// Its `value` is its source text, as in [`Construct::to_mdast`], and
+    /// its `children` are empty: content is written as HTML after it.
+    Enter(&'a Token<'a, T>),
+    /// A token ends.
+    Exit(&'a Token<'a, T>),
+    /// Source text inside the token, outside the tokens in it, without
+    /// container prefixes: the bytes a step consumed in it, such as the `@`
+    /// and the name of a mention.
+    Text(T, &'a str),
+}
+
+/// What runs a handler on one event of a match, given to the compiler.
+pub(crate) type HtmlEmit<'e> = dyn FnMut(RawHtmlEvent<'_>, &mut HtmlWriter<'_>) + 'e;
+
+/// An [`HtmlEvent`] whose tokens are indices in the tokens of the match.
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum RawHtmlEvent<'a> {
+    Enter(usize),
+    Exit(usize),
+    Text(usize, &'a str),
+}
+
+/// Kind of URL for [`HtmlWriter::url`], which says which protocols are safe.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum Url {
+    /// A link, such as `href`: the protocols of links in `to_html`.
+    Href,
+    /// A resource, such as `src`: the protocols of images in `to_html`.
+    Src,
+    /// The `src` of an `<img>`: as [`Url::Src`], and any protocol with
+    /// `allow_any_img_src`, which is safe only for images, as browsers do
+    /// not run code in them.
+    Image,
+}
+
+/// Where [`Construct::html`] writes, like the `this` of a handler of
+/// micromark’s `htmlExtension`.
+pub struct HtmlWriter<'a> {
+    inner: &'a mut dyn HtmlSink,
+}
+
+impl fmt::Debug for HtmlWriter<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("HtmlWriter").finish_non_exhaustive()
+    }
+}
+
+impl<'a> HtmlWriter<'a> {
+    pub(crate) fn new(inner: &'a mut dyn HtmlSink) -> Self {
+        HtmlWriter { inner }
+    }
+
+    /// Write text, escaped.
+    pub fn text(&mut self, value: &str) {
+        self.inner.text(value);
+    }
+
+    /// Write markup, as is, like micromark’s `this.tag`.
+    ///
+    /// Like built-in markup, it is left out in the `alt` of an image.
+    /// It takes only a `&'static str`, so text from the input cannot be
+    /// written as markup: write that with [`text`][Self::text],
+    /// [`attr`][Self::attr], [`url`][Self::url], or [`raw`][Self::raw].
+    ///
+    /// ```compile_fail,E0597
+    /// # use markdown::extension::HtmlWriter;
+    /// fn write(w: &mut HtmlWriter<'_>, name: &str) {
+    ///     let markup = format!("<{}>", name);
+    ///     w.tag(&markup);
+    /// }
+    /// ```
+    pub fn tag(&mut self, value: &'static str) {
+        self.inner.tag(value);
+    }
+
+    /// Write an attribute, ` name="value"`, after the name of an element
+    /// written with [`tag`][Self::tag], such as `<span`.
+    ///
+    /// The value is escaped, and the value of a URL attribute, `href`,
+    /// `src`, or `cite`, is checked as [`url`][Self::url] checks it.
+    /// Unless `allow_dangerous_html`, only attributes that cannot run script
+    /// are written, as `hast-util-sanitize` allows them: `id`, `class`,
+    /// `title`, `lang`, `dir`, `role`, `alt`, `width`, `height`, `start`,
+    /// `reversed`, `open`, `colspan`, `rowspan`, `href`, `src`, `cite`,
+    /// `aria-*`, and `data-*` of letters, digits, and `-`, except those that
+    /// frameworks run as code (`data-bind`, `data-hx-*`, `data-ng-*`).
+    /// With it, any name of ASCII letters, digits, `_`, `:`, `.`, and `-`
+    /// that starts with a letter is written.
+    /// Nothing is written for other names, or in the `alt` of an image.
+    /// An allowed attribute can still matter on the element a construct
+    /// picks, such as an `id` from the input that shadows a global of the
+    /// page: prefix such values, as `to_html` prefixes footnote ids.
+    pub fn attr(&mut self, name: &str, value: &str) {
+        let mut chars = name.chars();
+        let is_name = chars
+            .next()
+            .map_or(false, |char| char.is_ascii_alphabetic())
+            && chars
+                .all(|char| char.is_ascii_alphanumeric() || matches!(char, '_' | ':' | '.' | '-'));
+        if !is_name || !self.inner.tags() {
+            return;
+        }
+        let lower = name.to_ascii_lowercase();
+        if !self.inner.options().allow_dangerous_html && !is_safe_attribute(&lower) {
+            return;
+        }
+        self.inner.raw_tag(" ");
+        self.inner.raw_tag(name);
+        self.inner.raw_tag("=\"");
+        match url_attribute(&lower) {
+            Some(kind) => self.inner.url(value, kind),
+            None => self.inner.text(value),
+        }
+        self.inner.raw_tag("\"");
+    }
+
+    /// Write HTML from the input, such as the raw HTML of a construct, as
+    /// `to_html` writes raw HTML in markdown: as is if `allow_dangerous_html`,
+    /// filtered if `gfm_tagfilter` too, and escaped otherwise.
+    pub fn raw(&mut self, value: &str) {
+        self.inner.raw(value);
+    }
+
+    /// Write HTML that [`resume`][Self::resume] returned, as is: `to_html`
+    /// wrote it, so it is as safe as the rest of the output.
+    ///
+    /// In the `alt` of an image, where markup is left out, HTML that was
+    /// written with markup is left out too.
+    pub fn html(&mut self, value: &Html) {
+        if value.tags && !self.inner.tags() {
+            return;
+        }
+        self.inner.html(&value.value);
+    }
+
+    /// Write a URL, escaped and encoded, with its protocol checked as `to_html`
+    /// checks links or images, unless `allow_dangerous_protocol`: an unsafe
+    /// URL is empty.
+    pub fn url(&mut self, value: &str, kind: Url) {
+        self.inner.url(value, kind);
+    }
+
+    /// Write a line ending, unless at the start or after one.
+    pub fn line_ending_if_needed(&mut self) {
+        self.inner.line_ending_if_needed();
+    }
+
+    /// Write to a new buffer, until [`resume`][Self::resume], like
+    /// micromark’s `this.buffer`: to use content in an attribute, call it
+    /// at the enter of the content token, and at its exit, pass
+    /// `resume().as_str()` to [`attr`][Self::attr], which escapes it.
+    pub fn buffer(&mut self) {
+        self.inner.buffer();
+    }
+
+    /// End the last buffer, and return what was written to it, which
+    /// [`html`][Self::html] can write back.
+    ///
+    /// ## Panics
+    ///
+    /// Without a buffer started by [`buffer`][Self::buffer] in this match.
+    pub fn resume(&mut self) -> Html {
+        Html {
+            tags: self.inner.tags(),
+            value: self.inner.resume(),
+        }
+    }
+
+    /// Options of `to_html`.
+    pub fn options(&self) -> &CompileOptions {
+        self.inner.options()
+    }
+}
+
+/// HTML that `to_html` wrote to a buffer, returned by
+/// [`HtmlWriter::resume`].
+///
+/// Only `to_html` makes it, so writing it back with [`HtmlWriter::html`]
+/// writes nothing a construct did not escape.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Html {
+    value: String,
+    /// Whether it was written where markup is written, so it can hold some.
+    tags: bool,
+}
+
+impl Html {
+    /// The HTML, to read it, such as to check whether it is blank, or to
+    /// use it as the value of an attribute with [`HtmlWriter::attr`].
+    pub fn as_str(&self) -> &str {
+        &self.value
+    }
+}
+
+/// Attributes that cannot run script, which [`HtmlWriter::attr`] writes
+/// without `allow_dangerous_html`.
+fn is_safe_attribute(name: &str) -> bool {
+    match name {
+        "id" | "class" | "title" | "lang" | "dir" | "role" | "alt" | "width" | "height"
+        | "start" | "reversed" | "open" | "colspan" | "rowspan" | "href" | "src" | "cite" => true,
+        "data-bind" => false,
+        _ => {
+            let is_plain = |rest: &str| {
+                !rest.is_empty()
+                    && rest
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+            };
+            if let Some(rest) = name.strip_prefix("aria-") {
+                is_plain(rest)
+            } else if let Some(rest) = name.strip_prefix("data-") {
+                is_plain(rest) && !rest.starts_with("hx-") && !rest.starts_with("ng-")
+            } else {
+                false
+            }
+        }
+    }
+}
+
+/// Attributes whose value is a URL, and how `to_html` checks it.
+fn url_attribute(name: &str) -> Option<Url> {
+    match name {
+        "src" | "poster" | "background" | "lowsrc" | "dynsrc" => Some(Url::Src),
+        "href" | "action" | "formaction" | "cite" | "longdesc" | "manifest" | "ping"
+        | "codebase" | "data" | "icon" | "xlink:href" => Some(Url::Href),
+        _ => None,
+    }
+}
+
+/// What `to_html` gives [`HtmlWriter`].
+pub(crate) trait HtmlSink {
+    fn text(&mut self, value: &str);
+    fn tag(&mut self, value: &str);
+    /// Markup built by `HtmlWriter` itself, such as an attribute name.
+    fn raw_tag(&mut self, value: &str) {
+        self.tag(value);
+    }
+    /// Raw HTML from the input, as `to_html` writes raw HTML in markdown.
+    fn raw(&mut self, value: &str);
+    /// HTML that `to_html` wrote to a buffer.
+    fn html(&mut self, value: &str);
+    /// Whether markup is written: not in the `alt` of an image.
+    fn tags(&self) -> bool;
+    fn url(&mut self, value: &str, kind: Url);
+    fn line_ending_if_needed(&mut self);
+    fn buffer(&mut self);
+    fn resume(&mut self) -> String;
+    fn options(&self) -> &CompileOptions;
+}
 
 /// What an interned token name is.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -854,6 +1237,7 @@ trait ErasedConstruct {
     /// state.
     fn resume(&self, slot: &mut Option<Box<dyn Any>>, ok: bool);
     fn to_mdast(&self, tokens: Vec<RawToken>) -> mdast::Node;
+    fn html_run(&self, tokens: &[RawToken], run: &mut dyn FnMut(&mut HtmlEmit<'_>));
 }
 
 /// A construct of a known type.
@@ -1032,6 +1416,31 @@ impl<C: Construct> ErasedConstruct for Wrap<C> {
                 })
                 .collect(),
         )
+    }
+
+    fn html_run(&self, tokens: &[RawToken], run: &mut dyn FnMut(&mut HtmlEmit<'_>)) {
+        let tokens = tokens
+            .iter()
+            .map(typed)
+            .collect::<Vec<Token<'_, C::Token>>>();
+        run(&mut |event, w| {
+            let event = match event {
+                RawHtmlEvent::Enter(index) => HtmlEvent::Enter(&tokens[index]),
+                RawHtmlEvent::Exit(index) => HtmlEvent::Exit(&tokens[index]),
+                RawHtmlEvent::Text(index, value) => HtmlEvent::Text(tokens[index].name, value),
+            };
+            self.0.html(event, &tokens, w);
+        });
+    }
+}
+
+/// A token with its name as a `T`, borrowing its value.
+fn typed<'t, T: TokenType>(token: &'t RawToken<'_>) -> Token<'t, T> {
+    Token {
+        name: T::ALL[usize::from(token.name)],
+        value: Cow::Borrowed(&token.value),
+        children: vec![],
+        position: token.position.clone(),
     }
 }
 
@@ -1964,6 +2373,23 @@ pub(crate) fn markers(options: &ParseOptions, index: u8) -> &[u8] {
 /// Whether the construct at `index` can start after `previous`.
 pub(crate) fn can_start_after(options: &ParseOptions, index: u8, previous: Option<char>) -> bool {
     erased(options, index).previous(previous)
+}
+
+/// Run the handler of the construct at `index` over a segment of events,
+/// with its tokens typed once.
+pub(crate) fn html_run(
+    options: &ParseOptions,
+    index: u8,
+    tokens: &[RawToken],
+    run: &mut dyn FnMut(&mut HtmlEmit<'_>),
+) {
+    erased(options, index).html_run(tokens, run);
+}
+
+/// Whether the construct at `index` is a block: a flow construct or a
+/// container.
+pub(crate) fn is_block(options: &ParseOptions, index: u8) -> bool {
+    erased(options, index).place() != PlaceKind::Text
 }
 
 /// Turn the tokens of a match of the construct at `index` into a node.
@@ -2946,6 +3372,8 @@ pub(crate) fn exits(events: &[Event], names: &[TokenName]) -> Vec<usize> {
 /// A match of a construct, as event indices.
 pub(crate) struct Match<'a> {
     pub tokens: Vec<RawToken<'a>>,
+    /// Enter and exit of each token.
+    pub spans: Vec<(usize, usize)>,
     /// Content tokens: token, enter, and exit, and whether the content is a
     /// document.
     pub contents: Vec<(usize, usize, usize, bool)>,
@@ -3002,6 +3430,7 @@ pub(crate) fn collect_tokens<'a>(
         index += 1;
     }
 
+    let bounds = spans.iter().map(|span| (span.1, span.2)).collect();
     let tokens = spans
         .into_iter()
         .map(|(name, enter, exit, is_content)| Token {
@@ -3021,6 +3450,7 @@ pub(crate) fn collect_tokens<'a>(
 
     Match {
         tokens,
+        spans: bounds,
         contents,
         excluded,
         end: index,
