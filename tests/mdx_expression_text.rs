@@ -3,7 +3,7 @@ use markdown::{
     mdast::{Blockquote, MdxTextExpression, Node, Paragraph, Root, Text},
     message, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Constructs, MdxSignal, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
@@ -373,4 +373,26 @@ fn mdx_expression_text_gnostic() -> Result<(), message::Message> {
     );
 
     Ok(())
+}
+
+#[test]
+fn mdx_expression_text_error_overflow() {
+    let options = ParseOptions {
+        constructs: Constructs::mdx(),
+        mdx_expression_parse: Some(Box::new(|_value, _kind| {
+            MdxSignal::Error(
+                "x".into(),
+                usize::MAX,
+                Box::new("a".into()),
+                Box::new("b".into()),
+            )
+        })),
+        ..Default::default()
+    };
+
+    assert_eq!(
+        to_mdast("a {b} c", &options).err().unwrap().to_string(),
+        "1:5: x (a:b)",
+        "should not overflow on a huge error offset"
+    );
 }

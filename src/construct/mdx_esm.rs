@@ -213,7 +213,7 @@ fn parse_esm(tokenizer: &mut Tokenizer) -> State {
                 .as_ref()
                 .expect("expected location index if aware mdx is on")
                 .relative_to_point(&result.stops, relative)
-                .expect("expected non-empty string");
+                .unwrap_or_else(|| tokenizer.point.to_unist());
             State::Error(message::Message {
                 place: Some(Box::new(message::Place::Point(point))),
                 reason: message,
