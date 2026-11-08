@@ -9,6 +9,8 @@
 //! through another tokenizer and inject the result.
 
 use crate::event::Event;
+#[cfg(debug_assertions)]
+use crate::event::Link;
 use alloc::{vec, vec::Vec};
 
 /// Shift `previous` and `next` links according to `jumps`.
@@ -75,6 +77,13 @@ impl EditMap {
         add_impl(self, index, remove, add, true);
     }
     /// Done, change the events.
+    ///
+    /// Edits must be in bounds (`index + remove <= events.len()`) and must
+    /// not overlap.
+    /// Links must point forward to events that have a link.
+    /// An event that is kept must not link to an event that is removed:
+    /// `shift_links` cannot fix such a link, and would underflow.
+    /// These are checked in debug builds.
     pub fn consume(&mut self, events: &mut Vec<Event>) {
         self.map
             .sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
@@ -82,6 +91,9 @@ impl EditMap {
         if self.map.is_empty() {
             return;
         }
+
+        #[cfg(debug_assertions)]
+        check(events, &self.map);
 
         // Calculate jumps: where items in the current list move to.
         let mut jumps = Vec::with_capacity(self.map.len());
@@ -119,6 +131,50 @@ impl EditMap {
     }
 }
 
+/// Check that edits and links can be applied.
+///
+/// `map` must be sorted.
+#[cfg(debug_assertions)]
+fn check(events: &[Event], map: &[(usize, usize, Vec<Event>)]) {
+    let mut index = 0;
+    let mut end = 0;
+
+    while index < map.len() {
+        let (at, remove, _) = &map[index];
+        assert!(*at >= end, "expected edits to not overlap");
+        end = at + remove;
+        assert!(end <= events.len(), "expected edits to be in bounds");
+        index += 1;
+    }
+
+    // Whether the event at `position` is removed.
+    let removed = |position: usize| match map.binary_search_by(|edit| edit.0.cmp(&position)) {
+        Ok(index) => map[index].1 > 0,
+        Err(0) => false,
+        Err(index) => position < map[index - 1].0 + map[index - 1].1,
+    };
+
+    index = 0;
+
+    while index < events.len() {
+        if let Some(Link {
+            next: Some(next), ..
+        }) = &events[index].link
+        {
+            assert!(
+                *next > index && *next < events.len() && events[*next].link.is_some(),
+                "expected link to point forward to a linked event"
+            );
+            assert!(
+                removed(index) || !removed(*next),
+                "expected kept event to not link to a removed event"
+            );
+        }
+
+        index += 1;
+    }
+}
+
 /// Create an edit.
 fn add_impl(edit_map: &mut EditMap, at: usize, remove: usize, mut add: Vec<Event>, before: bool) {
     let mut index = 0;
@@ -145,4 +201,47 @@ fn add_impl(edit_map: &mut EditMap, at: usize, remove: usize, mut add: Vec<Event
     }
 
     edit_map.map.push((at, remove, add));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::event::{Content, Kind, Link, Name, Point};
+
+    fn event(next: Option<usize>) -> Event {
+        Event {
+            kind: Kind::Enter,
+            name: Name::Data,
+            point: Point {
+                line: 1,
+                column: 1,
+                index: 0,
+                vs: 0,
+            },
+            link: Some(Link {
+                previous: None,
+                next,
+                content: Content::Text,
+            }),
+        }
+    }
+
+    #[test]
+    fn consume() {
+        let mut events = vec![event(Some(1)), event(None), event(None)];
+        let mut map = EditMap::new();
+        map.add(2, 1, vec![]);
+        map.consume(&mut events);
+        assert_eq!(events.len(), 2, "should remove events");
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "expected kept event to not link to a removed event")]
+    fn consume_kept_link_to_removed() {
+        let mut events = vec![event(Some(2)), event(None), event(None)];
+        let mut map = EditMap::new();
+        map.add(1, 2, vec![]);
+        map.consume(&mut events);
+    }
 }
