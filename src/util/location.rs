@@ -89,6 +89,9 @@ impl Location {
     }
 
     /// Turn a relative offset into an absolute offset.
+    ///
+    /// Returns `None` when there are no stops, or when the absolute offset
+    /// does not fit in `usize`.
     #[must_use]
     pub fn relative_to_absolute(stops: &[Stop], relative: usize) -> Option<usize> {
         let mut index = 0;
@@ -102,7 +105,7 @@ impl Location {
             None
         } else {
             let (stop_relative, stop_absolute) = &stops[index - 1];
-            Some(stop_absolute + (relative - stop_relative))
+            stop_absolute.checked_add(relative - stop_relative)
         }
     }
 }
@@ -205,6 +208,15 @@ mod tests {
             Location::relative_to_absolute(&[], 0),
             None,
             "relative_to_absolute"
+        );
+    }
+
+    #[test]
+    fn test_relative_to_absolute_overflow() {
+        assert_eq!(
+            Location::relative_to_absolute(&[(0, usize::MAX)], 1),
+            None,
+            "should not overflow"
         );
     }
 }

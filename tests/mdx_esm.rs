@@ -3,7 +3,7 @@ use markdown::{
     mdast::{MdxjsEsm, Node, Root},
     message, to_html_with_options, to_mdast,
     unist::Position,
-    Constructs, Options, ParseOptions,
+    Constructs, MdxSignal, Options, ParseOptions,
 };
 use pretty_assertions::assert_eq;
 use test_utils::swc::{parse_esm, parse_expression};
@@ -267,4 +267,24 @@ fn mdx_esm() -> Result<(), message::Message> {
     );
 
     Ok(())
+}
+
+#[test]
+fn mdx_esm_error_out_of_range() {
+    let options = ParseOptions {
+        constructs: Constructs::mdx(),
+        mdx_esm_parse: Some(Box::new(|_value| {
+            MdxSignal::Error("x".into(), 100, Box::new("a".into()), Box::new("b".into()))
+        })),
+        ..Default::default()
+    };
+
+    assert_eq!(
+        to_mdast("import a from 'b'\n\n# c", &options)
+            .err()
+            .unwrap()
+            .to_string(),
+        "1:18: x (a:b)",
+        "should not panic on an error offset past the end of the esm"
+    );
 }
