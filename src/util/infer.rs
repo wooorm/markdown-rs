@@ -3,6 +3,7 @@
 //! Used to share between `to_html` and `to_mdast`.
 
 use crate::event::{Event, Kind, Name};
+use crate::extension::{is_in_content, TokenName};
 use crate::mdast::AlignKind;
 use alloc::{vec, vec::Vec};
 
@@ -10,7 +11,12 @@ use alloc::{vec, vec::Vec};
 ///
 /// When `include_items: true` is passed, infers whether the list as a whole
 /// is “loose”.
-pub fn list_loose(events: &[Event], mut index: usize, include_items: bool) -> bool {
+pub(crate) fn list_loose(
+    events: &[Event],
+    mut index: usize,
+    include_items: bool,
+    extension_names: &[TokenName],
+) -> bool {
     let mut balance = 0;
     let name = &events[index].name;
     debug_assert!(
@@ -68,6 +74,15 @@ pub fn list_loose(events: &[Event], mut index: usize, include_items: bool) -> bo
                         at_empty_block_quote = true;
                     } else if events[before].name == Name::ListItemPrefix {
                         at_empty_list_item = true;
+                    }
+                    // Or a container of a construct, whose content is empty or
+                    // whose last line is only its prefix.
+                    else if events[before].name == Name::Extension
+                        && !is_in_content(extension_names, &events[before])
+                        && (events[before - 2].kind == Kind::Enter
+                            || is_in_content(extension_names, &events[before - 2]))
+                    {
+                        at_empty_block_quote = true;
                     }
                 }
 

@@ -800,6 +800,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                     name: Name::GfmTable,
                     point: tokenizer.events[index].point.clone(),
                     link: None,
+                    extension: 0,
                 };
                 tokenizer.map.add(index, 0, vec![enter]);
             } else if matches!(event.name, Name::GfmTableRow | Name::GfmTableDelimiterRow) {
@@ -818,6 +819,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                         name: Name::GfmTableBody,
                         point: tokenizer.events[index].point.clone(),
                         link: None,
+                        extension: 0,
                     };
                     tokenizer.map.add(index, 0, vec![enter]);
                 }
@@ -921,6 +923,7 @@ fn flush_cell(
                 name: group_name.clone(),
                 point: tokenizer.events[range.0].point.clone(),
                 link: None,
+                extension: 0,
             }],
         );
     }
@@ -940,6 +943,7 @@ fn flush_cell(
             name: group_name.clone(),
             point: tokenizer.events[range.1].point.clone(),
             link: None,
+            extension: 0,
         }],
     );
 
@@ -961,6 +965,7 @@ fn flush_cell(
                 name: value_name.clone(),
                 point: tokenizer.events[range.2].point.clone(),
                 link: None,
+                extension: 0,
             }],
         );
         debug_assert_ne!(range.3, 0);
@@ -989,6 +994,7 @@ fn flush_cell(
                 name: value_name,
                 point: tokenizer.events[range.3].point.clone(),
                 link: None,
+                extension: 0,
             }],
         );
     }
@@ -1009,6 +1015,7 @@ fn flush_cell(
                 name: group_name,
                 point: tokenizer.events[row_end].point.clone(),
                 link: None,
+                extension: 0,
             }],
         );
     }
@@ -1024,6 +1031,7 @@ fn flush_table_end(tokenizer: &mut Tokenizer, index: usize, body: bool) {
             name: Name::GfmTableBody,
             point: tokenizer.events[index].point.clone(),
             link: None,
+            extension: 0,
         });
     }
 
@@ -1032,6 +1040,7 @@ fn flush_table_end(tokenizer: &mut Tokenizer, index: usize, body: bool) {
         name: Name::GfmTable,
         point: tokenizer.events[index].point.clone(),
         link: None,
+        extension: 0,
     });
 
     tokenizer.map.add(index + 1, 0, exits);

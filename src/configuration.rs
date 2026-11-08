@@ -1,8 +1,9 @@
+use crate::extension::{BoxedConstruct, Container, Flow, Text};
 use crate::util::{
     line_ending::LineEnding,
     mdx::{EsmParse as MdxEsmParse, ExpressionParse as MdxExpressionParse},
 };
-use alloc::{boxed::Box, fmt, string::String};
+use alloc::{boxed::Box, fmt, string::String, vec::Vec};
 
 /// Control which constructs are enabled.
 ///
@@ -1226,6 +1227,30 @@ pub struct ParseOptions {
     /// `tests/test_utils/mod.rs`.
     #[cfg_attr(feature = "serde", serde(skip))]
     pub mdx_esm_parse: Option<Box<MdxEsmParse>>,
+
+    /// Constructs of syntax extensions to try in text, in order, before the
+    /// built-in ones.
+    ///
+    /// See [`Construct`][crate::extension::Construct], and
+    /// [`construct()`][crate::extension::construct()] to wrap one.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub text_constructs: Vec<BoxedConstruct<Text>>,
+
+    /// Constructs of syntax extensions to try at the start of a line in
+    /// flow, in order, before the built-in ones.
+    ///
+    /// See [`Construct`][crate::extension::Construct], and
+    /// [`construct()`][crate::extension::construct()] to wrap one.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub flow_constructs: Vec<BoxedConstruct<Flow>>,
+
+    /// Constructs of syntax extensions to try as containers at the start of
+    /// a line, in order, before the built-in ones, such as block quotes.
+    ///
+    /// See [`Construct`][crate::extension::Construct], and
+    /// [`construct()`][crate::extension::construct()] to wrap one.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub document_constructs: Vec<BoxedConstruct<Container>>,
     // Note: when adding fields, don’t forget to add them to `fmt::Debug` below.
 }
 
@@ -1246,6 +1271,9 @@ impl fmt::Debug for ParseOptions {
                 "mdx_esm_parse",
                 &self.mdx_esm_parse.as_ref().map(|_d| "[Function]"),
             )
+            .field("text_constructs", &self.text_constructs.len())
+            .field("flow_constructs", &self.flow_constructs.len())
+            .field("document_constructs", &self.document_constructs.len())
             .finish()
     }
 }
@@ -1259,6 +1287,9 @@ impl Default for ParseOptions {
             math_text_single_dollar: true,
             mdx_expression_parse: None,
             mdx_esm_parse: None,
+            text_constructs: Vec::new(),
+            flow_constructs: Vec::new(),
+            document_constructs: Vec::new(),
         }
     }
 }
@@ -1456,7 +1487,7 @@ mod tests {
 
         assert_eq!(
             format!("{:?}", ParseOptions::default()),
-            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None }",
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: None, mdx_esm_parse: None, text_constructs: 0, flow_constructs: 0, document_constructs: 0 }",
             "should support `Debug` trait"
         );
         assert_eq!(
@@ -1469,7 +1500,7 @@ mod tests {
                 })),
                 ..Default::default()
             }),
-            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\") }",
+            "ParseOptions { constructs: Constructs { attention: true, autolink: true, block_quote: true, character_escape: true, character_reference: true, code_indented: true, code_fenced: true, code_text: true, definition: true, frontmatter: false, gfm_autolink_literal: false, gfm_footnote_definition: false, gfm_label_start_footnote: false, gfm_strikethrough: false, gfm_table: false, gfm_task_list_item: false, hard_break_escape: true, hard_break_trailing: true, heading_atx: true, heading_setext: true, html_flow: true, html_text: true, label_start_image: true, label_start_link: true, label_end: true, list_item: true, math_flow: false, math_text: false, mdx_esm: false, mdx_expression_flow: false, mdx_expression_text: false, mdx_jsx_flow: false, mdx_jsx_text: false, thematic_break: true }, gfm_strikethrough_single_tilde: true, math_text_single_dollar: true, mdx_expression_parse: Some(\"[Function]\"), mdx_esm_parse: Some(\"[Function]\"), text_constructs: 0, flow_constructs: 0, document_constructs: 0 }",
             "should support `Debug` trait on mdx functions"
         );
     }

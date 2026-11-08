@@ -902,6 +902,45 @@ pub enum Name {
     ///      ^
     /// ```
     EmphasisText,
+    /// Token of a construct of a syntax extension: which one is in
+    /// [`Event::extension`].
+    ///
+    /// ## Info
+    ///
+    /// * **Context**:
+    ///   [text content][crate::construct::text]
+    /// * **Content model**:
+    ///   [`Extension`][Name::Extension],
+    ///   [`LineEnding`][Name::LineEnding]
+    /// * **Construct**:
+    ///   [`Construct`][crate::extension::Construct]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | @a
+    ///     ^^
+    /// ```
+    Extension,
+    /// Chunk of content of a construct of a syntax extension, linked to the
+    /// other chunks of its content token.
+    ///
+    /// ## Info
+    ///
+    /// * **Context**:
+    ///   [`Extension`][Name::Extension]
+    /// * **Content model**:
+    ///   void
+    /// * **Construct**:
+    ///   [`Construct`][crate::extension::Construct]
+    ///
+    /// ## Example
+    ///
+    /// ```markdown
+    /// > | {{a}}
+    ///       ^
+    /// ```
+    ExtensionChunk,
     /// Whole frontmatter.
     ///
     /// ## Info
@@ -3381,7 +3420,7 @@ pub enum Name {
 }
 
 /// List of void events, used to make sure everything is working well.
-pub const VOID_EVENTS: [Name; 76] = [
+pub const VOID_EVENTS: [Name; 77] = [
     Name::AttentionSequence,
     Name::AutolinkEmail,
     Name::AutolinkMarker,
@@ -3406,6 +3445,7 @@ pub const VOID_EVENTS: [Name; 76] = [
     Name::DefinitionMarker,
     Name::DefinitionTitleMarker,
     Name::EmphasisSequence,
+    Name::ExtensionChunk,
     Name::FrontmatterChunk,
     Name::GfmAutolinkLiteralEmail,
     Name::GfmAutolinkLiteralProtocol,
@@ -3463,6 +3503,8 @@ pub const VOID_EVENTS: [Name; 76] = [
 /// Embedded content type.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Content {
+    /// Represents a nested [document][crate::construct::document].
+    Document,
     /// Represents [flow content][crate::construct::flow].
     Flow,
     /// Represents [content][crate::construct::content].
@@ -3567,4 +3609,9 @@ pub struct Event {
     pub point: Point,
     /// Link to another event.
     pub link: Option<Link>,
+    /// Interned name of the token of a construct of a syntax extension, for
+    /// [`Extension`][Name::Extension]; for the enter of an
+    /// [`AttentionSequence`][Name::AttentionSequence] of a delimiter run, the
+    /// index of its construct plus one.
+    pub extension: u16,
 }

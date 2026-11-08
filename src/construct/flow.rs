@@ -22,8 +22,10 @@
 //! * [Thematic break][crate::construct::thematic_break]
 
 use crate::event::Name;
+use crate::extension::{can_start_after, ext, ext_mut, markers, start as start_construct};
 use crate::state::{Name as StateName, State};
 use crate::tokenizer::Tokenizer;
+use core::convert::TryFrom;
 
 /// Start of flow.
 //
@@ -36,6 +38,75 @@ use crate::tokenizer::Tokenizer;
 ///     ^
 /// ```
 pub fn start(tokenizer: &mut Tokenizer) -> State {
+    if tokenizer.parse_state.options.flow_constructs.is_empty() {
+        start_builtin(tokenizer)
+    } else {
+        before_construct(tokenizer, 0)
+    }
+}
+
+/// Before constructs of syntax extensions, trying the one at `index` and
+/// later.
+///
+/// ```markdown
+/// > | ::a
+///     ^
+/// ```
+pub fn before_construct(tokenizer: &mut Tokenizer, index: u8) -> State {
+    let options = tokenizer.parse_state.options;
+    let mut index = usize::from(index);
+    // A line starts after a line ending, before indentation, like micromark.
+    let previous = if tokenizer.point.line == 1 {
+        None
+    } else {
+        Some('\n')
+    };
+
+    if let Some(byte) = tokenizer.current {
+        while index < options.flow_constructs.len() {
+            // Parsing checks that there are at most 255 constructs.
+            let global = u8::try_from(options.text_constructs.len() + index)
+                .expect("expected at most 255 constructs");
+            // Indentation, which the construct skips first, comes before a
+            // marker.
+            if (matches!(byte, b'\t' | b' ')
+                || (byte != b'\n' && markers(options, global).contains(&byte)))
+                && can_start_after(options, global, previous)
+            {
+                // Parsing checks that there are at most 255 constructs.
+                ext_mut(tokenizer).next =
+                    u8::try_from(index + 1).expect("expected at most 255 constructs");
+                tokenizer.attempt(
+                    State::Next(StateName::FlowAfter),
+                    State::Next(StateName::FlowBeforeConstructNext),
+                );
+                return start_construct(tokenizer, global);
+            }
+            index += 1;
+        }
+    }
+
+    start_builtin(tokenizer)
+}
+
+/// Before constructs of syntax extensions, after one did not match.
+///
+/// ```markdown
+/// > | ::b
+///     ^
+/// ```
+pub fn before_construct_next(tokenizer: &mut Tokenizer) -> State {
+    let next = ext(tokenizer).next;
+    before_construct(tokenizer, next)
+}
+
+/// Start of flow, at built-in constructs.
+///
+/// ```markdown
+/// > | ## alpha
+///     ^
+/// ```
+pub fn start_builtin(tokenizer: &mut Tokenizer) -> State {
     match tokenizer.current {
         Some(b'#') => {
             tokenizer.attempt(

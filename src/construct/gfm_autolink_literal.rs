@@ -366,8 +366,9 @@ pub fn domain_inside(tokenizer: &mut Tokenizer) -> State {
         }
         _ => {
             // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
-            if kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
-                == CharacterKind::Other
+            if tokenizer.current.is_some()
+                && kind_after_index(tokenizer.parse_state.bytes, tokenizer.point.index)
+                    == CharacterKind::Other
             {
                 tokenizer.tokenize_state.seen = true;
                 tokenizer.consume();
@@ -674,6 +675,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                     name: Name::Data,
                                     point: point.clone(),
                                     link: None,
+                                    extension: 0,
                                 });
                                 point = point
                                     .shift_to(tokenizer.parse_state.bytes, start_index + range.0);
@@ -682,6 +684,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                     name: Name::Data,
                                     point: point.clone(),
                                     link: None,
+                                    extension: 0,
                                 });
                             }
 
@@ -691,6 +694,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 name: range.2.clone(),
                                 point: point.clone(),
                                 link: None,
+                                extension: 0,
                             });
                             point =
                                 point.shift_to(tokenizer.parse_state.bytes, start_index + range.1);
@@ -699,6 +703,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                                 name: range.2.clone(),
                                 point: point.clone(),
                                 link: None,
+                                extension: 0,
                             });
                             min = range.1;
                         }
@@ -714,12 +719,14 @@ pub fn resolve(tokenizer: &mut Tokenizer) {
                         name: Name::Data,
                         point: point.clone(),
                         link: None,
+                        extension: 0,
                     });
                     replace.push(Event {
                         kind: Kind::Exit,
                         name: Name::Data,
                         point: event.point.clone(),
                         link: None,
+                        extension: 0,
                     });
                 }
 

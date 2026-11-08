@@ -96,7 +96,7 @@ use [`mdxjs-rs`][mdxjs-rs].
 ## Install
 
 With [Rust][]
-(rust edition 2018+, ±version 1.56+),
+(rust edition 2018+, ±version 1.62+),
 install with `cargo`:
 
 ```sh
@@ -196,6 +196,11 @@ They are not enabled by default but can be turned on with options.
 
 It is not a goal of this project to support lots of different extensions.
 It’s instead a goal to support very common and mostly standardized extensions.
+Other syntax can be added from outside this project, with constructs passed
+in options: see the [`extension` module][docs-extension],
+and its [guide][docs-extension-guide], a tutorial and recipes.
+The `derive` feature adds `#[derive(TokenType)]`, for the names of their
+tokens.
 
 ## Project
 
@@ -224,6 +229,8 @@ The files in `src/` are as follows:
   — helpers often needed when parsing markdown
 * `event.rs`
   — things with meaning happening somewhere
+* `extension.rs`
+  — constructs of syntax extensions, passed in options
 * `lib.rs`
   — public API
 * `mdast.rs`
@@ -338,6 +345,17 @@ are opened but not closed.
 It is wise to cap the accepted size of input (500kb can hold a big book) and to
 process content in a different thread so that it can be stopped when needed.
 
+Constructs passed in options are code,
+trusted as much as the rest of your program.
+One whose reach is `Reach::Unbounded` can make parsing quadratic on hostile
+input;
+`extension::assert_linear` checks for that.
+The HTML handler of a construct writes markup with `HtmlWriter::tag`,
+which takes only fixed strings,
+so input reaches the HTML only through methods that escape it
+(`text`, `attr`, `url`)
+or through `raw`, which follows `allow_dangerous_html`.
+
 For more information on markdown sanitation,
 see
 [`improper-markup-sanitization.md`][improper] by [**@chalker**][chalker].
@@ -387,6 +405,8 @@ Special thanks go out to:
 [badge-coverage-url]: https://codecov.io/github/wooorm/markdown-rs
 
 [docs]: https://docs.rs/markdown/latest/markdown/
+[docs-extension]: https://docs.rs/markdown/latest/markdown/extension/index.html
+[docs-extension-guide]: https://docs.rs/markdown/latest/markdown/extension/guide/index.html
 
 [crate]: https://crates.io/crates/markdown
 

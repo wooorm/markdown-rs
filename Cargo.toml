@@ -5,6 +5,7 @@ path = "benches/bench.rs"
 
 [dependencies]
 log = { optional = true, version = "0.4" }
+markdown_derive = { optional = true, path = "markdown_derive", version = "=1.0.0" }
 serde = { features = ["derive"], optional = true, version = "1" }
 unicode-id = { features = ["no_std"], version = "0.3" }
 
@@ -13,7 +14,7 @@ criterion = "0.5"
 env_logger = "0.11"
 pretty_assertions = { workspace = true }
 serde_json = { version = "1" }
-swc_core = { version = "22", features = [
+swc_core = { version = "32", features = [
   "common",
   "ecma_ast",
   "ecma_parser",
@@ -22,9 +23,11 @@ swc_core = { version = "22", features = [
 
 [features]
 default = []
+derive = ["dep:markdown_derive"]
 json = ["serde"]
 log = ["dep:log"]
 serde = ["dep:serde"]
+test-util = []
 
 [package]
 authors = ["Titus Wormer <tituswormer@gmail.com>"]
@@ -37,11 +40,11 @@ keywords = ["commonmark", "markdown", "parse", "render", "tokenize"]
 license = "MIT"
 name = "markdown"
 repository = "https://github.com/wooorm/markdown-rs"
-rust-version = "1.56"
+rust-version = "1.62"
 version = "1.0.0"
 
 [workspace]
-members = ["generate", "mdast_util_to_markdown"]
+members = ["generate", "hast", "hast_util_to_html", "markdown_derive", "markdown_processor", "mdast_util_to_hast", "mdast_util_to_markdown"]
 
 [workspace.dependencies]
 pretty_assertions = "1"

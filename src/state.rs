@@ -115,10 +115,12 @@ pub enum Name {
     DestinationRawEscape,
 
     DocumentStart,
+    DocumentStartNested,
     DocumentBeforeFrontmatter,
     DocumentContainerExistingBefore,
     DocumentContainerExistingAfter,
     DocumentContainerNewBefore,
+    DocumentContainerNewBeforeConstructNext,
     DocumentContainerNewBeforeNotBlockQuote,
     DocumentContainerNewBeforeNotList,
     DocumentContainerNewBeforeNotGfmFootnoteDefinition,
@@ -127,7 +129,18 @@ pub enum Name {
     DocumentFlowInside,
     DocumentFlowEnd,
 
+    ExtensionStep,
+    ExtensionContinuation,
+    ExtensionAttemptOk,
+    ExtensionAttemptNok,
+    ExtensionIndentAfter,
+    ExtensionLineEnding,
+    ExtensionLineAfter,
+    ExtensionNonLazy,
+    ExtensionLazy,
+
     FlowStart,
+    FlowBeforeConstructNext,
     FlowBeforeGfmTable,
     FlowBeforeCodeIndented,
     FlowBeforeRaw,
@@ -448,6 +461,7 @@ pub enum Name {
 
     TextStart,
     TextBefore,
+    TextBeforeConstructNext,
     TextBeforeHtml,
     TextBeforeMdxJsx,
     TextBeforeHardBreakEscape,
@@ -546,10 +560,14 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DestinationRawEscape => construct::partial_destination::raw_escape,
 
         Name::DocumentStart => construct::document::start,
+        Name::DocumentStartNested => construct::document::start_nested,
         Name::DocumentBeforeFrontmatter => construct::document::before_frontmatter,
         Name::DocumentContainerExistingBefore => construct::document::container_existing_before,
         Name::DocumentContainerExistingAfter => construct::document::container_existing_after,
         Name::DocumentContainerNewBefore => construct::document::container_new_before,
+        Name::DocumentContainerNewBeforeConstructNext => {
+            construct::document::container_new_before_construct_next
+        }
         Name::DocumentContainerNewBeforeNotBlockQuote => {
             construct::document::container_new_before_not_block_quote
         }
@@ -564,7 +582,18 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
         Name::DocumentFlowEnd => construct::document::flow_end,
         Name::DocumentFlowInside => construct::document::flow_inside,
 
+        Name::ExtensionStep => crate::extension::step,
+        Name::ExtensionContinuation => crate::extension::continuation,
+        Name::ExtensionAttemptOk => crate::extension::attempt_ok,
+        Name::ExtensionAttemptNok => crate::extension::attempt_nok,
+        Name::ExtensionIndentAfter => crate::extension::indent_after,
+        Name::ExtensionLineEnding => crate::extension::line_ending,
+        Name::ExtensionLineAfter => crate::extension::line_after,
+        Name::ExtensionNonLazy => crate::extension::at_non_lazy,
+        Name::ExtensionLazy => crate::extension::at_lazy,
+
         Name::FlowStart => construct::flow::start,
+        Name::FlowBeforeConstructNext => construct::flow::before_construct_next,
         Name::FlowBeforeGfmTable => construct::flow::before_gfm_table,
         Name::FlowBeforeCodeIndented => construct::flow::before_code_indented,
         Name::FlowBeforeRaw => construct::flow::before_raw,
@@ -947,6 +976,7 @@ pub fn call(tokenizer: &mut Tokenizer, name: Name) -> State {
 
         Name::TextStart => construct::text::start,
         Name::TextBefore => construct::text::before,
+        Name::TextBeforeConstructNext => construct::text::before_construct_next,
         Name::TextBeforeHtml => construct::text::before_html,
         Name::TextBeforeMdxJsx => construct::text::before_mdx_jsx,
         Name::TextBeforeHardBreakEscape => construct::text::before_hard_break_escape,

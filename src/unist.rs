@@ -85,7 +85,7 @@ mod tests {
     fn point() {
         let point = Point::new(1, 1, 0);
         assert_eq!(
-            format!("{:?}", point),
+            format!("{point:?}"),
             "1:1 (0)",
             "should support `Debug` on unist points"
         );
@@ -95,7 +95,7 @@ mod tests {
     fn position() {
         let position = Position::new(1, 1, 0, 1, 3, 2);
         assert_eq!(
-            format!("{:?}", position),
+            format!("{position:?}"),
             "1:1-1:3 (0-2)",
             "should support `Debug` on unist positions"
         );

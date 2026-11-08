@@ -36,6 +36,9 @@ pub enum Container {
     ListItem,
     /// [GFM: Footnote definition][crate::construct::gfm_footnote_definition].
     GfmFootnoteDefinition,
+    /// Construct of a syntax extension, with the interned names of its token
+    /// and its content token.
+    Extension(u8, u16, u16),
 }
 
 /// Info used to tokenize a container.
@@ -161,7 +164,7 @@ struct Attempt {
 /// Not to be confused with states from the state machine, this instead is all
 /// the information on where we currently are and what’s going on.
 #[derive(Clone, Debug)]
-struct Progress {
+pub(crate) struct Progress {
     /// Length of `events`.
     ///
     /// It’s not allowed to remove events, so reverting will just pop stuff off.
@@ -242,7 +245,9 @@ pub struct TokenizeState<'a> {
     /// Secondary marker.
     pub marker_b: u8,
     /// Several markers.
-    pub markers: &'static [u8],
+    pub markers: &'a [u8],
+    /// State of syntax extensions, created when one runs.
+    pub(crate) extension: Option<Box<crate::extension::ExtensionState>>,
     /// Whether something was seen.
     pub seen: bool,
     /// Size.
@@ -278,7 +283,7 @@ pub struct Tokenizer<'a> {
     // First line where this tokenizer starts.
     first_line: usize,
     /// Current point after the last line ending (excluding jump).
-    line_start: Point,
+    pub line_start: Point,
     /// Track whether the current byte is already consumed (`true`) or expected
     /// to be consumed (`false`).
     ///
@@ -358,6 +363,7 @@ impl<'a> Tokenizer<'a> {
                 marker: 0,
                 marker_b: 0,
                 markers: &[],
+                extension: None,
                 labels: vec![],
                 seen: false,
                 size: 0,
@@ -425,12 +431,33 @@ impl<'a> Tokenizer<'a> {
         self.account_for_potential_skip();
     }
 
+    /// Define a jump for the line of `point`, unless one is defined: for a
+    /// chunk that continues the line of the chunk before it.
+    pub fn define_skip_if_missing(&mut self, point: Point) {
+        if point.line - self.first_line >= self.column_start.len() {
+            self.define_skip(point);
+        }
+    }
+
+    /// Whether the current point is where a line after the first starts,
+    /// after its skip, if any.
+    pub fn at_line_start(&self) -> bool {
+        let at = self.point.line - self.first_line;
+        at > 0
+            && (self.column_start.get(at) == Some(&(self.point.index, self.point.vs))
+                || (self.point.index == self.line_start.index
+                    && self.point.vs == self.line_start.vs))
+    }
+
     /// Increment the current positional info if we’re right after a line
     /// ending, which has a skip defined.
     fn account_for_potential_skip(&mut self) {
         let at = self.point.line - self.first_line;
+        // A tokenizer can start mid line, in a nested document.
+        let is_line_start = self.point.column == 1
+            || (self.point.index == self.line_start.index && self.point.vs == self.line_start.vs);
 
-        if self.point.column == 1 && at != self.column_start.len() {
+        if is_line_start && at != self.column_start.len() {
             self.move_to(self.column_start[at]);
         }
     }
@@ -494,12 +521,18 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    /// Move (virtual) bytes.
+    /// Move (virtual) bytes, such as the container prefixes that a skip
+    /// leaves out.
+    ///
+    /// Skipped bytes are not content, so `previous` stays the last byte
+    /// before them, such as the line ending, as in micromark.
     fn move_to(&mut self, to: (usize, usize)) {
         let (to_index, to_vs) = to;
+        let previous = self.previous;
         while self.point.index < to_index || self.point.index == to_index && self.point.vs < to_vs {
             self.move_one();
         }
+        self.previous = previous;
     }
 
     /// Mark the start of a semantic label.
@@ -523,14 +556,16 @@ impl<'a> Tokenizer<'a> {
 
         debug_assert!(
             current != previous.name
+                // Tokens of a construct can end together.
+                || (current == Name::Extension && previous.kind == Kind::Exit)
                 || previous.point.index != point.index
                 || previous.point.vs != point.vs,
             "expected non-empty event"
         );
 
         if VOID_EVENTS.iter().any(|d| d == &name) {
-            debug_assert!(
-                current == previous.name,
+            debug_assert_eq!(
+                current, previous.name,
                 "expected event to be void, instead of including something"
             );
         }
@@ -544,15 +579,28 @@ impl<'a> Tokenizer<'a> {
         }
 
         #[cfg(feature = "log")]
-        log::debug!("exit:    `{:?}`", name);
+        log::debug!("exit:    `{name:?}`");
 
         let event = Event {
             kind: Kind::Exit,
             name,
             point,
             link: None,
+            extension: 0,
         };
         self.events.push(event);
+    }
+
+    /// Capture the progress, to go back to it with [`Tokenizer::restore`].
+    pub(crate) fn snapshot(&mut self) -> Progress {
+        self.capture()
+    }
+
+    /// Go back to progress from [`Tokenizer::snapshot`], dropping the events
+    /// after it.
+    pub(crate) fn restore(&mut self, progress: Progress) {
+        self.consumed = false;
+        self.free(progress);
     }
 
     /// Capture the tokenizer progress.
@@ -659,7 +707,7 @@ impl<'a> Tokenizer<'a> {
 }
 
 /// Move back past ignored bytes.
-fn move_point_back(tokenizer: &mut Tokenizer, point: &mut Point) {
+pub fn move_point_back(tokenizer: &Tokenizer, point: &mut Point) {
     while point.index > 0 {
         point.index -= 1;
         let action = byte_action(tokenizer.parse_state.bytes, point);
@@ -676,7 +724,7 @@ fn enter_impl(tokenizer: &mut Tokenizer, name: Name, link: Option<Link>) {
     move_point_back(tokenizer, &mut point);
 
     #[cfg(feature = "log")]
-    log::debug!("enter:   `{:?}`", name);
+    log::debug!("enter:   `{name:?}`");
 
     tokenizer.stack.push(name.clone());
     tokenizer.events.push(Event {
@@ -684,6 +732,7 @@ fn enter_impl(tokenizer: &mut Tokenizer, name: Name, link: Option<Link>) {
         name,
         point,
         link,
+        extension: 0,
     });
 }
 
@@ -723,7 +772,7 @@ fn push_impl(
                     };
 
                     #[cfg(feature = "log")]
-                    log::trace!("attempt: `{:?}` -> `{:?}`", state, next);
+                    log::trace!("attempt: `{state:?}` -> `{next:?}`");
 
                     state = next;
                 } else {
@@ -760,7 +809,7 @@ fn push_impl(
             }
             State::Retry(name) => {
                 #[cfg(feature = "log")]
-                log::trace!("retry:   `{:?}`", name);
+                log::trace!("retry:   `{name:?}`");
 
                 state = call(tokenizer, name);
             }

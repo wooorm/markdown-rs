@@ -1,0 +1,14 @@
+[dependencies]
+hast = { path = "../hast", version = "0.0.0" }
+markdown = { path = "../", version = "1.0.0" }
+
+[dev-dependencies]
+hast_util_to_html = { path = "../hast_util_to_html", version = "0.0.0" }
+pretty_assertions = { workspace = true }
+
+[package]
+description = "mdast (markdown syntax tree) to hast (HTML syntax tree)"
+edition = "2018"
+license = "MIT"
+name = "mdast_util_to_hast"
+version = "0.0.0"

@@ -499,6 +499,14 @@ fn mdx_jsx_text_core() -> Result<(), message::Message> {
     );
 
     assert_eq!(
+        to_mdast("<a>[</b>](c)", &mdx.parse)
+            .err()
+            .unwrap().to_string(),
+        "1:5-1:9: Unexpected closing tag `</b>`, expected corresponding closing tag for `<a>` (1:1) (markdown-rs:end-tag-mismatch)",
+        "should crash when building the ast on mismatched tags in a link"
+    );
+
+    assert_eq!(
         to_mdast("*a <b>c* d</b>.", &mdx.parse)
             .err()
             .unwrap()

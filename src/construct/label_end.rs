@@ -711,6 +711,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                 // Enter:GfmFootnoteCallMarker.
                 point: tokenizer.events[label.start.1 - 2].point.clone().clone(),
                 link: None,
+                extension: 0,
             });
             caret.push(Event {
                 kind: Kind::Exit,
@@ -718,6 +719,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                 // Exit:GfmFootnoteCallMarker.
                 point: tokenizer.events[label.start.1 - 1].point.clone(),
                 link: None,
+                extension: 0,
             });
             // Change and move label end.
             tokenizer.events[label.start.0].name = Name::LabelLink;
@@ -738,12 +740,14 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                     name: group_name.clone(),
                     point: tokenizer.events[label.start.0].point.clone(),
                     link: None,
+                    extension: 0,
                 },
                 Event {
                     kind: Kind::Enter,
                     name: Name::Label,
                     point: tokenizer.events[label.start.0].point.clone(),
                     link: None,
+                    extension: 0,
                 },
             ],
         );
@@ -760,6 +764,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                     name: Name::LabelText,
                     point: tokenizer.events[label.start.1].point.clone(),
                     link: None,
+                    extension: 0,
                 }],
             );
             tokenizer.map.add(
@@ -770,6 +775,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                     name: Name::LabelText,
                     point: tokenizer.events[label.end.0].point.clone(),
                     link: None,
+                    extension: 0,
                 }],
             );
         }
@@ -787,6 +793,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                 name: Name::Label,
                 point: tokenizer.events[label.end.0 + 3].point.clone(),
                 link: None,
+                extension: 0,
             }],
         );
 
@@ -799,6 +806,7 @@ fn inject_labels(tokenizer: &mut Tokenizer, labels: &[Label]) {
                 name: group_name,
                 point: tokenizer.events[label.end.1].point.clone(),
                 link: None,
+                extension: 0,
             }],
         );
 
@@ -823,12 +831,14 @@ fn mark_as_data(tokenizer: &mut Tokenizer, events: &[LabelStart]) {
                     name: Name::Data,
                     point: tokenizer.events[data_enter_index].point.clone(),
                     link: None,
+                    extension: 0,
                 },
                 Event {
                     kind: Kind::Exit,
                     name: Name::Data,
                     point: tokenizer.events[data_exit_index].point.clone(),
                     link: None,
+                    extension: 0,
                 },
             ],
         );

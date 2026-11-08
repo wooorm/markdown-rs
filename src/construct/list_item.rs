@@ -395,7 +395,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                 while list_index > 0 {
                     list_index -= 1;
                     let previous = &lists_wip[list_index];
-                    let before = skip::opt(
+                    let before = skip::opt_with_extensions(
                         &tokenizer.events,
                         previous.3 + 1,
                         &[
@@ -404,6 +404,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                             Name::BlankLineEnding,
                             Name::BlockQuotePrefix,
                         ],
+                        &tokenizer.parse_state.extension_names.borrow(),
                     );
 
                     if previous.0 == current.0 && previous.1 == current.1 && before == current.2 {

@@ -18,6 +18,7 @@
 //! any level that can include references can be parsed.
 
 use crate::event::{Content, Event, Kind, Name, VOID_EVENTS};
+use crate::extension::ext_mut;
 use crate::message;
 use crate::parser::ParseState;
 use crate::state::{Name as StateName, State};
@@ -111,9 +112,15 @@ pub fn subtokenize(
                 // Substate.
                 let mut state = State::Next(match link.content {
                     Content::Content => StateName::ContentDefinitionBefore,
+                    Content::Document => StateName::DocumentStartNested,
                     Content::String => StateName::StringStart,
                     _ => StateName::TextStart,
                 });
+
+                // Text content of a construct.
+                if event.name == Name::ExtensionChunk {
+                    ext_mut(&mut tokenizer).keep_whitespace = true;
+                }
 
                 // Check if this is the first paragraph, after zero or more
                 // definitions (or a blank line), in a list item.
@@ -149,8 +156,17 @@ pub fn subtokenize(
                     let link_curr = enter.link.as_ref().expect("expected link");
                     debug_assert_eq!(enter.kind, Kind::Enter);
 
-                    if link_curr.previous.is_some() {
-                        tokenizer.define_skip(enter.point.clone());
+                    if let Some(previous) = link_curr.previous {
+                        // A chunk that continues the line of the chunk before
+                        // it, such as its line ending, keeps the skip of that
+                        // line, whose bytes were fed.
+                        if events[previous].point.line == events[previous + 1].point.line
+                            && events[previous + 1].point.index == enter.point.index
+                        {
+                            tokenizer.define_skip_if_missing(enter.point.clone());
+                        } else {
+                            tokenizer.define_skip(enter.point.clone());
+                        }
                     }
 
                     let end = &events[index + 1].point;
@@ -194,62 +210,50 @@ pub fn divide_events(
 ) -> (usize, usize) {
     // Loop through `child_events` to figure out which parts belong where and
     // fix deep links.
+    // Each slice replaces the enter and exit of its chunk, so a child event
+    // lands at its chunk, minus 2 events for each earlier chunk, plus its
+    // index in the child events.
+    // Chunks may be far apart, with other events between them.
     let mut child_index = 0;
-    let mut slices = vec![];
+    let mut slices: Vec<(usize, usize)> = vec![];
     let mut slice_start = 0;
-    let mut old_prev: Option<usize> = None;
     let len = child_events.len();
 
     while child_index < len {
         let current = &child_events[child_index].point;
-        let end = &events[link_index + 1].point;
 
-        // Find the first event that starts after the end we’re looking
-        // for.
-        if current.index > end.index || (current.index == end.index && current.vs > end.vs) {
+        // Find the chunk this event is in: a chunk can be skipped when no
+        // event starts in it.
+        loop {
+            let end = &events[link_index + 1].point;
+            if current.index < end.index || (current.index == end.index && current.vs <= end.vs) {
+                break;
+            }
             slices.push((link_index, slice_start));
             slice_start = child_index;
             link_index = events[link_index].link.as_ref().unwrap().next.unwrap();
         }
 
-        // Fix sublinks.
-        if let Some(sublink_curr) = &child_events[child_index].link {
-            if sublink_curr.previous.is_some() {
-                let old_prev = old_prev.unwrap();
-                let prev_event = &mut child_events[old_prev];
-                // The `index` in `events` where the current link is,
-                // minus one to get the previous link,
-                // minus 2 events (the enter and exit) for each removed
-                // link.
-                let new_link = if slices.is_empty() {
-                    old_prev + link_index + 2
-                } else {
-                    old_prev + link_index - (slices.len() - 1) * 2
-                };
-                prev_event.link.as_mut().unwrap().next =
-                    Some(new_link + acc_before.1 - acc_before.0);
+        // Link this event and the one before it in its chain, which is in
+        // this slice or an earlier one.
+        if let Some(previous) = child_events[child_index]
+            .link
+            .as_ref()
+            .and_then(|link| link.previous)
+        {
+            let mut slice = slices.len();
+            let (mut enter, mut start) = (link_index, slice_start);
+            while previous < start {
+                slice -= 1;
+                enter = slices[slice].0;
+                start = slices[slice].1;
             }
-        }
-
-        // If there is a `next` link in the subevents, we have to change
-        // its `previous` index to account for the shifted events.
-        // If it points to a next event, we also change the next event’s
-        // reference back to *this* event.
-        if let Some(sublink_curr) = &child_events[child_index].link {
-            if let Some(next) = sublink_curr.next {
-                let sublink_next = child_events[next].link.as_mut().unwrap();
-
-                old_prev = sublink_next.previous;
-
-                sublink_next.previous = sublink_next
-                    .previous
-                    // The `index` in `events` where the current link is,
-                    // minus 2 events (the enter and exit) for each removed
-                    // link.
-                    .map(|previous| {
-                        previous + link_index - (slices.len() * 2) + acc_before.1 - acc_before.0
-                    });
-            }
+            // Add before subtracting: removed chunks can outnumber events.
+            let new_previous = enter + previous + acc_before.1 - acc_before.0 - slice * 2;
+            let new_current =
+                link_index + child_index + acc_before.1 - acc_before.0 - slices.len() * 2;
+            child_events[previous].link.as_mut().unwrap().next = Some(new_current);
+            child_events[child_index].link.as_mut().unwrap().previous = Some(new_previous);
         }
 
         child_index += 1;

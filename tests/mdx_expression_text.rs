@@ -144,7 +144,7 @@ fn mdx_expression() -> Result<(), message::Message> {
             .err()
             .unwrap()
             .to_string(),
-        "2:8: Could not parse expression with swc: Unexpected eof (mdx:swc)",
+        "2:8: Could not parse expression with swc: Expression expected (mdx:swc)",
         "should crash on incorrect expressions in containers (1)"
     );
 
@@ -270,7 +270,7 @@ fn mdx_expression_text_gnostic() -> Result<(), message::Message> {
             .err()
             .unwrap()
             .to_string(),
-        "1:9: Could not parse expression with swc: Unexpected eof (mdx:swc)",
+        "1:9: Could not parse expression with swc: Expression expected (mdx:swc)",
         "should crash on an incorrect expression"
     );
 

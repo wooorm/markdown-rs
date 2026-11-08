@@ -1,6 +1,9 @@
 //! Turn events into a syntax tree.
 
 use crate::event::{Event, Kind, Name};
+use crate::extension::{
+    collect_tokens, exits, is_in_content, to_mdast as construct_to_mdast, RawToken, TokenName,
+};
 use crate::mdast::{
     AttributeContent, AttributeValue, AttributeValueExpression, Blockquote, Break, Code,
     Definition, Delete, Emphasis, FootnoteDefinition, FootnoteReference, Heading, Html, Image,
@@ -20,6 +23,7 @@ use crate::util::{
     normalize_identifier::normalize_identifier,
     slice::{Position as SlicePosition, Slice},
 };
+use crate::ParseOptions;
 use alloc::{
     boxed::Box,
     format,
@@ -103,13 +107,28 @@ struct CompileContext<'a> {
     // Intermediate results.
     /// Primary tree and buffers.
     trees: Vec<(Node, Vec<usize>, Vec<usize>)>,
+    /// Options, for constructs of syntax extensions.
+    options: &'a ParseOptions,
+    /// Names of the tokens of constructs, by interned index.
+    extension_names: &'a [TokenName],
+    /// Matches of constructs being compiled, innermost last.
+    extension_matches: Vec<ExtensionMatch<'a>>,
+    /// Last event of a token of a construct in content, which is skipped.
+    extension_skip: Option<usize>,
+    /// Exit of each event entered, with constructs.
+    extension_exits: Vec<usize>,
     /// Current event index.
     index: usize,
 }
 
 impl<'a> CompileContext<'a> {
     /// Create a new compile context.
-    fn new(events: &'a [Event], bytes: &'a [u8]) -> CompileContext<'a> {
+    fn new(
+        events: &'a [Event],
+        bytes: &'a [u8],
+        options: &'a ParseOptions,
+        extension_names: &'a [TokenName],
+    ) -> CompileContext<'a> {
         let tree = Node::Root(Root {
             children: vec![],
             position: Some(Position {
@@ -138,6 +157,11 @@ impl<'a> CompileContext<'a> {
             media_reference_stack: vec![],
             raw_flow_fence_seen: false,
             trees: vec![(tree, vec![], vec![])],
+            options,
+            extension_names,
+            extension_matches: vec![],
+            extension_skip: None,
+            extension_exits: exits(events, extension_names),
             index: 0,
         }
     }
@@ -225,8 +249,13 @@ impl<'a> CompileContext<'a> {
 }
 
 /// Turn events and bytes into a syntax tree.
-pub fn compile(events: &[Event], bytes: &[u8]) -> Result<Node, message::Message> {
-    let mut context = CompileContext::new(events, bytes);
+pub(crate) fn compile(
+    events: &[Event],
+    bytes: &[u8],
+    options: &ParseOptions,
+    extension_names: &[TokenName],
+) -> Result<Node, message::Message> {
+    let mut context = CompileContext::new(events, bytes, options, extension_names);
 
     let mut index = 0;
     while index < events.len() {
@@ -260,6 +289,47 @@ fn handle(context: &mut CompileContext, index: usize) -> Result<(), message::Mes
 
 /// Handle [`Enter`][Kind::Enter].
 fn enter(context: &mut CompileContext) -> Result<(), message::Message> {
+    // A match’s own events are skipped; its content compiles into a buffer.
+    let index = context.index;
+    if context.extension_skip.map_or(false, |until| index <= until) {
+        return Ok(());
+    }
+    if let Some(top) = context.extension_matches.last_mut() {
+        if top.inside {
+            // A token of a construct in its content, such as a line prefix.
+            if is_in_content(context.extension_names, &context.events[index]) {
+                context.extension_skip = Some(context.extension_exits[index]);
+                return Ok(());
+            }
+        } else {
+            if let Some((_, _, _, is_document)) = top
+                .contents
+                .get(top.content)
+                .filter(|(_, enter, _, _)| *enter == index)
+            {
+                top.inside = true;
+                if *is_document {
+                    context.trees.push((
+                        Node::Root(Root {
+                            children: vec![],
+                            position: None,
+                        }),
+                        vec![],
+                        vec![],
+                    ));
+                } else {
+                    context.buffer();
+                }
+            }
+            return Ok(());
+        }
+    }
+
+    if context.events[index].name == Name::Extension {
+        on_enter_extension(context);
+        return Ok(());
+    }
+
     match context.events[context.index].name {
         Name::AutolinkEmail
         | Name::AutolinkProtocol
@@ -338,6 +408,51 @@ fn enter(context: &mut CompileContext) -> Result<(), message::Message> {
 
 /// Handle [`Exit`][Kind::Exit].
 fn exit(context: &mut CompileContext) -> Result<(), message::Message> {
+    let index = context.index;
+    if let Some(until) = context.extension_skip {
+        if index <= until {
+            if index == until {
+                context.extension_skip = None;
+            }
+            return Ok(());
+        }
+    }
+    if let Some(top) = context.extension_matches.last_mut() {
+        if !top.inside {
+            if index == top.end {
+                on_exit_extension(context);
+            }
+            return Ok(());
+        }
+        if let Some(token) = top
+            .contents
+            .get(top.content)
+            .filter(|(_, _, exit, _)| *exit == index)
+            .map(|(token, _, _, _)| *token)
+        {
+            top.inside = false;
+            top.content += 1;
+            // A node left open in content, such as an MDX JSX tag.
+            let events = context.events;
+            if let Some(left) = context.trees.last().and_then(|tree| tree.2.last()) {
+                on_mismatch_error(context, Some(&events[index]), &events[*left])?;
+            }
+            let children = match context.resume() {
+                Node::Paragraph(Paragraph { children, .. }) | Node::Root(Root { children, .. }) => {
+                    children
+                }
+                _ => unreachable!("expected buffer"),
+            };
+            context
+                .extension_matches
+                .last_mut()
+                .expect("expected a match")
+                .tokens[token]
+                .children = children;
+            return Ok(());
+        }
+    }
+
     match context.events[context.index].name {
         Name::Autolink
         | Name::BlockQuote
@@ -743,7 +858,12 @@ fn on_enter_link(context: &mut CompileContext) {
 /// Handle [`Enter`][Kind::Enter]:{[`ListOrdered`][Name::ListOrdered],[`ListUnordered`][Name::ListUnordered]}.
 fn on_enter_list(context: &mut CompileContext) {
     let ordered = context.events[context.index].name == Name::ListOrdered;
-    let spread = list_loose(context.events, context.index, false);
+    let spread = list_loose(
+        context.events,
+        context.index,
+        false,
+        context.extension_names,
+    );
 
     context.tail_push(Node::List(List {
         ordered,
@@ -1485,7 +1605,6 @@ fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), message::Mess
     if tag.close {
         // Unwrap: we crashed earlier if there’s nothing on the stack.
         let tail = tail.unwrap();
-
         if tail.name != tag.name {
             let label = serialize_abbreviated_tag(&tag);
             return Err(
@@ -1505,6 +1624,28 @@ fn on_exit_mdx_jsx_tag(context: &mut CompileContext) -> Result<(), message::Mess
                     source: Box::new("markdown-rs".into()),
                 },
             );
+        }
+
+        // The element is open outside this content of a construct.
+        let is_outside = context.trees.last().map_or(true, |tree| tree.2.is_empty());
+
+        if is_outside {
+            let label = serialize_abbreviated_tag(&tag);
+            return Err(message::Message {
+                place: Some(Box::new(message::Place::Position(Position {
+                    start: tag.start,
+                    end: tag.end,
+                }))),
+                reason: format!(
+                    "Unexpected closing tag `{}`, expected its opening tag `{}` ({}:{}) in the same content",
+                    label,
+                    serialize_abbreviated_tag(tail),
+                    tail.start.line,
+                    tail.start.column,
+                ),
+                rule_id: Box::new("end-tag-mismatch".into()),
+                source: Box::new("markdown-rs".into()),
+            });
         }
 
         // Remove from our custom stack.
@@ -1714,6 +1855,70 @@ fn position_from_event(event: &Event) -> Position {
     }
 }
 
+/// A match of a construct being compiled.
+#[derive(Debug)]
+struct ExtensionMatch<'a> {
+    /// Index of the construct.
+    construct: u8,
+    /// Index of the first event of the match.
+    start: usize,
+    /// Index of the last event of the match.
+    end: usize,
+    /// Tokens of the match, in the order they were entered.
+    tokens: Vec<RawToken<'a>>,
+    /// Content tokens: token index, enter and exit event indices, and
+    /// whether the content is a document, in order.
+    contents: Vec<(usize, usize, usize, bool)>,
+    /// Index in `contents` of the next content token.
+    content: usize,
+    /// Whether the current event is inside content.
+    inside: bool,
+}
+
+/// Handle [`Enter`][Kind::Enter]:[`Extension`][Name::Extension], first of a
+/// match.
+fn on_enter_extension(context: &mut CompileContext) {
+    let event = &context.events[context.index];
+    let construct = context.extension_names[usize::from(event.extension)].0;
+    let found = collect_tokens(
+        context.events,
+        context.bytes,
+        context.extension_names,
+        &context.extension_exits,
+        context.index,
+    );
+    context.extension_matches.push(ExtensionMatch {
+        construct,
+        start: context.index,
+        end: found.end,
+        tokens: found.tokens,
+        contents: found.contents,
+        content: 0,
+        inside: false,
+    });
+}
+
+/// Handle the last event of a match.
+///
+/// Lets the construct make one node of the match, which is added as a child.
+fn on_exit_extension(context: &mut CompileContext) {
+    let done = context.extension_matches.pop().expect("expected a match");
+    let mut node = construct_to_mdast(context.options, done.construct, done.tokens);
+
+    if node.position().is_none() {
+        node.position_set(Some(Position {
+            start: context.events[done.start].point.to_unist(),
+            end: context.events[done.end].point.to_unist(),
+        }));
+    }
+
+    context
+        .tail_mut()
+        .children_mut()
+        .expect("expected a parent for a construct")
+        .push(node);
+}
+
 /// Resolve the current stack on the tree.
 fn delve_mut<'tree>(mut node: &'tree mut Node, stack: &'tree [usize]) -> &'tree mut Node {
     let mut stack_index = 0;
@@ -1805,9 +2010,9 @@ fn on_mismatch_error(
                     reason: format!(
                         "Expected the closing tag `{}` either before the start of `{:?}` ({}:{}), or another opening tag after that start",
                         serialize_abbreviated_tag(tag),
-                        &right.name,
-                        &right.point.line,
-                        &right.point.column,
+                        right.name,
+                        right.point.line,
+                        right.point.column,
                     ),
                     rule_id: Box::new("end-tag-mismatch".into()),
                     source: Box::new("markdown-rs".into()),
@@ -1815,9 +2020,8 @@ fn on_mismatch_error(
             );
         }
         unreachable!("mismatched (non-jsx): {:?} / {:?}", left.name, right.name);
-    } else {
-        unreachable!("mismatched (non-jsx): document / {:?}", right.name);
     }
+    unreachable!("mismatched (non-jsx): document / {:?}", right.name);
 }
 
 /// Format a JSX tag, ignoring its attributes.

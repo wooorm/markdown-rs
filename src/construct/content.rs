@@ -24,6 +24,7 @@
 //! [paragraph]: crate::construct::paragraph
 
 use crate::event::{Content, Kind, Link, Name};
+use crate::extension::is_in_content;
 use crate::message;
 use crate::resolve::Name as ResolveName;
 use crate::state::{Name as StateName, State};
@@ -140,6 +141,11 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Result<Option<Subresult>, message::
                     if event.name != Name::SpaceOrTab
                         && event.name != Name::BlockQuotePrefix
                         && event.name != Name::BlockQuoteMarker
+                        && !(event.name == Name::Extension
+                            && is_in_content(
+                                &tokenizer.parse_state.extension_names.borrow(),
+                                event,
+                            ))
                     {
                         break;
                     }

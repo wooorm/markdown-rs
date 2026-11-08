@@ -149,12 +149,14 @@ fn trim_data(
                         name: name.clone(),
                         point: enter_point.clone(),
                         link: None,
+                        extension: 0,
                     },
                     Event {
                         kind: Kind::Exit,
                         name,
                         point: exit_point,
                         link: None,
+                        extension: 0,
                     },
                 ],
             );
@@ -197,12 +199,14 @@ fn trim_data(
                         name: Name::SpaceOrTab,
                         point: enter_point,
                         link: None,
+                        extension: 0,
                     },
                     Event {
                         kind: Kind::Exit,
                         name: Name::SpaceOrTab,
                         point: exit_point.clone(),
                         link: None,
+                        extension: 0,
                     },
                 ],
             );

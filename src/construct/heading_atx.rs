@@ -240,6 +240,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                             name: Name::HeadingAtxText,
                             point: tokenizer.events[start].point.clone(),
                             link: None,
+                            extension: 0,
                         }],
                     );
 
@@ -254,6 +255,7 @@ pub fn resolve(tokenizer: &mut Tokenizer) -> Option<Subresult> {
                             name: Name::HeadingAtxText,
                             point: tokenizer.events[end].point.clone(),
                             link: None,
+                            extension: 0,
                         }],
                     );
                 }
